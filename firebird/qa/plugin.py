@@ -110,6 +110,7 @@ def pytest_configure(config):
         _vars_['firebird-config'] = config_path
     driver_config.register_database('pytest')
     #
+    _vars_['basetemp'] = config.getoption('basetemp')
     _vars_['runslow'] = config.getoption('runslow')
     _vars_['root'] = config.rootpath
     path = config.rootpath / 'databases'
@@ -164,8 +165,6 @@ def pytest_collection_modifyitems(config, items):
 def firebird_server():
     with connect_server(_vars_['server']) as srv:
         yield srv
-
-
 
 def substitute_macros(text: str, macros: Dict[str, str]):
     f_text = text
@@ -278,6 +277,12 @@ class Database:
 @pytest.fixture
 def db_path(tmp_path) -> Path:
     if platform.system != 'Windows':
+        base = _vars_['basetemp']
+        if base is None:
+            os.chmod(tmp_path.parent, 16895)
+            os.chmod(tmp_path.parent.parent, 16895)
+        else:
+            os.chmod(Path(base), 16895)
         os.chmod(tmp_path, 16895)
     return tmp_path
 
