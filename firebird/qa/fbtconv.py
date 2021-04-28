@@ -148,6 +148,7 @@ def escape(txt: str) -> str:
 def load_test(filename: Path, verbose: bool=False) -> Dict:
     if verbose:
         print(f"Loading {filename}...")
+    expr_b = filename.read_bytes()
     expr = filename.read_text(encoding='utf-8')
     try:
         d = eval(expr)
@@ -192,8 +193,8 @@ def clean_tests():
 def list_tests(root_path: Path, verbose: bool=False):
     for t in tests:
         test_file: Path = root_path / (t.id.replace('.', '/') + '.py')
-        if not test_file.name.startswith('test_'):
-            test_file = test_file.with_name('test_' + test_file.name)
+        if not test_file.stem.endswith('_test'):
+            test_file = test_file.with_name(test_file.stem + '_test.py')
         if verbose:
             print(f"id:         {t.id}")
             print(f"output:     {test_file}")
@@ -213,8 +214,14 @@ def write_tests(root_path: Path, verbose: bool=False):
         test_dir = test_file.parent
         if not test_dir.is_dir():
             make_dirs(root_path, test_dir)
-        if not test_file.name.startswith('test_'):
-            test_file = test_file.with_name('test_' + test_file.name)
+        if test_file.name.startswith('core_'):
+            if not test_file.stem.endswith('_test'):
+                test_file = test_file.with_name(test_file.stem + '_test.py')
+        else:
+            if not test_file.name.startswith('test_'):
+                test_file = test_file.with_name('test_' + test_file.name)
+        if test_file.stem[0] in '0123456789':
+            test_file = test_file.with_name('t' + test_file.name)
         content = f"""#coding:utf-8
 #
 # id:           {t.id}
@@ -277,7 +284,7 @@ from firebird.qa import db_factory, isql_act, Action
                     content += f"""@pytest.mark.platform({", ".join([f"'{i}'" for i in v.platform.split(':')])})\n"""
                 if v.id in slow_tests:
                     content += '@pytest.mark.slow\n'
-                content += f"""def {test_file.stem}_{seq}(act_{seq}: Action):\n"""
+                content += f"""def test_{seq}(act_{seq}: Action):\n"""
                 if v.expected_stdout:
                     content += f'    act_{seq}.expected_stdout = expected_stdout_{seq}\n'
                 if v.expected_stderr:
@@ -303,7 +310,7 @@ from firebird.qa import db_factory, isql_act, Action
                 if v.platform != 'All':
                     content += f"""@pytest.mark.platform({", ".join([f"'{i}'" for i in v.platform.split(':')])})\n"""
                 content += "@pytest.mark.xfail\n"
-                content += f"""def {test_file.stem}_{seq}(db_{seq}):\n    pytest.fail("Test not IMPLEMENTED")\n\n"""
+                content += f"""def test_{seq}(db_{seq}):\n    pytest.fail("Test not IMPLEMENTED")\n\n"""
                 content += '\n'
 
         #
