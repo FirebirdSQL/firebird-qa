@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.database.create_08
+# id:           functional.database.create.08
 # title:        
 #                   CREATE DATABASE - Multi file DB
 #                   Checked on:
@@ -62,7 +62,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.xfail
-def test_create_08_1(db_1):
+def test_08_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 

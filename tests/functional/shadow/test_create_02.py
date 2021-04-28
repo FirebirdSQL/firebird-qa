@@ -2,19 +2,21 @@
 #
 # id:           functional.shadow.create_02
 # title:        CREATE SHADOW
-# decription:   CREATE SHADOW
+# decription:   
+#                   CREATE SHADOW
 #               
-#               Dependencies:
-#               CREATE DATABASE
+#                   Dependencies:
+#                   CREATE DATABASE
+#                 
 # tracker_id:   
-# min_versions: []
-# versions:     3.0
+# min_versions: ['2.5.0']
+# versions:     2.5
 # qmid:         functional.shadow.create.create_shadow_02
 
 import pytest
 from firebird.qa import db_factory, isql_act, Action
 
-# version: 3.0
+# version: 2.5
 # resources: None
 
 substitutions_1 = []
@@ -24,7 +26,7 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    create shadow 1 manual conditional '$(DATABASE_LOCATION)/TEST.SHD' file '$(DATABASE_LOCATION)/TEST.S00' starting at page 1000;
+    create shadow 1 manual conditional '$(DATABASE_LOCATION)TEST.SHD' file '$(DATABASE_LOCATION)TEST.S00' starting at page 1000;
     commit;
     set list on;
     set count on;
@@ -58,7 +60,7 @@ expected_stdout_1 = """
     Records affected: 2
  """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=2.5')
 def test_create_02_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()

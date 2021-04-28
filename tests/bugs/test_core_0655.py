@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_655
+# id:           bugs.core_0655
 # title:        Blob Type 1 compatibility with VarChar
 # decription:   Blob Sub-Type 1 (text) column treated in the same manner as a VarChar column
 #               for assignments, conversions, cast, lower, upper, trim, concatenate and substring
@@ -38,7 +38,7 @@ firebird             FIREBIRD             Firebird2.1          Firebird 2.1     
 SQL>"""
 
 @pytest.mark.version('>=2.1')
-def test_core_655_1(act_1: Action):
+def test_core_0655_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

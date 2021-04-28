@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.indexes.upper_bound_asc_01_segments_02
+# id:           functional.arno.indices.upper_bound_asc_01_segments_02
 # title:        ASC single index upper bound
 # decription:   Check if all 32 values are fetched with "lower than" operator.
 # tracker_id:   

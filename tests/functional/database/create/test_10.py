@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.database.create_10
+# id:           functional.database.create.10
 # title:        CREATE DATABASE - Multi file DB - starting
 # decription:   
 #                   Database with four files. Additional files specified by STARTING AT.
@@ -73,7 +73,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 @pytest.mark.xfail
-def test_create_10_1(db_1):
+def test_10_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 
@@ -133,7 +133,7 @@ expected_stdout_2 = """
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.xfail
-def test_create_10_2(db_2):
+def test_10_2(db_2):
     pytest.fail("Test not IMPLEMENTED")
 
 

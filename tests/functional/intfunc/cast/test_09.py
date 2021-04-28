@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.intfunc.cast_09
+# id:           functional.intfunc.cast.09
 # title:        CAST CHAR -> DATE
 # decription:   CAST CHAR -> DATE
 #               Be careful about date format on FB server !
@@ -37,7 +37,7 @@ expected_stderr_1 = '''Statement failed, SQLSTATE = 22018
 conversion error from string "29.2.2002"'''
 
 @pytest.mark.version('>=2.5')
-def test_cast_09_1(act_1: Action):
+def test_09_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

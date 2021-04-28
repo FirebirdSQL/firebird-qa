@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.basic.db.db_23
+# id:           functional.basic.db.23
 # title:        Empty DB - RDB$RELATIONS
 # decription:   Check for correct content of RDB$RELATIONS in empty database.
 # tracker_id:   
@@ -1176,7 +1176,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_db_23_1(act_1: Action):
+def test_23_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
@@ -2416,7 +2416,7 @@ expected_stdout_2 = """
   """
 
 @pytest.mark.version('>=4.0')
-def test_db_23_2(act_2: Action):
+def test_23_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_expected_stdout == act_2.clean_stdout

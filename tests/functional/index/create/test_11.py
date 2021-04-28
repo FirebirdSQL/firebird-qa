@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.index.create_11
+# id:           functional.index.create.11
 # title:        CREATE UNIQUE INDEX - Non unique data in table
 # decription:   CREATE UNIQUE INDEX - Non unique data in table
 #               
@@ -45,7 +45,7 @@ attempt to store duplicate value (visible to active transactions) in unique inde
 """
 
 @pytest.mark.version('>=2.5.3')
-def test_create_11_1(act_1: Action):
+def test_11_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

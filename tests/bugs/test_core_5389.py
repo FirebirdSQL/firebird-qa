@@ -10,6 +10,10 @@
 #               		4.0.0.1635 SS: 2.782s.
 #               		4.0.0.1633 CS: 3.515s.	
 #               	NB: old checked on: 4.0.0.639 - did pass without using codecs! Strange!
+#               
+#                   13.04.2021. Adapted for run both on Windows and Linux. Checked on:
+#                     Windows: 4.0.0.2416
+#                     Linux:   4.0.0.2416
 #                
 # tracker_id:   CORE-5389
 # min_versions: ['4.0']
@@ -36,38 +40,70 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  # 30.10.2019. This is needed in Python 2.7 for converting string in UTF8 to cp1251
 #  import codecs
-#  
-#  #--------------------------------------------
-#  
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#  
-#  #--------------------------------------------
-#  
+#  import io
 #  
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  
 #  db_conn.close()
 #  
+#  #--------------------------------------------
+#  
+#  def flush_and_close( file_handle ):
+#      # https://docs.python.org/2/library/os.html#os.fsync
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
+#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
+#      global os
+#  
+#      file_handle.flush()
+#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
+#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
+#          os.fsync(file_handle.fileno())
+#      file_handle.close()
+#  
+#  #--------------------------------------------
+#  
+#  def cleanup( f_names_list ):
+#      global os
+#      for i in range(len( f_names_list )):
+#         if type(f_names_list[i]) == file:
+#            del_name = f_names_list[i].name
+#         elif type(f_names_list[i]) == str:
+#            del_name = f_names_list[i]
+#         else:
+#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
+#            print('type(f_names_list[i])=',type(f_names_list[i]))
+#            del_name = None
+#  
+#         if del_name and os.path.isfile( del_name ):
+#             os.remove( del_name )
+#  
+#  #--------------------------------------------
+#  
 #  non_ascii_ddl='''
+#      set bail on;
 #      set list on;
+#      -- set names win1251;
+#      connect '%(dsn)s' user '%(user_name)s' password '%(user_password)s';
+#  
 #  	select
 #  	   '' as "ФИО"
 #  	  ,'' as "Д.рождения"
 #  	  ,'' as "Город"
 #  	  ,'' as "Расшифровка выступлений"
 #  	from rdb$database;	
-#  '''
+#  ''' % dict(globals(), **locals())
 #  
-#  f_checksql=os.path.join(context['temp_directory'],'tmp_non_ascii_ddl_5389.sql')
-#  with codecs.open( f_checksql, 'w', encoding='cp1251') as f:
-#      f.write( non_ascii_ddl.decode('utf-8') )
+#  f_checksql = open( os.path.join(context['temp_directory'], 'tmp_5389_w1251.sql'), 'w' )
+#  f_checksql.write( non_ascii_ddl.decode('utf8').encode('cp1251') )
+#  flush_and_close( f_checksql )
 #  
-#  # Result: file 'tmp_non_ascii_chk_5389.sql' is encoded in cp1251 and contains SQL statements to be executed.
+#  # result: file 'tmp_non_ascii_chk_5389.sql' is encoded in win1251
+#  
+#  #f_checksql=os.path.join(context['temp_directory'],'tmp_non_ascii_ddl_5389.sql')
+#  #with io.open( f_checksql, 'w', encoding='cp1251') as f:
+#  #    f.write( non_ascii_ddl.decode('utf-8') )
 #  
 #  ###########################################################################################################
 #  ###  check-1:  attempt to apply DDL with non-ascii characters __WITHOUT__ charset specifying (for ISQL) ###
@@ -76,13 +112,13 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  f_apply_cset_none_log = open( os.path.join(context['temp_directory'],'tmp_5389_apply_cset_none.log'), 'w')
 #  f_apply_cset_none_err = open( os.path.join(context['temp_directory'],'tmp_5389_apply_cset_none.err'), 'w')
 #  
-#  subprocess.call( ["isql", dsn, "-i", f_checksql ],
+#  subprocess.call( [context['isql_path'], "-q", "-i", f_checksql.name ],
 #                   stdout = f_apply_cset_none_log,
 #                   stderr = f_apply_cset_none_err
 #                 )
 #  
-#  f_apply_cset_none_log.close()
-#  f_apply_cset_none_err.close()
+#  flush_and_close( f_apply_cset_none_log )
+#  flush_and_close( f_apply_cset_none_err )
 #  
 #  #############################################################################################################
 #  ###  check-2:  attempt to apply DDL with non-ascii characters ___WITH___ specifying: ISQL ... -ch WIN1251 ###
@@ -91,20 +127,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  f_apply_cset_1251_log = open( os.path.join(context['temp_directory'],'tmp_5389_apply_cset_1251.log'), 'w')
 #  f_apply_cset_1251_err = open( os.path.join(context['temp_directory'],'tmp_5389_apply_cset_1251.err'), 'w')
 #  
-#  subprocess.call( ["isql", dsn, "-i", f_checksql, "-ch", "win1251" ],
+#  subprocess.call( [context['isql_path'], "-q", "-i", f_checksql.name, "-ch", "win1251" ],
 #                   stdout = f_apply_cset_1251_log,
 #                   stderr = f_apply_cset_1251_err
 #                 )
 #  
-#  f_apply_cset_1251_log.close()
+#  flush_and_close( f_apply_cset_1251_log )
 #  
 #  # This file should NOT contain any errors:
-#  f_apply_cset_1251_err.close()
-#  
-#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with 
-#  # Exception raised while executing Python test script. exception: WindowsError: 32
-#  time.sleep(1)
-#  
+#  flush_and_close( f_apply_cset_1251_err )
 #  
 #  # CHECK RESULTS:
 #  ################
@@ -116,7 +147,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          out_txt='STDLOG WHEN CSET=NONE: ';
 #          if line.strip():
 #              print( out_txt+line.strip().decode("cp1251").encode('utf8') )
-#  f.close()
 #  
 #  
 #  with open( f_apply_cset_none_err.name, 'r') as f:
@@ -125,30 +155,23 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          if line.strip():
 #              print( out_txt+line.strip().decode("cp1251").encode('utf8') )
 #          
-#  f.close()
-#  
-#  
 #  with open( f_apply_cset_1251_log.name, 'r') as f:
 #      for line in f:
 #          out_txt='STDLOG WHEN CSET=WIN1251: ';
 #          if line.strip():
 #              print( out_txt+line.strip().decode("cp1251").encode('utf8') )
-#  f.close()
 #  
 #  with open( f_apply_cset_1251_err.name, 'r') as f:
 #      for line in f:
 #          out_txt='STDERR WHEN CSET=WIN1251: ';
 #          if line.strip():
 #              print( out_txt+line.strip().decode("cp1251").encode('utf8') )
-#  f.close()
 #  
 #  
 #  #####################################################################
 #  # Cleanup:
-#  
-#  f_list = [ i.name for i in ( f_apply_cset_none_log, f_apply_cset_none_err, f_apply_cset_1251_log, f_apply_cset_1251_err ) ]
-#  f_list += [ f_checksql, ]
-#  cleanup( f_list )
+#  time.sleep(1)
+#  cleanup( (f_apply_cset_none_log, f_apply_cset_none_err, f_apply_cset_1251_log, f_apply_cset_1251_err, f_checksql) )
 #  
 #    
 #---
@@ -165,7 +188,6 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.platform('Windows')
 @pytest.mark.xfail
 def test_core_5389_1(db_1):
     pytest.fail("Test not IMPLEMENTED")

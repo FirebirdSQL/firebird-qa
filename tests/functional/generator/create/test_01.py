@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.generator.create_01
+# id:           functional.generator.create.01
 # title:        Run CREATE GENERATOR and query related data from RDB$GENERATORS.
 # decription:   
 #                  Run 'CREATE GENERATOR' statement and obtain data about it from system table (rdb$generators).
@@ -47,7 +47,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_create_01_1(act_1: Action):
+def test_01_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
@@ -82,7 +82,7 @@ expected_stdout_2 = """
   """
 
 @pytest.mark.version('>=4.0')
-def test_create_01_2(act_2: Action):
+def test_01_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_expected_stdout == act_2.clean_stdout

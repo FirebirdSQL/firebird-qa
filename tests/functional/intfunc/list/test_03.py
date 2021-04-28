@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.intfunc.list_03
+# id:           functional.intfunc.list.03
 # title:        List function with distinct option
 # decription:   
 # tracker_id:   CORE-964
@@ -36,7 +36,7 @@ expected_stdout_1 = """RDB$SYSTEM_FLAG LIST
 
 @pytest.mark.version('>=2.1')
 @pytest.mark.xfail
-def test_list_03_1(db_1):
+def test_03_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 

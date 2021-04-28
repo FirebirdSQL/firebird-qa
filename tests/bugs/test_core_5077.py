@@ -1,21 +1,13 @@
 #coding:utf-8
 #
 # id:           bugs.core_5077
-# title:        ISQL does not show encryption status of database
+# title:        ISQL 'SHOW DATABASE' command does not show encryption status of database
 # decription:   
 #                   We create new database ('tmp_core_5077.fdb') and try to encrypt it usng IBSurgeon Demo Encryption package
 #                   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
 #                   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
 #                   This file was preliminary stored in FF Test machine.
 #                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
-#               
-#                   Anyone who wants to run this test on his own machine must
-#                   1) download https://ib-aid.com/download/crypt/CryptTest.zip AND 
-#                   2) PURCHASE LICENSE and get from IBSurgeon file plugins\\dbcrypt.conf with apropriate expiration date and other info.
-#                   
-#                   ################################################ ! ! !    N O T E    ! ! ! ##############################################
-#                   FF tests storage (aka "fbt-repo") does not (and will not) contain any license file for IBSurgeon Demo Encryption package!
-#                   #########################################################################################################################
 #               
 #                   After test database will be created, we try to encrypt it using 'alter database encrypt with <plugin_name> ...' command
 #                   (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\ folder that implements encryption).
@@ -27,28 +19,12 @@
 #               
 #                   Checked on: 4.0.0.1629: OK, 6.264s; 3.0.5.33179: OK, 4.586s.
 #               
-#                   === NOTE-1 ===
-#                   In case of "Crypt plugin DBCRYPT failed to load/607/335544351" check that all 
-#                   needed files from IBSurgeon Demo Encryption package exist in %FB_HOME% and %FB_HOME%\\plugins
-#                   %FB_HOME%:
-#                       283136 fbcrypt.dll
-#                      2905600 libcrypto-1_1-x64.dll
-#                       481792 libssl-1_1-x64.dll
-#               
-#                   %FB_HOME%\\plugins:
-#                       297984 dbcrypt.dll
-#                       306176 keyholder.dll
-#                          108 DbCrypt.conf
-#                          856 keyholder.conf
-#                   
-#                   === NOTE-2 ===
-#                   Version of DbCrypt.dll of october-2018 must be replaced because it has hard-coded 
-#                   date of expiration rather than reading it from DbCrypt.conf !!
-#               
-#                   === NOTE-3 ===
-#                   firebird.conf must contain following line:
-#                       KeyHolderPlugin = KeyHolder
-#               
+#                   13.04.2021. Adapted for run both on Windows and Linux. Checked on:
+#                     Windows: 4.0.0.2416
+#                     Linux:   4.0.0.2416
+#                   Note: different names for encryption plugin and keyholde rare used for Windows vs Linux:
+#                      PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else '"fbSampleDbCrypt"'
+#                      KHOLDER_NAME = 'KeyHolder' if os.name == 'nt' else "fbSampleKeyHolder"
 #                
 # tracker_id:   CORE-5077
 # min_versions: ['3.0.0']
@@ -77,32 +53,64 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import fdb
 #  from fdb import services
 #  
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
+#  os.environ["ISC_USER"] = user_name
+#  os.environ["ISC_PASSWORD"] = user_password
+#  engine = db_conn.engine_version
+#  db_conn.close()
 #  
 #  #--------------------------------------------
 #  
+#  def flush_and_close( file_handle ):
+#      # https://docs.python.org/2/library/os.html#os.fsync
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
+#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
+#      global os
 #  
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
+#      file_handle.flush()
+#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
+#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
+#          os.fsync(file_handle.fileno())
+#      file_handle.close()
 #  
-#  fb_home = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
+#  #--------------------------------------------
 #  
-#  db_conn.close()
+#  def cleanup( f_names_list ):
+#      global os
+#      for i in range(len( f_names_list )):
+#         if type(f_names_list[i]) == file:
+#            del_name = f_names_list[i].name
+#         elif type(f_names_list[i]) == str:
+#            del_name = f_names_list[i]
+#         else:
+#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
+#            print('type(f_names_list[i])=',type(f_names_list[i]))
+#            del_name = None
+#  
+#         if del_name and os.path.isfile( del_name ):
+#             os.remove( del_name )
+#  
+#  #--------------------------------------------
 #  
 #  tmpfdb='$(DATABASE_LOCATION)'+'tmp_core_5077.fdb'
 #  
-#  if os.path.isfile( tmpfdb ):
-#      os.remove( tmpfdb )
+#  cleanup( (tmpfdb,) )
 #  
 #  con = fdb.create_database( dsn = 'localhost:'+tmpfdb )
-#  con.close()
-#  con=fdb.connect( dsn = 'localhost:'+tmpfdb )
+#  
+#  # 14.04.2021.
+#  # Name of encryption plugin depends on OS:
+#  # * for Windows we (currently) use plugin by IBSurgeon, its name is 'dbcrypt';
+#  # * for Linux we use:
+#  #   ** 'DbCrypt_example' for FB 3.x
+#  #   ** 'fbSampleDbCrypt' for FB 4.x+
+#  #
+#  PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else ( '"fbSampleDbCrypt"' if engine >= 4.0 else '"DbCrypt_example"')
+#  KHOLDER_NAME = 'KeyHolder' if os.name == 'nt' else "fbSampleKeyHolder"
+#  
 #  cur = con.cursor()
-#  cur.execute('alter database encrypt with dbcrypt key Red')
+#  cur.execute('alter database encrypt with %(PLUGIN_NAME)s key Red' % locals())
+#  ### DOES NOT WORK ON LINUX! ISSUES 'TOKEN UNKNOWN' !! >>> con.execute_immediate('alter database encrypt with %(PLUGIN_NAME)s key Red' % locals()) // sent letter to Alex and dimitr, 14.04.2021
 #  con.commit()
 #  time.sleep(2)
 #  #          ^
@@ -110,25 +118,27 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  con.close()
 #  
-#  #--------------------------------- run ISQL --------------------
+#  ########################################
+#  # run ISQL with 'SHOW DATABASE' command:
+#  ########################################
 #  f_isql_cmd=open( os.path.join(context['temp_directory'],'tmp_5077.sql'), 'w')
 #  f_isql_cmd.write('show database;')
-#  f_isql_cmd.close()
+#  flush_and_close( f_isql_cmd )
 #  
 #  f_isql_log=open( os.path.join(context['temp_directory'], 'tmp_5077.log'), 'w')
 #  f_isql_err=open( os.path.join(context['temp_directory'], 'tmp_5077.err'), 'w')
-#  subprocess.call( [fb_home+'isql', 'localhost:' + tmpfdb, '-q', '-n', '-i', f_isql_cmd.name ], stdout=f_isql_log, stderr = f_isql_err)
-#  f_isql_log.close()
-#  f_isql_err.close()
+#  subprocess.call( [context['isql_path'], 'localhost:' + tmpfdb, '-q', '-n', '-i', f_isql_cmd.name ], stdout=f_isql_log, stderr = f_isql_err)
+#  flush_and_close( f_isql_log )
+#  flush_and_close( f_isql_err )
 #  
 #  #---------------------------- shutdown temp DB --------------------
 #  
 #  f_dbshut_log = open( os.path.join(context['temp_directory'],'tmp_dbshut_5077.log'), 'w')
-#  subprocess.call( [ "gfix", 'localhost:'+tmpfdb, "-shut", "full", "-force", "0" ],
+#  subprocess.call( [ context['gfix_path'], 'localhost:'+tmpfdb, "-shut", "full", "-force", "0" ],
 #                   stdout = f_dbshut_log,
 #                   stderr = subprocess.STDOUT
 #                 )
-#  f_dbshut_log.close()
+#  flush_and_close( f_dbshut_log )
 #  
 #  allowed_patterns = (
 #       re.compile( 'Database(\\s+not){0,1}\\s+encrypted\\.*', re.IGNORECASE),
@@ -148,15 +158,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      for line in f:
 #          print("Unexpected error on SHUTDOWN temp database: "+line)
 #  
-#  time.sleep(1)
 #  
 #  # CLEANUP
 #  #########
+#  time.sleep(1)
 #  
-#  f_list = [ i.name for i in ( f_isql_log, f_isql_err, f_isql_cmd, f_dbshut_log ) ]
-#  f_list += [ tmpfdb ]
-#  cleanup( f_list )
-#  
+#  cleanup( ( f_isql_log, f_isql_err, f_isql_cmd, f_dbshut_log,tmpfdb )  )
 #    
 #---
 #act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
@@ -166,7 +173,6 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.platform('Windows')
 @pytest.mark.xfail
 def test_core_5077_1(db_1):
     pytest.fail("Test not IMPLEMENTED")

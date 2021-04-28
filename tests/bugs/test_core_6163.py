@@ -462,7 +462,9 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      -- The reason of that weird effect currently is unknown.
 #      -- Here we make pause using 'set transaction lock timeout':
 #  
-#      set transaction lock timeout 2; -- THIS LOCK TIMEOUT SERVES ONLY FOR DELAY
+#      -- 20.04.2021: increased delay from 2 to 3 seconds.
+#      -- Otherwise can get "... crypt thread not complete":
+#      set transaction lock timeout 3; -- THIS LOCK TIMEOUT SERVES ONLY FOR DELAY
 #      execute procedure sp_delay;
 #      rollback;
 #      show database;

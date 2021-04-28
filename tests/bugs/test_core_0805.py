@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_805
+# id:           bugs.core_0805
 # title:        Privileges of dynamic statements in SP
 # decription:   
 #                   Checked on:
@@ -165,7 +165,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=2.5')
-def test_core_805_1(act_1: Action):
+def test_core_0805_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

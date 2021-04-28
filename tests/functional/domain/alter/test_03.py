@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.domain.alter_03
+# id:           functional.domain.alter.03
 # title:        ALTER DOMAIN - ADD CONSTRAINT
 # decription:   
 # tracker_id:   
@@ -39,7 +39,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=2.0')
-def test_alter_03_1(act_1: Action):
+def test_03_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

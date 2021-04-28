@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_952
+# id:           bugs.core_0952
 # title:        AV when blob is used in expression index
 # decription:   
 # tracker_id:   CORE-952
@@ -48,7 +48,7 @@ expected_stdout_1 = """ID N2
 """
 
 @pytest.mark.version('>=2.0.1')
-def test_core_952_1(act_1: Action):
+def test_core_0952_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

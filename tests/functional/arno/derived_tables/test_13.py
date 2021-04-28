@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.derived_tables.derived_tables_13
+# id:           functional.arno.derived_tables.13
 # title:        Simple derived table
 # decription:   Test DISTINCT inside derived table.
 # tracker_id:   
@@ -60,7 +60,7 @@ two
 """
 
 @pytest.mark.version('>=2.0')
-def test_derived_tables_13_1(act_1: Action):
+def test_13_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

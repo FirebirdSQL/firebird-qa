@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.indexes.starting_with_02
+# id:           functional.arno.indices.starting_with_02
 # title:        STARTING WITH charset ISO8859_1
 # decription:   STARTING WITH - Select from table with 2 entries
 #               

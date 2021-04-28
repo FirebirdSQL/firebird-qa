@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_842
+# id:           bugs.core_0842
 # title:        Specific query crashing server
 # decription:   Run the query below twice and the server will crash:
 #               
@@ -42,7 +42,7 @@ expected_stdout_1 = """
  """
 
 @pytest.mark.version('>=2.1')
-def test_core_842_1(act_1: Action):
+def test_core_0842_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

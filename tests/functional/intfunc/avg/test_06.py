@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.intfunc.avg_06
+# id:           functional.intfunc.avg.06
 # title:        AVG - Integer OverFlow
 # decription:   
 #                   Refactored 14.10.2019: adjusted expected_stdout/stderr
@@ -56,7 +56,7 @@ expected_stderr_1 = """
    """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_avg_06_1(act_1: Action):
+def test_06_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
@@ -98,7 +98,7 @@ expected_stdout_2 = """
    """
 
 @pytest.mark.version('>=4.0')
-def test_avg_06_2(act_2: Action):
+def test_06_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_expected_stdout == act_2.clean_stdout

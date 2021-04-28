@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_871
+# id:           bugs.core_0871
 # title:        Incorrect handling of null within view - returns 0
 # decription:   
 # tracker_id:   CORE-871
@@ -43,7 +43,7 @@ expected_stdout_1 = """A            B
 """
 
 @pytest.mark.version('>=2.1')
-def test_core_871_1(act_1: Action):
+def test_core_0871_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

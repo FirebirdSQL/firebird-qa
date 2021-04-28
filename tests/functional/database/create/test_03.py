@@ -1,17 +1,17 @@
 #coding:utf-8
 #
-# id:           functional.database.create_03
-# title:        CREATE DATABASE - PAGE SIZE 1024
+# id:           functional.database.create.03
+# title:        CREATE DATABASE with PAGE_SIZE=1024: check actual size of page in the created database.
 # decription:   
 # tracker_id:   
-# min_versions: []
-# versions:     3.0
+# min_versions: ['2.5.0']
+# versions:     2.5
 # qmid:         
 
 import pytest
 from firebird.qa import db_factory, isql_act, Action
 
-# version: 3.0
+# version: 2.5
 # resources: None
 
 substitutions_1 = [('^((?!PAGE_SIZE).)*$', '')]
@@ -31,8 +31,8 @@ expected_stdout_1 = """
     PAGE_SIZE                       4096
   """
 
-@pytest.mark.version('>=3.0')
-def test_create_03_1(act_1: Action):
+@pytest.mark.version('>=2.5')
+def test_03_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

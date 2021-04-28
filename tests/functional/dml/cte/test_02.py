@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.dml.cte_02
+# id:           functional.dml.cte.02
 # title:        test for Recursive CTEs
 # decription:   Rules for Recursive CTEs
 #               A recursive CTE is self-referencing (has a reference to itself)
@@ -96,7 +96,7 @@ ID_TYPE_PRODUCT NAME                                 COUNT_P
 """
 
 @pytest.mark.version('>=3.0')
-def test_cte_02_1(act_1: Action):
+def test_02_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

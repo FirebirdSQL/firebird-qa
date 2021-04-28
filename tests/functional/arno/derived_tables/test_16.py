@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.derived_tables.derived_tables_16
+# id:           functional.arno.derived_tables.16
 # title:        Simple derived table
 # decription:   Test aggregate inside derived table.
 # tracker_id:   
@@ -58,7 +58,7 @@ expected_stdout_1 = """     GROUPID              ID_COUNT
 """
 
 @pytest.mark.version('>=3.0')
-def test_derived_tables_16_1(act_1: Action):
+def test_16_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

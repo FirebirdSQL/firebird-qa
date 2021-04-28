@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.database.alter_01
+# id:           functional.database.alter.01
 # title:        Alter database: adding a secondary file
 # decription:   Adding a secondary file to the database
 # tracker_id:   
@@ -38,7 +38,7 @@ C:\\JOB\\QA\\FBTEST\\TMP\\TEST.G00                                              
 
 @pytest.mark.version('>=1.0')
 @pytest.mark.xfail
-def test_alter_01_1(db_1):
+def test_01_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 

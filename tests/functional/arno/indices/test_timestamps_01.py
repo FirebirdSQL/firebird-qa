@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.indexes.timestamps_01
+# id:           functional.arno.indices.timestamps_01
 # title:        TIMESTAMP in index with values below julian date
 # decription:   Datetime values below the julian date (firebird base date '1858-11-17') should be stored in correct order.
 # tracker_id:   

@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.database.alter_03
+# id:           functional.database.alter.03
 # title:        Alter database: add file with name of this database or previously added files must fail
 # decription:   Add same file twice must fail
 # tracker_id:   
@@ -47,7 +47,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 @pytest.mark.xfail
-def test_alter_03_1(db_1):
+def test_03_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 

@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_925
+# id:           bugs.core_0925
 # title:        ALL predicate works incorrectly for some subqueries
 # decription:   
 # tracker_id:   CORE-925
@@ -63,6 +63,6 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 
 @pytest.mark.version('>=2.1')
-def test_core_925_1(act_1: Action):
+def test_core_0925_1(act_1: Action):
     act_1.execute()
 

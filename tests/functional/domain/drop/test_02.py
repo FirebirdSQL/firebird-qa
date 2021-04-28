@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.domain.drop_02
+# id:           functional.domain.drop.02
 # title:        DROP DOMAIN - in use
 # decription:   DROP DOMAIN - that was use
 #               
@@ -38,7 +38,7 @@ unsuccessful metadata update
 """
 
 @pytest.mark.version('>=3.0')
-def test_drop_02_1(act_1: Action):
+def test_02_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

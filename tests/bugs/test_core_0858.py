@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_858
+# id:           bugs.core_0858
 # title:        Server crash when using UDF
 # decription:   
 #                   Checked on:
@@ -76,7 +76,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_core_858_1(act_1: Action):
+def test_core_0858_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
@@ -102,6 +102,6 @@ act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 
 @pytest.mark.version('>=4.0')
-def test_core_858_2(act_2: Action):
+def test_core_0858_2(act_2: Action):
     act_2.execute()
 

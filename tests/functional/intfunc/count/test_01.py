@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.intfunc.count_01
+# id:           functional.intfunc.count.01
 # title:        COUNT - empty
 # decription:   COUNT - Select from empty table
 #               
@@ -36,7 +36,7 @@ expected_stdout_1 = """                COUNT
 """
 
 @pytest.mark.version('>=3.0')
-def test_count_01_1(act_1: Action):
+def test_01_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

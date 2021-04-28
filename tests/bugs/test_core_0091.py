@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_91
+# id:           bugs.core_0091
 # title:        Recreate and self-referencing indexes
 # decription:   
 # tracker_id:   CORE-91
@@ -45,6 +45,6 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 
 @pytest.mark.version('>=2.1')
-def test_core_91_1(act_1: Action):
+def test_core_0091_1(act_1: Action):
     act_1.execute()
 

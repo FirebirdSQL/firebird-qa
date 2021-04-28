@@ -2,12 +2,14 @@
 #
 # id:           functional.shadow.create_01
 # title:        CREATE SHADOW
-# decription:   CREATE SHADOW
+# decription:   
+#                   CREATE SHADOW
 #               
-#               Dependencies:
-#               CREATE DATABASE
+#                   Dependencies:
+#                   CREATE DATABASE
+#                 
 # tracker_id:   
-# min_versions: []
+# min_versions: ['2.5.0']
 # versions:     3.0
 # qmid:         functional.shadow.create.create_shadow_01
 
@@ -24,7 +26,7 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    create shadow 1 '$(DATABASE_LOCATION)/test_defaults.shd';
+    create shadow 1 '$(DATABASE_LOCATION)test_defaults.shd';
     commit;
     -- SHOW DATABASE -- Removed from here because this test must verify only ability to create shadow.
     set list on;

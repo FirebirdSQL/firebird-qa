@@ -1,8 +1,9 @@
 #coding:utf-8
 #
 # id:           bugs.core_5936
-# title:        Firebird crashes ...
+# title:        Firebird crashes, related to Bugcheck 165 (cannot find tip page)
 # decription:   
+#                   NB. Ticket title: "Firebird server segfaults in the end of database backup" - has nothing to the actual reason of segfault.
 #                   Confirmed crash on:
 #                       * 2.5.8.27089 SuperClassic
 #                       * 2.5.9.27117 Classic and SuperClassic (build date: 29-sep-2018 - is earlier than fix: 08-oct-2018)
@@ -28,6 +29,10 @@
 #                       3.0.2.32658: OK, 3.309s.
 #                       4.0.0.1501: OK, 5.602s.
 #                       4.0.0.1421: OK, 6.920s.
+#               
+#                   15.04.2021. Adapted for run both on Windows and Linux. Checked on:
+#                     Windows: 4.0.0.2416
+#                     Linux:   4.0.0.2416
 #                
 # tracker_id:   CORE-5936
 # min_versions: ['2.5.9']
@@ -90,7 +95,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  f_ddl_script.write( ddl_script )
 #  f_ddl_script.close()
 #  
-#  subprocess.call( ['isql', dsn, '-i', f_ddl_script.name ] )
+#  subprocess.call( [context['isql_path'], dsn, '-i', f_ddl_script.name ] )
 #  
 #  os.remove( f_ddl_script.name )
 #  
@@ -162,7 +167,6 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=2.5.9')
-@pytest.mark.platform('Windows')
 @pytest.mark.xfail
 def test_core_5936_1(db_1):
     pytest.fail("Test not IMPLEMENTED")

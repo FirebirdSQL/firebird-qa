@@ -3,14 +3,18 @@
 # id:           bugs.core_5220
 # title:        ISQL -X: double quotes are missed for COLLATE <C> of CREATE DOMAIN statement when <C> is from any non-ascii charset
 # decription:   
-#                  We create in init_script two collations with non-ascii names and two varchar domains which use these collations.
-#                  Then we extract metadata and save it to file as .sql script to be applied further.
-#                  This script should contain CORRECT domains definition, i.e. collations should be enclosed in double quotes.
-#                  We check correctness by removing from database all objects and applying this script: no errors should occur at that point.
-#                  Then we extract metadata second time, store it to second .sql and COMPARE this file with result of first metadata extraction.
-#                  These files should be equal, i.e. difference should be empty.
-#                  
-#                  Checked on WI-V3.0.0.32501, WI-T4.0.0.155.
+#                   We create in init_script two collations with non-ascii names and two varchar domains which use these collations.
+#                   Then we extract metadata and save it to file as .sql script to be applied further.
+#                   This script should contain CORRECT domains definition, i.e. collations should be enclosed in double quotes.
+#                   We check correctness by removing from database all objects and applying this script: no errors should occur at that point.
+#                   Then we extract metadata second time, store it to second .sql and COMPARE this file with result of first metadata extraction.
+#                   These files should be equal, i.e. difference should be empty.
+#               
+#                   Checked on WI-V3.0.0.32501, WI-T4.0.0.155.
+#               
+#                   13.04.2021. Adapted for run both on Windows and Linux. Checked on:
+#                     Windows: 4.0.0.2416
+#                     Linux:   4.0.0.2416
 #                
 # tracker_id:   CORE-5220
 # min_versions: ['3.0']
@@ -25,14 +29,7 @@ from firebird.qa import db_factory, isql_act, Action
 
 substitutions_1 = []
 
-init_script_1 = """
-    create collation "Циферки" for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
-    create collation "Испания" for iso8859_1 from es_es_ci_ai 'SPECIALS-FIRST=1';;
-    commit;
-    create domain "Артикулы" varchar(12) character set utf8 collate "Циферки";
-    create domain "Комрады" varchar(40) character set iso8859_1 collate "Испания";
-    commit;
-  """
+init_script_1 = """"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -42,44 +39,123 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import time
 #  import subprocess
 #  import difflib
+#  import io
 #  
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  
 #  db_conn.close()
 #  
+#  #--------------------------------------------
+#  
+#  def flush_and_close( file_handle ):
+#      # https://docs.python.org/2/library/os.html#os.fsync
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
+#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
+#      global os
+#  
+#      file_handle.flush()
+#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
+#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
+#          os.fsync(file_handle.fileno())
+#      file_handle.close()
+#  
+#  #--------------------------------------------
+#  
+#  def cleanup( f_names_list ):
+#      global os
+#      for i in range(len( f_names_list )):
+#         if type(f_names_list[i]) == file:
+#            del_name = f_names_list[i].name
+#         elif type(f_names_list[i]) == str:
+#            del_name = f_names_list[i]
+#         else:
+#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
+#            print('type(f_names_list[i])=',type(f_names_list[i]))
+#            del_name = None
+#  
+#         if del_name and os.path.isfile( del_name ):
+#             os.remove( del_name )
+#  
+#  #--------------------------------------------
+#  
+#  sql_txt='''    set bail on;
+#      set names utf8;
+#      connect '%(dsn)s' user '%(user_name)s' password '%(user_password)s';
+#  
+#      create collation "Циферки" for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
+#      create collation "Испания" for iso8859_1 from es_es_ci_ai 'SPECIALS-FIRST=1';;
+#      commit;
+#      create domain "Артикулы" varchar(12) character set utf8 collate "Циферки";
+#      create domain "Комрады" varchar(40) character set iso8859_1 collate "Испания";
+#      commit;
+#  ''' % dict(globals(), **locals())
+#  
+#  f_ddl_sql = open( os.path.join(context['temp_directory'], 'tmp_5220_ddl.sql'), 'w' )
+#  f_ddl_sql.write( sql_txt )
+#  flush_and_close( f_ddl_sql )
+#  
+#  f_ddl_log = open( os.path.splitext(f_ddl_sql.name)[0]+'.log', 'w')
+#  subprocess.call( [ context['isql_path'], '-q', '-i', f_ddl_sql.name ],
+#                   stdout = f_ddl_log,
+#                   stderr = subprocess.STDOUT
+#                 )
+#  flush_and_close( f_ddl_log )
+#  
+#  
 #  f_extract_meta1_sql = open( os.path.join(context['temp_directory'],'tmp_5220_meta1.sql'), 'w')
-#  subprocess.call( ["isql", dsn, "-x"],
+#  subprocess.call( [context['isql_path'], dsn, "-x"],
 #                   stdout = f_extract_meta1_sql,
 #                   stderr = subprocess.STDOUT
 #                 )
-#  f_extract_meta1_sql.close()
+#  flush_and_close( f_extract_meta1_sql )
 #  
 #  f_remove_meta_sql = open( os.path.join(context['temp_directory'],'tmp_5220_kill.sql'), 'w')
-#  f_remove_meta_sql.write('drop domain "Комрады"; drop domain "Артикулы"; drop collation "Испания"; drop collation "Циферки"; commit; show domain; show collation;')
-#  f_remove_meta_sql.close()
+#  
+#  sql_txt='''    drop domain "Комрады";
+#      drop domain "Артикулы";
+#      drop collation "Испания";
+#      drop collation "Циферки";
+#      commit;
+#  
+#      set list on;
+#      set count on;
+#      select f.rdb$field_name
+#      from rdb$fields f
+#      where
+#          f.rdb$system_flag is distinct from 1
+#          and f.rdb$field_name not starting with upper('rdb$');
+#  
+#      select r.rdb$collation_name
+#      from rdb$collations r
+#      where
+#          r.rdb$system_flag is distinct from 1;
+#  '''
+#  f_remove_meta_sql.write(sql_txt)
+#  flush_and_close( f_remove_meta_sql )
 #  
 #  f_remove_meta_log = open( os.path.join(context['temp_directory'],'tmp_5220_kill.log'), 'w')
-#  subprocess.call( ["isql", dsn, "-ch", "utf8", "-i", f_remove_meta_sql.name],
+#  subprocess.call( [context['isql_path'], dsn, "-ch", "utf8", "-i", f_remove_meta_sql.name],
 #                   stdout = f_remove_meta_log,
 #                   stderr = subprocess.STDOUT
 #                 )
-#  f_remove_meta_log.close()               
+#  flush_and_close( f_remove_meta_log )
 #                 
 #  f_apply_meta_log = open( os.path.join(context['temp_directory'],'tmp_5220_apply.log'), 'w')
-#  subprocess.call( ["isql", dsn, "-ch", "utf8", "-i", f_extract_meta1_sql.name],
+#  subprocess.call( [context['isql_path'], dsn, "-ch", "utf8", "-i", f_extract_meta1_sql.name],
 #                   stdout = f_apply_meta_log,
 #                   stderr = subprocess.STDOUT
 #                 )
-#  f_apply_meta_log.close()
+#  flush_and_close( f_apply_meta_log )
 #  
 #  
 #  f_extract_meta2_sql = open( os.path.join(context['temp_directory'],'tmp_5220_meta2.sql'), 'w')
-#  subprocess.call( ["isql", dsn, "-x"],
+#  subprocess.call( [context['isql_path'], dsn, "-x"],
 #                   stdout = f_extract_meta2_sql,
 #                   stderr = subprocess.STDOUT
 #                 )
-#  f_extract_meta2_sql.close()
+#  flush_and_close( f_extract_meta2_sql )
 #            
 #  time.sleep(1)
 #            
@@ -92,7 +168,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      for line in f:
 #          if line.strip():
 #              print('REMOVE METADATA LOG: '+line)
-#  f.close()
 #  
 #  # 2. Log f_apply_meta_log (result of APPLYING extracted metadata, file: f_extract_meta1_sql) should be EMPTY 
 #  #    (because collation names now should be enclosed in double quotes)
@@ -100,7 +175,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      for line in f:
 #          if line.strip():
 #              print('APPLY EXTRACTED METADATA LOG: '+line)
-#  f.close()
 #  
 #  # 3. Log f_extract_meta2_sql should EXACTLY match to first extracted metadata log (f_extract_meta1_sql).
 #  #    We compare these files using Python 'diff' package.
@@ -122,41 +196,30 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      old_file.close()
 #      new_file.close()
 #  
-#  f_diff_txt.close()
+#  flush_and_close( f_diff_txt )
 #  
 #  # Should be EMPTY:
 #  ##################
 #  with open( f_diff_txt.name,'r') as f:
 #      for line in f:
 #              print( 'METADATA DIFF:' + ' '.join(line.split()).upper() )
-#  f.close()
+#  
 #  
 #  #####################################################################
 #  # Cleanup:
-#  
-#  f_list=[]
-#  f_list.append(f_extract_meta1_sql)
-#  f_list.append(f_extract_meta2_sql)
-#  f_list.append(f_apply_meta_log)
-#  f_list.append(f_remove_meta_log)
-#  f_list.append(f_remove_meta_sql)
-#  f_list.append(f_diff_txt)
-#  
-#  for i in range(len(f_list)):
-#      if os.path.isfile(f_list[i].name):
-#          os.remove(f_list[i].name)
+#  time.sleep(1)
+#  cleanup((f_extract_meta1_sql,f_extract_meta2_sql,f_apply_meta_log,f_remove_meta_log,f_remove_meta_sql,f_diff_txt,f_ddl_sql,f_ddl_log))
 #  
 #    
 #---
 #act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    REMOVE METADATA LOG: There are no domains in this database
-    REMOVE METADATA LOG: There are no user-defined collations in this database  
+    REMOVE METADATA LOG: Records affected: 0
+    REMOVE METADATA LOG: Records affected: 0
   """
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.platform('Windows')
 @pytest.mark.xfail
 def test_core_5220_1(db_1):
     pytest.fail("Test not IMPLEMENTED")

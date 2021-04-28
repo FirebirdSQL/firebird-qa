@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_907
+# id:           bugs.core_0907
 # title:        Server crash on violation of NOT NULL constraint
 # decription:   
 # tracker_id:   CORE-907
@@ -78,7 +78,7 @@ expected_stderr_1 = """
   """
 
 @pytest.mark.version('>=3.0')
-def test_core_907_1(act_1: Action):
+def test_core_0907_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

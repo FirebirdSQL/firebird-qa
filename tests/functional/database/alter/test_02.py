@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.database.alter_02
+# id:           functional.database.alter.02
 # title:        ALter database: adding secondary file with alternate keyword
 # decription:   Adding secondary file with alternate keyword for database.
 # tracker_id:   
@@ -37,7 +37,7 @@ C:\\JOB\\QA\\FBTEST\\TMP\\TEST.G00                                              
 
 @pytest.mark.version('>=1.0')
 @pytest.mark.xfail
-def test_alter_02_1(db_1):
+def test_02_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 

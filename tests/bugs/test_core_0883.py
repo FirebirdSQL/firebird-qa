@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_883
+# id:           bugs.core_0883
 # title:        The built-in BLR printer doesn't support all FB2 features
 # decription:   
 # tracker_id:   CORE-883
@@ -134,7 +134,7 @@ RDB$PROCEDURE_BLR               1a:f1
   """
 
 @pytest.mark.version('>=3.0')
-def test_core_883_1(act_1: Action):
+def test_core_0883_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

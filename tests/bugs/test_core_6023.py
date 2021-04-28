@@ -128,7 +128,6 @@ expected_stderr_1 = """
   """
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.platform('Windows')
 @pytest.mark.xfail
 def test_core_6023_1(db_1):
     pytest.fail("Test not IMPLEMENTED")

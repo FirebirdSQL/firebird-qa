@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.database.create_01
+# id:           functional.database.create.01
 # title:        
 #                   Check ability to specify SET NAMES and DEFAULT CHARACTER SET within one statement.
 #                   Checked on:
@@ -71,7 +71,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=2.5.0')
 @pytest.mark.xfail
-def test_create_01_1(db_1):
+def test_01_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 

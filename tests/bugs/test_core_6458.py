@@ -19,12 +19,19 @@
 #                       2. operation was cancelled
 #               
 #                   ::: NB :::
-#                   subprocess.Popen() must have argument: creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+#                   Windows only: subprocess.Popen() must have argument: creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
 #                   Otherwise we can not send signal Ctrl_C_EVENT to the child process.
+#                   Linux: parameter 'creationflags' must be 0, signal.SIGINT is used instead of Ctrl_C_EVENT.
+#               
 #                   See: https://docs.python.org/2.7/library/subprocess.html
 #               
 #                   Confirmed bug on 4.0.0.2307: query could NOT be interrupted and we had to wait until it completed.
 #                   Checked on 4.0.0.2324 (SS/CS): works OK, query can be interrupted via sending Ctrl-C signal.
+#               
+#                   16.04.2021. Adapted for run both on Windows and Linux. Checked on:
+#                      Windows: 4.0.0.2422 SS/CS
+#                      Linux:   4.0.0.2422 SS/CS
+#               
 #                
 # tracker_id:   CORE-6458
 # min_versions: ['4.0']
@@ -69,7 +76,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      global datetime
 #      return ''.join( (datetime.datetime.now().strftime("%H:%M:%S.%f")[:11],'.') )
 #  #--------------------------------------------
-#  def flush_and_close(file_handle):
+#  
+#  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f, 
 #      # first do f.flush(), and 
@@ -81,7 +89,9 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
+#  
 #  #--------------------------------------------
+#  
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -94,19 +104,21 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  f_sql_cmd = open( os.path.join(context['temp_directory'],'tmp-c6458.sql'),'w')
 #  f_sql_cmd.write("set list on; select count(*) as LONG_QUERY_RESULT from (select 1 i from rdb$types a,rdb$types b,rdb$types c);")
-#  f_sql_cmd.close()
+#  flush_and_close( f_sql_cmd )
 #  
 #  f_sql_log = open( os.path.splitext(f_sql_cmd.name)[0] + '.log','w')
 #  f_sql_err = open( os.path.splitext(f_sql_cmd.name)[0] + '.err','w')
 #  
 #  try:
+#      # NB: subprocess.CREATE_NEW_PROCESS_GROUP is MANDATORY FOR SENDING CTRL_C SIGNAL on Windows:
+#      p_flag = 0 if platform.system() == 'Linux' else subprocess.CREATE_NEW_PROCESS_GROUP
 #      p_long = subprocess.Popen( [ os.path.join(FB_BINS, 'isql'), dsn, '-q', '-i', f_sql_cmd.name]
 #                                 ,stdout=f_sql_log
 #                                 ,stderr=f_sql_err
-#                                 ,creationflags = subprocess.CREATE_NEW_PROCESS_GROUP # <<< MANDATORY FOR SENDING CTRL_C SIGNAL <<<
+#                                 ,creationflags = p_flag
 #                               )
 #      time.sleep(1)
-#      p_long.send_signal(signal.CTRL_C_EVENT)
+#      p_long.send_signal( signal.SIGINT if platform.system() == 'Linux' else signal.CTRL_C_EVENT )
 #      p_long.wait()
 #      print('Was ISQL process terminated ? => ', p_long.poll())
 #  except Exception,e:
@@ -149,7 +161,6 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.platform('Windows')
 @pytest.mark.xfail
 def test_core_6458_1(db_1):
     pytest.fail("Test not IMPLEMENTED")

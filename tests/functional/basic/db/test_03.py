@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.basic.db.db_03
+# id:           functional.basic.db.03
 # title:        Empty DB - RDB$COLLATIONS
 # decription:   Check the correct content of RDB$COLLATIONS on empty DB.
 # tracker_id:   
@@ -1836,7 +1836,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0')
-def test_db_03_1(act_1: Action):
+def test_03_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

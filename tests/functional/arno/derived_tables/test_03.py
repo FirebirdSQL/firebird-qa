@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.derived_tables.derived_tables_03
+# id:           functional.arno.derived_tables.03
 # title:        Simple derived table 3
 # decription:   Test explicit column names for derived table
 # tracker_id:   
@@ -61,7 +61,7 @@ expected_stdout_1 = """     TEST_ID TEST_DESC
            9 nine"""
 
 @pytest.mark.version('>=2.0')
-def test_derived_tables_03_1(act_1: Action):
+def test_03_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

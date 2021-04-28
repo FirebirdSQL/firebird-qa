@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_972
+# id:           bugs.core_0972
 # title:        Case insensitive collation for UTF-8
 # decription:   Basic test for case-insensitive comparison of char and blob fields with text literals. Use non-ascii text here.
 # tracker_id:   CORE-972
@@ -59,7 +59,7 @@ expected_stdout_1 = """
  """
 
 @pytest.mark.version('>=2.5')
-def test_core_972_1(act_1: Action):
+def test_core_0972_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

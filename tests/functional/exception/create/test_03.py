@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.exception.create_03
+# id:           functional.exception.create.03
 # title:        CREATE EXCEPTION - too long message
 # decription:   CREATE EXCEPTION - too long message
 #               
@@ -105,7 +105,7 @@ expected_stderr_1 = """
   """
 
 @pytest.mark.version('>=3.0')
-def test_create_03_1(act_1: Action):
+def test_03_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

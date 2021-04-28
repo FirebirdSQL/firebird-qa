@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.database.create_09
+# id:           functional.database.create.09
 # title:        CREATE DATABASE - Multi file DB
 # decription:   
 #                   Create database with four files.
@@ -77,7 +77,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.xfail
-def test_create_09_1(db_1):
+def test_09_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 

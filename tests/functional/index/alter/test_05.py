@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.index.alter_05
+# id:           functional.index.alter.05
 # title:        ALTER INDEX - INACTIVE FOREIGN KEY
 # decription:   ALTER INDEX - INACTIVE FOREIGN KEY
 #               
@@ -48,7 +48,7 @@ unsuccessful metadata update
 """
 
 @pytest.mark.version('>=3.0')
-def test_alter_05_1(act_1: Action):
+def test_05_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.indexes.lower_bound_asc_02_segments_01
+# id:           functional.arno.indices.lower_bound_asc_02_segments_01
 # title:        ASC 2-segment index lower bound
 # decription:   Check if all 5 values are fetched with "equals" operator over first segment and "greater than or equal" operator on second segment.
 #               2 values are bound to the upper segments and 1 value is bound to the lower segment.

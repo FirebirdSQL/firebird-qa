@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.intfunc.cast_03
+# id:           functional.intfunc.cast.03
 # title:        CAST Numeric -> DATE
 # decription:   Convert from number to date is not (yet) supported
 #               
@@ -37,7 +37,7 @@ expected_stderr_1 = '''Statement failed, SQLSTATE = 22018
 conversion error from string "1"'''
 
 @pytest.mark.version('>=2.5')
-def test_cast_03_1(act_1: Action):
+def test_03_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

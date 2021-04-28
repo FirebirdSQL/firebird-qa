@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_965
+# id:           bugs.core_0965
 # title:        Many aggregate functions within a single select list may cause a server crash
 # decription:   This test may crash the server.
 # tracker_id:   CORE-965
@@ -40,7 +40,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_core_965_1(act_1: Action):
+def test_core_0965_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

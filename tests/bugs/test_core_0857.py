@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_857
+# id:           bugs.core_0857
 # title:        Containing not working correctly
 # decription:   
 #                   Could not find build 2.0 RC3.
@@ -88,7 +88,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=2.5')
 @pytest.mark.xfail
-def test_core_857_1(db_1):
+def test_core_0857_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 

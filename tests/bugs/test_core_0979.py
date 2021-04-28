@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_979
+# id:           bugs.core_0979
 # title:        Make RDB$DB_KEY in outer joins return NULL when appropriate
 # decription:   ----------------------------------------------------------------------------------------------
 #               -- test de la fonctionalité
@@ -43,7 +43,7 @@ expected_stdout_1 = """DB_KEY
 <null>"""
 
 @pytest.mark.version('>=2.1')
-def test_core_979_1(act_1: Action):
+def test_core_0979_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

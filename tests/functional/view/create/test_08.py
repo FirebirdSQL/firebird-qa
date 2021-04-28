@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.view.create_08
+# id:           functional.view.create.08
 # title:        CREATE VIEW - updateable WITH CHECK OPTION
 # decription:   CREATE VIEW - updateable WITH CHECK OPTION
 #               
@@ -36,7 +36,7 @@ Operation violates CHECK constraint  on view or table TEST
 """
 
 @pytest.mark.version('>=3.0')
-def test_create_08_1(act_1: Action):
+def test_08_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

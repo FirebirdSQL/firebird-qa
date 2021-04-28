@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.derived_tables.derived_tables_10
+# id:           functional.arno.derived_tables.10
 # title:        Derived table 10 outer reference
 # decription:   Outer reference to upper scope-level is allowed. Such as fields inside derived table part of sub-query.
 # tracker_id:   
@@ -63,7 +63,7 @@ expected_stdout_1 = """          ID DESCRIPTION
            9 nine"""
 
 @pytest.mark.version('>=2.0')
-def test_derived_tables_10_1(act_1: Action):
+def test_10_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

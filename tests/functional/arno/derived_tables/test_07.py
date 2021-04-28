@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.derived_tables.derived_tables_07
+# id:           functional.arno.derived_tables.07
 # title:        Derived table 7 outer reference
 # decription:   Outer reference inside derived table to other relations in from clause is not allowed.
 # tracker_id:   
@@ -58,7 +58,7 @@ Dynamic SQL Error
 """
 
 @pytest.mark.version('>=2.5.0')
-def test_derived_tables_07_1(act_1: Action):
+def test_07_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

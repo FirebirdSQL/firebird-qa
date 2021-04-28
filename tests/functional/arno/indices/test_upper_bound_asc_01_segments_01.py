@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.indexes.upper_bound_asc_01_segments_01
+# id:           functional.arno.indices.upper_bound_asc_01_segments_01
 # title:        ASC single index upper bound
 # decription:   Check if all 15 values are fetched with "lower than or equal" operator.
 # tracker_id:   

@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.derived_tables.derived_tables_04
+# id:           functional.arno.derived_tables.04
 # title:        Simple derived table 4
 # decription:   Derived table column names must be unique.
 # tracker_id:   
@@ -55,7 +55,7 @@ Dynamic SQL Error
 """
 
 @pytest.mark.version('>=2.5.0')
-def test_derived_tables_04_1(act_1: Action):
+def test_04_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

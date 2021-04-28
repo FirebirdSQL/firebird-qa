@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.intfunc.count_02
+# id:           functional.intfunc.count.02
 # title:        COUNT
 # decription:   Count of Not Null values and count of rows and count of distinct values
 #               
@@ -47,7 +47,7 @@ expected_stdout_1 = """                COUNT                 COUNT              
 """
 
 @pytest.mark.version('>=3.0')
-def test_count_02_1(act_1: Action):
+def test_02_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

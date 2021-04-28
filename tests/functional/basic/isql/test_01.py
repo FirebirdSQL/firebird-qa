@@ -1,10 +1,10 @@
 #coding:utf-8
 #
-# id:           functional.basic.isql.isql_01
+# id:           functional.basic.isql.01
 # title:        ISQL - SHOW DATABASE
 # decription:   Check for correct output of SHOW DATABASE on empty database.
 # tracker_id:   
-# min_versions: []
+# min_versions: ['2.5.2']
 # versions:     3.0, 4.0
 # qmid:         functional.basic.isql.isql_01
 
@@ -46,7 +46,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_isql_01_1(act_1: Action):
+def test_01_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
@@ -87,7 +87,7 @@ expected_stdout_2 = """
   """
 
 @pytest.mark.version('>=4.0')
-def test_isql_01_2(act_2: Action):
+def test_01_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_expected_stdout == act_2.clean_stdout

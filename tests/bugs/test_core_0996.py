@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_996
+# id:           bugs.core_0996
 # title:        Keyword AS not recognized in clause FROM
 # decription:   The sentence SELECT * FROM <table> AS <alias> is not recognized correct.
 # tracker_id:   CORE-996
@@ -34,7 +34,7 @@ expected_stdout_1 = """         ID1
 """
 
 @pytest.mark.version('>=2.0')
-def test_core_996_1(act_1: Action):
+def test_core_0996_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

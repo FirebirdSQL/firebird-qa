@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_888
+# id:           bugs.core_0888
 # title:        DDL - object in use
 # decription:   
 # tracker_id:   CORE-888
@@ -37,6 +37,6 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 
 @pytest.mark.version('>=2.0.1')
-def test_core_888_1(act_1: Action):
+def test_core_0888_1(act_1: Action):
     act_1.execute()
 

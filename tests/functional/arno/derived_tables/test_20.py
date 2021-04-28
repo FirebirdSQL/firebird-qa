@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.derived_tables.derived_tables_20
+# id:           functional.arno.derived_tables.20
 # title:        Simple derived table
 # decription:   Test sub-select inside derived table.
 # tracker_id:   
@@ -63,7 +63,7 @@ expected_stdout_1 = """     GROUPID       MIN_ID       MAX_ID
            3            6            9"""
 
 @pytest.mark.version('>=2.0')
-def test_derived_tables_20_1(act_1: Action):
+def test_20_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

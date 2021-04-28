@@ -28,6 +28,9 @@
 #                       FB40CS, build 4.0.0.690: OK, 3.891s.
 #                       FB40SC, build 4.0.0.690: OK, 2.750s.
 #                       FB40SS, build 4.0.0.690: OK, 2.828s.
+#                   13.04.2021. Adapted for run both on Windows and Linux. Checked on:
+#                     Windows: 4.0.0.2416
+#                     Linux:   4.0.0.2416
 #                
 # tracker_id:   CORE-5579
 # min_versions: ['2.5.8']
@@ -57,8 +60,41 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
 #  db_conn.close()
+#  
+#  #--------------------------------------------
+#  
+#  def flush_and_close( file_handle ):
+#      # https://docs.python.org/2/library/os.html#os.fsync
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
+#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
+#      global os
+#  
+#      file_handle.flush()
+#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
+#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
+#          os.fsync(file_handle.fileno())
+#      file_handle.close()
+#  
+#  #--------------------------------------------
+#  
+#  def cleanup( f_names_list ):
+#      global os
+#      for i in range(len( f_names_list )):
+#         if type(f_names_list[i]) == file:
+#            del_name = f_names_list[i].name
+#         elif type(f_names_list[i]) == str:
+#            del_name = f_names_list[i]
+#         else:
+#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
+#            print('type(f_names_list[i])=',type(f_names_list[i]))
+#            del_name = None
+#  
+#         if del_name and os.path.isfile( del_name ):
+#             os.remove( del_name )
+#  
+#  #--------------------------------------------
 #  
 #  zf = zipfile.ZipFile( os.path.join(context['files_location'],'core_5579_broken_nn.zip') )
 #  
@@ -71,28 +107,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  tmpfbk=''.join( ( context['temp_directory'], zipfbk ) )
 #  tmpfdb=''.join( ( context['temp_directory'], 'core_5579_broken_nn.fdb') )
 #  
-#  # C:\\MIX
-#  irebird\\QA
-#  bt-repo	mp\\core_5579_broken_nn.fbk
-#  # C:\\MIX
-#  irebird\\QA
-#  bt-repo	mp\\core_5579_broken_nn.fdb
-#  
 #  f_restore_log=open( os.path.join(context['temp_directory'],'tmp_restore_5579.log'), 'w')
 #  f_restore_err=open( os.path.join(context['temp_directory'],'tmp_restore_5579.err'), 'w')
 #  
-#  if os.path.isfile(tmpfdb):
-#      os.remove(tmpfdb)
+#  cleanup( (tmpfdb,) )
 #  
-#  # C:\\MIX
-#  irebird
-#  b25Csin\\gbak -rep C:\\MIX
-#  irebird\\QA
-#  bt-repo	mp\\c5579.fbk\\core_5579_broken_nn.fbk -v -o /:C:\\MIX
-#  irebird\\QA
-#  bt-repo	mp\\c5579.fbk\\CORE_5579_BROKEN_NN.FDB
-#  
-#  subprocess.call([ "fbsvcmgr",
+#  subprocess.call([ context['fbsvcmgr_path'],
 #                    "localhost:service_mgr",
 #                    "action_restore",
 #                    "bkp_file", tmpfbk,
@@ -105,8 +125,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # before this ticket was fixed restore log did contain following line:
 #  # gbak: ERROR:request synchronization error
 #  
-#  f_restore_log.close()
-#  f_restore_err.close()
+#  flush_and_close( f_restore_log )
+#  flush_and_close( f_restore_err )
 #  
 #  # Check:
 #  ########
@@ -131,14 +151,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with 
 #  # Exception raised while executing Python test script. exception: WindowsError: 32
 #  time.sleep(1)
-#  
-#  f_list=(f_restore_log, f_restore_err)
-#  for i in range(len(f_list)):
-#      if os.path.isfile(f_list[i].name):
-#          os.remove(f_list[i].name)
-#  os.remove(tmpfdb)
-#  os.remove(tmpfbk)
-#  
+#  cleanup( (f_restore_log, f_restore_err, tmpfdb, tmpfbk) )
 #  
 #    
 #---
@@ -146,7 +159,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 
 @pytest.mark.version('>=2.5.8')
-@pytest.mark.platform('Windows')
 @pytest.mark.xfail
 def test_core_5579_1(db_1):
     pytest.fail("Test not IMPLEMENTED")

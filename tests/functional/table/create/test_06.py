@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.table.create_06
+# id:           functional.table.create.06
 # title:        CREATE TABLE - two column with same name
 # decription:   CREATE TABLE - two column with same name
 #               
@@ -40,7 +40,7 @@ unsuccessful metadata update
 """
 
 @pytest.mark.version('>=3.0')
-def test_create_06_1(act_1: Action):
+def test_06_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

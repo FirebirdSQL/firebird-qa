@@ -10,6 +10,10 @@
 #                       4.0.0.1685 CS: 12.078s.
 #                       3.0.5.33206 SS: 10.827s.
 #                       3.0.5.33206 CS: 11.793s.
+#               
+#                   13.04.2021. Adapted for run both on Windows and Linux. Checked on:
+#                     Windows: 3.0.8.33445, 4.0.0.2416
+#                     Linux:   3.0.8.33426, 4.0.0.2416
 #                
 # tracker_id:   CORE-4889
 # min_versions: ['3.0']
@@ -38,11 +42,48 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  fdb_file='$(DATABASE_LOCATION)bugs.core_4889.fdb'
 #  
+#  os.environ["ISC_USER"] = user_name
+#  os.environ["ISC_PASSWORD"] = user_password
+#  
 #  db_conn.close()
 #  
-#  #####################################################################
-#  # Prepare config for trace session that will be launched by call of FBSVCMGR:
+#  #--------------------------------------------
 #  
+#  def flush_and_close( file_handle ):
+#      # https://docs.python.org/2/library/os.html#os.fsync
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
+#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
+#      global os
+#  
+#      file_handle.flush()
+#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
+#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
+#          os.fsync(file_handle.fileno())
+#      file_handle.close()
+#  
+#  #--------------------------------------------
+#  
+#  def cleanup( f_names_list ):
+#      global os
+#      for i in range(len( f_names_list )):
+#         if type(f_names_list[i]) == file:
+#            del_name = f_names_list[i].name
+#         elif type(f_names_list[i]) == str:
+#            del_name = f_names_list[i]
+#         else:
+#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
+#            print('type(f_names_list[i])=',type(f_names_list[i]))
+#            del_name = None
+#  
+#         if del_name and os.path.isfile( del_name ):
+#             os.remove( del_name )
+#  
+#  #--------------------------------------------
+#  
+#  
+#  # Prepare config for trace session that will be launched by call of FBSVCMGR:
+#  ################
 #  txt = '''database= %[\\\\\\\\/]bugs.core_4889.fdb
 #  {
 #    enabled = true
@@ -53,19 +94,17 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  '''
 #  trc_cfg=open( os.path.join(context['temp_directory'],'tmp_trace_4889.cfg'), 'w')
 #  trc_cfg.write(txt)
-#  trc_cfg.close()
-#  trc_log=open( os.path.join(context['temp_directory'],'tmp_trace_4889.log'), 'w')
-#  trc_log.close()
-#  trc_lst=open( os.path.join(context['temp_directory'],'tmp_trace_4889.lst'), 'w')
-#  trc_lst.close()
-#  
+#  flush_and_close( trc_cfg )
 #  
 #  #####################################################################
 #  # Async. launch of trace session using FBSVCMGR action_trace_start:
 #  
-#  trc_log=open(trc_log.name, "w")
+#  trc_log = open( os.path.join(context['temp_directory'],'tmp_trace_4889.log'), 'w')
+#  
 #  # Execute a child program in a new process, redirecting STDERR to the same target as of STDOUT:
-#  p_svcmgr = Popen( ["fbsvcmgr", "localhost:service_mgr", "user" , "SYSDBA" , "password" , "masterkey",                    "action_trace_start","trc_cfg", trc_cfg.name],                   stdout=trc_log, stderr=subprocess.STDOUT)
+#  p_svcmgr = Popen( [context['fbsvcmgr_path'], "localhost:service_mgr",
+#                     "action_trace_start","trc_cfg", trc_cfg.name],
+#                    stdout=trc_log, stderr=subprocess.STDOUT)
 #  
 #  # Wait! Trace session is initialized not instantly!
 #  time.sleep(2)
@@ -74,9 +113,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  # Determine active trace session ID (for further stop):
 #  
-#  trc_lst=open(trc_lst.name, "w")
-#  subprocess.call(["fbsvcmgr", "localhost:service_mgr", "user" , "SYSDBA" , "password" , "masterkey",                  "action_trace_list"],                  stdout=trc_lst, stderr=subprocess.STDOUT                )
-#  trc_lst.close()
+#  trc_lst = open( os.path.join(context['temp_directory'],'tmp_trace_4889.lst'), 'w')
+#  subprocess.call([context['fbsvcmgr_path'], "localhost:service_mgr",
+#                   "action_trace_list"],
+#                   stdout=trc_lst, stderr=subprocess.STDOUT
+#                 )
+#  flush_and_close( trc_lst )
 #  
 #  # Session ID: 5 
 #  #   user:   
@@ -98,7 +140,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # We have to terminate trace session that is running on server BEFORE we termitane process `p_svcmgr`
 #  if trcssn==0:
 #      print("Error parsing trace session ID.")
-#      trc_log.close()
+#      flush_and_close( trc_log )
 #  
 #  else:
 #      #####################################################################
@@ -120,7 +162,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #      isql_cmd=open( os.path.join(context['temp_directory'],'tmp_isql_4889.sql'), 'w')
 #      isql_cmd.write(sql_cmd)
-#      isql_cmd.close()
+#      flush_and_close( isql_cmd )
 #  
 #      #######################################################################
 #  
@@ -131,13 +173,18 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      # **HANGS**  on WI-V3.0.0.31948, build 16-jul-2015
 #  
 #      isql_log=open( os.path.join(context['temp_directory'],'tmp_isql_4889.log'), 'w')
-#      p_isql = Popen( [ "isql" , fdb_file,                       "-user", "tmp$no$such$user$4889",                       "-n", "-i", isql_cmd.name ],                     stdout=isql_log,                     stderr=subprocess.STDOUT                   )
+#      p_isql = Popen( [ context['isql_path'] , fdb_file,
+#                        "-user", "tmp$no$such$user$4889",
+#                        "-n", "-i", isql_cmd.name ],
+#                      stdout=isql_log,
+#                      stderr=subprocess.STDOUT
+#                    )
 #  
 #      # do NOT remove this delay:
 #      time.sleep(5)
 #  
 #      p_isql.terminate()
-#      isql_log.close()
+#      flush_and_close( isql_log )
 #  
 #      #####################################################################
 #  
@@ -145,11 +192,14 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #      trc_lst=open(trc_lst.name, "a")
 #      trc_lst.seek(0,2)
-#      subprocess.call([ "fbsvcmgr", "localhost:service_mgr", "user" , "SYSDBA" , "password" , "masterkey",                       "action_trace_stop","trc_id",trcssn],                       stdout=trc_lst, stderr=subprocess.STDOUT                    )
-#      trc_lst.close()
+#      subprocess.call([ context['fbsvcmgr_path'], "localhost:service_mgr",
+#                        "action_trace_stop","trc_id",trcssn],
+#                        stdout=trc_lst, stderr=subprocess.STDOUT
+#                     )
+#      flush_and_close( trc_lst )
 #  
 #      p_svcmgr.terminate()
-#      trc_log.close()
+#      flush_and_close( trc_log )
 #  
 #      # do NOT remove this delay:
 #      time.sleep(2)
@@ -182,8 +232,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # do NOT remove this pause otherwise log of trace will not be enable for deletion and test will finish with 
 #  # Exception raised while executing Python test script. exception: WindowsError: 32
 #  
-#  time.sleep(1)
-#  
 #  # On WI-V3.0.0.31948 final output was:
 #  # FAILED to found text in trace related to EMBEDDED connect.
 #  # FAILED to print log from EMBEDDED connect: log is EMPTY.
@@ -191,13 +239,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  #####################################################################
 #  
 #  # Cleanup:
-#  
-#  f_list = [ trc_lst, trc_cfg, trc_log ]
-#  if trcssn > 0:
-#      f_list += [isql_cmd, isql_log, ]
-#  
-#  for f in f_list:
-#       os.remove(f.name)
+#  time.sleep(1)
+#  cleanup( (trc_lst, trc_cfg, trc_log,isql_cmd, isql_log) )
 #  
 #    
 #---
@@ -213,7 +256,6 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.platform('Windows')
 @pytest.mark.xfail
 def test_core_4889_1(db_1):
     pytest.fail("Test not IMPLEMENTED")

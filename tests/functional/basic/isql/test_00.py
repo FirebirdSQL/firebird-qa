@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.basic.isql.isql_00
+# id:           functional.basic.isql.00
 # title:        Check output of "HELP" and "HELP SET" commands
 # decription:   
 #                  NB: this test can also cover issue of CORE-2432 ("Missing SHOW COLLATIONs in HELP")
@@ -73,7 +73,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0')
-def test_isql_00_1(act_1: Action):
+def test_00_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

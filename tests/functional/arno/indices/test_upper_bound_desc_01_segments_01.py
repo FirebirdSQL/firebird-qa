@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.indexes.upper_bound_desc_01_segments_01
+# id:           functional.arno.indices.upper_bound_desc_01_segments_01
 # title:        DESC single index upper bound
 # decription:   Check if all 15 values are fetched with "greater than or equal" operator.
 # tracker_id:   

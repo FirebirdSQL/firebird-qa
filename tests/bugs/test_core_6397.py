@@ -3,7 +3,9 @@
 # id:           bugs.core_6397
 # title:        Message length error with COALESCE and TIME/TIMESTAMP WITHOUT TIME ZONE and WITH TIME ZONE
 # decription:   
-#                  We user ISQL "out nul;" command in order to supress STDOUT. STDERR is not redirected and must be empty.
+#                  Test uses EXECUTE BLOCK with dummy variable to store reuslt (w/o suspend in order to prevent any output).
+#                  EXECUTE STATEMENT must be used here for reproducing problem (no error with static PSQL code).
+#               
 #                  Confirmed bug on 4.0.0.2173.
 #                  Checked on 4.0.0.2188 -- all fine.
 #                
@@ -25,17 +27,20 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    set list on;
-    out nul;
-    select coalesce(localtimestamp, current_timestamp) as result from rdb$database;
-    out;
+    set term ^;
+    execute block as
+        declare dummy timestamp;
+    begin
+        execute statement 'select coalesce(localtimestamp, current_timestamp) from rdb$database' into dummy;
+    end
+    ^
+    set term ;^
   """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.platform('Windows')
 def test_core_6397_1(act_1: Action):
     act_1.execute()
 

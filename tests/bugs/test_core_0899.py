@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_899
+# id:           bugs.core_0899
 # title:        Problems with explicit cursors in unwanted states
 # decription:   
 # tracker_id:   CORE-899
@@ -133,7 +133,7 @@ no current record for fetch operation
 """
 
 @pytest.mark.version('>=2.5.0')
-def test_core_899_1(act_1: Action):
+def test_core_0899_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.basic.db.db_24
+# id:           functional.basic.db.24
 # title:        Empty DB - RDB$RELATION_FIELDS
 # decription:   Check for correct content of RDB$RELATION_FIELDS in empty database.
 # tracker_id:   
@@ -10113,7 +10113,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_db_24_1(act_1: Action):
+def test_24_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
@@ -21037,7 +21037,7 @@ expected_stdout_2 = """
   """
 
 @pytest.mark.version('>=4.0')
-def test_db_24_2(act_2: Action):
+def test_24_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_expected_stdout == act_2.clean_stdout

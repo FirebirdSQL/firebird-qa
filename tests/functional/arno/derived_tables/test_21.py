@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.arno.derived_tables.derived_tables_21
+# id:           functional.arno.derived_tables.21
 # title:        Implicit derived table by IN predicate
 # decription:   IN predicate uses derived table internally and should ignore column-name checks (Aggregate functions are unnamed by default).
 # tracker_id:   
@@ -54,7 +54,7 @@ expected_stdout_1 = """          ID DESCRIPTION
            9 nine"""
 
 @pytest.mark.version('>=2.0')
-def test_derived_tables_21_1(act_1: Action):
+def test_21_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

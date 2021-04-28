@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.database.create_02
+# id:           functional.database.create.02
 # title:        CREATE DATABASE - non sysdba user
 # decription:   
 # tracker_id:   
@@ -66,7 +66,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0')
-def test_create_02_1(act_1: Action):
+def test_02_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

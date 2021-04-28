@@ -10,14 +10,6 @@
 #                   This file was preliminary stored in FF Test machine.
 #                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
 #               
-#                   Anyone who wants to run this test on his own machine must
-#                   1) download https://ib-aid.com/download/crypt/CryptTest.zip AND 
-#                   2) PURCHASE LICENSE and get from IBSurgeon file plugins\\dbcrypt.conf with apropriate expiration date and other info.
-#                   
-#                   ################################################ ! ! !    N O T E    ! ! ! ##############################################
-#                   FF tests storage (aka "fbt-repo") does not (and will not) contain any license file for IBSurgeon Demo Encryption package!
-#                   #########################################################################################################################
-#               
 #                   We create table with UNIQUE constraint, add some data to it and try to encrypt database using 'alter database encrypt with <plugin_name> ...'
 #                   command (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\  folder that implements encryption).
 #                   Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
@@ -32,27 +24,9 @@
 #                        4.0.0.1524: OK, 4.056s ;  4.0.0.1421: OK, 6.160s.
 #                       3.0.5.33139: OK, 2.895s ; 3.0.5.33118: OK, 2.837s.
 #               
-#                   === NOTE-1 ===
-#                   In case of "Crypt plugin DBCRYPT failed to load/607/335544351" check that all 
-#                   needed files from IBSurgeon Demo Encryption package exist in %FB_HOME% and %FB_HOME%\\plugins
-#                   %FB_HOME%:
-#                       283136 fbcrypt.dll
-#                      2905600 libcrypto-1_1-x64.dll
-#                       481792 libssl-1_1-x64.dll
-#               
-#                   %FB_HOME%\\plugins:
-#                       297984 dbcrypt.dll
-#                       306176 keyholder.dll
-#                          108 DbCrypt.conf
-#                          856 keyholder.conf
-#                   
-#                   === NOTE-2 ===
-#                   Version of DbCrypt.dll of october-2018 must be replaced because it has hard-coded 
-#                   date of expiration rather than reading it from DbCrypt.conf !!
-#               
-#                   === NOTE-3 ===
-#                   firebird.conf must contain following line:
-#                       KeyHolderPlugin = KeyHolder
+#                   15.04.2021. Adapted for run both on Windows and Linux. Checked on:
+#                     Windows: 4.0.0.2416
+#                     Linux:   4.0.0.2416
 #               
 #                
 # tracker_id:   CORE-5673
@@ -83,18 +57,18 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#  engine = db_conn.engine_version
 #  db_conn.close()
 #  
-#  #---------- aux func for cleanup: ---------
-#  
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#  
-#  #------------------------------------------
+#  # 14.04.2021.
+#  # Name of encryption plugin depends on OS:
+#  # * for Windows we (currently) use plugin by IBSurgeon, its name is 'dbcrypt';
+#  # * for Linux we use:
+#  #   ** 'DbCrypt_example' for FB 3.x
+#  #   ** 'fbSampleDbCrypt' for FB 4.x+
+#  #
+#  PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else ( '"fbSampleDbCrypt"' if engine >= 4.0 else '"DbCrypt_example"')
+#  KHOLDER_NAME = 'KeyHolder' if os.name == 'nt' else "fbSampleKeyHolder"
 #  
 #  
 #  con = fdb.connect( dsn = dsn )
@@ -105,7 +79,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cur.execute( 'insert into test(x) select row_number()over() from rdb$types rows 10' )
 #  con.commit()
 #  
-#  cur.execute('alter database encrypt with dbcrypt key Red')
+#  ##############################################
+#  # WARNING! Do NOT use 'connection_obj.execute_immediate()' for ALTER DATABASE ENCRYPT... command!
+#  # There is bug in FB driver which leads this command to fail with 'token unknown' message
+#  # The reason is that execute_immediate() silently set client dialect = 0 and any encryption statement
+#  # can not be used for such value of client dialect.
+#  # One need to to use only cursor_obj.execute() for encryption!
+#  # See letter from Pavel Cisar, 20.01.20 10:36
+#  ##############################################
+#  cur.execute('alter database encrypt with %(PLUGIN_NAME)s key Red' % locals())
 #  con.commit()
 #  
 #  time.sleep(2)
@@ -149,7 +131,6 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0.3')
-@pytest.mark.platform('Windows')
 @pytest.mark.xfail
 def test_core_5673_1(db_1):
     pytest.fail("Test not IMPLEMENTED")

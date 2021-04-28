@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.basic.isql.isql_05
+# id:           functional.basic.isql.05
 # title:        ISQL should be able to process single statement with length up to 10*1024*1024 chars
 # decription:   
 #                  Source sample see in CORE-5382 ("Incorrect processing (truncation) of SQL statement with length 10MB+1").
@@ -70,7 +70,7 @@ expected_stderr_1 = """
 
 @pytest.mark.version('>=3.0')
 @pytest.mark.xfail
-def test_isql_05_1(db_1):
+def test_05_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
 
 

@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           bugs.core_878
+# id:           bugs.core_0878
 # title:        problem when dropping column that is a primary key
 # decription:   
 # tracker_id:   CORE-878
@@ -67,7 +67,7 @@ I2                              INTEGER Nullable
 """
 
 @pytest.mark.version('>=2.1')
-def test_core_878_1(act_1: Action):
+def test_core_0878_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

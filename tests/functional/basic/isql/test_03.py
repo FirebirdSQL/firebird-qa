@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.basic.isql.isql_03
+# id:           functional.basic.isql.03
 # title:        SHOW SYSTEM parameters
 # decription:   Extend ISQL SHOW SYSTEM command to accept parameters TABLES, COLLATIONS and FUNCTIONS
 # tracker_id:   CORE-978
@@ -207,7 +207,7 @@ WIN_PTBR, CHARACTER SET WIN1252, PAD SPACE, CASE INSENSITIVE, ACCENT INSENSITIVE
   """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_isql_03_1(act_1: Action):
+def test_03_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
@@ -437,7 +437,7 @@ expected_stdout_2 = """
   """
 
 @pytest.mark.version('>=4.0')
-def test_isql_03_2(act_2: Action):
+def test_03_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_expected_stdout == act_2.clean_stdout

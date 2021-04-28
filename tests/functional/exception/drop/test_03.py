@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.exception.drop_03
+# id:           functional.exception.drop.03
 # title:        DROP EXCEPTION - that doesn't exists
 # decription:   DROP EXCEPTION - that doesn't exists
 #               
@@ -37,7 +37,7 @@ There is no exception TEST in this database
 """
 
 @pytest.mark.version('>=3.0')
-def test_drop_03_1(act_1: Action):
+def test_03_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

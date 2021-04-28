@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.procedure.alter_02
+# id:           functional.procedure.alter.02
 # title:        ALTER PROCEDURE - Alter non exists procedure
 # decription:   ALTER PROCEDURE - Alter non exists procedure
 #               
@@ -40,7 +40,7 @@ unsuccessful metadata update
 """
 
 @pytest.mark.version('>=3.0')
-def test_alter_02_1(act_1: Action):
+def test_02_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

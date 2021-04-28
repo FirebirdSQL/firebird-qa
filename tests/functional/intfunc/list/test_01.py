@@ -1,6 +1,6 @@
 #coding:utf-8
 #
-# id:           functional.intfunc.list_01
+# id:           functional.intfunc.list.01
 # title:        List with default options
 # decription:   
 # tracker_id:   CORE-964
@@ -222,7 +222,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=2.1')
-def test_list_01_1(act_1: Action):
+def test_01_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
