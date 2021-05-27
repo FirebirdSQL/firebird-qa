@@ -120,9 +120,9 @@ def pytest_configure(config):
     _vars_['server'] = config.getoption('server')
     _vars_['bin-dir'] = config.getoption('bin_dir')
     _vars_['protocol'] = config.getoption('protocol')
-    _vars_['password'] = config.getoption('password', 'masterkey')
     srv_conf = driver_config.get_server(_vars_['server'])
     _vars_['host'] = srv_conf.host.value if srv_conf is not None else ''
+    _vars_['password'] = srv_conf.password.value
     #
     with connect_server(_vars_['server'], user='SYSDBA',
                         password=_vars_['password']) as srv:
