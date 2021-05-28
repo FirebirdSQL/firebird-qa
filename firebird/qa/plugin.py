@@ -104,7 +104,7 @@ def pytest_configure(config):
     )
     if config.getoption('help'):
         return
-    config_path: Path = Path.cwd() / 'firebird.conf'
+    config_path: Path = Path.cwd() / 'firebird-driver.conf'
     if config_path.is_file():
         driver_config.read(str(config_path))
         _vars_['firebird-config'] = config_path
