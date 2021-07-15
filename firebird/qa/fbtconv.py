@@ -170,7 +170,8 @@ def clean_tests():
     v30: Version = parse('3.0')
     for t in tests:
         new_versions = []
-        last: Version = parse('0.1')
+        last_pre_30_version: Version = parse('0.1')
+        last_pre_30 = None
         has_30: bool = False
         t.id = t.id.replace('-','_')
         for v in t.versions:
@@ -179,15 +180,15 @@ def clean_tests():
                     if mv > v.firebird_version:
                         v.firebird_version = mv
             #
-            if last < v.firebird_version:
-                last = v.firebird_version
+            if last_pre_30_version < v.firebird_version < v30:
+                last_pre_30_version = v.firebird_version
+                last_pre_30 = v
             if v.firebird_version >= v30:
-                has_30 = True
+                if v.firebird_version == v30:
+                    has_30 = True
                 new_versions.append(v)
-        if not has_30:
-            for v in t.versions:
-                if v.firebird_version >= last:
-                    new_versions.append(v)
+        if not has_30 and last_pre_30:
+            new_versions.insert(0, last_pre_30)
         t.versions[:] = new_versions
 
 def list_tests(root_path: Path, verbose: bool=False):
