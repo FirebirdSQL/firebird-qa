@@ -1,7 +1,7 @@
 #coding:utf-8
 #
 # id:           bugs.core_4082
-# title:        Wrong value of expected length in the sring right truncation error
+# title:        Wrong value of expected length in the string right truncation error
 # decription:   
 #                   NB. Ticket title: Wrong error message (should point out the proper expected length)
 #                

@@ -25,7 +25,7 @@ test_script_1 = """
     execute block as
         declare d date;
     begin
-        d = "now";
+        d = 'now';
     end
     ^ 
   """

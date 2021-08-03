@@ -14,7 +14,7 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 3.0
 # resources: None
 
-substitutions_1 = []
+substitutions_1 = [('PROCEDURE_SOURCE .*', '')]
 
 init_script_1 = """"""
 

@@ -34,7 +34,7 @@ expected_stdout_1 = """
     RDB$OWNER_NAME                  SYSDBA
     RDB$DESCRIPTION                 <null>
     RDB$SYSTEM_FLAG                 1
-    RDB$SECURITY_CLASS              SQL$162
+    RDB$SECURITY_CLASS              <null>
 
     Records affected: 1
   """

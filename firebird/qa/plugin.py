@@ -51,7 +51,7 @@ from configparser import ConfigParser, ExtendedInterpolation
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version, parse
 from firebird.driver import connect, connect_server, create_database, driver_config, \
-     NetProtocol, PageSize, Server
+     NetProtocol, PageSize, Server, CHARSET_MAP
 
 _vars_ = {'server': None,
           'bin-dir': None,
@@ -144,22 +144,29 @@ def pytest_configure(config):
         set_tool(tool)
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(session, config, items):
     skip_slow = pytest.mark.skip(reason="need --runslow option to run")
     skip_platform = pytest.mark.skip(reason=f"test not designed for {_platform}")
-    skip_version = pytest.mark.skip(reason=f"test not designed for {_vars_['version']}")
+    # Apply skip markers
     for item in items:
         if 'slow' in item.keywords and not _vars_['runslow']:
             item.add_marker(skip_slow)
-        platforms = [mark.args for mark in item.iter_markers(name="platform")]
-        for items in platforms:
-            if _platform not in items:
+        for platforms in [mark.args for mark in item.iter_markers(name="platform")]:
+            if _platform not in platforms:
                 item.add_marker(skip_platform)
+    # Deselect tests not applicable to tested engine version
+    selected = []
+    deselected = []
+    for item in items:
         versions = [mark.args for mark in item.iter_markers(name="version")]
         if versions:
             spec = SpecifierSet(','.join(list(versions[0])))
-            if _vars_['version'] not in spec:
-                item.add_marker(skip_version)
+            if _vars_['version'] in spec:
+                selected.append(item)
+            else:
+                deselected.append(item)
+    items[:] = selected
+    config.hook.pytest_deselected(items=deselected)
 
 @pytest.fixture(autouse=True)
 def firebird_server():
@@ -183,8 +190,8 @@ class Database:
             self.dsn = f"{_vars_['host']}:{str(self.db_path)}"
         else:
             self.dsn = str(self.db_path)
-        self.subs = {'temp_directory': str(path), 'database_location': str(path),
-                     'DATABASE_PATH': str(path), 'DSN': self.dsn,
+        self.subs = {'temp_directory': str(path / 'x')[:-1], 'database_location': str(path / 'x')[:-1],
+                     'DATABASE_PATH': str(path / 'x')[:-1], 'DSN': self.dsn,
                      'files_location': str(_vars_['root'] / 'files'),
                      'backup_location': str(_vars_['root'] / 'backups'),
                      'suite_database_location': str(_vars_['root'] / 'databases'),
@@ -210,7 +217,7 @@ class Database:
     def create(self, page_size: int=None, sql_dialect: int=None, charset: str=None) -> None:
         #__tracebackhide__ = True
         self._make_config(page_size, sql_dialect, charset)
-        #print(f"Creating db: {self.db_path} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
+        print(f"Creating db: {self.db_path} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
         db = create_database('pytest')
         db.close()
     def restore(self, backup: str) -> None:
@@ -227,7 +234,7 @@ class Database:
             print(result.stdout)
             print(f"-- stderr {'-' * 20}")
             print(result.stderr)
-            raise CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
+            raise Exception("Database restore failed")
         # Fix permissions
         #if platform.system != 'Windows':
             #os.chmod(self.db_path, 16895)
@@ -252,21 +259,25 @@ class Database:
             print(result.stdout)
             print(f"-- stderr {'-' * 20}")
             print(result.stderr)
-            raise CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
+            raise Exception("Database init script execution failed")
         return result
-    def execute(self, script: str, *, raise_on_fail: bool) -> CompletedProcess:
+    def execute(self, script: str, *, raise_on_fail: bool, charset: str='utf8') -> CompletedProcess:
         __tracebackhide__ = True
         #print("Running test script")
-        result = run([_vars_['isql'], '-ch', 'utf8', '-user', self.user,
+        if charset:
+            charset = charset.upper()
+        else:
+            charset = 'NONE'
+        result = run([_vars_['isql'], '-ch', charset, '-user', self.user,
                       '-password', self.password, str(self.dsn)],
                      input=substitute_macros(script, self.subs),
-                     encoding='utf8', capture_output=True)
+                     encoding=CHARSET_MAP[charset], capture_output=True)
         if result.returncode and raise_on_fail:
             print(f"-- stdout {'-' * 20}")
             print(result.stdout)
             print(f"-- stderr {'-' * 20}")
             print(result.stderr)
-            raise CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
+            raise Exception("ISQL script execution failed")
         return result
     def drop(self) -> None:
         self._make_config()
@@ -332,9 +343,11 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
     return database_fixture
 
 class Action:
-    def __init__(self, db: Database, script: str, substitutions: List[str]):
+    def __init__(self, db: Database, script: str, substitutions: List[str], outfile: Path,
+                 charset: str):
         self.db: Database = db
         self.script: str = script
+        self.charset: str = charset
         self.return_code: int = 0
         self.stdout: str = ''
         self._clean_stdout: str = None
@@ -345,6 +358,7 @@ class Action:
         self.expected_stderr: str = ''
         self._clean_expected_stderr: str = None
         self.substitutions: List[str] = [x for x in substitutions]
+        self.outfile: Path = outfile
     def make_diff(self, left: str, right: str) -> str:
         return '\n'.join(difflib.ndiff(left.splitlines(), right.splitlines()))
     def space_strip(self, value: str) -> str:
@@ -369,11 +383,23 @@ class Action:
         return value
     def execute(self) -> None:
         __tracebackhide__ = True
+        out_file: Path = self.outfile.with_suffix('.out')
+        err_file: Path = self.outfile.with_suffix('.err')
+        if out_file.is_file():
+            out_file.unlink()
+        if err_file.is_file():
+            err_file.unlink()
         result: CompletedProcess = self.db.execute(self.script,
-                                                   raise_on_fail=not bool(self.expected_stderr))
+                                                   raise_on_fail=not bool(self.expected_stderr),
+                                                   charset=self.charset)
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
+        # Store output
+        if self.stdout:
+            out_file.write_text(self.stdout)
+        if self.stderr:
+            err_file.write_text(self.stderr)
     @property
     def clean_stdout(self) -> str:
         if self._clean_stdout is None:
@@ -395,12 +421,18 @@ class Action:
             self._clean_expected_stderr = self.string_strip(self.expected_stderr, self.substitutions)
         return self._clean_expected_stderr
 
-def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None):
+def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None,
+             charset: str='utf8'):
 
     @pytest.fixture
     def isql_act_fixture(request: FixtureRequest) -> Action:
         db: Database = request.getfixturevalue(db_fixture_name)
-        result: Action = Action(db, script, substitutions)
+        f: Path = Path.cwd() / 'out' / request.module.__name__.replace('.', '/')
+        if not f.parent.exists():
+            f.parent.mkdir(parents=True)
+        f = f.with_name(f'{f.stem}-{request.function.__name__}.out')
+        #f.write_text('stdout')
+        result: Action = Action(db, script, substitutions, f, charset)
         return result
 
     return isql_act_fixture

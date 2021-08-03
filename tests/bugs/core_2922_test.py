@@ -37,7 +37,7 @@ test_script_1 = """
     commit;
     
     -- show proc;
-    set width dep_nm 10;
+    set width dep_name 10;
     set width dep_on 10;
     set width dep_on_type 20;
     set list on;
@@ -54,14 +54,18 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    DEP_NAME                        P1
-    DEP_ON                          WIN1250
-    DEP_ON_TYPE                     COLLATION
+DEP_NAME                        P1                                                                                                                          
+DEP_ON                          WIN1250                                                                                                                     
+DEP_ON_TYPE                     COLLATION                                                                                                                   
 
-    DEP_NAME                        P2
-    DEP_ON                          WIN1250
-    DEP_ON_TYPE                     COLLATION
-  """
+DEP_NAME                        P1                                                                                                                          
+DEP_ON                          UTF8                                                                                                                        
+DEP_ON_TYPE                     COLLATION                                                                                                                   
+
+DEP_NAME                        P2                                                                                                                          
+DEP_ON                          WIN1250                                                                                                                     
+DEP_ON_TYPE                     COLLATION                                                                                                                   
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):

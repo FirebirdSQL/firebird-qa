@@ -159,9 +159,9 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     USER                            TMP$C3735
-  """
+"""
+
 expected_stderr_1 = """
-    There is no privilege granted in this database
     Statement failed, SQLSTATE = 28000
     no permission for INSERT access to TABLE RDB$CHARACTER_SETS
     Statement failed, SQLSTATE = 28000

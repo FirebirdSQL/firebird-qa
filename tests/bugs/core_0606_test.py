@@ -118,13 +118,14 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    /* Grant permissions for this database */
-    GRANT SELECT ON t t TO ROLE FOR
-    GRANT FOR CVC TO CVC
-    
-    WHO_AM_I                        CVC
-    I_M_PLAYING_ROLE                FOR CVC
-  """
+/* Grant permissions for this database */
+GRANT SELECT ON t t TO ROLE FOR
+GRANT FOR CVC TO CVC
+GRANT CREATE DATABASE TO USER TMP$C4648
+
+WHO_AM_I                        CVC
+I_M_PLAYING_ROLE                FOR CVC
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     Execute statement error at isc_dsql_prepare :

@@ -27,7 +27,7 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    D                               -3.000000000000000
+    D                               -3
   """
 
 @pytest.mark.version('>=2.5')

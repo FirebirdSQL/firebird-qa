@@ -361,686 +361,679 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    MSG                             point-01
-    N                               1
-    X                               100
-    CN                              1
-    CX                              100
-
-    MSG                             point-01
-    N                               2
-    X                               20
-    CN                              2
-    CX                              20
-
-    MSG                             point-01
-    N                               3
-    X                               30
-    CN                              3
-    CX                              30
-
-
-
-    MSG                             point-02
-    N                               1
-    X                               100
-    CN                              1
-    CX                              100
-
-    MSG                             point-02
-    N                               2
-    X                               200
-    CN                              2
-    CX                              200
-
-    MSG                             point-02
-    N                               3
-    X                               30
-    CN                              3
-    CX                              30
-
-
-
-    MSG                             point-03
-    N                               1
-    X                               100
-    CN                              1
-    CX                              100
-    VCN                             1
-
-    MSG                             point-03
-    N                               2
-    X                               200
-    CN                              2
-    CX                              200
-    VCN                             2
-
-    MSG                             point-03
-    N                               3
-    X                               30
-    CN                              3
-    CX                              30
-    VCN                             3
-
-
-
-    MSG                             point-04
-    N                               1
-    X                               100
-    CN                              1
-    CX                              100
-    VCN                             1
-
-    MSG                             point-04
-    N                               2
-    X                               200
-    CN                              2
-    CX                              200
-    VCN                             2
-
-    MSG                             point-04
-    N                               3
-    X                               30
-    CN                              3
-    CX                              30
-    VCN                             3
-
-    MSG                             point-04
-    N                               4
-    X                               40
-    CN                              4
-    CX                              40
-    VCN                             4
+MSG                             point-01                        
+N                               1
+X                               100
+CN                              1
+CX                              100
+
+MSG                             point-01                        
+N                               2
+X                               20
+CN                              2
+CX                              20
+
+MSG                             point-01                        
+N                               3
+X                               30
+CN                              3
+CX                              30
+
+
+
+MSG                             point-02
+N                               1
+X                               100
+CN                              1
+CX                              100
+
+MSG                             point-02
+N                               2
+X                               200
+CN                              2
+CX                              200
+
+MSG                             point-02
+N                               3
+X                               30
+CN                              3
+CX                              30
+
+
+
+MSG                             point-03                        
+N                               1
+X                               100
+CN                              1
+CX                              100
+VCN                             1
+
+MSG                             point-03                        
+N                               2
+X                               200
+CN                              2
+CX                              200
+VCN                             2
+
+MSG                             point-03                        
+N                               3
+X                               30
+CN                              3
+CX                              30
+VCN                             3
+
+
+
+MSG                             point-04                        
+N                               1
+X                               100
+CN                              1
+CX                              100
+VCN                             1
+
+MSG                             point-04                        
+N                               2
+X                               200
+CN                              2
+CX                              200
+VCN                             2
+
+MSG                             point-04                        
+N                               3
+X                               30
+CN                              3
+CX                              30
+VCN                             3
+
+MSG                             point-04                        
+N                               4
+X                               40
+CN                              4
+CX                              40
+VCN                             4
 
 
 
-    MSG                             point-05
-    N                               1
-    X                               100
-    CN                              1
-    CX                              100
+MSG                             point-05
+N                               1
+X                               100
+CN                              1
+CX                              100
 
-    MSG                             point-05
-    N                               2
-    X                               200
-    CN                              2
-    CX                              200
+MSG                             point-05
+N                               2
+X                               200
+CN                              2
+CX                              200
 
-    MSG                             point-05
-    N                               3
-    X                               300
-    CN                              3
-    CX                              300
+MSG                             point-05
+N                               3
+X                               300
+CN                              3
+CX                              300
 
-    MSG                             point-05
-    N                               4
-    X                               40
-    CN                              4
-    CX                              40
+MSG                             point-05
+N                               4
+X                               40
+CN                              4
+CX                              40
 
 
 
-    MSG                             point-06
-    N                               1
-    X                               100
-    CN                              1
-    CX                              100
-    VCN                             1
+MSG                             point-06                        
+N                               1
+X                               100
+CN                              1
+CX                              100
+VCN                             1
 
-    MSG                             point-06
-    N                               2
-    X                               200
-    CN                              2
-    CX                              200
-    VCN                             2
+MSG                             point-06                        
+N                               2
+X                               200
+CN                              2
+CX                              200
+VCN                             2
 
-    MSG                             point-06
-    N                               3
-    X                               300
-    CN                              3
-    CX                              300
-    VCN                             3
+MSG                             point-06                        
+N                               3
+X                               300
+CN                              3
+CX                              300
+VCN                             3
 
-    MSG                             point-06
-    N                               4
-    X                               40
-    CN                              4
-    CX                              40
-    VCN                             4
+MSG                             point-06                        
+N                               4
+X                               40
+CN                              4
+CX                              40
+VCN                             4
 
-    MSG                             point-06
-    N                               1008
-    X                               88
-    CN                              1008
-    CX                              88
-    VCN                             1008
+MSG                             point-06                        
+N                               1008
+X                               88
+CN                              1008
+CX                              88
+VCN                             1008
 
 
 
-    MSG                             point-07
-    COAL_01                         1
+MSG                             point-07                        
+COAL_01                         1
 
-    MSG                             point-07
-    COAL_01                         2
+MSG                             point-07                        
+COAL_01                         2
 
-    MSG                             point-07
-    COAL_01                         3
+MSG                             point-07                        
+COAL_01                         3
 
-    MSG                             point-07
-    COAL_01                         4
+MSG                             point-07                        
+COAL_01                         4
 
-    MSG                             point-07
-    COAL_01                         1008
+MSG                             point-07                        
+COAL_01                         1008
 
 
 
-    MSG                             point-08
-    COAL_02                         1
+MSG                             point-08                        
+COAL_02                         1
 
-    MSG                             point-08
-    COAL_02                         2
+MSG                             point-08                        
+COAL_02                         2
 
-    MSG                             point-08
-    COAL_02                         3
+MSG                             point-08                        
+COAL_02                         3
 
-    MSG                             point-08
-    COAL_02                         4
+MSG                             point-08                        
+COAL_02                         4
 
-    MSG                             point-08
-    COAL_02                         1008
+MSG                             point-08                        
+COAL_02                         1008
 
 
 
-    MSG                             point-09
-    COAL_03                         1
+MSG                             point-09                        
+COAL_03                         1
 
-    MSG                             point-09
-    COAL_03                         2
+MSG                             point-09                        
+COAL_03                         2
 
-    MSG                             point-09
-    COAL_03                         3
+MSG                             point-09                        
+COAL_03                         3
 
-    MSG                             point-09
-    COAL_03                         4
+MSG                             point-09                        
+COAL_03                         4
 
-    MSG                             point-09
-    COAL_03                         1008
+MSG                             point-09                        
+COAL_03                         1008
 
 
 
-    MSG                             point-10
-    COAL_04                         1
+MSG                             point-10                        
+COAL_04                         1
 
-    MSG                             point-10
-    COAL_04                         2
+MSG                             point-10                        
+COAL_04                         2
 
-    MSG                             point-10
-    COAL_04                         3
+MSG                             point-10                        
+COAL_04                         3
 
-    MSG                             point-10
-    COAL_04                         4
+MSG                             point-10                        
+COAL_04                         4
 
-    MSG                             point-10
-    COAL_04                         1008
+MSG                             point-10                        
+COAL_04                         1008
 
 
 
-    MSG                             point-11
-    COAL_05                         1
+MSG                             point-11                        
+COAL_05                         1
 
-    MSG                             point-11
-    COAL_05                         2
+MSG                             point-11                        
+COAL_05                         2
 
-    MSG                             point-11
-    COAL_05                         3
+MSG                             point-11                        
+COAL_05                         3
 
-    MSG                             point-11
-    COAL_05                         4
+MSG                             point-11                        
+COAL_05                         4
 
 
 
-    MSG                             point-12
-    COAL_06                         10
+MSG                             point-12                        
+COAL_06                         10
 
-    MSG                             point-12
-    COAL_06                         20
+MSG                             point-12                        
+COAL_06                         20
 
-    MSG                             point-12
-    COAL_06                         30
+MSG                             point-12                        
+COAL_06                         30
 
-    MSG                             point-12
-    COAL_06                         40
+MSG                             point-12                        
+COAL_06                         40
 
-    MSG                             point-12
-    COAL_06                         10080
+MSG                             point-12                        
+COAL_06                         10080
 
 
 
-    MSG                             point-13
-    COAL_07A                        30
-    COAL_07B                        3000
+MSG                             point-13                        
+COAL_07A                        30
+COAL_07B                        3000
 
-    MSG                             point-13
-    COAL_07A                        20
-    COAL_07B                        2000
+MSG                             point-13                        
+COAL_07A                        20
+COAL_07B                        2000
 
-    MSG                             point-13
-    COAL_07A                        10
-    COAL_07B                        1000
+MSG                             point-13                        
+COAL_07A                        10
+COAL_07B                        1000
 
-    MSG                             point-13
-    COAL_07A                        10080
-    COAL_07B                        880
+MSG                             point-13                        
+COAL_07A                        10080
+COAL_07B                        880
 
-    MSG                             point-13
-    COAL_07A                        40
-    COAL_07B                        400
+MSG                             point-13                        
+COAL_07A                        40
+COAL_07B                        400
 
 
 
-    MSG                             point-14
-    COAL_08A                        10080
-    COAL_08B                        880
+MSG                             point-14                        
+COAL_08A                        10080
+COAL_08B                        880
 
-    MSG                             point-14
-    COAL_08A                        40
-    COAL_08B                        400
+MSG                             point-14                        
+COAL_08A                        40
+COAL_08B                        400
 
-    MSG                             point-14
-    COAL_08A                        30
-    COAL_08B                        3000
+MSG                             point-14                        
+COAL_08A                        30
+COAL_08B                        3000
 
-    MSG                             point-14
-    COAL_08A                        20
-    COAL_08B                        2000
+MSG                             point-14                        
+COAL_08A                        20
+COAL_08B                        2000
 
-    MSG                             point-14
-    COAL_08A                        10
-    COAL_08B                        1000
+MSG                             point-14                        
+COAL_08A                        10
+COAL_08B                        1000
 
 
 
-    MSG                             point-15
-    CASE_GROUP_BY_01                1
+MSG                             point-15                        
+CASE_GROUP_BY_01                1
 
-    MSG                             point-15
-    CASE_GROUP_BY_01                2
+MSG                             point-15                        
+CASE_GROUP_BY_01                2
 
-    MSG                             point-15
-    CASE_GROUP_BY_01                3
+MSG                             point-15                        
+CASE_GROUP_BY_01                3
 
-    MSG                             point-15
-    CASE_GROUP_BY_01                4
+MSG                             point-15                        
+CASE_GROUP_BY_01                4
 
-    MSG                             point-15
-    CASE_GROUP_BY_01                1008
+MSG                             point-15                        
+CASE_GROUP_BY_01                1008
 
 
 
-    MSG                             point-16
-    CASE_GROUP_BY_02                1
+MSG                             point-16                        
+CASE_GROUP_BY_02                1
 
-    MSG                             point-16
-    CASE_GROUP_BY_02                2
+MSG                             point-16                        
+CASE_GROUP_BY_02                2
 
-    MSG                             point-16
-    CASE_GROUP_BY_02                3
+MSG                             point-16                        
+CASE_GROUP_BY_02                3
 
-    MSG                             point-16
-    CASE_GROUP_BY_02                4
+MSG                             point-16                        
+CASE_GROUP_BY_02                4
 
-    MSG                             point-16
-    CASE_GROUP_BY_02                1008
+MSG                             point-16                        
+CASE_GROUP_BY_02                1008
 
 
 
-    MSG                             point-17
-    CASE_GROUP_BY_03                1
+MSG                             point-17                        
+CASE_GROUP_BY_03                1
 
-    MSG                             point-17
-    CASE_GROUP_BY_03                2
+MSG                             point-17                        
+CASE_GROUP_BY_03                2
 
-    MSG                             point-17
-    CASE_GROUP_BY_03                3
+MSG                             point-17                        
+CASE_GROUP_BY_03                3
 
-    MSG                             point-17
-    CASE_GROUP_BY_03                4
+MSG                             point-17                        
+CASE_GROUP_BY_03                4
 
 
 
-    MSG                             point-18
-    CASE_GROUP_BY_04                1008
+MSG                             point-18                        
+CASE_GROUP_BY_04                1008
 
-    MSG                             point-18
-    CASE_GROUP_BY_04                4
+MSG                             point-18                        
+CASE_GROUP_BY_04                4
 
-    MSG                             point-18
-    CASE_GROUP_BY_04                3
+MSG                             point-18                        
+CASE_GROUP_BY_04                3
 
-    MSG                             point-18
-    CASE_GROUP_BY_04                2
+MSG                             point-18                        
+CASE_GROUP_BY_04                2
 
-    MSG                             point-18
-    CASE_GROUP_BY_04                1
+MSG                             point-18                        
+CASE_GROUP_BY_04                1
 
 
 
-    MSG                             point-22
-    N                               1
+MSG                             point-22                        
+N                               1
 
-    MSG                             point-22
-    N                               2
+MSG                             point-22                        
+N                               2
 
-    MSG                             point-22
-    N                               3
+MSG                             point-22                        
+N                               3
 
-    MSG                             point-22
-    N                               4
+MSG                             point-22                        
+N                               4
 
-    MSG                             point-22
-    N                               1008
+MSG                             point-22                        
+N                               1008
 
 
 
-    MSG                             point-23
-    V2_N                            1
-    V2_X1                           2
-    V2_X2                           3
+MSG                             point-23                        
+V2_N                            1
+V2_X1                           2
+V2_X2                           3
 
-    MSG                             point-23
-    V2_N                            2
-    V2_X1                           3
-    V2_X2                           4
+MSG                             point-23                        
+V2_N                            2
+V2_X1                           3
+V2_X2                           4
 
-    MSG                             point-23
-    V2_N                            3
-    V2_X1                           4
-    V2_X2                           5
+MSG                             point-23                        
+V2_N                            3
+V2_X1                           4
+V2_X2                           5
 
-    MSG                             point-23
-    V2_N                            4
-    V2_X1                           5
-    V2_X2                           6
+MSG                             point-23                        
+V2_N                            4
+V2_X1                           5
+V2_X2                           6
 
-    MSG                             point-23
-    V2_N                            1008
-    V2_X1                           1009
-    V2_X2                           1010
+MSG                             point-23                        
+V2_N                            1008
+V2_X1                           1009
+V2_X2                           1010
 
 
 
-    MSG                             point-24
-    V3_N                            1
-    V3_X1                           14
-    V3_X2                           26
+MSG                             point-24                        
+V3_N                            1
+V3_X1                           14
+V3_X2                           26
 
-    MSG                             point-24
-    V3_N                            2
-    V3_X1                           16
-    V3_X2                           28
+MSG                             point-24                        
+V3_N                            2
+V3_X1                           16
+V3_X2                           28
 
-    MSG                             point-24
-    V3_N                            3
-    V3_X1                           18
-    V3_X2                           30
+MSG                             point-24                        
+V3_N                            3
+V3_X1                           18
+V3_X2                           30
 
-    MSG                             point-24
-    V3_N                            4
-    V3_X1                           20
-    V3_X2                           32
+MSG                             point-24                        
+V3_N                            4
+V3_X1                           20
+V3_X2                           32
 
-    MSG                             point-24
-    V3_N                            1008
-    V3_X1                           2028
-    V3_X2                           2040
+MSG                             point-24                        
+V3_N                            1008
+V3_X1                           2028
+V3_X2                           2040
 
 
 
-    MSG                             point-25
-    V4_N                            1
-    V4_X1                           1
-    V4_X2                           3
+MSG                             point-25                        
+V4_N                            1
+V4_X1                           1
+V4_X2                           3
 
-    MSG                             point-25
-    V4_N                            2
-    V4_X1                           1
-    V4_X2                           3
+MSG                             point-25                        
+V4_N                            2
+V4_X1                           1
+V4_X2                           3
 
-    MSG                             point-25
-    V4_N                            3
-    V4_X1                           1
-    V4_X2                           3
+MSG                             point-25                        
+V4_N                            3
+V4_X1                           1
+V4_X2                           3
 
-    MSG                             point-25
-    V4_N                            4
-    V4_X1                           1
-    V4_X2                           3
+MSG                             point-25                        
+V4_N                            4
+V4_X1                           1
+V4_X2                           3
 
-    MSG                             point-25
-    V4_N                            1008
-    V4_X1                           1
-    V4_X2                           3
+MSG                             point-25                        
+V4_N                            1008
+V4_X1                           1
+V4_X2                           3
 
 
 
-    MSG                             point-26
-    N                               1
-    X1                              14
-    X2                              26
+MSG                             point-26                        
+N                               1
+X1                              14
+X2                              26
 
-    MSG                             point-26
-    N                               2
-    X1                              16
-    X2                              28
+MSG                             point-26                        
+N                               2
+X1                              16
+X2                              28
 
-    MSG                             point-26
-    N                               3
-    X1                              18
-    X2                              30
+MSG                             point-26                        
+N                               3
+X1                              18
+X2                              30
 
-    MSG                             point-26
-    N                               4
-    X1                              20
-    X2                              32
+MSG                             point-26                        
+N                               4
+X1                              20
+X2                              32
 
-    MSG                             point-26
-    N                               1008
-    X1                              2028
-    X2                              2040
+MSG                             point-26                        
+N                               1008
+X1                              2028
+X2                              2040
 
-    MSG                             point-26
-    N                               1
-    X1                              14
-    X2                              26
+MSG                             point-26                        
+N                               1
+X1                              14
+X2                              26
 
-    MSG                             point-26
-    N                               2
-    X1                              16
-    X2                              28
+MSG                             point-26                        
+N                               2
+X1                              16
+X2                              28
 
-    MSG                             point-26
-    N                               3
-    X1                              18
-    X2                              30
+MSG                             point-26                        
+N                               3
+X1                              18
+X2                              30
 
-    MSG                             point-26
-    N                               4
-    X1                              20
-    X2                              32
+MSG                             point-26                        
+N                               4
+X1                              20
+X2                              32
 
-    MSG                             point-26
-    N                               1008
-    X1                              2028
-    X2                              2040
+MSG                             point-26                        
+N                               1008
+X1                              2028
+X2                              2040
 
 
 
-    MSG                             point-27
-    N                               1
-    X                               100
-    CN                              1
-    CX                              100
+MSG                             point-27                        
+N                               1
+X                               100
+CN                              1
+CX                              100
 
-    MSG                             point-27
-    N                               2
-    X                               200
-    CN                              2
-    CX                              200
+MSG                             point-27                        
+N                               2
+X                               200
+CN                              2
+CX                              200
 
-    MSG                             point-27
-    N                               3
-    X                               300
-    CN                              3
-    CX                              300
+MSG                             point-27                        
+N                               3
+X                               300
+CN                              3
+CX                              300
 
-    MSG                             point-27
-    N                               4
-    X                               40
-    CN                              4
-    CX                              40
+MSG                             point-27                        
+N                               4
+X                               40
+CN                              4
+CX                              40
 
-    MSG                             point-27
-    N                               1008
-    X                               88
-    CN                              1008
-    CX                              88
+MSG                             point-27                        
+N                               1008
+X                               88
+CN                              1008
+CX                              88
 
-    MSG                             point-27
-    N                               5
-    X                               5
-    CN                              5
-    CX                              5
+MSG                             point-27                        
+N                               5
+X                               5
+CN                              5
+CX                              5
 
 
 
-    MSG                             point-28
-    N                               1
-    X                               100
-    CN                              1
-    CX                              100
-    DC1                             <null>
-    DC2                             <null>
+MSG                             point-28                        
+N                               1
+X                               100
+CN                              1
+CX                              100
+DC1                             <null>
+DC2                             <null>
 
-    MSG                             point-28
-    N                               2
-    X                               200
-    CN                              2
-    CX                              200
-    DC1                             <null>
-    DC2                             <null>
+MSG                             point-28                        
+N                               2
+X                               200
+CN                              2
+CX                              200
+DC1                             <null>
+DC2                             <null>
 
-    MSG                             point-28
-    N                               3
-    X                               300
-    CN                              3
-    CX                              300
-    DC1                             <null>
-    DC2                             <null>
+MSG                             point-28                        
+N                               3
+X                               300
+CN                              3
+CX                              300
+DC1                             <null>
+DC2                             <null>
 
-    MSG                             point-28
-    N                               4
-    X                               40
-    CN                              4
-    CX                              40
-    DC1                             <null>
-    DC2                             <null>
+MSG                             point-28                        
+N                               4
+X                               40
+CN                              4
+CX                              40
+DC1                             <null>
+DC2                             <null>
 
-    MSG                             point-28
-    N                               1008
-    X                               88
-    CN                              1008
-    CX                              88
-    DC1                             <null>
-    DC2                             <null>
+MSG                             point-28                        
+N                               1008
+X                               88
+CN                              1008
+CX                              88
+DC1                             <null>
+DC2                             <null>
 
-    MSG                             point-28
-    N                               5
-    X                               5
-    CN                              5
-    CX                              5
-    DC1                             <null>
-    DC2                             <null>
+MSG                             point-28                        
+N                               5
+X                               5
+CN                              5
+CX                              5
+DC1                             <null>
+DC2                             <null>
 
-    MSG                             point-28
-    N                               6
-    X                               <null>
-    CN                              6
-    CX                              <null>
-    DC1                             6
-    DC2                             <null>
+MSG                             point-28                        
+N                               6
+X                               <null>
+CN                              6
+CX                              <null>
+DC1                             6
+DC2                             <null>
 
-    MSG                             point-28
-    N                               7
-    X                               <null>
-    CN                              7
-    CX                              <null>
-    DC1                             <null>
-    DC2                             7
+MSG                             point-28                        
+N                               7
+X                               <null>
+CN                              7
+CX                              <null>
+DC1                             <null>
+DC2                             7
 
 
 
-    MSG                             point-29
-    BC                              -1
+MSG                             point-29                        
+BC                              -1
 
 
-    INPUT message field count: 3
-    01: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
-      :  name:   alias: 
-      : table:   owner: 
-    02: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
-      :  name:   alias: 
-      : table:   owner: 
-    03: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
-      :  name:   alias: 
-      : table:   owner: 
 
-    OUTPUT message field count: 2
-    01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 8 charset: 0 NONE
-      :  name: CONSTANT  alias: MSG
-      : table:   owner: 
-    02: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
-      :  name: COALESCE  alias: COALESCE
-      : table:   owner: 
-  """
+INPUT message field count: 3
+01: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
+  :  name:   alias: 
+  : table:   owner: 
+02: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
+  :  name:   alias: 
+  : table:   owner: 
+03: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
+  :  name:   alias: 
+  : table:   owner: 
+
+OUTPUT message field count: 2
+01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32 charset: 4 UTF8
+  :  name: CONSTANT  alias: MSG
+  : table:   owner: 
+02: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
+  :  name: COALESCE  alias: COALESCE
+  : table:   owner: 
+"""
 expected_stderr_1 = """
-    Statement failed, SQLSTATE = 42000
-    Dynamic SQL Error
-    -SQL error code = -104
-    -Invalid expression in the HAVING clause (neither an aggregate function nor a part of the GROUP BY clause)
-
-    Statement failed, SQLSTATE = 42000
-    Dynamic SQL Error
-    -SQL error code = -104
-    -Invalid expression in the select list (not contained in either an aggregate function or the GROUP BY clause)
-
-    Statement failed, SQLSTATE = 42000
-    Dynamic SQL Error
-    -SQL error code = -104
-    -Invalid expression in the HAVING clause (neither an aggregate function nor a part of the GROUP BY clause)
-
-    Statement failed, SQLSTATE = 23000
-    Operation violates CHECK constraint T1_N on view or table T1
-    -At trigger 'CHECK_1'
-
-    Statement failed, SQLSTATE = 23000
-    Operation violates CHECK constraint T1_CX on view or table T1
-    -At trigger 'CHECK_3'
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "T1"."DC1", value "10"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "T1"."DC2", value "10"
-
-    Statement failed, SQLSTATE = 22012
-    arithmetic exception, numeric overflow, or string truncation
-    -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
-
-    Statement failed, SQLSTATE = 07002
-    Dynamic SQL Error
-    -SQLDA error
-    -No SQLDA for input values provided
-  """
+Statement failed, SQLSTATE = 42000
+Dynamic SQL Error
+-SQL error code = -104
+-Invalid expression in the HAVING clause (neither an aggregate function nor a part of the GROUP BY clause)
+Statement failed, SQLSTATE = 42000
+Dynamic SQL Error
+-SQL error code = -104
+-Invalid expression in the select list (not contained in either an aggregate function or the GROUP BY clause)
+Statement failed, SQLSTATE = 42000
+Dynamic SQL Error
+-SQL error code = -104
+-Invalid expression in the HAVING clause (neither an aggregate function nor a part of the GROUP BY clause)
+Statement failed, SQLSTATE = 23000
+Operation violates CHECK constraint T1_N on view or table T1
+-At trigger 'CHECK_1'
+Statement failed, SQLSTATE = 23000
+Operation violates CHECK constraint T1_CX on view or table T1
+-At trigger 'CHECK_3'
+Statement failed, SQLSTATE = 23000
+validation error for column "T1"."DC1", value "10"
+Statement failed, SQLSTATE = 23000
+validation error for column "T1"."DC2", value "10"
+Statement failed, SQLSTATE = 22012
+arithmetic exception, numeric overflow, or string truncation
+-Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
+Statement failed, SQLSTATE = 07002
+Dynamic SQL Error
+-SQLDA error
+-Wrong number of parameters (expected 3, got 0)
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):

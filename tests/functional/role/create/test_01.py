@@ -35,18 +35,18 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    RDB$ROLE_NAME                   RDB$ADMIN
-    RDB$OWNER_NAME                  SYSDBA
-    RDB$DESCRIPTION                 <null>
-    RDB$SYSTEM_FLAG                 1
-    RDB$SECURITY_CLASS              SQLnnnn
-    
-    RDB$ROLE_NAME                   TEST
-    RDB$OWNER_NAME                  SYSDBA
-    RDB$DESCRIPTION                 <null>
-    RDB$SYSTEM_FLAG                 0
-    RDB$SECURITY_CLASS              SQLnnnn
-  """
+RDB$ROLE_NAME                   RDB$ADMIN                                                                                                                   
+RDB$OWNER_NAME                  SYSDBA                                                                                                                      
+RDB$DESCRIPTION                 <null>
+RDB$SYSTEM_FLAG                 1
+RDB$SECURITY_CLASS              <null>
+
+RDB$ROLE_NAME                   TEST                                                                                                                        
+RDB$OWNER_NAME                  SYSDBA                                                                                                                      
+RDB$DESCRIPTION                 <null>
+RDB$SYSTEM_FLAG                 0
+RDB$SECURITY_CLASS              SQL$414                                                                                                                     
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):

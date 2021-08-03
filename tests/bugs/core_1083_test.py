@@ -38,7 +38,7 @@ test_script_1 = """
     grant update (col2) on tab2 to role1;
     commit;
     
-    connect 'localhost:$(DATABASE_LOCATION)bugs.core_1083.fdb' user 'TMP$C1083' password 'QweRtyUioP';
+    connect 'localhost:$(DATABASE_LOCATION)test.fdb' user 'TMP$C1083' password 'QweRtyUioP';
     --set bail on;
     set echo on;
     grant update(col1) on tab1 to role1;
@@ -47,7 +47,7 @@ test_script_1 = """
     set echo off;
     commit;
     
-    connect 'localhost:$(DATABASE_LOCATION)bugs.core_1083.fdb' user 'SYSDBA' password 'masterkey';
+    connect 'localhost:$(DATABASE_LOCATION)test.fdb' user 'SYSDBA' password 'masterkey';
     set echo on;
     drop user tmp$c1083;
     set echo off;

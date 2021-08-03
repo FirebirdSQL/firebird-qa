@@ -42,12 +42,12 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    ID                              1
-    OPDATE                          31-DEC-2000
+ID                              1
+OPDATE                          2000-12-31 00:00:00.0000
 
-    ID                              2
-    OPDATE                          01-JAN-2001
-  """
+ID                              2
+OPDATE                          2001-01-01 00:00:00.0000
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):

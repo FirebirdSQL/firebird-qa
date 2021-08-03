@@ -32,13 +32,12 @@ test_script_1 = """SELECT ABS(MYNUM) FROM TEST;"""
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-                    ABS
-=======================
-      1.000000000000000
-      1.000000000000000
-      2147483647.000000
-      2147483648.000000
-
+                  ABS 
+===================== 
+                    1 
+                    1 
+           2147483647 
+           2147483648 
 """
 
 @pytest.mark.version('>=2.5.0')

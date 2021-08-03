@@ -37,7 +37,7 @@ test_script_1 = """
     commit;
   """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1, charset='win1251')
 
 expected_stdout_1 = """
     CONNECTION_CSET                 WIN1251 

@@ -91,7 +91,7 @@ test_script_1 = """
 
   """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1, charset='NONE')
 
 expected_stdout_1 = """
     N                               32739
