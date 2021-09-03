@@ -126,7 +126,7 @@ def pytest_configure(config):
     #
     with connect_server(_vars_['server'], user='SYSDBA',
                         password=_vars_['password']) as srv:
-        _vars_['version'] = parse(srv.info.version)
+        _vars_['version'] = parse(srv.info.version.replace('-dev', ''))
         _vars_['home-dir'] = Path(srv.info.home_directory)
         _vars_['lock-dir'] = Path(srv.info.lock_directory)
         _vars_['security-db'] = Path(srv.info.security_database)
