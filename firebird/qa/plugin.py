@@ -45,13 +45,13 @@ import platform
 import difflib
 import pytest
 from _pytest.fixtures import FixtureRequest
-from subprocess import run, CompletedProcess, CalledProcessError
+from subprocess import run, CompletedProcess
 from pathlib import Path
-from configparser import ConfigParser, ExtendedInterpolation
+#from configparser import ConfigParser, ExtendedInterpolation
 from packaging.specifiers import SpecifierSet
-from packaging.version import Version, parse
+from packaging.version import parse
 from firebird.driver import connect, connect_server, create_database, driver_config, \
-     NetProtocol, PageSize, Server, CHARSET_MAP
+     NetProtocol, Server, CHARSET_MAP
 
 _vars_ = {'server': None,
           'bin-dir': None,
@@ -70,6 +70,7 @@ def pytest_addoption(parser, pluginmanager):
                   choices=[i.name.lower() for i in NetProtocol],
                   help="Network protocol used for database attachments")
     grp.addoption('--runslow', action='store_true', default=False, help="Run slow tests")
+    grp.addoption('--save-output', action='store_true', default=False, help="Save test std[out|err] output to files")
 
 def pytest_report_header(config):
     return ["Firebird:",
@@ -81,6 +82,7 @@ def pytest_report_header(config):
             f"  bin: {_vars_['bin-dir']}",
             f"  security db: {_vars_['security-db']}",
             f"  run slow test: {_vars_['runslow']}",
+            f"  save test output: {_vars_['save-output']}",
             ]
 
 def set_tool(tool: str):
@@ -120,6 +122,7 @@ def pytest_configure(config):
     _vars_['server'] = config.getoption('server')
     _vars_['bin-dir'] = config.getoption('bin_dir')
     _vars_['protocol'] = config.getoption('protocol')
+    _vars_['save-output'] = config.getoption('save_output')
     srv_conf = driver_config.get_server(_vars_['server'])
     _vars_['host'] = srv_conf.host.value if srv_conf is not None else ''
     _vars_['password'] = srv_conf.password.value
@@ -273,9 +276,9 @@ class Database:
                      input=substitute_macros(script, self.subs),
                      encoding=CHARSET_MAP[charset], capture_output=True)
         if result.returncode and raise_on_fail:
-            print(f"-- stdout {'-' * 20}")
+            print(f"-- ISQL script stdout {'-' * 20}")
             print(result.stdout)
-            print(f"-- stderr {'-' * 20}")
+            print(f"-- ISQL script stderr {'-' * 20}")
             print(result.stderr)
             raise Exception("ISQL script execution failed")
         return result
@@ -396,10 +399,11 @@ class Action:
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
         # Store output
-        if self.stdout:
-            out_file.write_text(self.stdout)
-        if self.stderr:
-            err_file.write_text(self.stderr)
+        if _vars_['save-output']:
+            if self.stdout:
+                out_file.write_text(self.stdout)
+            if self.stderr:
+                err_file.write_text(self.stderr)
     @property
     def clean_stdout(self) -> str:
         if self._clean_stdout is None:
@@ -428,7 +432,7 @@ def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None
     def isql_act_fixture(request: FixtureRequest) -> Action:
         db: Database = request.getfixturevalue(db_fixture_name)
         f: Path = Path.cwd() / 'out' / request.module.__name__.replace('.', '/')
-        if not f.parent.exists():
+        if _vars_['save-output'] and not f.parent.exists():
             f.parent.mkdir(parents=True)
         f = f.with_name(f'{f.stem}-{request.function.__name__}.out')
         #f.write_text('stdout')
