@@ -2,10 +2,14 @@
 #
 # id:           bugs.core_5162
 # title:        SEC$ tables and tag/attributes
-# decription:   
+# decription:
 #                   FB30SS, build 3.0.4.32972: OK, 1.047s.
 #                   FB40SS, build 4.0.0.977: OK, 1.266s.
-#                
+#
+#               [pcisar] 21.10.2021 - This test requires Legacy_UserManager to be listed
+#                   in firebird.conf UserManager option, which is NOT by default.
+#                   Otherwise it will FAIL with "Missing requested management plugin"
+#
 # tracker_id:   CORE-5162
 # min_versions: ['3.0.0']
 # versions:     3.0
@@ -32,7 +36,7 @@ test_script_1 = """
         execute statement 'drop user tmp$c5162 using plugin Legacy_UserManager' with autonomous transaction;
             when any do begin end
         end
-     
+
         begin
         execute statement 'drop user tmp$c5162 using plugin Srp' with autonomous transaction;
             when any do begin end

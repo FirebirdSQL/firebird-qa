@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4839
 # title:        SHOW GRANTS does not display info about exceptions which were granted to user
-# decription:   
+# decription:
 # tracker_id:   CORE-4839
 # min_versions: ['3.0']
 # versions:     3.0
@@ -28,7 +28,7 @@ test_script_1 = """
 
     grant usage on exception exc_foo to tmp$c4839; -- this wasn`t shown before rev. 61822 (build 3.0.0.31881), 2015-06-14 11:35
     grant usage on sequence gen_bar to tmp$c4839;
-    commit; 
+    commit;
     show grants;
     commit;
     drop user tmp$c4839;
@@ -41,6 +41,7 @@ expected_stdout_1 = """
     /* Grant permissions for this database */
     GRANT USAGE ON SEQUENCE GEN_BAR TO USER TMP$C4839
     GRANT USAGE ON EXCEPTION EXC_FOO TO USER TMP$C4839
+    GRANT CREATE DATABASE TO USER TMP$C4648
   """
 
 @pytest.mark.version('>=3.0')

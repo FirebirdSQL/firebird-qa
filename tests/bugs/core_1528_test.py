@@ -25,9 +25,9 @@ test_script_1 = """SELECT DATEDIFF(DAY, CAST('18.10.2007' AS TIMESTAMP), CAST('2
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-             DATEDIFF 
-===================== 
-                    5 
+               DATEDIFF 
+======================= 
+      5.000000000000000 
 """
 
 @pytest.mark.version('>=2.1')

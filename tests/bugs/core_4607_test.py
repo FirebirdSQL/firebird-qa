@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4607
 # title:        Add support for having more than one UserManager in firebird.conf and use them from SQL
-# decription:   
+# decription:
 #                  Line "UserManager = Srp,..." has been added since ~MAR-2018 in firebird.conf before every fbt_run launch.
 #                  Initial attempt to use Srp failed for following COREs tests: 2307, 3365, 4200, 4301, 4469 - and error
 #                  was the same for all of them:
@@ -11,13 +11,17 @@
 #                     database" in Quick Start Guide
 #                  ===
 #                  (reply from dimitr, letter 31.05.2015 17:44).
-#               
+#
 #                  Checked on:
 #                       fb30Cs, build 3.0.4.32972: OK, 0.844s.
 #                       FB30SS, build 3.0.4.32988: OK, 1.203s.
 #                       FB40CS, build 4.0.0.955: OK, 2.016s.
 #                       FB40SS, build 4.0.0.1008: OK, 1.328s.
-#                
+#
+#               [pcisar] 21.10.2021 - This test requires Legacy_UserManager to be listed
+#                   in firebird.conf UserManager option, which is NOT by default.
+#                   Otherwise it will FAIL with "Missing requested management plugin"
+#
 # tracker_id:   CORE-4607
 # min_versions: ['3.0.0']
 # versions:     3.0
@@ -40,7 +44,7 @@ test_script_1 = """
     set count on;
     create view v_test as
     select sec$user_name, sec$plugin
-    from sec$users 
+    from sec$users
     where upper(sec$user_name) starting with upper('tmp$c4607')
     order by 1,2
     ;
@@ -73,6 +77,7 @@ expected_stdout_1 = """
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
+    #act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

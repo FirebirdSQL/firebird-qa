@@ -2,11 +2,11 @@
 #
 # id:           bugs.core_4468
 # title:        FB3: CREATE USER GRANT ADMIN ROLE does not work
-# decription:   
+# decription:
 # tracker_id:   CORE-4468
 # min_versions: ['3.0']
 # versions:     3.0
-# qmid:         
+# qmid:
 
 import pytest
 from firebird.qa import db_factory, isql_act, Action
@@ -41,7 +41,7 @@ test_script_1 = """
     select 'start' msg, v.* from v_users v;
     commit;
 
-    create or alter user ozzy_osbourne password '123' 
+    create or alter user ozzy_osbourne password '123'
     grant admin role -- this is mandatory because it gives him admin role in Security DB
     ;
     revoke all on all from ozzy_osbourne;
@@ -60,7 +60,7 @@ test_script_1 = """
     commit;
 
     -- Users are stored in Security DB,  *not* in "this" database!
-    -- So, following statement will pass only if 'ozzy_osbourne' has been granted by 'admin role' 
+    -- So, following statement will pass only if 'ozzy_osbourne' has been granted by 'admin role'
     -- in his own 'create user' phase:
     create or alter user bon_scott password '456' revoke admin role;
     commit;
@@ -118,7 +118,7 @@ test_script_1 = """
     -- -no permission for DELETE access to TABLE PLG$VIEW_USERS
     drop user ozzy_osbourne;
     commit;
-    
+
     select 'step-7' msg, v.* from v_users v;
     commit;
 
@@ -148,123 +148,128 @@ expected_stdout_1 = """
     WHATS_MY_ROLE                   NONE
     NON_SYSDBA_USER_NAME            <null>
     NON_SYSDBA_HAS_ADMIN_ROLE       <null>
-    
-    
+
+
     Records affected: 1
-    
+
     MSG                             step-1
     WHO_AM_I                        SYSDBA
     WHATS_MY_ROLE                   NONE
-    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE                                                                                
+    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
     NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-    
+
     Records affected: 1
-    
-    
+
+
     MSG                             step-2
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE                                                                                
+    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
     NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-    
+
     MSG                             step-2
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            BON_SCOTT                                                                                    
+    NON_SYSDBA_USER_NAME            BON_SCOTT
     NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-    
-    
+
+
     Records affected: 2
-    
+
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    
+    GRANT CREATE DATABASE TO USER TMP$C4648
+
     MSG                             step-3
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE                                                                                
+    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
     NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-    
+
     MSG                             step-3
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            BON_SCOTT                                                                                    
+    NON_SYSDBA_USER_NAME            BON_SCOTT
     NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-    
-    
+
+
     Records affected: 2
-    
+
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO BON_SCOTT GRANTED BY OZZY_OSBOURNE
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    
+    GRANT CREATE DATABASE TO USER TMP$C4648
+
     MSG                             step-4
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE                                                                                
+    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
     NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-    
+
     MSG                             step-4
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            BON_SCOTT                                                                                    
+    NON_SYSDBA_USER_NAME            BON_SCOTT
     NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-    
-    
+
+
     Records affected: 2
-    
+
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    
+    GRANT CREATE DATABASE TO USER TMP$C4648
+
     MSG                             step-5
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE                                                                                
+    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
     NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-    
-    
+
+
     Records affected: 1
-    
+
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    
+    GRANT CREATE DATABASE TO USER TMP$C4648
+
     MSG                             step-6
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE                                                                                
+    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
     NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-    
-    
+
+
     Records affected: 1
-    
+
     MSG                             step-7
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE                                                                                
+    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
     NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-    
-    
+
+
     Records affected: 1
-    
+
     MSG                             step-8
     WHO_AM_I                        OZZY_OSBOURNE
     WHATS_MY_ROLE                   RDB$ADMIN
-    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE                                                                                
+    NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
     NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-    
-    
+
+
     Records affected: 1
-    
+
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    
+    GRANT CREATE DATABASE TO USER TMP$C4648
+
     MSG                             final
     WHO_AM_I                        SYSDBA
     WHATS_MY_ROLE                   NONE
     NON_SYSDBA_USER_NAME            <null>
     NON_SYSDBA_HAS_ADMIN_ROLE       <null>
-    
-    
+
+
     Records affected: 1
   """
 expected_stderr_1 = """

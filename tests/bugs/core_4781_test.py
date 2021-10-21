@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4781
 # title:        Maximum string length (32765 bytes) is not validated
-# decription:   
+# decription:
 # tracker_id:   CORE-4781
 # min_versions: ['3.0']
 # versions:     3.0
@@ -21,7 +21,7 @@ init_script_1 = """"""
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    recreate table test(bf blob); 
+    recreate table test(bf blob);
     commit;
 
     -- At least since 31948 following **TWO** INSERT statements work OK.
@@ -700,10 +700,10 @@ ldlkdw89dw89d2kssdjkcsuic3892343kbmvasjhcvsdyucg872348234ejwehsj#'
 
     set blob all;
     set list on;
-    select 
-        bf is null bf_is_null, 
-        octet_length(bf), 
-        char_length(bf) 
+    select
+        bf is null bf_is_null,
+        octet_length(bf),
+        char_length(bf)
     from test;
   """
 
@@ -720,6 +720,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

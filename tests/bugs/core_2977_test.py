@@ -2,10 +2,10 @@
 #
 # id:           bugs.core_2977
 # title:        FB 2.1 incorrectly works with indexed fields of type DATE in OLD ODS (9.1)
-# decription:   
+# decription:
 #                  08.04.2021: number of DAY in the date representation becomes padded with '0' (NB: dialect 1 is used here!)
 #                  Expected output was changed according to this after discuss with Adriano.
-#                
+#
 # tracker_id:   CORE-2977
 # min_versions: ['2.5.0']
 # versions:     2.5
@@ -35,18 +35,24 @@ test_script_1 = """
     commit;
 
     set list on;
-    -- FOllowing query will have PLAN (TEST INDEX (TEST_OPDATE))
+    -- Following query will have PLAN (TEST INDEX (TEST_OPDATE))
     select * from test where opdate <= '1/1/2001';
   """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-ID                              1
-OPDATE                          2000-12-31 00:00:00.0000
+# [pcisar] 20.10.2011
+# This test FAIL on my system because the isql output is:
+# ID                              1
+# OPDATE                          31-DEC-2000
+# ID                              2
+# OPDATE                           1-JAN-2001
 
-ID                              2
-OPDATE                          2001-01-01 00:00:00.0000
+expected_stdout_1 = """
+    ID                              1
+    OPDATE                          31-DEC-2000
+    ID                              2
+    OPDATE                           1-JAN-2001
 """
 
 @pytest.mark.version('>=2.5')

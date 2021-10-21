@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3735
 # title:        Unprivileged user can delete from RDB$DATABASE, RDB$COLLATIONS, RDB$CHARACTER_SETS
-# decription:   
+# decription:
 # tracker_id:   CORE-3735
 # min_versions: ['3.0']
 # versions:     3.0
@@ -27,19 +27,19 @@ test_script_1 = """
     commit;
     revoke all on all from tmp$c3735;
     commit;
-    
+
     connect '$(DSN)' user tmp$c3735 password '123';
-    
+
     --show version;
-    
+
     set list on;
     set blob all;
     select current_user from rdb$database;
     show grants;
     set count on;
-    
+
     --set echo on;
-    
+
     insert into rdb$character_sets(
         rdb$character_set_name
         ,rdb$form_of_use
@@ -60,12 +60,12 @@ test_script_1 = """
         null,
         null,
         1
-    ) returning 
-        rdb$character_set_name, 
-        rdb$character_set_id, 
+    ) returning
+        rdb$character_set_name,
+        rdb$character_set_id,
         rdb$default_collate_name
     ;
-    
+
     insert into rdb$collations(
         rdb$collation_name
         ,rdb$collation_id
@@ -86,13 +86,13 @@ test_script_1 = """
         ,null
         ,null
         ,null
-    ) returning 
+    ) returning
         rdb$collation_name
         ,rdb$collation_id
         ,rdb$character_set_id
     ;
-    
-    
+
+
     insert into rdb$database(
         rdb$description
         ,rdb$relation_id
@@ -109,37 +109,37 @@ test_script_1 = """
         ,rdb$security_class
         ,rdb$character_set_name
     ;
-    
-    
-    update rdb$collations set rdb$description = null rows 1 
-    returning 
+
+
+    update rdb$collations set rdb$description = null rows 1
+    returning
         rdb$collation_id
     ;
-    
-    update rdb$character_sets set rdb$description = null rows 1 
-    returning 
+
+    update rdb$character_sets set rdb$description = null rows 1
+    returning
         rdb$character_set_id
     ;
-    
+
     update rdb$database set rdb$character_set_name = 'ISO_HA_HA'
-    returning 
+    returning
         rdb$relation_id
     ;
-    
+
     delete from rdb$collations order by rdb$collation_id desc rows 1
-    returning 
+    returning
         rdb$collation_name
         ,rdb$collation_id
         ,rdb$character_set_id
     ;
-    
-    delete from rdb$character_sets order by rdb$character_set_id desc rows 1 
-    returning 
-        rdb$character_set_name, 
-        rdb$character_set_id, 
+
+    delete from rdb$character_sets order by rdb$character_set_id desc rows 1
+    returning
+        rdb$character_set_name,
+        rdb$character_set_id,
         rdb$default_collate_name
     ;
-    
+
     delete from rdb$database order by rdb$relation_id desc rows 1
     returning
         rdb$description
@@ -147,9 +147,9 @@ test_script_1 = """
         ,rdb$security_class
         ,rdb$character_set_name
     ;
-    
+
     commit;
-    
+
     connect '$(DSN)' user sysdba password 'masterkey';
     drop user tmp$c3735;
     commit;
@@ -159,6 +159,9 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     USER                            TMP$C3735
+
+/* Grant permissions for this database */
+GRANT CREATE DATABASE TO USER TMP$C4648
 """
 
 expected_stderr_1 = """

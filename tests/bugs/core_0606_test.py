@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0606
 # title:         Tricky role defeats basic SQL security
-# decription:   
+# decription:
 #                   CHecked on:
 #                       4.0.0.1635 SS: 1.482s.
 #                       4.0.0.1633 CS: 1.954s.
@@ -10,7 +10,7 @@
 #                       3.0.5.33178 CS: 1.265s.
 #                       2.5.9.27119 SS: 0.297s.
 #                       2.5.9.27146 SC: 0.306s.
-#                
+#
 # tracker_id:   CORE-0606
 # min_versions: ['2.5']
 # versions:     2.5.6
@@ -64,12 +64,12 @@ test_script_1 = """
 
     show grants;
     commit;
-    
+
     set list on;
     set term ^;
     execute block returns(who_am_i varchar(31), i_m_playing_role varchar(31)) as
     begin
-      for 
+      for
          execute statement 'select current_user, current_role from rdb$database'
          on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
          as user 'cvc' password 'pw' role '"FOR CVC"'
@@ -78,10 +78,10 @@ test_script_1 = """
          suspend;
     end
     ^
-    
+
     execute block returns(data int) as
     begin
-      for 
+      for
          execute statement 'select data from "t t"'
          on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
          as user 'cvc' password 'pw' role '"FOR CVC"'
@@ -89,7 +89,7 @@ test_script_1 = """
       do
          suspend;
     end
-    ^ 
+    ^
     set term ;^
     commit;
 
@@ -106,7 +106,7 @@ test_script_1 = """
     -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
-    commit;    
+    commit;
 
     drop user cvc;
     commit;

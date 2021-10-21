@@ -2,10 +2,10 @@
 #
 # id:           bugs.core_5341
 # title:        User collate doesn't work with blobs
-# decription:   
+# decription:
 #                  Reproduced bug on 3.0.1.32594.
 #                  All fine on WI-V3.0.1.32596, WI-T4.0.0.366.
-#                
+#
 # tracker_id:   CORE-5341
 # min_versions: ['3.0.1']
 # versions:     3.0.1
@@ -45,7 +45,7 @@ test_script_1 = """
       union all
       select 'UPDATE' from rdb$database
     )
-    select * from a 
+    select * from a
     where blob_id collate PXW_CYRL_CI_AI like '%update%';
   """
 
@@ -59,6 +59,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0.1')
 def test_1(act_1: Action):
+    act_1.charset = 'WIN1251'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

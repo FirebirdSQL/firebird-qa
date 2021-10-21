@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3047
 # title:        Wrong logic is used to resolve EXECUTE BLOCK parameters collations
-# decription:   
+# decription:
 # tracker_id:   CORE-3047
 # min_versions: ['3.0']
 # versions:     3.0
@@ -27,10 +27,12 @@ test_script_1 = """
     -- -SQL error code = -204
     -- -Data type unknown
     -- -COLLATION WIN_PTBR for CHARACTER SET UTF8 is not defined
-    -- (See ticket issue: "WIN_PTBR is tried to be resolved agains database charset instead of client charset: incorrect") 
+    -- (See ticket issue: "WIN_PTBR is tried to be resolved agains database charset instead of client charset: incorrect")
+    -- [pcisar] 20.10.2021
+    -- It fails as well in 3.0.7 on Linux (opensuse tumbleweed)
     -- In 3.0.0.31827 (WI- and LI-) works fine:
     set term ^;
-    execute block returns (c varchar(10) collate win_ptbr) as 
+    execute block returns (c varchar(10) collate win_ptbr) as
     begin
     end
     ^

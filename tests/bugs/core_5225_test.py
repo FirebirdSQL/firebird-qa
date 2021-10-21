@@ -2,22 +2,22 @@
 #
 # id:           bugs.core_5225
 # title:        Authentication end with first plugin that has the user but auth fails; should continue with next plugin
-# decription:   
+# decription:
 #                   We create two users with the same name, 1st using plugin Srp, 2nd - via Legacy.
 #                   Then we try to establish subsequent attachments via ES/EDS for each of them.
 #                   No error should occur.
-#               
+#
 #                   Confirmed exception on 3.0.0 for plugin that was specified as SECOND in firebird.conf, got:
 #                       Statement failed, SQLSTATE = 42000
 #                       Execute statement error at attach :
 #                       335544472 : Your user name and password are not defined <...>
-#               
+#
 #                   Works fine on:
 #                     fb30Cs, build 3.0.4.32947: OK, 2.907s.
 #                     FB30SS, build 3.0.4.32963: OK, 1.140s.
 #                     FB40CS, build 4.0.0.955: OK, 3.531s.
 #                     FB40SS, build 4.0.0.967: OK, 1.312s.
-#                
+#
 # tracker_id:   CORE-5225
 # min_versions: ['3.0.1']
 # versions:     3.0.1
@@ -41,7 +41,7 @@ test_script_1 = """
     create or alter user tmp$c5225 password 'srp' using plugin Srp;
     create or alter user tmp$c5225 password 'leg' using plugin Legacy_UserManager;
     commit;
- 
+
     set term ^;
     execute block returns(whoami_leg varchar(31)) as
     begin

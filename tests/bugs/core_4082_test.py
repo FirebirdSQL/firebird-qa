@@ -2,9 +2,9 @@
 #
 # id:           bugs.core_4082
 # title:        Wrong value of expected length in the string right truncation error
-# decription:   
+# decription:
 #                   NB. Ticket title: Wrong error message (should point out the proper expected length)
-#                
+#
 # tracker_id:   CORE-4082
 # min_versions: ['3.0']
 # versions:     3.0
@@ -44,6 +44,7 @@ expected_stderr_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr

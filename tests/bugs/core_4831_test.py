@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4831
 # title:        Revoke all on all from role <R> -- failed with "SQL role <R> does not exist in security database"
-# decription:   
+# decription:
 # tracker_id:   CORE-4831
 # min_versions: ['3.0']
 # versions:     3.0
@@ -34,13 +34,14 @@ test_script_1 = """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stderr_1 = """
-    There is no privilege granted in this database
-  """
+expected_stdout_1 = """
+/* Grant permissions for this database */
+GRANT CREATE DATABASE TO USER TMP$C4648
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
+    act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr
 

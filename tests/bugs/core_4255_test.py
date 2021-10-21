@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4255
 # title:        Parametrized queries using RDB$DB_KEY do not work
-# decription:   
+# decription:
 # tracker_id:   CORE-4255
 # min_versions: ['3.0']
 # versions:     3.0
@@ -33,7 +33,7 @@ test_script_1 = """
     insert into dbkeytest (id) values (3);
     insert into dbkeytest (id) values (4);
     commit;
-    
+
     -- actual test:
     set term ^;
     execute block
@@ -49,11 +49,11 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
-    select * from dbkeytest; 
+
+    select * from dbkeytest;
 
     -- one else test (suggested by Dmitry) in this ticket:
-    select 1 x from rdb$database where rdb$db_key = cast((select rdb$db_key from rdb$database) as varchar(8)); 
+    select 1 x from rdb$database where rdb$db_key = cast((select rdb$db_key from rdb$database) as varchar(8));
   """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
@@ -73,6 +73,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

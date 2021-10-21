@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4379
 # title:        Poor performance of explicit cursors containing correlated subqueries in the select list
-# decription:   
+# decription:
 # tracker_id:   CORE-4379
 # min_versions: ['3.0']
 # versions:     3.0
@@ -31,29 +31,29 @@ db_1 = db_factory(from_backup='mon-stat-gathering-3_0.fbk', init=init_script_1)
 
 test_script_1 = """
     set list on;
-    
+
     execute procedure sp_truncate_stat;
     commit;
     execute procedure sp_gather_stat;
     commit;
-    
+
     set plan on;
-    update t a set f01 = (select f01 from t x where x.id>a.id order by id rows 1); 
+    update t a set f01 = (select f01 from t x where x.id>a.id order by id rows 1);
     set plan off;
     rollback;
-    
+
     execute procedure sp_gather_stat;
     commit;
-    
+
     select natural_reads, indexed_reads from v_agg_stat_tabs where table_name = upper('T');
-    
+
     --------------------------
-    
+
     execute procedure sp_truncate_stat;
     commit;
     execute procedure sp_gather_stat;
     commit;
-    
+
     set plan on;
     set term ^;
     execute block as
@@ -73,20 +73,20 @@ test_script_1 = """
     set term ;^
     set plan off;
     rollback;
-    
+
     execute procedure sp_gather_stat;
     commit;
-    
+
     -- On LI-T3.0.0.30981 (29-mar02014) it was 200029999  indexed reads here:
     select natural_reads, indexed_reads from v_agg_stat_tabs where table_name = upper('T');
 
     -----------------------------
-    
+
     execute procedure sp_truncate_stat;
     commit;
     execute procedure sp_gather_stat;
     commit;
-    
+
     set plan on;
     set term ^;
     execute block as
@@ -102,15 +102,15 @@ test_script_1 = """
         update t set f01 = :v_next_f01 where rdb$db_key = :v_key;
       end
       close c_cur;
-    end 
+    end
     ^
     set term ;^
     set plan off;
     rollback;
-    
+
     execute procedure sp_gather_stat;
     commit;
-    
+
     -- On LI-T3.0.0.30981 (29-mar02014) it was 200049999 indexed reads here:
     select natural_reads, indexed_reads from v_agg_stat_tabs where table_name = upper('T');
   """
@@ -139,6 +139,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

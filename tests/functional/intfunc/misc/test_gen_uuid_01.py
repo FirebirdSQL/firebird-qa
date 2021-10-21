@@ -3,7 +3,7 @@
 # id:           functional.intfunc.misc.gen_uuid_01
 # title:        test for GEN_UUID()
 # decription:     Returns a universal unique number.
-# tracker_id:   
+# tracker_id:
 # min_versions: []
 # versions:     3.0
 # qmid:         functional.intfunc.misc.gen_uuid_01
@@ -61,6 +61,7 @@ expected_stdout_1 = """                COUNT
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

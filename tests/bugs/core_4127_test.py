@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4127
 # title:        Server crashes instead of reporting the error "key size exceeds implementation restriction"
-# decription:   
+# decription:
 # tracker_id:   CORE-4127
 # min_versions: ['2.5.3']
 # versions:     3.0
@@ -28,7 +28,7 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     set list on;
-    select * from tab1 
+    select * from tab1
     where col1 = 1 and col2 = rpad('a', 32765)
     union all
     -- This part of query will NOT raise
@@ -36,7 +36,7 @@ test_script_1 = """
     -- arithmetic exception, numeric overflow, or string truncation
     -- -Implementation limit exceeded
     -- since WI-V3.0.0.31981
-    select * from tab1 
+    select * from tab1
     where col1 = 1 and col2 = rpad('a', 32766);
   """
 
@@ -51,6 +51,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

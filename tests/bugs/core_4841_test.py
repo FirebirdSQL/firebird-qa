@@ -2,11 +2,11 @@
 #
 # id:           bugs.core_4841
 # title:        Make message about missing password being always displayed as reply on attempt to issue CREATE new login without PASSWORD clause
-# decription:   
-#                   Checked on 
+# decription:
+#                   Checked on
 #                       4.0.0.2271 SS; 4.0.0.2265 SS; 4.0.0.2267 CS.
 #                       3.0.8.33392 SS; 3.0.8.33390 SC; 3.0.7.33388 CS.
-#                 
+#
 # tracker_id:   CORE-4841
 # min_versions: ['3.0.7']
 # versions:     3.0.7
@@ -39,39 +39,31 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stderr_1 = """
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE USER U01 failed
-    -Password must be specified when creating user
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE USER U01 failed
-    -Password must be specified when creating user
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE USER U01 failed
-    -Password must be specified when creating user
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE USER U01 failed
-    -Password must be specified when creating user
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE USER U01 failed
-    -Password must be specified when creating user
-
-    Statement failed, SQLSTATE = HY000
-    Password must be specified when creating user
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE USER PASSWORD failed
-    -Password must be specified when creating user
-  """
+Statement failed, SQLSTATE = 42000
+unsuccessful metadata update
+-CREATE USER U01 failed
+-Password must be specified when creating user
+Statement failed, SQLSTATE = 42000
+unsuccessful metadata update
+-CREATE USER U01 failed
+-Password must be specified when creating user
+Statement failed, SQLSTATE = 42000
+unsuccessful metadata update
+-CREATE USER U01 failed
+-Password must be specified when creating user
+Statement failed, SQLSTATE = 42000
+unsuccessful metadata update
+-CREATE USER U01 failed
+-Password must be specified when creating user
+Statement failed, SQLSTATE = 42000
+unsuccessful metadata update
+-CREATE USER U01 failed
+-Password must be specified when creating user
+Statement failed, SQLSTATE = 42000
+unsuccessful metadata update
+-CREATE USER PASSWORD failed
+-Password must be specified when creating user
+"""
 
 @pytest.mark.version('>=3.0.7')
 def test_1(act_1: Action):

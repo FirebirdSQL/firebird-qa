@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4806
 # title:        Regression: generators can be seen/modified by unprivileged users
-# decription:   
+# decription:
 #                   We create sequence ('g') and three users and one role.
 #                   First user ('big_brother') is granted to use generator directly.
 #                   Second user ('bill_junior') is gratned to use generator via ROLE ('stockmgr').
@@ -14,7 +14,7 @@
 #                   Also, we do additional check for second user: try to connect WITHOUT specifying role
 #                   and see/change sequence. Error must be in this case (SQLSTATE = 28000).
 #                   Third user must NOT see neither value of generator nor to change it (SQLSTATE = 28000).
-#               
+#
 #                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
 #                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
 #                   statement 'CREATE SEQUENCE <G>' will create generator with current value LESS FOR 1 then it was before.
@@ -22,13 +22,13 @@
 #                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
 #                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#               
+#
 #                   Because of this, it was decided to filter out concrete values that are produced in 'SHOW SEQUENCE' command.
-#               
+#
 #                   Checked on:
 #                       4.0.0.2164
 #                       3.0.7.33356
-#                
+#
 # tracker_id:   CORE-4806
 # min_versions: ['3.0']
 # versions:     3.0
@@ -58,26 +58,26 @@ test_script_1 = """
     end
     ^ set term ;^
     commit;
-    
+
     create or alter user Maverick password '123';
     create or alter user Big_Brother password '456';
     create or alter user Bill_Junior password '789';
     create role stockmgr;
     commit;
-    
+
     revoke all on all from Maverick;
     revoke all on all from Big_Brother;
     revoke all on all from Bill_Junior;
     --revoke all on all from stockmgr; -- COMMENTED TEMPLY, error "Revoke all on all from role <R> -- failed with "SQL role <R> does not exist in security database"", see core-4831
     revoke all on all from public;
     commit;
-    
+
     grant usage on sequence g to big_brother;
     grant usage on sequence g to role stockmgr;
     grant stockmgr to Bill_Junior;
     commit;
     show grants;
-    
+
     set list on;
 
     connect '$(DSN)' user 'BIG_BROTHER' password '456';
@@ -94,14 +94,14 @@ test_script_1 = """
 
     connect '$(DSN)' user 'BILL_JUNIOR' password '789';
     select current_user, current_role from rdb$database;
-    
+
     -- 'show sequ' should produce error:
     --    Statement failed, SQLSTATE = 28000
     --    no permission for USAGE access to GENERATOR G
     --    There is no generator G in this database
     -- (for user 'Bill_Junior' who connects w/o ROLE and thus has NO rights to see that sequence)
     show sequ g;
-    
+
     -- 'select gen_id(...)' should produce error:
     --    Statement failed, SQLSTATE = 28000
     --    no permission for USAGE access to GENERATOR G
@@ -142,6 +142,7 @@ expected_stdout_1 = """
     GRANT STOCKMGR TO BILL_JUNIOR
     GRANT USAGE ON SEQUENCE G TO USER BIG_BROTHER
     GRANT USAGE ON SEQUENCE G TO ROLE STOCKMGR
+    GRANT CREATE DATABASE TO USER TMP$C4648
 
     USER                            BIG_BROTHER
     ROLE                            NONE
@@ -166,7 +167,7 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 28000
     no permission for USAGE access to GENERATOR G
-    
+
     Statement failed, SQLSTATE = 28000
     no permission for USAGE access to GENERATOR G
     There is no generator G in this database

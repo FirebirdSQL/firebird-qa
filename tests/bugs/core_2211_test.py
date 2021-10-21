@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_2211
 # title:        Offset value for SUBSTRING from BLOB more than 32767 makes exception
-# decription:   
+# decription:
 # tracker_id:   CORE-2211
 # min_versions: ['2.5.0']
 # versions:     2.5
@@ -21,14 +21,23 @@ init_script_1 = """"""
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
+    -- [pcisar] 20.10.2021
+    -- This script reports error:
+    -- Statement failed, SQLSTATE = 54000
+    -- arithmetic exception, numeric overflow, or string truncation
+    -- -Implementation limit exceeded
+    -- -At block line: 7, col: 9
+    -- Statement failed, SQLSTATE = 22011
+    -- Invalid offset parameter -1 to SUBSTRING. Only positive integers are allowed.
+
     recreate table test(b blob);
     commit;
     insert into test values('');
     commit;
-    
+
     set list on;
     set blob all;
-    
+
     set term ^;
     execute block as
       declare bsize int = 1000000;
@@ -59,6 +68,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

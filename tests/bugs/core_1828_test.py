@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_1828
 # title:        Error with ABS in dialect 1
-# decription:   
+# decription:
 # tracker_id:   CORE-1828
 # min_versions: ['2.5']
 # versions:     2.5.0
@@ -32,12 +32,12 @@ test_script_1 = """SELECT ABS(MYNUM) FROM TEST;"""
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-                  ABS 
-===================== 
-                    1 
-                    1 
-           2147483647 
-           2147483648 
+                    ABS
+=======================
+      1.000000000000000
+      1.000000000000000
+      2147483647.000000
+      2147483648.000000
 """
 
 @pytest.mark.version('>=2.5.0')

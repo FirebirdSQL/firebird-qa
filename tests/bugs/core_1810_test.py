@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_1810
 # title:        Usernames with '.' character
-# decription:   
+# decription:
 # tracker_id:   CORE-1810
 # min_versions: ['2.1.7']
 # versions:     2.5
@@ -32,7 +32,7 @@ test_script_1 = """
     create role "#.#";
     commit;
     create user "$.$" password '123';
-    commit;              
+    commit;
 
     revoke all on all from "$.$";
     grant "#.#" to "$.$";
@@ -42,11 +42,11 @@ test_script_1 = """
     connect '$(DSN)' user "$.$" password '123' role "#.#";
     commit;
 
-    select 
-        current_user, 
-        current_role, 
+    select
+        current_user,
+        current_role,
         iif( upper(a.mon$remote_protocol) starting with upper('TCP'), 'YES', 'NO!') is_remote_connection
-    from rdb$database m 
+    from rdb$database m
     join mon$attachments a on a.mon$attachment_id = current_connection
     ;
 
@@ -65,16 +65,23 @@ expected_stdout_1 = """
     USER                            $.$
     ROLE                            #.#
     IS_REMOTE_CONNECTION            YES
-    
+
     ID                              1
     X                               100
     Y                               200
     Z                               300
   """
 
+expected_stderr_1 = """
+    Statement failed, SQLSTATE = HY000
+    record not found for user: $.$
+    """
+
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
+    act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_expected_stderr == act_1.clean_stderr
 

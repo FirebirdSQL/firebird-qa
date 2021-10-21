@@ -2,11 +2,11 @@
 #
 # id:           bugs.core_6340
 # title:        Alternate quoting does not work on some particular cases
-# decription:   
+# decription:
 #                   Checked on build 4.0.0.2073 with timestamp 24.06.2020 13:40 (intermediate).
 #                   NOTE: test tries several cases + checks that string with maximum limit of length (65533) can be properly parsed.
 #                   04.07.2020: changed min_version to 3.0.6 - checked on 3.0.6.33332.
-#                
+#
 # tracker_id:   CORE-6340
 # min_versions: ['3.0.6']
 # versions:     3.0.6
@@ -30,8 +30,8 @@ test_script_1 = """
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 set list on;
 
-select 'point-0.01' as msg, q'{{}' as result from rdb$database; 
-select 'point-0.02' as msg, q'{}}' as result from rdb$database; 
+select 'point-0.01' as msg, q'{{}' as result from rdb$database;
+select 'point-0.02' as msg, q'{}}' as result from rdb$database;
 select 'point-0.03' as msg, q'!'!' as result from rdb$database;
 
 
@@ -45,7 +45,7 @@ select 'point-1.06' as msg, q'!
 !' as result from rdb$database;
 
 select 'point-1.07' as msg, q'!!' as result from rdb$database;
-                  
+
 select 'point-1.08' as msg, q'!!!' as result from rdb$database;
 
 select 'point-1.09' as msg, q'!
@@ -185,7 +185,7 @@ select 'point-5.06' as msg, q'q
 '
 q' as result from rdb$database; -- expected: ' followed by [CR/]LF
 
-select 'point-5.07' as msg, q'qq' as result from rdb$database; -- expected: empty string 
+select 'point-5.07' as msg, q'qq' as result from rdb$database; -- expected: empty string
 
 select 'point-5.08' as msg, q'qqq' as result from rdb$database; -- expected: q
 
@@ -224,7 +224,7 @@ RESULT                          '
 
 
 MSG                             point-1.03
-RESULT                          ' 
+RESULT                          '
 
 
 
@@ -239,14 +239,14 @@ RESULT                          '''
 
 
 MSG                             point-1.06
-RESULT                          
+RESULT
 '
 
 
 
 
 MSG                             point-1.07
-RESULT                          
+RESULT
 
 
 
@@ -256,7 +256,7 @@ RESULT                          !
 
 
 MSG                             point-1.09
-RESULT                          
+RESULT
 !
 
 
@@ -293,7 +293,7 @@ RESULT                          ''''''''''''''''''''''''''''''''''''''''''''''''
 
 
 MSG                             point-2.01
-RESULTS                         ''' 
+RESULTS                         '''
 
 
 
@@ -338,7 +338,7 @@ RESULT                          '
 
 
 MSG                             point-3.03
-RESULT                          ' 
+RESULT                          '
 
 
 
@@ -353,14 +353,14 @@ RESULT                          '''
 
 
 MSG                             point-3.06
-RESULT                          
+RESULT
 '
 
 
 
 
 MSG                             point-3.07
-RESULT                          
+RESULT
 
 
 
@@ -370,7 +370,7 @@ RESULT                          !
 
 
 MSG                             point-3.09
-RESULT                          
+RESULT
 !
 
 
@@ -403,14 +403,14 @@ RESULT                          !
 
 
 MSG                             point-3.15
-RESULT                          
+RESULT
 !
 '
 
 
 
 MSG                             point-3.16
-RESULT                          
+RESULT
 '!
 ''
 '!
@@ -429,7 +429,7 @@ RESULT                          '
 
 
 MSG                             point-4.03
-RESULT                          ' 
+RESULT                          '
 
 
 
@@ -444,14 +444,14 @@ RESULT                          '''
 
 
 MSG                             point-4.06
-RESULT                          
+RESULT
 '
 
 
 
 
 MSG                             point-4.07
-RESULT                          
+RESULT
 
 
 
@@ -461,7 +461,7 @@ RESULT                          |
 
 
 MSG                             point-4.09
-RESULT                          
+RESULT
 |
 
 
@@ -493,14 +493,14 @@ RESULT                          ||
 
 
 MSG                             point-4.15
-RESULT                          
+RESULT
 |
 '
 
 
 
 MSG                             point-4.16
-RESULT                          
+RESULT
 '|
 ''
 '|
@@ -559,14 +559,14 @@ RESULT                          '''
 
 
 MSG                             point-5.06
-RESULT                          
+RESULT
 '
 
 
 
 
 MSG                             point-5.07
-RESULT                          
+RESULT
 
 
 
@@ -586,6 +586,7 @@ RESULT                           'q '
 
 @pytest.mark.version('>=3.0.6')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

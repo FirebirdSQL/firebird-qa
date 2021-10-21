@@ -2,10 +2,10 @@
 #
 # id:           bugs.core_3683
 # title:        Wrong results if the recursive query contains an embedded GROUP BY clause
-# decription:   
+# decription:
 #                   Confirmed bug on: 2.5.1.26351
 #                   Works OK on: 2.5.2.26540; 2.5.9.27103; 3.0.3.32861; 3.0.4.32912; 4.0.0.890.
-#                
+#
 # tracker_id:   CORE-3683
 # min_versions: ['2.5.2']
 # versions:     2.5.2
@@ -80,7 +80,7 @@ test_script_1 = """
     insert into rdeps values( 'RYAZAN','MUROM', 5, 5, 61);
     insert into rdeps values( 'RYAZAN','MUROM', 5, 5, 62);
 
-    commit;    
+    commit;
 
     set count on;
 
@@ -116,7 +116,7 @@ test_script_1 = """
     set count off;
 
     --############################################# FROM CORE_3698: ######################################
-    
+
     recreate table contacts (
         id        integer not null,
         age       integer,
@@ -242,6 +242,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=2.5.2')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

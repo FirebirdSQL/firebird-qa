@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3245
 # title:        SUBSTRING on long blobs truncates result to 32767 if third argument not present
-# decription:   
+# decription:
 # tracker_id:   CORE-3245
 # min_versions: ['2.1.5']
 # versions:     2.1.5
@@ -34,7 +34,7 @@ test_script_1 = """
                     substring(s from 8000)
         from q
     )
-    select 
+    select
       char_length(s) as "char_length(s)"
       ,right(s, 3) as "blob_right(s,3)"
       ,char_length(sub_for) as "char_length(sub_for)"
@@ -58,6 +58,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=2.1.5')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

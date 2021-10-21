@@ -3,7 +3,7 @@
 # id:           functional.tabloid.arithmetic_numexpr_eval_dialect_1
 # title:        Check result of integer division on dialect 1.
 # decription:   Was fixed in 2.1, see: sql.ru/forum/actualutils.aspx?action=gotomsg&tid=708324&msg=7865013
-# tracker_id:   
+# tracker_id:
 # min_versions: ['2.5.0']
 # versions:     2.5
 # qmid:         None
@@ -27,7 +27,7 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    D                               -3
+    D                               -3.000000000000000
   """
 
 @pytest.mark.version('>=2.5')

@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4826
 # title:        Make ISQL display character set when sqlda_display is on
-# decription:   
+# decription:
 # tracker_id:   CORE-4826
 # min_versions: ['3.0']
 # versions:     3.0
@@ -33,7 +33,7 @@ test_script_1 = """
       tf2 time,
       tf3 timestamp,
       boo boolean,
-      tx1 char character set utf8, 
+      tx1 char character set utf8,
       tx2 varchar(10) character set iso8859_1,
       tx3 nchar,
       -- doesn`t compile: tx4 nvarchar(10),
@@ -42,7 +42,7 @@ test_script_1 = """
       tb2 blob sub_type 0
     );
     commit;
-    
+
     set sqlda_display on;
     select * from test1;
     commit;
@@ -71,6 +71,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

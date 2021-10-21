@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3100
 # title:        Wait mode and lock timeout of external transaction of EXECUTE STATEMENT not matched to corresponding parameters of local transaction
-# decription:   
+# decription:
 #                   Checked on: 4.0.0.1635 SS, 4.0.0.1633 CS: OK, 2.319s; 3.0.5.33180 SS, 3.0.5.33178 CS: OK, 2.215s.
 # tracker_id:   CORE-3100
 # min_versions: ['3.0']
@@ -20,7 +20,7 @@ substitutions_1 = [('Statement failed, SQLSTATE.*', ''), ('record not found for 
 init_script_1 = """
     create or alter procedure sp_add_trn_data (a_run_no smallint) as begin end;
     commit;
-    
+
     recreate table mon_trn(
         run_no         smallint,
         att_id         bigint,
@@ -39,7 +39,7 @@ init_script_1 = """
         usr            char(31) character set unicode_fss
     );
     commit;
-    
+
     set term ^;
     create or alter procedure sp_add_trn_data (a_run_no smallint) as
         declare v_dbname type of column mon$database.mon$database_name;
@@ -86,7 +86,7 @@ init_script_1 = """
             || ' from mon$transactions t join mon$attachments a using (mon$attachment_id)'
             || ' where mon$transaction_id = current_transaction'
             ;
-    
+
         --- 1 --- direct statement, sysdba
         insert into mon_trn(
              run_no
@@ -123,17 +123,17 @@ init_script_1 = """
             ,a.mon$user
         from mon$transactions t join mon$attachments a using (mon$attachment_id)
         where mon$transaction_id = current_transaction;
-    
+
         select 'localhost:' || d.mon$database_name
         from mon$database d
         into v_dbname;
-    
+
         --- 2 --- execute statement on EXTERNAL datasource, with new attachment because of user = tmp$c3100a
         execute statement ( v_stt ) ( x:= :a_run_no )
         on external :v_dbname
         as user :v_usr1 password :v_pwd1
         ;
-    
+
         --- 3 --- execute statement on EXTERNAL datasource, AUTONOMOUS transaction, with new attachment because user = tmp$c3100b
         execute statement ( v_stt ) ( x:= :a_run_no )
         on external :v_dbname
@@ -144,7 +144,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-    
+
   """
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
@@ -156,7 +156,7 @@ test_script_1 = """
     commit;
     grant select,insert on mon_trn to tmp$c3100a;
     commit;
-    
+
     drop user tmp$c3100b;
     commit;
     create user tmp$c3100b password 'tmp$c3100b';
@@ -168,30 +168,30 @@ test_script_1 = """
     set transaction wait;
     execute procedure sp_add_trn_data(1);
     commit;
-    
+
     -- Check for 'NO WAIT':
     set transaction no wait;
     execute procedure sp_add_trn_data(2);
     commit;
-    
+
     -- Check for 'LOCK TIMEOUT' value:
     set transaction lock timeout 9;
     execute procedure sp_add_trn_data(3);
     commit;
-    
-    
+
+
     -- Check for ISOLATION level:
-    set transaction read committed no wait; 
+    set transaction read committed no wait;
     execute procedure sp_add_trn_data(4);
     commit;
-    
+
     -- DO NOT: as of 26.03.2015, flag NO_AUTO_UNDO should *NOT* be copied
     -- (commented after colsulting with Vlad)
     -- Check for NO AUTO UNDO:
     -- set transaction read committed no wait no auto undo;
     -- execute procedure sp_add_trn_data(5);
     -- commit;
-    
+
     set list on;
     select
         m.run_no
@@ -206,7 +206,7 @@ test_script_1 = """
     drop user tmp$c3100a;
     drop user tmp$c3100b;
     commit;
-    
+
     --                                    ||||||||||||||||||||||||||||
     -- ###################################|||  FB 4.0+, SS and SC  |||##############################
     --                                    ||||||||||||||||||||||||||||
@@ -230,26 +230,34 @@ expected_stdout_1 = """
     TRN_DISTINCT_COUNT              3
     WAIT_DISTINCT_COUNT             1
     ISOL_DISTINCT_COUNT             1
-    
+
     RUN_NO                          2
     TRN_DISTINCT_COUNT              3
     WAIT_DISTINCT_COUNT             1
     ISOL_DISTINCT_COUNT             1
-    
+
     RUN_NO                          3
     TRN_DISTINCT_COUNT              3
     WAIT_DISTINCT_COUNT             1
     ISOL_DISTINCT_COUNT             1
-    
+
     RUN_NO                          4
     TRN_DISTINCT_COUNT              3
     WAIT_DISTINCT_COUNT             1
     ISOL_DISTINCT_COUNT             1
   """
 
+expected_stderr_1 = """
+Statement failed, SQLSTATE = HY000
+record not found for user: TMP$C3100A
+Statement failed, SQLSTATE = HY000
+record not found for user: TMP$C3100B
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
+    act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

@@ -2,11 +2,11 @@
 #
 # id:           bugs.core_5246
 # title:        String truncation error while selecting from MON$ tables if some user-defined context variable exceeds 255 bytes in length
-# decription:   
-#                   More description see here: 
+# decription:
+#                   More description see here:
 #                   https://github.com/FirebirdSQL/firebird/commit/373c4599d3f2be06ea9d239a25e18248c8d38a64
 #                   See also: CORE-6248.
-#                 
+#
 # tracker_id:   CORE-5246
 # min_versions: ['3.0.1']
 # versions:     3.0.1
@@ -55,6 +55,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0.1')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

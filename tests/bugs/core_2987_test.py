@@ -2,13 +2,13 @@
 #
 # id:           bugs.core_2987
 # title:        Don't send full length of field over the wire when field is null
-# decription:   
+# decription:
 #                   Checked on: WI-V3.0.0.32484 (SS/SC/CS), LI-T4.0.0.138 (SS)
-#                 
+#
 # tracker_id:   CORE-2987
 # min_versions: ['3.0']
 # versions:     3.0
-# qmid:         
+# qmid:
 
 import pytest
 from firebird.qa import db_factory, isql_act, Action
@@ -23,7 +23,7 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    -- Measurement showed than on 3.0 (SS/SC/CS) transfer of NULLs is more than 5 (five) times 
+    -- Measurement showed than on 3.0 (SS/SC/CS) transfer of NULLs is more than 5 (five) times
     -- faster than text data with length = 32K. As of 2.5 (SC) than ration is about 1.7 ... 1.8.
     -- Test fills up two tables: one with text data and another with only nulls.
     -- Then we receive data from these tables via ES/EDS, evaluate elapsed time for both cases
@@ -45,7 +45,7 @@ test_script_1 = """
            || 'with recursive r as (select 0 i from rdb$database union all select r.i+1 from r where r.i<99) '
            || 'select rpad('''', 32760, uuid_to_char(gen_uuid()) ) from r r1,r r2 rows ' || c_added_rows
            on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
-           as user 'SYSDBA' password 'masterkey' 
+           as user 'SYSDBA' password 'masterkey'
            role 'R001' ------------------------------- this will create new attach #1 that will be used later!
         ;
         execute statement
@@ -53,7 +53,7 @@ test_script_1 = """
            || 'with recursive r as (select 0 i from rdb$database union all select r.i+1 from r where r.i<99) '
            || 'select null from r r1,r r2 rows ' || c_added_rows
            on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
-           as user 'SYSDBA' password 'masterkey' 
+           as user 'SYSDBA' password 'masterkey'
            role 'R002' ------------------------------- this will create new attach #2 that will be used later!
         ;
     end
@@ -70,36 +70,36 @@ test_script_1 = """
         for
             execute statement
                'select f01 from test1' on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
-               as user 'SYSDBA' password 'masterkey' 
+               as user 'SYSDBA' password 'masterkey'
                role 'R001' --------------- here we use EXISTING attach #1 (from internal FB connection pool)
                into v_f01
         do begin end
-    
+
         t1='now';
-    
+
         for
             execute statement
                'select f01 from test2' on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
-               as user 'SYSDBA' password 'masterkey' 
+               as user 'SYSDBA' password 'masterkey'
                role 'R002'  --------------- here we use EXISTING attach #2 (from internal FB connection pool)
                into v_f01
         do begin end
-    
+
         t2='now';
-    
+
         sel_data_ms = datediff(millisecond from t0 to t1);
         sel_null_ms = datediff(millisecond from t1 to t2);
         ratio = coalesce( sel_data_ms * 1.000 / nullif(sel_null_ms,0), 9999999.99);
-    
+
         suspend;
-    
+
     end
     ^
     set term ;^
     --commit;
-    
+
     set list on;
-    
+
     --set stat on;
     -- must be ~15 sec
     execute procedure sp_fill; -- will add data into GTT test1 (in attach #1) and GTT test2 (in attach #2)
@@ -148,11 +148,26 @@ test_script_1 = """
     -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
-    commit;    
+    commit;
 
   """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+
+# [pcisar] 20.10.2021
+# This test fails on my system due to (unexpected) error output from test script:
+# Statement failed, SQLSTATE = 42000
+# Execute statement error at isc_dsql_execute2 :
+# 335544321 : arithmetic exception, numeric overflow, or string truncation
+# 335544381 : Implementation limit exceeded
+# Statement : insert into test1 with recursive r as (select 0 i from rdb$database union all select r.i+1 from r where r.i<99) select rpad('', 32760, uuid_to_char(gen_uuid()) ) from r r1,r r2 rows 2000
+# Data source : Firebird::localhost:/tmp/pytest-of-pcisar/pytest-7/test_1514/test.fdb
+# -At procedure 'SP_FILL' line: 4, col: 9
+#
+# Also, the stdout from test script differs:
+# MEASURE_RESULT                  WINS >= 3.8x
+# MEASURE_RESULT                  LOOSES, 0.00x
+# MEASURE_RESULT                  LOOSES, 0.00x
 
 expected_stdout_1 = """
    MEASURE_RESULT                  WINS >= 3.8x
@@ -162,6 +177,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

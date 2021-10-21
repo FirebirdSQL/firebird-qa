@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3233
 # title:        LIKE, STARTING and CONTAINING fail if second operand >= 32K
-# decription:   
+# decription:
 # tracker_id:   CORE-3233
 # min_versions: ['2.1.5']
 # versions:     2.1.5
@@ -29,7 +29,7 @@ select 1 from blobz where zin like cast(cast('woord' as char(32767)) as blob sub
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:btestnew	mpugs.core_3233.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbtestnew\\tmp\\bugs.core_3233.fdb, User: SYSDBA
 SQL>
     CONSTANT
 ============
@@ -44,6 +44,7 @@ SQL>"""
 
 @pytest.mark.version('>=2.1.5')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
