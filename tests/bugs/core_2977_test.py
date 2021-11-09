@@ -17,7 +17,7 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 2.5
 # resources: None
 
-substitutions_1 = []
+substitutions_1 = [('01-JAN-', ' 1-JAN-')]
 
 init_script_1 = """"""
 
@@ -40,13 +40,6 @@ test_script_1 = """
   """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-# [pcisar] 20.10.2011
-# This test FAIL on my system because the isql output is:
-# ID                              1
-# OPDATE                          31-DEC-2000
-# ID                              2
-# OPDATE                           1-JAN-2001
 
 expected_stdout_1 = """
     ID                              1

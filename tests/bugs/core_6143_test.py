@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_6143
 # title:        Error 'Multiple maps found for ...' is raised in not appropriate case
-# decription:   
+# decription:
 #                   Confirmed bug on: 4.0.0.1535, 3.0.5.33152.
 #                   Checked on:
 #                        4.0.0.1614: OK, 2.740s.
@@ -13,7 +13,9 @@
 #                   as for trusted role and also for "usual" way (i.e. when used specifies 'ROLE ...' clause).
 #                   Discussion about this with Alex was in 23-sep-2019, and his solution not yet known.
 #                   For this reason it was decided to comment code that relates tgo ROLE mapping in this test.
-#                
+#
+#                   [pcisar] 3.11.2021 This test fails for 4.0, WHO_AM_I = TMP$C6143_FOO
+#
 # tracker_id:   CORE-6143
 # min_versions: ['3.0.5']
 # versions:     3.0.5
@@ -40,7 +42,7 @@ test_script_1 = """
     execute block as
     begin
         execute statement 'drop role tmp$r6143_boss';
-        when any do 
+        when any do
             begin
             end
     end
@@ -49,7 +51,7 @@ test_script_1 = """
     commit;
 
     create or alter view v_show_mapping as
-    select 
+    select
          a.rdb$map_name
         ,a.rdb$map_using
         ,a.rdb$map_plugin
@@ -57,8 +59,8 @@ test_script_1 = """
         ,a.rdb$map_from_type
         ,a.rdb$map_from
         ,a.rdb$map_to_type
-        ,a.rdb$map_to 
-    from rdb$database d 
+        ,a.rdb$map_to
+    from rdb$database d
     left join rdb$auth_mapping a on 1=1
     where rdb$map_from containing 'tmp$c6143' or rdb$map_from containing 'tmp$r6143'
     ;
@@ -88,13 +90,13 @@ test_script_1 = """
 
 
     connect '$(DSN)' user tmp$c6143_foo password '123' role tmp$r6143_boss;
-    select 
+    select
         'Connected OK when local mapping is duplicated.' as msg
         ,current_user as who_am_i     -- <<< TMP$C6143_BAR must be shown here, *NOT* tmp$c6143_foo
         -- temply diabled, wait for solution by Alex, see letters to him 23.09.2019 12:02:
         -- ,current_role as what_my_role -- <<< WHAT ROLE MUST BE SHOWN HERE, *BOSS or *ACNT ???
     from rdb$database;
-    
+
     set count on;
     select * from v_show_mapping;
     set count on;
@@ -112,8 +114,8 @@ test_script_1 = """
     -- ++++++++++++++++++++++++ T E S T    G L O B A L    M A P P I N G  +++++++++++++++++++++++
 
 
-    create or alter global mapping gmap_foo2rio_a using plugin srp from user tmp$c6143_foo to user tmp$c6143_rio; 
-    create or alter global mapping gmap_foo2rio_b using plugin srp from user tmp$c6143_foo to user tmp$c6143_rio; 
+    create or alter global mapping gmap_foo2rio_a using plugin srp from user tmp$c6143_foo to user tmp$c6143_rio;
+    create or alter global mapping gmap_foo2rio_b using plugin srp from user tmp$c6143_foo to user tmp$c6143_rio;
 
     create or alter global mapping gmap_boss2mngr_a using plugin srp from role tmp$r6143_boss to role tmp$r6143_mngr;
     create or alter global mapping gmap_boss2mngr_b using plugin srp from role tmp$c6143_boss to role tmp$r6143_mngr;
@@ -184,12 +186,12 @@ expected_stdout_1 = """
     RDB$MAP_FROM                    TMP$C6143_BOSS
     RDB$MAP_TO_TYPE                 1
     RDB$MAP_TO                      TMP$R6143_ACNT
-    
+
     Records affected: 4
-    
+
     MSG                             Connected OK when global mapping is duplicated.
     WHO_AM_I                        TMP$C6143_RIO
-    
+
     Records affected: 1
   """
 

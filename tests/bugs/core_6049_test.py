@@ -2,15 +2,15 @@
 #
 # id:           bugs.core_6049
 # title:        Builtin functions converting binary string to hexadecimal representation and vice versa
-# decription:   
+# decription:
 #                   Test may need to be more complex. Currently only basic operations are checked:
 #                   * ability to insert into binary field result of hex_decode()
-#                   * result of double conversion: bin_data -> base64_encode -> base64_decode 
+#                   * result of double conversion: bin_data -> base64_encode -> base64_decode
 #                     - must be equal to initial bin_data (and similar for bin_data -> hex_encode -> hex_decode)
 #                   We get columns type details using sqlda_display in order to fix them in expected_stdout.
-#               
+#
 #                   Checked on 4.0.0.1496: OK, 1.679s.
-#                
+#
 # tracker_id:   CORE-6049
 # min_versions: ['4.0']
 # versions:     4.0
@@ -37,12 +37,12 @@ test_script_1 = """
 
     set list on;
     set sqlda_display on;
-    select 
+    select
         t.*
        ,uid = "b64_decode(b64_encode(uid))" as "b64_dec(b64_enc(uid)) result"
        ,uid = "hex_decode(hex_encode(uid))" as "hex_dec(hex_enc(uid)) result"
     from (
-        select 
+        select
             uid
            ,base64_encode(uid) as "b64_encode(uid)"
            ,base64_decode(base64_encode(uid)) as "b64_decode(b64_encode(uid))"
@@ -91,6 +91,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

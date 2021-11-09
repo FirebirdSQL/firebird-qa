@@ -74,6 +74,9 @@ def pytest_addoption(parser, pluginmanager):
 
 def pytest_report_header(config):
     return ["Firebird:",
+            f"  root: {_vars_['root']}",
+            f"  databases: {_vars_['databases']}",
+            f"  backups: {_vars_['backups']}",
             f"  driver configuration: {_vars_['firebird-config']}",
             f"  server: {_vars_['server']}",
             f"  protocol: {_vars_['protocol']}",
@@ -120,7 +123,6 @@ def pytest_configure(config):
     path = config.rootpath / 'backups'
     _vars_['backups'] = path if path.is_dir() else config.rootpath
     _vars_['server'] = config.getoption('server')
-    _vars_['bin-dir'] = config.getoption('bin_dir')
     _vars_['protocol'] = config.getoption('protocol')
     _vars_['save-output'] = config.getoption('save_output')
     srv_conf = driver_config.get_server(_vars_['server'])
@@ -131,17 +133,25 @@ def pytest_configure(config):
                         password=_vars_['password']) as srv:
         _vars_['version'] = parse(srv.info.version.replace('-dev', ''))
         _vars_['home-dir'] = Path(srv.info.home_directory)
+        if bindir := config.getoption('bin_dir'):
+            _vars_['bin-dir'] = Path(bindir)
+        else:
+            bindir = _vars_['home-dir'] / 'bin'
+            if not bindir.exists():
+                bindir = _vars_['home-dir']
+            _vars_['bin-dir'] = bindir
         _vars_['lock-dir'] = Path(srv.info.lock_directory)
+        _vars_['bin-dir'] = Path(bindir) if bindir else _vars_['home-dir']
         _vars_['security-db'] = Path(srv.info.security_database)
         _vars_['arch'] = srv.info.architecture
-        if _vars_['bin-dir'] is None:
-            path = _vars_['home-dir'] / 'bin'
-            if path.is_dir():
-                _vars_['bin-dir'] = path
-            else:
-                pytest.exit("Path to binary tools not determined")
-        else:
-            _vars_['bin-dir'] = Path(_vars_['bin-dir'])
+        #if _vars_['bin-dir'] is None:
+            #path = _vars_['home-dir'] / 'bin'
+            #if path.is_dir():
+                #_vars_['bin-dir'] = path
+            #else:
+                #pytest.exit("Path to binary tools not determined")
+        #else:
+            #_vars_['bin-dir'] = Path(_vars_['bin-dir'])
     # tools
     for tool in ['isql', 'gbak', 'nbackup', 'gstat', 'gfix', 'gsec']:
         set_tool(tool)
@@ -154,17 +164,17 @@ def pytest_collection_modifyitems(session, config, items):
     for item in items:
         if 'slow' in item.keywords and not _vars_['runslow']:
             item.add_marker(skip_slow)
-        for platforms in [mark.args for mark in item.iter_markers(name="platform")]:
-            if _platform not in platforms:
-                item.add_marker(skip_platform)
-    # Deselect tests not applicable to tested engine version
+    # Deselect tests not applicable to tested engine version and platform
     selected = []
     deselected = []
     for item in items:
+        platform_ok = True
+        for platforms in [mark.args for mark in item.iter_markers(name="platform")]:
+            platform_ok = _platform in platforms
         versions = [mark.args for mark in item.iter_markers(name="version")]
         if versions:
             spec = SpecifierSet(','.join(list(versions[0])))
-            if _vars_['version'] in spec:
+            if platform_ok and _vars_['version'] in spec:
                 selected.append(item)
             else:
                 deselected.append(item)
@@ -189,12 +199,15 @@ class Database:
                  user: str=None, password: str=None):
         self.db_path: Path = path / filename
         self.dsn: str = None
+        self.io_enc = 'utf8'
         if _vars_['host']:
             self.dsn = f"{_vars_['host']}:{str(self.db_path)}"
         else:
             self.dsn = str(self.db_path)
-        self.subs = {'temp_directory': str(path / 'x')[:-1], 'database_location': str(path / 'x')[:-1],
-                     'DATABASE_PATH': str(path / 'x')[:-1], 'DSN': self.dsn,
+        self.subs = {'temp_directory': str(path / 'x')[:-1],
+                     'database_location': str(path / 'x')[:-1],
+                     'DATABASE_PATH': str(path / 'x')[:-1],
+                     'DSN': self.dsn,
                      'files_location': str(_vars_['root'] / 'files'),
                      'backup_location': str(_vars_['root'] / 'backups'),
                      'suite_database_location': str(_vars_['root'] / 'databases'),
@@ -271,10 +284,11 @@ class Database:
             charset = charset.upper()
         else:
             charset = 'NONE'
+        self.io_enc = CHARSET_MAP[charset]
         result = run([_vars_['isql'], '-ch', charset, '-user', self.user,
                       '-password', self.password, str(self.dsn)],
                      input=substitute_macros(script, self.subs),
-                     encoding=CHARSET_MAP[charset], capture_output=True)
+                     encoding=self.io_enc, capture_output=True)
         if result.returncode and raise_on_fail:
             print(f"-- ISQL script stdout {'-' * 20}")
             print(result.stdout)
@@ -401,9 +415,9 @@ class Action:
         # Store output
         if _vars_['save-output']:
             if self.stdout:
-                out_file.write_text(self.stdout)
+                out_file.write_text(self.stdout, encoding=self.db.io_enc)
             if self.stderr:
-                err_file.write_text(self.stderr)
+                err_file.write_text(self.stderr, encoding=self.db.io_enc)
     @property
     def clean_stdout(self) -> str:
         if self._clean_stdout is None:

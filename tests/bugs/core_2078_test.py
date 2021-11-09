@@ -2,11 +2,11 @@
 #
 # id:           bugs.core_2078
 # title:        Suboptimal join plan if there are selective non-indexed predicates involved
-# decription:   
+# decription:
 #                   This test operates with three tables: "small", "medium" and "big" - which are INNER-join'ed.
 #                   It was found that there is some threshold ratio between number of rows in "small"  vs "medium"
-#                   tables which affects on generated PLAN after reaching this ratio. 
-#                   In particular, when tables  have following values of rows: 26, 300 and 3000 - than optimizer 
+#                   tables which affects on generated PLAN after reaching this ratio.
+#                   In particular, when tables  have following values of rows: 26, 300 and 3000 - than optimizer
 #                   still DOES take in account "WHERE" condition with non-indexed field in SMALL table ("where s.sf = 0"),
 #                   and this lead to GOOD (fast) performance because SMALL table will be FIRST in the join order.
 #                   However, if number of rows in SMALL table will change from 26 to 27 (yes, just one row) than
@@ -32,7 +32,7 @@
 #                   FETCHES_1_2                     9094
 #                   FETCHES_2_1                     19548
 #                   FETCHES_2_2                     19548
-#               
+#
 #                   18.08.2020.
 #                   Test uses pre-created database which has several procedures for analyzing performance by with the help of MON$ tables.
 #                   Performance results are gathered in the table STAT_LOG, each odd run will save mon$ counters with "-" sign and next
@@ -41,18 +41,18 @@
 #                   difference between them means performance expenses which we want to evaluate).
 #                   NOTE. Before each new measure we have to set generator G_GATHER_STAT to zero in order to make it produce proper values
 #                   starting with 1 (odd --> NEGATIVE sign for counters). This is done in SP_TRUNCATE_STAT.
-#               
+#
 #                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
 #                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
 #                   statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1. 
+#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
 #                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
 #                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#               
+#
 #                   Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
 #                   reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
-#               
+#
 #                   Checked on:
 #                       4.0.0.2164 SS: 2.183s.
 #                       4.0.0.2119 SS: 2.280s.
@@ -60,7 +60,7 @@
 #                       3.0.7.33356 SS: 1.500s.
 #                       3.0.7.33356 CS: 2.445s.
 #                       2.5.9.27150 SC: 0.653s.
-#                
+#
 # tracker_id:   CORE-2078
 # min_versions: ['2.5.0']
 # versions:     3.0
@@ -86,43 +86,43 @@ test_script_1 = """
     commit;
     recreate table tmed(id int not null);
     commit;
-    
+
     set term ^;
     create or alter procedure sp_fill_data(a_sml_rows int, a_med_rows int, a_big_rows int)
     as
       declare i int;
       declare i_mod2 smallint;
     begin
-    
+
       -- gather old record versions if they are from previous run:
-      select count(*) from tsml into i; 
+      select count(*) from tsml into i;
       select count(*) from tmed into i;
       select count(*) from tbig into i;
-    
+
       i=0;
       while (i < a_sml_rows) do
       begin
          insert into tsml(id, sf) values( :i, :i - (:i/2)*2 );
          i = i+1;
       end
-    
+
       i=0;
       while (i < a_med_rows) do
       begin
          insert into tmed(id) values( :i );
          i = i+1;
       end
-    
+
       i=0;
       while (i < a_big_rows) do
       begin
          insert into tbig(id, sid, mid) values( :i, :i - (:i/2)*2, :i - (:i/:a_med_rows)*:a_med_rows );
          i = i+1;
       end
-    
+
     end
     ^
-    
+
     create or alter procedure srv_recalc_idx_stat
     returns (
         tab_name varchar(31),
@@ -132,7 +132,7 @@ test_script_1 = """
     as
     begin
         -- Refresh index statistics all user (non-system) tables.
-        -- Needs to be run in regular basis (`cron` on linux, `at` on windows) 
+        -- Needs to be run in regular basis (`cron` on linux, `at` on windows)
         -- otherwise ineffective plans can be generated when doing inner joins!
         -- Example to run:  select * from srv_recalc_idx_stat;
         for
@@ -149,52 +149,52 @@ test_script_1 = """
             execute statement( 'set statistics index '||idx_name )
             with autonomous transaction
             ;
-    
+
             select ri.rdb$statistics
             from rdb$indices ri
             where ri.rdb$relation_name = :tab_name and ri.rdb$index_name = :idx_name
             into idx_stat_afte;
-    
+
             suspend;
         end
     end
     ^
-    
+
     set term ;^
     commit;
-    
+
     alter table tsml add constraint tsml_pk primary key(id) using index tsml_pk;
     alter table tmed add constraint tmed_pk primary key(id) using index tmed_pk;
-    
+
     alter table tbig add constraint tbig_fk_sml foreign key(sid) references tsml using index tbig_idx1_fk_sml;
     alter table tbig add constraint tbig_fk_med foreign key(mid) references tmed using index tbig_idx2_fk_med;
     commit;
-    
+
     set width tab_name 31;
     set width idx_name 31;
     set list on;
-    
+
     -------------------- prepare-1 ------------------
     --execute procedure sp_fill_data(26, 300, 3000);
     execute procedure sp_fill_data(15, 300, 3000);
     commit;
-    
+
     set transaction read committed;
-    select 
-        tab_name as run1_tab_name 
+    select
+        tab_name as run1_tab_name
        ,idx_name as run1_idx_name
        ,idx_stat_afte run1_idx_stat
     from srv_recalc_idx_stat where tab_name in ( upper('tsml'), upper('tmed'), upper('tbig') );
     commit;
-    
+
     --------------------- run-1.1 -------------------
     -----alter sequence g_gather_stat restart with 0;
     execute procedure sp_truncate_stat;
     commit;
-    
+
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
-    
+
     set plan on;
     select count(*) cnt_1_1
     from tsml s
@@ -202,14 +202,14 @@ test_script_1 = """
       join tmed m on b.mid = m.id
     ;
     set plan off;
-    
+
     execute procedure sp_gather_stat;  ------- catch statistics AFTER measured statement(s)
     commit;
-    
+
     --------------------- run-1.2 -------------------
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
-    
+
     set plan on;
     select count(*) cnt_1_2
     from tsml s
@@ -218,32 +218,32 @@ test_script_1 = """
     where s.sf = 0  -- selective non-indexed boolean
     ;
     set plan off;
-    
+
     execute procedure sp_gather_stat;  ------- catch statistics AFTER measured statement(s)
     commit;
-    
+
     -------------------- prepare-2 ------------------
     delete from tbig;
     delete from tmed;
     delete from tsml;
     commit;
-    
+
     --execute procedure sp_fill_data(27, 300, 3000);
     execute procedure sp_fill_data(45, 300, 3000);
     commit;
-    
+
     set transaction read committed;
-    select 
-        tab_name as run2_tab_name 
+    select
+        tab_name as run2_tab_name
        ,idx_name as run2_idx_name
        ,idx_stat_afte run2_idx_stat
     from srv_recalc_idx_stat where tab_name in ( upper('tsml'), upper('tmed'), upper('tbig') );
     commit;
-    
+
     --------------------- run-2.1 -------------------
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
-    
+
     set plan on;
     select count(*) cnt_2_1
     from tsml s
@@ -251,11 +251,11 @@ test_script_1 = """
         join tmed m on b.mid = m.id
     ;
     set plan off;
-    
+
     execute procedure sp_gather_stat;  ------- catch statistics AFTER measured statement(s)
     commit;
     --------------------- run-2.2 -------------------
-    
+
         execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
         commit;
     set plan on;
@@ -268,8 +268,8 @@ test_script_1 = """
     set plan off;
         execute procedure sp_gather_stat;  ------- catch statistics AFTER measured statement(s)
     commit;
-    
-    
+
+
     -- Here we define constants that serve as *upper* limit for fetches:
     set term ^;
     execute block as
@@ -279,7 +279,7 @@ test_script_1 = """
     end
     ^
     set term ;^
-    
+
     -- Typical values for page_size 4K on 2.5 and 3.0:
     -- FETCHES_1_1                     19636
     -- FETCHES_1_2                     9094
@@ -309,20 +309,20 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    RUN1_TAB_NAME                   TBIG                           
-    RUN1_IDX_NAME                   TBIG_IDX1_FK_SML               
+    RUN1_TAB_NAME                   TBIG
+    RUN1_IDX_NAME                   TBIG_IDX1_FK_SML
     RUN1_IDX_STAT                   0.5000000000
-    
-    RUN1_TAB_NAME                   TBIG                           
-    RUN1_IDX_NAME                   TBIG_IDX2_FK_MED               
+
+    RUN1_TAB_NAME                   TBIG
+    RUN1_IDX_NAME                   TBIG_IDX2_FK_MED
     RUN1_IDX_STAT                   0.0033333334
-    
-    RUN1_TAB_NAME                   TMED                           
-    RUN1_IDX_NAME                   TMED_PK                        
+
+    RUN1_TAB_NAME                   TMED
+    RUN1_IDX_NAME                   TMED_PK
     RUN1_IDX_STAT                   0.0033333334
-    
-    RUN1_TAB_NAME                   TSML                           
-    RUN1_IDX_NAME                   TSML_PK                        
+
+    RUN1_TAB_NAME                   TSML
+    RUN1_IDX_NAME                   TSML_PK
     RUN1_IDX_STAT                   0.0666666701
 
     PLAN JOIN (M NATURAL, B INDEX (TBIG_IDX2_FK_MED), S INDEX (TSML_PK))
@@ -331,20 +331,20 @@ expected_stdout_1 = """
     PLAN JOIN (S NATURAL, B INDEX (TBIG_IDX1_FK_SML), M INDEX (TMED_PK))
     CNT_1_2                         1500
 
-    RUN2_TAB_NAME                   TBIG                           
-    RUN2_IDX_NAME                   TBIG_IDX1_FK_SML               
+    RUN2_TAB_NAME                   TBIG
+    RUN2_IDX_NAME                   TBIG_IDX1_FK_SML
     RUN2_IDX_STAT                   0.5000000000
-    
-    RUN2_TAB_NAME                   TBIG                           
-    RUN2_IDX_NAME                   TBIG_IDX2_FK_MED               
+
+    RUN2_TAB_NAME                   TBIG
+    RUN2_IDX_NAME                   TBIG_IDX2_FK_MED
     RUN2_IDX_STAT                   0.0033333334
-    
-    RUN2_TAB_NAME                   TMED                           
-    RUN2_IDX_NAME                   TMED_PK                        
+
+    RUN2_TAB_NAME                   TMED
+    RUN2_IDX_NAME                   TMED_PK
     RUN2_IDX_STAT                   0.0033333334
-    
-    RUN2_TAB_NAME                   TSML                           
-    RUN2_IDX_NAME                   TSML_PK                        
+
+    RUN2_TAB_NAME                   TSML
+    RUN2_IDX_NAME                   TSML_PK
     RUN2_IDX_STAT                   0.0222222228
 
     PLAN JOIN (M NATURAL, B INDEX (TBIG_IDX2_FK_MED), S INDEX (TSML_PK))

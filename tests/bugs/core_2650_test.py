@@ -2,20 +2,20 @@
 #
 # id:           bugs.core_2650
 # title:        Improve sorting performance when long VARCHARs are involved
-# decription:   
+# decription:
 #                  Test verifies trivial queries with persistent and computed columns, predicates, views,
 #                  expressions without reference to any column and datatypes which have no symmetrical
 #                  transformation from value to a key (decfloat, time-with-timezone and varchar with non-default collation).
-#                  
+#
 #                  It is supposed that default value of InlineSortThreshold parameter is 1000.
 #                  No changes in the firebird.conf reuired.
-#               
+#
 #                  This test most probably will be added by some new examples later.
-#                  
+#
 #                  Thanks to dimitr for lot of explanations (e-mail discussion was 28.12.2020).
-#               
+#
 #                  Checked on 4.0.0.2303 SS/CS.
-#                
+#
 # tracker_id:   CORE-2650
 # min_versions: ['4.0']
 # versions:     4.0
@@ -48,8 +48,8 @@ test_script_1 = """
         ,computed_ts_dup computed by ( txt_short || txt_short )
         ,computed_tb_dup computed by ( txt_broad || txt_broad )
         ,computed_guid   computed by ( lpad('', 2000, uuid_to_char(gen_uuid()) ) )
-        ,computed_ts_left computed by( left(txt_short,10) ) 
-        ,computed_tb_left computed by( left(txt_broad,10) ) 
+        ,computed_ts_left computed by( left(txt_short,10) )
+        ,computed_tb_left computed by( left(txt_broad,10) )
     );
     commit;
 
@@ -64,7 +64,7 @@ test_script_1 = """
 
     -- Must USE refetch because length of non-key column is greater than default threshold:
     select txt_broad from test a02 order by id;
-    
+
     -- MUST use refethc regardless on length of column because 'ROWS <N>' presents (!):
     select txt_short from test a03 order by id rows 1;
 
@@ -99,7 +99,7 @@ test_script_1 = """
     select id from test a11 where '' <> any (select id from test x11 where txt_broad>'' order by id) ;
 
     -- ########################################   e x i s t s   ###########################################
-    
+
     -- Predicate "EXISTS" must turn on refetching regardless of record length, but only when "WHERE" has column which not present in "ORDER BY"
     select id,txt_short from test a12 where exists(select 1 from test x12 where txt_short>'' order by id) ; -- MUST use refetch
 
@@ -148,13 +148,13 @@ test_script_1 = """
     recreate view v_unioned as
     select id, txt_broad from test
     union all
-    select -1, 'qwerty' 
+    select -1, 'qwerty'
     from rdb$database rows 0;
 
     -- does NOT use refetch because view is based on UNION:
     select txt_broad from v_unioned v01 order by id;
     commit;
-    
+
     -- #################################   e x p r e s s i o n s    #####################################
 
     -- must use refetch because expression is based on column which has length >= threshold
@@ -166,7 +166,7 @@ test_script_1 = """
     select left( txt_short || txt_short, 2000) as txt from test a22 order by id;
     commit;
 
-    
+
     -- ###########  n o n - s y m m e t r i c a l     k e y - v a l u e     d a t a t y p e s   #########
 
     -- Following data types in common case have no ability to get column value from a key:
@@ -462,6 +462,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

@@ -11,6 +11,7 @@
 #                       Statement failed, SQLSTATE = 42000
 #                       Execute statement error at attach :
 #                       335544472 : Your user name and password are not defined <...>
+#                   [pcisar] 03.11.2021 The same error raised by 4.0 on Windows and Linux
 #
 #                   Works fine on:
 #                     fb30Cs, build 3.0.4.32947: OK, 2.907s.

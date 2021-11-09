@@ -43,22 +43,30 @@ Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -CREATE USER U01 failed
 -Password must be specified when creating user
+
 Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -CREATE USER U01 failed
 -Password must be specified when creating user
+
 Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -CREATE USER U01 failed
 -Password must be specified when creating user
+
 Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -CREATE USER U01 failed
 -Password must be specified when creating user
+
 Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -CREATE USER U01 failed
 -Password must be specified when creating user
+
+Statement failed, SQLSTATE = HY000
+Password must be specified when creating user
+
 Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -CREATE USER PASSWORD failed

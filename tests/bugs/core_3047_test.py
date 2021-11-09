@@ -28,9 +28,10 @@ test_script_1 = """
     -- -Data type unknown
     -- -COLLATION WIN_PTBR for CHARACTER SET UTF8 is not defined
     -- (See ticket issue: "WIN_PTBR is tried to be resolved agains database charset instead of client charset: incorrect")
-    -- [pcisar] 20.10.2021
-    -- It fails as well in 3.0.7 on Linux (opensuse tumbleweed)
     -- In 3.0.0.31827 (WI- and LI-) works fine:
+    -- [pcisar] 20.10.2021
+    -- It fails as well in 3.0.7 and 4.0 on Linux (opensuse tumbleweed) and Windows (8.1)
+    -- It appears that this test is bogus from the beginning
     set term ^;
     execute block returns (c varchar(10) collate win_ptbr) as
     begin

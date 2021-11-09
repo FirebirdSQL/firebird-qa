@@ -2,16 +2,16 @@
 #
 # id:           bugs.core_5970
 # title:        Built-in cryptographic functions
-# decription:   
+# decription:
 #                   Issues found during implementing this test - see CORE-6185, CORE-6186.
 #                   This test checks only ability to call ENCRYPT()/DECRYPT() functions with different parameters.
 #                   Also, it checks that <source> -> encrypt(<source>) -> decrypt(encrypted_source) gives the same <source>.
-#               
+#
 #                   Checked on:
 #                       4.0.0.1646 SS: 3.657s.
 #                       4.0.0.1637 SC: 3.271s.
 #                       4.0.0.1633 CS: 4.191s.
-#                
+#
 # tracker_id:   CORE-5970
 # min_versions: ['4.0.0']
 # versions:     4.0
@@ -102,7 +102,7 @@ test_script_1 = """
 
     set term ^;
     create or alter procedure sp_block_test(a_alg varchar(30))
-        returns( 
+        returns(
             encryption_algorithm varchar(30)
             ,encryption_mode varchar(10)
             ,enc_key_octet_length int
@@ -134,7 +134,7 @@ test_script_1 = """
 
             --    block_cipher ::= { AES | ANUBIS | BLOWFISH | KHAZAD | RC5 | RC6 | SAFER+ | TWOFISH | XTEA }
             --    mode ::= { CBC | CFB | CTR | ECB | OFB }
-            
+
             for
                 select 'CBC' as mode from rdb$database union all
                 select 'CFB' from rdb$database union all -- AES
@@ -143,7 +143,7 @@ test_script_1 = """
                 select 'OFB' from rdb$database           -- AES
             as cursor cm
             do begin
-            
+
                 encryption_mode = cm.mode;
                 encrypted_equals_to_decrypted = null;
                 encryption_finish_gdscode = null;
@@ -167,7 +167,7 @@ test_script_1 = """
                     v_decrypt_sttm = 'select decrypt( t.encrypted_text using ' || c.crypto_alg || ' mode ' || cm.mode || ' key q''{' || c.crypto_key || '}'' iv q''{' || c.crypto_iv || '}'' ) from gtt_tmp t';
                     execute statement v_decrypt_sttm into s_decrypted_text;
 
-                    
+
                     encrypted_equals_to_decrypted = false;
                     if ( hash(s_source_text) = hash(s_decrypted_text) ) then
                         if (s_source_text = s_decrypted_text) then
@@ -230,10 +230,10 @@ test_script_1 = """
 
                 -- Mode should be specified for block ciphers.
                 -- Initialization vector (IV) should be specified for block ciphers in all modes except ECB and all stream ciphers except RC4.
-                
+
                 insert into gtt_tmp(source_text) values(c.source_text);
                 s_source_text = c.source_text;
-                
+
                 enc_init_vector_octet_length = 0;
                 if ( upper( :a_alg ) = upper('RC4') ) then
                     iv_suffix= '';
@@ -251,7 +251,7 @@ test_script_1 = """
                 v_decrypt_sttm = 'select decrypt( t.encrypted_text using ' || c.crypto_alg || ' key q''{' || c.crypto_key || '}'' ' || iv_suffix || ') from gtt_tmp t';
                 execute statement v_decrypt_sttm into s_decrypted_text;
 
-                
+
                 encrypted_equals_to_decrypted = false;
                 if ( hash(s_source_text) = hash(s_decrypted_text) ) then
                     if (s_source_text = s_decrypted_text) then
@@ -1366,13 +1366,13 @@ expected_stdout_1 = """
     OUTPUT message field count: 3
     01: sqltype: 520 BLOB scale: 0 subtype: 0 len: 8
       :  name: ENCRYPT  alias: E_BLOB
-      : table:   owner: 
+      : table:   owner:
     02: sqltype: 448 VARYING scale: 0 subtype: 0 len: 255 charset: 1 OCTETS
       :  name: ENCRYPT  alias: E_CHAR
-      : table:   owner: 
-    03: sqltype: 448 VARYING scale: 0 subtype: 0 len: 6 charset: 0 NONE
+      : table:   owner:
+    03: sqltype: 448 VARYING scale: 0 subtype: 0 len: 6 charset: 1 OCTETS
       :  name: DECRYPT  alias: D_BIN
-      : table:   owner: 
+      : table:   owner:
 
   """
 expected_stderr_1 = """
@@ -1391,6 +1391,7 @@ expected_stderr_1 = """
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

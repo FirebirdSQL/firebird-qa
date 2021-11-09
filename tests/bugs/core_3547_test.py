@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3547
 # title:        Floating-point negative zero doesn't match positive zero in the index
-# decription:   
+# decription:
 # tracker_id:   CORE-3547
 # min_versions: ['2.5.1']
 # versions:     2.5.1, 2.5.1
@@ -22,7 +22,7 @@ init_script_1 = """
     insert into t_float_no_pk (col) values (0e0);
     insert into t_float_no_pk (col) values (-0e0);
     commit;
-    
+
     recreate table t1_double_as_pk (col double precision, constraint t1_double_pk primary key(col) using index t1_double_pk);
     commit;
   """
@@ -37,7 +37,7 @@ test_script_1 = """
     select count(*) "where id = -0e0"         from rdb$relations where rdb$relation_id = -0e0;
     select count(*) "where id = -(1e0 - 1e0)" from rdb$relations where rdb$relation_id = -(1e0 - 1e0);
     select count(*) "where 0e0 = -0e0"        from rdb$database where 0e0 = -0e0;
-    
+
     insert into t1_double_as_pk (col) values (0e0);
     commit;
     insert into t1_double_as_pk (col) values (-0e0);
@@ -68,7 +68,7 @@ expected_stderr_1 = """
     -Problematic key value is ("COL" = 0.0000000000000000)
   """
 
-@pytest.mark.version('>=2.5.1,<2.5.1')
+@pytest.mark.version('>=2.5.1')
 @pytest.mark.platform('Windows')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1

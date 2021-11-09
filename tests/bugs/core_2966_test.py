@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_2966
 # title:        Wrong results or unexpected errors while sorting a large data set
-# decription:   
+# decription:
 # tracker_id:   CORE-2966
 # min_versions: ['2.1.6', '2.5.0']
 # versions:     2.5.0
@@ -14,7 +14,7 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 2.5.0
 # resources: None
 
-substitutions_1 = []
+substitutions_1 = [('=.*', '=')]
 
 init_script_1 = """create table t (col varchar(32000));
 commit;

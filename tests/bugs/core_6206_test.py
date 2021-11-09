@@ -2,14 +2,14 @@
 #
 # id:           bugs.core_6206
 # title:        VARCHAR of insufficient length used for set bind of decfloat to varchar
-# decription:   
+# decription:
 #                   Confirmed bug on 4.0.0.1685
 #                   Checked on 4.0.0.1691: OK, 1.165s.
-#               
+#
 #                   26.06.2020: changed SET BIND argument from numeric(38) to INT128, adjusted output
 #                   (letter from Alex, 25.06.2020 17:56; needed after discuss CORE-6342).
 #                   Checked on 4.0.0.2078.
-#                
+#
 # tracker_id:   CORE-6206
 # min_versions: ['4.0']
 # versions:     4.0
@@ -58,6 +58,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

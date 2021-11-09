@@ -2,12 +2,12 @@
 #
 # id:           bugs.core_6300
 # title:        Next attachment id, next statement id - get this info via MON$ query and rdb$get_context()
-# decription:   
+# decription:
 #                   Check SQLDA output by query mon$database columns and context variabled that are described in doc/sql.extensions/README.context_variables2
 #                   See also: https://github.com/FirebirdSQL/firebird/commit/22ad236f625716f5f2885f8d9e783cca9516f7b3
 #                   Checked on 4.0.0.2170.
-#                 
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         bugs.core_6300
@@ -50,6 +50,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

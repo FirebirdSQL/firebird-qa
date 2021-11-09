@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5495
 # title:        New users or changed passwords in legacy authentication do not work in Firebird 4
-# decription:   
+# decription:
 #                   Confirmed bug on WI-T4.0.0.546, got:
 #                      Statement failed, SQLSTATE = 28000
 #                      Your user name and password are not defined. Ask your database administrator <...>
@@ -12,7 +12,10 @@
 #                      WireCrypt = Disabled
 #                      UserManager = Srp, Legacy_UserManager
 #                   Checked on WI-T4.0.0.549 - works fine.
-#                
+#
+#                   [pcisar] 3.11.2021 This test fails with 4.0, even with specified config
+#                   Although user is created, the connect as user tmp$c5495 fails (unknown user)
+#
 # tracker_id:   CORE-5495
 # min_versions: ['4.0']
 # versions:     4.0
@@ -33,11 +36,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set list on;
     set bail on;
+    set echo on;
     create user tmp$c5495 password '123' using plugin Legacy_UserManager;
     commit;
     connect '$(DSN)' user tmp$c5495 password '123';
-    --select mon$user,mon$remote_address,mon$remote_protocol,mon$client_version,mon$remote_version,mon$auth_method from mon$attachments 
-    select mon$user,mon$remote_protocol,mon$auth_method from mon$attachments 
+    --select mon$user,mon$remote_address,mon$remote_protocol,mon$client_version,mon$remote_version,mon$auth_method from mon$attachments
+    select mon$user,mon$remote_protocol,mon$auth_method from mon$attachments
     where mon$attachment_id=current_connection;
     commit;
     connect '$(DSN)' user SYSDBA password 'masterkey';

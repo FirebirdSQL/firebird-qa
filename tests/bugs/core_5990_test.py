@@ -2,21 +2,21 @@
 #
 # id:           bugs.core_5990
 # title:        Pool of external connections
-# decription:   
+# decription:
 #                   Test assumes that firebird.conf contains:
 #                     ExtConnPoolSize = 100 (or at any other value >= 6)
 #                     ExtConnPoolLifeTime = 10
 #                   We run six execute blocks with COMMIT after each of them.
 #                   When EDS pool is enabled then every new execute block will use the same attachment as it was established in the 1st EB.
 #                   We check this by running query that show number of duplicates for each of N attachments: this number must be equal to N-1.
-#                   ::: NB ::: 
-#                   Final statement must be 'ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL' otherwise DB file will be kept by engine at least 
+#                   ::: NB :::
+#                   Final statement must be 'ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL' otherwise DB file will be kept by engine at least
 #                   for 10 seconds after this test finish (see parameter 'ExtConnPoolLifeTime').
-#               
+#
 #                   Thank hvlad for additional explanations, discuss in e-mail was 26.04.19 09:38.
-#               
+#
 #                   Checked on 4.0.0.1501 (both SS and CS): OK, 1.343s.
-#                
+#
 # tracker_id:   CORE-5990
 # min_versions: ['4.0']
 # versions:     4.0
@@ -36,7 +36,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     recreate view v_conn as
-    select 
+    select
         cast(rdb$get_context('SYSTEM', 'EXT_CONN_POOL_SIZE') as int) as pool_size,
         cast(rdb$get_context('SYSTEM', 'EXT_CONN_POOL_IDLE_COUNT') as int) as pool_idle,
         cast(rdb$get_context('SYSTEM', 'EXT_CONN_POOL_ACTIVE_COUNT') as int) as pool_active,
@@ -145,11 +145,11 @@ test_script_1 = """
 
     --set echo on;
     --select * from v_conn;
-    --select a.id, a.established_attach_id, count(*)over(partition by established_attach_id)-1 dup_cnt 
+    --select a.id, a.established_attach_id, count(*)over(partition by established_attach_id)-1 dup_cnt
 
     set list on;
-    select a.id, count(*)over(partition by established_attach_id)-1 dup_cnt 
-    from att_info a 
+    select a.id, count(*)over(partition by established_attach_id)-1 dup_cnt
+    from att_info a
     order by id;
 
     ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL; -- !! mandatory otherwise database file will be kept by engine and fbtest will not able to drop it !!

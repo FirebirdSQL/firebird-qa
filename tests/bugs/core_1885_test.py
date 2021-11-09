@@ -24,10 +24,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     -- [pcisar] 20.10.2021
-    -- For 3.0.7 on Linux (uses system ICU) or Windows (includes ICU 52) this
-    -- collation *SHOULD* be created w/o errors like in 4.0 version.
-    -- However this has to be verified (passes on Linux opensuse tumbleweed)
-    -- In case it would be confirmed, both test cases could be merged into one.
+    -- For 3.0.7 on Linux this PASS (uses system ICU) but on Windows (includes ICU 52)
+    -- it FAIL unless newer ICU (63) is installed.
 
     set list on;
     set count on;

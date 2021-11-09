@@ -2,11 +2,13 @@
 #
 # id:           bugs.core_5884
 # title:        Initial global mapping from srp plugin does not work
-# decription:   
+# decription:
 #                  Confirmed bug on: 3.0.4.33020, 4.0.0.1143 ('TEST2' was shown instead of 'GTOST').
 #                  Checked on:
 #                    FB30SS, build 3.0.4.33021: OK, 2.312s.
-#                
+#
+#                  [pcisar] 3.11.2021 This test fails for 4.0 (returns tmp$ user names instead mapped ones)
+#
 # tracker_id:   CORE-5884
 # min_versions: ['3.0.4']
 # versions:     3.0.4
@@ -31,7 +33,7 @@ test_script_1 = """
     commit;
 
     create or alter mapping lmap using plugin srp from user tmp$c5884_1 to user ltost;
-    create or alter global mapping gmap using plugin srp from user tmp$c5884_2 to user gtost; 
+    create or alter global mapping gmap using plugin srp from user tmp$c5884_2 to user gtost;
     commit;
 
     connect '$(DSN)' user tmp$c5884_1 password '123';

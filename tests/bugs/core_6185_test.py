@@ -2,10 +2,10 @@
 #
 # id:           bugs.core_6185
 # title:        Some (wrong ?) parameters of ENCRYPT() leads FB to crash
-# decription:   
+# decription:
 #                   Confirmed crash on 4.0.0.1637.
 #                   Checked on 4.0.0.1691 SS: OK, 1.658s.
-#                
+#
 # tracker_id:   CORE-6185
 # min_versions: ['4.0']
 # versions:     4.0
@@ -63,7 +63,7 @@ test_script_1 = """
     set term ;^
     commit;
 
-    select result_msg from sp_block_test('aes'); 
+    select result_msg from sp_block_test('aes');
     select encrypt( 'fooriobar' using CHACHA20 key q'{1110FB89-AD32-4E}' iv q'{114E811E}' counter cast(null as bigint) ) as encrypt_str from rdb$database;
   """
 
@@ -76,6 +76,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

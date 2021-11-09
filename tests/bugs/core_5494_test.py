@@ -2,10 +2,10 @@
 #
 # id:           bugs.core_5494
 # title:        Creating a column of type BLOB SUB_TYPE BINARY fails with a Token unknown
-# decription:   
+# decription:
 #                  Confirmed compilation problem on WI-T4.0.0.546.
 #                  Checked on WI-T4.0.0.549 -- all OK.
-#                
+#
 # tracker_id:   CORE-5494
 # min_versions: ['4.0']
 # versions:     4.0
@@ -60,6 +60,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
+    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
