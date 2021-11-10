@@ -2,14 +2,15 @@
 #
 # id:           bugs.core_0967
 # title:        SQL with incorrect characters (outside the ASCII range) may be processed wrongly
-# decription:   
+# decription:
 # tracker_id:   CORE-967
 # min_versions: []
 # versions:     2.1
 # qmid:         bugs.core_967
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import DatabaseError
 
 # version: 2.1
 # resources: None
@@ -36,14 +37,18 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #    c.execute('select * from t')
 #    printData(c)
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """'Error while preparing SQL statement:/n- SQLCODE: -104/n- Dynamic SQL Error/n- SQL error code = -104/n- Token unknown - line 1, column 17/n- /xee'
-"""
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+#expected_stdout_1 = """'Error while preparing SQL statement:/n- SQLCODE: -104/n- Dynamic SQL Error/n- SQL error code = -104/n- Token unknown - line 1, column 17/n- /xee'
+#"""
 
 @pytest.mark.version('>=2.1')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    with act_1.db.connect() as con:
+        c = con.cursor()
+        with pytest.raises(DatabaseError, match="Dynamic SQL Error\n-SQL error code = -104\n-Token unknown - line 1, column 17\n.*") as excinfo:
+            c.execute('update t set i=1'+chr(238)+' where 1=0')
+
 
 

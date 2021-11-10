@@ -11,7 +11,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5
 # resources: None
@@ -38,7 +38,7 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 #      c.execute(cmd % i)
 #      i += 1
 #  db_conn.commit()
-#  
+#
 #  # Grants
 #  i = 1
 #  cmd = """GRANT INSERT ON LOG TO TRIGGER LOGT_%d"""
@@ -51,12 +51,30 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 #      i += 1
 #  db_conn.commit()
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.5')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    with act_1.db.connect() as con:
+        c = con.cursor()
+        # Create 4000 triggers on table T
+        i = 1
+        cmd = """create trigger LOGT_%d for T after insert as
+        begin
+          insert into log (PK) values (new.pk);
+        end
+        """
+        while i <= 4000:
+            c.execute(cmd % i)
+            i += 1
+        con.commit()
+        # Grants
+        i = 1
+        cmd = """GRANT INSERT ON LOG TO TRIGGER LOGT_%d"""
+        while i <= 4000:
+            c.execute(cmd % i)
+            i += 1
+        con.commit()
 
 

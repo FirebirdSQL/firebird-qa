@@ -9,7 +9,7 @@
 # qmid:         bugs.core_1112
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 2.1
 # resources: None
@@ -28,7 +28,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #    c.execute("select * from rdb$database where '%s' = 'a'" % longstr)
 #  except:
 #    pass
-#  
+#
 #  try:
 #    c.execute("select * from rdb$database where '%s' containing 'a'" % longstr)
 #  except:
@@ -36,14 +36,18 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  c.execute("select 'a' from rdb$database")
 #  print (c.fetchall())
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """[('a',)]
-"""
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.1')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    with act_1.db.connect() as con:
+        c = con.cursor()
+        longstr = 'abc' * 10930
+        c.execute(f"select * from rdb$database where '{longstr}' = 'a'")
+        c.execute(f"select * from rdb$database where '{longstr}' containing 'a'")
+        c.execute("select 'a' from rdb$database")
+        result = c.fetchall()
+        assert result == [('a',)]
 
 

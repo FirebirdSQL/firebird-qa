@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0733
 # title:        Compress Data over the Network
-# decription:   
+# decription:
 #                   CHANGED 22.12.2019: CODE REDUCTION: REMOVED MEASURES OT TIME.
 #                   Results are completely opposite to those which were obtained on snapshots when this test was implenmented (3.0.5.33084, 4.0.0.1347).
 #                   Requirement to compress data leads to DEGRADATION of performance when data are stored on local machine, and we have no ability
@@ -10,16 +10,16 @@
 #                   After discuss with dimitr it was decided to remove any logging and its analysis.
 #                   We only verify matching of RDB$GET_CONTEXT('SYSTEM', 'WIRE_COMPRESSED') and value that was stored in the firebird.conf
 #                   for current check.
-#               
+#
 #                   ### NOTE ###
-#                   Changed value of parameter WireCompression (in firebird.conf) will be seen by application if it reloads client library. 
+#                   Changed value of parameter WireCompression (in firebird.conf) will be seen by application if it reloads client library.
 #                   Reconnect is NOT enough for this. For this reason we use subprocess and call ISQL utility to do above mentioned actions
 #                   in new execution context.
-#                   
+#
 #                   See also tests for:
 #                       CORE-5536 - checks that field mon$wire_compressed actually exists in MON$ATTACHMENTS table;
 #                       CORE-5913 - checks that built-in rdb$get_context('SYSTEM','WIRE_ENCRYPTED') is avaliable;
-#               
+#
 #                   Checked on:
 #                       4.0.0.1693 SS: 3.031s.
 #                       4.0.0.1346 SC: 2.890s.
@@ -27,8 +27,12 @@
 #                       3.0.5.33215 SS: 1.452s.
 #                       3.0.5.33084 SC: 1.344s.
 #                       3.0.5.33212 CS: 3.175s.
-#               
-#                 
+#
+#               [pcisar] 9.11.2021
+#               This test was fragile from start, usualy lefts behind resources and requires
+#               temporary changes to firebird.conf on run-time. It's questionable whether
+#               wire-compression should be tested at all.
+#
 # tracker_id:   CORE-0733
 # min_versions: ['3.0.0']
 # versions:     3.0
@@ -46,8 +50,8 @@ init_script_1 = """
     create domain dm_dump varchar(32700) character set none;
     recreate table t_log( required_value varchar(5), actual_value varchar(5), elap_ms int );
     commit;
-    set term ^; 
-    create or alter procedure sp_uuid(a_compressable boolean, n_limit int default 1) 
+    set term ^;
+    create or alter procedure sp_uuid(a_compressable boolean, n_limit int default 1)
     returns (b dm_dump) as
         declare g char(16) character set octets;
     begin
@@ -76,7 +80,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import time as tm
 #  import datetime
@@ -85,86 +89,86 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import shutil
 #  import subprocess
 #  import platform
-#  
+#
 #  from fdb import services
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  DB_NAME = '$(DATABASE_LOCATION)' + 'bugs.core_0733.fdb'
-#  
+#
 #  DB_PATH = '$(DATABASE_LOCATION)'
 #  U_NAME = user_name
 #  U_PSWD = user_password
 #  NUL_DEVICE = 'nul' if platform.system() == 'Windows' else '/dev/null'
-#  
+#
 #  N_ROWS = 1
-#  
+#
 #  F_SQL_NAME=os.path.join(context['temp_directory'],'tmp_core_0733.sql')
-#  
+#
 #  fb_home = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
 #  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
 #  fbconf_bak = fb_home+'firebird_'+dts+'.tmp_0733.bak'
 #  shutil.copy2( fb_home+'firebird.conf', fbconf_bak )
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close(file_handle):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb'):
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def prepare_fb_conf( fb_home, a_required_value ):
-#      
+#
 #      f_fbconf=open(fb_home+'firebird.conf','r')
 #      fbconf_content=f_fbconf.readlines()
 #      f_fbconf.close()
 #      for i,s in enumerate( fbconf_content ):
 #          if s.lower().lstrip().startswith( 'wirecompression'.lower() ):
 #              fbconf_content[i] = '# <temply commented> ' + s
-#  
+#
 #      fbconf_content.append('\\n# Temporarily added by fbtest, CORE-0733. Should be removed auto:')
 #      fbconf_content.append("\\n#" + '='*30 )
 #      fbconf_content.append('\\nWireCompression = %s' % a_required_value )
 #      fbconf_content.append("\\n#" + '='*30 )
 #      fbconf_content.append("\\n" )
-#  
+#
 #      f_fbconf=open(fb_home+'firebird.conf','w')
 #      f_fbconf.writelines( fbconf_content )
 #      f_fbconf.close()
 #  #------------------------------------------------------------------------------------
-#  
+#
 #  def prepare_sql_4run( required_compression, db_path, n_rows, sql_file_name ):
 #      global os
 #      global U_NAME
 #      global U_PSWD
 #      global NUL_DEVICE
-#  
+#
 #      sql_dump='tmp_core_0733_compression_%(required_compression)s.dump' % ( locals() )
-#  
+#
 #      if os.path.isfile( '%(db_path)s%(sql_dump)s' % (locals()) ):
 #          os.remove( '%(db_path)s%(sql_dump)s' % (locals()) )
-#  
+#
 #      if n_rows is None:
 #          return
-#      
+#
 #      #------------------
-#  
+#
 #      sql_text='''
 #          set list on;
-#  
+#
 #          set term ^;
 #          execute block returns(dts timestamp) as
 #          begin
@@ -174,10 +178,10 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          end
 #          ^
 #          set term ;^
-#  
+#
 #          --out %(db_path)s%(sql_dump)s;
 #          out nul;
-#  
+#
 #          set term ^;
 #          execute block returns(b dm_dump) as
 #          begin
@@ -194,7 +198,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          ^
 #          set term ;^
 #          out;
-#  
+#
 #          set term ^;
 #          execute block returns(dts timestamp) as
 #          begin
@@ -204,97 +208,97 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          end
 #          ^
 #          set term ;^
-#  
+#
 #          insert into t_log( required_value, actual_value, elap_ms)
 #          values(
 #                  upper( '%(required_compression)s' )
 #                 ,upper( rdb$get_context('SYSTEM','WIRE_COMPRESSED') )
-#                 ,datediff( millisecond 
-#                            from cast(rdb$get_context('USER_SESSION','DTS_BEG') as timestamp) 
-#                            to cast(rdb$get_context('USER_SESSION','DTS_END') as timestamp) 
-#                          )           
+#                 ,datediff( millisecond
+#                            from cast(rdb$get_context('USER_SESSION','DTS_BEG') as timestamp)
+#                            to cast(rdb$get_context('USER_SESSION','DTS_END') as timestamp)
+#                          )
 #                )
 #          returning required_value, actual_value, elap_ms
 #          ;
 #          commit;
 #      ''' % dict(globals(), **locals())
 #       # ( locals() )
-#  
+#
 #      f_sql=open( sql_file_name, 'w')
 #      f_sql.write( sql_text )
 #      f_sql.close()
-#  
+#
 #  #-------------------------
-#  
+#
 #  # Call for removing dump from disk:
 #  prepare_sql_4run( 'false', DB_PATH, None, None )
 #  prepare_sql_4run( 'true',  DB_PATH, None, None )
-#  
-#  
+#
+#
 #  REQUIRED_WIRE_COMPRESSION = 'false'
 #  # ------------------------------------------------------ ###########
 #  # Generate SQL script for running when WireCompression = |||FALSE|||
 #  # ------------------------------------------------------ ###########
 #  prepare_sql_4run( REQUIRED_WIRE_COMPRESSION, DB_PATH, N_ROWS, F_SQL_NAME )
-#  
+#
 #  # ------------------------------------------------------ ###########
 #  # Update content of firebird.conf with WireCompression = |||FALSE|||
 #  # ------------------------------------------------------ ###########
 #  prepare_fb_conf( fb_home, REQUIRED_WIRE_COMPRESSION)
-#  
-#  
+#
+#
 #  # --------------------------------------------------------------------------------------
 #  #  Launch ISQL in separate context of execution with job to obtain data and log duration
 #  # --------------------------------------------------------------------------------------
-#  
+#
 #  fn_log = open(os.devnull, 'w')
 #  #fn_log = open( os.path.join(context['temp_directory'],'tmp_0733_with_compression.log'), 'w')
 #  f_isql_obtain_data_err = open( os.path.join(context['temp_directory'],'tmp_0733_obtain_data.err'), 'w')
-#  
+#
 #  subprocess.call( [ context['isql_path'], dsn, "-i", F_SQL_NAME ],
 #                     stdout = fn_log,
 #                     stderr = f_isql_obtain_data_err
 #                 )
 #  fn_log.close()
 #  f_isql_obtain_data_err.close()
-#  
+#
 #  # Call for removing dump from disk:
 #  #prepare_sql_4run( False, DB_PATH, None, None )
 #  #prepare_sql_4run( True, DB_PATH, None, None )
-#  
-#  
+#
+#
 #  # Update content of firebird.conf with WireCompression = true
 #  ##############################################################
-#  
+#
 #  REQUIRED_WIRE_COMPRESSION = 'true'
 #  # ------------------------------------------------------ ###########
 #  # Generate SQL script for running when WireCompression = ||| TRUE|||
 #  # ------------------------------------------------------ ###########
 #  prepare_sql_4run( REQUIRED_WIRE_COMPRESSION, DB_PATH, N_ROWS, F_SQL_NAME )
-#  
+#
 #  # ------------------------------------------------------ ###########
 #  # Update content of firebird.conf with WireCompression = ||| TRUE|||
 #  # ------------------------------------------------------ ###########
 #  prepare_fb_conf( fb_home, REQUIRED_WIRE_COMPRESSION)
-#  
-#  fn_log = open(os.devnull, 'w') 
+#
+#  fn_log = open(os.devnull, 'w')
 #  #fn_log = open( os.path.join(context['temp_directory'],'tmp_0733_without_compress.log'), 'w')
 #  f_isql_obtain_data_err = open( os.path.join(context['temp_directory'],'tmp_0733_obtain_data.err'), 'a')
-#  
+#
 #  subprocess.call( [ context['isql_path'], dsn, "-i", F_SQL_NAME ],
 #                     stdout = fn_log,
 #                     stderr = f_isql_obtain_data_err
 #                 )
 #  fn_log.close()
 #  flush_and_close( f_isql_obtain_data_err )
-#  
+#
 #  # Call for removing dump from disk:
 #  #prepare_sql_4run( REQUIRED_WIRE_COMPRESSION, DB_PATH, None, None )
-#  
+#
 #  # RESTORE original config:
 #  ##########################
 #  shutil.copy2( fbconf_bak , fb_home+'firebird.conf')
-#  
+#
 #  sql='''
 #      -- select * from t_log;
 #      --   REQUIRED_VALUE ACTUAL_VALUE      ELAP_MS
@@ -304,15 +308,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      set list on;
 #      select
 #           result_of_req_compare_to_actual
-#          --,iif( slowest_with_compression < fastest_without_compression, 
-#          --      'EXPECTED: compression was FASTER.', 
+#          --,iif( slowest_with_compression < fastest_without_compression,
+#          --      'EXPECTED: compression was FASTER.',
 #          --      'POOR. slowest_with_compression=' || slowest_with_compression || ', fastest_without_compression=' || fastest_without_compression
 #          --    ) as result_of_compression_benchmark
 #      from (
-#          select 
+#          select
 #               min( iif( upper(required_value) is distinct from upper(actual_value)
 #                         ,coalesce(required_value,'<null>') || coalesce(actual_value,'<null>')
-#                         ,'EXPECTED: actual values were equal to required.' 
+#                         ,'EXPECTED: actual values were equal to required.'
 #                       )
 #                  ) as result_of_req_compare_to_actual
 #              ,min( iif( upper(required_value) = upper('false'), elap_ms, null ) ) fastest_without_compression
@@ -322,14 +326,14 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      ;
 #      set list off;
 #      --select * from t_log;
-#  
+#
 #  '''
 #  runProgram('isql', [ dsn ], sql)
-#  
-#  
+#
+#
 #  # Additional check: STDERR for ISQL must be EMPTY.
 #  ##################################################
-#  
+#
 #  f_list=(f_isql_obtain_data_err,)
 #  for i in range(len(f_list)):
 #     f_name=f_list[i].name
@@ -337,12 +341,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         with open( f_name,'r') as f:
 #             for line in f:
 #                 print("Unexpected STDERR, file "+f_name+": "+line)
-#  
+#
 #  os.remove(f_isql_obtain_data_err.name)
 #  os.remove(fbconf_bak)
 #  os.remove(F_SQL_NAME)
-#  
-#    
+#
+#
 #---
 #act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 

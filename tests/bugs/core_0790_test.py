@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0790
 # title:        Alter view
-# decription:   
+# decription:
 # tracker_id:   CORE-790
 # min_versions: ['2.5.0']
 # versions:     2.5.0
@@ -46,7 +46,7 @@ show view v_users_name;
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:btest2	mpugs.core_0790.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:/fbtest2/tmp/bugs.core_0790.fdb, User: SYSDBA
 SQL> CON> SQL> SQL> ID                              INTEGER Nullable
 NAME                            VARCHAR(20) Nullable
 PASSWD                          VARCHAR(20) Nullable
@@ -65,7 +65,8 @@ View Source:
 ==== ======
 
     select name from v_users
-SQL> SQL> SQL> SQL>"""
+SQL> SQL> SQL> SQL>
+"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
