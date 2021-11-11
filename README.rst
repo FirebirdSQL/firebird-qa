@@ -33,6 +33,7 @@ Usage Guide
         --protocol={xnet,inet,inet4,wnet}
                               Network protocol used for database attachments
         --runslow             Run slow tests
+        --save-output         Save output from isql and other executed utilities into ./out subdirectory
 
    To run all tests (except slow ones) against local server use next command::
 
