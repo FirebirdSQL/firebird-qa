@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_1539
 # title:        select * from rdb$triggers where rdb$trigger_source like 'CHECK%'
-# decription:   
+# decription:
 #                   ::: NOTE :::
 #                   In order to check correctness of following statements under ISQL itself (NOT under fbt_run), do following:
 #                   1) open some text editor that supports charset = win1251 and set encoding for new document = WIN1251
@@ -19,19 +19,19 @@
 #                   4) save .fbt and ensure that it was saved in UTF8 encoding, otherwise exeption like
 #                      "UnicodeDecodeError: 'utf8' codec can't decode byte 0xc3 in position 621: invalid continuation byte"
 #                      will raise.
-#               
-#               
+#
+#
 #                   02-mar-2021. Re-implemented in ordeer to have ability to run this test on Linux.
 #                   We run 'init_script' using charset = utf8 but then run separate ISQL-process
 #                   with request to establish connection using charset = WIN1251.
 #                   Its output is redirected to separate files. File with results of errors (STDERR) must remain empty.
 #                   If it contain anything, we use codecs.open(..., 'r', 'cp1251') + encode('utf8') to display its content.
-#               
+#
 #                   Checked on:
 #                   * Windows: 4.0.0.2377, 3.0.8.33420, 2.5.9.27152
 #                   * Linux:   4.0.0.2377, 3.0.8.33415
-#               
-#                 
+#
+#
 # tracker_id:   CORE-1539
 # min_versions: ['2.1']
 # versions:     2.1
@@ -43,7 +43,7 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 2.1
 # resources: None
 
-substitutions_1 = []
+substitutions_1 = [('RDB$TRIGGER_SOURCE.*', 'RDB$TRIGGER_SOURCE              <VALUE>')]
 
 init_script_1 = """
 	-- ### ONCE AGAIN ###
@@ -56,7 +56,7 @@ init_script_1 = """
         fixerkey        int,
         decisiondate date
     );
-    
+
     alter table test
         add constraint test_bugtype check (bugtype in ('зрабіць', 'трэба зрабіць', 'недахоп', 'памылка', 'катастрофа'))
         ,add constraint test_bugfrequency check (bugfrequency in ('ніколі', 'зрэдку', 'часам', 'часта', 'заўсёды', 'не прыкладаецца'))
@@ -66,35 +66,35 @@ init_script_1 = """
     commit;
   """
 
-db_1 = db_factory(charset='WIN1251', sql_dialect=3, init=init_script_1)
+db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import subprocess
 #  import time
 #  import codecs
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -105,13 +105,13 @@ db_1 = db_factory(charset='WIN1251', sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
-#  
+#
+#
 #  sql_cmd='''
 #      set names WIN1251;
 #      connect '%(dsn)s' user '%(user_name)s' password '%(user_password)s';
@@ -121,39 +121,87 @@ db_1 = db_factory(charset='WIN1251', sql_dialect=3, init=init_script_1)
 #      -- select * from rdb$triggers where rdb$trigger_source like 'CHECK%%' ==> "Cannot transliterate character between character sets."
 #      -- select * from rdb$triggers where rdb$trigger_source starting 'CHECK' ==> works fine.
 #      select rdb$trigger_name, rdb$trigger_source
-#      from rdb$triggers 
+#      from rdb$triggers
 #      where rdb$trigger_source like 'check%%'
 #      order by cast(replace(rdb$trigger_name, 'CHECK_', '') as int);
 #  	;
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_sql_chk = open( os.path.join(context['temp_directory'],'tmp_1539_run.sql'), 'w')
 #  f_sql_chk.write(sql_cmd)
 #  flush_and_close( f_sql_chk )
-#  
+#
 #  f_sql_log = open( ''.join( (os.path.splitext(f_sql_chk.name)[0], '.log' ) ), 'w')
 #  f_sql_err = open( ''.join( (os.path.splitext(f_sql_chk.name)[0], '.err' ) ), 'w')
 #  subprocess.call( [ context['isql_path'], '-q', '-i', f_sql_chk.name ], stdout = f_sql_log, stderr = f_sql_err)
 #  flush_and_close( f_sql_log )
 #  flush_and_close( f_sql_err )
-#  
+#
 #  # If any error occurs --> open .err file and convert messages from there (encoded in win1251) to utf-8:
-#  # 
+#  #
 #  with codecs.open(f_sql_err.name,'r', encoding='cp1251') as f:
 #      for line in f:
 #          if line:
 #              print( 'Unexpected STDERR, line: %s' % line.encode('utf-8') )
-#  
+#
 #  cleanup( (f_sql_chk, f_sql_log, f_sql_err) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+test_script_1 = """
+set blob all;
+set list on;
+-- Ticket:
+-- select * from rdb$triggers where rdb$trigger_source like 'CHECK%%' ==> "Cannot transliterate character between character sets."
+-- select * from rdb$triggers where rdb$trigger_source starting 'CHECK' ==> works fine.
+select rdb$trigger_name, rdb$trigger_source
+from rdb$triggers
+where rdb$trigger_source like 'check%%'
+order by cast(replace(rdb$trigger_name, 'CHECK_', '') as int);
+"""
+
+act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1, charset='WIN1251')
+
+expected_stdout_1 = """
+
+RDB$TRIGGER_NAME                CHECK_1
+RDB$TRIGGER_SOURCE              0:b
+check (bugtype in ('зрабіць', 'трэба зрабіць', 'недахоп', 'памылка', 'катастрофа'))
+
+RDB$TRIGGER_NAME                CHECK_2
+RDB$TRIGGER_SOURCE              0:e
+check (bugtype in ('зрабіць', 'трэба зрабіць', 'недахоп', 'памылка', 'катастрофа'))
+
+RDB$TRIGGER_NAME                CHECK_3
+RDB$TRIGGER_SOURCE              0:11
+check (bugfrequency in ('ніколі', 'зрэдку', 'часам', 'часта', 'заўсёды', 'не прыкладаецца'))
+
+RDB$TRIGGER_NAME                CHECK_4
+RDB$TRIGGER_SOURCE              0:14
+check (bugfrequency in ('ніколі', 'зрэдку', 'часам', 'часта', 'заўсёды', 'не прыкладаецца'))
+
+RDB$TRIGGER_NAME                CHECK_5
+RDB$TRIGGER_SOURCE              0:17
+check (decision in ('адкрыта', 'зроблена', 'састарэла', 'адхілена', 'часткова', 'выдалена'))
+
+RDB$TRIGGER_NAME                CHECK_6
+RDB$TRIGGER_SOURCE              0:1a
+check (decision in ('адкрыта', 'зроблена', 'састарэла', 'адхілена', 'часткова', 'выдалена'))
+
+RDB$TRIGGER_NAME                CHECK_7
+RDB$TRIGGER_SOURCE              0:1d
+check ((decision = 'адкрыта' and fixerkey is null and decisiondate is null) or (decision <> 'адкрыта' and not fixerkey is null and not decisiondate is null))
+
+RDB$TRIGGER_NAME                CHECK_8
+RDB$TRIGGER_SOURCE              0:20
+check ((decision = 'адкрыта' and fixerkey is null and decisiondate is null) or (decision <> 'адкрыта' and not fixerkey is null and not decisiondate is null))
+"""
 
 @pytest.mark.version('>=2.1')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    act_1.expected_stdout = expected_stdout_1
+    act_1.execute()
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

@@ -17,7 +17,7 @@
 # qmid:         bugs.core_1148
 
 import pytest
-from firebird.qa import db_factory, python_act, Action, temp_user, User
+from firebird.qa import db_factory, python_act, Action, user_factory, User
 from firebird.driver import DatabaseError
 
 # version: 2.5
@@ -95,7 +95,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
-user_1 = temp_user(name='TMP$C1148', password='QweRtyUi')
+user_1 = user_factory(name='TMP$C1148', password='QweRtyUi')
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action, user_1: User):

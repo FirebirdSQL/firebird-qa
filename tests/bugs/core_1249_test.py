@@ -9,7 +9,8 @@
 # qmid:         bugs.core_1249
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import ShutdownMode, ShutdownMethod, DatabaseError
 
 # version: 2.0.2
 # resources: None
@@ -22,11 +23,11 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  cur1 = db_conn.cursor()
 #  #cur1.execute('select 1 from rdb$database')
 #  runProgram('gfix',[dsn,'-user',user_name,'-pas',user_password,'-shut','full','-force','0'])
-#  
+#
 #  try:
 #      cur1.execute('select 1 from rdb$database')
 #      print ('BUG! Operation allowed after shutdown!')
@@ -35,7 +36,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      print( ' '.join( ( 'Exception', ('DOES' if 'shutdown' in e[0] else 'does NOT'), 'contain text about shutdown.') ) )
 #      if 'shutdown' not in e[0]:
 #          print(e[0])
-#  
+#
 #  #    Error while starting transaction:
 #  #    - SQLCODE: -902
 #  #    - connection shutdown
@@ -46,21 +47,21 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  #   isc_att_shut_idle: Idle timeout expired
 #  #   isc_att_shut_db_down: Database is shutdown
 #  #   isc_att_shut_engine: Engine is shutdown
-#  
+#
 #  runProgram('gfix',[dsn,'-user',user_name,'-pas',user_password,'-online'])
-#  
+#
 #  # 'substitutions': [('^.*shutdown','shutdown')]
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-    OK: operation not allowed.
-    Exception DOES contain text about shutdown.
-  """
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.0.2')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    with act_1.connect_server() as srv, act_1.db.connect() as con:
+        srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.FULL,
+                              method=ShutdownMethod.FORCED, timeout=0)
+        c = con.cursor()
+        with pytest.raises(DatabaseError, match='.*shutdown'):
+            c.execute('select 1 from rdb$database')
+        #
+        srv.database.bring_online(database=str(act_1.db.db_path))

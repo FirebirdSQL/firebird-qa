@@ -15,7 +15,7 @@
 # qmid:
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import db_factory, python_act, Action, user_factory, User
 
 # version: 3.0
 # resources: None
@@ -171,6 +171,9 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
+user_1 = user_factory(name="Nebuchadnezzar2_King_of_Babylon",
+                      password="Nebu_King_of_Babylon")
+
 expected_stdout_1 = """
 SEC$USER_NAME                   NEBUCHADNEZZAR2_KING_OF_BABYLON
 SEC$FIRST_NAME                  Nebuchadnezzar3_King_of_Babylon
@@ -179,22 +182,16 @@ SEC$LAST_NAME                   Nebuchadnezzar5_King_of_Babylon
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    with act_1.connect_server() as srv:
-        check_login = "Nebuchadnezzar2_King_of_Babylon"
-        srv.user.add(user_name=check_login, password="Nebu_King_of_Babylon")
-        srv.user.update(user_name=check_login,
-                        first_name="Nebuchadnezzar3_King_of_Babylon",
-                        middle_name="Nebuchadnezzar4_King_of_Babylon",
-                        last_name="Nebuchadnezzar5_King_of_Babylon")
-        #
-        act_1.script = f"""set list on;
+def test_1(act_1: Action, user_1: User):
+   user_1.update(first_name="Nebuchadnezzar3_King_of_Babylon",
+                 middle_name="Nebuchadnezzar4_King_of_Babylon",
+                 last_name="Nebuchadnezzar5_King_of_Babylon")
+   #
+   act_1.script = f"""set list on;
 select sec$user_name, sec$first_name, sec$middle_name, sec$last_name from sec$users
-where upper(sec$user_name) = upper('{check_login}');
-commit;
-drop user {check_login};
+where upper(sec$user_name) = upper('{user_1.name}');
 """
-        act_1.expected_stdout = expected_stdout_1
-        act_1.execute()
-        assert act_1.clean_stdout == act_1.clean_expected_stdout
+   act_1.expected_stdout = expected_stdout_1
+   act_1.execute()
+   assert act_1.clean_stdout == act_1.clean_expected_stdout
 
