@@ -123,6 +123,8 @@ def pytest_configure(config):
     _vars_['databases'] = path if path.is_dir() else config.rootpath
     path = config.rootpath / 'backups'
     _vars_['backups'] = path if path.is_dir() else config.rootpath
+    path = config.rootpath / 'files'
+    _vars_['files'] = path if path.is_dir() else config.rootpath
     _vars_['server'] = config.getoption('server')
     _vars_['protocol'] = config.getoption('protocol')
     _vars_['save-output'] = config.getoption('save_output')
