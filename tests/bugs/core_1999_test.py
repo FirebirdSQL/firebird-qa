@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_1999
 # title:        TimeStamp in the every line output gbak.exe utility
-# decription:   
+# decription:
 #                  Database for this test was created beforehand and filled-up with all possible kind of objects:
 #                  domain, table, view, standalone procedure & function, package, trigger, sequence, exception and role.
 #                  Then backup was created for this DB and it was packed into .zip archive - see files/core_1999_nn.zip.
@@ -14,7 +14,7 @@
 #                  NB.
 #                  Utility fbsvcmgr in 2.5.5 was not able to produce output with statistics (i.e. "res_stat tdrw") until commit #62537
 #                  (see:  http://sourceforge.net/p/firebird/code/62537 ).
-#               
+#
 #                  28.10.2019. Checked on:
 #                      4.0.0.1635 SS: 3.495s.
 #                      4.0.0.1633 CS: 3.982s.
@@ -22,20 +22,21 @@
 #                      3.0.5.33178 CS: 4.538s.
 #                      2.5.9.27119 SS: 1.972s.
 #                      2.5.9.27146 SC: 1.540s.
-#               
+#
 #                  13.04.2021: removed code for 2.5.x, changed platform to 'All', replaced path to FB utilities with 'context[...]'.
 #                  Checked on:
 #                      Windows: 3.0.8.33445, 4.0.0.2416
 #                      Linux:   3.0.8.33426, 4.0.0.2416
-#               
-#                
+#
+#
 # tracker_id:   CORE-1999
 # min_versions: ['3.0.5']
 # versions:     3.0.5
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action, temp_file
+from firebird.driver import SrvBackupFlag, SrvRestoreFlag
 
 # version: 3.0.5
 # resources: None
@@ -52,28 +53,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import zipfile
 #  import time
 #  import subprocess
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f,
 #      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#  
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -85,21 +86,21 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            print('type(f_names_list[i])=',type(f_names_list[i]))
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  zf = zipfile.ZipFile( os.path.join(context['files_location'],'core_1999_30.zip') )
 #  zf.extractall( context['temp_directory'] )
 #  zf.close()
-#  
+#
 #  # Result: core_1999_30.fbk is extracted into context['temp_directory']
-#  
+#
 #  tmpres='$(DATABASE_LOCATION)tmp_core_1999_30.fdb'
 #  tmpbkp='$(DATABASE_LOCATION)tmp_core_1999_30.fbk'
-#  
+#
 #  f_restore=open( os.path.join(context['temp_directory'],'tmp_restore_1999_30.log'), 'w')
 #  subprocess.check_call( [ context['fbsvcmgr_path']
 #                           ,"localhost:service_mgr"
@@ -113,9 +114,9 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                         stdout=f_restore, stderr=subprocess.STDOUT
 #                       )
 #  flush_and_close( f_restore )
-#  
+#
 #  # Result: database file 'tmp_core_1999_30.fdb' should be created after this restoring, log in 'tmp_restore_1999_30.log'
-#  
+#
 #  f_backup=open( os.path.join(context['temp_directory'],'tmp_backup_1999_30.log'), 'w')
 #  subprocess.check_call( [ context['fbsvcmgr_path']
 #                           ,"localhost:service_mgr"
@@ -128,13 +129,13 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                         stdout=f_backup, stderr=subprocess.STDOUT
 #                       )
 #  flush_and_close( f_backup )
-#  
+#
 #  # Result: backup file 'tmp_core_1999_30.fbk' should be replaced after this backup, log in 'tmp_backup_1999_30.log'
-#  
-#  
+#
+#
 #  # Sample of backup log with statistics:
 #  # -------------------------------------
-#  # gbak: time     delta  reads  writes 
+#  # gbak: time     delta  reads  writes
 #  # gbak:    0.019  0.019     43      0 readied database . . .fdb for backup
 #  # gbak:    0.019  0.000      0      0 creating file . . ..fbk
 #  # gbak:    0.020  0.000      0      0 starting transaction
@@ -144,33 +145,33 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # . . .
 #  # gbak:    0.847  0.109      2      0 closing file, committing, and finishing. 1105920 bytes written
 #  # gbak:    0.847  0.000    802      2 total statistics
-#  
+#
 #  rows_without_stat=0
 #  with open(f_backup.name, 'r') as f:
 #      for line in f:
 #          tokens=line.split()
 #          if not (           tokens[1].replace('.','',1).replace(',','',1).isdigit()            and            tokens[2].replace('.','',1).replace(',','',1).isdigit()            and            tokens[3].replace('.','',1).replace(',','',1).isdigit()            and            tokens[4].replace('.','',1).replace(',','',1).isdigit()            ):
 #              rows_without_stat = rows_without_stat + 1
-#  
+#
 #  print("bkp: rows_without_stat="+str(rows_without_stat))
-#  
+#
 #  # Sample of restore log with statistics:
 #  # -------------------------------------
-#  # gbak: time     delta  reads  writes  
-#  # gbak:    0.000  0.000      0      0 opened file ....fbk 
-#  # gbak:    0.004  0.003      0      0 transportable backup -- data in XDR format 
-#  # gbak:    0.004  0.000      0      0 		backup file is compressed 
-#  # gbak:    0.004  0.000      0      0 backup version is 10 
-#  # gbak:    0.275  0.270      0    711 created database ....fdb, page_size 4096 bytes 
-#  # gbak:    0.277  0.002      0      2 started transaction 
-#  # gbak:    0.278  0.001      0      0 restoring domain RDB$11 
+#  # gbak: time     delta  reads  writes
+#  # gbak:    0.000  0.000      0      0 opened file ....fbk
+#  # gbak:    0.004  0.003      0      0 transportable backup -- data in XDR format
+#  # gbak:    0.004  0.000      0      0 		backup file is compressed
+#  # gbak:    0.004  0.000      0      0 backup version is 10
+#  # gbak:    0.275  0.270      0    711 created database ....fdb, page_size 4096 bytes
+#  # gbak:    0.277  0.002      0      2 started transaction
+#  # gbak:    0.278  0.001      0      0 restoring domain RDB$11
 #  # . . .
-#  # gbak:    1.987  0.000      0     31 fixing system generators 
-#  # gbak:    2.016  0.029      0     10 finishing, closing, and going home 
-#  # gbak:    2.017  0.000      0   1712 total statistics 
-#  # gbak:adjusting the ONLINE and FORCED WRITES flags 
-#  
-#  
+#  # gbak:    1.987  0.000      0     31 fixing system generators
+#  # gbak:    2.016  0.029      0     10 finishing, closing, and going home
+#  # gbak:    2.017  0.000      0   1712 total statistics
+#  # gbak:adjusting the ONLINE and FORCED WRITES flags
+#
+#
 #  rows_without_stat=0
 #  with open(f_restore.name, 'r') as f:
 #      for line in f:
@@ -185,39 +186,70 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #             tokens[4].replace('.','',1).replace(',','',1).isdigit()
 #             ):
 #              rows_without_stat = rows_without_stat + 1
-#  
+#
 #  print("res: rows_without_stat="+str(rows_without_stat))
-#  
+#
 #  # Backup log should contain SINGLE row without statistics, in its header (1st line):
-#  # gbak: time     delta  reads  writes 
-#  
+#  # gbak: time     delta  reads  writes
+#
 #  # Restore log should contain TWO rows without statistics, first and last:
-#  # gbak: time     delta  reads  writes  
-#  # gbak:adjusting the ONLINE and FORCED WRITES flags 
-#  
+#  # gbak: time     delta  reads  writes
+#  # gbak:adjusting the ONLINE and FORCED WRITES flags
+#
 #  #####################################################################
 #  # Cleanup:
-#  
-#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with 
+#
+#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with
 #  # Exception raised while executing Python test script. exception: WindowsError: 32
 #  time.sleep(1)
-#  
+#
 #  # CLEANUP
 #  #########
 #  cleanup( (f_backup, f_restore, tmpbkp, tmpres ) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-    bkp: rows_without_stat=1
-    res: rows_without_stat=2
-  """
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+file_1 = temp_file('pytest-run.fbk')
 
 @pytest.mark.version('>=3.0.5')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
+def test_1(act_1: Action, file_1):
+    src_backup = act_1.vars['backups'] / 'core1999_30.fbk'
+    with act_1.connect_server() as srv:
+        srv.database.restore(database=str(act_1.db.db_path), backup=str(src_backup),
+                             flags=SrvRestoreFlag.REPLACE,
+                             verbose=True, stats='TDWR')
+        restore_log = srv.readlines()
+        srv.database.backup(database=str(act_1.db.db_path), backup=str(file_1),
+                            verbose=True, stats='TDWR')
+        backup_log = srv.readlines()
+        #
+        # Backup log should contain SINGLE row without statistics, in its header (1st line):
+        # gbak: time     delta  reads  writes
+        #
+        rows_without_stat = 0
+        for line in backup_log:
+            tokens = line.split()
+            if not (tokens[1].replace('.', '', 1).replace(',', '', 1).isdigit() and
+                    tokens[2].replace('.', '', 1).replace(',', '', 1).isdigit() and
+                    tokens[3].replace('.', '', 1).replace(',', '', 1).isdigit() and
+                    tokens[4].replace('.', '', 1).replace(',', '', 1).isdigit()):
+                rows_without_stat = rows_without_stat + 1
+        assert rows_without_stat == 1
+        #
+        # Restore log should contain TWO rows without statistics, first and last:
+        # gbak: time     delta  reads  writes
+        # gbak:adjusting the ONLINE and FORCED WRITES flags
+        #
+        rows_without_stat = 0
+        for line in restore_log:
+            tokens = line.split()
+            if not (tokens[1].replace('.', '', 1).replace(',', '', 1).isdigit() and
+                    tokens[2].replace('.', '', 1).replace(',', '', 1).isdigit() and
+                    tokens[3].replace('.', '', 1).replace(',', '', 1).isdigit() and
+                    tokens[4].replace('.', '', 1).replace(',', '', 1).isdigit()):
+                rows_without_stat = rows_without_stat + 1
+        assert rows_without_stat == 2
 
