@@ -78,6 +78,7 @@ def pytest_report_header(config):
             f"  root: {_vars_['root']}",
             f"  databases: {_vars_['databases']}",
             f"  backups: {_vars_['backups']}",
+            f"  files: {_vars_['files']}",
             f"  driver configuration: {_vars_['firebird-config']}",
             f"  server: {_vars_['server']}",
             f"  protocol: {_vars_['protocol']}",
@@ -232,6 +233,7 @@ class Database:
             db_conf.page_size.value = page_size
         if charset is not None:
             db_conf.db_charset.value = charset
+            db_conf.charset.value = charset
         if _vars_['protocol'] is not None:
             db_conf.protocol.value = NetProtocol._member_map_[_vars_['protocol'].upper()]
     def create(self, page_size: int=None, sql_dialect: int=None, charset: str=None) -> None:
@@ -326,8 +328,8 @@ class Database:
         db = connect('pytest')
         #print(f"Removing db: {self.db_path}")
         db.drop_database()
-    def connect(self, *, user: str=None, password: str=None, role: str=None) -> Connection:
-        self._make_config(user=user, password=password)
+    def connect(self, *, user: str=None, password: str=None, role: str=None, charset: str=None) -> Connection:
+        self._make_config(user=user, password=password, charset=charset)
         return connect('pytest', role=role)
 
 
@@ -687,6 +689,39 @@ class Action:
             print(f"-- isql stderr {'-' * 20}")
             print(result.stderr)
             raise Exception("isql execution failed")
+        self.return_code: int = result.returncode
+        self.stdout: str = result.stdout
+        self.stderr: str = result.stderr
+        # Store output
+        if _vars_['save-output']:
+            if self.stdout:
+                out_file.write_text(self.stdout, encoding=io_enc)
+            if self.stderr:
+                err_file.write_text(self.stderr, encoding=io_enc)
+    def svcmgr(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None) -> None:
+        __tracebackhide__ = True
+        out_file: Path = self.outfile.with_suffix('.out')
+        err_file: Path = self.outfile.with_suffix('.err')
+        if out_file.is_file():
+            out_file.unlink()
+        if err_file.is_file():
+            err_file.unlink()
+        if charset is not None:
+            charset = charset.upper()
+        else:
+            charset = 'NONE'
+        if io_enc is None:
+            io_enc = CHARSET_MAP[charset]
+        params = [_vars_['fbsvcmgr']]
+        if switches:
+            params.extend(switches)
+        result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
+        if result.returncode and not bool(self.expected_stderr):
+            print(f"-- fbsvcmgr stdout {'-' * 20}")
+            print(result.stdout)
+            print(f"-- fbsvcmgr stderr {'-' * 20}")
+            print(result.stderr)
+            raise Exception("fbsvcmgr execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
