@@ -2,15 +2,15 @@
 #
 # id:           bugs.core_2817
 # title:        If stored procedure or trigger contains query with PLAN ORDER it could fail after disconnect of attachment where procedure	rigger executed first time
-# decription:   
-#                
+# decription:
+#
 # tracker_id:   CORE-2817
 # min_versions: ['2.5.0']
 # versions:     2.5
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5
 # resources: None
@@ -39,9 +39,9 @@ init_script_1 = """
     set term ^;
     create or alter procedure sp_test(a_odd smallint) as
         declare c_ord cursor for (
-            select s 
-            from test 
-            where mod(x, 2) = :a_odd 
+            select s
+            from test
+            where mod(x, 2) = :a_odd
             order by x
         );
         declare v_s type of column test.s;
@@ -57,7 +57,7 @@ init_script_1 = """
     end
     ^ -- sp_test
     set term ;^
-    commit; 
+    commit;
   """
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
@@ -65,32 +65,36 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 # test_script_1
 #---
 # import fdb
-#  
+#
 #  db_conn.close()
 #  att1 = kdb.connect(dsn=dsn.encode(),user='SYSDBA',password='masterkey')
 #  att2 = kdb.connect(dsn=dsn.encode(),user='SYSDBA',password='masterkey')
-#  
+#
 #  cur1 = att1.cursor()
 #  cur2 = att2.cursor()
-#  
+#
 #  sp_run='execute procedure sp_test'
-#  
+#
 #  cur1.execute('execute procedure sp_test(0)')
 #  cur2.execute('execute procedure sp_test(1)')
-#  
+#
 #  att1.commit()
 #  att1.close()
-#  
+#
 #  cur2.execute('execute procedure sp_test(1)')
 #  att2.close()
-#    
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.5')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    with act_1.db.connect() as att2:
+        with act_1.db.connect() as att1:
+            cur1 = att1.cursor()
+            cur2 = att2.cursor()
+            cur1.execute('execute procedure sp_test(0)')
+            cur2.execute('execute procedure sp_test(1)')
+            att1.commit()
+        cur2.execute('execute procedure sp_test(1)')

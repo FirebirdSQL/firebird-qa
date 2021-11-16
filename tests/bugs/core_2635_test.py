@@ -2,19 +2,20 @@
 #
 # id:           bugs.core_2635
 # title:        Unique index with a lot of NULL keys can be corrupted at level 1
-# decription:   
+# decription:
 # tracker_id:   CORE-2635
 # min_versions: ['2.1.4', '2.0.6', '2.5']
 # versions:     2.5
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5
 # resources: None
 
-substitutions_1 = []
+substitutions_1 = [('[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9]', ''),
+                   ('Relation [0-9]{3,4}', 'Relation')]
 
 init_script_1 = """set term ^;
 recreate table t (id int, sss varchar(255)) ^
@@ -61,12 +62,25 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 # db_conn.close()
 #  runProgram('gfix',['-validate','-full','-no_update','-user',user_name,'-password',user_password,dsn])
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+expected_stdout_1 = """
+Validation started
+Relation (T)
+process pointer page    0 of    1
+Index 1 (T_ID_DESC)
+Index 2 (T_ID_ASC)
+Index 3 (T_ID_SSS_DESC)
+Index 4 (T_ID_SSS_ASC)
+Relation (T) is ok
+Validation finished
+"""
 
 @pytest.mark.version('>=2.5')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    act_1.expected_stdout = expected_stdout_1
+    with act_1.connect_server() as srv:
+        srv.database.validate(database=str(act_1.db.db_path))
+        act_1.stdout = '\n'.join(srv.readlines())
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

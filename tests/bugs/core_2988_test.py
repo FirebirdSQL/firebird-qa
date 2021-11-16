@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_2988
 # title:        Concurrent transaction number not reported if lock timeout occurs
-# decription:   
+# decription:
 #                    08-aug-2018.
 #                    ::: ACHTUNG :::
 #                    Important change has been added in FB 4.0.
@@ -16,29 +16,32 @@
 #                    as ticket says in its case-1:
 #                    ===
 #                        set transaction read committed no record_version lock timeout 10;
-#                        select * from test; 
+#                        select * from test;
 #                    ===
 #                    For this reason it was decided to create separate section for major version 4.0
-#                    and use UPDATE statement instead of 'select * from test' (UPDATE also must READ 
+#                    and use UPDATE statement instead of 'select * from test' (UPDATE also must READ
 #                    data before changing).
-#               
+#
 #                    Checked on:
 #                        FB25SC, build 2.5.9.27115: OK, 3.750s.
 #                        FB30SS, build 3.0.4.33022: OK, 4.343s.
 #                        FB40SS, build 4.0.0.1154: OK, 4.875s.
-#                
+#
 # tracker_id:   CORE-2988
 # min_versions: ['2.5.4']
 # versions:     3.0, 4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, python_act
+from firebird.driver import TPB, TraAccessMode, Isolation
 
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('record not found for user:.*', ''), ('-concurrent transaction number is.*', '-concurrent transaction number is'), ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
+substitutions_1 = [('record not found for user:.*', ''),
+                   ('-concurrent transaction number is.*', '-concurrent transaction number is'),
+                   ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
 
 init_script_1 = """"""
 
@@ -49,7 +52,7 @@ test_script_1 = """
     commit;
     create user tmp$2988 password 'tmp$2988';
     commit;
-    
+
     recreate table test (id integer);
     insert into test values(1);
     commit;
@@ -60,7 +63,7 @@ test_script_1 = """
 
     set transaction lock timeout 1;
     update test set id = id;
-    
+
     set term ^;
     execute block as
         declare v_usr char(31) = 'tmp$2988';
@@ -76,10 +79,10 @@ test_script_1 = """
     ^
     set term ;^
     rollback;
-    
+
     set transaction read committed no record_version lock timeout 1;
     update test set id = id;
-    
+
     set term ^;
     execute block as
         declare v_usr char(31) = 'tmp$2988';
@@ -95,11 +98,11 @@ test_script_1 = """
     ^
     set term ;^
     rollback;
-    
+
     set list on;
     set transaction read committed no record_version lock timeout 1;
     select id from test with lock;
-    
+
     set term ^;
     execute block as
         declare v_usr char(31) = 'tmp$2988';
@@ -114,7 +117,7 @@ test_script_1 = """
             begin
             end
         end
-   
+
         execute statement ('select id from test with lock')
         with autonomous transaction
         as user v_usr password v_pwd
@@ -155,7 +158,8 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     ID                              1
-  """
+"""
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = HY000
     record not found for user: TMP$2988
@@ -177,7 +181,7 @@ expected_stderr_1 = """
     -read conflicts with concurrent update
     -concurrent transaction number is 24
     -At block line: 7, col: 9
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
@@ -190,7 +194,8 @@ def test_1(act_1: Action):
 # version: 4.0
 # resources: None
 
-substitutions_2 = [('^((?!concurrent transaction number is).)*$', ''), ('[\\-]{0,1}concurrent transaction number is [0-9]+', 'concurrent transaction number is')]
+substitutions_2 = [('^((?!concurrent transaction number is).)*$', ''),
+                   ('[\\-]{0,1}concurrent transaction number is [0-9]+', 'concurrent transaction number is')]
 
 init_script_2 = """
     create table test(id int, x int, constraint test_pk primary key(id) using index test_pk);
@@ -203,42 +208,42 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 # test_script_2
 #---
-# 
+#
 #  import os
 #  db_conn.close()
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  con = fdb.connect(dsn = dsn)
-#  
-#  tx1 = con.trans() 
+#
+#  tx1 = con.trans()
 #  tx1.begin()
 #  cur1=tx1.cursor()
 #  cur1.execute( 'update test set x = ? where id = ?', (222, 1) )
-#  
-#  
+#
+#
 #  # **INSTEAD** of ticket case-1:
 #  #     set transaction read committed no record_version lock timeout N;
 #  # -- we start Tx with lock_timeout using custom TPB and try just to **update** record which is locked now
 #  # (but NOT 'SELECT ...'! It is useless with default value of confign parameter ReadConsistency = 1).
 #  # Message about concurrent transaction (which holds lock) in any case must appear in exception text.
 #  # NB: NO_rec_version is USELESS in default FB 4.0 config!
-#  
-#  
+#
+#
 #  # Linsk to doc for creating instance of custom TPB and start transaction which using it:
 #  # https://pythonhosted.org/fdb/reference.html#fdb.TPB
 #  # https://pythonhosted.org/fdb/reference.html#fdb.Connection.trans
-#  
+#
 #  custom_tpb = fdb.TPB()
 #  custom_tpb.access_mode = fdb.isc_tpb_write
 #  custom_tpb.isolation_level = (fdb.isc_tpb_read_committed, fdb.isc_tpb_rec_version) # ::: NB ::: NO_rec_version is USELESS in default FB 4.0 config!
 #  custom_tpb.lock_timeout = 1
-#  
-#  tx2 = con.trans( default_tpb = custom_tpb ) 
+#
+#  tx2 = con.trans( default_tpb = custom_tpb )
 #  tx2.begin()
 #  cur2=tx2.cursor()
-#  
+#
 #  try:
 #      cur2.execute( 'update test set x = ? where id = ?', (333, 1) )
 #  except Exception,e:
@@ -249,21 +254,21 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      print( '-'*30 )
 #  finally:
 #      tx2.commit()
-#  
+#
 #  #----------------------------------------------------------
-#  
+#
 #  # This is for ticket case-2:
 #  #     set transaction read committed lock timeout N;
-#  #     select * from test with lock; 
-#  
+#  #     select * from test with lock;
+#
 #  custom_tpb.access_mode = fdb.isc_tpb_write
 #  custom_tpb.isolation_level = fdb.isc_tpb_concurrency
 #  custom_tpb.lock_timeout = 1
-#  
-#  tx3 = con.trans( default_tpb = custom_tpb ) 
+#
+#  tx3 = con.trans( default_tpb = custom_tpb )
 #  tx3.begin()
 #  cur3=tx3.cursor()
-#  
+#
 #  try:
 #      cur3.execute( 'select x from test where id = ? with lock', (1,) )
 #      for r in cur3:
@@ -276,22 +281,69 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      print( '-'*30 )
 #  finally:
 #      tx3.commit()
-#  
+#
 #  tx1.commit()
 #  con.close()
-#  
-#    
+#
+#
 #---
-#act_2 = python_act('db_2', test_script_2, substitutions=substitutions_2)
+
+act_2 = python_act('db_2', substitutions=substitutions_2)
 
 expected_stdout_2 = """
-    - concurrent transaction number is 13
-    - concurrent transaction number is 13
-  """
+concurrent transaction number is 13
+concurrent transaction number is 13
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_2(db_2):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_2(act_2: Action, capsys):
+    with act_2.db.connect() as con:
+        tx1 = con.transaction_manager()
+        tx1.begin()
+        cur1 = tx1.cursor()
+        cur1.execute('update test set x = ? where id = ?', (222, 1))
+        # **INSTEAD** of ticket case-1:
+        #     set transaction read committed no record_version lock timeout N;
+        # -- we start Tx with lock_timeout using custom TPB and try just to **update** record which is locked now
+        # (but NOT 'SELECT ...'! It is useless with default value of confign parameter ReadConsistency = 1).
+        # Message about concurrent transaction (which holds lock) in any case must appear in exception text.
+        # NB: NO_rec_version is USELESS in default FB 4.0 config!
+        custom_tpb = TPB(access_mode=TraAccessMode.WRITE,
+                         isolation=Isolation.READ_COMMITTED_RECORD_VERSION,
+                         lock_timeout=1)
+        tx2 = con.transaction_manager(default_tpb=custom_tpb.get_buffer())
+        tx2.begin()
+        cur2 = tx2.cursor()
+        try:
+            cur2.execute('update test set x = ? where id = ?', (333, 1))
+        except Exception as e:
+            print('Exception in cur2:')
+            print('-' * 30)
+            for x in e.args:
+                print(x)
+            print('-' * 30)
+        finally:
+            tx2.commit()
+        # This is for ticket case-2:
+        #     set transaction read committed lock timeout N;
+        #     select * from test with lock;
+        custom_tpb.isolation = Isolation.CONCURRENCY
+        tx3 = con.transaction_manager(default_tpb=custom_tpb.get_buffer())
+        tx3.begin()
+        cur3 = tx3.cursor()
+        try:
+            cur3.execute('select x from test where id = ? with lock', (1,))
+            for r in cur3:
+                print(r[0])
+        except Exception as e:
+            print('Exception in cur3:')
+            print('-' * 30)
+            for x in e.args:
+                print(x)
+            print('-' * 30)
+        finally:
+            tx3.commit()
+        tx1.commit()
+    act_2.expected_stdout = expected_stdout_2
+    act_2.stdout = capsys.readouterr().out
+    assert act_2.clean_stdout == act_2.clean_expected_stdout

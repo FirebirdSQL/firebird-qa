@@ -2,14 +2,14 @@
 #
 # id:           bugs.core_2651
 # title:        Incorrect "string right truncation" error with NONE column and multibyte connection charset
-# decription:   
+# decription:
 # tracker_id:   CORE-2651
 # min_versions: []
 # versions:     2.5
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5
 # resources: None
@@ -35,12 +35,16 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 #  finally:
 #      con.close()
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.5')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    with act_1.db.connect(charset='CP943C') as con:
+        c = con.cursor()
+        try:
+            c.execute("select * from TEST_NONE")
+        except:
+            pytest.fail("Test FAILED")
 
 
