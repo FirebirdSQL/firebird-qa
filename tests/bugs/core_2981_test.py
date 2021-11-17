@@ -16,7 +16,7 @@
 # qmid:         None
 
 import pytest
-from threading import Thread
+from threading import Thread, Barrier
 from difflib import unified_diff
 from firebird.qa import db_factory, python_act, Action
 
@@ -482,7 +482,7 @@ select '*Лев Николаевич Толстой *
 ' from rdb$database;
 """
 
-def trace_session(act: Action):
+def trace_session(act: Action, b: Barrier):
     cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
     f'database=%[\\\\/]{act.db.db_path.name}',
     '{',
@@ -515,17 +515,20 @@ def trace_session(act: Action):
     with act.connect_server() as srv:
         srv.encoding = 'utf8'
         srv.trace.start(config='\n'.join(cfg30))
+        b.wait()
         for line in srv:
             pass # we are not interested in trace output
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):
+    b = Barrier(2)
     # Get content of firebird.log BEFORE test
     with act_1.connect_server() as srv:
         srv.info.get_log()
         log_before = srv.readlines()
-    trace_thread = Thread(target=trace_session, args=[act_1])
+    trace_thread = Thread(target=trace_session, args=[act_1, b])
     trace_thread.start()
+    b.wait()
     # RUN QUERY WITH NON-ASCII CHARACTERS
     act_1.isql(switches=['-n', '-q'], input=test_script_1)
     with act_1.connect_server() as srv:

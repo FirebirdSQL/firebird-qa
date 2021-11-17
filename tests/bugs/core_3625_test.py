@@ -2,24 +2,24 @@
 #
 # id:           bugs.core_3625
 # title:        MON$IO_STATS doesn't report page writes performed asynchronously (at the AST level)
-# decription:   
+# decription:
 #                   Thanks to dimitr for suggestions about how this test can be implemented.
 #                   We have to read some part of data from table by "att_watcher", make small change in this table
 #                   by "att_worker" and finaly do commit + once again read this table in "att_watcher".
 #                   Counter mon$page_writes that will be obtained twise by "att_watcher" (before its two changes)
 #                   must differ.
-#               
+#
 #                   ::: NOTE-1 :::
 #                   We have to analyze counter mon$page_writes for attachment that is called "att_watcher" here,
 #                   despite that it does NOT change any in queried table!
-#               
+#
 #                   ::: NOTE-2 :::
-#                   Superserver should *not* be processed by this test because page cache is shared between all 
+#                   Superserver should *not* be processed by this test because page cache is shared between all
 #                   attachments thus counter mon$page_writes is NOT changed in this scenario.
 #                   For this reason in SS we can only "simulate" proper outcome.
 #                   We define server mode (SS/SC/CS) by queries to mon$ tables ana analyzing results, result will
 #                   be stored in variable 'fba'.
-#               
+#
 #                   Checked on:
 #                       4.0.0.1740 SC: 1.228s.
 #                       4.0.0.1714 CS: 8.047s.
@@ -27,78 +27,92 @@
 #                       3.0.6.33236 CS: 1.372s.
 #                       2.5.9.27149 SC: 0.218s.
 #                       2.5.9.27143 CS: 0.645s.
-#               
-#                
+#
+#
 # tracker_id:   CORE-3625
 # min_versions: ['2.5.2']
 # versions:     2.5.2
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import DbInfoCode
 
 # version: 2.5.2
 # resources: None
 
 substitutions_1 = [('[ ]+', ' ')]
 
-init_script_1 = """"""
+init_script_1 = """
+    recreate view v_check as
+    select i.mon$page_writes as iostat_pg_writes
+    from mon$attachments a
+    left join mon$io_stats i on a.mon$stat_id = i.mon$stat_id
+    where
+        a.mon$attachment_id <> current_connection
+        and a.mon$remote_protocol is not null
+        and i.mon$stat_group = 1 -- <<< ATTACHMENTS level
+    ;
+
+    recreate table test(x int) ;
+    insert into test(x) values(1) ;
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  db_conn.close()
-#  
+#
 #  v_check_ddl='''
 #      recreate view v_check as
 #      select i.mon$page_writes as iostat_pg_writes
 #      from mon$attachments a
 #      left join mon$io_stats i on a.mon$stat_id = i.mon$stat_id
-#      where     
+#      where
 #          a.mon$attachment_id <> current_connection
 #          and a.mon$remote_protocol is not null
 #          and i.mon$stat_group = 1 -- <<< ATTACHMENTS level
 #      ;
 #  '''
-#  
+#
 #  # Connection-"worker":
 #  con1=fdb.connect( dsn = dsn )
 #  #print(con1.firebird_version)
-#  
+#
 #  con1.execute_immediate( v_check_ddl )
 #  con1.commit()
 #  con1.execute_immediate('recreate table test(x int)')
 #  con1.commit()
 #  con1.execute_immediate('insert into test(x) values(1)')
 #  con1.commit()
-#  
+#
 #  #-------------------------------------------------------
-#  
+#
 #  # Connection-"watcher":
 #  con2=fdb.connect( dsn = dsn )
-#  
+#
 #  ###############################################################
 #  ###   G E T    S E R V E R    M O D E:   S S / S C / C S ?  ###
 #  ###############################################################
 #  cur1 = con1.cursor()
-#  
+#
 #  sql_mon_query='''
 #      select count(distinct a.mon$server_pid), min(a.mon$remote_protocol), max(iif(a.mon$remote_protocol is null,1,0))
 #      from mon$attachments a
 #      where a.mon$attachment_id in (%s, %s) or upper(a.mon$user) = upper('%s')
 #  ''' % (con1.attachment_id, con2.attachment_id, 'cache writer')
-#  
+#
 #  cur1.execute( sql_mon_query )
 #  for r in cur1.fetchall():
 #      server_cnt=r[0]
 #      server_pro=r[1]
 #      cache_wrtr=r[2]
-#  
+#
 #  if server_pro == None:
 #      fba='Embedded'
 #  elif cache_wrtr == 1:
@@ -106,23 +120,23 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  elif server_cnt == 2:
 #      fba='CS'
 #  else:
-#  
+#
 #      f1=con1.db_info(fdb.isc_info_fetches)
-#      
+#
 #      cur2=con2.cursor()
 #      cur2.execute('select 1 from rdb$database')
 #      for r in cur2.fetchall():
 #         pass
-#  
+#
 #      f2=con1.db_info(fdb.isc_info_fetches)
-#  
+#
 #      fba = 'SC' if f1 ==f2 else 'SS'
-#  
+#
 #  #print('Server mode: ', fba)
 #  cur1.close()
-#  
+#
 #  #########################################################
-#  
+#
 #  if fba == 'SS':
 #      ###                  !!!!!!!!!!!!!                        ###
 #      ##################   A C H T U N G   ########################
@@ -133,47 +147,89 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      #############################################################
 #      page_writes_at_point_2, page_writes_at_point_1 = 0,1
 #  else:
-#  
+#
 #      # Do following in connection-WATCHER:
 #      # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #      cur2=con2.cursor()
 #      con1.execute_immediate('update test set x = 2 rows 1')
-#  
+#
 #      cur2.execute('select * from v_check') # get FIRST value of mon$page_writes
 #      for r in cur2:
 #          page_writes_at_point_1 = r[0]
-#  
+#
 #      # Again do in connection-worker: add small change to the data,
 #      # otherwise watcher will not get any difference in mon$page_writes:
 #      con1.execute_immediate('update test set x = 3 rows 1')
-#  
+#
 #      cur2.execute('select * from test')
 #      for r in cur2:
 #          pass # print('query data:', r[0])
-#  
+#
 #      con2.commit()
 #      cur2.execute('select * from v_check') # get SECOND value of mon$page_writes
 #      for r in cur2:
 #          page_writes_at_point_2 = r[0]
 #      cur2.close()
-#  
-#  
+#
+#
 #  con2.close()
 #  con1.close()
-#  
+#
 #  print('PAGE_WRITES DIFFERENCE SIGN: ', abs(page_writes_at_point_2 - page_writes_at_point_1) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-    PAGE_WRITES DIFFERENCE SIGN: 1
-  """
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.5.2')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    with act_1.db.connect() as worker_con, act_1.db.connect() as watcher_con:
+        worker = worker_con.cursor()
+        watcher = watcher_con.cursor()
+        sql_mon_query = f'''
+            select count(distinct a.mon$server_pid), min(a.mon$remote_protocol), max(iif(a.mon$remote_protocol is null,1,0))
+            from mon$attachments a
+            where a.mon$attachment_id in ({worker_con.info.id}, {watcher_con.info.id}) or upper(a.mon$user) = upper('cache writer')
+        '''
+        worker.execute(sql_mon_query)
+        server_cnt, server_pro, cache_wrtr = worker.fetchone()
+        if server_pro is None:
+            fba = 'Embedded'
+        elif cache_wrtr == 1:
+            fba = 'SS'
+        elif server_cnt == 2:
+            fba = 'CS'
+        else:
+            f1 = worker_con.info.get_info(DbInfoCode.FETCHES)
+            watcher.execute('select 1 from rdb$database')
+            watcher.fetchall()
+            f1 = worker_con.info.get_info(DbInfoCode.FETCHES)
 
+            fba = 'SC' if f1 ==f2 else 'SS'
+        #
+        if fba == 'SS':
+            # SUPERSERVER SHOULD *NOT* BE PROCESSED BY THIS TEST
+            # COUNTER MON$PAGE_WRITES IS NOT CHANGED DURING RUN,
+            # SO WE CAN ONLY "SIMULATE" PROPER OUTCOME FOR THIS!
+            page_writes_at_point_2, page_writes_at_point_1 = 0, 1
+        else:
+            # Do following in connection-WATCHER:
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            worker_con.execute_immediate('update test set x = 2 rows 1')
 
+            watcher.execute('select * from v_check') # get FIRST value of mon$page_writes
+            page_writes_at_point_1 = watcher.fetchone()[0]
+
+            # Again do in connection-worker: add small change to the data,
+            # otherwise watcher will not get any difference in mon$page_writes:
+            worker_con.execute_immediate('update test set x = 3 rows 1')
+
+            watcher.execute('select * from test')
+            watcher.fetchall()
+
+            watcher_con.commit()
+            watcher.execute('select * from v_check') # get SECOND value of mon$page_writes
+            page_writes_at_point_2 = watcher.fetchone()[0]
+    # PAGE_WRITES DIFFERENCE SIGN: 1
+    assert abs(page_writes_at_point_2 - page_writes_at_point_1) == 1

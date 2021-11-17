@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3328
 # title:        Client writes error messages into firebird.log when database is shutted down
-# decription:   
+# decription:
 #                  Test retrieves FB engine version in order to issue proper command option for getting firebird.log content
 #                  (in 2.5 this is 'action_get_ib_log' rather then expected 'action_get_fb_log' - note on letter 'i' instead 'f').
 #                  Initial content of firebird.log is saved into file, see var. 'f_fblog_before'.
@@ -13,55 +13,40 @@
 #                  Comparison is done by using standard Python package 'difflib'.
 #                  Difference between old and new firebird.log should _NOT_ contain lines with words 'gds__detach' or 'lost'.
 #                  If these words absent - all fine, actual and expected output both have to be empty.
-#               
-#                  04-dec-2016. 
+#
+#                  04-dec-2016.
 #                  Checked on: WI-V2.5.7.27028, WI-V3.0.2.32642, WI-T4.0.0.460 (all on SS/SC/CS).
 #                  Reduced time of ISQL working from 5 to 2 seconds.
-#               
+#
 #                  Samples of call with '-c <path_to_fbclient_dll>':
-#               
-#                  fbt_run -b C:\\MIX
-#               irebird
-#               b25in bugs.core_3328 -o localhost/3255 -c C:\\MIX
-#               irebird
-#               b25in
-#               bclient.dll
-#                  fbt_run -b C:\\MIX
-#               irebird
-#               b25Csin bugs.core_3328 -o localhost/3249 -c C:\\MIX
-#               irebird
-#               b25csin
-#               bclient.dll
-#                  fbt_run -b C:\\MIX
-#               irebird
-#               b40Cs bugs.core_3328 -o localhost/3439 -c C:\\MIX
-#               irebird
-#               b40cs
-#               bclient.dll
-#                  fbt_run -b C:\\MIX
-#               irebird
-#               b40sc bugs.core_3328 -o localhost/3430 -c C:\\MIX
-#               irebird
-#               b40sc
-#               bclient.dll & fbt_view -d results.trf
-#                
+#
+#                  fbt_run -b C:\\MIX\\firebird\\fb25\\bin bugs.core_3328 -o localhost/3255 -c C:\\MIX\\firebird\\fb25\\fbinbclient.dll
+#                  fbt_run -b C:\\MIX\\firebird\\fb25Cs\\bin bugs.core_3328 -o localhost/3249 -c C:\\MIX\\firebird\\fb25cs\\bin\\fbclient.dll
+#                  fbt_run -b C:\\MIX\\firebird\\fb40Cs bugs.core_3328 -o localhost/3439 -c C:\\MIX\\firebird\\fb40cs\\fbclient.dll
+#                  fbt_run -b C:\\MIX\\firebird\\fb40sc bugs.core_3328 -o localhost/3430 -c C:\\MIX\\firebird\\fb40sc\\fbclient.dll & fbt_view -d results.trf
+#
 # tracker_id:   CORE-3328
 # min_versions: ['2.5.1']
 # versions:     2.5.1
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+import time
+from difflib import unified_diff
+from threading import Thread
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import ShutdownMethod, ShutdownMode
 
 # version: 2.5.1
 # resources: None
 
-substitutions_1 = [('attachments: [1-9]+', 'attachments: 1'), ('[\\s]+', ' ')]
+# substitutions_1 = [('attachments: [1-9]+', 'attachments: 1'), ('[\\s]+', ' ')]
+substitutions_1 = [('database.*shutdown', 'database shutdown')]
 
 init_script_1 = """
     create table test(s varchar(36) unique);
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -73,51 +58,51 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import time
 #  import difflib
 #  from fdb import services
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  db_file=db_conn.database_name
 #  engine = str(db_conn.engine_version) # convert to text because 'float' object has no attribute 'startswith'
 #  db_conn.close()
-#  
+#
 #  #---------------------------------------------------
 #  def svc_get_fb_log( engine, f_fb_log ):
-#  
+#
 #    import subprocess
-#  
+#
 #    if engine.startswith('2.5'):
 #        get_firebird_log_key='action_get_ib_log'
 #    else:
 #        get_firebird_log_key='action_get_fb_log'
-#  
+#
 #    subprocess.call( [ context['fbsvcmgr_path'],
 #                       "localhost:service_mgr",
 #                       get_firebird_log_key
 #                     ],
-#                     stdout=f_fb_log, 
+#                     stdout=f_fb_log,
 #                     stderr=subprocess.STDOUT
 #                   )
 #    return
-#  
-#  
+#
+#
 #  #---------------------------------------------
-#  
+#
 #  def flush_and_close(file_handle):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb'):
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -125,24 +110,24 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              os.remove( f_names_list[i] )
 #              if os.path.isfile( f_names_list[i]):
 #                  print('ERROR: can not remove file ' + f_names_list[i])
-#  
+#
 #  #--------------------------------------------
-#  
-#  
+#
+#
 #  # Get HOME dir of FB instance that is now checked.
-#  # We will concatenate this string with 'fbsvcmgr' command in order to choose 
+#  # We will concatenate this string with 'fbsvcmgr' command in order to choose
 #  # PROPER binary file when querying services API to shutdown/online DB
 #  # NOTE: this is NECESSARY if several instances are in work and we did not change
 #  # PATH variable before call this test!
-#  
-#  # NB, 06.12.2016: as of  fdb 1.6.1 one need to EXPLICITLY specify user+password pair when doing connect 
+#
+#  # NB, 06.12.2016: as of  fdb 1.6.1 one need to EXPLICITLY specify user+password pair when doing connect
 #  # via to FB services API by services.connect() - see FB tracker, PYFB-69
 #  # ("Can not connect to FB services if set ISC_USER & ISC_PASSWORD by os.environ[ ... ]")
-#  
+#
 #  f_fblog_before=open( os.path.join(context['temp_directory'],'tmp_3328_fblog_before.txt'), 'w')
 #  svc_get_fb_log( engine, f_fblog_before )
 #  flush_and_close( f_fblog_before )
-#  
+#
 #  sql_dml='''
 #    show version;
 #    set term ^;
@@ -158,20 +143,20 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #    ^
 #    set term ;^
 #  '''
-#  
+#
 #  f_client_sql = open( os.path.join(context['temp_directory'],'tmp_client_3328.sql'), 'w')
 #  f_client_sql.write(sql_dml)
 #  flush_and_close( f_client_sql )
-#  
+#
 #  f_client_log = open( os.path.join(context['temp_directory'],'tmp_client_3328.log'), 'w')
 #  p_client_dml=subprocess.Popen( [context['isql_path'], dsn, "-n", "-i", f_client_sql.name ],
 #                   stdout = f_client_log,
 #                   stderr = subprocess.STDOUT
 #                 )
 #  time.sleep(2)
-#  
+#
 #  f_shutdown_log = open( os.path.join(context['temp_directory'],'tmp_shutdown_and_online_3328.log'), 'w')
-#  
+#
 #  # Databases:
 #  #   Number of attachments: 1
 #  #   Number of databases: 1
@@ -182,7 +167,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                   stdout = f_shutdown_log,
 #                   stderr=subprocess.STDOUT
 #                 )
-#  
+#
 #  subprocess.call( [context['fbsvcmgr_path'], "localhost:service_mgr",
 #                    "action_properties", "prp_shutdown_mode", "prp_sm_full", "prp_shutdown_db", "0",
 #                    "dbname", db_file,
@@ -190,7 +175,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                   stdout = f_shutdown_log,
 #                   stderr = subprocess.STDOUT
 #                 )
-#  
+#
 #  # Databases:
 #  #   Number of attachments: 0
 #  #   Number of databases: 0
@@ -200,7 +185,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                   stdout = f_shutdown_log,
 #                   stderr=subprocess.STDOUT
 #                 )
-#  
+#
 #  subprocess.call( [context['fbsvcmgr_path'],"localhost:service_mgr",
 #                    "action_db_stats",
 #                    "dbname", db_file, "sts_hdr_pages"
@@ -208,7 +193,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                   stdout = f_shutdown_log,
 #                   stderr=subprocess.STDOUT
 #                 )
-#  
+#
 #  subprocess.call( [context['fbsvcmgr_path'], "localhost:service_mgr",
 #                    "action_properties", "prp_db_online",
 #                    "dbname", db_file,
@@ -216,7 +201,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                   stdout = f_shutdown_log,
 #                   stderr = subprocess.STDOUT
 #                 )
-#  
+#
 #  subprocess.call( [context['fbsvcmgr_path'],"localhost:service_mgr",
 #                    "action_db_stats",
 #                    "dbname", db_file, "sts_hdr_pages"
@@ -224,37 +209,37 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                   stdout = f_shutdown_log,
 #                   stderr=subprocess.STDOUT
 #                 )
-#  
+#
 #  flush_and_close( f_shutdown_log )
-#  
-#  
+#
+#
 #  f_fblog_after=open( os.path.join(context['temp_directory'],'tmp_3328_fblog_after.txt'), 'w')
 #  svc_get_fb_log( engine, f_fblog_after )
 #  flush_and_close( f_fblog_after )
-#  
+#
 #  p_client_dml.terminate()
 #  flush_and_close( f_client_log )
-#  
+#
 #  # Now we can compare two versions of firebird.log and check their difference.
-#  
+#
 #  oldfb=open(f_fblog_before.name, 'r')
 #  newfb=open(f_fblog_after.name, 'r')
-#  
+#
 #  difftext = ''.join(difflib.unified_diff(
-#      oldfb.readlines(), 
+#      oldfb.readlines(),
 #      newfb.readlines()
 #    ))
 #  oldfb.close()
 #  newfb.close()
-#  
+#
 #  f_diff_txt=open( os.path.join(context['temp_directory'],'tmp_3328_diff.txt'), 'w')
 #  f_diff_txt.write(difftext)
 #  flush_and_close( f_diff_txt )
-#  
+#
 #  # New lines in firebird.log must |NOT| contain these:
 #  # ===
 #  # REMOTE INTERFACE/gds__detach: Unsuccesful detach from database.
-#  # Uncommitted work may have been lost 
+#  # Uncommitted work may have been lost
 #  # ===
 #  # If such lines present - this is regression and we output them.
 #  # When all fine, final output is empty.
@@ -262,39 +247,78 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # BTW: for 3.0, firebird.log will contain such text:
 #  # INET/INET_ERROR: READ ERRNO = 10054, SERVER HOST = LOCALHOST, ADDRESS = 127.0.0.1/3333
 #  # -- but this is checked by another .fbt
-#  
+#
 #  with open( f_shutdown_log.name,'r') as f:
 #    for line in f:
 #        if ( 'unknown' in line.lower() or 'attributes' in line.lower() ):
 #          print(line)
-#          #or 'attachments' in line.lower() 
-#  
+#          #or 'attachments' in line.lower()
+#
 #  with open( f_diff_txt.name,'r') as f:
 #      for line in f:
 #          if line.startswith('+') and ('gds__detach' in line or 'lost' in line):
 #              print(line.upper())
-#  
+#
 #  ###############################
 #  # Cleanup.
 #  cleanup( [i.name for i in (f_shutdown_log,f_client_sql,f_client_log,f_fblog_before,f_fblog_after,f_diff_txt) ] )
-#  
+#
 #  # NB: temply removed following lines from expected_stdout,
 #  # see core-5413, "fbsvcmgr info_svr_db_info does not see active attachments and databases in use (CLASSIC only)"
 #  #    Number of attachments: 1
 #  #    Number of attachments: 0
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-    Attributes force write, full shutdown
-    Attributes force write
-  """
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
-@pytest.mark.version('>=2.5.1')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+expected_stderr_1 = """
+Statement failed, SQLSTATE = HY000
+database /tmp/pytest-of-pcisar/pytest-528/test_10/test.fdb shutdown
+Statement failed, SQLSTATE = HY000
+database /tmp/pytest-of-pcisar/pytest-528/test_10/test.fdb shutdown
+"""
 
+def run_work(act: Action):
+    test_script = """
+    show version;
+    set term ^;
+    execute block as
+        declare v_role varchar(31);
+    begin
+        v_role = left(replace( uuid_to_char(gen_uuid()), '-', ''), 31);
+        while (1=1) do
+        begin
+            insert into test(s) values( uuid_to_char( gen_uuid() ) );
+        end
+    end
+    ^
+    set term ;^
+    """
+    act.expected_stderr = expected_stderr_1
+    act.isql(switches=['-n'], input=test_script)
 
+@pytest.mark.version('>=3.0')
+def test_1(act_1: Action):
+    with act_1.connect_server() as srv:
+        srv.info.get_log()
+        log_before = srv.readlines()
+        #
+        work_thread = Thread(target=run_work, args=[act_1])
+        work_thread.start()
+        time.sleep(2)
+        #
+        srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.FULL,
+                              method=ShutdownMethod.FORCED, timeout=0)
+        srv.database.bring_online(database=str(act_1.db.db_path))
+        #
+        srv.info.get_log()
+        log_after = srv.readlines()
+        #
+        work_thread.join(2)
+        if work_thread.is_alive():
+            pytest.fail('Work thread is still alive')
+        #
+        assert list(unified_diff(log_before, log_after)) == []
+        assert act_1.clean_stderr == act_1.clean_expected_stderr

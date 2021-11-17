@@ -9,7 +9,8 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import SrvStatFlag
 
 # version: 2.5.5
 # resources: None
@@ -27,15 +28,23 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  runProgram('gstat',['$(DATABASE_LOCATION)bugs.core_3548.fdb','-h','-user',user_name,'-password',user_password])
 #  runProgram('gfix',['$(DATABASE_LOCATION)bugs.core_3548.fdb','-online','-user',user_name,'-password',user_password])
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Attributes		force write, full shutdown
-  """
+"""
 
 @pytest.mark.version('>=2.5.5')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
+def test_1(act_1: Action):
+    act_1.gfix(switches=['-user', act_1.db.user, '-password', act_1.db.password,
+                         '-shut', 'full', '-force', '0', str(act_1.db.db_path)])
+    with act_1.connect_server() as srv:
+        srv.database.get_statistics(database=str(act_1.db.db_path), flags=SrvStatFlag.HDR_PAGES)
+        stats = srv.readlines()
+    act_1.gfix(switches=['-user', act_1.db.user, '-password', act_1.db.password,
+                         '-online', str(act_1.db.db_path)])
+    act_1.stdout = '\n'.join(stats)
+    act_1.expected_stdout = expected_stdout_1
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

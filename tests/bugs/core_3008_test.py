@@ -20,7 +20,7 @@
 # qmid:         None
 
 import pytest
-from threading import Thread
+from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5
@@ -188,7 +188,7 @@ expected_stdout_1 = """
     SYSDBA:NONE, ISO88591, TCP
 """
 
-def trace_session(act: Action):
+def trace_session(act: Action, b: Barrier):
     cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
     f'database=%[\\\\/]{act.db.db_path.name}',
     '{',
@@ -198,13 +198,16 @@ def trace_session(act: Action):
     '}']
     with act.connect_server() as srv:
         srv.trace.start(config='\n'.join(cfg30))
+        b.wait()
         for line in srv:
             print(line.upper())
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, capsys):
-    trace_thread = Thread(target=trace_session, args=[act_1])
+    b = Barrier(2)
+    trace_thread = Thread(target=trace_session, args=[act_1, b])
     trace_thread.start()
+    b.wait()
     # make two connections with different charset
     with act_1.db.connect(charset='utf8'):
         pass
