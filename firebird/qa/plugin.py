@@ -239,7 +239,7 @@ class Database:
     def create(self, page_size: int=None, sql_dialect: int=None, charset: str=None) -> None:
         #__tracebackhide__ = True
         self._make_config(page_size=page_size, sql_dialect=sql_dialect, charset=charset)
-        print(f"Creating db: {self.db_path} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
+        print(f"Creating db: {self.dsn} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
         db = create_database('pytest')
         db.close()
     def restore(self, backup: str) -> None:
