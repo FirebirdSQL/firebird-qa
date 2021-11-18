@@ -2,18 +2,21 @@
 #
 # id:           bugs.core_4224
 # title:        Database replace through services API fails
-# decription:   
+# decription:
 #                   13.04.2021. Adapted for run both on Windows and Linux. Checked on:
 #                      Windows: 3.0.8.33445, 4.0.0.2416
 #                      Linux:   3.0.8.33426, 4.0.0.2416
-#                
+#
 # tracker_id:   CORE-4224
 # min_versions: ['2.5.3']
 # versions:     2.5.3
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+import os
+from io import BytesIO
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import SrvRestoreFlag
 
 # version: 2.5.3
 # resources: None
@@ -29,28 +32,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 # import os
 #  import time
 #  import subprocess
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f,
 #      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#  
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -62,28 +65,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            print('type(f_names_list[i])=',type(f_names_list[i]))
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  tmpsrc='$(DATABASE_LOCATION)bugs.core_4224.fdb'
 #  tmpbkp='$(DATABASE_LOCATION)tmp_core_4224.fbk'
-#  
+#
 #  fn_bkp_log=open( os.path.join(context['temp_directory'],'tmp_4224_backup.log'), 'w')
 #  fn_bkp_err=open( os.path.join(context['temp_directory'],'tmp_4224_backup.err'), 'w')
-#  
+#
 #  subprocess.call([context['fbsvcmgr_path'],"localhost:service_mgr",
 #                   "action_backup", "dbname", tmpsrc, "bkp_file", tmpbkp ],
 #                  stdout=fn_bkp_log, stderr=fn_bkp_err)
 #  flush_and_close( fn_bkp_log )
 #  flush_and_close( fn_bkp_err )
-#  
+#
 #  src_timestamp1 = -1
 #  if os.path.isfile(tmpsrc):
 #    src_timestamp1 = os.path.getmtime(tmpsrc)
-#  
+#
 #  fn_res_log=open( os.path.join(context['temp_directory'],'tmp_4224_restore.log'), 'w')
 #  fn_res_err=open( os.path.join(context['temp_directory'],'tmp_4224_restore.err'), 'w')
 #  subprocess.call([context['fbsvcmgr_path'],"localhost:service_mgr",
@@ -91,56 +94,60 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                  stdout=fn_res_log, stderr=fn_res_err)
 #  flush_and_close( fn_res_log )
 #  flush_and_close( fn_res_err )
-#  
+#
 #  src_timestamp2 = -2
 #  if os.path.isfile(tmpsrc):
 #    src_timestamp2 = os.path.getmtime(tmpsrc)
-#  
+#
 #  # Log ERRORS on BACKUP should be EMPTY:
 #  with open( fn_bkp_err.name,'r') as f:
 #      for line in f:
 #          if line.split():
 #             print("UNEXPECTED BACKUP STDERR: " + line)
-#  
-#  
+#
+#
 #  # Log ERRORS on RESTORE should also be EMPTY:
 #  with open( fn_res_err.name,'r') as f:
 #      for line in f:
 #          if line.split():
 #              print("UNEXPECTED RESTORE STDERR: " + line)
-#  
+#
 #  # If restore will fail due to source database in use, its error logs will be like this:
 #  # RESTORE STDERR: could not drop database <...> (database might be in use)
 #  # -Exiting before completion due to errors
 #  # Problems on backup or restore. Timestamps difference is 0.0
-#  
+#
 #  # Difference of timestamps should be positive number:
 #  src_timestamps_diff = src_timestamp2 - src_timestamp1
-#  
+#
 #  if src_timestamps_diff > 0:
 #      print("OK: 'fbsvcmgr action_restore res_replace' DID change database file.")
 #  else:
 #      print("Problems on backup or restore. Timestamps difference is "+str(src_timestamps_diff))
-#  
+#
 #  #####################################################################
 #  # Cleanup:
-#  
-#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with 
+#
+#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with
 #  # Exception raised while executing Python test script. exception: WindowsError: 32
 #  time.sleep(1)
 #  cleanup( (fn_bkp_log, fn_bkp_err, fn_res_log, fn_res_err, tmpbkp) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-    OK: 'fbsvcmgr action_restore res_replace' DID change database file.
-  """
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.5.3')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    src_timestamp1 = os.path.getmtime(act_1.db.db_path)
+    backup = BytesIO()
+    with act_1.connect_server() as srv:
+        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        backup.seek(0)
+        srv.database.local_restore(database=str(act_1.db.db_path), backup_stream=backup,
+                                   flags=SrvRestoreFlag.REPLACE)
+    src_timestamp2 = os.path.getmtime(act_1.db.db_path)
+    assert src_timestamp2 - src_timestamp1 > 0
 
 

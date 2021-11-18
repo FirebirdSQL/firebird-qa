@@ -20,6 +20,7 @@
 # qmid:         None
 
 import pytest
+import time
 from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
@@ -217,6 +218,7 @@ def test_1(act_1: Action, capsys):
     trace_thread.start()
     b.wait()
     act_1.isql(switches=['-n'], input='select 1 as c from rdb$database;')
+    time.sleep(2)
     with act_1.connect_server() as srv:
         for session in list(srv.trace.sessions.keys()):
             srv.trace.stop(session_id=session)

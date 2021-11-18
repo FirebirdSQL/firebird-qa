@@ -316,9 +316,11 @@ def test_1(act_1: Action, work_script_1: Path):
                                        '-password', act_1.db.password, act_1.db.dsn],
                                       stderr = subprocess.STDOUT)
         time.sleep(3)
-        srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.FULL,
-                              method=ShutdownMethod.FORCED, timeout=0)
-        p_work_sql.terminate()
+        try:
+            srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.FULL,
+                                  method=ShutdownMethod.FORCED, timeout=0)
+        finally:
+            p_work_sql.terminate()
         srv.database.bring_online(database=str(act_1.db.db_path))
         srv.info.get_log()
         fblog_before = srv.readlines()

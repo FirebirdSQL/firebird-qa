@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3959
 # title:        Repeat Temporary Table access from ReadOnly Transaction and ReadWrite transaction causes Internal Firebird consistency check (cannot find record back version (291), file: vio.cpp line: 4905)
-# decription:   
+# decription:
 #                  Bug in WI-V2.5.1.26351: execution of last line ('print( cur1a.fetchall() )') leads FB to crash, log:
 #                  ===
 #                        Access violation.
@@ -12,14 +12,15 @@
 #                       to terminate abnormally.
 #                  ===
 #                  No problem in 2.5.7 and 3.0.x
-#                
+#
 # tracker_id:   CORE-3959
 # min_versions: ['2.5.7']
 # versions:     2.5.7
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import TPB, TraAccessMode, Isolation
 
 # version: 2.5.7
 # resources: None
@@ -54,7 +55,7 @@ init_script_1 = """
             select x1.id, x1.name
         from x1
             into sid, sname
-        do 
+        do
             suspend;
     end
     ^
@@ -69,55 +70,55 @@ init_script_1 = """
             insert into x1 values( :pid, :pname);
     end
     ^
-    set term ;^ 
+    set term ;^
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import fdb
 #  os.environ["ISC_USER"] = 'SYSDBA'
 #  os.environ["ISC_PASSWORD"] = 'masterkey'
-#  
+#
 #  db_conn.close()
-#  
+#
 #  txparam1 = ( [ fdb.isc_tpb_read_committed, fdb.isc_tpb_rec_version, fdb.isc_tpb_nowait, fdb.isc_tpb_read ] )
 #  txparam2 = ( [ fdb.isc_tpb_read_committed, fdb.isc_tpb_rec_version, fdb.isc_tpb_nowait ] )
-#  
+#
 #  con1 = fdb.connect(dsn=dsn)
 #  #print(con1.firebird_version)
-#  
+#
 #  print('step-1')
 #  tx1a=con1.trans( default_tpb = txparam1 )
 #  print('step-2')
 #  cur1a = tx1a.cursor()
-#  
+#
 #  print('step-3')
 #  cur1a.execute("select sid, sname from FU_X1")
 #  print('step-4')
-#  
+#
 #  tx1b=con1.trans( default_tpb = txparam2 )
-#  
+#
 #  print('step-5')
 #  cur1b = tx1b.cursor()
 #  print('step-6')
 #  cur1b.callproc("save_x1", ('2', 'foo'))
-#  
+#
 #  print('step-7')
 #  tx1b.commit()
-#  
+#
 #  #cur1b.callproc("save_x1", (3, 'bar'))
 #  #tx1b.commit()
-#  
+#
 #  print('step-8')
 #  cur1a.execute("select sid, sname from FU_X1")
 #  print('step-9')
 #  print( cur1a.fetchall() )
-#  
+#
 #  '''
 #     Output in 2.5.1:
 #        step-1
@@ -147,26 +148,26 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  - Unable to complete network request to host "localhost".
 #  - Error reading data from the connection.', -902, 335544721)
 #  '''
-#    
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-    step-1
-    step-2
-    step-3
-    step-4
-    step-5
-    step-6
-    step-7
-    step-8
-    step-9
-    [(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')]
-  """
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.5.7')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    with act_1.db.connect() as con:
+        txparam_read = TPB(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0,
+                           access_mode=TraAccessMode.READ).get_buffer()
+        txparam_write = TPB(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0).get_buffer()
 
+        tx_read = con.transaction_manager(txparam_read)
+        cur_read = tx_read.cursor()
+        cur_read.execute("select sid, sname from FU_X1")
 
+        tx_write = con.transaction_manager(txparam_write)
+        cur_write = tx_write.cursor()
+        cur_write.callproc("save_x1", ['2', 'foo'])
+        tx_write.commit()
+
+        cur_read.execute("select sid, sname from FU_X1")
+        cur_read.fetchall() # If this does not raises an exception, the test passes

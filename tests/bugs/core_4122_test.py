@@ -2,19 +2,20 @@
 #
 # id:           bugs.core_4122
 # title:        Metadata export with isql (option -ex) does not export functions properly
-# decription:   
+# decription:
 # tracker_id:   CORE-4122
 # min_versions: ['3.0']
 # versions:     3.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0
 # resources: None
 
-substitutions_1 = [("CREATE DATABASE '.*' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE", "CREATE DATABASE '' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE")]
+substitutions_1 = [("CREATE DATABASE '.*' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE",
+                    "CREATE DATABASE '' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE")]
 
 init_script_1 = """
     set term ^ ;
@@ -25,7 +26,7 @@ init_script_1 = """
       returns smallint;
     end^
     set term ; ^
-    
+
     set term ^ ;
     recreate package body PKG_TEST
     as
@@ -38,7 +39,7 @@ init_script_1 = """
       end
     end^
     set term ; ^
-    
+
     set term ^ ;
     create or alter function F_TEST_OUTSIDE_PKG
     returns smallint
@@ -46,10 +47,10 @@ init_script_1 = """
     begin
       return -1;
     end^
-    
+
     set term ; ^
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -57,14 +58,15 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 #---
 # #
 #  runProgram('isql',['-x',dsn,'-user',user_name,'-pass',user_password])
-#    
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    SET SQL DIALECT 3; 
+    SET SQL DIALECT 3;
 
-    /* CREATE DATABASE 'localhost/3330:C:\\FBTESTING\\qabt-repo	mp\\core4122.fdb' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE; */
+    /* CREATE DATABASE 'localhost/3330:C:\\FBTESTING\\qa\\fbt-repo\\tmp\\core4122.fdb' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE; */
 
 
     COMMIT WORK;
@@ -75,7 +77,7 @@ expected_stdout_1 = """
 
     /* Stored functions headers */
     CREATE OR ALTER FUNCTION F_TEST_OUTSIDE_PKG RETURNS SMALLINT
-    AS 
+    AS
     BEGIN END ^
 
     SET TERM ; ^
@@ -106,7 +108,7 @@ expected_stdout_1 = """
     /* Stored functions bodies */
 
     ALTER FUNCTION F_TEST_OUTSIDE_PKG RETURNS SMALLINT
-    AS 
+    AS
     begin
       return -1;
     end ^
@@ -135,11 +137,12 @@ expected_stdout_1 = """
     SET TERM ; ^
     COMMIT WORK;
     SET AUTODDL ON;
-  """
+"""
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    act_1.expected_stdout = expected_stdout_1
+    act_1.isql(switches=['-x'])
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

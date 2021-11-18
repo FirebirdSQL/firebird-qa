@@ -2,10 +2,10 @@
 #
 # id:           bugs.core_3977
 # title:        DELETE FROM MON$STATEMENTS does not interrupt a longish fetch
-# decription:   
+# decription:
 #                   Refactored 08-may-2017.
 #                   Checked on 2.5.8.27061,  3.0.2.32708 and 4.0.0.633 (Classic & Super).
-#               
+#
 #                   Refactored 02.11.2019: restored DB state must be changed to full shutdown in order to make sure tha all attachments are gone.
 #                   Otherwise one may get:
 #                       Error while dropping database
@@ -20,14 +20,17 @@
 #                       3.0.5.33178 CS: 5.192s.
 #                       2.5.9.27119 SS: 3.491s.
 #                       2.5.9.27146 SC: 3.617s.
-#                
+#
 # tracker_id:   CORE-3977
 # min_versions: ['2.5.3']
 # versions:     2.5.3
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+import subprocess
+import time
+from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
 
 # version: 2.5.3
 # resources: None
@@ -37,47 +40,46 @@ substitutions_1 = [('^((?!RECORDS AFFECTED:|RESULT_MSG).)*$', '')]
 init_script_1 = """
     create sequence g;
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  #import sys
 #  import subprocess
 #  from subprocess import Popen
 #  import time
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
-#  # dsn                     localhost/3400:C:\\FBTESTING\\qa
-#  bt-repo	mpugs.core_NNNN.fdb
+#
+#  # dsn                     localhost/3400:C:\\FBTESTING\\qa\\fbt-repo\\tmp\\bugs.core_NNNN.fdb
 #  # db_conn.database_name   C:\\FBTESTING\\QA\\FBT-REPO\\TMP\\BUGS.CORE_NNNN.FDB
 #  # $(DATABASE_LOCATION)... C:/FBTESTING/qa/fbt-repo/tmp/bugs.core_NNN.fdb
-#  
+#
 #  this_fdb=db_conn.database_name
 #  db_conn.close()
-#  
+#
 #  #---------------------------------------------
-#  
+#
 #  def flush_and_close(file_handle):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb'):
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -85,25 +87,25 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              os.remove( f_names_list[i] )
 #              if os.path.isfile( f_names_list[i]):
 #                  print('ERROR: can not remove file ' + f_names_list[i])
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  # Script for ISQL that will do 'heavy select':
-#  
+#
 #  usr=user_name
 #  pwd=user_password
-#  
+#
 #  sql_cmd='''
 #      alter sequence g restart with 0;
 #      commit;
-#  
+#
 #      set term ^;
 #      execute block as
 #          declare x int;
 #      begin
-#          for 
+#          for
 #              execute statement ('select gen_id(g,1) from rdb$types,rdb$types,rdb$types')
-#              on external 
+#              on external
 #                  'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
 #                  as user '%(usr)s' password '%(pwd)s'
 #              into x
@@ -113,118 +115,118 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      ^
 #      set term ;^
 #  ''' % locals()
-#  
+#
 #  f_query_to_be_killedcmd=open( os.path.join(context['temp_directory'],'tmp_isql_3977.sql'), 'w')
 #  f_query_to_be_killedcmd.write(sql_cmd)
 #  flush_and_close( f_query_to_be_killedcmd )
-#  
+#
 #  ############################################################
 #  # Starting ISQL in separate process with doing 'heavy query'
-#  
+#
 #  f_query_to_be_killedlog=open( os.path.join(context['temp_directory'],'tmp_isql_3977.log'), 'w')
-#  
+#
 #  p_heavy_dml = Popen( [ context['isql_path'] , dsn, "-i", f_query_to_be_killedcmd.name ],
 #                       stdout=f_query_to_be_killedlog,
 #                       stderr=subprocess.STDOUT
 #                     )
-#  
-#  # Here we have to wait for sure that ISQL could establish its connect and starts DML 
+#
+#  # Here we have to wait for sure that ISQL could establish its connect and starts DML
 #  # before we start DELETE FROM MON$ATTACHMENTS
-#  
+#
 #  time.sleep(2)
-#  
+#
 #  ######################################
 #  # Run 2nd isql and issue there DELETE FROM MON$ATATSMENTS command. First ISQL process should be terminated for short time.
-#  
+#
 #  v_mon_sttm_sql='''
-#      commit; 
-#      set list on; 
-#  
-#      select * 
-#      from mon$statements 
-#      where 
+#      commit;
+#      set list on;
+#
+#      select *
+#      from mon$statements
+#      where
 #          mon$attachment_id != current_connection
 #          and mon$sql_text containing 'gen_id('
 #      --order by mon$stat_id
-#      ; 
-#  
-#      set count on; 
-#  
-#      delete from mon$statements 
-#      where 
+#      ;
+#
+#      set count on;
+#
+#      delete from mon$statements
+#      where
 #          mon$attachment_id != current_connection
 #          and mon$sql_text containing 'gen_id('
 #      --order by mon$stat_id
 #      ;
 #      quit;
 #  '''
-#  
+#
 #  f_delete_from_mon_sttm_sql=open( os.path.join(context['temp_directory'],'tmp_dels_3977.sql'), 'w')
 #  f_delete_from_mon_sttm_sql.write(v_mon_sttm_sql)
 #  flush_and_close( f_delete_from_mon_sttm_sql )
-#  
+#
 #  f_delete_from_mon_sttm_log=open( os.path.join(context['temp_directory'],'tmp_dels_3977.log'), 'w')
-#  
+#
 #  subprocess.call( [context['isql_path'], dsn, "-i", f_delete_from_mon_sttm_sql.name ],
 #                       stdout=f_delete_from_mon_sttm_log,
 #                       stderr=subprocess.STDOUT
 #                     )
-#  
+#
 #  f_delete_from_mon_sttm_log.close()
-#  
+#
 #  p_heavy_dml.terminate()
 #  flush_and_close( f_query_to_be_killedlog )
-#  
+#
 #  #########################################
 #  # Run checking query: what is resuling value of sequence 'g' ?
 #  # (it must be > 0 and < total number of records to be handled).
-#  
+#
 #  sql_cmd='''
 #      --set echo on;
 #      set list on;
 #      set count on;
-#      select iif( current_gen > 0 and current_gen < total_rows, 
-#                  'OK: query was interrupted in the middle point.', 
-#                  'WRONG! Query to be interrupted ' 
-#                  || iif(current_gen <= 0, 'did not start.', 'already gone, current_gen = '||current_gen ) 
+#      select iif( current_gen > 0 and current_gen < total_rows,
+#                  'OK: query was interrupted in the middle point.',
+#                  'WRONG! Query to be interrupted '
+#                  || iif(current_gen <= 0, 'did not start.', 'already gone, current_gen = '||current_gen )
 #                ) as result_msg
 #      from (
 #          select gen_id(g,0) as current_gen, c.n * c.n * c.n as total_rows
 #          from ( select (select count(*) from rdb$types) as n from rdb$database) c
 #      );
 #  '''
-#  
+#
 #  f_check_result_cmd=open( os.path.join(context['temp_directory'],'tmp_chkr_3977.sql'), 'w')
 #  f_check_result_cmd.write(sql_cmd)
 #  flush_and_close( f_check_result_cmd )
-#  
+#
 #  f_check_result_log=open( os.path.join(context['temp_directory'],'tmp_chkr_3977.log'), 'w')
-#  
+#
 #  subprocess.call( [context['isql_path'], dsn, "-i", f_check_result_cmd.name ],
 #                       stdout=f_check_result_log,
 #                       stderr=subprocess.STDOUT
 #                     )
-#  
+#
 #  flush_and_close( f_check_result_log )
-#  
+#
 #  with open(f_delete_from_mon_sttm_log.name) as f:
 #    for line in f:
 #      if not 'EXECUTE STATEMENT' in line.upper():
 #         print('DEL FROM MON$STTM: ', ' '.join(line.upper().split()) )
-#  
+#
 #  with open(f_query_to_be_killedlog.name) as f:
 #    for line in f:
 #      print('QUERY THAT KILLED: ', ' '.join(line.upper().split()) )
-#  
+#
 #  with open(f_check_result_log.name) as f:
 #    for line in f:
 #      print('CHECK RESULTS LOG: ', ' '.join(line.upper().split()) )
-#  
-#  
+#
+#
 #  ########################
 #  # Cleanup
 #  time.sleep(1)
-#  
+#
 #  # 02.11.2019: add full shutdown to forcedly drop all attachments.
 #  ##                                    ||||||||||||||||||||||||||||
 #  ## ###################################|||  FB 4.0+, SS and SC  |||##############################
@@ -238,9 +240,9 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  ## This means that one need to kill all connections to prevent from exception on cleanup phase:
 #  ## SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
 #  ## #############################################################################################
-#  
+#
 #  f_shutdown_log=open( os.path.join(context['temp_directory'],'tmp_3977_shutdown.log'), 'w')
-#  
+#
 #  subprocess.call( [context['fbsvcmgr_path'], "localhost:service_mgr",
 #                    "action_properties", "prp_shutdown_mode", "prp_sm_full", "prp_shutdown_db", "0", "dbname", this_fdb,
 #                   ],
@@ -253,34 +255,114 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                   stdout = f_shutdown_log,
 #                   stderr = subprocess.STDOUT
 #                 )
-#  
+#
 #  flush_and_close( f_shutdown_log )
-#  
+#
 #  with open( f_shutdown_log.name,'r') as f:
 #      for line in f:
 #          if line.split():
 #              print( 'UNEXPECTED OUTPUT IN DB SHUTDOWN LOG: ' + (' '.join(line.split()).upper()) )
-#  
-#  
-#  
+#
+#
+#
 #  # CLEANUP
 #  #########
 #  time.sleep(1)
 #  cleanup( [i.name for i in (f_query_to_be_killedcmd, f_query_to_be_killedlog, f_delete_from_mon_sttm_sql, f_delete_from_mon_sttm_log, f_check_result_cmd, f_check_result_log, f_shutdown_log ) ] )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     DEL FROM MON$STTM:  RECORDS AFFECTED: 2
     CHECK RESULTS LOG:  RESULT_MSG OK: QUERY WAS INTERRUPTED IN THE MIDDLE POINT.
     CHECK RESULTS LOG:  RECORDS AFFECTED: 1
-  """
+"""
+
+work_script_1 = temp_file('work_script.sql')
 
 @pytest.mark.version('>=2.5.3')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action, work_script_1: Path, capsys):
+    work_script_1.write_text(f"""
+    alter sequence g restart with 0;
+    commit;
 
+    set term ^;
+    execute block as
+        declare x int;
+    begin
+        for
+            execute statement ('select gen_id(g,1) from rdb$types,rdb$types,rdb$types')
+            on external
+                'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
+                as user '{act_1.db.user}' password '{act_1.db.password}'
+            into x
+        do begin
+        end
+    end
+    ^
+    set term ;^
+    """)
+    # Starting ISQL in separate process with doing 'heavy query'
+    p_work_sql = subprocess.Popen([act_1.vars['isql'], '-i', str(work_script_1),
+                                   '-user', act_1.db.user,
+                                   '-password', act_1.db.password, act_1.db.dsn],
+                                  stderr = subprocess.STDOUT)
+    time.sleep(3)
+    # Run 2nd isql and issue there DELETE FROM MON$ATATSMENTS command. First ISQL process should be terminated for short time.
+    drop_sql = """
+    commit;
+    set list on;
 
+    select *
+    from mon$statements
+    where
+        mon$attachment_id != current_connection
+        and mon$sql_text containing 'gen_id('
+    --order by mon$stat_id
+    ;
+
+    set count on;
+
+    delete from mon$statements
+    where
+        mon$attachment_id != current_connection
+        and mon$sql_text containing 'gen_id('
+    --order by mon$stat_id
+    ;
+    quit;
+    """
+    try:
+        act_1.isql(switches=[], input=drop_sql)
+        delete_from_mon_sttm_log = act_1.stdout
+    finally:
+        p_work_sql.terminate()
+    # Run checking query: what is resuling value of sequence 'g' ?
+    # (it must be > 0 and < total number of records to be handled).
+    check_sql = """
+    --set echo on;
+    set list on;
+    set count on;
+    select iif( current_gen > 0 and current_gen < total_rows,
+                'OK: query was interrupted in the middle point.',
+                'WRONG! Query to be interrupted '
+                || iif(current_gen <= 0, 'did not start.', 'already gone, current_gen = '||current_gen )
+              ) as result_msg
+    from (
+        select gen_id(g,0) as current_gen, c.n * c.n * c.n as total_rows
+        from (select (select count(*) from rdb$types) as n from rdb$database) c
+    );
+    """
+    act_1.isql(switches=[], input=check_sql)
+    #
+    for line in delete_from_mon_sttm_log.splitlines():
+        if not 'EXECUTE STATEMENT' in line.upper():
+            print('DEL FROM MON$STTM: ', ' '.join(line.upper().split()))
+    for line in act_1.stdout.splitlines():
+        print('CHECK RESULTS LOG: ', ' '.join(line.upper().split()))
+    #
+    act_1.expected_stdout = expected_stdout_1
+    act_1.stdout = capsys.readouterr().out
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
