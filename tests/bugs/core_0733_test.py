@@ -352,11 +352,9 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 expected_stdout_1 = """
     RESULT_OF_REQ_COMPARE_TO_ACTUAL EXPECTED: actual values were equal to required.
-  """
+"""
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
 def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+    pytest.skip("Test requires manipulation with firebird.conf")
+    #pytest.fail("Test not IMPLEMENTED")

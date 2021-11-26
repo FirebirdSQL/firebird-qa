@@ -252,8 +252,7 @@ def test_1(act_1: Action):
         c = con.cursor()
         c.execute('update test set x = -x')
         con.commit()
-    act_1.svcmgr(switches=['localhost:service_mgr', 'user', act_1.db.user,
-                           'password', act_1.db.password, 'action_db_stats', 'dbname',
+    act_1.svcmgr(switches=['action_db_stats', 'dbname',
                            str(act_1.db.db_path), 'sts_record_versions'])
     act_1.stdout = '\n'.join([line for line in act_1.stdout.splitlines() if 'versions:' in line.lower()])
     act_1.expected_stdout = expected_stdout_1

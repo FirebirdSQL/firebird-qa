@@ -136,9 +136,8 @@ expected_stdout_1 = """
 user_1 = user_factory(name='TMP$C1972', password='123')
 
 @pytest.mark.version('>=2.1.1')
-@pytest.mark.xfail
 def test_1(act_1: Action, user_1: User):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.skip("Test can't be implement with new Python driver")
     # This test is not possible to implement with new Python driver as it does not
     # allow to specify `forced_writes` or `reserve_space` options on connect() as tested
     # configuration options are passed to DPB only for create_database()!

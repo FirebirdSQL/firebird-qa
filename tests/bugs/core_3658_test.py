@@ -201,8 +201,6 @@ Expected line found.
   """
 
 @pytest.mark.version('>=2.5.2')
-@pytest.mark.xfail
 def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+    pytest.skip("Implementation is complicated, and IMHO not worth of realization")
+    #pytest.fail("Test not IMPLEMENTED")

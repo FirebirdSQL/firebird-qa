@@ -2,9 +2,9 @@
 #
 # id:           bugs.core_4964
 # title:        Real errors during connect to security database are hidden by Srp user manager. Errors should be logged no matter what AuthServer is used.
-# decription:   
+# decription:
 #                   Test obtains full path to $fb_home via FBSVCMGR info_get_env.
-#                   Then it makes copy of file 'databases.conf' that is in $fb_home directory because 
+#                   Then it makes copy of file 'databases.conf' that is in $fb_home directory because
 #                   following lines will be added to that 'databases.conf':
 #                   ===
 #                   tmp_alias_4964 = ...
@@ -13,18 +13,18 @@
 #                   }
 #                   ===
 #                   NB: we intentionally put reference to file that for sure does exist but is INVALID for usage as fdb: 'firebird.msg'
-#               
+#
 #                   Then we:
 #                   1) obtain content of server firebird.log
 #                   2) try to make connect to alias 'tmp_alias_4964' and (as expected) get error.
 #                   3) wait a little and obtain again content of server firebird.log
-#               
+#
 #                   Finally we restore original databases.conf and check that:
 #                   1) Client error message contains phrase about need to check server firebird.log for details.
-#                   2) Difference of firebird.log contains messages that engine could not attach to password database 
-#                      because it is invalid (we specify 'firebird.msg' as security_db in databases.conf for test database, 
+#                   2) Difference of firebird.log contains messages that engine could not attach to password database
+#                      because it is invalid (we specify 'firebird.msg' as security_db in databases.conf for test database,
 #                      and of course this is not valid database)
-#               
+#
 #                   Client always get message with gdscode = 335545106 and sqlcode=-902.
 #                   Error text in firebird.log depends on what plugin is used for authentification:
 #                   1) Legacy:
@@ -34,16 +34,16 @@
 #                       file <...> is not a valid database
 #                   2) Srp:
 #                       Authentication error
-#                       file C:\\FBSS\\FIREBIRD.MSG is not a valid database
-#               
+#                       file C:\\FB\\SS\\FIREBIRD.MSG is not a valid database
+#
 #                   Checked for:
 #                      FB30SS, build 3.0.4.32972: OK, 3.360s.
 #                      FB40SS, build 4.0.0.977: OK, 3.485s.
-#               
+#
 #                   Refactored 05.01.2020 (firebird.conf now contains Srp as first plugin in UserManager parameter):
 #                       4.0.0.1714 SS:  2.922s; 4.0.0.1714 SC:  5.563s; 4.0.0.1714  CS: 9.172s.
 #                       3.0.5.33221 SS: 2.015s; 3.0.5.33221 SC: 3.469s; 3.0.5.33221 CS: 6.173s.
-#                
+#
 # tracker_id:   CORE-4964
 # min_versions: ['3.0']
 # versions:     3.0
@@ -55,7 +55,8 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('FILE.*FIREBIRD.MSG', 'FILE FIREBIRD.MSG'), ('CLIENT_MSG: 335545106L', 'CLIENT_MSG: 335545106')]
+substitutions_1 = [('FILE.*FIREBIRD.MSG', 'FILE FIREBIRD.MSG'),
+                   ('CLIENT_MSG: 335545106L', 'CLIENT_MSG: 335545106')]
 
 init_script_1 = """"""
 
@@ -63,7 +64,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import subprocess
 #  from subprocess import Popen
@@ -73,29 +74,29 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import shutil
 #  import re
 #  from fdb import services
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close(file_handle):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb'):
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -106,16 +107,16 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def svc_get_fb_log( f_fb_log ):
-#  
+#
 #    global subprocess
-#  
+#
 #    subprocess.call( [ context['fbsvcmgr_path'],
 #                       "localhost:service_mgr",
 #                       "action_get_fb_log"
@@ -123,26 +124,26 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                     stdout=f_fb_log, stderr=subprocess.STDOUT
 #                   )
 #    return
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  svc = services.connect(host='localhost')
 #  fb_home=svc.get_home_directory()
 #  svc.close()
-#  
+#
 #  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#  
+#
 #  dbconf = os.path.join(fb_home, 'databases.conf')
 #  fbconf = os.path.join(fb_home, 'firebird.conf')
-#  
+#
 #  dbcbak = os.path.join(fb_home, 'databases_'+dts+'.bak')
 #  fbcbak = os.path.join(fb_home, 'firebird_'+dts+'.bak')
-#  
+#
 #  shutil.copy2( dbconf, dbcbak )
 #  shutil.copy2( fbconf, fbcbak )
-#  
+#
 #  tmp_fdb=os.path.join(context['temp_directory'],'tmp_4964.fdb')
-#  
+#
 #  f_dbconf=open(dbconf,'a')
 #  f_dbconf.seek(0, 2)
 #  f_dbconf.write("\\n\\n# Temporarily added by fbtest, CORE-4964. Should be removed auto:")
@@ -151,29 +152,29 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  f_dbconf.write("\\n{\\n  SecurityDatabase = $(dir_conf)/firebird.msg\\n}")
 #  f_dbconf.write("\\n#" + '='*60 )
 #  f_dbconf.close()
-#  
+#
 #  f_fbconf=open(fbconf,'r')
 #  fbconf_content=f_fbconf.readlines()
 #  f_fbconf.close()
 #  for i,s in enumerate( fbconf_content ):
 #      if s.lower().lstrip().startswith( 'wirecrypt'.lower() ):
 #          fbconf_content[i] = '# <temply commented> ' + s
-#  
+#
 #  fbconf_content.append('\\n# Temporarily added by fbtest, CORE-4964. Should be removed auto:')
 #  fbconf_content.append("\\n#" + '='*30 )
 #  fbconf_content.append('\\nWireCrypt = Disabled')
 #  fbconf_content.append("\\n#" + '='*30 )
-#  
+#
 #  f_fbconf=open(fbconf,'w')
 #  f_fbconf.writelines( fbconf_content )
 #  flush_and_close( f_fbconf )
-#  
+#
 #  f_fblog_before=open( os.path.join(context['temp_directory'],'tmp_4964_fblog_before.txt'), 'w')
 #  svc_get_fb_log( f_fblog_before )
 #  flush_and_close( f_fblog_before )
-#  
+#
 #  f_connect_log=open( os.path.join(context['temp_directory'],'tmp_connect_4964.log'), 'w')
-#  
+#
 #  try:
 #     # Try to connect to 'firebird.msg' which is obviously not a database file:
 #     ###################################
@@ -183,37 +184,37 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  except Exception,e:
 #      for x in e:
 #          f_connect_log.write( repr(x)+'\\n' )
-#  
+#
 #  flush_and_close( f_connect_log )
-#  
+#
 #  f_fblog_after=open( os.path.join(context['temp_directory'],'tmp_4964_fblog_after.txt'), 'w')
 #  svc_get_fb_log( f_fblog_after )
 #  flush_and_close( f_fblog_after )
-#  
-#  
+#
+#
 #  # RESTORE original config:
 #  ##########################
 #  shutil.move( dbcbak, dbconf )
 #  shutil.move( fbcbak, fbconf )
-#  
+#
 #  # Compare firebird.log versions BEFORE and AFTER this test:
 #  ######################
-#  
+#
 #  oldfb=open(f_fblog_before.name, 'r')
 #  newfb=open(f_fblog_after.name, 'r')
-#  
+#
 #  difftext = ''.join(difflib.unified_diff(
-#      oldfb.readlines(), 
+#      oldfb.readlines(),
 #      newfb.readlines()
 #    ))
 #  oldfb.close()
 #  newfb.close()
-#  
+#
 #  f_diff_txt=open( os.path.join(context['temp_directory'],'tmp_4964_diff.txt'), 'w')
 #  f_diff_txt.write(difftext)
 #  flush_and_close( f_diff_txt )
-#  
-#  
+#
+#
 #  allowed_patterns = (
 #       re.compile('cannot\\s+attach\\s+to\\s+password+\\s+database\\.*', re.IGNORECASE)
 #      ,re.compile('error\\s+in\\s+isc_attach_database\\(\\)\\s+API\\.*', re.IGNORECASE)
@@ -222,30 +223,30 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      ,re.compile('335545106')
 #      ,re.compile('-902')
 #  )
-#  
+#
 #  with open( f_connect_log.name,'r') as f:
 #      for line in f:
 #          match2some = filter( None, [ p.search(line) for p in allowed_patterns ] )
 #          if match2some:
 #              print( 'CLIENT_MSG: ' + line.upper() )
-#  
+#
 #  with open( f_diff_txt.name,'r') as f:
 #      for line in f:
 #          if line.startswith('+'):
 #              match2some = filter( None, [ p.search(line) for p in allowed_patterns ] )
 #              if match2some:
 #                  print( 'FIREBIRD.LOG: ' + (' '.join(line.split()).upper()) )
-#  
-#  
-#  
+#
+#
+#
 #  # Cleanup:
 #  ##########
-#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with 
+#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with
 #  # Exception raised while executing Python test script. exception: WindowsError: 32
 #  time.sleep(1)
 #  cleanup( (f_connect_log, f_diff_txt, f_fblog_before, f_fblog_after) )
-#  
-#    
+#
+#
 #---
 #act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -255,11 +256,9 @@ expected_stdout_1 = """
     CLIENT_MSG: 335545106L
     FIREBIRD.LOG: + AUTHENTICATION ERROR
     FIREBIRD.LOG: + FILE FIREBIRD.MSG IS NOT A VALID DATABASE
-  """
+"""
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
 def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+    pytest.skip("Test requires manipulation with databases.conf")
+    #pytest.fail("Test not IMPLEMENTED")

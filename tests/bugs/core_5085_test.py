@@ -2,16 +2,16 @@
 #
 # id:           bugs.core_5085
 # title:        Allow to fixup (nbackup) database via Services API
-# decription:   
+# decription:
 #                   Checked on 4.0.0.2119: OK.
-#                
+#
 # tracker_id:   CORE-5085
 # min_versions: ['4.0']
 # versions:     4.0
-# qmid:         
+# qmid:
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -24,38 +24,38 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import time
 #  import subprocess
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  db_source = db_conn.database_name
 #  db_delta = db_source +'.delta'
 #  nbk_level_0 = os.path.splitext(db_source)[0] + '.nbk00'
 #  #'$(DATABASE_LOCATION)tmp_core_5085.nbk_00'
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close(file_handle):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -66,25 +66,25 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  cleanup( ( db_delta, nbk_level_0, ) )
-#  
+#
 #  # 1. Create standby copy: make clone of source DB using nbackup -b 0:
 #  ########################
 #  f_nbk0_log=open( os.path.join(context['temp_directory'],'tmp_nbk0_5085.log'), 'w')
 #  f_nbk0_err=open( os.path.join(context['temp_directory'],'tmp_nbk0_5085.err'), 'w')
-#  
+#
 #  subprocess.call( [context['nbackup_path'], '-L', db_source], stdout=f_nbk0_log, stderr=f_nbk0_err )
 #  subprocess.call( [context['fbsvcmgr_path'], 'service_mgr', 'action_nfix', 'dbname', db_source], stdout=f_nbk0_log, stderr=f_nbk0_err )
-#  
+#
 #  flush_and_close( f_nbk0_log )
 #  flush_and_close( f_nbk0_err )
-#  
+#
 #  # test connect to ensure that all OK after fixup:
 #  ##############
 #  con=fdb.connect(dsn = dsn)
@@ -94,7 +94,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      print(r[0])
 #  cur.close()
 #  con.close()
-#  
+#
 #  # Check. All of these files must be empty:
 #  ###################################
 #  f_list=(f_nbk0_log, f_nbk0_err)
@@ -103,23 +103,32 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          for line in f:
 #              if line.split():
 #                  print( 'UNEXPECTED output in file '+f_list[i].name+': '+line.upper() )
-#  
+#
 #  # Cleanup.
 #  ##########
 #  time.sleep(1)
 #  cleanup( (f_nbk0_log,f_nbk0_err,db_delta, nbk_level_0) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-    0
-  """
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+#expected_stdout_1 = """
+    #0
+#"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    act_1.nbackup(switches=['-l', str(act_1.db.db_path)])
+    #with act_1.connect_server() as srv:
+        # This raises error in new FB OO API while calling spb.insert_string(SPBItem.DBNAME, database):
+        # "Internal error when using clumplet API: attempt to store data in dataless clumplet"
+        #srv.database.nfix_database(database=str(act_1.db.db_path))
+    # So we have to use svcmgr...
+    act_1.reset()
+    act_1.svcmgr(switches=['action_nfix', 'dbname', str(act_1.db.db_path)])
+    with act_1.db.connect() as con:
+        c = con.cursor()
+        result = c.execute('select mon$backup_state from mon$database').fetchall()
+    assert result == [(0, )]
