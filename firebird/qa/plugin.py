@@ -346,26 +346,41 @@ def db_path(tmp_path) -> Path:
     return tmp_path
 
 class User:
-    def __init__(self, name: str, password: str, server: Server):
+    def __init__(self, name: str, password: str, server: Server, encoding: str):
         self.name: str = name
         self.password: str = password
         self.server: Server = server
+        self.encoding = encoding
+        self.__srv_encoding = None
+    def _enter_encode(self) -> None:
+        if self.encoding is not None:
+            self.__srv_encoding = self.server.encoding
+            self.server.encoding = self.encoding
+    def _exit_encode(self) -> None:
+        if self.encoding is not None:
+            self.server.encoding = self.__srv_encoding
     def create(self) -> None:
+        self._enter_encode()
         if self.server.user.exists(self.name):
             self.drop()
         self.server.user.add(user_name=self.name, password=self.password)
         #print(f"User {self.name} created")
+        self._exit_encode()
     def drop(self) -> None:
+        self._enter_encode()
         self.server.user.delete(self.name)
         #print(f"User {self.name} dropped")
+        self._exit_encode()
     def update(self, **kwargs) -> None:
+        self._enter_encode()
         self.server.user.update(user_name=self.name, **kwargs)
+        self._exit_encode()
 
-def user_factory(*, name: str, password: str) -> None:
+def user_factory(*, name: str, password: str, encoding: str=None) -> None:
 
     @pytest.fixture
     def user_fixture(request: FixtureRequest, firebird_server) -> User:
-        user = User(name, password, firebird_server)
+        user = User(name, password, firebird_server, encoding)
         user.create()
         yield user
         user.drop()
@@ -373,12 +388,15 @@ def user_factory(*, name: str, password: str) -> None:
     return user_fixture
 
 class Role:
-    def __init__(self, name: str, database: Database):
+    def __init__(self, name: str, database: Database, charset: str=None):
         self.name: str = name
-        self.db: Connection = database.connect()
+        self.db: Connection = database.connect(charset=charset)
     def __enter__(self) -> Server:
-        self.db.execute_immediate(f'create role {self.name}')
-        self.db.commit()
+        try:
+            self.db.execute_immediate(f'create role {self.name}')
+            self.db.commit()
+        except:
+            pass
         return self
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.db.execute_immediate(f'drop role {self.name}')
@@ -485,7 +503,8 @@ class Action:
                 out_file.write_text(self.stdout, encoding=self.db.io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=self.db.io_enc)
-    def gstat(self, *, switches: List[str], charset: str='utf8') -> None:
+    def gstat(self, *, switches: List[str], charset: str='utf8', connect_db: bool=True,
+              credentials: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -499,8 +518,11 @@ class Action:
             charset = 'NONE'
         self.db.io_enc = CHARSET_MAP[charset]
         params = [_vars_['gstat']]
+        if credentials:
+            params.extend(['-user', self.db.user, '-password', self.db.password])
         params.extend(switches)
-        params.extend(['-user', self.db.user, '-password', self.db.password, str(self.db.dsn)])
+        if connect_db:
+            params.append(str(self.db.dsn))
         result: CompletedProcess = run(params,
                                        encoding=self.db.io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
@@ -519,7 +541,7 @@ class Action:
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=self.db.io_enc)
     def gsec(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None,
-             input: str=None) -> None:
+             input: str=None, credentials: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -536,7 +558,8 @@ class Action:
         params = [_vars_['gsec']]
         if switches:
             params.extend(switches)
-        params.extend(['-user', self.db.user, '-password', self.db.password])
+        if credentials:
+            params.extend(['-user', self.db.user, '-password', self.db.password])
         result: CompletedProcess = run(params, input=input,
                                        encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
@@ -555,7 +578,7 @@ class Action:
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
     def gbak(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None,
-             input: str=None) -> None:
+             input: str=None, credentials: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -570,9 +593,10 @@ class Action:
         if io_enc is None:
             io_enc = CHARSET_MAP[charset]
         params = [_vars_['gbak']]
+        if credentials:
+            params.extend(['-user', self.db.user, '-password', self.db.password])
         if switches:
             params.extend(switches)
-        params.extend(['-user', self.db.user, '-password', self.db.password])
         result: CompletedProcess = run(params, input=input,
                                        encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
@@ -590,7 +614,7 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def nbackup(self, *, switches: List[str], charset: str='utf8') -> None:
+    def nbackup(self, *, switches: List[str], charset: str='utf8', credentials: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -605,7 +629,8 @@ class Action:
         self.db.io_enc = CHARSET_MAP[charset]
         params = [_vars_['nbackup']]
         params.extend(switches)
-        params.extend(['-user', self.db.user, '-password', self.db.password])
+        if credentials:
+            params.extend(['-user', self.db.user, '-password', self.db.password])
         result: CompletedProcess = run(params,
                                        encoding=self.db.io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
@@ -624,7 +649,7 @@ class Action:
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=self.db.io_enc)
     def gfix(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None,
-             input: str=None) -> None:
+             input: str=None, credentials: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -641,7 +666,8 @@ class Action:
         params = [_vars_['gfix']]
         if switches:
             params.extend(switches)
-        params.extend(['-user', self.db.user, '-password', self.db.password])
+        if credentials:
+            params.extend(['-user', self.db.user, '-password', self.db.password])
         result: CompletedProcess = run(params, input=input,
                                        encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
@@ -660,7 +686,8 @@ class Action:
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
     def isql(self, *, switches: List[str], charset: str='utf8', io_enc: str=None,
-             input: str=None, input_file: Path=None, connect_db: bool=True) -> None:
+             input: str=None, input_file: Path=None, connect_db: bool=True,
+             credentials: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -676,11 +703,13 @@ class Action:
             charset = 'NONE'
         if io_enc is None:
             io_enc = CHARSET_MAP[charset]
+        if credentials:
+            params.extend(['-user', self.db.user, '-password', self.db.password])
         params.extend(switches)
         if input_file is not None:
             params.extend(['-i', str(input_file)])
         if connect_db:
-            params.extend(['-user', self.db.user, '-password', self.db.password, str(self.db.dsn)])
+            params.append(str(self.db.dsn))
         result: CompletedProcess = run(params, input=input,
                                        encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
@@ -698,7 +727,8 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def svcmgr(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None) -> None:
+    def svcmgr(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None,
+               connect_mngr: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -713,6 +743,9 @@ class Action:
         if io_enc is None:
             io_enc = CHARSET_MAP[charset]
         params = [_vars_['fbsvcmgr']]
+        if connect_mngr:
+            params.extend([f"{_vars_['host']}:service_mgr" if _vars_['host'] else 'service_mgr',
+                           'user', self.db.user, 'password', self.db.password])
         if switches:
             params.extend(switches)
         result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
@@ -766,8 +799,14 @@ class Action:
                 fieldMaxWidth = max((len(cursor.description[fieldIndex][DESCRIPTION_NAME]),cursor.description[fieldIndex][DESCRIPTION_DISPLAY_SIZE]))
                 print (fieldValue.ljust(fieldMaxWidth), end=' ')
             print('')
-    def test_role(self, name: str) -> Role:
-        return Role(name, self.db)
+    def print_data_list(self, cursor: Cursor, *, prefix: str='') -> None:
+        for row in cursor:
+            i = 0
+            for fieldDesc in cursor.description:
+                print(f'{prefix}{fieldDesc[DESCRIPTION_NAME].ljust(32)}{row[i]}')
+                i += 1
+    def test_role(self, name: str, charset: str=None) -> Role:
+        return Role(name, self.db, charset)
     @property
     def clean_stdout(self) -> str:
         if self._clean_stdout is None:
