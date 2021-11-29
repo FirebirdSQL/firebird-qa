@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5183
 # title:        Regression: line/column numbering may be twisted if alias.name syntax is used
-# decription:   
+# decription:
 #                   NB: it's very _poor_ idea to compare line and column values from text of failed statement
 #                   and some concrete values because they depend on position of statement whithin text ('sqltxt')
 #                   which we going to execute by ISQL.
@@ -11,23 +11,24 @@
 #                   For this purpose we run script, filter its log (which contains text like: -At line NN, column MM)
 #                   and parse (split) these lines on tokens. We extract tokens with number line and column and add
 #                   each pair to the dictionary (Python; Map in java). Name of variable for this dict. = 'pairs'.
-#               
+#
 #                   Key point: length of this dictionary should be 1.
-#                   
+#
 #                   Confirmed on 3.0.0.32493 - line and column numbers differed:
 #                       -At line 6, column 35
 #                       -At line 9, column 5
 #                   (thus length of 'pairs' is 2).
-#               
+#
 #                   On 2.5.6.27001, 4.0.0.145 -- all fine, numbers of line and column is the same, length of 'pairs' = 1.
-#                
+#
 # tracker_id:   CORE-5183
 # min_versions: ['2.5.6']
 # versions:     2.5.6
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+import re
+from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5.6
 # resources: None
@@ -44,28 +45,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import time
 #  import subprocess
 #  import re
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close(file_handle):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -76,13 +77,13 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
-#  
+#
+#
 #  sqltxt='''
 #      set term ^;
 #      execute block
@@ -94,7 +95,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          into id;
 #        suspend;
 #      end^
-#  
+#
 #      execute block
 #      returns (id int)
 #      as
@@ -103,24 +104,24 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          from rdb$database x where z = 0
 #          into id;
 #        suspend;
-#      end^ 
+#      end^
 #  '''
-#  
+#
 #  f_checksql=open( os.path.join(context['temp_directory'],'tmp_5183.sql'), 'w')
 #  f_checksql.write(sqltxt)
 #  flush_and_close( f_checksql )
-#  
+#
 #  f_isqllog=open( os.path.join(context['temp_directory'],'tmp_5183.log'), 'w')
 #  subprocess.call([context['isql_path'], dsn, "-i", f_checksql.name],  stdout=f_isqllog, stderr=subprocess.STDOUT)
 #  flush_and_close( f_isqllog )
-#  
-#  # Output 
+#
+#  # Output
 #  # -At line 6, column 35
 #  # -At line 9, column 5
 #  #  ^   ^   ^    ^    ^
 #  #  |   |   |    |    |
 #  #  1   2   3    4    5 <<< indices for tokens
-#  
+#
 #  pattern = re.compile("-At line[\\s]+[0-9]+[\\s]*,[\\s]*column[\\s]+[0-9]+")
 #  pairs={}
 #  with open( f_isqllog.name,'r') as f:
@@ -128,30 +129,66 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          if pattern.match(line):
 #              tokens=re.split('\\W+', line)
 #              pairs[ tokens[3] ] = tokens[5]
-#  
+#
 #  print( 'Number of distinct pairs {line,column}:  %d ' % len(pairs) )
-#  
+#
 #  # This is sample of WRONG content of dictionary (it was so till 3.0.0.32493):
 #  # {'9': '5', '6': '35'}
 #  # Number of distinct pairs {line,column}:  2
-#  
-#  
+#
+#
 #  # Cleanup:
 #  ##########
 #  time.sleep(1)
 #  cleanup( (f_isqllog,f_checksql) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-    Number of distinct pairs {line,column}:  1
-  """
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+#expected_stdout_1 = """
+    #Number of distinct pairs {line,column}:  1
+#"""
+
+test_script_1 = """
+set term ^;
+execute block
+returns (id int)
+as
+begin
+  select y
+    from rdb$database x where z = 0
+    into id;
+  suspend;
+end^
+
+execute block
+returns (id int)
+as
+begin
+  select x.y
+    from rdb$database x where z = 0
+    into id;
+  suspend;
+end^
+"""
 
 @pytest.mark.version('>=2.5.6')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    pattern = re.compile("-At line[\\s]+[0-9]+[\\s]*,[\\s]*column[\\s]+[0-9]+")
+    act_1.expected_stderr = "We expect errors"
+    act_1.isql(switches=[], input=test_script_1)
+    # stderr Output
+    # -At line 6, column 35
+    # -At line 9, column 5
+    #  ^   ^   ^    ^    ^
+    #  |   |   |    |    |
+    #  1   2   3    4    5 <<< indices for tokens
+    pairs = {}
+    for line in act_1.stderr.splitlines():
+        if pattern.match(line):
+            tokens = re.split('\\W+', line)
+            pairs[tokens[3]] = tokens[5]
+    print(pairs)
+    assert len(pairs) == 1
