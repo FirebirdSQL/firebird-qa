@@ -36,5 +36,5 @@
 
 """
 
-from .plugin import db_factory, user_factory, isql_act, python_act, Database, Action, \
-     temp_file, User
+from .plugin import db_factory, user_factory, isql_act, python_act, Database, Action, User, \
+     temp_file, temp_files

@@ -52,7 +52,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import parse
 from firebird.driver import connect, connect_server, create_database, driver_config, \
      NetProtocol, Server, CHARSET_MAP, Connection, DatabaseError, Cursor, \
-     DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE
+     DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope
 
 _vars_ = {'server': None,
           'bin-dir': None,
@@ -236,6 +236,8 @@ class Database:
             db_conf.charset.value = charset
         if _vars_['protocol'] is not None:
             db_conf.protocol.value = NetProtocol._member_map_[_vars_['protocol'].upper()]
+    def get_config(self) -> DatabaseConfig:
+        return driver_config.get_database('pytest')
     def create(self, page_size: int=None, sql_dialect: int=None, charset: str=None) -> None:
         #__tracebackhide__ = True
         self._make_config(page_size=page_size, sql_dialect=sql_dialect, charset=charset)
@@ -328,9 +330,12 @@ class Database:
         db = connect('pytest')
         #print(f"Removing db: {self.db_path}")
         db.drop_database()
-    def connect(self, *, user: str=None, password: str=None, role: str=None, charset: str=None) -> Connection:
+    def connect(self, *, user: str=None, password: str=None, role: str=None, no_gc: bool=None,
+                no_db_triggers: bool=None, dbkey_scope: DBKeyScope=None,
+                session_time_zone: str=None, charset: str=None) -> Connection:
         self._make_config(user=user, password=password, charset=charset)
-        return connect('pytest', role=role)
+        return connect('pytest', role=role, no_gc=no_gc, no_db_triggers=no_db_triggers,
+                       dbkey_scope=dbkey_scope, session_time_zone=session_time_zone)
 
 
 @pytest.fixture
@@ -870,4 +875,18 @@ def temp_file(filename: str):
             tmp_file.unlink()
 
     return temp_file_fixture
+
+def temp_files(filenames: List[str]):
+
+    @pytest.fixture
+    def temp_files_fixture(tmp_path):
+        tmp_files = []
+        for filename in filenames:
+            tmp_files.append(tmp_path / filename)
+        yield tmp_files
+        for tmp_file in tmp_files:
+            if tmp_file.is_file():
+                tmp_file.unlink()
+
+    return temp_files_fixture
 
