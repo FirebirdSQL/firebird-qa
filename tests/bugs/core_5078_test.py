@@ -131,9 +131,9 @@ fdb_file_1 = temp_file('tmp_core_5078.fdb')
 
 @pytest.mark.version('>=2.5.6')
 def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path):
-    script_file = zipfile.Path(act_1.vars['files'] / 'core_5078.zip',
+    zipped_fbk_file = zipfile.Path(act_1.vars['files'] / 'core_5078.zip',
                     at='tmp_core_5078.fbk')
-    fbk_file_1.write_bytes(script_file.read_bytes())
+    fbk_file_1.write_bytes(zipped_fbk_file.read_bytes())
     with act_1.connect_server() as srv:
         srv.database.restore(database=str(fdb_file_1), backup=str(fbk_file_1))
         srv.wait()

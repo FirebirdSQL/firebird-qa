@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5207
 # title:        ISQL -X may generate invalid GRANT USAGE statements for domains
-# decription:   
+# decription:
 #                  Test uses .fbk which was prepared on FB 2.5 (source .fdb contains single domain).
 #                  After .fbk extration we start restore from it and extract metadata to log.
 #                  Then we search metadata log for phrase 'GRANT USAGE ON DOMAIN' - it should NOT present there.
@@ -18,14 +18,16 @@
 #                       WRONG GRANT: GRANT USAGE ON DOMAIN DM_INT TO PUBLIC;
 #                  ===
 #                  Checked on: LI-T4.0.0.142 - works fine.
-#                
+#
 # tracker_id:   CORE-5207
 # min_versions: ['3.0']
 # versions:     3.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+import zipfile
+from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
 
 # version: 3.0
 # resources: None
@@ -43,31 +45,31 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import zipfile
 #  import subprocess
 #  import re
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  tmpbkp = os.path.join( context['temp_directory'], 'core_5207.fbk' )
 #  tmpres = os.path.join( context['temp_directory'], 'tmp_core_5207.fdb' )
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close(file_handle):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -78,19 +80,19 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
-#  
+#
+#
 #  zf = zipfile.ZipFile( os.path.join(context['files_location'],'core_5207.zip') )
 #  zf.extractall( context['temp_directory'] )
 #  zf.close()
-#  
+#
 #  # Result: core_5207.fbk is extracted into context['temp_directory']
-#  
+#
 #  f_restore=open( os.path.join(context['temp_directory'],'tmp_restore_5207.log'), 'w')
 #  subprocess.check_call([context['fbsvcmgr_path'],
 #                         "localhost:service_mgr",
@@ -101,54 +103,54 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                        ],
 #                        stdout=f_restore, stderr=subprocess.STDOUT)
 #  flush_and_close( f_restore )
-#  
+#
 #  # Result: database file 'tmp_core_5207.fdb' should be created after this restoring,
 #  # log ('tmp_restore_5207.log') must be EMPTY.
-#  
+#
 #  f_xmeta_log = open( os.path.join(context['temp_directory'],'tmp_xmeta_5207.log'), 'w')
 #  f_xmeta_err = open( os.path.join(context['temp_directory'],'tmp_xmeta_5207.err'), 'w')
-#  
+#
 #  subprocess.call( [context['isql_path'], "localhost:"+tmpres, "-x"],
 #                   stdout = f_xmeta_log,
 #                   stderr = f_xmeta_err
 #                 )
-#  
+#
 #  # This file should contain metadata:
 #  flush_and_close( f_xmeta_log )
-#  
+#
 #  # This file should be empty:
 #  flush_and_close( f_xmeta_err )
-#  
+#
 #  f_apply_log = open( os.path.join(context['temp_directory'],'tmp_apply_5207.log'), 'w')
 #  f_apply_err = open( os.path.join(context['temp_directory'],'tmp_apply_5207.err'), 'w')
-#  
+#
 #  subprocess.call( [context['isql_path'], dsn, "-i", f_xmeta_log.name],
 #                   stdout = f_apply_log,
 #                   stderr = f_apply_err
 #                 )
-#  
+#
 #  # Both of these files should be empty:
 #  flush_and_close( f_apply_log )
 #  flush_and_close( f_apply_err )
-#  
+#
 #  # Output STDOUT+STDERR of restoring and STDERR of metadata extraction: they both should be EMPTY:
 #  with open( f_restore.name,'r') as f:
 #      for line in f:
 #          print( "RESTORE LOG: "+line )
-#  
+#
 #  with open( f_xmeta_err.name,'r') as f:
 #      for line in f:
 #          print( "EXTRACT ERR: "+line )
-#  
+#
 #  with open( f_apply_log.name,'r') as f:
 #      for line in f:
 #          print( "APPLY STDOUT: "+line )
-#  
+#
 #  with open( f_apply_err.name,'r') as f:
 #      for line in f:
 #          print( "APPLY STDERR: "+line )
-#  
-#  # Check that STDOUT of metadata extration (f_xmeta_log) does __not__ contain 
+#
+#  # Check that STDOUT of metadata extration (f_xmeta_log) does __not__ contain
 #  # statement like 'GRANT USAGE ON DOMAIN'.
 #  # Output must be empty here:
 #  #
@@ -156,23 +158,38 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      for line in f:
 #          if 'GRANT USAGE ON DOMAIN' in line:
 #              print( "WRONG GRANT: "+line )
-#  
-#  
+#
+#
 #  # Cleanup:
 #  ##########
-#  
-#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with 
+#
+#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with
 #  # Exception raised while executing Python test script. exception: WindowsError: 32
 #  time.sleep(1)
 #  cleanup( (f_restore,f_xmeta_log,f_xmeta_err,f_apply_log,f_apply_err,tmpbkp,tmpres) )
-#    
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+fbk_file_1 = temp_file('tmp_core_5207.fbk')
+fdb_file_1 = temp_file('tmp_core_5207.fdb')
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path, capsys):
+    zipped_fbk_file = zipfile.Path(act_1.vars['files'] / 'core_5207.zip',
+                    at='core_5207.fbk')
+    fbk_file_1.write_bytes(zipped_fbk_file.read_bytes())
+    with act_1.connect_server() as srv:
+        srv.database.restore(database=str(fdb_file_1), backup=str(fbk_file_1))
+        srv.wait()
+    act_1.isql(switches=['-x', str(fdb_file_1)], connect_db=False)
+    metadata = act_1.stdout
+    # Check metadata
+    for line in metadata.splitlines():
+        if 'GRANT USAGE ON DOMAIN' in line:
+            pytest.fail(f'WRONG GRANT: {line}')
+    # Apply metadata to main test database
+    act_1.reset()
+    act_1.isql(switches=[], input=metadata)
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
