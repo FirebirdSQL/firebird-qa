@@ -133,6 +133,11 @@ def pytest_configure(config):
     _vars_['host'] = srv_conf.host.value if srv_conf is not None else ''
     _vars_['password'] = srv_conf.password.value
     #
+    driver_config.register_database('employee')
+    db_conf = driver_config.get_database('employee')
+    db_conf.server.value = _vars_['server']
+    db_conf.database.value = 'employee.fdb'
+    #
     with connect_server(_vars_['server'], user='SYSDBA',
                         password=_vars_['password']) as srv:
         _vars_['version'] = parse(srv.info.version.replace('-dev', ''))
@@ -373,6 +378,12 @@ class User:
         self._exit_encode()
     def drop(self) -> None:
         self._enter_encode()
+        with connect('employee') as con:
+            c = con.cursor()
+            grants = c.execute('select count(*) from rdb$user_privileges where rdb$user = ?', [self.name]).fetchone()[0]
+            if grants > 0:
+                c.execute(f'revoke all on all from {self.name}')
+                con.commit()
         self.server.user.delete(self.name)
         #print(f"User {self.name} dropped")
         self._exit_encode()
@@ -776,6 +787,7 @@ class Action:
         spec = SpecifierSet(version_spec)
         return _vars_['version'] in spec
     def reset(self) -> None:
+        self.return_code: int = 0
         self._clean_stdout = None
         self._clean_stderr = None
         self._clean_expected_stdout = None
