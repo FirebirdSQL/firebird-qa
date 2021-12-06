@@ -52,7 +52,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import parse
 from firebird.driver import connect, connect_server, create_database, driver_config, \
      NetProtocol, Server, CHARSET_MAP, Connection, DatabaseError, Cursor, \
-     DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope
+     DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope, DbInfoCode
 
 _vars_ = {'server': None,
           'bin-dir': None,
@@ -780,12 +780,41 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def connect_server(self, *, user: str='SYSDBA', password: str=None) -> Server:
+    def connect_server(self, *, user: str='SYSDBA', password: str=None, role: str=None) -> Server:
         return connect_server(_vars_['server'], user=user,
-                              password=_vars_['password'] if password is None else password)
+                              password=_vars_['password'] if password is None else password,
+                              role=role)
+    def get_firebird_log(self) -> List[str]:
+        with self.connect_server() as srv:
+            srv.info.get_log()
+            return srv.readlines()
     def is_version(self, version_spec: str) -> bool:
         spec = SpecifierSet(version_spec)
         return _vars_['version'] in spec
+    def get_server_architecture(self) -> str:
+        with self.db.connect() as con1, self.db.connect() as con2:
+            sql = f"""
+            select count(distinct a.mon$server_pid), min(a.mon$remote_protocol),
+            max(iif(a.mon$remote_protocol is null, 1, 0))
+            from mon$attachments a
+            where a.mon$attachment_id in ({con1.info.id}, {con2.info.id}) or upper(a.mon$user) = upper('cache writer')
+        """
+            cur1 = con1.cursor()
+            cur1.execute(sql)
+            server_cnt, server_pro, cache_wrtr = cur1.fetchone()
+            if server_pro is None:
+                result = 'Embedded'
+            elif cache_wrtr == 1:
+                result = 'SS'
+            elif server_cnt == 2:
+                result = 'CS'
+            else:
+                f1 = con1.info.get_info(DbInfoCode.FETCHES)
+                cur2 = con2.cursor()
+                cur2.execute('select 1 from rdb$database').fetchall()
+                f2 = con1.info.get_info(DbInfoCode.FETCHES)
+                result = 'SC' if f1 == f2 else 'SS'
+        return result
     def reset(self) -> None:
         self.return_code: int = 0
         self._clean_stdout = None
