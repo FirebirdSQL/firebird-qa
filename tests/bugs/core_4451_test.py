@@ -229,7 +229,9 @@ def test_1(act_1: Action, capsys):
     trace_thread = Thread(target=trace_session, args=[act_1, b])
     trace_thread.start()
     b.wait()
+    # Trace ready, run tests
     act_1.isql(switches=[], input='select count(*) from test;')
+    # Stop trace
     time.sleep(2)
     with act_1.connect_server() as srv:
         for session in list(srv.trace.sessions.keys()):
@@ -237,7 +239,7 @@ def test_1(act_1: Action, capsys):
         trace_thread.join(1.0)
         if trace_thread.is_alive():
             pytest.fail('Trace thread still alive')
-    #
+    # Check
     show_line = 0
     for line in capsys.readouterr().out.splitlines():
         show_line = (show_line + 1 if ('^' * 79) in line or show_line>0 else show_line)
