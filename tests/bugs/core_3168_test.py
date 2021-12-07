@@ -33,8 +33,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from io import BytesIO
 from firebird.qa import db_factory, python_act, Action, temp_file
 from firebird.driver import SrvStatFlag
@@ -267,43 +265,20 @@ expected_stdout_1 = """
    "BACKUP DATABASE"
 """
 
-def trace_session(act: Action, barrier: Barrier):
-    cfg30 = ['services',
-             '{',
-             '  enabled = true',
-             '  log_services = true',
-             '  exclude_filter = "Database Stats"',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        barrier.wait()
-        for line in srv:
-            print(line.upper())
+trace_1 = ['log_services = true',
+           'exclude_filter = "Database Stats"',
+           ]
 
 temp_file_1 = temp_file('test-file')
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, capsys, temp_file_1):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    with act_1.connect_server() as srv:
-        # Make some service requests
-        b.wait()
+def test_1(act_1: Action, temp_file_1):
+    with act_1.trace(svc_events=trace_1), act_1.connect_server() as srv:
         srv.database.set_sweep_interval(database=act_1.db.db_path, interval=1234321)
         srv.database.get_statistics(database=act_1.db.db_path, flags=SrvStatFlag.HDR_PAGES)
         srv.wait()
         srv.database.backup(database=act_1.db.db_path, backup=temp_file_1)
         srv.wait()
-        #
-        time.sleep(2)
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(2.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
     act_1.expected_stdout = expected_stdout_1
-    act_1.stdout = capsys.readouterr().out
+    act_1.trace_to_stdout(upper=True)
     assert act_1.clean_stdout == act_1.clean_expected_stdout
-
-

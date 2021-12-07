@@ -21,8 +21,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0
@@ -258,54 +256,32 @@ expected_stdout_1 = """
      Records affected: 1
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_initfini = false',
-             '  log_errors = true',
-             '  log_statement_finish = true',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line)
+trace_1 = ['time_threshold = 0',
+           'log_initfini = false',
+           'log_errors = true',
+           'log_statement_finish = true',
+           ]
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, capsys):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    isq_script = """
-    set list on;
-    set count on;
-    select
-        iif(a.mon$remote_protocol is null, 'internal', 'remote') as connection_protocol,
-        iif(a.mon$remote_process is null,  'internal', 'remote') as connection_process,
-        iif(a.mon$remote_pid     is null,  'internal', 'remote') as connection_remote_pid,
-        a.mon$auth_method as auth_method -- should be: 'User name in DPB'
-    from rdb$database r
-    left join mon$attachments a on a.mon$attachment_id = current_connection and a.mon$system_flag = 0;
-    commit;
-    """
-    act_1.isql(switches=['-n', '-user', 'tmp$no$such$user$4889', str(act_1.db.db_path)],
-               connect_db=False, input=isq_script)
-    output = act_1.stdout
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(1.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
-    trace_log = capsys.readouterr().out
-    #
-    # Process logs
+    with act_1.trace(db_events=trace_1):
+        isq_script = """
+        set list on;
+        set count on;
+        select
+            iif(a.mon$remote_protocol is null, 'internal', 'remote') as connection_protocol,
+            iif(a.mon$remote_process is null,  'internal', 'remote') as connection_process,
+            iif(a.mon$remote_pid     is null,  'internal', 'remote') as connection_remote_pid,
+            a.mon$auth_method as auth_method -- should be: 'User name in DPB'
+        from rdb$database r
+        left join mon$attachments a on a.mon$attachment_id = current_connection and a.mon$system_flag = 0;
+        commit;
+        """
+        act_1.isql(switches=['-n', '-user', 'tmp$no$such$user$4889', str(act_1.db.db_path)],
+                   connect_db=False, credentials=False, input=isq_script)
+    # Process trace log
     i = 0
-    for line in trace_log.splitlines():
+    for line in act_1.trace_log:
         if ') EXECUTE_STATEMENT_FINISH' in line:
             i = 1
         if i == 1 and '1 records fetched' in line:
@@ -313,8 +289,8 @@ def test_1(act_1: Action, capsys):
             print("OK: found text in trace related to EMBEDDED connect.")
             break
     if not i == 2:
-        print("FAILED to found text in trace related to EMBEDDED connect.")
-    print(output if output else "FAILED to print log from EMBEDDED connect: log is EMPTY.")
+        print("FAILED to find text in trace related to EMBEDDED connect.")
+    print(act_1.stdout if act_1.stdout else "FAILED to print log from EMBEDDED connect: log is EMPTY.")
     # Check
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = capsys.readouterr().out

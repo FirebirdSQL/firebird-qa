@@ -33,8 +33,6 @@
 
 import pytest
 import re
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5.3
@@ -262,44 +260,24 @@ expected_stdout_1 = """
     param3 = smallint, "4"
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_statement_start = true',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line)
+trace_1 = ['time_threshold = 0',
+           'log_statement_start = true',
+           ]
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action, capsys):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    act_1.isql(switches=['-n', '-q'], input='execute procedure sp_test(1, 2, 3, 4);')
-    time.sleep(2)
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(1.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
-    #
-    trace_log = capsys.readouterr().out
+    with act_1.trace(db_events=trace_1):
+        act_1.isql(switches=['-n', '-q'], input='execute procedure sp_test(1, 2, 3, 4);')
+    # process trace
     spcall_pattern = re.compile("execute procedure ")
     params_pattern = re.compile("param[0-9]{1} = ")
     flag = False
-    for line in trace_log.splitlines():
+    for line in act_1.trace_log:
         if spcall_pattern.match(line):
             flag = True
         if flag and params_pattern.match(line):
             print(line)
+    # Check
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = capsys.readouterr().out
     assert act_1.clean_stdout == act_1.clean_expected_stdout

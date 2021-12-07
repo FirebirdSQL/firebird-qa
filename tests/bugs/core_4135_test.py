@@ -55,7 +55,6 @@ import time
 import re
 import subprocess
 from datetime import datetime
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 from firebird.driver import DbWriteMode, ShutdownMethod, ShutdownMode
 
@@ -522,23 +521,13 @@ expected_stdout_1_b = """
     Trace log parsing. Found triggers before sweep finish: EXPECTED (equals to planned).
 """
 
-def trace_session(act: Action, b: Barrier):
-     cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_statement_start = true',
-             '  log_initfini = false',
-             '  log_errors = true',
-             '  log_sweep = true',
-             '  log_trigger_finish = true',
-             '}']
-     with act.connect_server() as srv:
-          srv.trace.start(config='\n'.join(cfg30))
-          b.wait()
-          for line in srv:
-               print(line)
+trace_1 = ['time_threshold = 0',
+           'log_statement_start = true',
+           'log_initfini = false',
+           'log_errors = true',
+           'log_sweep = true',
+           'log_trigger_finish = true',
+           ]
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, capsys):
@@ -619,57 +608,46 @@ def test_1(act_1: Action, capsys):
      with act_1.connect_server() as srv:
           srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.SYNC)
      # Trace
-     b_trace = Barrier(2)
-     trace_thread = Thread(target=trace_session, args=[act_1, b_trace])
-     trace_thread.start()
-     b_trace.wait()
-     # Traced action
-     # Now we run SWEEP in child thread (asynchronous) and while it will work - try to establish several attachments.
-     sweeper = subprocess.Popen([act_1.vars['gfix'], '-sweep',  '-user', act_1.db.user,
-                                 '-password', act_1.db.password, act_1.db.dsn],
-                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                                )
+     with act_1.trace(db_events=trace_1):
+          # Traced action
+          # Now we run SWEEP in child thread (asynchronous) and while it will work - try to establish several attachments.
+          sweeper = subprocess.Popen([act_1.vars['gfix'], '-sweep',  '-user', act_1.db.user,
+                                      '-password', act_1.db.password, act_1.db.dsn],
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                                     )
+          #
+          try:
+               time.sleep(WAIT_BEFORE_RUN_1ST_ATT)
+               # Save current timestamp: this is point BEFORE we try to establish attachmentas using several ISQL sessions:
+               DTS_BEG_FOR_ATTACHMENTS = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+               # Try to establish several attachments to database while sweep is in work:
+               check_sql = """
+               set heading off;
+               set term ^;
+               execute block returns(att bigint) as
+               begin
+                   att = current_connection;
+                   suspend;
+               end
+               ^
+               set term ;^
+               commit;
+               """
+               for i in range(PLANNED_ATTACH_CNT):
+                    act_1.reset()
+                    act_1.isql(switches=['-n'], input=check_sql)
+               time.sleep(WAIT_FOR_ALL_ATT_DONE)
+               # Save current timestamp: we assume that now ALL isql sessions already FINISHED to
+               # establish attachment (or the whole job and quited)
+               DTS_END_FOR_ATTACHMENTS = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+               # Move database to shutdown in order to stop sweep
+               with act_1.connect_server() as srv:
+                    srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
+                                          method=ShutdownMethod.FORCED, timeout=0)
+          finally:
+               # Kill sweep
+               sweeper.terminate()
      #
-     try:
-          time.sleep(WAIT_BEFORE_RUN_1ST_ATT)
-          # Save current timestamp: this is point BEFORE we try to establish attachmentas using several ISQL sessions:
-          DTS_BEG_FOR_ATTACHMENTS = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-          # Try to establish several attachments to database while sweep is in work:
-          check_sql = """
-          set heading off;
-          set term ^;
-          execute block returns(att bigint) as
-          begin
-              att = current_connection;
-              suspend;
-          end
-          ^
-          set term ;^
-          commit;
-          """
-          for i in range(PLANNED_ATTACH_CNT):
-               act_1.reset()
-               act_1.isql(switches=['-n'], input=check_sql)
-          time.sleep(WAIT_FOR_ALL_ATT_DONE)
-          # Save current timestamp: we assume that now ALL isql sessions already FINISHED to
-          # establish attachment (or the whole job and quited)
-          DTS_END_FOR_ATTACHMENTS = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-          # Move database to shutdown in order to stop sweep
-          with act_1.connect_server() as srv:
-               srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
-                                     method=ShutdownMethod.FORCED, timeout=0)
-     finally:
-          # Kill sweep
-          sweeper.terminate()
-     # stop trace
-     with act_1.connect_server() as srv:
-          for session in list(srv.trace.sessions.keys()):
-               srv.trace.stop(session_id=session)
-          trace_thread.join(1.0)
-          if trace_thread.is_alive():
-               pytest.fail('Trace thread still alive')
-     #
-     trace_log = capsys.readouterr().out
      # Return database online in order to check number of attachments that were established
      # while sweep was in work
      with act_1.connect_server() as srv:
@@ -716,7 +694,7 @@ def test_1(act_1: Action, capsys):
      found_swp_finish = False
      triggers_count_before_swp_start = 0
      triggers_count_before_swp_finish = 0
-     for line in trace_log.splitlines():
+     for line in act_1.trace_log:
           for p in allowed_patterns:
                if result:= p.search(line):
                     what_found = result.group(0)
@@ -728,9 +706,6 @@ def test_1(act_1: Action, capsys):
                          triggers_count_before_swp_start += (1 if not found_swp_start else 0)
                          triggers_count_before_swp_finish += (1 if found_swp_start and not found_swp_finish else 0)
 
-     #time.sleep(1)
-     #print('Trace log parsing. Found triggers before sweep start:',  triggers_count_before_swp_start )
-     #print('Trace log parsing. Found triggers before sweep finish:', triggers_count_before_swp_finish )
      print('Trace log parsing. Found triggers before sweep start:',
            'EXPECTED (no triggers found).' if triggers_count_before_swp_start == 0
            else f'UNEXPECTED: {triggers_count_before_swp_start} instead of 0.')

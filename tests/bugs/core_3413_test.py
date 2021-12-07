@@ -20,8 +20,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5.1
@@ -197,35 +195,14 @@ expected_stdout_1 = """
     ELEMENT "LOG_STATEMENT_FINISH": "FOO" IS NOT A VALID
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_statement_finish = foo',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line.upper())
+trace_1 = ['time_threshold = 0',
+           'log_statement_finish = foo'
+           ]
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, capsys):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    act_1.isql(switches=['-n'], input='select 1 as c from rdb$database;')
-    time.sleep(2)
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(1.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
+def test_1(act_1: Action):
+    with act_1.trace(db_events=trace_1):
+        act_1.isql(switches=['-n'], input='select 1 as c from rdb$database;')
     act_1.expected_stdout = expected_stdout_1
-    act_1.stdout = capsys.readouterr().out
+    act_1.trace_to_stdout(upper=True)
     assert act_1.clean_stdout == act_1.clean_expected_stdout
-

@@ -34,8 +34,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5.5
@@ -280,39 +278,17 @@ expected_stdout_1 = """
     DETAIL_2100
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_initfini = false',
-             '  log_statement_finish = true',
-             '  print_perf = true',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line)
+trace_1 = ['time_threshold = 0',
+           'log_initfini = false',
+           'log_statement_finish = true',
+           'print_perf = true',
+           ]
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, capsys):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    act_1.isql(switches=[], input='set list on; select result from sp_test;')
-    time.sleep(2)
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(1.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
+    with act_1.trace(db_events=trace_1):
+        act_1.isql(switches=[], input='set list on; select result from sp_test;')
     # Check
     act_1.expected_stdout = expected_stdout_1
-    act_1.stdout = capsys.readouterr().out
+    act_1.trace_to_stdout()
     assert act_1.clean_stdout == act_1.clean_expected_stdout
-
-

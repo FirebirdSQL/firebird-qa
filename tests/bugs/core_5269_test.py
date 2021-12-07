@@ -17,8 +17,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action, user_factory, User
 
 # version: 4.0
@@ -26,9 +24,9 @@ from firebird.qa import db_factory, python_act, Action, user_factory, User
 
 substitutions_1 = [('\t+', ' '),
                    ('^((?!ROLE_|PREPARE_STATEMENT|EXECUTE_STATEMENT_START|EXECUTE_STATEMENT_FINISH).)*$', ''),
-                   ('.*PREPARE_STATEMENT', 'TRACE_LOG: PREPARE_STATEMENT'),
-                   ('.*EXECUTE_STATEMENT_START', 'TRACE_LOG: EXECUTE_STATEMENT_START'),
-                   ('.*EXECUTE_STATEMENT_FINISH', 'TRACE_LOG: EXECUTE_STATEMENT_FINISH')]
+                   ('.*PREPARE_STATEMENT', 'PREPARE_STATEMENT'),
+                   ('.*EXECUTE_STATEMENT_START', 'EXECUTE_STATEMENT_START'),
+                   ('.*EXECUTE_STATEMENT_FINISH', 'EXECUTE_STATEMENT_FINISH')]
 
 init_script_1 = """"""
 
@@ -214,29 +212,18 @@ expected_stdout_1_a = """
 """
 
 expected_stdout_1_b = """
-    TRACE LOG: 2016-08-06T11:51:38.9360 (2536:01FD0CC8) PREPARE_STATEMENT
-    TRACE LOG: 2016-08-06T11:51:38.9360 (2536:01FD0CC8) EXECUTE_STATEMENT_START
-    TRACE LOG: 2016-08-06T11:51:38.9360 (2536:01FD0CC8) EXECUTE_STATEMENT_FINISH
+2016-08-06T11:51:38.9360 (2536:01FD0CC8) PREPARE_STATEMENT
+2016-08-06T11:51:38.9360 (2536:01FD0CC8) EXECUTE_STATEMENT_START
+2016-08-06T11:51:38.9360 (2536:01FD0CC8) EXECUTE_STATEMENT_FINISH
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_initfini = false',
-             '  log_statement_start = true',
-             '  log_statement_finish = true',
-             '  max_sql_length = 5000',
-             '  log_statement_prepare = true',
-             '}']
-    with act.connect_server(user='TMP$C5269_2', password='456',
-                            role='role_for_trace_any_attachment') as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line)
+trace_1 = ['time_threshold = 0',
+           'log_initfini = false',
+           'log_statement_start = true',
+           'log_statement_finish = true',
+           'max_sql_length = 5000',
+           'log_statement_prepare = true',
+           ]
 
 user_1_a = user_factory(name='TMP$C5269_1', password='123')
 user_1_b = user_factory(name='TMP$C5269_2', password='456')
@@ -250,7 +237,7 @@ where p.rdb$user = upper('TMP$C5269_2');
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action, user_1_a: User, user_1_b: User, capsys):
+def test_1(act_1: Action, user_1_a: User, user_1_b: User):
     with act_1.test_role('role_for_trace_any_attachment'):
         with act_1.db.connect() as con:
             con.execute_immediate('alter role role_for_trace_any_attachment set system privileges to TRACE_ANY_ATTACHMENT')
@@ -261,25 +248,11 @@ def test_1(act_1: Action, user_1_a: User, user_1_b: User, capsys):
         act_1.isql(switches=[], input=test_script_1_a)
         assert act_1.clean_stdout == act_1.clean_expected_stdout
         # Run trace
-        b = Barrier(2)
-        trace_thread = Thread(target=trace_session, args=[act_1, b])
-        trace_thread.start()
-        b.wait()
-        # Test
-        with act_1.db.connect(user='TMP$C5269_1', password='123') as con:
+        with act_1.trace(db_events=trace_1), act_1.db.connect(user='TMP$C5269_1', password='123') as con:
             c = con.cursor()
             c.execute('select current_user from rdb$database')
-        time.sleep(2)
-        # End trace
-        with act_1.connect_server() as srv:
-            for session in list(srv.trace.sessions.keys()):
-                srv.trace.stop(session_id=session)
-            trace_thread.join(1.0)
-            if trace_thread.is_alive():
-                pytest.fail('Trace thread still alive')
         # Check
         act_1.reset()
         act_1.expected_stdout = expected_stdout_1_b
-        act_1.stdout = capsys.readouterr().out
+        act_1.trace_to_stdout()
         assert act_1.clean_stdout == act_1.clean_expected_stdout
-

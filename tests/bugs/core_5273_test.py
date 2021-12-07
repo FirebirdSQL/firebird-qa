@@ -34,8 +34,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from difflib import unified_diff
 from pathlib import Path
 from firebird.qa import db_factory, python_act, Action, temp_file
@@ -291,37 +289,20 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 temp_db_1 = temp_file('tmp_5273.fdb')
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             'database=%[\\\\/]tmp_5273.fdb',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_sweep = true',
-             '  log_errors = true',
-             '  log_connections = true',
-             '  log_statement_prepare = true',
-             '  log_statement_start = true',
-             '  log_statement_finish = true',
-             '  log_statement_free = true',
-             '  log_trigger_start = true',
-             '  log_trigger_finish = true',
-             '  print_perf = true',
-             '  max_sql_length = 16384',
-             '  max_log_size = 5000000',
-             '}',
-             'services',
-             '{',
-             '  enabled = false',
-             '  log_services = true',
-             '  log_service_query = true',
-             '  log_errors = true',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line)
+trace_1 = ['time_threshold = 0',
+           'log_sweep = true',
+           'log_errors = true',
+           'log_connections = true',
+           'log_statement_prepare = true',
+           'log_statement_start = true',
+           'log_statement_finish = true',
+           'log_statement_free = true',
+           'log_trigger_start = true',
+           'log_trigger_finish = true',
+           'print_perf = true',
+           'max_sql_length = 16384',
+           'max_log_size = 5000000',
+           ]
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, temp_db_1: Path):
@@ -337,20 +318,8 @@ def test_1(act_1: Action, temp_db_1: Path):
     # Get content of firebird.log BEFORE test
     log_before = act_1.get_firebird_log()
     # Start trace
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    # Test
-    act_1.isql(switches=[], input=sql_ddl)
-    # Stop trace
-    time.sleep(2)
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(1.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
+    with act_1.trace(db_events=trace_1, keep_log=False, database=temp_db_1.name):
+        act_1.isql(switches=[], input=sql_ddl)
     # Get content of firebird.log AFTER test
     log_after = act_1.get_firebird_log()
     # Check

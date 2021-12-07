@@ -16,8 +16,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
@@ -266,38 +264,19 @@ expected_stdout_1 = """
     Y                               2
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=',
-             '{',
-             '  enabled = true',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            pass
+trace_1 = ['database=',
+           '{',
+           'enabled = true',
+           '}']
 
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, capsys):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    # Trace ready, run tests
-    for i in range(3, 0, -1):
-        act_1.reset()
-        act_1.isql(switches=[], input=test_script_1)
-        print(act_1.stdout)
-    # Stop trace
-    time.sleep(2)
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(1.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
+    with act_1.trace(config=trace_1, keep_log=False):
+        for i in range(3, 0, -1):
+            act_1.reset()
+            act_1.isql(switches=[], input=test_script_1)
+            print(act_1.stdout)
     # Check
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1

@@ -15,8 +15,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0
@@ -205,46 +203,25 @@ expected_stdout_1 = """
     -> Table "TEST" Full Scan
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_initfini = false',
-             '  print_plan = true',
-             '  explain_plan = true',
-             '  log_statement_prepare = true',
-             '  include_filter=%(from|join)[[:whitespace:]]test%',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line)
+trace_1 = ['time_threshold = 0',
+           'log_initfini = false',
+           'print_plan = true',
+           'explain_plan = true',
+           'log_statement_prepare = true',
+           'include_filter=%(from|join)[[:whitespace:]]test%',
+           ]
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, capsys):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    # Trace ready, run tests
-    act_1.isql(switches=[], input='select count(*) from test;')
-    # Stop trace
-    time.sleep(2)
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(1.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
-    # Check
+    with act_1.trace(db_events=trace_1):
+        act_1.isql(switches=[], input='select count(*) from test;')
+    # Process trace
     show_line = 0
-    for line in capsys.readouterr().out.splitlines():
+    for line in act_1.trace_log:
         show_line = (show_line + 1 if ('^' * 79) in line or show_line>0 else show_line)
         if show_line > 1:
             print(line)
+    # Check
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = capsys.readouterr().out
     assert act_1.clean_stdout == act_1.clean_expected_stdout

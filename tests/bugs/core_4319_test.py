@@ -22,8 +22,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5.3
@@ -174,39 +172,17 @@ Command error: show database
 Cannot get server version without database connection
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_errors = true',
-             '  connection_id = 1234',
-             '  log_connections = true',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line.upper())
+trace_1 = ['time_threshold = 0',
+           'log_errors = true',
+           'connection_id = 1234',
+           'log_connections = true',
+           ]
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, capsys):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    try:
+def test_1(act_1: Action):
+    with act_1.trace(db_events=trace_1):
         act_1.expected_stderr = expected_stderr_1
         act_1.isql(switches=['-n'],
                    input="connect 'localhost:some_non_existent' user 'SYSDBA' password 'masterkey'; show database; show version;")
-        time.sleep(2)
-    finally:
-        with act_1.connect_server() as srv:
-            for session in list(srv.trace.sessions.keys()):
-                srv.trace.stop(session_id=session)
-            trace_thread.join(1.0)
-            if trace_thread.is_alive():
-                pytest.fail('Trace thread still alive')
-    # check that we are still kicking and got expected result from isql
+    # check that we are still kicking (via trace exit) and got expected result from isql
     assert act_1.clean_stderr == act_1.clean_expected_stderr

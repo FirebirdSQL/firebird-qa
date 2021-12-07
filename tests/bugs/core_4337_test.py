@@ -50,7 +50,6 @@ import re
 import time
 import subprocess
 from difflib import unified_diff
-from threading import Thread, Barrier
 from pathlib import Path
 from firebird.qa import db_factory, python_act, Action, temp_file
 from firebird.driver import DbWriteMode
@@ -613,21 +612,11 @@ sweep_killer_out_1 = temp_file('killer.out')
 sweep_killer_err_1 = temp_file('killer.err')
 sweep_out_1 = temp_file('sweep.out')
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_errors = true',
-             '  log_sweep = true',
-             '  log_connections = true',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line.upper())
+trace_1 = ['time_threshold = 0',
+           'log_errors = true',
+           'log_sweep = true',
+           'log_connections = true',
+           ]
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, capsys, sweep_killer_script_1: Path, sweep_killer_out_1: Path,
@@ -681,11 +670,7 @@ def test_1(act_1: Action, capsys, sweep_killer_script_1: Path, sweep_killer_out_
         # Change FW to ON (in order to make sweep life harder :))
         srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.SYNC)
     # Start trace
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    try:
+    with act_1.trace(db_events=trace_1):
         # Launch (async.) ISQL which will make small delay and then kill GFIX attachment
         with open(sweep_killer_out_1, 'w') as killer_out, \
              open(sweep_killer_err_1, 'w') as killer_err:
@@ -704,17 +689,7 @@ def test_1(act_1: Action, capsys, sweep_killer_script_1: Path, sweep_killer_out_
                 gfix_err = act_1.stderr
             finally:
                 p_killer.terminate()
-        time.sleep(2)
-    finally:
-        # stop trace
-        with act_1.connect_server() as srv:
-            for session in list(srv.trace.sessions.keys()):
-                srv.trace.stop(session_id=session)
-            trace_thread.join(1.0)
-            if trace_thread.is_alive():
-                pytest.fail('Trace thread still alive')
     #
-    trace_log = capsys.readouterr().out
     # get firebird log after action
     with act_1.connect_server() as srv:
         srv.info.get_log()
@@ -731,7 +706,7 @@ def test_1(act_1: Action, capsys, sweep_killer_script_1: Path, sweep_killer_out_
             print('ISQL ERR:', line.upper())
     # Trace log
     found_sweep_failed = 0
-    for line in trace_log.splitlines():
+    for line in act_1.trace_log:
         if 'SWEEP_FAILED' in line:
             print('TRACE_LOG:' + (' '.join(line.split()).upper()))
             found_sweep_failed = 1

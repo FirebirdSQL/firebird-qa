@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5457
 # title:        Bugcheck 167 (invalid SEND request)
-# decription:   
+# decription:
 #                    Reproduced on: WI-V3.0.1.32609 - got in firebird.log:
 #                        "internal Firebird consistency check (invalid SEND request (167), file: JrdStatement.cpp line: 325)"
 #                    On client side got:
@@ -12,7 +12,7 @@
 #                        - internal Firebird consistency check (can't continue after bugcheck)
 #                        -902
 #                        335544333
-#               
+#
 #                    Test extracts content of firebird.log, then runs scenario which earlier led to "invalid SEND request (167)"
 #                    and then again get firebird.log for comparing with its previous content.
 #                    The only new record in firebird.log must be:
@@ -22,15 +22,18 @@
 #                        FB30SS, build 3.0.4.32988: OK, 3.047s.
 #                        FB40CS, build 4.0.0.955: OK, 4.531s.
 #                        FB40SS, build 4.0.0.1008: OK, 3.141s.
-#               
-#                
+#
+#
 # tracker_id:   CORE-5457
 # min_versions: ['3.0.2']
 # versions:     3.0.2
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+import time
+import re
+from difflib import unified_diff
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0.2
 # resources: None
@@ -43,7 +46,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import sys
 #  import subprocess
@@ -51,28 +54,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import re
 #  import time
 #  from fdb import services
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -83,16 +86,16 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def svc_get_fb_log( f_fb_log ):
-#  
+#
 #    global subprocess
-#  
+#
 #    subprocess.call( [ context['fbsvcmgr_path'],
 #                       "localhost:service_mgr",
 #                       "action_get_fb_log"
@@ -100,15 +103,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                     stdout=f_fb_log, stderr=subprocess.STDOUT
 #                   )
 #    return
-#  
+#
 #  ###########################################################################################
-#  
+#
 #  f_fblog_before=open( os.path.join(context['temp_directory'],'tmp_5457_fblog_before.txt'), 'w')
 #  svc_get_fb_log( f_fblog_before )
 #  flush_and_close( f_fblog_before )
-#  
+#
 #  con1=fdb.connect(dsn = dsn)
-#  
+#
 #  sp_test_ddl='''
 #      create procedure sp_calc_val(a_id int) returns(val int) as
 #      begin
@@ -116,11 +119,11 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         suspend;
 #      end
 #  '''
-#  
+#
 #  test_table_ddl='''
 #      create table test(
-#          id int primary key, 
-#          txt varchar(80), 
+#          id int primary key,
+#          txt varchar(80),
 #          calc_val computed by ( (select val from sp_calc_val(test.id) ) )
 #      )
 #  '''
@@ -128,82 +131,132 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  con1.commit()
 #  con1.execute_immediate(test_table_ddl)
 #  con1.commit()
-#  
+#
 #  cur1=con1.cursor()
 #  cur1.execute('insert into test select row_number()over(), ascii_char( 96+row_number()over() ) from rdb$types rows 7')
 #  con1.commit()
-#  
+#
 #  cur1.execute('select count(*), sum(calc_val) from test')
 #  for r in cur1:
 #      pass;
-#  
-#  
+#
+#
 #  sp_alter_ddl='''
-#  alter procedure sp_calc_val (a_id int) returns (val int) as 
-#  begin 
-#      val = a_id * 7; 
-#      suspend; 
+#  alter procedure sp_calc_val (a_id int) returns (val int) as
+#  begin
+#      val = a_id * 7;
+#      suspend;
 #  end
 #  '''
-#  
+#
 #  con1.execute_immediate(sp_alter_ddl)
-#  
+#
 #  cur1.execute('select count(*), sum(calc_val) from test')
 #  for r in cur1:
 #      pass;
 #  con1.commit()
-#  
+#
 #  cur1.execute('select count(*), sum(calc_val) from test')
 #  for r in cur1:
 #      pass;
-#  
+#
 #  time.sleep(1)
-#  
+#
 #  f_fblog_after=open( os.path.join(context['temp_directory'],'tmp_5457_fblog_after.txt'), 'w')
 #  svc_get_fb_log( f_fblog_after )
 #  flush_and_close( f_fblog_after )
-#  
-#  
+#
+#
 #  # Compare firebird.log versions BEFORE and AFTER this test:
 #  ######################
-#  
+#
 #  oldfb=open(f_fblog_before.name, 'r')
 #  newfb=open(f_fblog_after.name, 'r')
-#  
+#
 #  difftext = ''.join(difflib.unified_diff(
-#      oldfb.readlines(), 
+#      oldfb.readlines(),
 #      newfb.readlines()
 #    ))
 #  oldfb.close()
 #  newfb.close()
-#  
+#
 #  f_diff_txt=open( os.path.join(context['temp_directory'],'tmp_5457_diff.txt'), 'w')
 #  f_diff_txt.write(difftext)
 #  flush_and_close( f_diff_txt )
-#  
+#
 #  unexpected_patterns =(
 #      re.compile('\\s+internal\\s+Firebird\\s+consistency\\s+check', re.IGNORECASE),
 #  )
-#  
+#
 #  with open( f_diff_txt.name,'r') as f:
 #      for line in f:
 #          if line.startswith('+'):
 #              match2some = filter( None, [ p.search(line) for p in unexpected_patterns ] )
 #              if match2some:
 #                  print( 'UNEXPECTED TEXT IN FIREBIRD.LOG: ' + (' '.join(line.split()).upper()) )
-#  
+#
 #  # Cleanup:
 #  ##########
 #  time.sleep(1)
 #  cleanup( (f_diff_txt,f_fblog_before,f_fblog_after) )
-#    
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 
 @pytest.mark.version('>=3.0.2')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, capsys):
+    log_before = act_1.get_firebird_log()
+    #
+    with act_1.db.connect() as con:
+        sp_test_ddl = """
+            create procedure sp_calc_val(a_id int) returns(val int) as
+            begin
+               val = a_id * 10;
+               suspend;
+            end
+        """
+        con.execute_immediate(sp_test_ddl)
+        con.commit()
+        test_table_ddl = """
+            create table test(
+                id int primary key,
+                txt varchar(80),
+                calc_val computed by ((select val from sp_calc_val(test.id)))
+            )
+        """
+        con.execute_immediate(test_table_ddl)
+        con.commit()
+        #
+        c = con.cursor()
+        c.execute('insert into test select row_number()over(), ascii_char(96 + row_number()over()) from rdb$types rows 7')
+        con.commit()
+        #
+        c.execute('select count(*), sum(calc_val) from test').fetchall()
+        #
+        sp_alter_ddl = """
+        alter procedure sp_calc_val (a_id int) returns (val int) as
+        begin
+            val = a_id * 7;
+            suspend;
+        end
+        """
+        con.execute_immediate(sp_alter_ddl)
+        c.execute('select count(*), sum(calc_val) from test').fetchall()
+        con.commit()
+        c.execute('select count(*), sum(calc_val) from test').fetchall()
+        #
+        time.sleep(1)
+    #
+    log_after = act_1.get_firebird_log()
+    unexpected_patterns = [re.compile('\\s+internal\\s+Firebird\\s+consistency\\s+check', re.IGNORECASE)]
+    for line in unified_diff(log_before, log_after):
+        if line.startswith('+'):
+            match2some = list(filter(None, [p.search(line) for p in unexpected_patterns]))
+            if match2some:
+                print(f'UNEXPECTED: {line}')
+    #
+    act_1.expected_stdout = ''
+    act_1.stdout = capsys.readouterr().out
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

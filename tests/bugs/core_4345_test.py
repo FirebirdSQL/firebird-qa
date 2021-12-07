@@ -23,9 +23,7 @@
 # qmid:         None
 
 import pytest
-import time
 import re
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0
@@ -350,28 +348,16 @@ expected_stdout_1 = """
     LOG_FUNC_ENABLED PARAM0 = BIGINT, "207936"
 """
 
-def trace_session(act: Action, b: Barrier, logfunc: bool):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_errors = true',
-             '  log_connections = true',
-             '  log_transactions = true',
-             ]
-    if logfunc:
-        cfg30.append('  log_function_start = true')
-        cfg30.append('  log_function_finish = true')
-    cfg30.append('}')
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line.upper())
+trace_1 = ['time_threshold = 0',
+           'log_errors = true',
+           'log_connections = true',
+           'log_transactions = true',
+           'log_function_start = true',
+           'log_function_finish = true'
+           ]
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, capsys):
+def test_1(act_1: Action):
     output = []
     trace_timestamp_prefix = '[.*\\s+]*20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3,4}\\s+\\(.+\\)'
     func_start_ptn = re.compile(trace_timestamp_prefix + '\\s+(FAILED){0,1}\\s*EXECUTE_FUNCTION_START$', re.IGNORECASE)
@@ -395,52 +381,27 @@ def test_1(act_1: Action, capsys):
     commit;
     """
     # Case 1: Trace functions enabled
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b, True])
-    trace_thread.start()
-    b.wait()
-    try:
+    with act_1.trace(db_events=trace_1):
         act_1.isql(switches=['-n', '-q'], input=func_script % (123, 456))
-        time.sleep(2)
-    finally:
-        with act_1.connect_server() as srv:
-            for session in list(srv.trace.sessions.keys()):
-                srv.trace.stop(session_id=session)
-            trace_thread.join(1.0)
-            if trace_thread.is_alive():
-                pytest.fail('Trace thread still alive')
     #
-    trace_log = capsys.readouterr().out
-    for line in trace_log.splitlines():
+    for line in act_1.trace_log:
         if (func_start_ptn.search(line)
             or func_finish_ptn.search(line)
             or func_name_ptn.search(line)
             or func_param_prn.search(line) ):
             output.append('LOG_FUNC_ENABLED ' + line.upper())
-    # Case 1: Trace functions disabled
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b, False])
-    trace_thread.start()
-    b.wait()
-    try:
+    # Case 2: Trace functions disabled
+    act_1.trace_log.clear()
+    with act_1.trace(db_events=trace_1[:-2]):
         act_1.isql(switches=['-n', '-q'], input=func_script % (789, 987))
-        time.sleep(2)
-    finally:
-        with act_1.connect_server() as srv:
-            for session in list(srv.trace.sessions.keys()):
-                srv.trace.stop(session_id=session)
-            trace_thread.join(1.0)
-            if trace_thread.is_alive():
-                pytest.fail('Trace thread still alive')
     #
-    trace_log += capsys.readouterr().out
-    for line in trace_log.splitlines():
+    for line in act_1.trace_log:
         if (func_start_ptn.search(line)
             or func_finish_ptn.search(line)
             or func_name_ptn.search(line)
             or func_param_prn.search(line) ):
-            print('LOG_FUNC_DISABLED ' + line.upper())
-    # Test
+            output.append('LOG_FUNC_DISABLED ' + line.upper())
+    # Check
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = '\n'.join(output)

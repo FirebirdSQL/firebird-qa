@@ -28,8 +28,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0
@@ -277,54 +275,26 @@ expected_stdout_1 = """
     Statement statistics detected for ROLLBACK
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  log_transactions = true',
-             '  print_perf = true',
-             #'  log_connections = true',
-             #'  log_procedure_start = true',
-             #'  log_procedure_finish = true',
-             '  log_initfini = false',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line)
+trace_1 = ['log_transactions = true',
+           'print_perf = true',
+           'log_initfini = false',
+           ]
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, capsys):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    #
-    act_1.isql(switches=[], input=test_script_1)
-    # do NOT remove this otherwise trace log can contain only message about its start before being closed!
-    time.sleep(3)
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(3.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
-    trace_output = capsys.readouterr().out
+    with act_1.trace(db_events=trace_1):
+        act_1.isql(switches=[], input=test_script_1)
     # Output log of trace session, with filtering only interested info:
     # Performance header text (all excessive spaces will be removed before comparison - see below):
     perf_header='Table                             Natural     Index    Update    Insert    Delete   Backout     Purge   Expunge'
-
     checked_events= {') COMMIT_TRANSACTION': 'commit',
                      ') ROLLBACK_TRANSACTION': 'rollback',
                      ') EXECUTE_STATEMENT': 'execute_statement',
                      ') START_TRANSACTION': 'start_transaction'
                      }
-
     i, k = 0, 0
     watched_event = ''
-    for line in trace_output.splitlines():
+    for line in act_1.trace_log:
         k += 1
         e = ''.join([v.upper() for x, v in checked_events.items() if x in line])
         watched_event = e if e else watched_event
@@ -336,6 +306,7 @@ def test_1(act_1: Action, capsys):
             print('Found performance block header')
         if line.startswith('TFIX') or line.startswith('GTT_SSN') or line.startswith('GTT_TRA'):
             print(f'Found table statistics for {line.split()[0]}')
+    # Check
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = capsys.readouterr().out
     assert act_1.clean_stdout == act_1.clean_expected_stdout

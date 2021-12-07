@@ -41,8 +41,6 @@
 # qmid:         None
 
 import pytest
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 from firebird.driver import DbWriteMode
 
@@ -451,23 +449,10 @@ expected_stdout_1 = """
     Check ratio_marks_to_row_count_for_GTT_PRESERVE_ROWS: OK
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  log_transactions = true',
-             '  print_perf = true',
-             #'  log_connections = true',
-             #'  log_procedure_start = true',
-             #'  log_procedure_finish = true',
-             '  log_initfini = false',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line)
+trace_1 = ['log_transactions = true',
+           'print_perf = true',
+           'log_initfini = false',
+           ]
 
 @pytest.mark.version('>=2.5.2')
 def test_1(act_1: Action, capsys):
@@ -482,29 +467,15 @@ def test_1(act_1: Action, capsys):
         c.call_procedure('sp_fill_fix_tab', [NUM_ROWS_TO_BE_ADDED])
         con.commit()
     #
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    #
-    with act_1.db.connect() as con1:
-        c = con1.cursor()
-        c.call_procedure('sp_fill_gtt_sav_rows', [NUM_ROWS_TO_BE_ADDED])
-        con1.rollback()
-
-    with act_1.db.connect() as con2:
-        c = con2.cursor()
-        c.call_procedure('sp_fill_gtt_del_rows', [NUM_ROWS_TO_BE_ADDED])
-        con2.rollback()
-    # Somehow sleep is necessary otherwise "sp_fill_gtt_del_rows" will not show up in trace log
-    time.sleep(3)
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(3.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
-    trace_output = capsys.readouterr().out
+    with act_1.trace(db_events=trace_1):
+        with act_1.db.connect() as con1:
+            c = con1.cursor()
+            c.call_procedure('sp_fill_gtt_sav_rows', [NUM_ROWS_TO_BE_ADDED])
+            con1.rollback()
+        with act_1.db.connect() as con2:
+            c = con2.cursor()
+            c.call_procedure('sp_fill_gtt_del_rows', [NUM_ROWS_TO_BE_ADDED])
+            con2.rollback()
     # Obtain statistics for table T_FIX_TAB in order to estimate numberof data pages
     dp_cnt = 0
     act_1.gstat(switches=['-a','-t', 'T_FIX_TAB', '-u', act_1.db.user, '-p', act_1.db.password])
@@ -519,7 +490,7 @@ def test_1(act_1: Action, capsys):
     gtt_del_marks = -1
     gtt_del_trace = ''
     gtt_sav_trace = ''
-    for line in trace_output.splitlines():
+    for line in act_1.trace_log:
         if 'fetch' in line:
             # 2.5.7:
             # ['370', 'ms,', '1100', 'read(s),', '1358', 'write(s),', '410489', 'fetch(es),', '93294', 'mark(s)']
@@ -568,7 +539,7 @@ def test_1(act_1: Action, capsys):
     if failed_flag:
         print('Trace for GTT PRESERVE rows: ' + gtt_sav_trace)
         print('Trace for GTT DELETE   rows: ' + gtt_del_trace)
-    #
+    # Check
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = capsys.readouterr().out
     assert act_1.clean_stdout == act_1.clean_expected_stdout

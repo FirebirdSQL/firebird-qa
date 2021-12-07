@@ -21,8 +21,6 @@
 
 import pytest
 import re
-import time
-from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5.2
@@ -303,54 +301,30 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
-def trace_session(act: Action, b: Barrier, log_sweep: bool):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-             f'database=%[\\\\/]{act.db.db_path.name}',
-             '{',
-             '  enabled = true',
-             '  time_threshold = 0',
-             '  log_connections = true',
-             f'  log_sweep = {"true" if log_sweep else "false"}',
-             '  log_initfini = false',
-             '}']
-    with act.connect_server() as srv:
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            print(line.upper())
-
-def sweep_present(text: str) -> bool:
+def sweep_present(trace_log) -> bool:
     pattern = re.compile('\\s+sweep_(start|progress|finish)(\\s+|$)', re.IGNORECASE)
     present = False
-    for line in text.splitlines():
+    for line in trace_log:
         if pattern.search(line):
             present = True
             break
     return present
 
 def check_sweep(act_1: Action, log_sweep: bool):
-    b = Barrier(2)
-    trace_thread = Thread(target=trace_session, args=[act_1, b, log_sweep])
-    trace_thread.start()
-    b.wait()
-    with act_1.connect_server() as srv:
-        # Run sweep
+    cfg = ['time_threshold = 0',
+           'log_connections = true',
+           f'log_sweep = {"true" if log_sweep else "false"}',
+           'log_initfini = false',
+           ]
+    with act_1.trace(db_events=cfg), act_1.connect_server() as srv:
         srv.database.sweep(database=act_1.db.db_path)
-        # Stop trace
-        time.sleep(2)
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(1.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, capsys):
+def test_1(act_1: Action):
     # Case 1 - sweep logged
     check_sweep(act_1, True)
-    trace_log = capsys.readouterr().out
-    assert sweep_present(trace_log)
+    assert sweep_present(act_1.trace_log)
     # Case 2 - sweep not logged
+    act_1.trace_log.clear()
     check_sweep(act_1, False)
-    trace_log = capsys.readouterr().out
-    assert not sweep_present(trace_log)
+    assert not sweep_present(act_1.trace_log)

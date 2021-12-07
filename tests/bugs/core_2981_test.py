@@ -16,7 +16,6 @@
 # qmid:         None
 
 import pytest
-from threading import Thread, Barrier
 from difflib import unified_diff
 from firebird.qa import db_factory, python_act, Action
 
@@ -482,65 +481,34 @@ select '*Лев Николаевич Толстой *
 ' from rdb$database;
 """
 
-def trace_session(act: Action, b: Barrier):
-    cfg30 = ['# Trace config, format for 3.0. Generated auto, do not edit!',
-    f'database=%[\\\\/]{act.db.db_path.name}',
-    '{',
-    '  enabled = true',
-    '  include_filter = %(SELECT|INSERT|UPDATE|DELETE)%',
-    '  exclude_filter = %no_trace%',
-    '  log_connections = true',
-    '  log_transactions = true',
-    '  log_statement_prepare = true',
-    '  log_statement_free = true',
-    '  log_statement_start = true',
-    '  log_statement_finish = true',
-    '  log_trigger_start = true',
-    '  log_trigger_finish = true',
-    '  log_context = true',
-    '  print_plan = true',
-    '  print_perf = true',
-    '  time_threshold = 0',
-    '  max_sql_length = 5000',
-    '  max_blr_length = 500',
-    '  max_dyn_length = 500',
-    '  max_arg_length = 80',
-    '  max_arg_count = 30',
-    '}',
-    'services {',
-    '  enabled = false',
-    '  log_services = false',
-    '  log_service_query = false',
-    '}']
-    with act.connect_server() as srv:
-        srv.encoding = 'utf8'
-        srv.trace.start(config='\n'.join(cfg30))
-        b.wait()
-        for line in srv:
-            pass # we are not interested in trace output
+
+trace_1 = ['include_filter = %(SELECT|INSERT|UPDATE|DELETE)%',
+           'exclude_filter = %no_trace%',
+           'log_connections = true',
+           'log_transactions = true',
+           'log_statement_prepare = true',
+           'log_statement_free = true',
+           'log_statement_start = true',
+           'log_statement_finish = true',
+           'log_trigger_start = true',
+           'log_trigger_finish = true',
+           'log_context = true',
+           'print_plan = true',
+           'print_perf = true',
+           'time_threshold = 0',
+           'max_sql_length = 5000',
+           'max_blr_length = 500',
+           'max_dyn_length = 500',
+           'max_arg_length = 80',
+           'max_arg_count = 30',
+           ]
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):
-    b = Barrier(2)
     # Get content of firebird.log BEFORE test
-    with act_1.connect_server() as srv:
-        srv.info.get_log()
-        log_before = srv.readlines()
-    trace_thread = Thread(target=trace_session, args=[act_1, b])
-    trace_thread.start()
-    b.wait()
-    # RUN QUERY WITH NON-ASCII CHARACTERS
-    act_1.isql(switches=['-n', '-q'], input=test_script_1)
-    with act_1.connect_server() as srv:
-        for session in list(srv.trace.sessions.keys()):
-            srv.trace.stop(session_id=session)
-        trace_thread.join(1.0)
-        if trace_thread.is_alive():
-            pytest.fail('Trace thread still alive')
+    log_before = act_1.get_firebird_log()
+    with act_1.trace(db_events=trace_1, keep_log=False, encoding='utf8'):
+        act_1.isql(switches=['-n', '-q'], input=test_script_1)
     # Get content of firebird.log AFTER test
-    with act_1.connect_server() as srv:
-        srv.info.get_log()
-        log_after = srv.readlines()
+    log_after = act_1.get_firebird_log()
     assert '\n'.join(unified_diff(log_before, log_after)) == ''
-
-
