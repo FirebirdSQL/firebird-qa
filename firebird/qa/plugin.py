@@ -50,9 +50,12 @@ from pathlib import Path
 #from configparser import ConfigParser, ExtendedInterpolation
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse
+import time
+from threading import Thread, Barrier
 from firebird.driver import connect, connect_server, create_database, driver_config, \
-     NetProtocol, Server, CHARSET_MAP, Connection, DatabaseError, Cursor, \
-     DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope, DbInfoCode
+     NetProtocol, Server, CHARSET_MAP, Connection, Cursor, \
+     DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope, DbInfoCode, \
+     DbWriteMode
 
 _vars_ = {'server': None,
           'bin-dir': None,
@@ -234,6 +237,7 @@ class Database:
         db_conf.password.value = self.password if password is None else password
         if sql_dialect is not None:
             db_conf.db_sql_dialect.value = sql_dialect
+            db_conf.sql_dialect.value = sql_dialect
         if page_size is not None:
             db_conf.page_size.value = page_size
         if charset is not None:
@@ -337,11 +341,13 @@ class Database:
         db.drop_database()
     def connect(self, *, user: str=None, password: str=None, role: str=None, no_gc: bool=None,
                 no_db_triggers: bool=None, dbkey_scope: DBKeyScope=None,
-                session_time_zone: str=None, charset: str=None) -> Connection:
-        self._make_config(user=user, password=password, charset=charset)
+                session_time_zone: str=None, charset: str=None, sql_dialect: int=None) -> Connection:
+        self._make_config(user=user, password=password, charset=charset, sql_dialect=sql_dialect)
         return connect('pytest', role=role, no_gc=no_gc, no_db_triggers=no_db_triggers,
                        dbkey_scope=dbkey_scope, session_time_zone=session_time_zone)
-
+    def set_async_write(self) -> None:
+        with connect_server(_vars_['server']) as srv:
+            srv.database.set_write_mode(database=self.db_path, mode=DbWriteMode.ASYNC)
 
 @pytest.fixture
 def db_path(tmp_path) -> Path:
@@ -392,7 +398,7 @@ class User:
         self.server.user.update(user_name=self.name, **kwargs)
         self._exit_encode()
 
-def user_factory(*, name: str, password: str, encoding: str=None) -> None:
+def user_factory(*, name: str, password: str, encoding: str=None):
 
     @pytest.fixture
     def user_fixture(request: FixtureRequest, firebird_server) -> User:
@@ -403,11 +409,46 @@ def user_factory(*, name: str, password: str, encoding: str=None) -> None:
 
     return user_fixture
 
+def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], keep_log: bool, encoding: str):
+    with act.connect_server() as srv:
+        srv.encoding = encoding
+        srv.trace.start(config='\n'.join(cfg))
+        b.wait()
+        for line in srv:
+            if keep_log:
+                output.append(line)
+
+class TraceSession:
+    def __init__(self, act: Action, config: List[str], keep_log: bool=True, encoding: str='ascii'):
+        self.act: Action = act
+        self.config: List[str] = config
+        self.output: List[str] = []
+        self.keep_log: bool = keep_log
+        self.trace_thread: Thread = None
+        self.encoding: str = encoding
+    def __enter__(self) -> TraceSession:
+        b = Barrier(2)
+        self.trace_thread = Thread(target=trace_thread, args=[self.act, b, self.config,
+                                                              self.output, self.keep_log,
+                                                              self.encoding])
+        self.trace_thread.start()
+        b.wait()
+        return self
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        time.sleep(2)
+        with self.act.connect_server() as srv:
+            for session in list(srv.trace.sessions.keys()):
+                srv.trace.stop(session_id=session)
+            self.trace_thread.join(5.0)
+            if self.trace_thread.is_alive():
+                pytest.fail('Trace thread still alive')
+        self.act.trace_log = self.output
+
 class Role:
     def __init__(self, name: str, database: Database, charset: str=None):
         self.name: str = name
         self.db: Connection = database.connect(charset=charset)
-    def __enter__(self) -> Server:
+    def __enter__(self) -> Role:
         try:
             self.db.execute_immediate(f'create role {self.name}')
             self.db.commit()
@@ -458,6 +499,7 @@ class Action:
         self._clean_expected_stderr: str = None
         self.substitutions: List[str] = [x for x in substitutions]
         self.outfile: Path = outfile
+        self.trace_log: List[str] = []
     def make_diff(self, left: str, right: str) -> str:
         return '\n'.join(difflib.ndiff(left.splitlines(), right.splitlines()))
     def space_strip(self, value: str) -> str:
@@ -853,6 +895,26 @@ class Action:
                 i += 1
     def test_role(self, name: str, charset: str=None) -> Role:
         return Role(name, self.db, charset)
+    def trace(self, *, db_events: List[str]=None, svc_events: List[str]=None,
+              config: List[str]=None, keep_log: bool=True, encoding: str='ascii',
+              database: str=None) -> TraceSession:
+        if config is not None:
+            return TraceSession(self, config, keep_log=keep_log, encoding=encoding)
+        else:
+            config = []
+            if db_events:
+                database = self.db.db_path.name if database is None else database
+                config.extend([f'database=%[\\\\/]{database}', '{', 'enabled = true'])
+                config.extend(db_events)
+                config.append('}')
+            if svc_events:
+                config.extend(['services', '{', 'enabled = true'])
+                config.extend(svc_events)
+                config.append('}')
+            return TraceSession(self, config, keep_log=keep_log, encoding=encoding)
+    def trace_to_stdout(self, *, upper: bool=False) -> None:
+        log = ''.join(self.trace_log)
+        self.stdout = log.upper() if upper else log
     @property
     def clean_stdout(self) -> str:
         if self._clean_stdout is None:
