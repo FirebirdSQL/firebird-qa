@@ -105,12 +105,12 @@ def test_1(act_1: Action, user_1: User, temp_db_1: Path, capsys):
     print ('Starting backup...')
     backup = BytesIO()
     with act_1.connect_server() as srv:
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
         print ('Backup finished.')
     backup.seek(0)
     with act_1.connect_server(user=user_1.name, password=user_1.password) as srv:
         print ('Starting restore using NON sysdba user account...')
-        srv.database.local_restore(database=str(temp_db_1), backup_stream=backup,
+        srv.database.local_restore(database=temp_db_1, backup_stream=backup,
                                    flags=SrvRestoreFlag.REPLACE)
         print ('Restore using NON sysdba user account finished.')
     #
@@ -127,7 +127,7 @@ def test_1(act_1: Action, user_1: User, temp_db_1: Path, capsys):
     """
     print ('Starting ISQL using NON sysdba user account...')
     act_1.isql(switches=['-q', '-user', 'tmp$c4648', '-pas', '123', f'localhost:{temp_db_1}'],
-               connect_db=False, input=script)
+               connect_db=False, input=script, credentials=False)
     print(act_1.stdout)
     print ('ISQL using NON sysdba user account finished.')
     act_1.reset()

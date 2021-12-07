@@ -157,7 +157,7 @@ tmp_db_file = temp_file('tmp_core_5201.fdb')
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, fbk_file: Path, tmp_db_file: Path):
     with act_1.connect_server() as srv:
-        srv.database.backup(database=str(act_1.db.db_path), backup=str(fbk_file))
+        srv.database.backup(database=act_1.db.db_path, backup=fbk_file)
         assert srv.readlines() == []
     #
     act_1.expected_stderr = 'We expect error'

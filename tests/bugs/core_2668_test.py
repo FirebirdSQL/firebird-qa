@@ -309,19 +309,19 @@ def test_1(act_1: Action, work_script_1: Path):
         select '-- shutdown me now --' from rdb$database;
     ''')
     with act_1.connect_server() as srv:
-        srv.database.set_sweep_interval(database=str(act_1.db.db_path), interval=100)
-        srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.ASYNC)
+        srv.database.set_sweep_interval(database=act_1.db.db_path, interval=100)
+        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
         p_work_sql = subprocess.Popen([act_1.vars['isql'], '-i', str(work_script_1),
                                        '-user', act_1.db.user,
                                        '-password', act_1.db.password, act_1.db.dsn],
                                       stderr = subprocess.STDOUT)
         time.sleep(3)
         try:
-            srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.FULL,
+            srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
                                   method=ShutdownMethod.FORCED, timeout=0)
         finally:
             p_work_sql.terminate()
-        srv.database.bring_online(database=str(act_1.db.db_path))
+        srv.database.bring_online(database=act_1.db.db_path)
         srv.info.get_log()
         fblog_before = srv.readlines()
         with act_1.db.connect() as con_for_sweep_start:

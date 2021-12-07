@@ -218,11 +218,11 @@ file_1 = temp_file('pytest-run.fbk')
 def test_1(act_1: Action, file_1):
     src_backup = act_1.vars['backups'] / 'core1999_30.fbk'
     with act_1.connect_server() as srv:
-        srv.database.restore(database=str(act_1.db.db_path), backup=str(src_backup),
+        srv.database.restore(database=act_1.db.db_path, backup=src_backup,
                              flags=SrvRestoreFlag.REPLACE,
                              verbose=True, stats='TDWR')
         restore_log = srv.readlines()
-        srv.database.backup(database=str(act_1.db.db_path), backup=str(file_1),
+        srv.database.backup(database=act_1.db.db_path, backup=file_1,
                             verbose=True, stats='TDWR')
         backup_log = srv.readlines()
         #

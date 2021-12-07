@@ -33,6 +33,7 @@
 # qmid:         None
 
 import pytest
+import time
 from threading import Thread, Barrier
 from io import BytesIO
 from firebird.qa import db_factory, python_act, Action, temp_file
@@ -289,12 +290,13 @@ def test_1(act_1: Action, capsys, temp_file_1):
     with act_1.connect_server() as srv:
         # Make some service requests
         b.wait()
-        srv.database.set_sweep_interval(database=str(act_1.db.db_path), interval=1234321)
-        srv.database.get_statistics(database=str(act_1.db.db_path), flags=SrvStatFlag.HDR_PAGES)
+        srv.database.set_sweep_interval(database=act_1.db.db_path, interval=1234321)
+        srv.database.get_statistics(database=act_1.db.db_path, flags=SrvStatFlag.HDR_PAGES)
         srv.wait()
-        srv.database.backup(database=str(act_1.db.db_path), backup=str(temp_file_1))
+        srv.database.backup(database=act_1.db.db_path, backup=temp_file_1)
         srv.wait()
         #
+        time.sleep(2)
         for session in list(srv.trace.sessions.keys()):
             srv.trace.stop(session_id=session)
         trace_thread.join(2.0)

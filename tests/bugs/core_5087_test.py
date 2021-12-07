@@ -641,7 +641,7 @@ def test_1(act_1: Action, db_dml_sessions_1: Database, dml_logs_1: List[Path],
                     att_chk.commit()
                     # Shutdown database
                     with act_1.connect_server() as srv:
-                         srv.database.shutdown(database=str(db_dml_sessions_1.db_path),
+                         srv.database.shutdown(database=db_dml_sessions_1.db_path,
                                                mode=ShutdownMode.FULL, method=ShutdownMethod.FORCED,
                                                timeout=0)
                     cur_chk.execute("select 'check_point_3: after shutdown <db_dml_sessions>' as msg from rdb$database")
@@ -683,7 +683,7 @@ def test_1(act_1: Action, db_dml_sessions_1: Database, dml_logs_1: List[Path],
           f_check_log.write(f'Found crash messages in DML worker logs: {crashes_in_worker_logs}\n') # must be 0.
           f_check_log.write('Point before bring DML database online.\n')
           with act_1.connect_server() as srv:
-               srv.database.bring_online(database=str(db_dml_sessions_1.db_path))
+               srv.database.bring_online(database=db_dml_sessions_1.db_path)
           f_check_log.write('Point after bring DML database online.\n')
           chk_script = f"""
           set list on;

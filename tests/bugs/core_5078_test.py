@@ -135,7 +135,7 @@ def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path):
                     at='tmp_core_5078.fbk')
     fbk_file_1.write_bytes(zipped_fbk_file.read_bytes())
     with act_1.connect_server() as srv:
-        srv.database.restore(database=str(fdb_file_1), backup=str(fbk_file_1))
+        srv.database.restore(database=fdb_file_1, backup=fbk_file_1)
         srv.wait()
     # This should execute without errors
     act_1.isql(switches=[str(fdb_file_1)], input='set list on; select * from do_changeTxStatus;',

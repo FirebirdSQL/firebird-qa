@@ -127,7 +127,7 @@ test_sript_1 = """
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.ASYNC)
+        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=[], input=test_sript_1)
     assert act_1.clean_stdout == act_1.clean_expected_stdout

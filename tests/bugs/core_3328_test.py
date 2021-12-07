@@ -309,9 +309,9 @@ def test_1(act_1: Action):
         work_thread.start()
         time.sleep(2)
         #
-        srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.FULL,
+        srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
                               method=ShutdownMethod.FORCED, timeout=0)
-        srv.database.bring_online(database=str(act_1.db.db_path))
+        srv.database.bring_online(database=act_1.db.db_path)
         #
         srv.info.get_log()
         log_after = srv.readlines()

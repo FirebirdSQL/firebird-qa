@@ -281,31 +281,27 @@ def test_1(act_1: Action, file_1: Path):
     with act_1.connect_server() as srv:
         backup = BytesIO()
         # Run-1: try to skip BACKUP of data for tables 'test_0a' and 'test_0b'.
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup,
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup,
                                   skip_data='test_0[[:alpha:]]')
         backup.seek(0)
-        srv.database.local_restore(backup_stream=backup, database=str(file_1))
+        srv.database.local_restore(backup_stream=backup, database=file_1)
         # check
         act_1.expected_stdout = expected_stdout_1_a
-        act_1.isql(switches=['-user', act_1.db.user,
-                             '-password', act_1.db.password,
-                             str(file_1)], input=check_script, connect_db=False)
+        act_1.isql(switches=[str(file_1)], input=check_script, connect_db=False)
         assert act_1.clean_stdout == act_1.clean_expected_stdout
         # Run-2: try to skip RESTORE of data for tables 'test_01' and 'test_02'.
         if file_1.is_file():
             file_1.unlink()
         backup.close()
         backup = BytesIO()
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
         backup.seek(0)
-        srv.database.local_restore(backup_stream=backup, database=str(file_1),
+        srv.database.local_restore(backup_stream=backup, database=file_1,
                                    skip_data='test_0[[:digit:]]')
         # check
         act_1.reset()
         act_1.expected_stdout = expected_stdout_1_b
-        act_1.isql(switches=['-user', act_1.db.user,
-                             '-password', act_1.db.password,
-                             str(file_1)], input=check_script, connect_db=False)
+        act_1.isql(switches=[str(file_1)], input=check_script, connect_db=False)
         assert act_1.clean_stdout == act_1.clean_expected_stdout
         # Run-3: try to skip BACKUP of data for table "опечатка".
         srv.encoding = 'utf8'
@@ -313,13 +309,11 @@ def test_1(act_1: Action, file_1: Path):
             file_1.unlink()
         backup.close()
         backup = BytesIO()
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup,
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup,
                                   skip_data='(о|а)(п|ч)(е|и)(п|ч)(а|я)(т|д)(к|г)(о|а)')
         backup.seek(0)
-        srv.database.local_restore(backup_stream=backup, database=str(file_1))
+        srv.database.local_restore(backup_stream=backup, database=file_1)
         # check
         act_1.reset()
         act_1.expected_stdout = expected_stdout_1_c
-        act_1.isql(switches=['-user', act_1.db.user,
-                             '-password', act_1.db.password,
-                             str(file_1)], input=check_script, connect_db=False)
+        act_1.isql(switches=[str(file_1)], input=check_script, connect_db=False)

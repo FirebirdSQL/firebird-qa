@@ -183,9 +183,9 @@ expected_stdout_1 = """
 def test_1(act_1: Action):
     with act_1.connect_server() as srv:
         backup = BytesIO()
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
         backup.seek(0)
-        srv.database.local_restore(database=str(act_1.db.db_path), backup_stream=backup,
+        srv.database.local_restore(database=act_1.db.db_path, backup_stream=backup,
                                    flags=SrvRestoreFlag.REPLACE)
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=['-q'],

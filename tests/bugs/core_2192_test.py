@@ -522,7 +522,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 def test_1(act_1: Action):
     # CHANGE FW to OFF
     with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.ASYNC)
+        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
     # 1. FIRST RUN DML_TEST
     act_1.script = test_script_1
     act_1.execute()
@@ -535,14 +535,14 @@ def test_1(act_1: Action):
     # [pcisar] I don't understand the point of validation as the original test does not check
     # that validation passed
     with act_1.connect_server() as srv:
-        srv.database.validate(database=str(act_1.db.db_path))
+        srv.database.validate(database=act_1.db.db_path)
         validate_log_1 = srv.readlines()
     # 4. TRY TO BACKUP AND RESTORE
     with act_1.connect_server() as srv:
         backup = BytesIO()
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
         backup.seek(0)
-        srv.database.local_restore(backup_stream=backup, database=str(act_1.db.db_path),
+        srv.database.local_restore(backup_stream=backup, database=act_1.db.db_path,
                                    flags=SrvRestoreFlag.REPLACE)
         backup.close()
     # 5. EXTRACT METADATA-2
@@ -556,7 +556,7 @@ def test_1(act_1: Action):
     run_dml_log_2 = act_1.stdout
     # 7. VALIDATE DATABASE-2
     with act_1.connect_server() as srv:
-        srv.database.validate(database=str(act_1.db.db_path))
+        srv.database.validate(database=act_1.db.db_path)
         validate_log_2 = srv.readlines()
     # 8. CHECKS
     # 1) STDERR for: create DB, backup, restore, validation-1 and validation-2 - they all must be EMPTY.

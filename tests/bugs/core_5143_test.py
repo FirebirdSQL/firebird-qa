@@ -167,10 +167,10 @@ fbk_file = temp_file('core_5143.fbk')
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, fbk_file: Path):
     with act_1.connect_server() as srv:
-        srv.database.backup(database=str(act_1.db.db_path), backup=str(fbk_file),
+        srv.database.backup(database=act_1.db.db_path, backup=fbk_file,
                             verbose=True)
         srv.wait()
-        srv.database.restore(database=str(act_1.db.db_path), backup=str(fbk_file),
+        srv.database.restore(database=act_1.db.db_path, backup=fbk_file,
                              flags=SrvRestoreFlag.REPLACE | SrvRestoreFlag.ONE_AT_A_TIME,
                              verbose=True)
         restore_log = srv.readlines()

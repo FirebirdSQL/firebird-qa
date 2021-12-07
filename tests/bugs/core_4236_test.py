@@ -334,7 +334,7 @@ def test_1(act_1: Action, capsys):
      time.sleep(WAIT_FOR_ALL_CONNECTIONS_START_JOB)
      with act_1.connect_server() as srv:
           # Move database to shutdown with ability to run after it validation (prp_sm_single)
-          srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.SINGLE,
+          srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.SINGLE,
                                 method=ShutdownMethod.FORCED, timeout=0)
           # get firebird.log _before_ validation
           srv.info.get_log()
@@ -348,7 +348,7 @@ def test_1(act_1: Action, capsys):
           # If database currently is in use by engine or some attachments than it shoudl fail
           # with message "database <db_file> shutdown."
           try:
-               srv.database.repair(database=str(act_1.db.db_path),
+               srv.database.repair(database=act_1.db.db_path,
                                    flags=SrvRepairFlag.FULL | SrvRepairFlag.VALIDATE_DB)
           except Exception as exc:
                print(f'Database repair failed with: {exc}')
@@ -357,7 +357,7 @@ def test_1(act_1: Action, capsys):
           srv.info.get_log()
           log_after = srv.readlines()
           # bring database online
-          srv.database.bring_online(database=str(act_1.db.db_path))
+          srv.database.bring_online(database=act_1.db.db_path)
      # At this point, threads should be dead
      for thread in threads:
           thread.join(1)

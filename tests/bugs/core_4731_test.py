@@ -302,9 +302,9 @@ def test_1(act_1: Action, dba_privileged_user: User, non_privileged_user: User, 
     act_1.isql(switches=['-q'], input=prep_script)
     #
     with act_1.connect_server() as srv:
-        srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.FULL,
+        srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
                               method=ShutdownMethod.FORCED, timeout=0)
-        srv.database.bring_online(database=str(act_1.db.db_path))
+        srv.database.bring_online(database=act_1.db.db_path)
     #
     test_script = f"""
         -- ###################################################################################

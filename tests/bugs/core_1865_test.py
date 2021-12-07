@@ -91,9 +91,9 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 def test_1(act_1: Action):
     backup = BytesIO()
     with act_1.connect_server() as srv:
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
         backup.seek(0)
         # test fails if restore raises an exception
-        srv.database.local_restore(backup_stream=backup, database=str(act_1.db.db_path),
+        srv.database.local_restore(backup_stream=backup, database=act_1.db.db_path,
                                    flags=SrvRestoreFlag.ONE_AT_A_TIME | SrvRestoreFlag.REPLACE)
 

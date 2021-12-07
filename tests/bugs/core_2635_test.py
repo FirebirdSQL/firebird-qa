@@ -81,6 +81,6 @@ Validation finished
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     with act_1.connect_server() as srv:
-        srv.database.validate(database=str(act_1.db.db_path))
+        srv.database.validate(database=act_1.db.db_path)
         act_1.stdout = '\n'.join(srv.readlines())
     assert act_1.clean_stdout == act_1.clean_expected_stdout

@@ -562,14 +562,14 @@ def test_1(act_1: Action):
     # backup  + restore _WITHOUT_ building indices:
     backup = BytesIO()
     with act_1.connect_server() as srv:
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
         backup.seek(0)
-        srv.database.local_restore(backup_stream=backup, database=str(act_1.db.db_path),
+        srv.database.local_restore(backup_stream=backup, database=act_1.db.db_path,
                                    flags=SrvRestoreFlag.DEACTIVATE_IDX | SrvRestoreFlag.REPLACE)
         # Get FB log before validation, run validation and get FB log after it:
         srv.info.get_log()
         log_before = srv.readlines()
-        srv.database.repair(database=str(act_1.db.db_path), flags=SrvRepairFlag.CORRUPTION_CHECK)
+        srv.database.repair(database=act_1.db.db_path, flags=SrvRepairFlag.CORRUPTION_CHECK)
         srv.info.get_log()
         log_after = srv.readlines()
     # Extract metadata from restored DB
@@ -580,7 +580,7 @@ def test_1(act_1: Action):
     # to drop will fail in test treadown as connect trigger referes to index tat was not activated
     with act_1.connect_server() as srv:
         backup.seek(0)
-        srv.database.local_restore(backup_stream=backup, database=str(act_1.db.db_path),
+        srv.database.local_restore(backup_stream=backup, database=act_1.db.db_path,
                                    flags=SrvRestoreFlag.REPLACE)
     #
     diff_meta = ''.join(unified_diff(meta_1.splitlines(), meta_2.splitlines()))

@@ -58,10 +58,10 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 @pytest.mark.version('>=2.0.2')
 def test_1(act_1: Action):
     with act_1.connect_server() as srv, act_1.db.connect() as con:
-        srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.FULL,
+        srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
                               method=ShutdownMethod.FORCED, timeout=0)
         c = con.cursor()
         with pytest.raises(DatabaseError, match='.*shutdown'):
             c.execute('select 1 from rdb$database')
         #
-        srv.database.bring_online(database=str(act_1.db.db_path))
+        srv.database.bring_online(database=act_1.db.db_path)

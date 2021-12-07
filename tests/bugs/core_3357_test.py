@@ -62,9 +62,9 @@ expected_stdout_1 = """
 def test_1(act_1: Action):
     with act_1.connect_server() as srv:
         backup = BytesIO()
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
         backup.seek(0)
-        srv.database.local_restore(backup_stream=backup, database=str(act_1.db.db_path),
+        srv.database.local_restore(backup_stream=backup, database=act_1.db.db_path,
                                    flags=SrvRestoreFlag.REPLACE)
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=[], input="show sequ g1; show sequ g2;")
@@ -111,9 +111,9 @@ expected_stdout_2 = """
 def test_2(act_2: Action):
     with act_2.connect_server() as srv:
         backup = BytesIO()
-        srv.database.local_backup(database=str(act_2.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_2.db.db_path, backup_stream=backup)
         backup.seek(0)
-        srv.database.local_restore(backup_stream=backup, database=str(act_2.db.db_path),
+        srv.database.local_restore(backup_stream=backup, database=act_2.db.db_path,
                                    flags=SrvRestoreFlag.REPLACE)
     act_2.expected_stdout = expected_stdout_2
     act_2.isql(switches=[], input="show sequ g1; show sequ g2;")

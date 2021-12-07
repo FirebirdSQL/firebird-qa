@@ -40,7 +40,7 @@ def test_1(act_1: Action):
     act_1.gfix(switches=['-user', act_1.db.user, '-password', act_1.db.password,
                          '-shut', 'full', '-force', '0', str(act_1.db.db_path)])
     with act_1.connect_server() as srv:
-        srv.database.get_statistics(database=str(act_1.db.db_path), flags=SrvStatFlag.HDR_PAGES)
+        srv.database.get_statistics(database=act_1.db.db_path, flags=SrvStatFlag.HDR_PAGES)
         stats = srv.readlines()
     act_1.gfix(switches=['-user', act_1.db.user, '-password', act_1.db.password,
                          '-online', str(act_1.db.db_path)])

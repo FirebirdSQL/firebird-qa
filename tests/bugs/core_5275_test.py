@@ -618,7 +618,7 @@ def test_1(act_1: Action, bulk_insert_script_1: Path, bulk_insert_output_1: Path
     log_after = act_1.get_firebird_log()
     # Run database validation
     with act_1.connect_server() as srv:
-        srv.database.validate(database=str(act_1.db.db_path), callback=print_validation)
+        srv.database.validate(database=act_1.db.db_path, callback=print_validation)
     # Check
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1

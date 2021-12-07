@@ -186,7 +186,7 @@ expected_stdout_1_b = """
 def test_1(act_1: Action, nbak_file_base: Path, nbak_file_add: Path):
     with act_1.connect_server() as srv, act_1.db.connect() as con:
         # Backup base database
-        srv.database.nbackup(database=str(act_1.db.db_path), backup=str(nbak_file_base),
+        srv.database.nbackup(database=act_1.db.db_path, backup=nbak_file_base,
                              level=0)
         c = con.cursor()
         # get db GUID
@@ -196,19 +196,19 @@ def test_1(act_1: Action, nbak_file_base: Path, nbak_file_add: Path):
         c.execute("insert into test(id,s,t,b) values(1, 'qwerty', '11.12.2013 14:15:16.178', 'foo-rio-bar')")
         con.commit()
         # Backup changes
-        srv.database.nbackup(database=str(act_1.db.db_path), backup=str(nbak_file_add),
+        srv.database.nbackup(database=act_1.db.db_path, backup=nbak_file_add,
                              guid=db_guid)
         # Restore inplace
-        srv.database.nrestore(flags=SrvNBackupFlag.IN_PLACE, database=str(nbak_file_base),
+        srv.database.nrestore(flags=SrvNBackupFlag.IN_PLACE, database=nbak_file_base,
                               backups=[str(nbak_file_add)])
         # Check restored database
         act_1.expected_stdout = expected_stdout_1_a
-        act_1.isql(switches=['-user', act_1.db.user, '-password', act_1.db.password, str(nbak_file_base)],
+        act_1.isql(switches=[str(nbak_file_base)],
                    connect_db=False,
                    input="set list on;set count on;set blob all;select id,s,t,b as blob_id from test;")
         assert act_1.clean_stdout == act_1.clean_expected_stdout
         # Validate restored database
-        srv.database.validate(database=str(nbak_file_base))
+        srv.database.validate(database=nbak_file_base)
         act_1.reset()
         act_1.expected_stdout = expected_stdout_1_b
         act_1.stdout = '\n'.join(srv.readlines())

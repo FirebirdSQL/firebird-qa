@@ -60,7 +60,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 @pytest.mark.version('>=2.5.6')
 def test_1(act_1: Action):
     with act_1.connect_server() as srv:
-        srv.database.set_access_mode(database=str(act_1.db.db_path), mode=DbAccessMode.READ_ONLY)
+        srv.database.set_access_mode(database=act_1.db.db_path, mode=DbAccessMode.READ_ONLY)
     script = """
     commit;
     set transaction read committed;

@@ -155,14 +155,14 @@ def test_1(act_1: Action):
     act_1.execute()
     backup = BytesIO()
     with act_1.connect_server() as srv:
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup,
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup,
                                   flags=SrvBackupFlag.NO_TRIGGERS)
         backup.seek(0)
         act_1.reset()
         act_1.expected_stdout = expected_stdout_1
         act_1.isql(switches=['-nod'], input=check_sql)
         assert act_1.clean_stdout == act_1.clean_expected_stdout
-        srv.database.local_restore(backup_stream=backup, database=str(act_1.db.db_path),
+        srv.database.local_restore(backup_stream=backup, database=act_1.db.db_path,
                                    flags=SrvRestoreFlag.REPLACE)
         backup.close()
         act_1.reset()

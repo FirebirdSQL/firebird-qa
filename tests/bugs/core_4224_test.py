@@ -143,9 +143,9 @@ def test_1(act_1: Action):
     src_timestamp1 = os.path.getmtime(act_1.db.db_path)
     backup = BytesIO()
     with act_1.connect_server() as srv:
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
         backup.seek(0)
-        srv.database.local_restore(database=str(act_1.db.db_path), backup_stream=backup,
+        srv.database.local_restore(database=act_1.db.db_path, backup_stream=backup,
                                    flags=SrvRestoreFlag.REPLACE)
     src_timestamp2 = os.path.getmtime(act_1.db.db_path)
     assert src_timestamp2 - src_timestamp1 > 0

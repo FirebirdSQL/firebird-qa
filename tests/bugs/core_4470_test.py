@@ -297,9 +297,9 @@ fbk_file_1 = temp_file('test.fbk')
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, fbk_file_1: Path):
     with act_1.connect_server() as srv:
-        srv.database.backup(database=str(act_1.db.db_path), backup=str(fbk_file_1))
+        srv.database.backup(database=act_1.db.db_path, backup=fbk_file_1)
         srv.wait()
-        srv.database.restore(backup=str(fbk_file_1), database=str(act_1.db.db_path),
+        srv.database.restore(backup=fbk_file_1, database=act_1.db.db_path,
                              flags=SrvRestoreFlag.REPLACE)
         srv.wait()
     act_1.expected_stdout = expected_stdout_1

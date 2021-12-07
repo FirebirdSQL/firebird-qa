@@ -673,13 +673,13 @@ def test_1(act_1: Action, capsys, sweep_killer_script_1: Path, sweep_killer_out_
         srv.info.get_log()
         log_before = srv.readlines()
         # Change FW to OFF in order to speed up initial data filling
-        srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.ASYNC)
+        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
         # make garbage
         act_1.isql(switches=[], input=make_garbage_1)
         # REDUCE number of cache buffers in DB header in order to sweep make its work as long as possible
-        srv.database.set_default_cache_size(database=str(act_1.db.db_path), size=100)
+        srv.database.set_default_cache_size(database=act_1.db.db_path, size=100)
         # Change FW to ON (in order to make sweep life harder :))
-        srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.SYNC)
+        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.SYNC)
     # Start trace
     b = Barrier(2)
     trace_thread = Thread(target=trace_session, args=[act_1, b])

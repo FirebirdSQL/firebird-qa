@@ -584,7 +584,7 @@ def test_1(act_1: Action, capsys):
      act_1.isql(switches=[], input=sql_ddl)
      # Temporay change FW to OFF in order to make DML faster:
      with act_1.connect_server() as srv:
-          srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.ASYNC)
+          srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
      #
      sql_data = f"""
      set term ^;
@@ -617,7 +617,7 @@ def test_1(act_1: Action, capsys):
      act_1.isql(switches=['-nod'], input=sql_data)
      # Restore FW to ON (make sweep to do its work "harder"):
      with act_1.connect_server() as srv:
-          srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.SYNC)
+          srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.SYNC)
      # Trace
      b_trace = Barrier(2)
      trace_thread = Thread(target=trace_session, args=[act_1, b_trace])
@@ -656,7 +656,7 @@ def test_1(act_1: Action, capsys):
           DTS_END_FOR_ATTACHMENTS = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
           # Move database to shutdown in order to stop sweep
           with act_1.connect_server() as srv:
-               srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.FULL,
+               srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
                                      method=ShutdownMethod.FORCED, timeout=0)
      finally:
           # Kill sweep
@@ -673,7 +673,7 @@ def test_1(act_1: Action, capsys):
      # Return database online in order to check number of attachments that were established
      # while sweep was in work
      with act_1.connect_server() as srv:
-          srv.database.bring_online(database=str(act_1.db.db_path))
+          srv.database.bring_online(database=act_1.db.db_path)
      # Check: number of ISQL attachments between DTS_BEG_FOR_ATTACHMENTS and
      # DTS_END_FOR_ATTACHMENTS must be equal to 'PLANNED_ATTACH_CNT'
      #

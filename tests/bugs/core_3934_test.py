@@ -21,6 +21,7 @@
 
 import pytest
 import re
+import time
 from threading import Thread, Barrier
 from firebird.qa import db_factory, python_act, Action
 
@@ -334,8 +335,9 @@ def check_sweep(act_1: Action, log_sweep: bool):
     b.wait()
     with act_1.connect_server() as srv:
         # Run sweep
-        srv.database.sweep(database=str(act_1.db.db_path))
+        srv.database.sweep(database=act_1.db.db_path)
         # Stop trace
+        time.sleep(2)
         for session in list(srv.trace.sessions.keys()):
             srv.trace.stop(session_id=session)
         trace_thread.join(1.0)

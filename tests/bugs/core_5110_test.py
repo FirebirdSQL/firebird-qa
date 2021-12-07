@@ -86,7 +86,7 @@ expected_stdout_1 = """
 @pytest.mark.version('>=2.5.6')
 def test_1(act_1: Action):
     with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.ASYNC)
+        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
     #
     custom_tpb = TPB(isolation=Isolation.CONCURRENCY).get_buffer()
     with act_1.db.connect(no_gc=True) as con:

@@ -51,12 +51,12 @@ fbk_file_1 = temp_file('test.fbk')
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action, fbk_file_1: Path):
     with act_1.connect_server() as srv:
-        srv.database.backup(database=str(act_1.db.db_path), backup=str(fbk_file_1))
+        srv.database.backup(database=act_1.db.db_path, backup=fbk_file_1)
         srv.wait()
         # Try overwrite existing database file
         with pytest.raises(DatabaseError,
                            match='atabase .* already exists.  To replace it, use the -REP switch'):
-            srv.database.restore(database=str(act_1.db.db_path), backup=str(fbk_file_1))
+            srv.database.restore(database=act_1.db.db_path, backup=fbk_file_1)
             srv.wait()
 
 

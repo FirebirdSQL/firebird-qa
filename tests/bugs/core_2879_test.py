@@ -253,7 +253,7 @@ def test_1(act_1: Action, isql_script: Path, capsys):
                                  stderr=subprocess.STDOUT)
         time.sleep(2)
         # LAUNCH SWEEP while ISQL is working
-        srv.database.sweep(database=str(act_1.db.db_path))
+        srv.database.sweep(database=act_1.db.db_path)
         p_isql.terminate()
         # Get content of firebird.log AFTER test
         srv.info.get_log()

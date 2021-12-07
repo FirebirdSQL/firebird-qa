@@ -174,7 +174,7 @@ expected_stdout_1 = """
 def test_1(act_1: Action, capsys):
     # Move database to FW = OFF in order to increase speed of insertions and output its header info:
     with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.ASYNC)
+        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
         # Preparing script for ISQL that will do inserts with long keys:
         long_keys_cmd = """
         recreate table test(s varchar(1015)); -- with THIS length of field following EB will get exception very fast.
@@ -197,7 +197,7 @@ def test_1(act_1: Action, capsys):
         print(act_1.stdout)
         print(act_1.stderr)
         # Run validation after ISQL will finish (with runtime exception due to implementation limit exceeding):
-        srv.database.validate(database=str(act_1.db.db_path), lock_timeout=1, callback=print)
+        srv.database.validate(database=act_1.db.db_path, lock_timeout=1, callback=print)
         # Check
         act_1.expected_stdout = expected_stdout_1
         act_1.stdout = capsys.readouterr().out

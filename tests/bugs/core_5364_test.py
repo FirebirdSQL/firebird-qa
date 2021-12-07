@@ -126,7 +126,7 @@ expected_stderr_1 = """
 @pytest.mark.version('>=3.0.6')
 def test_1(act_1: Action):
     with act_1.connect_server() as srv:
-        srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.SINGLE,
+        srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.SINGLE,
                               method=ShutdownMethod.FORCED, timeout=0)
         with act_1.db.connect() as con:
             c = con.cursor()

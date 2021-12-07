@@ -119,10 +119,10 @@ fdb_file_2 = temp_file('tmp_core_5295-2.db1')
 @pytest.mark.version('>=2.5.6')
 def test_1(act_1: Action, fbk_file: Path, fdb_file_1: Path, fdb_file_2: Path):
     with act_1.connect_server() as srv:
-        srv.database.backup(database=str(act_1.db.db_path), backup=str(fbk_file))
+        srv.database.backup(database=act_1.db.db_path, backup=fbk_file)
         srv.wait()
-        srv.database.restore(backup=str(fbk_file),
-                             database=[str(fdb_file_1), str(fdb_file_2)],
+        srv.database.restore(backup=fbk_file,
+                             database=[fdb_file_1, fdb_file_2],
                              db_file_pages=[100000])
         srv.wait()
     # Only 'gfix -v' raised error. Online validation works fine:

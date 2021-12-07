@@ -325,9 +325,9 @@ def test_1(act_1: Action):
     #
     backup = BytesIO()
     with act_1.connect_server() as srv:
-        srv.database.local_backup(database=str(act_1.db.db_path), backup_stream=backup)
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
         backup.seek(0)
-        srv.database.local_restore(database=str(act_1.db.db_path), backup_stream=backup,
+        srv.database.local_restore(database=act_1.db.db_path, backup_stream=backup,
                                    flags=SrvRestoreFlag.REPLACE)
     # gather metadta and test cript result after backup & restore
     act_1.reset()

@@ -138,15 +138,15 @@ def test_1(act_1: Action, capsys):
     print (':::MSG::: ISQL setting new value for linger finished.')
     print (':::MSG::: Starting GFIX setting new value for page buffers...')
     #with act_1.connect_server() as srv:
-        #srv.database.set_default_cache_size(database=str(act_1.db.db_path), size=3791)
-        #srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.ASYNC)
-        #srv.database.set_access_mode(database=str(act_1.db.db_path), mode=DbAccessMode.READ_ONLY)
-        #srv.database.shutdown(database=str(act_1.db.db_path), mode=ShutdownMode.SINGLE,
+        #srv.database.set_default_cache_size(database=act_1.db.db_path, size=3791)
+        #srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
+        #srv.database.set_access_mode(database=act_1.db.db_path, mode=DbAccessMode.READ_ONLY)
+        #srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.SINGLE,
                               #method=ShutdownMethod.DENNY_ATTACHMENTS, timeout=20)
-        #srv.database.get_statistics(database=str(act_1.db.db_path), flags=SrvStatFlag.HDR_PAGES,
+        #srv.database.get_statistics(database=act_1.db.db_path, flags=SrvStatFlag.HDR_PAGES,
                                     #callback=print)
-        #srv.database.bring_online(database=str(act_1.db.db_path))
-        #srv.database.set_access_mode(database=str(act_1.db.db_path), mode=DbAccessMode.READ_WRITE)
+        #srv.database.bring_online(database=act_1.db.db_path)
+        #srv.database.set_access_mode(database=act_1.db.db_path, mode=DbAccessMode.READ_WRITE)
     act_1.reset()
     act_1.gfix(switches=['-buffers', '3791', act_1.db.dsn])
     act_1.reset()

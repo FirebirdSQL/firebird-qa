@@ -124,7 +124,7 @@ def test_1(act_1: Action):
     #with act_1.connect_server() as srv:
         # This raises error in new FB OO API while calling spb.insert_string(SPBItem.DBNAME, database):
         # "Internal error when using clumplet API: attempt to store data in dataless clumplet"
-        #srv.database.nfix_database(database=str(act_1.db.db_path))
+        #srv.database.nfix_database(database=act_1.db.db_path)
     # So we have to use svcmgr...
     act_1.reset()
     act_1.svcmgr(switches=['action_nfix', 'dbname', str(act_1.db.db_path)])

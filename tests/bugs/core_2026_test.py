@@ -87,7 +87,7 @@ def test_1(act_1: Action):
     assert act_1.clean_stdout == act_1.clean_expected_stdout
     #
     with act_1.connect_server() as srv:
-        srv.database.set_access_mode(database=str(act_1.db.db_path), mode=DbAccessMode.READ_ONLY)
+        srv.database.set_access_mode(database=act_1.db.db_path, mode=DbAccessMode.READ_ONLY)
     #
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1_b

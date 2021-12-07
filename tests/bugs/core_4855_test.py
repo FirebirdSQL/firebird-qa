@@ -255,7 +255,7 @@ heavy_output_1 = temp_file('heavy_script.out')
 def test_1(act_1: Action, heavy_script_1: Path, heavy_output_1: Path, capsys):
     # Change database FW to OFF in order to increase speed of insertions and output its header info
     with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=str(act_1.db.db_path), mode=DbWriteMode.ASYNC)
+        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
     # Preparing script for ISQL that will do 'heavy DML'
     heavy_script_1.write_text("""
     recreate sequence g;
@@ -288,10 +288,10 @@ def test_1(act_1: Action, heavy_script_1: Path, heavy_output_1: Path, capsys):
             # Run validation twice
             with act_1.connect_server() as srv:
                 print('Iteration #1:')
-                srv.database.validate(database=str(act_1.db.db_path), lock_timeout=1,
+                srv.database.validate(database=act_1.db.db_path, lock_timeout=1,
                                       callback=print)
                 print('Iteration #2:')
-                srv.database.validate(database=str(act_1.db.db_path), lock_timeout=1,
+                srv.database.validate(database=act_1.db.db_path, lock_timeout=1,
                                       callback=print)
             # Stopping ISQL that is doing now 'heavy DML' (bulk-inserts):
             act_1.isql(switches=[], input='insert into stop(id) values(1); commit;')

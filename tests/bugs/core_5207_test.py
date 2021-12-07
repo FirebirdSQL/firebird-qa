@@ -181,7 +181,7 @@ def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path, capsys):
                     at='core_5207.fbk')
     fbk_file_1.write_bytes(zipped_fbk_file.read_bytes())
     with act_1.connect_server() as srv:
-        srv.database.restore(database=str(fdb_file_1), backup=str(fbk_file_1))
+        srv.database.restore(database=fdb_file_1, backup=fbk_file_1)
         srv.wait()
     act_1.isql(switches=['-x', str(fdb_file_1)], connect_db=False)
     metadata = act_1.stdout

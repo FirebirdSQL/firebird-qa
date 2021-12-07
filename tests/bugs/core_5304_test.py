@@ -79,9 +79,9 @@ fdb_file = temp_file('tmp_core_5304.fdb')
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, fbk_file: Path, fdb_file: Path):
     with act_1.connect_server() as srv:
-        srv.database.backup(database=str(act_1.db.db_path), backup=str(fbk_file))
+        srv.database.backup(database=act_1.db.db_path, backup=fbk_file)
         srv.wait()
-        srv.database.restore(backup=str(fbk_file), database=str(fdb_file))
+        srv.database.restore(backup=fbk_file, database=fdb_file)
         srv.wait()
 
 
