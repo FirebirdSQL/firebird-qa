@@ -1,27 +1,29 @@
 #coding:utf-8
 #
 # id:           bugs.core_5833
-# title:        Server crashes on preparing empty query when trace is enabled
-# decription:   
+# title:        DDL triggers for some object types (views, exceptions, roles, indexes, domains) are lost in backup-restore process
+# decription:
 #                  We create DDL triggers for all cases that are enumerated in $FB_HOME/doc/sql.extensions/README.ddl_triggers.txt.
 #                  Then query to RDB$TRIGGERS table is applied to database and its results are stored in <log_file_1>.
 #                  After this we do backup and restore to new file, again apply query to RDB$TRIGGERS and store results to <log_file_2>.
 #                  Finally we compare <log_file_1> and <log_file_2> but exclude from comparison lines which starts with to 'BLOB_ID'
 #                  (these are "prefixes" for RDB$TRIGGER_BLR and RDB$TRIGGER_SOURCE).
 #                  Difference should be empty.
-#               
+#
 #                  Confirmed bug on WI-T4.0.0.977 and WI-V3.0.4.32972.
 #                  Works fine on:
 #                      30SS, build 3.0.4.32980: OK, 4.656s.
 #                      40SS, build 4.0.0.993: OK, 6.531s.
-#                
+#
 # tracker_id:   CORE-5833
 # min_versions: ['3.0']
 # versions:     3.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from difflib import unified_diff
+from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
 
 # version: 3.0
 # resources: None
@@ -34,34 +36,34 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import re
 #  import subprocess
 #  import time
 #  import difflib
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -72,12 +74,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  ddl_list = ''.join(
 #      (
 #            'CREATE TABLE,ALTER TABLE,DROP TABLE,CREATE PROCEDURE,ALTER PROCEDURE,DROP PROCEDURE'
@@ -96,14 +98,14 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  #ddl_list += ',CREATE SEQUENCE,ALTER SEQUENCE,DROP SEQUENCE,CREATE USER,ALTER USER,DROP USER'
 #  #ddl_list += ',CREATE INDEX,ALTER INDEX,DROP INDEX,CREATE COLLATION,DROP COLLATION,ALTER CHARACTER SET'
 #  #ddl_list += ',CREATE PACKAGE,ALTER PACKAGE,DROP PACKAGE,CREATE PACKAGE BODY,DROP PACKAGE BODY'
-#  
-#  
+#
+#
 #  # Initial DDL: create all triggers
 #  ##################################
 #  f_ddl_sql=open( os.path.join(context['temp_directory'],'tmp_ddl_triggers_5833.sql'), 'w')
 #  f_ddl_sql.write('set bail on;\\n')
 #  f_ddl_sql.write('set term ^;\\n')
-#  
+#
 #  for i in ddl_list.split(','):
 #      for k in (1,2):
 #          evt_time='before' if k==1 else 'after'
@@ -113,14 +115,14 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          f_ddl_sql.write( "    c = rdb$get_context('DDL_TRIGGER', 'OBJECT_NAME');\\n" )
 #          f_ddl_sql.write( 'end\\n^' )
 #          f_ddl_sql.write( '\\n' )
-#  
-#  
+#
+#
 #  f_ddl_sql.write('set term ;^\\n')
 #  f_ddl_sql.write('commit;\\n')
 #  flush_and_close( f_ddl_sql )
-#  
+#
 #  runProgram('isql', [dsn, '-i', f_ddl_sql.name] )
-#  
+#
 #  # Prepare check query:
 #  ######################
 #  sql_text='''    set blob all;
@@ -131,54 +133,54 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      where rdb$system_flag is distinct from 1
 #      order by 1;
 #  '''
-#  
+#
 #  f_chk_sql=open( os.path.join(context['temp_directory'],'tmp_check_trg_5833.sql'), 'w')
 #  f_chk_sql.write( sql_text )
 #  flush_and_close( f_chk_sql )
-#  
+#
 #  # Query RDB$TRIGGERS before b/r:
 #  ################################
-#  
+#
 #  f_xmeta1_log = open( os.path.join(context['temp_directory'],'tmp_xmeta1_5833.log'), 'w')
 #  f_xmeta1_err = open( os.path.join(context['temp_directory'],'tmp_xmeta1_5833.err'), 'w')
-#  
+#
 #  # Add to log result of query to rdb$triggers table:
 #  subprocess.call( [context['isql_path'], dsn, "-i", f_chk_sql.name],
 #                   stdout = f_xmeta1_log,
 #                   stderr = f_xmeta1_err
 #                 )
-#  
+#
 #  flush_and_close( f_xmeta1_log )
 #  flush_and_close( f_xmeta1_err )
-#  
+#
 #  # Do backup and restore into temp file:
 #  #######################################
 #  tmp_bkup=os.path.join(context['temp_directory'],'tmp_backup_5833.fbk')
 #  tmp_rest=os.path.join(context['temp_directory'],'tmp_restored_5833.fdb')
 #  if os.path.isfile(tmp_rest):
 #      os.remove(tmp_rest)
-#  
+#
 #  runProgram('gbak', ['-b', dsn, tmp_bkup ] )
 #  runProgram('gbak', ['-c', tmp_bkup, 'localhost:'+tmp_rest ] )
-#  
-#  
+#
+#
 #  # Query RDB$TRIGGERS after b/r:
 #  ###############################
-#  
+#
 #  f_xmeta2_log = open( os.path.join(context['temp_directory'],'tmp_xmeta2_5833.log'), 'w')
 #  f_xmeta2_err = open( os.path.join(context['temp_directory'],'tmp_xmeta2_5833.err'), 'w')
-#  
+#
 #  subprocess.call( [context['isql_path'], 'localhost:'+tmp_rest, "-i", f_chk_sql.name],
 #                   stdout = f_xmeta2_log,
 #                   stderr = f_xmeta2_err
 #                 )
-#  
+#
 #  flush_and_close( f_xmeta2_log )
 #  flush_and_close( f_xmeta2_err )
-#  
+#
 #  # Every STDERR log should be EMPTY:
 #  ###################################
-#  
+#
 #  f_list = ( f_xmeta1_err, f_xmeta2_err )
 #  for i in range(len(f_list)):
 #     f_name=f_list[i].name
@@ -186,44 +188,96 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         with open( f_name,'r') as f:
 #             for line in f:
 #                 print("Unexpected STDERR, file "+f_name+": "+line)
-#  
-#  
+#
+#
 #  # DIFFERENCE between f_xmeta1_log and f_xmeta2_log should be EMPTY:
 #  ####################
-#  
+#
 #  old_rdb_triggers_data=open(f_xmeta1_log.name, 'r')
 #  new_rdb_triggers_data=open(f_xmeta2_log.name, 'r')
-#  
+#
 #  # NB: we should EXCLUDE from comparison lines which about to BLOB IDs for records:
 #  # ~~~~~~~~~~~~~~~~~~~~~
-#  
+#
 #  difftext = ''.join(difflib.unified_diff(
-#      [ line for line in old_rdb_triggers_data.readlines() if not line.startswith('BLOB_ID_FOR_TRG') ], 
+#      [ line for line in old_rdb_triggers_data.readlines() if not line.startswith('BLOB_ID_FOR_TRG') ],
 #      [ line for line in new_rdb_triggers_data.readlines() if not line.startswith('BLOB_ID_FOR_TRG') ]
 #    ))
 #  old_rdb_triggers_data.close()
 #  new_rdb_triggers_data.close()
-#  
+#
 #  f_diff_txt=open( os.path.join(context['temp_directory'],'tmp_5833_metadata_diff.txt'), 'w')
 #  f_diff_txt.write(difftext)
 #  flush_and_close( f_diff_txt )
-#  
+#
 #  with open( f_diff_txt.name,'r') as f:
 #      for line in f:
 #          print("Unexpected DIFF in metadata: "+line)
-#  
+#
 #  # CLEANUP
 #  #########
 #  time.sleep(1)
 #  cleanup( (f_ddl_sql, f_chk_sql, f_xmeta1_log, f_xmeta1_err, f_xmeta2_log, f_xmeta2_err, f_diff_txt, tmp_bkup, tmp_rest) )
-#    
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+ddl_list = ['CREATE TABLE', 'ALTER TABLE', 'DROP TABLE',
+            'CREATE PROCEDURE', 'ALTER PROCEDURE', 'DROP PROCEDURE',
+            'CREATE FUNCTION', 'ALTER FUNCTION', 'DROP FUNCTION',
+            'CREATE TRIGGER', 'ALTER TRIGGER', 'DROP TRIGGER',
+            'CREATE EXCEPTION', 'ALTER EXCEPTION', 'DROP EXCEPTION',
+            'CREATE VIEW', 'ALTER VIEW', 'DROP VIEW',
+            'CREATE DOMAIN', 'ALTER DOMAIN', 'DROP DOMAIN',
+            'CREATE ROLE', 'ALTER ROLE', 'DROP ROLE',
+            'CREATE SEQUENCE', 'ALTER SEQUENCE', 'DROP SEQUENCE',
+            'CREATE USER', 'ALTER USER', 'DROP USER',
+            'CREATE INDEX', 'ALTER INDEX', 'DROP INDEX',
+            'CREATE COLLATION', 'DROP COLLATION', 'ALTER CHARACTER SET',
+            'CREATE PACKAGE', 'ALTER PACKAGE', 'DROP PACKAGE',
+            'CREATE PACKAGE BODY', 'DROP PACKAGE BODY']
+
+test_script_1 = """
+    set blob all;
+    set list on;
+    set count on;
+    select rdb$trigger_name, rdb$trigger_type, rdb$trigger_source as blob_id_for_trg_source, rdb$trigger_blr as blob_id_for_trg_blr
+    from rdb$triggers
+    where rdb$system_flag is distinct from 1
+    order by 1;
+"""
+
+fbk_file = temp_file('tmp_5833.fbk')
+fdb_file = temp_file('tmp_5833.fdb')
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, fbk_file: Path, fdb_file: Path):
+    script = ['set bail on;', 'set term ^;']
+    # Initial DDL: create all triggers
+    for item in ddl_list:
+        for evt_time in ['before', 'after']:
+            script.append(f"recreate trigger trg_{evt_time}_{item.replace(' ', '_').lower()} active {evt_time} {item.lower()} as")
+            script.append("    declare c rdb$field_name;")
+            script.append("begin")
+            script.append("    c = rdb$get_context('DDL_TRIGGER', 'OBJECT_NAME');")
+            script.append("end ^")
+            script.append("")
+    script.append("set term ;^")
+    script.append("commit;")
+    act_1.isql(switches=[], input='\n'.join(script))
+    # Query RDB$TRIGGERS before b/r:
+    act_1.reset()
+    act_1.isql(switches=[], input=test_script_1)
+    meta_before = [line for line in act_1.stdout.splitlines() if not line.startswith('BLOB_ID_FOR_TRG')]
+    # B/S
+    act_1.reset()
+    act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file)])
+    act_1.reset()
+    act_1.gbak(switches=['-c', str(fbk_file), f'localhost:{fdb_file}'])
+    # Query RDB$TRIGGERS after b/r:
+    act_1.reset()
+    act_1.isql(switches=[f'localhost:{fdb_file}'], input=test_script_1, connect_db=False)
+    meta_after = [line for line in act_1.stdout.splitlines() if not line.startswith('BLOB_ID_FOR_TRG')]
+    # Check
+    assert list(unified_diff(meta_before, meta_after)) == []

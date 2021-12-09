@@ -2,32 +2,34 @@
 #
 # id:           bugs.core_5538
 # title:        DELETE FROM MON$STATEMENTS does not interrupt a longish fetch
-# decription:   
+# decription:
 #                   We create several tables and add single row to each of them. Row contains name of corresponding table.
-#                   Then we create view that based on UNIONED-query to all of these tables. 
-#                   After this, we handle list of PATTERNS and pass each of its elements (herteafter its name is: <P>) to 
+#                   Then we create view that based on UNIONED-query to all of these tables.
+#                   After this, we handle list of PATTERNS and pass each of its elements (herteafter its name is: <P>) to
 #                   '-include_data' gbak command switch.
 #                   Further we RESTORE from this .fbk to temporary DB. This new database which contain only those tables
 #                   which names matched to '-include_data <P>' pattern on previous step.
 #                   We also must check joint usage of '-include_data' and (old) '-skip_data' command switches.
 #                   For this purpose we create single pattern for EXCLUDING some tables (see 'skip_ptn' variable) and use
 #                   this pattern together with elements from patterns list for tables which data must be included in .fbk.
-#               
+#
 #                   Checked on: 4.0.0.1639 SS: 13.978s.
-#               
-#                
+#
+#
 # tracker_id:   CORE-5538
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
 
 # version: 4.0
 # resources: None
 
 substitutions_1 = [('[ \t]+', ' ')]
+#substitutions_1 = []
 
 init_script_1 = """
     recreate view v_test as select 1 x from rdb$database;
@@ -76,7 +78,6 @@ init_script_1 = """
     ;
     commit;
 
-
     insert into test_anna default values;
     insert into test_beta default values;
     insert into test_ciao default values;
@@ -95,47 +96,45 @@ init_script_1 = """
     insert into test_won2 default values;
     insert into test_w_n3 default values;
     commit;
-
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import sys
 #  import time
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
-#  # dsn                     localhost/3400:C:\\FBTESTING\\qa
-#  bt-repo	mpugs.core_NNNN.fdb
+#
+#  # dsn                     localhost/3400:C:\\FBTESTING\\qa\\fbt-repo\\tmp\\bugs.core_NNNN.fdb
 #  # db_conn.database_name   C:\\FBTESTING\\QA\\FBT-REPO\\TMP\\BUGS.CORE_NNNN.FDB
 #  # $(DATABASE_LOCATION)... C:/FBTESTING/qa/fbt-repo/tmp/bugs.core_NNN.fdb
-#  
+#
 #  this_fdb=db_conn.database_name
 #  this_fbk=os.path.join(context['temp_directory'],'tmp_5538.fbk')
 #  test_res=os.path.join(context['temp_directory'],'tmp_5538.tmp')
-#  
+#
 #  db_conn.close()
-#  
+#
 #  ##############################################
 #  # Script for ISQL that will do 'heavy select':
-#  
+#
 #  usr=user_name
 #  pwd=user_password
-#  
+#
 #  # 1. Check that we can use patterns for include data only from several selected tables:
 #  incl_ptn_list = ('test_doc%', 'test_d(o|u)ra', '%_w(i|o|_)n[[:DIGIT:]]', 'test_a[[:ALPHA:]]{1,}a' )
-#  
+#
 #  for i, p in enumerate(incl_ptn_list):
 #      runProgram('gbak',['-b', dsn, this_fbk, '-include', p ])
 #      runProgram('gbak',['-rep', this_fbk, 'localhost:'+test_res])
 #      sql_check = "set heading off; select %(i)s ptn_indx, q'{%(p)s}' as ptn_text, v.* from v_test v;" % locals()
 #      runProgram('isql',['localhost:'+test_res], sql_check )
-#  
+#
 #  # 2. Check interaction between -INCLUDE_DATA and -SKIP_DATA switches for a table:
 #  # We must check only conditions marked by '**':
 #  # +--------------------------------------------------+
@@ -147,23 +146,24 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # |   MATCH   |  excluded  |**excluded**|**excluded**|
 #  # | NOT MATCH |  included  |**included**|**excluded**|
 #  # +-----------+------------+------------+------------+
-#  
+#
 #  skip_ptn = 'test_d(o|u)%'
 #  incl_ptn_list = ('test_d%', 'test_(a|b)[[:ALPHA:]]+a', )
-#  
+#
 #  for i, p in enumerate(incl_ptn_list):
 #      runProgram('gbak',['-b', dsn, this_fbk, '-include_data', p, '-skip_data', skip_ptn ])
 #      runProgram('gbak',['-rep', this_fbk, 'localhost:'+test_res])
 #      sql_check = "set heading off; select %(i)s ptn_indx, q'{%(p)s}' as include_ptn, q'{%(skip_ptn)s}' as exclude_ptn, v.* from v_test v;" % locals()
 #      runProgram('isql',['localhost:'+test_res], sql_check )
-#  
+#
 #  time.sleep(1)
 #  os.remove( this_fbk )
 #  os.remove( test_res )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     0 test_doc% 								doca
@@ -179,11 +179,49 @@ expected_stdout_1 = """
     0 test_d%     test_d(o|u)% 					dina
     1 test_(a|b)[[:ALPHA:]]+a test_d(o|u)% 		anna
     1 test_(a|b)[[:ALPHA:]]+a test_d(o|u)% 		beta
-  """
+"""
+
+#  this_fbk=os.path.join(context['temp_directory'],'tmp_5538.fbk')
+#  test_res=os.path.join(context['temp_directory'],'tmp_5538.tmp')
+
+fbk_file_1 = temp_file('core_5538.fbk')
+fdb_file_1 = temp_file('core_5538.fdb')
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path, capsys):
+    # 1. Check that we can use patterns for include data only from several selected tables:
+    for i, p in enumerate(['test_doc%', 'test_d(o|u)ra', '%_w(i|o|_)n[[:DIGIT:]]', 'test_a[[:ALPHA:]]{1,}a']):
+        act_1.reset()
+        act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file_1), '-include', p])
+        act_1.reset()
+        act_1.gbak(switches=['-rep', str(fbk_file_1), f'localhost:{fdb_file_1}'])
+        act_1.reset()
+        act_1.isql(switches=[f'localhost:{fdb_file_1}'], connect_db=False,
+                   input=f"set heading off; select {i} ptn_indx, q'{{{p}}}' as ptn_text, v.* from v_test v;")
+        print(act_1.stdout)
+    # 2. Check interaction between -INCLUDE_DATA and -SKIP_DATA switches for a table:
+    # We must check only conditions marked by '**':
+    # +--------------------------------------------------+
+    # |           |             INCLUDE_DATA             |
+    # |           |--------------------------------------|
+    # | SKIP_DATA |  NOT SET   |   MATCH    | NOT MATCH  |
+    # +-----------+------------+------------+------------+
+    # |  NOT SET  |  included  |  included  |  excluded  | <<< these rules can be skipped  in this test
+    # |   MATCH   |  excluded  |**excluded**|**excluded**|
+    # | NOT MATCH |  included  |**included**|**excluded**|
+    # +-----------+------------+------------+------------+
+    skip_ptn = 'test_d(o|u)%'
+    for i, p in enumerate(['test_d%', 'test_(a|b)[[:ALPHA:]]+a']):
+        act_1.reset()
+        act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file_1), '-include_data', p, '-skip_data', skip_ptn])
+        act_1.reset()
+        act_1.gbak(switches=['-rep', str(fbk_file_1), f'localhost:{fdb_file_1}'])
+        act_1.reset()
+        act_1.isql(switches=[f'localhost:{fdb_file_1}'], connect_db=False,
+                   input=f"set heading off; select {i} ptn_indx, q'{{{p}}}' as include_ptn, q'{{{skip_ptn}}}' as exclude_ptn, v.* from v_test v;")
+        print(act_1.stdout)
+    # Check
+    act_1.reset()
+    act_1.expected_stdout = expected_stdout_1
+    act_1.stdout = capsys.readouterr().out
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

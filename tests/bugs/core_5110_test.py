@@ -26,7 +26,7 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import DbWriteMode, TPB, Isolation
+from firebird.driver import TPB, Isolation
 
 # version: 2.5.6
 # resources: None
@@ -85,8 +85,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=2.5.6')
 def test_1(act_1: Action):
-    with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
+    act_1.db.set_async_write()
     #
     custom_tpb = TPB(isolation=Isolation.CONCURRENCY).get_buffer()
     with act_1.db.connect(no_gc=True) as con:

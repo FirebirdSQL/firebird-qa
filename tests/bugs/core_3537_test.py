@@ -42,7 +42,6 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import DbWriteMode
 
 # version: 2.5.2
 # resources: None
@@ -458,8 +457,7 @@ trace_1 = ['log_transactions = true',
 def test_1(act_1: Action, capsys):
     NUM_ROWS_TO_BE_ADDED = 45000
     # Change FW to OFF in order to speed up initial data filling
-    with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
+    act_1.db.set_async_write()
     # Make initial data filling into PERMANENT table for retrieving later number of data pages
     # (it should be the same for any kind of tables, including GTTs):
     with act_1.db.connect() as con:

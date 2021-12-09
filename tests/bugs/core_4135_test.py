@@ -56,7 +56,7 @@ import re
 import subprocess
 from datetime import datetime
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import DbWriteMode, ShutdownMethod, ShutdownMode
+from firebird.driver import ShutdownMethod, ShutdownMode
 
 # version: 3.0
 # resources: None
@@ -572,8 +572,7 @@ def test_1(act_1: Action, capsys):
      """
      act_1.isql(switches=[], input=sql_ddl)
      # Temporay change FW to OFF in order to make DML faster:
-     with act_1.connect_server() as srv:
-          srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
+     act_1.db.set_async_write()
      #
      sql_data = f"""
      set term ^;
@@ -605,8 +604,7 @@ def test_1(act_1: Action, capsys):
      act_1.reset()
      act_1.isql(switches=['-nod'], input=sql_data)
      # Restore FW to ON (make sweep to do its work "harder"):
-     with act_1.connect_server() as srv:
-          srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.SYNC)
+     act_1.db.set_async_write()
      # Trace
      with act_1.trace(db_events=trace_1):
           # Traced action

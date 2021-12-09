@@ -26,7 +26,6 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import DbWriteMode
 
 # version: 2.5.7
 # resources: None
@@ -267,8 +266,7 @@ test_script_1 = f"""
 def test_1(act_1: Action):
     if act_1.get_server_architecture() == 'SS':
         # Bucgcheck is reproduced on 2.5.7.27030 only when FW = OFF
-        with act_1.connect_server() as srv:
-            srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
+        act_1.db.set_async_write()
         # Test
         act_1.expected_stdout = expected_stdout_1
         act_1.isql(switches=[], input=test_script_1)

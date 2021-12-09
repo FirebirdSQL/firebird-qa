@@ -33,7 +33,6 @@ import subprocess
 import time
 from pathlib import Path
 from firebird.qa import db_factory, python_act, Action, temp_file
-from firebird.driver import DbWriteMode
 
 # version: 3.0
 # resources: None
@@ -254,8 +253,7 @@ heavy_output_1 = temp_file('heavy_script.out')
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, heavy_script_1: Path, heavy_output_1: Path, capsys):
     # Change database FW to OFF in order to increase speed of insertions and output its header info
-    with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
+    act_1.db.set_async_write()
     # Preparing script for ISQL that will do 'heavy DML'
     heavy_script_1.write_text("""
     recreate sequence g;

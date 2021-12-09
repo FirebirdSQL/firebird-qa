@@ -25,7 +25,7 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import DbWriteMode, SrvRestoreFlag
+from firebird.driver import SrvRestoreFlag
 #from difflib import unified_diff
 from io import BytesIO
 
@@ -521,8 +521,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     # CHANGE FW to OFF
-    with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
+    act_1.db.set_async_write()
     # 1. FIRST RUN DML_TEST
     act_1.script = test_script_1
     act_1.execute()

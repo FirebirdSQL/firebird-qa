@@ -174,5 +174,5 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(db_1):
-    pytest.skip("Test depends on 3rd party encryption plugin")
+    pytest.skip("Requires encryption plugin")
     #pytest.fail("Test not IMPLEMENTED")

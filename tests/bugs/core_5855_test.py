@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5855
 # title:        Latest builds of Firebird 4.0 cannot backup DB with generators which contains space in the names
-# decription:   
+# decription:
 #                   Confirmed bug on 4.0.0.1036, got in STDERR:
 #                       Dynamic SQL Error
 #                       -SQL error code = -104
@@ -13,14 +13,15 @@
 #                   ::: NB:::
 #                   As of nowadays, it  is still possible to create sequence with name = single space character.
 #                   See note in ticket, 26/Jun/18 07:58 AM.
-#                
+#
 # tracker_id:   CORE-5855
 # min_versions: ['3.0.0']
 # versions:     3.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
 
 # version: 3.0
 # resources: None
@@ -32,43 +33,43 @@ init_script_1 = """
     commit;
     comment on sequence "new sequence" is 'foo rio bar';
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import sys
 #  import subprocess
 #  import time
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  thisdb=db_conn.database_name
 #  tmpbkp='$(DATABASE_LOCATION)tmp_core_5855.fbk'
 #  tmpres='$(DATABASE_LOCATION)tmp_core_5855.tmp'
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -79,12 +80,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  fn_bkp_log=open( os.path.join(context['temp_directory'],'tmp_5855_backup.log'), 'w')
 #  fn_bkp_err=open( os.path.join(context['temp_directory'],'tmp_5855_backup.err'), 'w')
 #  subprocess.call([context['fbsvcmgr_path'],"localhost:service_mgr",
@@ -92,15 +93,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                  stdout=fn_bkp_log, stderr=fn_bkp_err)
 #  flush_and_close( fn_bkp_log )
 #  flush_and_close( fn_bkp_err )
-#  
+#
 #  backup_error_flag=0
 #  with open(fn_bkp_err.name,'r') as f:
 #      for line in f:
 #          backup_error_flag=1
 #          print('UNEXPECTED STDERR DURING BACKUP '+fn_bkp_err.name+': '+line)
-#  
+#
 #  cleanup( (fn_bkp_err, fn_bkp_log ) )
-#  
+#
 #  if backup_error_flag==0:
 #      fn_res_log=open( os.path.join(context['temp_directory'],'tmp_5855_restore.log'), 'w')
 #      fn_res_err=open( os.path.join(context['temp_directory'],'tmp_5855_restore.err'), 'w')
@@ -109,72 +110,93 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                      stdout=fn_res_log, stderr=fn_res_err)
 #      flush_and_close( fn_res_log )
 #      flush_and_close( fn_res_err )
-#  
+#
 #      sql_text='''
-#          set list on; 
-#          set blob all; 
 #          set list on;
-#          select 
-#              rdb$generator_name as seq_name, 
-#              rdb$initial_value as seq_init, 
-#              rdb$generator_increment as seq_incr, 
+#          set blob all;
+#          set list on;
+#          select
+#              rdb$generator_name as seq_name,
+#              rdb$initial_value as seq_init,
+#              rdb$generator_increment as seq_incr,
 #              rdb$description as blob_id
-#          from rdb$generators 
+#          from rdb$generators
 #          where rdb$system_flag is distinct from 1;
 #      '''
-#  
+#
 #      fn_sql_chk=open( os.path.join(context['temp_directory'],'tmp_5855_check.sql'), 'w')
 #      fn_sql_chk.write(sql_text)
 #      flush_and_close( fn_sql_chk )
-#  
+#
 #      fn_sql_log=open( os.path.join(context['temp_directory'],'tmp_5855_check.log'), 'w')
 #      fn_sql_err=open( os.path.join(context['temp_directory'],'tmp_5855_check.err'), 'w')
 #      subprocess.call( [ context['isql_path'], 'localhost:'+tmpres, "-i", fn_sql_chk.name ],
 #                       stdout=fn_sql_log, stderr=fn_sql_err
 #                     )
-#  
+#
 #      flush_and_close( fn_sql_log )
 #      flush_and_close( fn_sql_err )
-#      
+#
 #      for fe in ( fn_res_err, fn_sql_err ):
 #          with open(fe.name,'r') as f:
 #              for line in f:
 #                  print('UNEXPECTED STDERR IN '+fe.name+': '+line)
-#      
-#  
+#
+#
 #      with open(fn_res_log.name,'r') as f:
 #          for line in f:
 #              # gbak: ERROR:
 #              if 'ERROR:' in line:
 #                  print('UNEXPECTED ERROR IN '+fg.name+': '+line)
-#  
+#
 #      with open(fn_sql_log.name,'r') as f:
 #          for line in f:
 #              print(line)
-#      
+#
 #      # cleanup:
 #      ##########
 #      time.sleep(1)
 #      cleanup( (fn_res_err, fn_sql_err, fn_res_log, fn_sql_log, fn_sql_chk ) )
-#      
+#
 #  #############################################################
-#  
+#
 #  cleanup( (tmpbkp, tmpres) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     SEQ_NAME                        new sequence
     SEQ_INIT                        123
     SEQ_INCR                        -456
     foo rio bar
-  """
+"""
+
+test_script_1 = """
+    set list on;
+    set blob all;
+    set list on;
+    select
+        rdb$generator_name as seq_name,
+        rdb$initial_value as seq_init,
+        rdb$generator_increment as seq_incr,
+        rdb$description as blob_id
+    from rdb$generators
+    where rdb$system_flag is distinct from 1;
+"""
+
+fbk_file = temp_file('tmp_core_5855.fbk')
+fdb_file = temp_file('tmp_core_5855.fdb')
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, fbk_file: Path, fdb_file: Path):
+    with act_1.connect_server() as srv:
+        srv.database.backup(database=act_1.db.db_path, backup=fbk_file)
+        srv.wait()
+        srv.database.restore(backup=fbk_file, database=fdb_file)
+        srv.wait()
+    act_1.expected_stdout = expected_stdout_1
+    act_1.isql(switches=[f'localhost:{fdb_file}'], input=test_script_1, connect_db=False)
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5719
 # title:        FB >= 3 crashes when restoring backup made by FB 2.5.
-# decription:   
+# decription:
 #                 This test also present in GTCS list, see it here:
 #                     https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/SV_HIDDEN_VAR_2_5.script
 #                 Confirmed crash on:
@@ -11,14 +11,18 @@
 #                 Works fine on:
 #                     FB30SS, build 3.0.3.32897: OK, 3.891s.
 #                     FB40SS, build 4.0.0.872: OK, 4.421s.
-#                 
+#
 # tracker_id:   CORE-5719
 # min_versions: ['3.0']
 # versions:     3.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+import zipfile
+from difflib import unified_diff
+from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
+from firebird.driver import SrvRestoreFlag
 
 # version: 3.0
 # resources: None
@@ -31,35 +35,35 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import time
 #  import zipfile
 #  import difflib
 #  import subprocess
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -70,16 +74,16 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def svc_get_fb_log( f_fb_log ):
-#  
+#
 #    global subprocess
-#  
+#
 #    subprocess.call( [ context['fbsvcmgr_path'],
 #                       "localhost:service_mgr",
 #                       "action_get_fb_log"
@@ -87,21 +91,21 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                     stdout=f_fb_log, stderr=subprocess.STDOUT
 #                   )
 #    return
-#  
-#  
+#
+#
 #  zf = zipfile.ZipFile( os.path.join(context['files_location'],'core5719-ods-11_2.zip') )
 #  tmpfbk = 'core5719-ods-11_2.fbk'
 #  zf.extract( tmpfbk, '$(DATABASE_LOCATION)')
 #  zf.close()
-#  
+#
 #  tmpfbk='$(DATABASE_LOCATION)'+tmpfbk
 #  tmpfdb='$(DATABASE_LOCATION)'+'tmp_5719_check_restored.fdb'
-#  
+#
 #  f_fblog_before=open( os.path.join(context['temp_directory'],'tmp_5719_fblog_before.txt'), 'w')
 #  svc_get_fb_log( f_fblog_before )
 #  flush_and_close( f_fblog_before )
-#  
-#  
+#
+#
 #  f_restore_log=open( os.path.join(context['temp_directory'],'tmp_5719_check_restored.log'), 'w')
 #  subprocess.check_call([context['fbsvcmgr_path'],"localhost:service_mgr",
 #                         "action_restore",
@@ -110,66 +114,66 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                         "res_replace",
 #                         "verbose"
 #                        ],
-#                        stdout=f_restore_log, 
+#                        stdout=f_restore_log,
 #                        stderr=subprocess.STDOUT)
 #  flush_and_close( f_restore_log )
-#  
+#
 #  f_fblog_after=open( os.path.join(context['temp_directory'],'tmp_5719_fblog_after.txt'), 'w')
 #  svc_get_fb_log( f_fblog_after )
 #  flush_and_close( f_fblog_after )
-#  
-#  
+#
+#
 #  f_validation_log=open( os.path.join(context['temp_directory'],'tmp_5719_validation.log'), 'w')
 #  subprocess.check_call([context['fbsvcmgr_path'],"localhost:service_mgr",
 #                         "action_validate",
 #                         "dbname", tmpfdb,
 #                        ],
-#                        stdout=f_validation_log, 
+#                        stdout=f_validation_log,
 #                        stderr=subprocess.STDOUT)
 #  flush_and_close( f_validation_log )
-#  
+#
 #  # Compare firebird.log versions BEFORE and AFTER this test:
 #  ######################
-#  
+#
 #  oldfb=open(f_fblog_before.name, 'r')
 #  newfb=open(f_fblog_after.name, 'r')
-#  
+#
 #  difftext = ''.join(difflib.unified_diff(
-#      oldfb.readlines(), 
+#      oldfb.readlines(),
 #      newfb.readlines()
 #    ))
 #  oldfb.close()
 #  newfb.close()
-#  
+#
 #  f_diff_txt=open( os.path.join(context['temp_directory'],'tmp_5719_diff.txt'), 'w')
 #  f_diff_txt.write(difftext)
 #  flush_and_close( f_diff_txt )
-#  
+#
 #  # Check logs:
 #  #############
 #  with open( f_restore_log.name,'r') as f:
 #      for line in f:
 #          if 'Error'.upper() in line.upper():
 #              print( 'UNEXPECTED ERROR IN RESTORE LOG: ' + (' '.join(line.split()).upper()) )
-#  
+#
 #  with open( f_validation_log.name,'r') as f:
 #      for line in f:
 #          if 'Error'.upper() in line.upper():
 #              print( 'UNEXPECTED ERROR IN VALIDATION LOG: ' + (' '.join(line.split()).upper()) )
-#  
-#  
+#
+#
 #  with open( f_diff_txt.name,'r') as f:
 #      for line in f:
 #          if line.startswith('+'):
 #              print( 'UNEXPECTED DIFF IN FIREBIRD.LOG: ' + (' '.join(line.split()).upper()) )
-#  
-#  
+#
+#
 #  ##########
 #  # Cleanup:
 #  ##########
 #  time.sleep(1)
-#  
-#  f_list=( 
+#
+#  f_list=(
 #       f_restore_log
 #      ,f_validation_log
 #      ,f_fblog_before
@@ -179,14 +183,29 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      ,tmpfdb
 #  )
 #  cleanup( f_list )
-#    
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+fbk_file_1 = temp_file('core5719-ods-11_2.fbk')
+fdb_file_1 = temp_file('check_restored_5719.fdb')
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path):
+    zipped_fbk_file = zipfile.Path(act_1.vars['files'] / 'core_5719-ods-11_2.zip',
+                                   at='core5719-ods-11_2.fbk')
+    fbk_file_1.write_bytes(zipped_fbk_file.read_bytes())
+    log_before = act_1.get_firebird_log()
+    #
+    with act_1.connect_server() as srv:
+        srv.database.restore(backup=fbk_file_1, database=fdb_file_1,
+                             flags=SrvRestoreFlag.REPLACE, verbose=True)
+        restore_err = [line for line in srv if 'ERROR' in line.upper()]
+        log_after = act_1.get_firebird_log()
+        srv.database.validate(database=fdb_file_1)
+        validate_err = [line for line in srv if 'ERROR' in line.upper()]
+    #
+    assert restore_err == []
+    assert validate_err == []
+    assert list(unified_diff(log_before, log_after)) == []

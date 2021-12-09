@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5579
 # title:        request synchronization error in the GBAK utility (restore)
-# decription:   
+# decription:
 #                  Database for this test was created beforehand on 2.5.7 with intentionally broken not null constraint.
 #                  It was done using direct RDB$ table modification:
 #                  ---
@@ -15,9 +15,9 @@
 #                     where rdb$field_name = upper('fn') and rdb$relation_name = upper('test');
 #                     commit;
 #                  ---
-#                  We try to restore .fbk which was created from that DB on current FB snapshot and check that restore log 
+#                  We try to restore .fbk which was created from that DB on current FB snapshot and check that restore log
 #                  does NOT contain phrase 'request synchronization' in any line.
-#               
+#
 #                  Bug was reproduced on 2.5.7.27062, 3.0.3.32746, 4.0.0.684
 #                  All fine on:
 #                       FB25Cs, build 2.5.8.27067: OK, 2.125s.
@@ -31,14 +31,18 @@
 #                   13.04.2021. Adapted for run both on Windows and Linux. Checked on:
 #                     Windows: 4.0.0.2416
 #                     Linux:   4.0.0.2416
-#                
+#
 # tracker_id:   CORE-5579
 # min_versions: ['2.5.8']
 # versions:     2.5.8
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+import re
+import zipfile
+from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
+from firebird.driver import SrvRestoreFlag
 
 # version: 2.5.8
 # resources: None
@@ -51,34 +55,34 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import time
 #  import zipfile
 #  import subprocess
 #  import re
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f,
 #      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#  
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -90,28 +94,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            print('type(f_names_list[i])=',type(f_names_list[i]))
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  zf = zipfile.ZipFile( os.path.join(context['files_location'],'core_5579_broken_nn.zip') )
-#  
+#
 #  # Name of .fbk inside .zip:
 #  zipfbk='core_5579_broken_nn.fbk'
-#  
+#
 #  zf.extract( zipfbk, context['temp_directory'] )
 #  zf.close()
-#  
+#
 #  tmpfbk=''.join( ( context['temp_directory'], zipfbk ) )
 #  tmpfdb=''.join( ( context['temp_directory'], 'core_5579_broken_nn.fdb') )
-#  
+#
 #  f_restore_log=open( os.path.join(context['temp_directory'],'tmp_restore_5579.log'), 'w')
 #  f_restore_err=open( os.path.join(context['temp_directory'],'tmp_restore_5579.err'), 'w')
-#  
+#
 #  cleanup( (tmpfdb,) )
-#  
+#
 #  subprocess.call([ context['fbsvcmgr_path'],
 #                    "localhost:service_mgr",
 #                    "action_restore",
@@ -124,10 +128,10 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                )
 #  # before this ticket was fixed restore log did contain following line:
 #  # gbak: ERROR:request synchronization error
-#  
+#
 #  flush_and_close( f_restore_log )
 #  flush_and_close( f_restore_err )
-#  
+#
 #  # Check:
 #  ########
 #  # 1. fbsvcmgr itself must finish without errors:
@@ -135,32 +139,43 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      for line in f:
 #          if line.split():
 #              print( 'UNEXPECTED STDERR in file '+f_restore_err.name+': '+line.upper() )
-#  
+#
 #  # 2. Log of restoring process must NOT contain line with phrase 'request synchronization':
-#  
+#
 #  req_sync_pattern=re.compile('[.*]*request\\s+synchronization\\s+error\\.*', re.IGNORECASE)
-#  
+#
 #  with open( f_restore_log.name,'r') as f:
 #      for line in f:
 #          if req_sync_pattern.search(line):
 #              print( 'UNEXPECTED STDLOG: '+line.upper() )
-#  
+#
 #  #####################################################################
 #  # Cleanup:
-#  
-#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with 
+#
+#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with
 #  # Exception raised while executing Python test script. exception: WindowsError: 32
 #  time.sleep(1)
 #  cleanup( (f_restore_log, f_restore_err, tmpfdb, tmpfbk) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+fbk_file_1 = temp_file('core_5579_broken_nn.fbk')
+fdb_file_1 = temp_file('core_5579_broken_nn.fdb')
 
 @pytest.mark.version('>=2.5.8')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action, fdb_file_1: Path, fbk_file_1: Path):
+    pattern = re.compile('[.*]*request\\s+synchronization\\s+error\\.*', re.IGNORECASE)
+    zipped_fbk_file = zipfile.Path(act_1.vars['files'] / 'core_5579_broken_nn.zip',
+                                   at='core_5579_broken_nn.fbk')
+    fbk_file_1.write_bytes(zipped_fbk_file.read_bytes())
+    with act_1.connect_server() as srv:
+        srv.database.restore(database=fdb_file_1, backup=fbk_file_1,
+                             flags=SrvRestoreFlag.ONE_AT_A_TIME | SrvRestoreFlag.CREATE)
 
-
+        # before this ticket was fixed restore fails with: request synchronization error
+        for line in srv:
+            if pattern.search(line):
+                pytest.fail(f'RESTORE ERROR: {line}')

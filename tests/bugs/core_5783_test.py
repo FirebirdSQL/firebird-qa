@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5783
 # title:        execute statement ignores the text of the SQL-query after a comment of the form "-"
-# decription:   
+# decription:
 #                  We concatenate query from several elements and use '
 #               ' delimiter only to split this query into lines.
 #                  Also, we put single-line comment in SEPARATE line between 'select' and column/value that is obtained from DB.
@@ -18,7 +18,7 @@
 #                  ===
 #                  This query should NOT raise any exception and must produce normal output (string 'foo').
 #                  Thanks to hvlad for suggestions.
-#               
+#
 #                  Confirmed bug on:
 #                      3.0.4.32924
 #                      4.0.0.918
@@ -33,14 +33,14 @@
 #                  Checked on:
 #                      3.0.4.32941: OK, 1.187s.
 #                      4.0.0.947: OK, 1.328s.
-#                
+#
 # tracker_id:   CORE-5783
 # min_versions: ['3.0.4']
 # versions:     3.0.4
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0.4
 # resources: None
@@ -55,27 +55,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #---
 # import sys
 #  import os
-#  
+#
 #  cur = db_conn.cursor()
-#  
-#  # NB: one need to use TWO backslash characters ('\\r') as escape for CR only within fbtest. 
+#
+#  # NB: one need to use TWO backslash characters ('\\r') as escape for CR only within fbtest.
 #  # Single '' should be used when running under "pure" Python control:
-#  
+#
 #  sql_expr = ' '.join( ('select', '\\r', '-- comment N1', '\\r', "'foo' as msg", '\\r', 'from', '\\r', '-- comment N2', '\\r', 'rdb$database') )
-#  
+#
 #  for i in sql_expr.split('\\r'):
 #      print('Query line: ' + i)
-#  
+#
 #  #sql_expr = 'select 1 FROM test'
 #  cur.execute( sql_expr )
 #  for r in cur:
 #      print( 'Query result: ' + r[0] )
-#  
+#
 #  cur.close()
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Query line: select
@@ -85,11 +86,19 @@ expected_stdout_1 = """
     Query line:  -- comment N2
     Query line:  rdb$database
     Query result: foo
-  """
+"""
 
 @pytest.mark.version('>=3.0.4')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, capsys):
+    with act_1.db.connect() as con:
+        c = con.cursor()
+        sql_expr = "select \r -- comment N1 \r 'foo' as msg \r from \r -- comment N2 \r rdb$database"
+        for line in sql_expr.split('\r'):
+            print(f'Query line: {line}')
+        c.execute(sql_expr)
+        for row in c:
+            print(f'Query result: {row[0]}')
+    #
+    act_1.expected_stdout = expected_stdout_1
+    act_1.stdout = capsys.readouterr().out
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

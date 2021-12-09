@@ -33,7 +33,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0.2
 # resources: None
@@ -304,16 +304,88 @@ db_1 = db_factory(page_size=8192, sql_dialect=3, init=init_script_1)
 #  cleanup( (f_trc_cfg, f_trc_lst, f_trc_log, f_trc_err, sql_log, sql_err, sql_cmd) )
 #
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     PLAN (TEST ORDER TEST_F01_ID)
     Number of fetches: acceptable.
-  """
+"""
+
+FETCHES_THRESHOLD = 80
+
+init_sql_1 = """
+   recreate table test
+   (
+       id int not null,
+       f01 int,
+       f02 int
+   );
+
+   set term ^;
+   create or alter procedure sp_add_init_data(a_rows_to_add int)
+   as
+       declare n int;
+       declare i int = 0;
+   begin
+       n = a_rows_to_add;
+       while (i < n) do
+       begin
+           insert into test(id, f01, f02) values(:i, nullif(mod(:i, :n/20), 0), iif(mod(:i,3)<2, 0, 1))
+           returning :i+1 into i;
+       end
+   end
+   ^
+   set term ^;
+   commit;
+
+   execute procedure sp_add_init_data(300000);
+   commit;
+
+   create index test_f01_id on test(f01, id);
+   create index test_f02_only on test(f02);
+   commit;
+"""
+
+test_script_1 = """
+    set list on;
+    select count(*) cnt_check
+    from (
+        select *
+        from test
+        where f01               -- ###################################################################
+              IS NULL           -- <<< ::: NB ::: we check here 'f01 is NULL', exactly as ticket says.
+              and f02=0         -- ###################################################################
+        order by f01, id
+    ) ;
+"""
+
+trace_1 = ['time_threshold = 0',
+           'log_statement_finish = true',
+           'print_plan = true',
+           'print_perf = true',
+           'log_initfini = false',
+           ]
 
 @pytest.mark.version('>=3.0.2')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    act_1.db.set_async_write()
+    act_1.isql(switches=[], input=init_sql_1)
+    #
+    with act_1.trace(db_events=trace_1):
+        act_1.reset()
+        act_1.isql(switches=[], input=test_script_1)
+    # Process trace
+    run_with_plan = ''
+    num_of_fetches = 99999999
+    for line in act_1.trace_log:
+        if line.lower().startswith('plan ('):
+            run_with_plan = line.strip().upper()
+        elif 'fetch(es)' in line:
+            words = line.split()
+            for k in range(len(words)):
+                if words[k].startswith('fetch'):
+                    num_of_fetches = int(words[k-1])
+    # Check
+    assert run_with_plan == 'PLAN (TEST ORDER TEST_F01_ID)'
+    assert num_of_fetches < FETCHES_THRESHOLD
