@@ -20,7 +20,7 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import TPB, TraAccessMode, Isolation
+from firebird.driver import tpb, TraAccessMode, Isolation
 
 # version: 2.5.7
 # resources: None
@@ -156,9 +156,9 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 @pytest.mark.version('>=2.5.7')
 def test_1(act_1: Action):
     with act_1.db.connect() as con:
-        txparam_read = TPB(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0,
-                           access_mode=TraAccessMode.READ).get_buffer()
-        txparam_write = TPB(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0).get_buffer()
+        txparam_read = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0,
+                           access_mode=TraAccessMode.READ)
+        txparam_write = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
 
         tx_read = con.transaction_manager(txparam_read)
         cur_read = tx_read.cursor()

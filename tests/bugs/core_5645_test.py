@@ -34,6 +34,7 @@ init_script_1 = """
 """
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db_1_repl = db_factory(sql_dialect=3, init=init_script_1, filename='tmp_5645_repl.fd')
 
 # test_script_1
 #---
@@ -167,13 +168,8 @@ expected_stdout_1 = """
     Records affected: 2
 """
 
-
-db_1_repl = db_factory(sql_dialect=3, init=init_script_1, filename='tmp_5645_repl.fd')
-
-
 @pytest.mark.version('>=3.0.3')
 def test_1(act_1: Action, db_1_repl: Database):
-    pytest.skip("Requires UDR udrcpp_example")
     ddl_for_replication = f"""
         create table replicate_config (
             name varchar(31) not null,
@@ -181,7 +177,7 @@ def test_1(act_1: Action, db_1_repl: Database):
         );
 
         insert into replicate_config (name, data_source)
-           values ('ds1', '{db_1_repl}');
+           values ('ds1', '{db_1_repl.db_path}');
 
         create trigger persons_replicate
             after insert on persons

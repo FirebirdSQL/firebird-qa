@@ -12,7 +12,7 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import TPB, Isolation
+from firebird.driver import tpb, Isolation
 
 # version: 3.0.6
 # resources: None
@@ -227,7 +227,7 @@ def test_1(act_1: Action, capsys):
     """
     act_1.isql(switches=[], input=ddl_script)
     #
-    tpb = TPB(isolation=Isolation.READ_COMMITTED_NO_RECORD_VERSION, lock_timeout=0).get_buffer()
+    custom_tpb = tpb(isolation=Isolation.READ_COMMITTED_NO_RECORD_VERSION, lock_timeout=0)
     with act_1.db.connect() as con:
         cur1 = con.cursor()
         cur1.execute('select x from sp_test(21)').fetchall()
@@ -239,7 +239,7 @@ def test_1(act_1: Action, capsys):
                          'drop index test2_id_x_desc']
         for cmd in drop_commands:
             with act_1.db.connect() as con2:
-                tx = con2.transaction_manager(default_tpb=tpb)
+                tx = con2.transaction_manager(custom_tpb)
                 tx.begin()
                 cur2 = tx.cursor()
                 try:

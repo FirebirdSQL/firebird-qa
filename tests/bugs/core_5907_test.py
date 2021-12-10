@@ -2,35 +2,36 @@
 #
 # id:           bugs.core_5907
 # title:        Regression: can not launch trace if its 'database' section contains regexp pattern with curvy brackets to enclose quantifier
-# decription:   
+# decription:
 #                   Database file name for check: {core_5907.97}.tmp // NB: outer curvy brackets ARE INCLUDED in this name.
 #                   This name should match to pattern: (\\{core_5907.[[:DIGIT:]]{2}\\}).tmp -- but we have to duplicate every "{" and "}".
 #                   Also, we have to duplicate '' otherwise it will be escaped by fbtest framework.
 #                   Checked on 4.0.0.1224: OK, 14.047s.
-#                
+#
 # tracker_id:   CORE-5907
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
 
-substitutions_1 = [('.*{CORE_5907.97}.TMP', '{CORE_5907.97}.TMP'), ('.*{core_5907.97}.tmp', '{CORE_5907.97}.TMP')]
+substitutions_1 = [('.*{CORE_5907.97}.FDB', '{CORE_5907.97}.FDB'),
+                   ('.*{core_5907.97}.fdb', '{CORE_5907.97}.FDB')]
 
 init_script_1 = """
     recreate table test(id int);
     commit;
-  """
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db_1 = db_factory(sql_dialect=3, init=init_script_1, filename='{core_5907.97}.fdb')
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import re
 #  import subprocess
@@ -38,32 +39,32 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import shutil
 #  from fdb import services
 #  from subprocess import Popen
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  this_fdb = db_conn.database_name
-#  test_fdb = os.path.join( os.path.split(this_fdb)[0], "{core_5907.97}.tmp")  # name of copy will be: %FBT_REPO%	mp\\{core_5907.97}.tmp
-#  
+#  test_fdb = os.path.join( os.path.split(this_fdb)[0], "{core_5907.97}.tmp")  # name of copy will be: %FBT_REPO%\\tmp\\{core_5907.97}.tmp
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -74,12 +75,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  txt30 = '''# Trace config, format for 3.0. Generated auto, do not edit!
 #  database=(%[\\\\\\\\/](\\{{core_5907.[[:DIGIT:]]{{2}}\\}}).tmp)
 #  {
@@ -89,48 +90,48 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #    log_connections = true
 #  }
 #  '''
-#  
+#
 #  f_trc_cfg=open( os.path.join(context['temp_directory'],'tmp_trace_5907.cfg'), 'w')
 #  f_trc_cfg.write(txt30)
 #  flush_and_close( f_trc_cfg )
-#  
+#
 #  shutil.copy2( this_fdb, test_fdb )
-#  
+#
 #  # ##############################################################
 #  # S T A R T   T R A C E   i n   S E P A R A T E    P R O C E S S
 #  # ##############################################################
-#  
+#
 #  f_trc_log=open( os.path.join(context['temp_directory'],'tmp_trace_5907.log'), "w")
 #  f_trc_err=open( os.path.join(context['temp_directory'],'tmp_trace_5907.err'), "w")
-#  
-#  p_trace = Popen( [ context['fbsvcmgr_path'], 
+#
+#  p_trace = Popen( [ context['fbsvcmgr_path'],
 #                     'localhost:service_mgr',
-#                     'action_trace_start', 
+#                     'action_trace_start',
 #                     'trc_cfg', f_trc_cfg.name
 #                   ],
 #                   stdout = f_trc_log, stderr = f_trc_err
 #                 )
-#  
+#
 #  # this delay need for trace start and finish its output about invalid section in its config file:
 #  time.sleep(1)
-#  
+#
 #  # ####################################################
 #  # G E T  A C T I V E   T R A C E   S E S S I O N   I D
 #  # ####################################################
 #  # Save active trace session info into file for further parsing it and obtain session_id back (for stop):
-#  
+#
 #  f_trc_lst = open( os.path.join(context['temp_directory'],'tmp_trace_5907.lst'), 'w')
-#  subprocess.call( [ context['fbsvcmgr_path'], 
-#                     'localhost:service_mgr', 
+#  subprocess.call( [ context['fbsvcmgr_path'],
+#                     'localhost:service_mgr',
 #                     'action_trace_list'
 #                   ],
 #                   stdout=f_trc_lst
 #                 )
 #  flush_and_close( f_trc_lst )
-#  
+#
 #  # !!! DO NOT REMOVE THIS LINE !!!
 #  #time.sleep(3)
-#  
+#
 #  trcssn=0
 #  with open( f_trc_lst.name,'r') as f:
 #      for line in f:
@@ -143,11 +144,11 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              break
 #  # Result: `trcssn` is ID of active trace session. Now we have to terminate it:
 #  #.............................................................................
-#  
+#
 #  #sql_cmd="insert into extdecimal(dec34_34) values (1)"
-#  
+#
 #  sql_cmd='select mon$database_name from mon$database'
-#  
+#
 #  con1=fdb.connect(dsn = 'localhost:' + test_fdb)
 #  cur=con1.cursor()
 #  try:
@@ -159,42 +160,42 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          print('CLIENT GOT ERROR:',i)
 #  finally:
 #      cur.close()
-#  
+#
 #  con1.close()
 #  #.............................................................................
-#  
+#
 #  time.sleep(1)
-#  
+#
 #  # ####################################################
 #  # S E N D   R E Q U E S T    T R A C E   T O   S T O P
 #  # ####################################################
 #  if trcssn>0:
 #      fn_nul = open(os.devnull, 'w')
 #      #f_trc_log=open( os.path.join(context['temp_directory'],'tmp_trace_5907.log'), "w")
-#      subprocess.call( [ context['fbsvcmgr_path'], 
+#      subprocess.call( [ context['fbsvcmgr_path'],
 #                         'localhost:service_mgr',
 #                         'action_trace_stop','trc_id', trcssn
-#                       ], 
+#                       ],
 #                       stdout=fn_nul
 #                     )
 #      fn_nul.close()
 #      # DO NOT REMOVE THIS LINE:
 #      time.sleep(1)
-#  
-#  
+#
+#
 #  p_trace.terminate()
-#  
+#
 #  flush_and_close( f_trc_log )
 #  flush_and_close( f_trc_err )
-#  
+#
 #  # 1. Trace STDERR log should be EMPTY:
 #  ######################################
-#  
+#
 #  # Example of STDERR when wrong database name pattern is spesified:
 #  # Trace session ID 11 started
 #  # Error creating trace session for database "":
 #  # Passed text: illegal line <database=(%[\\/]({core_5907.[[:DIGIT:]]{2}}).tmp)>
-#  
+#
 #  f_list = ( f_trc_err, )
 #  for i in range(len(f_list)):
 #     f_name=f_list[i].name
@@ -202,7 +203,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         with open( f_name,'r') as f:
 #             for line in f:
 #                 print("Unexpected STDERR, file "+f_name+": "+line)
-#  
+#
 #  # 2. Trace STDOUT log must contain one ATTACH and one DETACH events, e.g:
 #  #########################################################################
 #  # 2018-09-26T09:42:26.7340 (508:02122400) ATTACH_DATABASE
@@ -211,7 +212,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # 2018-09-26T09:42:26.7500 (508:02122400) DETACH_DATABASE
 #  #	C:\\MIX\\FIREBIRD\\QA\\FBT-REPO\\TMP\\{CORE_5907.97}.TMP (ATT_10, SYSDBA:NONE, NONE, TCPv4:127.0.0.1/4159)
 #  #	C:\\Python27\\python.exe:2080
-#  
+#
 #  msg='Found expected '
 #  with open( f_trc_log.name,'r') as f:
 #      for line in f:
@@ -219,26 +220,46 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              print( msg + 'ATTACH.')
 #          if 'DETACH_DATABASE' in line:
 #              print( msg + 'DETACH.')
-#  
-#  
+#
+#
 #  # CLEANUP
 #  #########
 #  time.sleep(1)
 #  cleanup( (f_trc_cfg, f_trc_log, f_trc_err, f_trc_lst, test_fdb) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    {CORE_5907.97}.TMP
+    {CORE_5907.97}.FDB
     Found expected ATTACH.
     Found expected DETACH.
-  """
+"""
+
+trace_conf = ['database=(%[\\\\/](\\{{core_5907.[[:DIGIT:]]{{2}}\\}}).fdb)',
+              '{',
+              'enabled = true',
+              'time_threshold = 0',
+              'log_connections = true',
+              'log_initfini = false',
+              '}'
+              ]
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, capsys):
+    with act_1.trace(config=trace_conf):
+        act_1.isql(switches=[],
+                   input='set list on;select mon$database_name from mon$database;')
+        print(act_1.stdout)
+    #
+    for line in act_1.trace_log:
+        if 'ATTACH_DATABASE' in line:
+            print('Found expected ATTACH.')
+        if 'DETACH_DATABASE' in line:
+            print('Found expected DETACH.')
+    # Check
+    act_1.expected_stdout = expected_stdout_1
+    act_1.stdout = capsys.readouterr().out
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

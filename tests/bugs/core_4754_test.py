@@ -21,7 +21,7 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import TPB, Isolation, TraAccessMode, DatabaseError
+from firebird.driver import tpb, Isolation, TraAccessMode, DatabaseError
 
 # version: 2.5.5
 # resources: None
@@ -108,8 +108,8 @@ lock conflict on no wait transaction
 
 @pytest.mark.version('>=2.5.5')
 def test_1(act_1: Action, capsys):
-    custom_tpb = TPB(isolation=Isolation.READ_COMMITTED_RECORD_VERSION,
-                     access_mode=TraAccessMode.WRITE, lock_timeout=0).get_buffer()
+    custom_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION,
+                     access_mode=TraAccessMode.WRITE, lock_timeout=0)
     with act_1.db.connect() as con1:
         tx1a = con1.transaction_manager(custom_tpb)
         cur1a = tx1a.cursor()

@@ -2,21 +2,22 @@
 #
 # id:           bugs.core_5949
 # title:        Bugcheck could happen when read-only database with non-zero linger is set to read-write mode
-# decription:   
+# decription:
 #                   Confirmed bug on 3.0.4.33053, got message in firebird.log:
 #                   ===
 #               	Database: ...\\FPT-REPO\\TMP\\BUGS.CORE_5949.FDB
 #               	internal Firebird consistency check (next transaction older than oldest active transaction (266), file: cch.cpp line: 4830)
-#                   ===	
+#                   ===
 #                   Checked on 3.0.5.33084, 4.0.0.1249, 4.0.0.1340 -- works fine.
-#                 
+#
 # tracker_id:   CORE-5949
 # min_versions: ['3.0.5']
 # versions:     3.0.5
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import DbAccessMode
 
 # version: 3.0.5
 # resources: None
@@ -29,15 +30,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import fdb
 #  from fdb import services as fbsvc
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  DB_NAME = '$(DATABASE_LOCATION)' + 'bugs.core_5949.fdb'
-#  
+#
 #  def change_db_access_mode( a_host, a_db_name, a_required_access ):
 #      global fbsvc
 #      svc=fbsvc.connect( host = a_host )
@@ -45,15 +46,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      svc.close()
 #      return None
 #  #------------------------------------
-#  
+#
 #  db_conn.execute_immediate('alter database set linger to 60')
 #  db_conn.commit()
 #  db_conn.close()
-#  
+#
 #  #------------------------------------
-#  
+#
 #  change_db_access_mode( 'localhost', DB_NAME, fbsvc.ACCESS_READ_ONLY )
-#  
+#
 #  con=fdb.connect(dsn = dsn)
 #  cur=con.cursor()
 #  cur.execute('select r.rdb$linger, d.mon$read_only from rdb$database r cross join mon$database d')
@@ -61,24 +62,34 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      print(r[0],r[1])
 #  con.commit()
 #  con.close()
-#  
+#
 #  #------------------------------------
 #  change_db_access_mode( 'localhost', DB_NAME, fbsvc.ACCESS_READ_WRITE )
-#  
+#
 #  print('COMPLETED.')
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     60 1
     COMPLETED.
-  """
+"""
 
 @pytest.mark.version('>=3.0.5')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    with act_1.db.connect() as con:
+        con.execute_immediate('alter database set linger to 60')
+        con.commit()
+    #
+    with act_1.connect_server() as srv:
+        srv.database.set_access_mode(database=act_1.db.db_path, mode=DbAccessMode.READ_ONLY)
+    # Test
+    with act_1.db.connect() as con:
+        c = con.cursor()
+        c.execute('select r.rdb$linger, d.mon$read_only from rdb$database r cross join mon$database d')
+        result = c.fetchone()
+        con.commit()
+    assert result == (60, 1)

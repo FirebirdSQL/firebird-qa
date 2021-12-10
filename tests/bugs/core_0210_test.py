@@ -11,7 +11,7 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import TPB, Isolation
+from firebird.driver import tpb, Isolation
 
 # version: 2.5
 # resources: None
@@ -86,20 +86,20 @@ def test_1(act_1: Action):
         exit;
     end
     '''
-    tpb = TPB(isolation=Isolation.CONCURRENCY).get_buffer()
+    custom_tpb = tpb(isolation=Isolation.CONCURRENCY)
     with act_1.db.connect() as con1, act_1.db.connect() as con2:
-        con1.begin(tpb)
+        con1.begin(custom_tpb)
         cur1 = con1.cursor()
         cur2 = con2.cursor()
 
         cur1.execute(stm1)
         con1.commit()
 
-        con2.begin(tpb)
+        con2.begin(custom_tpb)
         cur2.execute(stm2)
         con2.commit()
 
-        con1.begin(tpb)
+        con1.begin(custom_tpb)
         cur1.execute(stm1)
         con1.commit()
 

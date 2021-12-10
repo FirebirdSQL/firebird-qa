@@ -26,7 +26,7 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
-from firebird.driver import TPB, Isolation
+from firebird.driver import tpb, Isolation
 
 # version: 2.5.6
 # resources: None
@@ -87,7 +87,7 @@ expected_stdout_1 = """
 def test_1(act_1: Action):
     act_1.db.set_async_write()
     #
-    custom_tpb = TPB(isolation=Isolation.CONCURRENCY).get_buffer()
+    custom_tpb = tpb(isolation=Isolation.CONCURRENCY)
     with act_1.db.connect(no_gc=True) as con:
         tx1 = con.transaction_manager(custom_tpb)
         tx2 = con.transaction_manager(custom_tpb)

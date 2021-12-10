@@ -24,6 +24,7 @@
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
+from firebird.driver import tpb, Isolation
 
 # version: 3.0
 # resources: None
@@ -92,10 +93,11 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
-    with act_1.db.connect() as con_1:
-        c_1 = con_1.cursor()
-        c_1.execute('select * from sec$users')
-        with act_1.db.connect() as con_2:
+    custom_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
+    #
+    with act_1.db.connect() as con1:
+        trn1 = con1.transaction_manager(custom_tpb)
+        cur1 = trn1.cursor()
+        cur1.execute('select sec$user_name from sec$users')
+        with act_1.db.connect() as con2:
             pass # Connect should not raise an exception
-
-
