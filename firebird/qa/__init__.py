@@ -36,5 +36,5 @@
 
 """
 
-from .plugin import db_factory, user_factory, isql_act, python_act, Database, Action, User, \
-     temp_file, temp_files
+from .plugin import db_factory, Database, user_factory, User, isql_act, python_act, Action, \
+     temp_file, temp_files, role_factory, Role, envar_factory, Envar, ServerKeeper
