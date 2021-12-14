@@ -178,7 +178,7 @@ sp_invoker_ddl = """
     end
 """
 
-test_user = user_factory(name='TMP$C5892', password='123')
+test_user = user_factory('db_1', name='TMP$C5892', password='123')
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, test_user: User, capsys):

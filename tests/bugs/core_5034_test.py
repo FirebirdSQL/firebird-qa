@@ -43,8 +43,7 @@
 #                  http://web.firebirdsql.org/download/prerelease/results/archive/3.0.2.32630/bugs.core_5034.html
 #
 #                  [pcisar] 26.11.2021
-#                  New implementation should be done using multiprocessing Python module
-#                  Postponed for later due to complexity
+#                  New implementation postponed for later time due to complexity
 # tracker_id:   CORE-5034
 # min_versions: ['3.0']
 # versions:     3.0
@@ -245,7 +244,7 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db_1 = db_factory(sql_dialect=3) # , init=init_script_1) commented out to speed up SKIP, uncomment when implemented
 
 # test_script_1
 #---
@@ -461,8 +460,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
 def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.skip("New implementation postponed")
 
 

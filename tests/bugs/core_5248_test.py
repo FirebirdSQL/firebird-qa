@@ -2,16 +2,16 @@
 #
 # id:           bugs.core_5248
 # title:        Improve consistency in GRANT syntax between roles and privileges according to SQL standard
-# decription:   
+# decription:
 #                  Checked on 4.0.0.249; 3.0.1.32585
-#                
+#
 # tracker_id:   CORE-5248
 # min_versions: ['3.0.1']
 # versions:     3.0.1, 4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
 
 # version: 3.0.1
 # resources: None
@@ -122,11 +122,11 @@ test_script_2 = """
     select
          current_user                    as who_am_i
         ,p.RDB$USER                      as who_was_granted
-        ,p.RDB$PRIVILEGE                 as privilege_type 
-        ,p.RDB$RELATION_NAME             as role_name       
+        ,p.RDB$PRIVILEGE                 as privilege_type
+        ,p.RDB$RELATION_NAME             as role_name
         ,r.RDB$OWNER_NAME                as role_owner
         ,p.RDB$GRANTOR                   as granted_by
-        ,p.RDB$GRANT_OPTION              as grant_option   
+        ,p.RDB$GRANT_OPTION              as grant_option
     from rdb$user_privileges p
     left join rdb$roles r on p.rdb$relation_name = r.rdb$role_name
     where p.rdb$object_type=13
@@ -221,7 +221,7 @@ test_script_2 = """
     -- -no permission for DROP access to ROLE TEST_ROLE1
 
     drop role test_role1; -- should fail: this user is not owner of this role and he was not granted to use it with admin option
-    
+
     set count off;
     select count(*) from rdb$roles where rdb$role_name = 'TEST_ROLE1';
     set count on;
@@ -266,52 +266,52 @@ act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stdout_2 = """
     WHO_AM_I                        SYSDBA
-    WHO_WAS_GRANTED                 TMP$C5248_USR1                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR1
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    2
 
     WHO_AM_I                        SYSDBA
-    WHO_WAS_GRANTED                 TMP$C5248_USR2                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      TMP$C5248_USR1                                                                                                                                                                                                                                              
+    WHO_WAS_GRANTED                 TMP$C5248_USR2
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      TMP$C5248_USR1
     GRANT_OPTION                    0
 
 
     Records affected: 2
 
     WHO_AM_I                        SYSDBA
-    WHO_WAS_GRANTED                 TMP$C5248_USR2                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      TMP$C5248_USR1                                                                                                                                                                                                                                              
+    WHO_WAS_GRANTED                 TMP$C5248_USR2
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      TMP$C5248_USR1
     GRANT_OPTION                    0
 
 
     Records affected: 1
 
     WHO_AM_I                        TMP$C5248_USR1
-    WHO_WAS_GRANTED                 TMP$C5248_USR1                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR1
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    2
 
 
     Records affected: 1
 
     WHO_AM_I                        TMP$C5248_USR0
-    WHO_WAS_GRANTED                 TMP$C5248_USR3                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR3
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    0
 
 
@@ -319,30 +319,30 @@ expected_stdout_2 = """
     Records affected: 0
 
     WHO_AM_I                        TMP$C5248_USR1
-    WHO_WAS_GRANTED                 TMP$C5248_USR1                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR1
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    2
 
     WHO_AM_I                        TMP$C5248_USR1
-    WHO_WAS_GRANTED                 TMP$C5248_USR3                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR3
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    0
 
 
     Records affected: 2
 
     WHO_AM_I                        TMP$C5248_USR1
-    WHO_WAS_GRANTED                 TMP$C5248_USR1                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR1
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    2
 
 
@@ -351,27 +351,27 @@ expected_stdout_2 = """
     COUNT                           1
 
     WHO_AM_I                        TMP$C5248_USR0
-    WHO_WAS_GRANTED                 TMP$C5248_USR1                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR1
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    2
 
     WHO_AM_I                        TMP$C5248_USR0
-    WHO_WAS_GRANTED                 TMP$C5248_USR3                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR3
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    0
 
     WHO_AM_I                        TMP$C5248_USR0
-    WHO_WAS_GRANTED                 TMP$C5248_USR2                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      TMP$C5248_USR1                                                                                                                                                                                                                                              
+    WHO_WAS_GRANTED                 TMP$C5248_USR2
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      TMP$C5248_USR1
     GRANT_OPTION                    0
 
 
@@ -380,27 +380,27 @@ expected_stdout_2 = """
     Records affected: 0
 
     WHO_AM_I                        TMP$C5248_USR1
-    WHO_WAS_GRANTED                 TMP$C5248_USR1                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR1
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    2
 
     WHO_AM_I                        TMP$C5248_USR1
-    WHO_WAS_GRANTED                 TMP$C5248_USR3                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      SYSDBA                                                                                                                                                                                                                                                      
+    WHO_WAS_GRANTED                 TMP$C5248_USR3
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      SYSDBA
     GRANT_OPTION                    0
 
     WHO_AM_I                        TMP$C5248_USR1
-    WHO_WAS_GRANTED                 TMP$C5248_USR2                                                                                                                                                                                                                                              
-    PRIVILEGE_TYPE                  M     
-    ROLE_NAME                       TEST_ROLE1                                                                                                                                                                                                                                                  
-    ROLE_OWNER                      TMP$C5248_USR0                                                                                                                                                                                                                                              
-    GRANTED_BY                      TMP$C5248_USR1                                                                                                                                                                                                                                              
+    WHO_WAS_GRANTED                 TMP$C5248_USR2
+    PRIVILEGE_TYPE                  M
+    ROLE_NAME                       TEST_ROLE1
+    ROLE_OWNER                      TMP$C5248_USR0
+    GRANTED_BY                      TMP$C5248_USR1
     GRANT_OPTION                    0
 
     Records affected: 3
@@ -419,8 +419,17 @@ expected_stderr_2 = """
     -no permission for DROP access to ROLE TEST_ROLE1
   """
 
+
+usr0_2 = user_factory('db_2', name='tmp$c5248_usr0', password='c5248$u0')
+usr1_2 = user_factory('db_2', name='tmp$c5248_usr1', password='c5248$u1')
+usr2_2 = user_factory('db_2', name='tmp$c5248_usr2', password='c5248$u2')
+usr3_2 = user_factory('db_2', name='tmp$c5248_usr3', password='c5248$u3')
+usrx_2 = user_factory('db_2', name='tmp$c5248_usrx', password='c5248$ux')
+test_role_2 = role_factory('db_2', name='test_role1')
+
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action):
+def test_2(act_2: Action, usr0_2: User, usr1_2: User, usr2_2: User, usr3_2: User,
+           usrx_2: User, test_role_2: Role):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()

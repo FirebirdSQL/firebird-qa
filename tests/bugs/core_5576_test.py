@@ -182,12 +182,12 @@ fdb_file_1 = temp_file('core_5576.fdb')
 def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path):
     act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file_1)])
     act_1.reset()
-    act_1.gbak(switches=['-rep', str(fbk_file_1), f'localhost:{fdb_file_1}'])
+    act_1.gbak(switches=['-rep', str(fbk_file_1), act_1.get_dsn(fdb_file_1)])
     #
     for i in range(2): # Run isql twice!
         act_1.reset()
         act_1.expected_stdout = expected_stdout_1_a
-        act_1.isql(switches=[f'localhost:{fdb_file_1}'], connect_db=False,
+        act_1.isql(switches=[act_1.get_dsn(fdb_file_1)], connect_db=False,
                    input='set list on;select 1 x1 from test where i=1 with lock;')
         assert act_1.clean_stdout == act_1.clean_expected_stdout
     # Validate the database

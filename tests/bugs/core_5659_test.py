@@ -166,5 +166,5 @@ def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path):
         srv.wait()
     #
     act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-q', f'localhost:{fdb_file_1}'], input=test_script_1, connect_db=False)
+    act_1.isql(switches=['-q', act_1.get_dsn(fdb_file_1)], input=test_script_1, connect_db=False)
     assert act_1.clean_stdout == act_1.clean_expected_stdout

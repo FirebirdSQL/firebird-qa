@@ -170,7 +170,7 @@ expected_stdout_1 = """
     Records affected: 0
 """
 
-test_user = user_factory(name='tmp$c5790', password='123')
+test_user = user_factory('db_1', name='tmp$c5790', password='123')
 fdb_file = temp_file('tmp_5790.fdb')
 
 @pytest.mark.version('>=3.0.4')

@@ -2,28 +2,30 @@
 #
 # id:           bugs.core_6250
 # title:        Signature mismatch when creating package body on identical packaged procedure header
-# decription:   
+# decription:
 #                   Thank Adriano for suggestion.
 #                   Bug existed because backup/restore process changed value of RDB$PROCEDURE_PARAMETERS.RDB$NULL_FLAG
 #                   for procedure parameter from NULL to 0 (zero).
 #                   Test creates trivial package and stores its package body in variable that will be used after b/r.
 #                   Then we do backup / restore and attempt to apply this stored package body again, see 'sql_pk_body'.
-#               
+#
 #                   Confirmed bug on: 4.0.0.1766,  3.0.6.33247. Attempt to apply 'recreate package ...' with the same SQL code fails with:
 #                       Statement failed, SQLSTATE = 42000 / ... / -Procedure ... has a signature mismatch on package body ...
 #                   Bug was partially fixed in snapshots 4.0.0.1782 and 3.0.6.33252: problem remained if procedure parameter was of built-in
 #                   datatype rather than domain (i.e. this parameter type was TIMESTAMP or INT etc, instead of apropriate domain).
-#               
+#
 #                   Completely fixed in snapshots 4.0.0.1783 and 3.0.6.33254 (checked 23.02.2020).
 #                   Added special check for parameter that is declared of built-in datatype rather than domain.
-#                
+#
 # tracker_id:   CORE-6250
 # min_versions: ['3.0.6']
 # versions:     3.0.6
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from io import BytesIO
+from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
 
 # version: 3.0.6
 # resources: None
@@ -36,40 +38,40 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import sys
 #  import time
 #  import subprocess
 #  from fdb import services
 #  from subprocess import PIPE
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  dba_privileged_name = 'tmp_c6250_cooldba'
 #  non_privileged_name = 'tmp_c6250_manager'
-#  
+#
 #  this_db = db_conn.database_name
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for f in f_names_list:
@@ -80,17 +82,17 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f, ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#      
+#
 #  #--------------------------------------------
-#  
+#
 #  fdb_rest = os.path.join(context['temp_directory'],'tmp_6250_restored.fdb')
-#  
+#
 #  cleanup( (fdb_rest,) )
-#  
-#  # This part of DDL will be used twise:
+#
+#  # This part of DDL will be used twice:
 #  sql_pk_body = '''
 #      set term ^;
 #      recreate package body pg_test1 as
@@ -105,7 +107,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      ^
 #      set term ;^
 #  '''
-#  
+#
 #  sql_init = '''
 #      create domain dm_dts timestamp;
 #      commit;
@@ -121,34 +123,34 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      end
 #      ^
 #      set term ;^
-#  
+#
 #      %(sql_pk_body)s
-#  
+#
 #      commit;
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  runProgram('isql',[ 'localhost:' + this_db ], sql_init )
-#  
+#
 #  # https://docs.python.org/2/library/subprocess.html#replacing-shell-pipeline
 #  # gbak -b localhost:$fdb_init stdout | gbak -rep stdin localhost:$fdb_rest
-#  
+#
 #  p_sender = subprocess.Popen( [ context['gbak_path'], '-b', 'localhost:' + this_db, 'stdout' ], stdout=PIPE)
 #  p_getter = subprocess.Popen( [ context['gbak_path'], '-c', 'stdin',  'localhost:' + fdb_rest ], stdin = p_sender.stdout, stdout = PIPE )
 #  p_sender.stdout.close()
 #  p_getter_stdout, p_getter_stderr = p_getter.communicate()
-#  
-#  
+#
+#
 #  f_sql_pk_body = open( os.path.join(context['temp_directory'],'tmp_core_6250_run.sql'), 'w', buffering = 0)
 #  f_sql_pk_body.write( sql_pk_body )
 #  flush_and_close( f_sql_pk_body )
-#  
+#
 #  f_run_pk_body_log = open( '.'.join( (os.path.splitext( f_sql_pk_body.name )[0], 'log') ), 'w', buffering = 0)
 #  f_run_pk_body_err = open( '.'.join( (os.path.splitext( f_sql_pk_body.name )[0], 'err') ), 'w', buffering = 0)
 #  subprocess.call( [ context['isql_path'], 'localhost:' + fdb_rest, '-q', '-i', f_sql_pk_body.name ], stdout = f_run_pk_body_log, stderr = f_run_pk_body_err)
 #  flush_and_close( f_run_pk_body_log )
 #  flush_and_close( f_run_pk_body_err )
-#  
-#  
+#
+#
 #  # Check for UNEXPECTED output:
 #  #############################
 #  for g in ( f_run_pk_body_log, f_run_pk_body_err):
@@ -156,20 +158,64 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          for line in f:
 #              if line.strip():
 #                  print( 'UNEXPECTED ' +('STDOUT' if g == f_run_pk_body_log else 'STDERR')+ ': ' + line )
-#  
+#
 #  # Cleanup
 #  #########
 #  time.sleep(1)
 #  cleanup( [ i.name for i in ( f_sql_pk_body, f_run_pk_body_log, f_run_pk_body_err, ) ] + [ fdb_rest, ] )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+sql_pk_body = """
+    set term ^;
+    recreate package body pg_test1 as
+    begin
+        procedure sp_test1 ( a_since dm_dts ) as begin end
+    end
+    ^
+    recreate package body pg_test2 as
+    begin
+        procedure sp_test2 ( a_since timestamp ) as begin end
+    end
+    ^
+    set term ;^
+"""
+
+sql_init = f"""
+    create domain dm_dts timestamp;
+    commit;
+    set term ^;
+    create or alter package pg_test1 as
+    begin
+      procedure sp_test1 ( a_since dm_dts ) ;
+    end
+    ^
+    create or alter package pg_test2 as
+    begin
+      procedure sp_test2 ( a_since timestamp ) ;
+    end
+    ^
+    set term ;^
+
+    {sql_pk_body}
+
+    commit;
+"""
+
+fdb_restored = temp_file('tmp_6250_restored.fdb')
 
 @pytest.mark.version('>=3.0.6')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, fdb_restored: Path):
+    act_1.isql(switches=[], input=sql_init)
+    backup = BytesIO()
+    with act_1.connect_server() as srv:
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
+        backup.seek(0)
+        srv.database.local_restore(database=fdb_restored, backup_stream=backup)
+    #
+    act_1.reset()
+    act_1.isql(switches=['-q', act_1.get_dsn(fdb_restored)], input=sql_pk_body, connect_db=False)
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

@@ -171,7 +171,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
-user_1 = user_factory(name="Nebuchadnezzar2_King_of_Babylon",
+user_1 = user_factory('db_1', name="Nebuchadnezzar2_King_of_Babylon",
                       password="Nebu_King_of_Babylon")
 
 expected_stdout_1 = """
@@ -183,9 +183,13 @@ SEC$LAST_NAME                   Nebuchadnezzar5_King_of_Babylon
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, user_1: User):
-   user_1.update(first_name="Nebuchadnezzar3_King_of_Babylon",
-                 middle_name="Nebuchadnezzar4_King_of_Babylon",
-                 last_name="Nebuchadnezzar5_King_of_Babylon")
+   with act_1.connect_server() as srv:
+      sec_db = srv.info.security_database
+   act_1.svcmgr(switches=['action_modify_user', 'dbname', sec_db,
+                          'sec_username', user_1.name,
+                          'sec_firstname', 'Nebuchadnezzar3_King_of_Babylon',
+                          'sec_middlename', 'Nebuchadnezzar4_King_of_Babylon',
+                          'sec_lastname', 'Nebuchadnezzar5_King_of_Babylon'])
    #
    act_1.script = f"""set list on;
 select sec$user_name, sec$first_name, sec$middle_name, sec$last_name from sec$users

@@ -17,7 +17,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, python_act, Action, user_factory, User
+from firebird.qa import db_factory, python_act, Action, user_factory, User, role_factory, Role
 
 # version: 4.0
 # resources: None
@@ -225,8 +225,9 @@ trace_1 = ['time_threshold = 0',
            'log_statement_prepare = true',
            ]
 
-user_1_a = user_factory(name='TMP$C5269_1', password='123')
-user_1_b = user_factory(name='TMP$C5269_2', password='456')
+user_1_a = user_factory('db_1', name='TMP$C5269_1', password='123')
+user_1_b = user_factory('db_1', name='TMP$C5269_2', password='456')
+test_role = role_factory('db_1', name='role_for_trace_any_attachment')
 
 test_script_1_a = """
 set list on;
@@ -237,22 +238,21 @@ where p.rdb$user = upper('TMP$C5269_2');
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action, user_1_a: User, user_1_b: User):
-    with act_1.test_role('role_for_trace_any_attachment'):
-        with act_1.db.connect() as con:
-            con.execute_immediate('alter role role_for_trace_any_attachment set system privileges to TRACE_ANY_ATTACHMENT')
-            con.commit()
-            con.execute_immediate('grant role_for_trace_any_attachment to user TMP$C5269_2')
-            con.commit()
-        act_1.expected_stdout = expected_stdout_1_a
-        act_1.isql(switches=[], input=test_script_1_a)
-        assert act_1.clean_stdout == act_1.clean_expected_stdout
-        # Run trace
-        with act_1.trace(db_events=trace_1), act_1.db.connect(user='TMP$C5269_1', password='123') as con:
-            c = con.cursor()
-            c.execute('select current_user from rdb$database')
-        # Check
-        act_1.reset()
-        act_1.expected_stdout = expected_stdout_1_b
-        act_1.trace_to_stdout()
-        assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act_1: Action, user_1_a: User, user_1_b: User, test_role: Role):
+    with act_1.db.connect() as con:
+        con.execute_immediate('alter role role_for_trace_any_attachment set system privileges to TRACE_ANY_ATTACHMENT')
+        con.commit()
+        con.execute_immediate('grant role_for_trace_any_attachment to user TMP$C5269_2')
+        con.commit()
+    act_1.expected_stdout = expected_stdout_1_a
+    act_1.isql(switches=[], input=test_script_1_a)
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    # Run trace
+    with act_1.trace(db_events=trace_1), act_1.db.connect(user='TMP$C5269_1', password='123') as con:
+        c = con.cursor()
+        c.execute('select current_user from rdb$database')
+    # Check
+    act_1.reset()
+    act_1.expected_stdout = expected_stdout_1_b
+    act_1.trace_to_stdout()
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

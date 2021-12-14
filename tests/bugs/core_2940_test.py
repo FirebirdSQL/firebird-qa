@@ -263,13 +263,13 @@ test_script_1 = """
     set term ;^
 """
 
-trace_1 = ['exclude_filter = %no_trace%',
-           'log_connections = true',
+trace_1 = ['log_connections = true',
            'log_transactions = true',
            'log_statement_finish = true',
            'print_plan = true',
            'print_perf = true',
-           'time_threshold = 0'
+           'time_threshold = 0',
+           'exclude_filter = %no_trace%',
            ]
 
 @pytest.mark.version('>=3.0')

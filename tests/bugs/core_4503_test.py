@@ -111,10 +111,10 @@ expected_stdout_1 = """
 """
 
 
-user_bill = user_factory(name='TMP$C4503_BILL', password='123')
-user_john = user_factory(name='TMP$C4503_JOHN', password='456')
-user_mick = user_factory(name='TMP$C4503_MICK', password='789')
-user_boss = user_factory(name='TMP$C4503_BOSS', password='000')
+user_bill = user_factory('db_1', name='TMP$C4503_BILL', password='123')
+user_john = user_factory('db_1', name='TMP$C4503_JOHN', password='456')
+user_mick = user_factory('db_1', name='TMP$C4503_MICK', password='789')
+user_boss = user_factory('db_1', name='TMP$C4503_BOSS', password='000')
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, user_bill: User, user_john: User, user_mick: User, user_boss: User):

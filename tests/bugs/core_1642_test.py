@@ -74,9 +74,9 @@ expected_stdout_1 = """
     TMP$C1642_MICK OK.
   """
 
-user_1 = user_factory(name='tmp$c1642_alan', password='123')
-user_2 = user_factory(name='tmp$c1642_john', password = '456')
-user_3 = user_factory(name='tmp$c1642_mick', password = '789')
+user_1 = user_factory('db_1', name='tmp$c1642_alan', password='123')
+user_2 = user_factory('db_1', name='tmp$c1642_john', password = '456')
+user_3 = user_factory('db_1', name='tmp$c1642_mick', password = '789')
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action, user_1: User, user_2: User, user_3: User, capsys):

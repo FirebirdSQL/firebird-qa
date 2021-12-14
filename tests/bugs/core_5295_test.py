@@ -126,5 +126,5 @@ def test_1(act_1: Action, fbk_file: Path, fdb_file_1: Path, fdb_file_2: Path):
                              db_file_pages=[100000])
         srv.wait()
     # Only 'gfix -v' raised error. Online validation works fine:
-    act_1.gfix(switches=['-v', f'localhost:{fdb_file_1}'])
+    act_1.gfix(switches=['-v', act_1.get_dsn(fdb_file_1)])
     assert act_1.clean_stdout == act_1.clean_expected_stdout

@@ -2,16 +2,17 @@
 #
 # id:           bugs.core_6211
 # title:        Command "ISQL -X" can not extract ROLE name when use multi-byte charset for connection (4.x only is affected)
-# decription:   
-#                   Checked on 4.0.0.1713: 1.219s. 
-#                
+# decription:
+#                   Checked on 4.0.0.1713: 1.219s.
+#
 # tracker_id:   CORE-6211
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+#from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
 
 # version: 4.0
 # resources: None
@@ -29,28 +30,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import difflib
 #  import subprocess
 #  from fdb import services
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  this_db = db_conn.database_name
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for f in f_names_list:
@@ -61,41 +62,41 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f, ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#      
+#
 #  #--------------------------------------------
-#  
-#  
+#
+#
 #  sql_ddl='''
 #      set bail on;
 #  	create role  Nachalnik4ukotkiNachalnik4ukotkiNachalnik4ukotkiNachalnik4ukotk;  -- ASCII only
-#  	create role "НачальникЧукоткиНачальникЧукоткиНачальникЧукоткиНачальникЧукотк"; -- Cyrillic, two bytes per character 
+#  	create role "НачальникЧукоткиНачальникЧукоткиНачальникЧукоткиНачальникЧукотк"; -- Cyrillic, two bytes per character
 #  	create role "‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰"; -- U+2030 PER MILLE SIGN, three bytes per character: E2 80 B0
 #  	create role "🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀"; -- U+1F680 ROCKET, four bytes per character: F0 9F 9A 80
-#  	commit; 
+#  	commit;
 #  	set list on;
 #  	set count on;
 #  	select rdb$role_name as r_name from rdb$roles where rdb$system_flag is distinct from 1;
 #  '''
-#  
+#
 #  f_init_ddl=open( os.path.join(context['temp_directory'],'tmp_6211_init_ddl.sql'), 'w', buffering = 0)
 #  f_init_ddl.write(sql_ddl)
 #  flush_and_close( f_init_ddl )
-#  
+#
 #  f_init_log = open( os.path.join(context['temp_directory'],'tmp_6211_init_ddl.log'), 'w', buffering = 0)
 #  f_init_err = open( os.path.join(context['temp_directory'],'tmp_6211_init_ddl.err'), 'w', buffering = 0)
 #  subprocess.call( [ context['isql_path'], dsn, '-ch', 'utf8', '-i', f_init_ddl.name ], stdout = f_init_log,stderr = f_init_err)
 #  flush_and_close( f_init_log )
 #  flush_and_close( f_init_err )
-#  
+#
 #  f_meta_log1 = open( os.path.join(context['temp_directory'],'tmp_6211_extracted_meta.sql'), 'w', buffering = 0)
 #  f_meta_err1 = open( os.path.join(context['temp_directory'],'tmp_6211_extracted_meta.err'), 'w', buffering = 0)
 #  subprocess.call( [ context['isql_path'], dsn, '-x', '-ch', 'utf8' ], stdout = f_meta_log1, stderr = f_meta_err1)
 #  flush_and_close( f_meta_log1 )
 #  flush_and_close( f_meta_err1 )
-#  
+#
 #  f_list=(f_init_err, f_meta_err1,)
 #  for i in range(len(f_list)):
 #  	f_name=f_list[i].name
@@ -103,30 +104,47 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  	   with open( f_name,'r') as f:
 #  		   for line in f:
 #  			   print("Unexpected STDERR, file "+f_name+": "+line)
-#  
+#
 #  with open( f_meta_log1.name,'r') as f:
 #      for line in f:
 #  	    if 'CREATE ROLE' in line:
 #  			print(line)
-#  
+#
 #  # cleanup:
 #  ##########
 #  time.sleep(1)
 #  cleanup( ( f_init_ddl, f_init_log, f_init_err, f_meta_err1, f_meta_log1, f_meta_err1 )  )
-#    
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
 	CREATE ROLE NACHALNIK4UKOTKINACHALNIK4UKOTKINACHALNIK4UKOTKINACHALNIK4UKOTK;
 	CREATE ROLE "НачальникЧукоткиНачальникЧукоткиНачальникЧукоткиНачальникЧукотк";
 	CREATE ROLE "‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰";
 	CREATE ROLE "🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀";
-  """
+"""
+
+#test_script = temp_file('test-script.sql')
+
+ddl_script = """
+    set bail on;
+    create role  Nachalnik4ukotkiNachalnik4ukotkiNachalnik4ukotkiNachalnik4ukotk;  -- ASCII only
+    create role "НачальникЧукоткиНачальникЧукоткиНачальникЧукоткиНачальникЧукотк"; -- Cyrillic, two bytes per character
+    create role "‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰‰"; -- U+2030 PER MILLE SIGN, three bytes per character: E2 80 B0
+    create role "🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀"; -- U+1F680 ROCKET, four bytes per character: F0 9F 9A 80
+    commit;
+    set list on;
+    set count on;
+    select rdb$role_name as r_name from rdb$roles where rdb$system_flag is distinct from 1;
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    act_1.isql(switches=[], input=ddl_script)
+    act_1.reset()
+    act_1.expected_stdout = expected_stdout_1
+    act_1.isql(switches=['-x'])
+    act_1.stdout = '\n'.join([line for line in act_1.stdout.splitlines() if 'CREATE ROLE' in line])
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

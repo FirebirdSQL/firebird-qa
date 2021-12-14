@@ -260,5 +260,4 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(db_1):
-    pytest.skip("Test requires manipulation with databases.conf")
-    #pytest.fail("Test not IMPLEMENTED")
+    pytest.skip("Requires changes to databases.conf")

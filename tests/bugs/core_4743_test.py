@@ -36,7 +36,7 @@
 # qmid:         bugs.core_4743
 
 import pytest
-from firebird.qa import db_factory, python_act, Action, user_factory, User
+from firebird.qa import db_factory, python_act, Action, user_factory, User, role_factory, Role
 
 # version: 4.0
 # resources: None
@@ -442,27 +442,26 @@ expected_stdout_1 = """
     privilege:exec : YES
 """
 
-non_acii_user = user_factory(name='"Вася Пупкин"', password= '123', encoding= 'utf8')
+non_acii_user = user_factory('db_1', name='"Вася Пупкин"', password= '123')
+test_role = role_factory('db_1', name='"Старший дворник"')
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action, non_acii_user: User, capsys):
-    with act_1.test_role('"Старший дворник"', charset= 'utf8'):
-        act_1.isql(switches=['-b', '-q'], input=ddl_script_1)
-        print(act_1.stdout)
-        with act_1.db.connect(user=non_acii_user.name, password=non_acii_user.password,
-                              role='"Старший дворник"') as con:
-            cur = con.cursor()
-            cur.execute('select m.mon$user,m.mon$role from mon$attachments m where m.mon$attachment_id = current_connection')
-            col = cur.description
-            for r in cur:
-                for i in range(len(col)):
+def test_1(act_1: Action, non_acii_user: User, test_role: Role, capsys):
+    act_1.isql(switches=['-b', '-q'], input=ddl_script_1)
+    print(act_1.stdout)
+    with act_1.db.connect(user=non_acii_user.name, password=non_acii_user.password, role=test_role.name) as con:
+        cur = con.cursor()
+        cur.execute('select m.mon$user,m.mon$role from mon$attachments m where m.mon$attachment_id = current_connection')
+        col = cur.description
+        for r in cur:
+            for i in range(len(col)):
+                print(' '.join((col[i][0], ':', r[i])))
+        cur.execute("select v.* from v_current_privileges v")
+        col = cur.description
+        for r in cur:
+            for i in range(len(col)):
+                if 'privilege:' not in col[i][0] or 'privilege:' in col[i][0] and r[i] == 'YES':
                     print(' '.join((col[i][0], ':', r[i])))
-            cur.execute("select v.* from v_current_privileges v")
-            col = cur.description
-            for r in cur:
-                for i in range(len(col)):
-                    if 'privilege:' not in col[i][0] or 'privilege:' in col[i][0] and r[i] == 'YES':
-                        print(' '.join((col[i][0], ':', r[i])))
     #
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1

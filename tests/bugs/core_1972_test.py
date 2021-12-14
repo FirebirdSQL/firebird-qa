@@ -133,7 +133,7 @@ expected_stdout_1 = """
     Successfully finished script
   """
 
-user_1 = user_factory(name='TMP$C1972', password='123')
+user_1 = user_factory('db_1', name='TMP$C1972', password='123')
 
 @pytest.mark.version('>=2.1.1')
 def test_1(act_1: Action, user_1: User):

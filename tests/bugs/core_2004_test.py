@@ -183,8 +183,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
-user_1 = user_factory(name='tmp$c2004_foo', password='123')
-user_2 = user_factory(name='tmp$c2004_bar', password='456')
+user_1 = user_factory('db_1', name='tmp$c2004_foo', password='123', plugin='Srp', active=False, admin=True)
+user_2 = user_factory('db_1', name='tmp$c2004_bar', password='456', plugin='Srp', active=False)
 
 expected_stdout_1 = """
 MSG                             init_state
@@ -216,15 +216,11 @@ After line 19 in file tmp_check_2004.sql
 def test_1(act_1: Action, user_1: User, user_2: User):
     act_1.script = f'''
         set list on;
-        commit;
-        create or alter user tmp$c2004_foo password '123' inactive using plugin Srp grant admin role;
 
         -- NB: currently it seems strange that one need to grant rdb$admin to 'foo'
         -- For what reason this role need to be added if 'foo' does his actions only in security_db ?
         -- Sent letter to dimitr and alex, 10-mar-18 16:00
         grant rdb$admin to tmp$c2004_foo;
-
-        create or alter user tmp$c2004_bar password '456' inactive using plugin Srp;
         commit;
 
         set count on;

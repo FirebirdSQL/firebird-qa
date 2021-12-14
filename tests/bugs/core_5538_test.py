@@ -194,9 +194,9 @@ def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path, capsys):
         act_1.reset()
         act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file_1), '-include', p])
         act_1.reset()
-        act_1.gbak(switches=['-rep', str(fbk_file_1), f'localhost:{fdb_file_1}'])
+        act_1.gbak(switches=['-rep', str(fbk_file_1), act_1.get_dsn(fdb_file_1)])
         act_1.reset()
-        act_1.isql(switches=[f'localhost:{fdb_file_1}'], connect_db=False,
+        act_1.isql(switches=[act_1.get_dsn(fdb_file_1)], connect_db=False,
                    input=f"set heading off; select {i} ptn_indx, q'{{{p}}}' as ptn_text, v.* from v_test v;")
         print(act_1.stdout)
     # 2. Check interaction between -INCLUDE_DATA and -SKIP_DATA switches for a table:
@@ -215,9 +215,9 @@ def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path, capsys):
         act_1.reset()
         act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file_1), '-include_data', p, '-skip_data', skip_ptn])
         act_1.reset()
-        act_1.gbak(switches=['-rep', str(fbk_file_1), f'localhost:{fdb_file_1}'])
+        act_1.gbak(switches=['-rep', str(fbk_file_1), act_1.get_dsn(fdb_file_1)])
         act_1.reset()
-        act_1.isql(switches=[f'localhost:{fdb_file_1}'], connect_db=False,
+        act_1.isql(switches=[act_1.get_dsn(fdb_file_1)], connect_db=False,
                    input=f"set heading off; select {i} ptn_indx, q'{{{p}}}' as include_ptn, q'{{{skip_ptn}}}' as exclude_ptn, v.* from v_test v;")
         print(act_1.stdout)
     # Check

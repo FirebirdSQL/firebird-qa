@@ -91,7 +91,7 @@ expected_stdout_1 = """
     WHO_IS_OWNER                    TMP_U4218
 """
 
-test_user_1: User = user_factory(name='TMP_U4218', password='123')
+test_user_1: User = user_factory('db_1', name='TMP_U4218', password='123')
 
 test_db_1 = temp_file('owner-db.fdb')
 
@@ -102,11 +102,11 @@ def test_1(act_1: Action, test_user_1: User, test_db_1: Path):
         c.execute('grant create database to user TMP_U4218')
         con.commit()
     test_script_1 = f"""
-    create database 'localhost:{str(test_db_1)}' user 'TMP_U4218' password '123';
+    create database 'localhost:{test_db_1}' user 'TMP_U4218' password '123';
     set list on;
     select current_user as who_am_i, mon$owner as who_is_owner from mon$database;
     commit;
-    connect 'localhost:{str(test_db_1)}';
+    connect 'localhost:{test_db_1}';
     select current_user as who_am_i, mon$owner as who_is_owner from mon$database;
     commit;
     drop database;

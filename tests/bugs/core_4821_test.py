@@ -51,7 +51,8 @@
 import pytest
 import sys
 from pathlib import Path
-from firebird.qa import db_factory, python_act, Action, temp_file, user_factory, User
+from firebird.qa import db_factory, python_act, Action, temp_file, user_factory, User, \
+     role_factory, Role
 
 # version: 3.0.5
 # resources: None
@@ -228,7 +229,7 @@ expected_stderr_1 = """
     -Exiting before completion due to errors
 """
 
-test_user_1 = user_factory(name='tmp$c4821_boss', password='123')
+test_user_1 = user_factory('db_1', name='tmp$c4821_boss', password='123')
 
 fdb_test1 = temp_file('tmp_4821_test1.fdb')
 fdb_test2 = temp_file('tmp_4821_test2.fdb')
@@ -236,76 +237,80 @@ fbk_name = temp_file('tmp_4821_test2.fbk')
 fdb_restored_using_gbak = temp_file('tmp_4821_restored.gbak.fdb')
 fdb_restored_using_smgr = temp_file('tmp_4821_restored.smgr.fdb')
 fdb_restored_unexpected = temp_file('tmp_4821_restored.no_grant.fdb')
+test_role = role_factory('db_1', name='tmp$db_creator')
 
 @pytest.mark.version('>=3.0.5')
 def test_1(act_1: Action, test_user_1: User, capsys, fdb_test1: Path, fdb_test2: Path,
            fbk_name: Path, fdb_restored_using_gbak: Path, fdb_restored_using_smgr: Path,
-           fdb_restored_unexpected: Path):
-    with act_1.test_role('tmp$db_creator'):
-        with act_1.db.connect() as con:
-            #con.execute_immediate('revoke all on all from tmp$c4821_boss')
-            con.execute_immediate('grant create database to role tmp$db_creator')
-            con.execute_immediate('grant tmp$db_creator to tmp$c4821_boss')
-            con.commit()
-        #
-        sql_test = f"""
-        create database 'localhost:{fdb_test1}' user tmp$c4821_boss password '123';
-        select mon$database_name as created_db_name from mon$database;
-        rollback;
-        create database 'localhost:{fdb_test2}' user tmp$c4821_boss password '123' role tmp$db_creator;
-        set list on;
-        select mon$database_name as created_db_name from mon$database;
-        """
-        act_1.isql(switches=['-q'], input=sql_test)
-        print(act_1.stdout)
-        # Must PASS because user tmp$c4821_boss is the owner of this DB:
-        act_1.reset()
-        act_1.gbak(switches=['-b', '-user', 'tmp$c4821_boss', '-pas', '123',
-                             f'localhost:{fdb_test2}', str(fbk_name)],
-                   credentials=False)
-        # Must FAIL because we do not specify role, with text:
-        # "gbak: ERROR:no permission for CREATE access to DATABASE ... / gbak: ERROR:failed to create database localhost:tmp_4821_restored.gbak.fdb"
-        act_1.reset()
-        act_1.expected_stderr = "Must FAIL because we do not specify role"
-        act_1.gbak(switches=['-rep', '-user', 'tmp$c4821_boss', '-pas', '123',
-                             str(fbk_name), f'localhost:{fdb_restored_using_gbak}'],
-                   credentials=False)
-        print(act_1.stderr, file=sys.stderr)
-        # Must PASS because we DO specify role:
-        act_1.reset()
-        act_1.gbak(switches=['-rep', '-user', 'tmp$c4821_boss', '-pas', '123', '-role', 'tmp$db_creator',
-                             str(fbk_name), f'localhost:{fdb_restored_using_gbak}'],
-                   credentials=False)
-        #
-        act_1.reset()
-        act_1.isql(switches=['-user', act_1.db.user, '-password', act_1.db.password,
-                             f'localhost:{fdb_restored_using_gbak}'], connect_db=False,
-                   input='set list on; select mon$database_name as fdb_restored_using_gbak from mon$database;')
-        print(act_1.stdout)
-        # Must FAIL because we do not specify role, with text: "no permission for CREATE access to DATABASE ... / failed to create database tmp_4821_restored.smgr.fdb"
-        act_1.reset()
-        act_1.expected_stderr = "Must FAIL because we do not specify role"
-        act_1.svcmgr(switches=['localhost:service_mgr', 'user', 'tmp$c4821_boss', 'password', '123',
-                               'action_restore', 'res_replace', 'bkp_file', str(fbk_name),
-                               'dbname', str(fdb_restored_using_smgr)], connect_mngr=False)
-        print(act_1.stderr, file=sys.stderr)
-        # Must PASS because we DO specify role:
-        act_1.reset()
-        act_1.svcmgr(switches=['localhost:service_mgr', 'user', 'tmp$c4821_boss', 'password', '123',
-                               'role', 'tmp$db_creator',  'action_restore', 'res_replace',
-                               'bkp_file', str(fbk_name), 'dbname', str(fdb_restored_using_smgr)],
-                     connect_mngr=False)
-        #
-        act_1.reset()
-        act_1.isql(switches=['-user', act_1.db.user, '-password', act_1.db.password,
-                             f'localhost:{fdb_restored_using_gbak}'], connect_db=False,
-                   input='set list on; select mon$database_name as fdb_restored_using_smgr from mon$database;')
-        print(act_1.stdout)
-        #
-        act_1.reset()
-        act_1.expected_stdout = expected_stdout_1
-        act_1.expected_stderr = expected_stderr_1
-        act_1.stdout = capsys.readouterr().out
-        act_1.stderr = capsys.readouterr().err
-        assert act_1.clean_stdout == act_1.clean_expected_stdout
-        assert act_1.clean_stderr == act_1.clean_expected_stderr
+           fdb_restored_unexpected: Path, test_role: Role):
+    with act_1.db.connect() as con:
+        # Next lines are here to show that role really exists
+        c = con.cursor()
+        c.execute('select * from rdb$roles')
+        act_1.print_data_list(c)
+        # yet next statement fails anyway with: SQL role TMP$DB_CREATOR does not exist
+        con.execute_immediate(f'grant create database to role {test_role.name}')
+        con.execute_immediate(f'grant {test_role.name} to {test_user_1.name}')
+        con.commit()
+    #
+    sql_test = f"""
+    create database 'localhost:{fdb_test1}' user {test_user_1.name} password '123';
+    select mon$database_name as created_db_name from mon$database;
+    rollback;
+    create database 'localhost:{fdb_test2}' user {test_user_1.name} password '123' role {test_role.name};
+    set list on;
+    select mon$database_name as created_db_name from mon$database;
+    """
+    act_1.isql(switches=['-q'], input=sql_test)
+    print(act_1.stdout)
+    # Must PASS because user test_user_1 is the owner of this DB:
+    act_1.reset()
+    act_1.gbak(switches=['-b', '-user', test_user_1.name, '-pas', '123',
+                         act_1.get_dsn(fdb_test2), str(fbk_name)],
+               credentials=False)
+    # Must FAIL because we do not specify role, with text:
+    # "gbak: ERROR:no permission for CREATE access to DATABASE ... / gbak: ERROR:failed to create database localhost:tmp_4821_restored.gbak.fdb"
+    act_1.reset()
+    act_1.expected_stderr = "Must FAIL because we do not specify role"
+    act_1.gbak(switches=['-rep', '-user', test_user_1.name, '-pas', '123',
+                         str(fbk_name), act_1.get_dsn(fdb_restored_using_gbak)],
+               credentials=False)
+    print(act_1.stderr, file=sys.stderr)
+    # Must PASS because we DO specify role:
+    act_1.reset()
+    act_1.gbak(switches=['-rep', '-user', test_user_1.name, '-pas', '123', '-role', test_role.name,
+                         str(fbk_name), act_1.get_dsn(fdb_restored_using_gbak)],
+               credentials=False)
+    #
+    act_1.reset()
+    act_1.isql(switches=['-user', act_1.db.user, '-password', act_1.db.password,
+                         act_1.get_dsn(fdb_restored_using_gbak)], connect_db=False,
+               input='set list on; select mon$database_name as fdb_restored_using_gbak from mon$database;')
+    print(act_1.stdout)
+    # Must FAIL because we do not specify role, with text: "no permission for CREATE access to DATABASE ... / failed to create database tmp_4821_restored.smgr.fdb"
+    act_1.reset()
+    act_1.expected_stderr = "Must FAIL because we do not specify role"
+    act_1.svcmgr(switches=[f'{act_1.host}:service_mgr', 'user', test_user_1.name, 'password', '123',
+                           'action_restore', 'res_replace', 'bkp_file', str(fbk_name),
+                           'dbname', str(fdb_restored_using_smgr)], connect_mngr=False)
+    print(act_1.stderr, file=sys.stderr)
+    # Must PASS because we DO specify role:
+    act_1.reset()
+    act_1.svcmgr(switches=[f'{act_1.host}:service_mgr', 'user', test_user_1.name, 'password', '123',
+                           'role', test_role.name,  'action_restore', 'res_replace',
+                           'bkp_file', str(fbk_name), 'dbname', str(fdb_restored_using_smgr)],
+                 connect_mngr=False)
+    #
+    act_1.reset()
+    act_1.isql(switches=['-user', act_1.db.user, '-password', act_1.db.password,
+                         act_1.get_dsn(fdb_restored_using_gbak)], connect_db=False,
+               input='set list on; select mon$database_name as fdb_restored_using_smgr from mon$database;')
+    print(act_1.stdout)
+    #
+    act_1.reset()
+    act_1.expected_stdout = expected_stdout_1
+    act_1.expected_stderr = expected_stderr_1
+    act_1.stdout = capsys.readouterr().out
+    act_1.stderr = capsys.readouterr().err
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr

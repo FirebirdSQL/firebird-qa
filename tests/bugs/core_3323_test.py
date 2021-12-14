@@ -351,8 +351,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=2.5.1')
-@pytest.mark.xfail
 def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.skip("New implementation postponed")
 
 

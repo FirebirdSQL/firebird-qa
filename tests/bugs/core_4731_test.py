@@ -290,8 +290,8 @@ expected_stdout_1 = """
     -- gdscode list for blocked:    335544926
 """
 
-dba_privileged_user = user_factory(name='tmp_c4731_cooldba', password='123')
-non_privileged_user = user_factory(name='tmp_c4731_manager', password='123')
+dba_privileged_user = user_factory('db_1', name='tmp_c4731_cooldba', password='123')
+non_privileged_user = user_factory('db_1', name='tmp_c4731_manager', password='123')
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, dba_privileged_user: User, non_privileged_user: User, capsys):

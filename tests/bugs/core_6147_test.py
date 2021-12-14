@@ -2,23 +2,23 @@
 #
 # id:           bugs.core_6147
 # title:        PLG$SRP table, PLG$SRP_VIEW View instructions are strangely added in the metadata script extracted when Windows trusted authentication is enabled
-# decription:   
+# decription:
 #                  ::: NOTE :::
 #                  References to the table PLG$SRP and view PLG$SRP_VIEW *always* present in extracted metadata,
 #                  regardless of using auth plugin (and this is NOT a bug!).
-#               
+#
 #                  Fix was introduced in 4.0.0.2087: extracted metadata must contain "OR ALTER" clause in:
 #                      CREATE OR ALTER GLOBAL MAPPING TRUSTED_AUTH_C6147 ...
 #                             ^^^^^^^^
 #                  Builds before 4.0.0.2084 did not add this clause in extracted metadata script (checked 4.0.0.2076).
 #                  (see also discussion with Alex, 02-jun-2020 08:23).
-#               
+#
 #                  ### NB ###
 #                  For unclear reason ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL + DROP DATABASE do not work as expected in this test:
 #                  test DB remains opened by firebird.exe about 5...7 seconds after test finish, and 'drop database' does not issues any error.
 #                  Because of this it was decided to forcedly change DB state to full shutdown in order to have ability to drop it.
 #                  22.02.2021: perhaps, this was somehow related to core-6441.
-#               
+#
 #                  NOTES FOR WINDOWS:
 #                  ##################
 #                  We create copy of %FIREBIRD_HOME%\\database.conf and change it content by adding lines:
@@ -29,25 +29,25 @@
 #                  Then we create trest DB in embedded mode, create SYSDBA that belongs to this DB and create global mapping.
 #                  We check content of rdb$auth_mapping table after this step in order to ensure that mapping was actually created.
 #                  After this we do connect to DB using Win_SSPI and extract metadata.
-#                  
+#
 #                  NOTES FOR LINUX:
 #                  ################
 #                  03-mar-2021. This test can run on Linux but we have to use plugin = Srp instead of win_sspi.
 #                  This is done by check result of os.name (see below).
 #                  Local mapping (i.e. in RDB$DATABASE) will *not* be created in this case (in contrary to win_sspi),
 #                  thus we create and drop it "manually" in order to pass expected results check.
-#               
+#
 #                  Checked on:
 #                  * Windows: 4.0.0.2377 SS/CS (done for both win_sspi and Srp, but only win_sspi is used in this test for Windows)
 #                  * Linux:   4.0.0.2377 SS/CS (done for Srp)
-#                
+#
 # tracker_id:   CORE-6147
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -60,7 +60,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import subprocess
 #  import datetime
@@ -68,9 +68,9 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import shutil
 #  import re
 #  from fdb import services
-#  
+#
 #  this_fdb = db_conn.database_name
-#  
+#
 #  if os.name == 'nt':
 #      # On Windows we test what it was initially described  in the ticket (trusted auth.):
 #      PLUGIN_FOR_MAPPING = 'win_sspi'
@@ -78,8 +78,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      # On Linux currently we can check only Srp plugin
 #      # but results must be the same as for win_sspi:
 #      PLUGIN_FOR_MAPPING = 'Srp'
-#  
-#  
+#
+#
 #  # 23.08.2020: !!! REMOVING OS-VARIABLE ISC_USER IS MANDATORY HERE !!!
 #  # This variable could be set by other .fbts which was performed before current within batch mode (i.e. when fbt_run is called from <rundaily>)
 #  # NB: os.unsetenv('ISC_USER') actually does NOT affect on content of os.environ dictionary, see: https://docs.python.org/2/library/os.html
@@ -89,26 +89,26 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      del os.environ["ISC_USER"]
 #  except KeyError as e:
 #      pass
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for f in f_names_list:
@@ -119,29 +119,29 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f, ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#      
+#
 #  #--------------------------------------------
-#  
+#
 #  svc = services.connect(host='localhost', user= user_name, password= user_password)
 #  fb_home = svc.get_home_directory()
 #  svc.close()
 #  # Resut: fb_home is full path to FB instance home (with trailing slash).
-#  
+#
 #  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#  
+#
 #  dbconf = os.path.join( fb_home, 'databases.conf')
 #  dbcbak = os.path.join( fb_home, 'databases_'+dts+'.bak')
-#  
+#
 #  shutil.copy2( dbconf, dbcbak )
-#  
+#
 #  tmp_fdb=os.path.join(context['temp_directory'],'tmp_6147.fdb')
 #  cleanup( (tmp_fdb,) )
-#  
+#
 #  text2app='''
-#  
+#
 #  # Temporarily added by fbtest, CORE-6147. Should be removed auto:
 #  ##############################
 #  tmp_alias_6147 = %(tmp_fdb)s
@@ -150,13 +150,13 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  }
 #  ##############################
 #  ''' % locals()
-#  
+#
 #  f_dbconf=open( dbconf, 'a')
 #  f_dbconf.seek(0, 2)
 #  f_dbconf.write( text2app )
 #  flush_and_close( f_dbconf )
-#  
-#  
+#
+#
 #  SHOW_MAP_INFO_QUERY = '''
 #      set count on;
 #      -- set echo on;
@@ -169,7 +169,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      set width map_to 10;
 #      select * from v_map_info;
 #  '''
-#  
+#
 #  if PLUGIN_FOR_MAPPING == 'Srp':
 #      db_connect_string = this_fdb
 #      sql_txt=    '''
@@ -193,14 +193,14 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          create user %(user_name)s password '%(user_password)s';
 #          commit;
 #      ''' % dict(globals(), **locals())
-#  
+#
 #  sql_txt += '''
 #      -- ::: NB :::
 #      -- When used plugin is win_sspi then *TWO* mappings will be created here:  "local' (in rdb$auth_mapping)
 #      -- and g;pbal (in sec$global_auth_mapping). This is NOT so when used plugin = Srp (only global mapping will be made).
 #      create or alter global mapping trusted_auth_c6147 using plugin %(PLUGIN_FOR_MAPPING)s from any user to user;
-#      commit;                                                        
-#  
+#      commit;
+#
 #      recreate view v_map_info as
 #      select
 #          map_name
@@ -237,27 +237,27 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          and t.map_plugin = upper('%(PLUGIN_FOR_MAPPING)s')
 #      ;
 #      commit;
-#  
+#
 #      %(SHOW_MAP_INFO_QUERY)s
-#  
+#
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_prepare_sql = open( os.path.join(context['temp_directory'],'tmp_6147_prepare.sql'), 'w')
 #  f_prepare_sql.write(sql_txt)
 #  flush_and_close( f_prepare_sql )
-#  
+#
 #  f_prepare_log=open( os.path.join(context['temp_directory'],'tmp_6147_prepare.log'), 'w')
 #  subprocess.call( [ context['isql_path'], "-q", "-i", f_prepare_sql.name ], stdout=f_prepare_log, stderr=subprocess.STDOUT )
 #  flush_and_close( f_prepare_log )
-#  
-#  
+#
+#
 #  # Extract metadata from test DB:
 #  ##################
 #  f_medatata_log=open( os.path.join(context['temp_directory'],'tmp_6147_meta.mapping.sql'), 'w')
 #  subprocess.call( [ context['isql_path'], '-x', 'localhost:%(db_connect_string)s' % locals(),'-user', user_name, '-pas', user_password ], stdout=f_medatata_log, stderr=subprocess.STDOUT )
 #  flush_and_close( f_medatata_log )
-#  
-#  
+#
+#
 #  # Remove global mapping:
 #  ########################
 #  f_cleanup_sql = open( os.path.join(context['temp_directory'],'tmp_6147_cleanup.sql'), 'w')
@@ -277,66 +277,66 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      connect 'localhost:%(db_connect_string)s' user %(user_name)s password '%(user_password)s';
 #      drop global mapping trusted_auth_c6147;
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  if PLUGIN_FOR_MAPPING == 'Srp':
 #      sql_txt +=     '''
 #          -- Delete record from rdb$auth_mapping (only when used plugin = 'Srp'):
 #          drop mapping trusted_auth_c6147;
 #      '''
-#  
-#  sql_txt += '''    
+#
+#  sql_txt += '''
 #      commit;
-#  
+#
 #      %(SHOW_MAP_INFO_QUERY)s
 #      quit;
-#  
+#
 #      -- DOES NOT HELP! DATABASE FILE REMAINS OPENED BY FIREBIRD!
 #      -- ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL; -- !! mandatory otherwise database file will be kept by engine and fbtest will not able to drop it !!
 #      -- drop database; --> does not raise errot when clear pool but DB file still remains opened !!!
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_cleanup_sql.write(sql_txt)
 #  flush_and_close( f_cleanup_sql )
-#  
+#
 #  # DROP MAPPING:
 #  ###############
 #  f_cleanup_log = open( os.path.join(context['temp_directory'],'tmp_6147_cleanup.log'), 'w')
 #  subprocess.call( [ context['isql_path'], "-q", "-i", f_cleanup_sql.name ], stdout=f_cleanup_log, stderr=subprocess.STDOUT )
 #  flush_and_close( f_cleanup_log )
-#  
+#
 #  subprocess.call( [context['gfix_path'], 'localhost:%(db_connect_string)s' % locals(), '-shut', 'single', '-force', '0', '-user', user_name, '-pas', user_password] )
-#  
+#
 #  # RESTORE original config:
 #  ##########################
 #  shutil.move( dbcbak, dbconf)
-#  
+#
 #  with open(f_prepare_log.name, 'r') as f:
 #      for line in f:
 #          if line.split():
 #              print('AFTER_MADE_MAPPING: ' + line)
-#  
+#
 #  allowed_patterns = (
 #       re.compile('MAPPING TRUSTED_AUTH_C6147', re.IGNORECASE)
 #      ,re.compile('SQLSTATE', re.IGNORECASE)
 #      ,re.compile('Missing security', re.IGNORECASE)
 #      ,re.compile('Your user', re.IGNORECASE)
 #  )
-#  
+#
 #  with open(f_medatata_log.name, 'r') as f:
 #      for line in f:
 #          match2some = [ p.search(line) for p in allowed_patterns ]
 #          if max(match2some):
 #              print('EXTRACTED_METADATA: ' + line)
-#  
+#
 #  with open(f_cleanup_log.name, 'r') as f:
 #      for line in f:
 #          if line.split():
 #              print('AFTER_DROP_MAPPING: ' + line)
-#  
+#
 #  # CLEANUP:
 #  ##########
 #  time.sleep(1)
-#  f_list=( 
+#  f_list=(
 #       f_prepare_sql
 #      ,f_prepare_log
 #      ,f_medatata_log
@@ -345,17 +345,18 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      ,tmp_fdb
 #  )
 #  cleanup( f_list )
-#  
-#  
-#    
+#
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-AFTER_MADE_MAPPING: MAP_NAME                        MAP_TYPE   FROM_TYPE  MAP_FROM   TO_TYPE MAP_TO     
-AFTER_MADE_MAPPING: =============================== ========== ========== ========== ======= ========== 
-AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              local      USER       *                0 <null>     
-AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              global     USER       *                0 <null>     
+AFTER_MADE_MAPPING: MAP_NAME                        MAP_TYPE   FROM_TYPE  MAP_FROM   TO_TYPE MAP_TO
+AFTER_MADE_MAPPING: =============================== ========== ========== ========== ======= ==========
+AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              local      USER       *                0 <null>
+AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              global     USER       *                0 <null>
 AFTER_MADE_MAPPING: Records affected: 2
 
 EXTRACTED_METADATA: CREATE MAPPING TRUSTED_AUTH_C6147 USING PLUGIN
@@ -363,11 +364,10 @@ EXTRACTED_METADATA: CREATE OR ALTER GLOBAL MAPPING TRUSTED_AUTH_C6147 USING PLUG
 
 AFTER_DROP_MAPPING: Records affected: 0
 
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    pytest.skip("Requires change to databases.conf")
 
 

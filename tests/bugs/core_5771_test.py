@@ -173,7 +173,7 @@ fdb_file = temp_file('tmp_core_5771.fdb')
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, fbk_file: Path, fdb_file: Path):
     act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file)])
-    act_1.gbak(switches=['-rep', str(fbk_file), f'localhost:{fdb_file}'])
+    act_1.gbak(switches=['-rep', str(fbk_file), act_1.get_dsn(fdb_file)])
     #
     log_before = act_1.get_firebird_log()
     #

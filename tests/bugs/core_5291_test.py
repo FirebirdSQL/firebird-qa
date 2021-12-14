@@ -12,7 +12,8 @@
 
 import pytest
 from pathlib import Path
-from firebird.qa import db_factory, python_act, Action, user_factory, User, temp_file
+from firebird.qa import db_factory, python_act, Action, user_factory, User, temp_file, \
+     role_factory, Role
 
 # version: 4.0
 # resources: None
@@ -75,8 +76,10 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
-user_1 = user_factory(name='tmp$c5291_1', password='123')
-user_2 = user_factory(name='tmp$c5291_2', password='456')
+user_1 = user_factory('db_1', name='tmp$c5291_1', password='123')
+user_2 = user_factory('db_1', name='tmp$c5291_2', password='456')
+test_role = role_factory('db_1', name='role_for_use_gbak_utility')
+
 fbk_file = temp_file('tmp_core_5291.fbk')
 fdb_file_1 = temp_file('tmp_core_5291_1.fdb')
 fdb_file_2 = temp_file('tmp_core_5291_2.fdb')
@@ -103,43 +106,42 @@ expected_stderr_1 = """
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, user_1: User, user_2: User, fbk_file: Path, fdb_file_1: Path,
-           fdb_file_2: Path, capsys):
-    with act_1.test_role('role_for_use_gbak_utility'):
-        with act_1.db.connect() as con:
-            con.execute_immediate('alter role role_for_use_gbak_utility set system privileges to USE_GBAK_UTILITY, SELECT_ANY_OBJECT_IN_DATABASE')
-            con.commit()
-            con.execute_immediate('grant default role_for_use_gbak_utility to user tmp$c5291_2')
-            con.commit()
-        #
-        act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file)])
-        # User 1
-        act_1.reset()
-        act_1.expected_stderr = "We expect errors"
-        act_1.gbak(switches=['-se', 'localhost:service_mgr', '-rep', str(fbk_file),
-                             str(fdb_file_1), '-user', user_1.name, '-pas', user_1.password],
-                   credentials=False)
-        print(act_1.stderr)
-        # User 1
-        act_1.reset()
-        act_1.expected_stderr = "We expect errors"
-        act_1.gbak(switches=['-rep', str(fbk_file), f'localhost:{fdb_file_2}',
-                             '-user', user_1.name, '-pas', user_1.password], credentials=False)
-        print(act_1.stderr)
-        # User 2
-        act_1.reset()
-        act_1.expected_stderr = "We expect errors"
-        act_1.gbak(switches=['-se', 'localhost:service_mgr', '-rep', str(fbk_file),
-                             str(fdb_file_1), '-user', user_2.name, '-pas', user_2.password],
-                   credentials=False)
-        print(act_1.stderr)
-        # User 2
-        act_1.reset()
-        act_1.expected_stderr = "We expect errors"
-        act_1.gbak(switches=['-rep', str(fbk_file), f'localhost:{fdb_file_2}',
-                             '-user', user_2.name, '-pas', user_2.password], credentials=False)
-        print(act_1.stderr)
-        #
-        act_1.reset()
-        act_1.expected_stderr = expected_stderr_1
-        act_1.stderr = capsys.readouterr().out
-        assert act_1.clean_stderr == act_1.clean_expected_stderr
+           fdb_file_2: Path, test_role: Role, capsys):
+    with act_1.db.connect() as con:
+        con.execute_immediate('alter role role_for_use_gbak_utility set system privileges to USE_GBAK_UTILITY, SELECT_ANY_OBJECT_IN_DATABASE')
+        con.commit()
+        con.execute_immediate('grant default role_for_use_gbak_utility to user tmp$c5291_2')
+        con.commit()
+    #
+    act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file)])
+    # User 1
+    act_1.reset()
+    act_1.expected_stderr = "We expect errors"
+    act_1.gbak(switches=['-se', 'localhost:service_mgr', '-rep', str(fbk_file),
+                         str(fdb_file_1), '-user', user_1.name, '-pas', user_1.password],
+               credentials=False)
+    print(act_1.stderr)
+    # User 1
+    act_1.reset()
+    act_1.expected_stderr = "We expect errors"
+    act_1.gbak(switches=['-rep', str(fbk_file), act_1.get_dsn(fdb_file_2),
+                         '-user', user_1.name, '-pas', user_1.password], credentials=False)
+    print(act_1.stderr)
+    # User 2
+    act_1.reset()
+    act_1.expected_stderr = "We expect errors"
+    act_1.gbak(switches=['-se', f'{act_1.host}:service_mgr', '-rep', str(fbk_file),
+                         str(fdb_file_1), '-user', user_2.name, '-pas', user_2.password],
+               credentials=False)
+    print(act_1.stderr)
+    # User 2
+    act_1.reset()
+    act_1.expected_stderr = "We expect errors"
+    act_1.gbak(switches=['-rep', str(fbk_file), act_1.get_dsn(fdb_file_2),
+                         '-user', user_2.name, '-pas', user_2.password], credentials=False)
+    print(act_1.stderr)
+    #
+    act_1.reset()
+    act_1.expected_stderr = expected_stderr_1
+    act_1.stderr = capsys.readouterr().out
+    assert act_1.clean_stderr == act_1.clean_expected_stderr

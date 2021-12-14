@@ -31,9 +31,9 @@ import pytest
 from pathlib import Path
 from firebird.qa import db_factory, python_act, Action, user_factory, User
 
-user_0 = user_factory(name='tmp$c6078_0', password='123')
-user_1 = user_factory(name='tmp$c6078_1', password='123')
-user_2 = user_factory(name='tmp$c6078_2', password='456')
+user_0_1 = user_factory('db_1', name='tmp$c6078_0', password='123')
+user_1_1 = user_factory('db_1', name='tmp$c6078_1', password='123')
+user_2_1 = user_factory('db_1', name='tmp$c6078_2', password='456')
 
 # version: 3.0.5
 # resources: None
@@ -271,7 +271,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.5,<4')
-def test_1(act_1: Action, user_0: User, user_1: User, user_2: User):
+def test_1(act_1: Action, user_0_1: User, user_1_1: User, user_2_1: User):
     script_vars = {'dsn': act_1.db.dsn,
                    'user_name': act_1.db.user,
                    'user_password': act_1.db.password,}
@@ -367,6 +367,10 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #---
 
 act_2 = python_act('db_2', substitutions=substitutions_2)
+
+user_0_2 = user_factory('db_2', name='tmp$c6078_0', password='123')
+user_1_2 = user_factory('db_2', name='tmp$c6078_1', password='123')
+user_2_2 = user_factory('db_2', name='tmp$c6078_2', password='456')
 
 expected_stdout_2 = """
     Statement failed, SQLSTATE = 28000
@@ -524,7 +528,7 @@ expected_stdout_2 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action, user_0: User, user_1: User, user_2: User):
+def test_2(act_2: Action, user_0_2: User, user_1_2: User, user_2_2: User):
     script_vars = {'dsn': act_2.db.dsn,
                    'user_name': act_2.db.user,
                    'user_password': act_2.db.password,}

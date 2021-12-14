@@ -171,7 +171,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
     #NON_ASCII_USER_AFTER_DROP 0
 #"""
 
-non_ascii_user = user_factory(name='"Εὐκλείδης"', password='123', encoding='utf8')
+non_ascii_user = user_factory('db_1', name='"Εὐκλείδης"', password='123')
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, non_ascii_user: User):

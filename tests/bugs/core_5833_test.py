@@ -274,10 +274,10 @@ def test_1(act_1: Action, fbk_file: Path, fdb_file: Path):
     act_1.reset()
     act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file)])
     act_1.reset()
-    act_1.gbak(switches=['-c', str(fbk_file), f'localhost:{fdb_file}'])
+    act_1.gbak(switches=['-c', str(fbk_file), act_1.get_dsn(fdb_file)])
     # Query RDB$TRIGGERS after b/r:
     act_1.reset()
-    act_1.isql(switches=[f'localhost:{fdb_file}'], input=test_script_1, connect_db=False)
+    act_1.isql(switches=[act_1.get_dsn(fdb_file)], input=test_script_1, connect_db=False)
     meta_after = [line for line in act_1.stdout.splitlines() if not line.startswith('BLOB_ID_FOR_TRG')]
     # Check
     assert list(unified_diff(meta_before, meta_after)) == []

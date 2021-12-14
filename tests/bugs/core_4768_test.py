@@ -137,7 +137,7 @@ expected_stdout_1 = """
         Records affected: 1
 """
 
-test_user_1 = user_factory(name='tmp$c4768_1', password='123')
+test_user_1 = user_factory('db_1', name='tmp$c4768_1', password='123')
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, test_user_1: User):

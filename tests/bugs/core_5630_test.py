@@ -191,7 +191,7 @@ def test_1(act_1: Action, fdb_file_1: Path, fbk_file_1: Path, shd_file_1: Path):
     shd_file_1.unlink()
     #
     act_1.reset()
-    act_1.gbak(switches=['-c', '-use_all_space', str(fbk_file_1), f'localhost:{fdb_file_1}'])
+    act_1.gbak(switches=['-c', '-use_all_space', str(fbk_file_1), act_1.get_dsn(fdb_file_1)])
     # Check that we have the same data in DB tables
     sql_text = """
         set list on;
@@ -200,5 +200,5 @@ def test_1(act_1: Action, fdb_file_1: Path, fbk_file_1: Path, shd_file_1: Path):
     """
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1_b
-    act_1.isql(switches=['-q', f'localhost:{fdb_file_1}'], input=sql_text, connect_db=False)
+    act_1.isql(switches=['-q', act_1.get_dsn(fdb_file_1)], input=sql_text, connect_db=False)
     assert act_1.clean_stdout == act_1.clean_expected_stdout

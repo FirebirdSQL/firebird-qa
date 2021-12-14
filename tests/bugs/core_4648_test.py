@@ -90,7 +90,7 @@ expected_stdout_1 = """
     ISQL using NON sysdba user account finished.
 """
 
-user_1 = user_factory(name='tmp$c4648', password='123')
+user_1 = user_factory('db_1', name='tmp$c4648', password='123')
 temp_db_1 = temp_file('tmp4648.fdb')
 
 @pytest.mark.version('>=3.0')
@@ -126,7 +126,7 @@ def test_1(act_1: Action, user_1: User, temp_db_1: Path, capsys):
     commit;
     """
     print ('Starting ISQL using NON sysdba user account...')
-    act_1.isql(switches=['-q', '-user', 'tmp$c4648', '-pas', '123', f'localhost:{temp_db_1}'],
+    act_1.isql(switches=['-q', '-user', 'tmp$c4648', '-pas', '123', act_1.get_dsn(temp_db_1)],
                connect_db=False, input=script, credentials=False)
     print(act_1.stdout)
     print ('ISQL using NON sysdba user account finished.')

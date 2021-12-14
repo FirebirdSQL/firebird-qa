@@ -14,7 +14,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, python_act, Action, user_factory, User
+from firebird.qa import db_factory, python_act, Action, user_factory, User, role_factory, Role
 
 # version: 2.5
 # resources: None
@@ -116,8 +116,8 @@ db_1 = db_factory(sql_dialect=3, init='')
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
-user_mike = user_factory(name='tmp$c2233_mike', password='456')
-user_adam = user_factory(name='tmp$c2233_adam', password='123')
+user_mike = user_factory('db_1', name='tmp$c2233_mike', password='456')
+user_adam = user_factory('db_1', name='tmp$c2233_adam', password='123')
 
 expected_stdout_1 = """
     WHO_AM_I 		: TMP$C2233_MIKE
@@ -141,11 +141,13 @@ expected_stdout_1 = """
     MON_ATT_CNT 	: 1
   """
 
+boss = role_factory('db_1', name='tmp$r2233_boss')
+acnt = role_factory('db_1', name='tmp$r2233_acnt')
+
 @pytest.mark.version('>=2.5')
-def test_1(act_1: Action, user_mike: User, user_adam: User, capsys):
+def test_1(act_1: Action, user_mike: User, user_adam: User, boss: Role, acnt: Role, capsys):
     act_1.expected_stdout = expected_stdout_1
-    with act_1.db.connect() as con, act_1.test_role('tmp$r2233_boss') as boss,\
-         act_1.test_role('tmp$r2233_acnt') as acnt:
+    with act_1.db.connect() as con:
         c = con.cursor()
         c.execute('grant tmp$r2233_boss to tmp$c2233_adam')
         c.execute('grant tmp$r2233_acnt to tmp$c2233_adam')

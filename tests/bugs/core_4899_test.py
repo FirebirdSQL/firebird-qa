@@ -123,7 +123,7 @@ def test_1(act_1: Action, capsys):
     print(act_1.stdout)
     # Trying to move database online using REMOTE protocol:
     act_1.reset()
-    act_1.gfix(switches=['-online', f'localhost:{act_1.db.db_path}'])
+    act_1.gfix(switches=['-online', act_1.db.dsn])
     print(act_1.stdout)
     # Note: gfix attachment via remote protocol refects with following lines in trace:
     # 2015-08-24T18:30:03.8520 (3256:01B526A8) ATTACH_DATABASE

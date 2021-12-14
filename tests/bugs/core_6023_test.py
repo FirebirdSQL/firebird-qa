@@ -151,10 +151,10 @@ def test_1(act_1: Action, fdb_112_file: Path, fbk_file: Path):
     act_1.reset()
     act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file)])
     act_1.reset()
-    act_1.gbak(switches=['-rep', str(fbk_file), f'localhost:{fdb_112_file}'])
+    act_1.gbak(switches=['-rep', str(fbk_file), act_1.get_dsn(fdb_112_file)])
     #
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-q', f'localhost:{fdb_112_file}'], connect_db=False,
+    act_1.isql(switches=['-q', act_1.get_dsn(fdb_112_file)], connect_db=False,
                input='set list on; select sign(current_connection) as restore_with_replace_result from rdb$database;')
     assert act_1.clean_stdout == act_1.clean_expected_stdout
