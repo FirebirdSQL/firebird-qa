@@ -55,7 +55,7 @@ from threading import Thread, Barrier
 from firebird.driver import connect, connect_server, create_database, driver_config, \
      NetProtocol, Server, CHARSET_MAP, Connection, Cursor, \
      DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope, DbInfoCode, \
-     DbWriteMode
+     DbWriteMode, DatabaseError
 from firebird.driver.core import _connect_helper
 
 _vars_ = {'server': None,
@@ -158,14 +158,6 @@ def pytest_configure(config):
         _vars_['bin-dir'] = Path(bindir) if bindir else _vars_['home-dir']
         _vars_['security-db'] = Path(srv.info.security_database)
         _vars_['arch'] = srv.info.architecture
-        #if _vars_['bin-dir'] is None:
-            #path = _vars_['home-dir'] / 'bin'
-            #if path.is_dir():
-                #_vars_['bin-dir'] = path
-            #else:
-                #pytest.exit("Path to binary tools not determined")
-        #else:
-            #_vars_['bin-dir'] = Path(_vars_['bin-dir'])
     # tools
     for tool in ['isql', 'gbak', 'nbackup', 'gstat', 'gfix', 'gsec', 'fbsvcmgr']:
         set_tool(tool)
@@ -195,10 +187,16 @@ def pytest_collection_modifyitems(session, config, items):
     items[:] = selected
     config.hook.pytest_deselected(items=deselected)
 
-@pytest.fixture(autouse=True)
-def firebird_server():
-    with connect_server(_vars_['server']) as srv:
-        yield srv
+#@pytest.fixture(autouse=True)
+#def firebird_server():
+    #try:
+        #with connect_server(_vars_['server']) as srv:
+            #yield srv
+    #except DatabaseError as e:
+        #print('ERROR WHILE DETACH FROM SERVER:', e)
+        ## Shield from crashing server
+        #if 'Error reading data from the connection' not in str(e):
+            #raise
 
 def substitute_macros(text: str, macros: Dict[str, str]):
     f_text = text
@@ -210,10 +208,11 @@ def substitute_macros(text: str, macros: Dict[str, str]):
 class Database:
     ""
     def __init__(self, path: Path, filename: str='test.fdb',
-                 user: str=None, password: str=None):
+                 user: str=None, password: str=None, charset: str=None):
         self.db_path: Path = path / filename
         self.dsn: str = None
-        self.io_enc = 'utf8'
+        self.charset: str = 'NONE' if charset is None else charset.upper()
+        self.io_enc: str = CHARSET_MAP[charset]
         if _vars_['host']:
             self.dsn = f"{_vars_['host']}:{str(self.db_path)}"
         else:
@@ -249,9 +248,10 @@ class Database:
             db_conf.protocol.value = NetProtocol._member_map_[_vars_['protocol'].upper()]
     def get_config(self) -> DatabaseConfig:
         return driver_config.get_database('pytest')
-    def create(self, page_size: int=None, sql_dialect: int=None, charset: str=None) -> None:
+    def create(self, page_size: int=None, sql_dialect: int=None) -> None:
         #__tracebackhide__ = True
-        self._make_config(page_size=page_size, sql_dialect=sql_dialect, charset=charset)
+        self._make_config(page_size=page_size, sql_dialect=sql_dialect, charset=self.charset)
+        charset = self.charset
         print(f"Creating db: {self.dsn} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
         db = create_database('pytest')
         db.close()
@@ -283,9 +283,7 @@ class Database:
         if platform.system != 'Windows':
             os.chmod(self.db_path, 16895)
     def init(self, script: str) -> CompletedProcess:
-        #__tracebackhide__ = True
-        #print("Running init script")
-        result = run([_vars_['isql'], '-ch', 'utf8', '-user', self.user,
+        result = run([_vars_['isql'], '-ch', 'UTF8', '-user', self.user,
                       '-password', self.password, str(self.dsn)],
                      input=substitute_macros(script, self.subs),
                      encoding='utf8', capture_output=True)
@@ -295,46 +293,6 @@ class Database:
             print(f"-- stderr {'-' * 20}")
             print(result.stderr)
             raise Exception("Database init script execution failed")
-        return result
-    def execute(self, script: str, *, raise_on_fail: bool, charset: str='utf8',
-                do_not_connect: bool=False) -> CompletedProcess:
-        __tracebackhide__ = True
-        #print("Running test script")
-        if charset:
-            charset = charset.upper()
-        else:
-            charset = 'NONE'
-        self.io_enc = CHARSET_MAP[charset]
-        params = [_vars_['isql'], '-ch', charset]
-        if not do_not_connect:
-            params.extend(['-user', self.user, '-password', self.password, str(self.dsn)])
-        result = run(params,
-                     input=substitute_macros(script, self.subs),
-                     encoding=self.io_enc, capture_output=True)
-        if result.returncode and raise_on_fail:
-            print(f"-- ISQL script stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- ISQL script stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("ISQL script execution failed")
-        return result
-    def extract_meta(self, charset: str='utf8') -> CompletedProcess:
-        __tracebackhide__ = True
-        #print("Running test script")
-        if charset:
-            charset = charset.upper()
-        else:
-            charset = 'NONE'
-        self.io_enc = CHARSET_MAP[charset]
-        result = run([_vars_['isql'], '-x', '-ch', charset, '-user', self.user,
-                      '-password', self.password, str(self.dsn)],
-                     encoding=self.io_enc, capture_output=True)
-        if result.returncode:
-            print(f"-- ISQL stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- ISQL stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("ISQL execution failed")
         return result
     def drop(self) -> None:
         self._make_config()
@@ -352,24 +310,31 @@ class Database:
     def set_async_write(self) -> None:
         with connect_server(_vars_['server']) as srv:
             srv.database.set_write_mode(database=self.db_path, mode=DbWriteMode.ASYNC)
+    def set_sync_write(self) -> None:
+        with connect_server(_vars_['server']) as srv:
+            srv.database.set_write_mode(database=self.db_path, mode=DbWriteMode.SYNC)
 
 def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=None,
                copy_of: str=None, page_size: int=None, sql_dialect: int=None,
                charset: str=None, user: str=None, password: str=None,
-               do_not_create: bool=False, do_not_drop: bool=False):
+               do_not_create: bool=False, do_not_drop: bool=False, async_init: bool=False):
 
     @pytest.fixture
     def database_fixture(request: FixtureRequest, db_path) -> Database:
-        db = Database(db_path, filename, user, password)
+        db = Database(db_path, filename, user, password, charset)
         if not do_not_create:
             if from_backup is None and copy_of is None:
-                db.create(page_size, sql_dialect, charset)
+                db.create(page_size, sql_dialect)
             elif from_backup is not None:
                 db.restore(from_backup)
             elif copy_of is not None:
                 db.copy(copy_of)
             if init is not None:
+                if async_init:
+                    db.set_async_write()
                 db.init(init)
+                if async_init:
+                    db.set_sync_write()
         yield db
         if not do_not_drop:
             db.drop()
@@ -389,7 +354,7 @@ def db_path(tmp_path) -> Path:
     return tmp_path
 
 class User:
-    def __init__(self, db: Database, name: str, password: str, plugin: str, charset: str,
+    def __init__(self, db: Database, *, name: str, password: str, plugin: str, charset: str,
                  active: bool=True, tags: Dict[str]=None, first_name: str=None,
                  middle_name: str=None, last_name: str=None, admin: bool=False):
         self.db: Database = db
@@ -513,8 +478,10 @@ def user_factory(db_fixture_name: str, *, name: str, password: str, plugin: str=
 
     @pytest.fixture
     def user_fixture(request: FixtureRequest) -> User:
-        with User(request.getfixturevalue(db_fixture_name), name, password, plugin,
-                  charset, active, tags, first_name, middle_name, last_name, admin) as user:
+        with User(request.getfixturevalue(db_fixture_name), name=name, password=password,
+                  plugin=plugin, charset=charset, active=active, tags=tags,
+                  first_name=first_name, middle_name=middle_name, last_name=last_name,
+                  admin=admin) as user:
             yield user
 
     return user_fixture
@@ -585,8 +552,8 @@ def envar_factory(*, name: str, value: str):
 
     @pytest.fixture
     def envar_fixture() -> User:
-        with Envar(name, value) as role:
-            yield role
+        with Envar(name, value) as envar:
+            yield envar
 
     return envar_fixture
 
@@ -631,11 +598,9 @@ def role_factory(db_fixture_name: str, *, name: str, charset: str='utf8', do_not
     return role_fixture
 
 class Action:
-    def __init__(self, db: Database, script: str, substitutions: List[str], outfile: Path,
-                 charset: str):
+    def __init__(self, db: Database, script: str, substitutions: List[str], outfile: Path):
         self.db: Database = db
         self.script: str = script
-        self.charset: str = charset
         self.return_code: int = 0
         self.stdout: str = ''
         self._clean_stdout: str = None
@@ -670,7 +635,8 @@ class Action:
         if remove_space:
             value = self.space_strip(value)
         return value
-    def execute(self, *, do_not_connect: bool=False) -> None:
+    def execute(self, *, do_not_connect: bool=False, charset: str=None,
+                combine_output: bool=False) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -678,10 +644,28 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        result: CompletedProcess = self.db.execute(self.script,
-                                                   raise_on_fail=not bool(self.expected_stderr),
-                                                   charset=self.charset,
-                                                   do_not_connect=do_not_connect)
+        if charset is not None:
+            charset = charset.upper()
+            io_enc = CHARSET_MAP[charset]
+        else:
+            charset = self.db.charset
+            io_enc = self.db.io_enc
+        params = [_vars_['isql'], '-ch', charset]
+        if not do_not_connect:
+            params.extend(['-user', self.db.user, '-password', self.db.password, str(self.db.dsn)])
+        if combine_output:
+            result: CompletedProcess = run(params, input=substitute_macros(self.script, self.db.subs),
+                                           encoding=io_enc, stdout=PIPE, stderr=STDOUT)
+        else:
+            result: CompletedProcess = run(params, input=substitute_macros(self.script, self.db.subs),
+                                           encoding=io_enc, capture_output=True)
+        if result.returncode and not bool(self.expected_stderr) and not combine_output:
+            print(f"-- ISQL script stdout {'-' * 20}")
+            print(result.stdout)
+            print(f"-- ISQL script stderr {'-' * 20}")
+            print(result.stderr)
+            raise Exception("ISQL script execution failed")
+
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -691,7 +675,8 @@ class Action:
                 out_file.write_text(self.stdout, encoding='utf8')
             if self.stderr:
                 err_file.write_text(self.stderr, encoding='utf8')
-    def extract_meta(self) -> None:
+    def extract_meta(self, *, from_db: Database=None, charset: str=None,
+                     io_enc: str=None) -> str:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -699,7 +684,19 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        result: CompletedProcess = self.db.extract_meta(charset=self.charset)
+        db = self.db if from_db is None else from_db
+        charset = charset.upper() if charset else self.db.charset
+        if io_enc is None:
+            io_enc = CHARSET_MAP[charset]
+        result = run([_vars_['isql'], '-x', '-ch', charset, '-user', db.user,
+                      '-password', db.password, str(db.dsn)],
+                     encoding=io_enc, capture_output=True)
+        if result.returncode:
+            print(f"-- ISQL stdout {'-' * 20}")
+            print(result.stdout)
+            print(f"-- ISQL stderr {'-' * 20}")
+            print(result.stderr)
+            raise Exception("ISQL execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -709,7 +706,8 @@ class Action:
                 out_file.write_text(self.stdout, encoding=self.db.io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=self.db.io_enc)
-    def gstat(self, *, switches: List[str], charset: str='utf8', connect_db: bool=True,
+        return self.stdout
+    def gstat(self, *, switches: List[str], charset: str=None, connect_db: bool=True,
               credentials: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -718,11 +716,9 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        if charset:
-            charset = charset.upper()
-        else:
-            charset = 'NONE'
-        self.db.io_enc = CHARSET_MAP[charset]
+        #
+        charset = charset.upper() if charset else self.db.charset
+        io_enc = CHARSET_MAP[charset]
         params = [_vars_['gstat']]
         if credentials:
             params.extend(['-user', self.db.user, '-password', self.db.password])
@@ -730,7 +726,7 @@ class Action:
         if connect_db:
             params.append(str(self.db.dsn))
         result: CompletedProcess = run(params,
-                                       encoding=self.db.io_enc, capture_output=True)
+                                       encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
             print(f"-- gstat stdout {'-' * 20}")
             print(result.stdout)
@@ -746,7 +742,7 @@ class Action:
                 out_file.write_text(self.stdout, encoding=self.db.io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=self.db.io_enc)
-    def gsec(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None,
+    def gsec(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
              input: str=None, credentials: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -755,10 +751,8 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        if charset is not None:
-            charset = charset.upper()
-        else:
-            charset = 'NONE'
+        #
+        charset = charset.upper() if charset else self.db.charset
         if io_enc is None:
             io_enc = CHARSET_MAP[charset]
         params = [_vars_['gsec']]
@@ -783,7 +777,7 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def gbak(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None,
+    def gbak(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
              input: str=None, credentials: bool=True, combine_output: bool=False) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -792,10 +786,8 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        if charset is not None:
-            charset = charset.upper()
-        else:
-            charset = 'NONE'
+        #
+        charset = charset.upper() if charset else self.db.charset
         if io_enc is None:
             io_enc = CHARSET_MAP[charset]
         params = [_vars_['gbak']]
@@ -824,7 +816,7 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def nbackup(self, *, switches: List[str], charset: str='utf8', credentials: bool=True,
+    def nbackup(self, *, switches: List[str], charset: str=None, credentials: bool=True,
                 combine_output: bool=False) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -833,19 +825,17 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        if charset:
-            charset = charset.upper()
-        else:
-            charset = 'NONE'
-        self.db.io_enc = CHARSET_MAP[charset]
+        #
+        charset = charset.upper() if charset else self.db.charset
+        io_enc = CHARSET_MAP[charset]
         params = [_vars_['nbackup']]
         params.extend(switches)
         if credentials:
             params.extend(['-user', self.db.user, '-password', self.db.password])
         if combine_output:
-            result: CompletedProcess = run(params, encoding=self.db.io_enc, stdout=PIPE, stderr=STDOUT)
+            result: CompletedProcess = run(params, encoding=io_enc, stdout=PIPE, stderr=STDOUT)
         else:
-            result: CompletedProcess = run(params, encoding=self.db.io_enc, capture_output=True)
+            result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
         if result.returncode and not (bool(self.expected_stderr) or combine_output):
             print(f"-- nbackup stdout {'-' * 20}")
             print(result.stdout)
@@ -861,7 +851,7 @@ class Action:
                 out_file.write_text(self.stdout, encoding=self.db.io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=self.db.io_enc)
-    def gfix(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None,
+    def gfix(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
              input: str=None, credentials: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -870,10 +860,8 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        if charset is not None:
-            charset = charset.upper()
-        else:
-            charset = 'NONE'
+        #
+        charset = charset.upper() if charset else self.db.charset
         if io_enc is None:
             io_enc = CHARSET_MAP[charset]
         params = [_vars_['gfix']]
@@ -898,9 +886,9 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def isql(self, *, switches: List[str], charset: str='utf8', io_enc: str=None,
+    def isql(self, *, switches: List[str], charset: str=None, io_enc: str=None,
              input: str=None, input_file: Path=None, connect_db: bool=True,
-             credentials: bool=True, combine_output: bool=False) -> None:
+             credentials: bool=True, combine_output: bool=False, use_db: Database=None) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -908,21 +896,19 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        params = [_vars_['isql']]
-        if charset is not None:
-            charset = charset.upper()
-            params.extend(['-ch', charset])
-        else:
-            charset = 'NONE'
+        #
+        db = self.db if use_db is None else use_db
+        charset = charset.upper() if charset else db.charset
+        params = [_vars_['isql'], '-ch', charset]
         if io_enc is None:
             io_enc = CHARSET_MAP[charset]
         if credentials:
-            params.extend(['-user', self.db.user, '-password', self.db.password])
+            params.extend(['-user', db.user, '-password', db.password])
         params.extend(switches)
         if input_file is not None:
             params.extend(['-i', str(input_file)])
         if connect_db:
-            params.append(str(self.db.dsn))
+            params.append(str(db.dsn))
         if combine_output:
             result: CompletedProcess = run(params, input=input,
                                            encoding=io_enc, stdout=PIPE, stderr=STDOUT)
@@ -944,7 +930,7 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def svcmgr(self, *, switches: List[str]=None, charset: str='utf8', io_enc: str=None,
+    def svcmgr(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
                connect_mngr: bool=True) -> None:
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -953,10 +939,8 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        if charset is not None:
-            charset = charset.upper()
-        else:
-            charset = 'NONE'
+        #
+        charset = charset.upper() if charset else self.db.charset
         if io_enc is None:
             io_enc = CHARSET_MAP[charset]
         params = [_vars_['fbsvcmgr']]
@@ -1076,6 +1060,15 @@ class Action:
     def trace_to_stdout(self, *, upper: bool=False) -> None:
         log = ''.join(self.trace_log)
         self.stdout = log.upper() if upper else log
+    def envar(self, name: str, value: str) -> Envar:
+        return Envar(name, value)
+    def match_any(self, line: str, patterns) -> bool:
+        for pattern in patterns:
+            if pattern.search(line):
+                return True
+        return False
+    def print_callback(self, line: str) -> None:
+        print(line, end='')
     @property
     def clean_stdout(self) -> str:
         if self._clean_stdout is None:
@@ -1117,9 +1110,11 @@ class Action:
     @property
     def bin_dir(self) -> Path:
         return _vars_['bin-dir']
+    @property
+    def platform(self) -> str:
+        return _platform
 
-def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None,
-             charset: str='utf8'):
+def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None):
 
     @pytest.fixture
     def isql_act_fixture(request: FixtureRequest) -> Action:
@@ -1128,12 +1123,12 @@ def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None
         if _vars_['save-output'] and not f.parent.exists():
             f.parent.mkdir(parents=True)
         f = f.with_name(f'{f.stem}-{request.function.__name__}.out')
-        result: Action = Action(db, script, substitutions, f, charset)
+        result: Action = Action(db, script, substitutions, f)
         return result
 
     return isql_act_fixture
 
-def python_act(db_fixture_name: str, *, substitutions: List[str]=None, charset: str='utf8'):
+def python_act(db_fixture_name: str, *, substitutions: List[str]=None):
 
     @pytest.fixture
     def python_act_fixture(request: FixtureRequest) -> Action:
@@ -1142,7 +1137,7 @@ def python_act(db_fixture_name: str, *, substitutions: List[str]=None, charset: 
         if _vars_['save-output'] and not f.parent.exists():
             f.parent.mkdir(parents=True)
         f = f.with_name(f'{f.stem}-{request.function.__name__}.out')
-        result: Action = Action(db, '', substitutions, f, charset)
+        result: Action = Action(db, '', substitutions, f)
         return result
 
     return python_act_fixture
