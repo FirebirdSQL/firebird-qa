@@ -154,21 +154,6 @@ test_script_1 = """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-# [pcisar] 20.10.2021
-# This test fails on my system due to (unexpected) error output from test script:
-# Statement failed, SQLSTATE = 42000
-# Execute statement error at isc_dsql_execute2 :
-# 335544321 : arithmetic exception, numeric overflow, or string truncation
-# 335544381 : Implementation limit exceeded
-# Statement : insert into test1 with recursive r as (select 0 i from rdb$database union all select r.i+1 from r where r.i<99) select rpad('', 32760, uuid_to_char(gen_uuid()) ) from r r1,r r2 rows 2000
-# Data source : Firebird::localhost:/tmp/pytest-of-pcisar/pytest-7/test_1514/test.fdb
-# -At procedure 'SP_FILL' line: 4, col: 9
-#
-# Also, the stdout from test script differs:
-# MEASURE_RESULT                  WINS >= 3.8x
-# MEASURE_RESULT                  LOOSES, 0.00x
-# MEASURE_RESULT                  LOOSES, 0.00x
-
 expected_stdout_1 = """
    MEASURE_RESULT                  WINS >= 3.8x
    MEASURE_RESULT                  WINS >= 3.8x
@@ -177,7 +162,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
-    act_1.charset = 'NONE'
+    act_1.db.set_async_write()
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

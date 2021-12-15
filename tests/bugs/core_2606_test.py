@@ -96,14 +96,12 @@ expected_stdout_1_b = """
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1_a
     act_1.script = test_script_1
-    act_1.charset = 'UTF8'
-    act_1.execute()
+    act_1.execute(charset='UTF8')
     assert act_1.clean_stdout == act_1.clean_expected_stdout
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1_b
     act_1.script = test_script_1
-    act_1.charset = 'SJIS_0208'
-    act_1.execute()
+    act_1.execute(charset='SJIS_0208')
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

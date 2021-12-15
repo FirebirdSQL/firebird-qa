@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_6392
 # title:        Space in database path prevent working gbak -se ... -b "pat to/database" backup
-# decription:   
+# decription:
 #                   Test creates windows BATCH file for main job:
 #                   * create folder with spaces and some non-alphabetic characters (use "[", "]", "(", ")" etc);
 #                   * create .sql script which will make database with spaces and non-alphabetic characters in this folder;
@@ -11,21 +11,21 @@
 #                   * try to backup and restore using services manager.
 #                   Batch output is redirected to log and then we parse this log with expectation to find there messages
 #                   which prove successful results for each action.
-#               
+#
 #                   Confirmed bug on 4.0.0.2173.
 #                   Checked on 3.0.7.33358; 4.0.0.2180 SS/SC/CS: all fine.
-#               
+#
 #                   ::: NOTE :::
 #                   Some problem still exists when DB file or folder has name which last character is '.' or ' ' (dot or space).
 #                   Database will be created but attempt to backup raises: "gbak: ERROR:cannot open backup file ..."
-#                
+#
 # tracker_id:   CORE-6392
 # min_versions: ['3.0.7']
 # versions:     3.0.7
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0.7
 # resources: None
@@ -38,84 +38,84 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import sys
 #  import time
 #  import subprocess
 #  import re
 #  from fdb import services
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  #---------------------------------------------
-#  
+#
 #  def flush_and_close(file_handle):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb'):
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
 #         if os.path.isfile( f_names_list[i]):
 #              os.remove( f_names_list[i] )
 #  #--------------------------------------------
-#  
+#
 #  fb_home =  os.path.split( services.connect(host='localhost', user= user_name, password= user_password).get_home_directory() )[0]
 #  db_conn.close()
-#  
+#
 #  # tmpdir='c:\\\\temp\\\\folder with spaces '
 #  # gbak: ERROR:cannot open backup file c:	emp
 #  older with spaces \\db with spaces. . .fbk
-#  
+#
 #  # tmpdir='c:\\\\temp\\\\folder with spaces..'
 #  # gbak: ERROR:cannot open backup file c:	emp
 #  older with spaces..\\db with spaces. . .fbk
-#  
+#
 #  #tmpdir='c:\\\\temp\\\\^!very strange^! folder with (many) spaces; created    temporary, only     for core-6392^! '
-#  
+#
 #  #dbname='(strange name^!) DB with  #lot#  of excessive              spaces; created temporary,  only    for core-6392^!. . .fdb'
 #  # gbak: ERROR:cannot open backup file // but database is created OK.
-#  
+#
 #  #dbname='(strange name^!) DB with  #lot#  of excessive              spaces, created temporary,  only    for core-6392^!. . .fdb'
 #  # gbak: ERROR:cannot open backup file // but database is created OK.
-#  
+#
 #  tmpdir='c:\\\\temp\\\\ [[[ strange ]]] folder with   {{{ lot of }}}   spaces^!'
 #  dbname='DB with very^! ))) strange ((( name; created for core-6392.fdb'
-#  
+#
 #  bkname=( '.'.join( dbname.split('.')[:-1] )+'.fbk' if '.' in dbname else dbname+'.fbk' )
-#  
+#
 #  extbat=os.path.join(context['temp_directory'],'tmp_6392.bat')
 #  extlog=os.path.splitext(extbat)[0]+'.log'
 #  exterr=os.path.splitext(extbat)[0]+'.err'
-#  
+#
 #  chksql="iif( upper(mon$database_name) = upper( q'{%(tmpdir)s\\%(dbname)s}' ), 'SUCCESS.', '### ERROR: DB HAS DIFFERENT NAME ###')" % locals()
 #  chksql=chksql.replace('^', '^^').replace(')', '^)')
 #  # echo select 'c:	emp\\ [[[ strange ]]] folder with   {{{ lot of }}}   spaces^^!\\DB with very^^! ^)^)^) strange ((( name; created for core-6392.fdb' from rdb$database;
-#  
+#
 #  runcmd='''
 #  @echo off
 #  setlocal enabledelayedexpansion enableextensions
 #  set ISC_USER=%(user_name)s
 #  set ISC_PASSWORD=%(user_password)s
 #  set FB_HOME=%(fb_home)s\\\\
-#  
+#
 #  set tmpsql=%%~dpn0.sql
-#  
+#
 #  del %(extlog)s 2>nul
-#  
+#
 #  mkdir "%(tmpdir)s" 2>nul
 #  if exist "%(tmpdir)s" (
 #      echo Directory created OK.
@@ -123,28 +123,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      echo Could NOT create directory "%(tmpdir)s". ABEND.
 #      goto :final
 #  )
-#  
+#
 #  if exist "%(tmpdir)s\\%(dbname)s" del "%(tmpdir)s\\%(dbname)s"
-#  
+#
 #  (
 #      echo set bail on;
 #      echo create database "%(tmpdir)s\\%(dbname)s";
 #      echo set list on;
 #      echo select %(chksql)s as "CHECK POINT. Result:" from mon$database;
 #  ) > !tmpsql!
-#  
+#
 #  echo CHECK POINT. Trying to create database.
 #  !FB_HOME!isql.exe -q -i !tmpsql!
-#  
+#
 #  del !tmpsql!
-#  
+#
 #  echo CHECK POINT. Trying to BACKUP without "-se" switch.
 #  !FB_HOME!gbak.exe -b -verbi 999999 -st tdrw localhost:"%(tmpdir)s\\%(dbname)s" "%(tmpdir)s\\%(bkname)s"
 #  if exist "%(tmpdir)s\\%(bkname)s" (
 #      echo CHECK POINT. Trying to restore without "-se".
 #      !FB_HOME!gbak.exe -rep -verbi 999999 -st tdrw "%(tmpdir)s\\%(bkname)s" localhost:"%(tmpdir)s\\%(dbname)s"
 #  )
-#  
+#
 #  echo.
 #  echo CHECK POINT. Trying to backup using gbak WITH "-se" switch.
 #  if exist "%(tmpdir)s\\%(bkname)s" del "%(tmpdir)s\\%(bkname)s"
@@ -153,40 +153,40 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      echo CHECK POINT. Trying to restore using gbak WITH "-se" switch.
 #      !FB_HOME!gbak.exe -rep -verbi 999999 -st tdrw -se localhost:service_mgr "%(tmpdir)s\\%(bkname)s" "%(tmpdir)s\\%(dbname)s"
 #  )
-#  
+#
 #  echo.
 #  echo CHECK POINT. Trying to backup using fbsvcmgr.
 #  if exist "%(tmpdir)s\\%(bkname)s" del "%(tmpdir)s\\%(bkname)s"
-#  
+#
 #  !FB_HOME!fbsvcmgr.exe localhost:service_mgr action_backup dbname "%(tmpdir)s\\%(dbname)s" bkp_file "%(tmpdir)s\\%(bkname)s" verbint 999999 bkp_stat tdrw
 #  if exist "%(tmpdir)s\\%(bkname)s" (
 #      echo CHECK POINT. Trying to restore using fbsvcmgr.
 #      !FB_HOME!fbsvcmgr.exe localhost:service_mgr action_restore res_replace bkp_file "%(tmpdir)s\\%(bkname)s" dbname "%(tmpdir)s\\%(dbname)s" verbint 999999 res_stat tdrw
 #  )
-#  
+#
 #  :final
 #      if exist "%(tmpdir)s\\%(dbname)s" del "%(tmpdir)s\\%(dbname)s"
 #      if exist "%(tmpdir)s\\%(bkname)s" del "%(tmpdir)s\\%(bkname)s"
 #      rmdir "%(tmpdir)s"
 #      echo Bye-bye from %%~f0
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_extbat=open( extbat, 'w' )
 #  f_extbat.write(runcmd)
 #  flush_and_close(f_extbat)
-#  
+#
 #  f_extlog=open( extlog, 'w' )
 #  subprocess.call( [ extbat ], stdout = f_extlog, stderr = subprocess.STDOUT )
 #  flush_and_close(f_extlog)
-#  
-#  allowed_patterns = [ re.compile(p, re.IGNORECASE) for p in 
+#
+#  allowed_patterns = [ re.compile(p, re.IGNORECASE) for p in
 #                       (
 #                           'check\\s+point'
 #                           ,'closing\\s+file(,)?\\s+committing(,)?\\s+.*finishing'
 #                           ,'finishing(,)?\\s+closing(,)?\\s+.*going\\s+home'
 #                       )
 #                     ]
-#  
+#
 #  with open(f_extlog.name, 'r') as f:
 #      for line in f:
 #          if 'gbak: ERROR' in line:
@@ -195,14 +195,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              for p in allowed_patterns:
 #                  if p.search(line):
 #                      print( (line if 'CHECK POINT' in line else p.search(line).group() ) )
-#  
+#
 #  # CLEANUP
 #  #########
 #  time.sleep(1)
 #  #cleanup( [extbat, extlog] )
-#  
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     CHECK POINT. Trying to create database.
@@ -230,7 +231,7 @@ expected_stdout_1 = """
 @pytest.mark.version('>=3.0.7')
 @pytest.mark.platform('Windows')
 @pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

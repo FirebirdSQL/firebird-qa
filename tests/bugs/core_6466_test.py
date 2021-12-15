@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_6466
 # title:        Comments before the first line of code are removed (when extract metadata)
-# decription:   
+# decription:
 #                  Lot of comments (multi-line blocks) are inserted before each clause/token of created SP
 #                  (in its declaration of name, input and output parameters, sections of variables and after
 #                  final 'end').
@@ -11,20 +11,20 @@
 #                  First comment _after_ 'AS' clause (and before 1st 'declare variable' statement) *must*
 #                  be preserved.
 #                  Comment after final 'end' of procedure must also be preserved.
-#               
+#
 #                  Confirmed bug on:
 #                      * 4.0.0.2353 - final comment ('950' in this script) was not stored;
 #                      * 3.0.8.33401 - comments before first declaration of variable ('900') and after final
 #                                      'end' ('950') were not stored.
 #                  Checked on 4.0.0.2365, 3.0.8.33415 -- all fine.
-#                
+#
 # tracker_id:   CORE-6466
 # min_versions: ['3.0.8']
 # versions:     3.0.8
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0.8
 # resources: None
@@ -37,7 +37,7 @@ init_script_1 = """
     		/*
     		comment-100
     		*/
-    	( 
+    	(
     		/*
     		comment-150
     		*/
@@ -57,11 +57,11 @@ init_script_1 = """
     		/*
     		comment-300
     		*/
-    returns 
+    returns
     		/*
     		comment-400
     		*/
-    	( 
+    	(
     		/*
     		comment-500
     		*/
@@ -112,18 +112,19 @@ init_script_1 = """
     ^
     commit
     ^
-    set term ;^ 
-  """
+    set term ;^
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  runProgram('isql', [dsn, '-x', '-user', user_name, '-pas', user_password], )
-#    
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     comment-900
@@ -132,11 +133,12 @@ expected_stdout_1 = """
     comment-930
     comment-940
     comment-950
-  """
+"""
 
 @pytest.mark.version('>=3.0.8')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    act_1.expected_stdout = expected_stdout_1
+    act_1.extract_meta()
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

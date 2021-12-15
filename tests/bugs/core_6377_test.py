@@ -2,21 +2,23 @@
 #
 # id:           bugs.core_6377
 # title:        Unable to restore database with tables using GENERATED ALWAYS AS IDENTITY columns (ERROR:OVERRIDING SYSTEM VALUE should be used)
-# decription:   
+# decription:
 #                   Confirmed on 4.0.0.2126, got in STDERR when restore:
 #                     gbak: ERROR:OVERRIDING SYSTEM VALUE should be used to override the value of an identity column defined as 'GENERATED ALWAYS' in table/view IDENTITY_ALWAYS
 #                     gbak: ERROR:gds_$compile_request failed
 #                     gbak:Exiting before completion due to errors
-#               
+#
 #                   Checked on 4.0.0.2170 SS/CS -- all fine.
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['4.0']
 # versions:     4.0
-# qmid:         
+# qmid:
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from io import BytesIO
+from pathlib import Path
+from firebird.qa import db_factory, python_act, Action, temp_file
 
 # version: 4.0
 # resources: None
@@ -25,44 +27,44 @@ substitutions_1 = []
 
 init_script_1 = """
     create table identity_always(id bigint generated always as identity constraint pk_identity_always primary key);
-    insert into identity_always default values; 
+    insert into identity_always default values;
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import sys
 #  import subprocess
 #  from subprocess import PIPE
 #  from fdb import services
 #  import time
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for f in f_names_list:
@@ -73,48 +75,54 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f, ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#      
+#
 #  #--------------------------------------------
-#  
+#
 #  # https://docs.python.org/2/library/subprocess.html#replacing-shell-pipeline
-#  
+#
 #  tmp_restdb = os.path.join(context['temp_directory'],'tmp_6377_rest.fdb')
 #  cleanup( (tmp_restdb,) )
-#  
+#
 #  f_br_err=open( os.path.join(context['temp_directory'],'tmp_6377_br.err'), 'w')
 #  p_sender = subprocess.Popen( [ context['gbak_path'], '-b', dsn, 'stdout' ], stdout=PIPE)
 #  p_getter = subprocess.Popen( [ context['gbak_path'], '-rep', 'stdin',  'localhost:' + tmp_restdb ], stdin = p_sender.stdout, stdout = PIPE, stderr = f_br_err)
 #  p_sender.stdout.close()
 #  p_getter_stdout, p_getter_stderr = p_getter.communicate()
-#  
+#
 #  flush_and_close(f_br_err)
-#  
+#
 #  # This must PASS without errors:
 #  runProgram('isql', [ 'localhost:' + tmp_restdb ], 'insert into identity_always default values;')
-#  
+#
 #  # CHECK RESULTS
 #  ###############
 #  with open(f_br_err.name,'r') as g:
 #      for line in g:
 #          if line:
 #              print( 'UNEXPECTED STDERR IN ' + g.name + ':' +  line)
-#  
+#
 #  # Cleanup.
 #  ##########
 #  time.sleep(1)
 #  cleanup( (f_br_err,tmp_restdb ) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+fdb_file = temp_file('tmp_6377_rest.fdb')
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, fdb_file: Path):
+    backup = BytesIO()
+    with act_1.connect_server() as srv:
+        srv.database.local_backup(database=act_1.db.db_path, backup_stream=backup)
+        backup.seek(0)
+        srv.database.local_restore(backup_stream=backup, database=fdb_file)
+    # This should pass without error
+    act_1.isql(switches=[act_1.get_dsn(fdb_file)], connect_db=False,
+               input='insert into identity_always default values;')

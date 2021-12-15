@@ -9,7 +9,8 @@
 # qmid:         bugs.core_859
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import DatabaseError
 
 # version: 9.1
 # resources: None
@@ -30,36 +31,42 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #    pass
 #  else:
 #    print ('Test Failed in case 1')
-#  
+#
 #  try:
 #    c.prep('select * from t order by a')
 #  except:
 #    pass
 #  else:
 #    print ('Test Failed in case 2')
-#  
+#
 #  try:
 #    c.prep('select b, count(*) from t group by b')
 #  except:
 #    pass
 #  else:
 #    print ('Test Failed in case 3')
-#  
+#
 #  try:
 #    c.prep('select a, count(*) from t group by a')
 #  except:
 #    pass
 #  else:
 #    print ('Test Failed in case 4')
-#  
-#  
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 
-@pytest.mark.version('>=9.1')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+@pytest.mark.version('>=2.1')
+def test_1(act_1: Action):
+    with act_1.db.connect() as con:
+        c = con.cursor()
+        c.prepare('select * from t order by b')
+        with pytest.raises(DatabaseError, match='.*Datatype ARRAY is not supported for sorting operation.*'):
+            c.prepare('select * from t order by a')
+        c.prepare('select b, count(*) from t group by b')
+        with pytest.raises(DatabaseError, match='.*Datatype ARRAY is not supported for sorting operation.*'):
+            c.prepare('select a, count(*) from t group by a')
+    # Passed.

@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5948
 # title:        Make WIN_SSPI plugin produce keys for wirecrypt plugin
-# decription:   
+# decription:
 #                   We create mapping from current Windows user to SYSBDBA and then make following
 #                   changes in the firebird.conf:
 #                   * AuthClient = Win_Sspi
@@ -12,26 +12,26 @@
 #                   and we check that our attachment actualy uses wire encryption (by querying mon$ table).
 #                   Finally, we return original firebird.conf back and create connect using common pair
 #                   SYSDBA/masterkey. This is needed for drop mapping.
-#               
+#
 #                   Confirmed problem on 4.0.0.1227 (date of build: 01.10.2018): attempt to connect
 #                   using Win_SSPI leads to:
 #                       Statement failed, SQLSTATE = 28000
 #                       Client attempted to attach unencrypted but wire encryption is required
-#               
+#
 #                   Discussed with Alex, letters 23.06.2020.
 #                   Checked on 4.0.0.1346 (date of build: 17.12.2018), SS/SC/CS - works fine.
 #                   Checked on 3.0.6.33222, SS/SC/CS -- all OK.
-#               
+#
 #                   ::: NB ::: Test has separate code for 3.0.x and 4.0 because there is no column
 #                   mon$attachments.mon$wire_encrypted in FB 3.x
-#                
+#
 # tracker_id:   CORE-5948
 # min_versions: ['3.0.5']
 # versions:     3.0.5, 4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0.5
 # resources: None
@@ -44,7 +44,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import sys
 #  import os
 #  import shutil
@@ -54,7 +54,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import datetime
 #  import subprocess
 #  from fdb import services
-#  
+#
 #  # 23.08.2020: !!! REMOVING OS-VARIABLE ISC_USER IS MANDATORY HERE !!!
 #  # This variable could be set by other .fbts which was performed before current within batch mode (i.e. when fbt_run is called from <rundaily>)
 #  # NB: os.unsetenv('ISC_USER') actually does NOT affect on content of os.environ dictionary, see: https://docs.python.org/2/library/os.html
@@ -64,13 +64,13 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      del os.environ["ISC_USER"]
 #  except KeyError as e:
 #      pass
-#  
-#  
+#
+#
 #  THIS_COMPUTER_NAME = socket.gethostname()
 #  CURRENT_WIN_ADMIN = getpass.getuser()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -78,23 +78,23 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              os.remove( f_names_list[i] )
 #              if os.path.isfile( f_names_list[i]):
 #                  print('ERROR: can not remove file ' + f_names_list[i])
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  db_conn.close()
 #  fb_home = services.connect(host='localhost', user=user_name, password=user_password).get_home_directory()
-#  
+#
 #  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#  
+#
 #  fbconf_cur = os.path.join(fb_home, 'firebird.conf')
 #  fbconf_bak = os.path.join(context['temp_directory'], 'firebird_'+dts+'.bak')
-#  
+#
 #  sql_pre='''
 #      set bail on;
 #      set list on;
 #      set count on;
 #      -- set echo on;
-#  
+#
 #      recreate view v_map_info as
 #      select
 #           rdb$map_name              --    test_wmap
@@ -109,25 +109,25 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      from rdb$database
 #      left join rdb$auth_mapping on rdb$map_name = upper('test_wmap')
 #      ;
-#  
+#
 #      create or alter mapping test_wmap using plugin win_sspi from user "%(THIS_COMPUTER_NAME)s\\%(CURRENT_WIN_ADMIN)s" to user %(user_name)s;
 #      commit;
-#  
+#
 #      select * from v_map_info
 #      ;
-#  
+#
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_prepare_sql = open( os.path.join(context['temp_directory'],'tmp_winsspi_prepare.sql'), 'w', buffering=0)
 #  f_prepare_sql.write(sql_pre)
 #  f_prepare_sql.close()
-#  
+#
 #  f_prepare_log=open( os.path.join(context['temp_directory'],'tmp_winsspi_prepare.log'), 'w', buffering=0)
 #  subprocess.call( [ fb_home + "isql", dsn, "-user", user_name, "-pas", user_password, "-q", "-i", f_prepare_sql.name ], stdout=f_prepare_log, stderr=subprocess.STDOUT )
 #  f_prepare_log.close()
-#  
+#
 #  shutil.copy2( fbconf_cur, fbconf_bak )
-#  
+#
 #  f_fbconf=open( fbconf_cur, 'r')
 #  fbconf_content=f_fbconf.readlines()
 #  f_fbconf.close()
@@ -135,49 +135,49 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      line = s.lower().lstrip()
 #      if line.startswith( 'wirecrypt'.lower() ):
 #          fbconf_content[i] = '# [temply commented] ' + s
-#  
+#
 #      if line.startswith( 'AuthClient'.lower() ):
 #          fbconf_content[i] = '# [temply commented] ' + s
-#  
-#  
+#
+#
 #  text2app='''
 #  ### TEMPORARY CHANGED BY FBTEST FRAMEWORK ###
 #  AuthClient = Win_Sspi
 #  WireCrypt = Required
 #  ##############################################
 #  '''
-#  
+#
 #  fbconf_content += [ '\\n' + x for x in text2app.split('\\n') ]
-#  
+#
 #  f_fbconf=open( fbconf_cur, 'w', buffering = 0)
 #  f_fbconf.writelines( fbconf_content )
 #  f_fbconf.close()
-#  
+#
 #  sql_run='''
 #      set wng off;
 #      set bail on;
 #      set list on;
 #      -- set echo on;
-#  
+#
 #      connect '%(dsn)s';
 #      select
 #           mon$auth_method    as auth_method     -- mapped from win_sspi
 #      from mon$attachments where mon$attachment_id = current_connection;
 #      commit;
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_connect_sql = open( os.path.join(context['temp_directory'],'tmp_winsspi_connect.sql'), 'w', buffering=0)
 #  f_connect_sql.write(sql_run)
 #  f_connect_sql.close()
-#  
+#
 #  f_connect_log=open( os.path.join(context['temp_directory'],'tmp_winsspi_connect.log'), 'w', buffering=0)
 #  subprocess.call( [ fb_home + "isql", "-q", "-i", f_connect_sql.name ], stdout=f_connect_log, stderr=subprocess.STDOUT )
 #  f_connect_log.close()
-#  
-#  
+#
+#
 #  # RESTORE previous content of firebird.conf. This must be done BEFORE drop mapping!
 #  shutil.copy2( fbconf_bak, fbconf_cur )
-#  
+#
 #  # DROP mapping. NB: this connect will use Srp plugin because attempt to connect using WinSSPI could failed:
 #  sql_end='''
 #      drop mapping test_wmap;
@@ -186,43 +186,44 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      set count on;
 #      select * from v_map_info;
 #  '''
-#  
+#
 #  f_cleanup_sql = open( os.path.join(context['temp_directory'],'tmp_winsspi_cleanup.sql'), 'w', buffering=0)
 #  f_cleanup_sql.write(sql_end)
 #  f_cleanup_sql.close()
-#  
+#
 #  f_cleanup_log=open( os.path.join(context['temp_directory'],'tmp_winsspi_cleanup.log'), 'w', buffering=0)
 #  subprocess.call( [ fb_home + "isql", dsn, "-user", user_name, "-pas", user_password, "-q", "-i", f_cleanup_sql.name ], stdout=f_cleanup_log, stderr=subprocess.STDOUT )
 #  f_cleanup_log.close()
-#  
-#  
+#
+#
 #  with open(f_prepare_log.name, 'r') as f:
 #      for line in f:
 #          if line.split():
 #              print('PREPARE: ' + line)
-#  
+#
 #  with open(f_connect_log.name, 'r') as f:
 #      for line in f:
 #          if line.split():
 #              print('CONNECT: ' + line)
-#  
+#
 #  with open(f_cleanup_log.name, 'r') as f:
 #      for line in f:
 #          if line.split():
 #              print('CLEANUP: ' + line)
-#  
+#
 #  time.sleep(1)
-#  
+#
 #  f_list=( f_prepare_sql, f_prepare_log, f_connect_sql, f_connect_log, f_cleanup_sql, f_cleanup_log, )
-#  
+#
 #  # Cleanup
 #  ##########
 #  cleanup( [ i.name for i in f_list ] + [fbconf_bak] )
-#  
-#  
-#    
+#
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     PREPARE: RDB$MAP_NAME                    TEST_WMAP
@@ -237,7 +238,7 @@ expected_stdout_1 = """
     PREPARE: Records affected: 1
 
     CONNECT: AUTH_METHOD                     Mapped from Win_Sspi
-  
+
     CLEANUP: RDB$MAP_NAME                    <null>
     CLEANUP: RDB$MAP_USING                   <null>
     CLEANUP: RDB$MAP_PLUGIN                  <null>
@@ -252,9 +253,8 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action):
+    pytest.skip("Requires changes to firebird.conf")
 
 
 # version: 4.0
@@ -268,7 +268,7 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 # test_script_2
 #---
-# 
+#
 #  import sys
 #  import os
 #  import shutil
@@ -278,7 +278,7 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #  import datetime
 #  import subprocess
 #  from fdb import services
-#  
+#
 #  # 23.08.2020: !!! REMOVING OS-VARIABLE ISC_USER IS MANDATORY HERE !!!
 #  # This variable could be set by other .fbts which was performed before current within batch mode (i.e. when fbt_run is called from <rundaily>)
 #  # NB: os.unsetenv('ISC_USER') actually does NOT affect on content of os.environ dictionary, see: https://docs.python.org/2/library/os.html
@@ -288,12 +288,12 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      del os.environ["ISC_USER"]
 #  except KeyError as e:
 #      pass
-#  
+#
 #  THIS_COMPUTER_NAME = socket.gethostname()
 #  CURRENT_WIN_ADMIN = getpass.getuser()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -301,23 +301,23 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #              os.remove( f_names_list[i] )
 #              if os.path.isfile( f_names_list[i]):
 #                  print('ERROR: can not remove file ' + f_names_list[i])
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  db_conn.close()
 #  fb_home = services.connect(host='localhost', user=user_name, password=user_password).get_home_directory()
-#  
+#
 #  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#  
+#
 #  fbconf_cur = os.path.join(fb_home, 'firebird.conf')
 #  fbconf_bak = os.path.join(context['temp_directory'], 'firebird_'+dts+'.bak')
-#  
+#
 #  sql_pre='''
 #      set bail on;
 #      set list on;
 #      set count on;
 #      -- set echo on;
-#  
+#
 #      recreate view v_map_info as
 #      select
 #           rdb$map_name              --    test_wmap
@@ -332,25 +332,25 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      from rdb$database
 #      left join rdb$auth_mapping on rdb$map_name = upper('test_wmap')
 #      ;
-#  
+#
 #      create or alter mapping test_wmap using plugin win_sspi from user "%(THIS_COMPUTER_NAME)s\\%(CURRENT_WIN_ADMIN)s" to user %(user_name)s;
 #      commit;
-#  
+#
 #      select * from v_map_info
 #      ;
-#  
+#
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_prepare_sql = open( os.path.join(context['temp_directory'],'tmp_winsspi_prepare.sql'), 'w', buffering=0)
 #  f_prepare_sql.write(sql_pre)
 #  f_prepare_sql.close()
-#  
+#
 #  f_prepare_log=open( os.path.join(context['temp_directory'],'tmp_winsspi_prepare.log'), 'w', buffering=0)
 #  subprocess.call( [ fb_home + "isql", dsn, "-user", user_name, "-pas", user_password, "-q", "-i", f_prepare_sql.name ], stdout=f_prepare_log, stderr=subprocess.STDOUT )
 #  f_prepare_log.close()
-#  
+#
 #  shutil.copy2( fbconf_cur, fbconf_bak )
-#  
+#
 #  f_fbconf=open( fbconf_cur, 'r')
 #  fbconf_content=f_fbconf.readlines()
 #  f_fbconf.close()
@@ -358,30 +358,30 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      line = s.lower().lstrip()
 #      if line.startswith( 'wirecrypt'.lower() ):
 #          fbconf_content[i] = '# [temply commented] ' + s
-#  
+#
 #      if line.startswith( 'AuthClient'.lower() ):
 #          fbconf_content[i] = '# [temply commented] ' + s
-#  
-#  
+#
+#
 #  text2app='''
 #  ### TEMPORARY CHANGED BY FBTEST FRAMEWORK ###
 #  AuthClient = Win_Sspi
 #  WireCrypt = Required
 #  ##############################################
 #  '''
-#  
+#
 #  fbconf_content += [ '\\n' + x for x in text2app.split('\\n') ]
-#  
+#
 #  f_fbconf=open( fbconf_cur, 'w', buffering = 0)
 #  f_fbconf.writelines( fbconf_content )
 #  f_fbconf.close()
-#  
+#
 #  sql_run='''
 #      set wng off;
 #      set bail on;
 #      set list on;
 #      -- set echo on;
-#  
+#
 #      connect '%(dsn)s';
 #      select
 #           mon$auth_method    as auth_method     -- mapped from win_sspi
@@ -389,19 +389,19 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      from mon$attachments where mon$attachment_id = current_connection;
 #      commit;
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_connect_sql = open( os.path.join(context['temp_directory'],'tmp_winsspi_connect.sql'), 'w', buffering=0)
 #  f_connect_sql.write(sql_run)
 #  f_connect_sql.close()
-#  
+#
 #  f_connect_log=open( os.path.join(context['temp_directory'],'tmp_winsspi_connect.log'), 'w', buffering=0)
 #  subprocess.call( [ fb_home + "isql", "-q", "-i", f_connect_sql.name ], stdout=f_connect_log, stderr=subprocess.STDOUT )
 #  f_connect_log.close()
-#  
-#  
+#
+#
 #  # RESTORE previous content of firebird.conf. This must be done BEFORE drop mapping!
 #  shutil.copy2( fbconf_bak, fbconf_cur )
-#  
+#
 #  # DROP mapping. NB: this connect will use Srp plugin because attempt to connect using WinSSPI could failed:
 #  sql_end='''
 #      drop mapping test_wmap;
@@ -410,43 +410,44 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      set count on;
 #      select * from v_map_info;
 #  '''
-#  
+#
 #  f_cleanup_sql = open( os.path.join(context['temp_directory'],'tmp_winsspi_cleanup.sql'), 'w', buffering=0)
 #  f_cleanup_sql.write(sql_end)
 #  f_cleanup_sql.close()
-#  
+#
 #  f_cleanup_log=open( os.path.join(context['temp_directory'],'tmp_winsspi_cleanup.log'), 'w', buffering=0)
 #  subprocess.call( [ fb_home + "isql", dsn, "-user", user_name, "-pas", user_password, "-q", "-i", f_cleanup_sql.name ], stdout=f_cleanup_log, stderr=subprocess.STDOUT )
 #  f_cleanup_log.close()
-#  
-#  
+#
+#
 #  with open(f_prepare_log.name, 'r') as f:
 #      for line in f:
 #          if line.split():
 #              print('PREPARE: ' + line)
-#  
+#
 #  with open(f_connect_log.name, 'r') as f:
 #      for line in f:
 #          if line.split():
 #              print('CONNECT: ' + line)
-#  
+#
 #  with open(f_cleanup_log.name, 'r') as f:
 #      for line in f:
 #          if line.split():
 #              print('CLEANUP: ' + line)
-#  
+#
 #  time.sleep(1)
-#  
+#
 #  f_list=( f_prepare_sql, f_prepare_log, f_connect_sql, f_connect_log, f_cleanup_sql, f_cleanup_log, )
-#  
+#
 #  # Cleanup
 #  ##########
 #  cleanup( [ i.name for i in f_list ] + [fbconf_bak] )
-#  
-#  
-#    
+#
+#
+#
 #---
-#act_2 = python_act('db_2', test_script_2, substitutions=substitutions_2)
+
+act_2 = python_act('db_2', substitutions=substitutions_2)
 
 expected_stdout_2 = """
     PREPARE: RDB$MAP_NAME                    TEST_WMAP
@@ -477,8 +478,7 @@ expected_stdout_2 = """
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
-def test_2(db_2):
-    pytest.fail("Test not IMPLEMENTED")
+def test_2(act_2: Action):
+    pytest.skip("Requires changes to firebird.conf")
 
 

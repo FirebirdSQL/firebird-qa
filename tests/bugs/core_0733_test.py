@@ -348,7 +348,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     RESULT_OF_REQ_COMPARE_TO_ACTUAL EXPECTED: actual values were equal to required.
@@ -356,5 +357,4 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(db_1):
-    pytest.skip("Test requires manipulation with firebird.conf")
-    #pytest.fail("Test not IMPLEMENTED")
+    pytest.skip("Requires changes to firebird.conf")

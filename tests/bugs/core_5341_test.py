@@ -59,8 +59,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0.1')
 def test_1(act_1: Action):
-    act_1.charset = 'WIN1251'
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(charset='WIN1251')
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

@@ -30,7 +30,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0
 # resources: None
@@ -149,7 +149,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     MON$SEC_DATABASE                Self
@@ -162,5 +163,5 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.skip("Requires changes to databases.conf")

@@ -101,7 +101,7 @@ def test_1(act_1: Action, fbk_file_1: Path):
     act_1.reset()
     # This was in original test, but it makes no sense as it overwites att_log content
     # from backup that does not contain any data on v4.0.0.2496
-    # It's not important to test the issue anyway
+    # It's IMHO not important to test the issue anyway
     #act_1.gbak(switches=['-rep', str(fbk_file_1), act_1.db.dsn])
     #act_1.reset()
     # Check

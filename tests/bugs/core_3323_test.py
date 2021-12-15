@@ -46,12 +46,15 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5.1
 # resources: None
 
-substitutions_1 = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost'), ('After line.*', ''), ('.*Killed by database administrator.*', ''), ('-At block line:.*', '-At block line'), ('Execute statement error at isc_dsql_(execute2|prepare)', 'Execute statement error at isc_dsql')]
+substitutions_1 = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost'),
+                   ('After line.*', ''), ('.*Killed by database administrator.*', ''),
+                   ('-At block line:.*', '-At block line'),
+                   ('Execute statement error at isc_dsql_(execute2|prepare)', 'Execute statement error at isc_dsql')]
 
 init_script_1 = """"""
 
@@ -325,7 +328,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Point_A:                        starting EB with lock-conflict
@@ -351,7 +355,7 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=2.5.1')
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.skip("New implementation postponed")
 
 

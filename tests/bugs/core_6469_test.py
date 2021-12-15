@@ -2,13 +2,13 @@
 #
 # id:           bugs.core_6469
 # title:        Provide ability to see in the trace log actions related to session management (e.g. ALTER SESSION RESET)
-# decription:   
+# decription:
 #                   Test verifies management statements which are specified in doc/sql.extensions/README.management_statements_psql.md
 #                   We launch trace session before ISQL and stop it after its finish.
 #                   Every management statement is expected to be found in the trace log.
-#               
+#
 #                   ATTENTION: TWO SEPARATE BRANCHES present in this test for different OS.
-#               
+#
 #                   NOTES FOR WINDOWS
 #                   #################
 #                       Statement 'SET TRUSTED ROLE' is verified for appearance in the trace log.
@@ -19,14 +19,14 @@
 #                           * Two mappings are created (both uses plugin win_sspi):
 #                           ** from any user to user;
 #                           ** from predefined_group domain_any_rid_admins to role <role_to_be_trusted>
-#               
+#
 #                       Connect to database should be done in form: CONNECT '<computername>:<our_database>' role <role_to_be_trusted>',
 #                       and after this we can user 'SET TRUSTED ROLE' statement (see also: core_5887-trusted_role.fbt).
-#               
+#
 #                       ::: NOTE :::
 #                       We have to remove OS-veriable 'ISC_USER' before any check of trusted role.
 #                       This variable could be set by other .fbts which was performed before current within batch mode (i.e. when fbt_run is called from <rundaily>)
-#                   
+#
 #                   NOTES FOR LINUX
 #                   ###############
 #                       Trusted role is not verified for this case.
@@ -37,18 +37,21 @@
 #                       NO such trouble in the Classic.
 #                       The reason currently (03-mar-2021) remains unknown.
 #                       Sent letter to Alex et al, 03-mar-2021.
-#                   
+#
 #                   Checked on:
 #                   * Windows: 4.0.0.2235, 4.0.0.2377 (both on SS/CS).
 #                   * Linux:   4.0.0.2377 SS/CS.
-#                
+#
 # tracker_id:   CORE-6469
 # min_versions: ['4.0']
 # versions:     4.0, 4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+import re
+import socket
+import getpass
+from firebird.qa import db_factory, python_act, Action, role_factory, Role
 
 # version: 4.0
 # resources: None
@@ -61,7 +64,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import re
 #  import subprocess
@@ -71,7 +74,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import re
 #  from fdb import services
 #  from subprocess import Popen
-#  
+#
 #  # REMOVING OS-VARIABLE ISC_USER IS MANDATORY HERE !!!
 #  # This variable could be set by other .fbts which was performed before current within batch mode (i.e. when fbt_run is called from <rundaily>)
 #  # NB: os.unsetenv('ISC_USER') actually does NOT affect on content of os.environ dictionary, see: https://docs.python.org/2/library/os.html
@@ -81,34 +84,34 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      del os.environ["ISC_USER"]
 #  except KeyError as e:
 #      pass
-#  
-#  
+#
+#
 #  THIS_DBA_USER=user_name
 #  THIS_DBA_PSWD=user_password
-#  
+#
 #  THIS_COMPUTER_NAME = socket.gethostname()
 #  CURRENT_WIN_ADMIN = getpass.getuser()
-#  
+#
 #  THIS_FDB = db_conn.database_name
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f,
 #      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#  
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for f in f_names_list:
@@ -119,12 +122,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f, ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  sql='''
 #  set bail on;
 #  set list on;
@@ -139,21 +142,21 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  ^
 #  set term ;^
 #  commit;
-#  
+#
 #  create role TMP$R6469;
 #  grant tmp$r6469 to "%(THIS_COMPUTER_NAME)s\\%(CURRENT_WIN_ADMIN)s";
 #  commit;
-#  
+#
 #  -- We have to use here "create mapping trusted_auth ... from any user to user" otherwise get
 #  -- Statement failed, SQLSTATE = 28000 /Missing security context for C:\\FBTESTING\\QA\\MISC\\C5887.FDB
 #  -- on connect statement which specifies COMPUTERNAME:USERNAME instead path to DB:
 #  create or alter mapping trusted_auth using plugin win_sspi from any user to user;
-#  
+#
 #  -- We have to use here "create mapping win_admins ... DOMAIN_ANY_RID_ADMINS" otherwise get
 #  -- Statement failed, SQLSTATE = 0P000 / Your attachment has no trusted role
 #  create or alter mapping win_admins using plugin win_sspi from predefined_group domain_any_rid_admins to role tmp$r6469;
 #  commit;
-#  
+#
 #  -- We have to GRANT ROLE, even to SYSDBA. Otherwise:
 #  -- Statement failed, SQLSTATE = 0P000
 #  -- Role TMP$R6469 is invalid or unavailable
@@ -162,10 +165,10 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  show role;
 #  show grants;
 #  show mapping;
-#  
+#
 #  set autoddl off;
 #  commit;
-#  
+#
 #  -- Following management statements are taken from
 #  -- doc/sql.extensions/README.management_statements_psql.md:
 #  -- ########################################################
@@ -178,25 +181,25 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  set time zone 'America/Sao_Paulo';
 #  set role tmp$r6469;
 #  commit;
-#  
+#
 #  connect '%(THIS_COMPUTER_NAME)s:%(THIS_FDB)s' role tmp$r6469;
-#  
+#
 #  select mon$user,mon$role,mon$auth_method from mon$attachments where mon$attachment_id = current_connection;
 #  commit;
-#  
+#
 #  set trusted role;
 #  commit;
-#  
+#
 #  connect 'localhost:%(THIS_FDB)s' user %(THIS_DBA_USER)s password '%(THIS_DBA_PSWD)s';
 #  drop mapping trusted_auth;
 #  drop mapping win_admins;
 #  commit;
 #  ''' % locals()
-#  
+#
 #  f_sql_cmd=open( os.path.join(context['temp_directory'],'tmp_c6469_cmd.sql'), 'w')
 #  f_sql_cmd.write(sql)
 #  flush_and_close( f_sql_cmd )
-#  
+#
 #  txt = '''# Generated auto, do not edit!
 #        database=%[\\\\\\\\/]security?.fdb
 #        {
@@ -212,28 +215,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            log_statement_finish = true
 #        }
 #  '''
-#  
+#
 #  f_trc_cfg=open( os.path.join(context['temp_directory'],'tmp_c6469_trc.cfg'), 'w')
 #  f_trc_cfg.write(txt)
 #  flush_and_close( f_trc_cfg )
-#  
+#
 #  # ##############################################################
 #  # S T A R T   T R A C E   i n   S E P A R A T E    P R O C E S S
 #  # ##############################################################
-#  
+#
 #  f_trc_log=open( os.path.join(context['temp_directory'],'tmp_c6469_trc.log'), "w")
 #  f_trc_err=open( os.path.join(context['temp_directory'],'tmp_c6469_trc.err'), "w")
-#  
+#
 #  p_trace = Popen( [ context['fbsvcmgr_path'], 'localhost:service_mgr', 'user', user_name, 'password', user_password, 'action_trace_start', 'trc_cfg', f_trc_cfg.name],
 #                   stdout=f_trc_log,
 #                   stderr=f_trc_err
 #                 )
-#  
+#
 #  time.sleep(1)
-#  
+#
 #  f_isql_log=open( os.path.join(context['temp_directory'],'tmp_c6469_run.log'), 'w')
 #  f_isql_err=open( os.path.join(context['temp_directory'],'tmp_c6469_run.err'), 'w')
-#  
+#
 #  ######################
 #  # S T A R T    I S Q L
 #  ######################
@@ -244,17 +247,17 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                 )
 #  flush_and_close( f_isql_log )
 #  flush_and_close( f_isql_err )
-#  
-#  
+#
+#
 #  # ####################################################
 #  # G E T  A C T I V E   T R A C E   S E S S I O N   I D
 #  # ####################################################
 #  # Save active trace session info into file for further parsing it and obtain session_id back (for stop):
-#  
+#
 #  f_trc_lst = open( os.path.join(context['temp_directory'],'tmp_c6469_trc_session_idle.lst'), 'w')
 #  subprocess.call([context['fbsvcmgr_path'], 'localhost:service_mgr', 'user', user_name, 'password', user_password, 'action_trace_list' ], stdout=f_trc_lst)
 #  flush_and_close( f_trc_lst )
-#  
+#
 #  trcssn=0
 #  with open( f_trc_lst.name,'r') as f:
 #      for line in f:
@@ -265,10 +268,10 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                      trcssn=word
 #                  i=i+1
 #              break
-#  
+#
 #  # Result: `trcssn` is ID of active trace session. Now we have to terminate it:
-#  
-#  
+#
+#
 #  # ####################################################
 #  # S E N D   R E Q U E S T    T R A C E   T O   S T O P
 #  # ####################################################
@@ -278,12 +281,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      fn_nul.close()
 #      # DO NOT REMOVE THIS LINE:
 #      time.sleep(1)
-#  
+#
 #  p_trace.terminate()
 #  flush_and_close( f_trc_log )
 #  flush_and_close( f_trc_err )
-#  
-#  
+#
+#
 #  # Following files must be EMPTY:
 #  #################
 #  f_list=(f_trc_err,f_isql_err,)
@@ -293,8 +296,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         with open( f_name,'r') as f:
 #             for line in f:
 #                 print("Unexpected TRCERR, file "+f_name+": "+line)
-#  
-#  
+#
+#
 #  allowed_patterns = (
 #       re.compile('alter session reset', re.IGNORECASE)
 #      ,re.compile('set session idle timeout', re.IGNORECASE)
@@ -306,22 +309,23 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      ,re.compile('set role', re.IGNORECASE)
 #      ,re.compile('set trusted role', re.IGNORECASE)
 #  )
-#  
+#
 #  with open(f_trc_log.name) as f:
 #      for line in f:
 #          if line.split():
 #              match2some = filter( None, [ p.search(line) for p in allowed_patterns ] )
 #              if match2some:
 #                  print( (' '.join(line.split()).lower()) )
-#  
+#
 #  # CLEANUP
 #  #########
 #  time.sleep(1)
 #  cleanup( (f_trc_cfg, f_trc_lst, f_trc_log, f_trc_err, f_sql_cmd, f_isql_log, f_isql_err ) )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     alter session reset
@@ -333,13 +337,102 @@ expected_stdout_1 = """
     set time zone 'america/sao_paulo'
     set role tmp$r6469
     set trusted role
-  """
+"""
+
+trace_1 = ['log_initfini = false',
+           'log_statement_finish = true',
+           'log_errors = true',
+           'time_threshold = 0',
+           ]
+
+patterns_1 =  [re.compile('alter session reset', re.IGNORECASE),
+               re.compile('set session idle timeout', re.IGNORECASE),
+               re.compile('set statement timeout', re.IGNORECASE),
+               re.compile('set bind of decfloat to double precision', re.IGNORECASE),
+               re.compile('set decfloat round ceiling', re.IGNORECASE),
+               re.compile('set decfloat traps to Division_by_zero', re.IGNORECASE),
+               re.compile('set time zone', re.IGNORECASE),
+               re.compile('set role', re.IGNORECASE),
+               re.compile('set trusted role', re.IGNORECASE)]
+
+test_role_1 = role_factory('db_2', name='TMP$R6469')
+
+def run_script(act: Action):
+    __tracebackhide__ = True
+    THIS_COMPUTER_NAME = socket.gethostname()
+    CURRENT_WIN_ADMIN = getpass.getuser()
+    script = f"""
+    set bail on;
+    set list on;
+    set echo on;
+    grant tmp$r6469 to "{THIS_COMPUTER_NAME}\\{CURRENT_WIN_ADMIN}";
+    commit;
+
+    -- We have to use here "create mapping trusted_auth ... from any user to user" otherwise get
+    -- Statement failed, SQLSTATE = 28000 /Missing security context for C:\\FBTESTING\\QA\\MISC\\C5887.FDB
+    -- on connect statement which specifies COMPUTERNAME:USERNAME instead path to DB:
+    create or alter mapping trusted_auth using plugin win_sspi from any user to user;
+
+    -- We have to use here "create mapping win_admins ... DOMAIN_ANY_RID_ADMINS" otherwise get
+    -- Statement failed, SQLSTATE = 0P000 / Your attachment has no trusted role
+    create or alter mapping win_admins using plugin win_sspi from predefined_group domain_any_rid_admins to role tmp$r6469;
+    commit;
+
+    -- We have to GRANT ROLE, even to SYSDBA. Otherwise:
+    -- Statement failed, SQLSTATE = 0P000
+    -- Role TMP$R6469 is invalid or unavailable
+    grant TMP$R6469 to sysdba;
+    commit;
+    show role;
+    show grants;
+    show mapping;
+
+    set autoddl off;
+    commit;
+
+    -- Following management statements are taken from
+    -- doc/sql.extensions/README.management_statements_psql.md:
+    -- ########################################################
+    alter session reset;
+    set session idle timeout 1800 second;
+    set statement timeout 190 second;
+    set bind of decfloat to double precision;
+    set decfloat round ceiling;
+    set decfloat traps to Division_by_zero;
+    set time zone 'America/Sao_Paulo';
+    set role tmp$r6469;
+    commit;
+
+    connect '{THIS_COMPUTER_NAME}:{act.db.db_path}' role tmp$r6469;
+   #
+    select mon$user,mon$role,mon$auth_method from mon$attachments where mon$attachment_id = current_connection;
+    commit;
+   #
+    set trusted role;
+    commit;
+   #
+    connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
+    drop mapping trusted_auth;
+    drop mapping win_admins;
+    commit;
+    """
+    act.isql(switches=['-n'], input=script)
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act_1: Action, test_role_1: Role, capsys):
+
+    with act_1.trace(db_events=trace_1):
+        run_script()
+    # process trace
+    for line in act_1.trace_log:
+        if line.split():
+            if act_1.match_any(line, patterns_1):
+                print(' '.join(line.split()).lower())
+    # Check
+    act_1.expected_stdout = expected_stdout_2
+    act_1.stdout = capsys.readouterr().out
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 
 # version: 4.0
@@ -353,7 +446,7 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 # test_script_2
 #---
-# 
+#
 #  import os
 #  import re
 #  import subprocess
@@ -363,7 +456,7 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #  import re
 #  from fdb import services
 #  from subprocess import Popen
-#  
+#
 #  # REMOVING OS-VARIABLE ISC_USER IS MANDATORY HERE !!!
 #  # This variable could be set by other .fbts which was performed before current within batch mode (i.e. when fbt_run is called from <rundaily>)
 #  # NB: os.unsetenv('ISC_USER') actually does NOT affect on content of os.environ dictionary, see: https://docs.python.org/2/library/os.html
@@ -373,34 +466,34 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      del os.environ["ISC_USER"]
 #  except KeyError as e:
 #      pass
-#  
-#  
+#
+#
 #  THIS_DBA_USER=user_name
 #  THIS_DBA_PSWD=user_password
-#  
+#
 #  THIS_COMPUTER_NAME = socket.gethostname()
 #  CURRENT_WIN_ADMIN = getpass.getuser()
-#  
+#
 #  THIS_FDB = db_conn.database_name
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f,
 #      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#  
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for f in f_names_list:
@@ -411,12 +504,12 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #         else:
 #            print('Unrecognized type of element:', f, ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  sql='''
 #  set bail on;
 #  set list on;
@@ -430,21 +523,21 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #  ^
 #  set term ;^
 #  commit;
-#  
+#
 #  create role TMP$R6469;
 #  commit;
-#  
+#
 #  -- We have to GRANT ROLE, even to SYSDBA. Otherwise:
 #  -- Statement failed, SQLSTATE = 0P000
 #  -- Role TMP$R6469 is invalid or unavailable
 #  grant TMP$R6469 to sysdba;
 #  commit;
-#  
+#
 #  -- connect 'localhost:%(THIS_FDB)s' user %(THIS_DBA_USER)s password '%(THIS_DBA_PSWD)s';
 #  select current_user as who_ami, current_role as whats_my_role from rdb$database;
 #  set autoddl off;
 #  commit;
-#  
+#
 #  -- Following management statements are taken from
 #  -- doc/sql.extensions/README.management_statements_psql.md:
 #  -- ########################################################
@@ -460,11 +553,11 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #  commit;
 #  select 'Completed' as msg from rdb$database;
 #  ''' % locals()
-#  
+#
 #  f_sql_cmd=open( os.path.join(context['temp_directory'],'tmp_c6469_cmd.sql'), 'w')
 #  f_sql_cmd.write(sql)
 #  flush_and_close( f_sql_cmd )
-#  
+#
 #  txt = '''# Generated auto, do not edit!
 #        database=%[\\\\\\\\/]security?.fdb
 #        {
@@ -481,28 +574,28 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #            log_statement_finish = true
 #        }
 #  '''
-#  
+#
 #  f_trc_cfg=open( os.path.join(context['temp_directory'],'tmp_c6469_trc.cfg'), 'w')
 #  f_trc_cfg.write(txt)
 #  flush_and_close( f_trc_cfg )
-#  
+#
 #  # ##############################################################
 #  # S T A R T   T R A C E   i n   S E P A R A T E    P R O C E S S
 #  # ##############################################################
-#  
+#
 #  f_trc_log=open( os.path.join(context['temp_directory'],'tmp_c6469_trc.log'), "w")
 #  f_trc_err=open( os.path.join(context['temp_directory'],'tmp_c6469_trc.err'), "w")
-#  
+#
 #  p_trace = Popen( [ context['fbsvcmgr_path'], 'localhost:service_mgr', 'user', user_name, 'password', user_password, 'action_trace_start', 'trc_cfg', f_trc_cfg.name],
 #                   stdout=f_trc_log,
 #                   stderr=f_trc_err
 #                 )
-#  
+#
 #  time.sleep(1)
-#  
+#
 #  f_isql_log=open( os.path.join(context['temp_directory'],'tmp_c6469_run.log'), 'w')
 #  f_isql_err=open( os.path.join(context['temp_directory'],'tmp_c6469_run.err'), 'w')
-#  
+#
 #  ######################
 #  # S T A R T    I S Q L
 #  ######################
@@ -513,19 +606,19 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #                 )
 #  flush_and_close( f_isql_log )
 #  flush_and_close( f_isql_err )
-#  
+#
 #  # 04.03.2021: do NOT remove this delay!
 #  time.sleep(1)
-#  
+#
 #  # ####################################################
 #  # G E T  A C T I V E   T R A C E   S E S S I O N   I D
 #  # ####################################################
 #  # Save active trace session info into file for further parsing it and obtain session_id back (for stop):
-#  
+#
 #  f_trc_lst = open( os.path.join(context['temp_directory'],'tmp_c6469_trc_session_idle.lst'), 'w')
 #  subprocess.call([context['fbsvcmgr_path'], 'localhost:service_mgr', 'user', user_name, 'password', user_password, 'action_trace_list' ], stdout=f_trc_lst)
 #  flush_and_close( f_trc_lst )
-#  
+#
 #  trcssn=0
 #  with open( f_trc_lst.name,'r') as f:
 #      for line in f:
@@ -536,10 +629,10 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #                      trcssn=word
 #                  i=i+1
 #              break
-#  
+#
 #  # Result: `trcssn` is ID of active trace session. Now we have to terminate it:
-#  
-#  
+#
+#
 #  # ####################################################
 #  # S E N D   R E Q U E S T    T R A C E   T O   S T O P
 #  # ####################################################
@@ -549,12 +642,12 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      fn_nul.close()
 #      # DO NOT REMOVE THIS LINE:
 #      time.sleep(1)
-#  
+#
 #  p_trace.terminate()
 #  flush_and_close( f_trc_log )
 #  flush_and_close( f_trc_err )
-#  
-#  
+#
+#
 #  # Following files must be EMPTY:
 #  #################
 #  f_list=(f_trc_err,f_isql_err,)
@@ -564,8 +657,8 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #         with open( f_name,'r') as f:
 #             for line in f:
 #                 print("Unexpected TRCERR, file "+f_name+": "+line)
-#  
-#  
+#
+#
 #  allowed_patterns = (
 #       re.compile('alter session reset', re.IGNORECASE)
 #      ,re.compile('set session idle timeout', re.IGNORECASE)
@@ -576,22 +669,23 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #      ,re.compile('set time zone', re.IGNORECASE)
 #      ,re.compile('set role', re.IGNORECASE)
 #  )
-#  
+#
 #  with open(f_trc_log.name) as f:
 #      for line in f:
 #          if line.split():
 #              match2some = filter( None, [ p.search(line) for p in allowed_patterns ] )
 #              if match2some:
 #                  print( (' '.join(line.split()).lower()) )
-#  
+#
 #  # CLEANUP
 #  #########
 #  time.sleep(1)
 #  cleanup( (f_trc_cfg, f_trc_lst, f_trc_log, f_trc_err, f_sql_cmd, f_isql_log, f_isql_err ) )
-#  
-#    
+#
+#
 #---
-#act_2 = python_act('db_2', test_script_2, substitutions=substitutions_2)
+
+act_2 = python_act('db_2', substitutions=substitutions_2)
 
 expected_stdout_2 = """
     alter session reset
@@ -602,12 +696,67 @@ expected_stdout_2 = """
     set decfloat traps to division_by_zero
     set time zone 'america/sao_paulo'
     set role tmp$r6469
-  """
+"""
+
+test_script_2 = """
+    set bail on;
+    set list on;
+
+    -- We have to GRANT ROLE, even to SYSDBA. Otherwise:
+    -- Statement failed, SQLSTATE = 0P000
+    -- Role TMP$R6469 is invalid or unavailable
+    grant TMP$R6469 to sysdba;
+    commit;
+
+    select current_user as who_ami, current_role as whats_my_role from rdb$database;
+    set autoddl off;
+    commit;
+
+    -- Following management statements are taken from
+    -- doc/sql.extensions/README.management_statements_psql.md:
+    -- ########################################################
+    set echo on;
+    alter session reset;
+    set session idle timeout 1800 second;
+    set statement timeout 190 second;
+    set bind of decfloat to double precision;
+    set decfloat round ceiling;
+    set decfloat traps to Division_by_zero;
+    set time zone 'America/Sao_Paulo';
+    set role tmp$r6469;
+    commit;
+    select 'Completed' as msg from rdb$database;
+"""
+
+trace_2 = ['log_initfini = false',
+           'log_connections = true',
+           'log_statement_finish = true',
+           'log_errors = true',
+           'time_threshold = 0',
+           ]
+
+patterns_2 =  [re.compile('alter session reset', re.IGNORECASE),
+               re.compile('set session idle timeout', re.IGNORECASE),
+               re.compile('set statement timeout', re.IGNORECASE),
+               re.compile('set bind of decfloat to double precision', re.IGNORECASE),
+               re.compile('set decfloat round ceiling', re.IGNORECASE),
+               re.compile('set decfloat traps to Division_by_zero', re.IGNORECASE),
+               re.compile('set time zone', re.IGNORECASE),
+               re.compile('set role', re.IGNORECASE)]
+
+test_role_2 = role_factory('db_2', name='TMP$R6469')
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Linux')
-@pytest.mark.xfail
-def test_2(db_2):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_2(act_2: Action, test_role_2: Role, capsys):
+    with act_2.trace(db_events=trace_2):
+        act_2.isql(switches=['-n'], input=test_script_2)
+    # process trace
+    for line in act_2.trace_log:
+        if line.split():
+            if act_2.match_any(line, patterns_2):
+                print(' '.join(line.split()).lower())
+    # Check
+    act_2.expected_stdout = expected_stdout_2
+    act_2.stdout = capsys.readouterr().out
+    assert act_2.clean_stdout == act_2.clean_expected_stdout

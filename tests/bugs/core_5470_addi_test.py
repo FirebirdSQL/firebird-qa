@@ -2,19 +2,19 @@
 #
 # id:           bugs.core_5470_addi
 # title:        Additional check for trace log when user issues statement with character that can not be transliterated
-# decription:   
+# decription:
 #                   It was detected that trace can stop any writing to its log if client issues query with character
-#                   that can NOT transliterated between character sets. Such statement and *any* other statements 
-#                   that go after will NOT be reflected in the trace if its config contain include_filter with any 
+#                   that can NOT transliterated between character sets. Such statement and *any* other statements
+#                   that go after will NOT be reflected in the trace if its config contain include_filter with any
 #                   rule (even such trivial as: include_filter = "%").
-#               
+#
 #                   Initial discuss: july-2019, subj:  "... fbtrace returned error on call trace_dsql_execute" (mailbox: pz@ibase.ru).
 #                   Letter with example how to reproduce: 16.07.19 22:08.
 #                   Finally this bug was fixed 26.03.2020:
 #                       https://github.com/FirebirdSQL/firebird/commit/70ed61cba88ad70bd868079016cde3b338073db8
 #                   ::: NB :::
 #                   Problem was found  only in FB 3.0; 4.x works OK because of new regexp mechanism in it.
-#               
+#
 #                   Test uses SQL script with two correct statements ('point-1' and 'point-2') and invalid character literal between them.
 #                   This SQL can not be prepared in fbtest because of strict checks related to characters matching to unicode charsets.
 #                   Then we prepare tempopary BATCH file which does:
@@ -22,17 +22,17 @@
 #                       run ISQL with applying this script.
 #                   After this, we launch trace with config that contains trivial include_filter and run this temp batch.
 #                   Expected result: trace must contain lines with ALL THREE executed statements.
-#               
+#
 #                   Confirmed bug on 3.0.6.33273: only 'point-1' appears in the trace. No further statements at all.
 #                   All fine on 3.0.6.33276: all three statements can be seen in the trace.
-#                
+#
 # tracker_id:   CORE-5470
 # min_versions: ['3.0.6']
 # versions:     3.0.6
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0.6
 # resources: None
@@ -45,52 +45,52 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import subprocess
 #  import time
 #  from fdb import services
 #  from subprocess import Popen
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
 #         if os.path.isfile( f_names_list[i]):
 #              os.remove( f_names_list[i] )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  # Obtain engine version:
 #  engine = str(db_conn.engine_version) # convert to text because 'float' object has no attribute 'startswith'
 #  db_conn.close()
-#  
-#  # NB, 06.12.2016: as of  fdb 1.6.1 one need to EXPLICITLY specify user+password pair when doing connect 
+#
+#  # NB, 06.12.2016: as of  fdb 1.6.1 one need to EXPLICITLY specify user+password pair when doing connect
 #  # via to FB services API by services.connect() - see FB tracker, PYFB-69
 #  # ("Can not connect to FB services if set ISC_USER & ISC_PASSWORD by os.environ[ ... ]")
-#  
+#
 #  fb_home = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
 #  # fb_home = services.connect(host='localhost').get_home_directory()
-#  
+#
 #  fb_isql = fb_home+'isql'
-#  sql_chk = os.path.join(context['files_location'],'core_5470_addi.sql') 
+#  sql_chk = os.path.join(context['files_location'],'core_5470_addi.sql')
 #  tmp_log = os.path.join(context['temp_directory'],'core_5470_addi.log')
-#  
+#
 #  txt = '''@echo off
 #  chcp 1251>nul
 #  %(fb_isql)s %(dsn)s -ch win1251 -user %(user_name)s -pas %(user_password)s -i %(sql_chk)s 1>%(tmp_log)s 2>&1
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_tmp_bat=open( os.path.join(context['temp_directory'],'tmp_run_5470.bat'), 'w', buffering = 0)
 #  f_tmp_bat.write(txt)
 #  f_tmp_bat.close()
-#  
+#
 #  #--------------------------------------------------
-#  
+#
 #  txt = '''# Generated auto, do not edit!
 #    database=%[\\\\\\\\/]security?.fdb
 #    {
@@ -100,45 +100,45 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #    {
 #        enabled         = true
 #        time_threshold  = 0
-#  
+#
 #        log_initfini    = false
 #        log_warnings    = false
 #        log_errors      = true
-#  
+#
 #        log_statement_finish = true
-#   
+#
 #        include_filter = "%"
-#  
+#
 #    }
 #  '''
-#  
+#
 #  f_trc_cfg=open( os.path.join(context['temp_directory'],'tmp_trace_5470.cfg'), 'w', buffering = 0)
 #  f_trc_cfg.write(txt)
 #  f_trc_cfg.close()
-#  
+#
 #  # ##############################################################
 #  # S T A R T   T R A C E   i n   S E P A R A T E    P R O C E S S
 #  # ##############################################################
-#  
+#
 #  f_trc_log=open( os.path.join(context['temp_directory'],'tmp_trace_5470.log'), "w", buffering = 0)
 #  f_trc_err=open( os.path.join(context['temp_directory'],'tmp_trace_5470.err'), "w", buffering = 0)
-#  
+#
 #  p_trace = Popen( [ fb_home+'fbsvcmgr', 'localhost:service_mgr', 'action_trace_start' , 'trc_cfg', f_trc_cfg.name],stdout=f_trc_log,stderr=f_trc_err)
-#  
+#
 #  time.sleep(1)
-#  
+#
 #  # ####################################################
 #  # G E T  A C T I V E   T R A C E   S E S S I O N   I D
 #  # ####################################################
 #  # Save active trace session info into file for further parsing it and obtain session_id back (for stop):
-#  
+#
 #  f_trc_lst = open( os.path.join(context['temp_directory'],'tmp_trace_5470.lst'), 'w', buffering = 0)
 #  subprocess.call([fb_home+'fbsvcmgr', 'localhost:service_mgr', 'action_trace_list'], stdout=f_trc_lst)
 #  f_trc_lst.close()
-#  
+#
 #  # !!! DO NOT REMOVE THIS LINE !!!
 #  time.sleep(1)
-#  
+#
 #  trcssn=0
 #  with open( f_trc_lst.name,'r') as f:
 #      for line in f:
@@ -151,15 +151,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              break
 #  f.close()
 #  # Result: `trcssn` is ID of active trace session. Now we have to terminate it:
-#  
+#
 #  #------------------------------------------------
 #  # Run auxiliary batch:
 #  subprocess.call( [ f_tmp_bat.name ] )
 #  #------------------------------------------------
-#  
+#
 #  # Let trace log to be entirely written on disk:
 #  time.sleep(1)
-#  
+#
 #  # ####################################################
 #  # S E N D   R E Q U E S T    T R A C E   T O   S T O P
 #  # ####################################################
@@ -169,23 +169,24 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      fn_nul.close()
 #      # DO NOT REMOVE THIS LINE:
 #      time.sleep(2)
-#  
+#
 #  p_trace.terminate()
 #  f_trc_log.close()
 #  f_trc_err.close()
-#  
+#
 #  time.sleep(1)
-#  
+#
 #  with open(f_trc_log.name, 'r') as f:
 #      for line in f:
 #          if line.startswith( "select 'point-" ):
 #              print(line)
-#  
+#
 #  cleanup( [ i.name for i in ( f_trc_log, f_trc_err, f_trc_cfg, f_trc_lst, f_tmp_bat ) ] + [tmp_log,] ) # DO NOT ADD 'sql_chk' here!
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     select 'point-1' from rdb$database
@@ -197,5 +198,3 @@ expected_stdout_1 = """
 @pytest.mark.xfail
 def test_1(db_1):
     pytest.fail("Test not IMPLEMENTED")
-
-

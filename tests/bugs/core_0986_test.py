@@ -373,7 +373,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
@@ -550,6 +549,7 @@ tmp_file_1 = temp_file('non_ascii_ddl.sql')
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, tmp_file_1: Path):
+    act_1.db.set_async_write()
     #
     tmp_file_1.write_bytes(non_ascii_ddl.encode('cp1251'))
     # run without specifying charset

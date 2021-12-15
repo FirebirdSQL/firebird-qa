@@ -56,7 +56,7 @@ test_script_1 = """
     select char_length(b) from test;
     select substring(b from char_length(b)-1 for 1) from test;
     rollback;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -64,11 +64,11 @@ expected_stdout_1 = """
     CHAR_LENGTH                     1048320
     SUBSTRING                       0:43
     #
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
-    act_1.charset = 'NONE'
+    act_1.db.set_async_write()
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

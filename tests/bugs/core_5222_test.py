@@ -326,11 +326,10 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #
 #
 #---
-#act_2 = python_act('db_2', test_script_2, substitutions=substitutions_2)
+
+act_2 = python_act('db_2', substitutions=substitutions_2)
 
 
 @pytest.mark.version('>=4.0')
-def test_2(db_2):
-    pytest.skip("Requires changed firebird.conf [ReadConsistency=0]")
-
-
+def test_2(act_2: Action):
+    pytest.skip("Requires changes to firebird.conf")

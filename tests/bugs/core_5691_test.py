@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_5691
 # title:        File description on Firebird executables should be specific
-# decription:   
+# decription:
 #                   ::: NB :::
 #                   We can not obtain 'File description' property using Python.
 #                   Also this property is not accessible for WMIC interface.
@@ -11,19 +11,19 @@
 #                   VB script accepts full path and filename as single mandatory argument.
 #                   We run this script for each widely-used FB binaries (executables and DLLs).
 #                   Its output must contain only FILE name (w/o disk and path) and its 'File description' property value.
-#               
+#
 #                   Home directory for currently used FB  instance (i.e. prefix for each of files) can be found by
 #                   invocation of FDB services.get_home_directory() method.
-#               
+#
 #                   Checked on 4.0.0.1710 SS: 1.407s.
-#                
+#
 # tracker_id:   CORE-5691
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -40,10 +40,10 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import os
 #  import subprocess
 #  from fdb import services
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  #--------------------------------------------
 #  def cleanup( f_names_list ):
 #      global os
@@ -51,71 +51,71 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         if os.path.isfile( f_names_list[i]):
 #              os.remove( f_names_list[i] )
 #  #--------------------------------------------
-#  
+#
 #  fb_home = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
 #  db_conn.close()
-#  
-#  
+#
+#
 #  vbs_cmd = open( os.path.join(context['temp_directory'],'tmp_5691_get_file_descr.vbs'), 'w', buffering = 0)
-#  
+#
 #  vbs_source = \\
 #  r'''
 #  Option Explicit
-#  
+#
 #  if wscript.arguments.count = 0 then
 #      wscript.echo "Missed fully qualified file name, i.e.: drive + path + file_name"
 #      wscript.quit
 #  end if
-#  
+#
 #  dim fullname
 #  dim getDetails
-#  
+#
 #  fullname = wscript.arguments(0)
-#  
+#
 #  rem https://www.tek-tips.com/viewthread.cfm?qid=1402419
-#  
+#
 #  getDetails = GetFileDetails( fullName )
-#  
-#  
+#
+#
 #  function GetFileDetails(fullName)
-#  
+#
 #      on error resume next
-#  
+#
 #      dim fso
 #      dim objFile
-#  
+#
 #      set fso = CreateObject("Scripting.FileSystemObject")
 #      set objFile = fso.GetFile(fullName)
-#  
+#
 #      if not fso.FileExists(fullName) Then
 #          wscript.echo "File '" & fullName & "' does not exist."
 #          wscript.Quit
 #      end if
-#  
+#
 #      dim fileName
 #      dim folderName
-#  
+#
 #      fileName = objFile.Name
 #      folderName = objFile.Path
 #      folderName = Left(folderName, Len(folderName)-Len(fileName))
-#  
+#
 #      set objFile = Nothing
 #      set fso = Nothing
-#  
+#
 #      dim objShell
 #      dim objFolder
-#  
+#
 #      rem https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb776890(v=vs.85)
 #      rem The Windows Shell provides a powerful set of automation objects <...>
 #      rem You can use these objects to access <...> the file system, launch programs, and change system settings.
-#  
+#
 #      set objShell = CreateObject("Shell.Application")
 #      set objFolder = objShell.NameSpace(folderName)
-#  
+#
 #  	dim i
 #      dim fdescr_idx
 #      dim propertyName
-#  
+#
 #  	i = 0
 #  	fdescr_idx = 0
 #  	do
@@ -127,7 +127,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  			fdescr_idx = i
 #  			exit do
 #  		end if
-#  
+#
 #  		if propertyName = vbNullString then
 #  			exit do
 #  		end if
@@ -135,41 +135,41 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  	loop
 #  	propertyName = Nothing
 #  	rem wscript.echo "fdescr_idx=",fdescr_idx
-#  
+#
 #  	dim objFolderItem
 #  	set objFolderItem = objFolder.ParseName(fileName)
-#  
+#
 #  	if (not objFolderItem Is Nothing) then
 #  	    dim attribName
 #  		dim objInfo
 #  		attribName = objFolder.GetDetailsOf(objFolder.Items, fdescr_idx)
 #  		objInfo = objFolder.GetDetailsOf(objFolderItem, fdescr_idx)
-#  		
+#
 #  		wscript.echo "'" & fileName & "' " & LCase(attribName) & ":", LCase(objInfo)
-#  
+#
 #  	    attribName = Nothing
 #  		objInfo = Nothing
 #  	end if
-#  	
+#
 #  	set objFolderItem = Nothing
 #      set objFolder = Nothing
 #      set objShell = Nothing
 #  end function
 #  '''
-#  
+#
 #  vbs_cmd.write(vbs_source)
 #  vbs_cmd.close()
-#  
+#
 #  vbs_log = open( os.path.join(context['temp_directory'],'tmp_5691_get_file_descr.log'), 'w', buffering = 0)
 #  vbs_err = open( os.path.join(context['temp_directory'],'tmp_5691_get_file_descr.err'), 'w', buffering = 0)
-#  
+#
 #  f_list = ( 'fbclient.dll',
-#             'gbak.exe', 
-#             'gfix.exe', 
-#             'gstat.exe', 
+#             'gbak.exe',
+#             'gfix.exe',
+#             'gstat.exe',
 #             'fbguard.exe',
 #             'isql.exe',
-#             'fb_lock_print.exe', 
+#             'fb_lock_print.exe',
 #             'firebird.exe',
 #             'nbackup.exe',
 #             'fbtracemgr.exe',
@@ -184,25 +184,26 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #           )
 #  for x in sorted(f_list):
 #      subprocess.call( [ 'cscript', '//nologo', vbs_cmd.name, ''.join( (fb_home, x) )  ], stdout = vbs_log, stderr = vbs_err )
-#  
+#
 #  vbs_log.close()
 #  vbs_err.close()
-#  
+#
 #  with open( vbs_err.name,'r') as f:
 #      for line in f:
 #          print("Unexpected STDERR, file "+vbs_err.name+": " + line)
-#  
+#
 #  with open( vbs_log.name,'r') as f:
 #      for line in f:
 #          print( line.lower() )
-#  
+#
 #  os.remove( vbs_log.name )
 #  os.remove( vbs_err.name )
 #  os.remove( vbs_cmd.name )
-#  
-#    
+#
+#
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     'fb_lock_print.exe' 		file description: firebird lock print tool (64-bit)
@@ -228,7 +229,7 @@ expected_stdout_1 = """
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
 @pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 
