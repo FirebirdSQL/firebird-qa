@@ -2,29 +2,29 @@
 #
 # id:           functional.gtcs.dsql_domain_15
 # title:        GTCS/tests/DSQL_DOMAIN_15. Verify result of INSERT DEFAULT for domain-based fields which are declared as NOT NULL and have their own default values.
-# decription:   
+# decription:
 #               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_15.script 
-#               
+#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_15.script
+#
 #                   Comment in GTCS
 #                       This script will utilize the datatype, default and not null
-#                       clauses in the create domain statement. A table is then 
+#                       clauses in the create domain statement. A table is then
 #                       created using the domain definitions with overriding column
-#                       deafults, then data is added to the table with missing fields 
+#                       deafults, then data is added to the table with missing fields
 #                       being supplied by the column or domain defaults.
-#               
+#
 #                   ::: NOTE :::
 #                   Added domains with datatype that did appear only in FB 4.0: DECFLOAT and TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
-#               
+#
 #               	Currently following datatypes are NOT checked:
 #                     blob sub_type text|binary
 #                     long float;
 #                     binary(20);
 #                     varbinary(20);
-#               
+#
 #                   Checked on 4.0.0.2425.
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
@@ -71,11 +71,11 @@ test_script_1 = """
     commit;
 
     create table tab15a (
-      fld01 dom15_01 default 5000 
+      fld01 dom15_01 default 5000
      ,fld02 dom15_02 default 50000000
      ,fld03 dom15_03 default '01/01/90'
      ,fld04 dom15_04 default 'FIXCHAR DEF'
-     ,fld05 dom15_05 default 'VARCHAR DEF' 
+     ,fld05 dom15_05 default 'VARCHAR DEF'
      ,fld06 dom15_06 default 3.1415926
      ,fld07 dom15_07 default 500.2
      ,fld08 dom15_08 default 2.718281828
@@ -222,6 +222,6 @@ expected_stdout_1 = """
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(charset='utf8')
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

@@ -35,7 +35,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
 
 # version: 3.0
 # resources: None
@@ -49,27 +49,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set wng off;
     recreate sequence g;
-    commit;
-    set term ^;
-    execute block as
-    begin
-        execute statement 'drop role stockmgr';
-    when any do begin end
-    end
-    ^ set term ;^
-    commit;
-
-    create or alter user Maverick password '123';
-    create or alter user Big_Brother password '456';
-    create or alter user Bill_Junior password '789';
-    create role stockmgr;
-    commit;
-
-    revoke all on all from Maverick;
-    revoke all on all from Big_Brother;
-    revoke all on all from Bill_Junior;
-    --revoke all on all from stockmgr; -- COMMENTED TEMPLY, error "Revoke all on all from role <R> -- failed with "SQL role <R> does not exist in security database"", see core-4831
-    revoke all on all from public;
     commit;
 
     grant usage on sequence g to big_brother;
@@ -127,13 +106,7 @@ test_script_1 = """
     select gen_id(g, -444) as new_gen from rdb$database;
 
     commit;
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-
-    drop user Maverick;
-    drop user Big_Brother;
-    drop user Bill_Junior;
-    commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -142,7 +115,6 @@ expected_stdout_1 = """
     GRANT STOCKMGR TO BILL_JUNIOR
     GRANT USAGE ON SEQUENCE G TO USER BIG_BROTHER
     GRANT USAGE ON SEQUENCE G TO ROLE STOCKMGR
-    GRANT CREATE DATABASE TO USER TMP$C4648
 
     USER                            BIG_BROTHER
     ROLE                            NONE
@@ -159,7 +131,8 @@ expected_stdout_1 = """
 
     USER                            MAVERICK
     ROLE                            NONE
-  """
+"""
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     no permission for USAGE access to GENERATOR G
@@ -174,10 +147,15 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 28000
     no permission for USAGE access to GENERATOR G
-  """
+"""
+
+user_1a = user_factory('db_1', name='Maverick', password='123')
+user_1b = user_factory('db_1', name='Big_Brother', password='456')
+user_1c = user_factory('db_1', name='Bill_Junior', password='789')
+role_1 = role_factory('db_1', name='stockmgr')
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1a: User, user_1b: User, user_1c: User, role_1: Role):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

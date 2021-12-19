@@ -9,12 +9,16 @@
 # qmid:
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User
 
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('.*delete record.*', 'delete record'), ('TABLE PLG\\$VIEW_USERS', 'TABLE PLG'), ('TABLE PLG\\$SRP_VIEW', 'TABLE PLG'), ('-OZZY_OSBOURNE is not grantor of (role|Role|ROLE) on RDB\\$ADMIN to OZZY_OSBOURNE.', '-OZZY_OSBOURNE is not grantor of ROLE on RDB$ADMIN to OZZY_OSBOURNE.'), ('-Effective user is.*', '')]
+substitutions_1 = [('.*delete record.*', 'delete record'),
+                   ('TABLE PLG\\$VIEW_USERS', 'TABLE PLG'),
+                   ('TABLE PLG\\$SRP_VIEW', 'TABLE PLG'),
+                   ('-OZZY_OSBOURNE is not grantor of (role|Role|ROLE) on RDB\\$ADMIN to OZZY_OSBOURNE.', '-OZZY_OSBOURNE is not grantor of ROLE on RDB$ADMIN to OZZY_OSBOURNE.'),
+                   ('-Effective user is.*', '')]
 
 init_script_1 = """
     -- ::: NB ::: Name of table in STDERR depends on value of UserManager = { Srp | Legacy_UserManager }.
@@ -148,8 +152,6 @@ expected_stdout_1 = """
     WHATS_MY_ROLE                   NONE
     NON_SYSDBA_USER_NAME            <null>
     NON_SYSDBA_HAS_ADMIN_ROLE       <null>
-
-
     Records affected: 1
 
     MSG                             step-1
@@ -178,7 +180,6 @@ expected_stdout_1 = """
 
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    GRANT CREATE DATABASE TO USER TMP$C4648
 
     MSG                             step-3
     WHO_AM_I                        OZZY_OSBOURNE
@@ -198,7 +199,6 @@ expected_stdout_1 = """
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO BON_SCOTT GRANTED BY OZZY_OSBOURNE
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    GRANT CREATE DATABASE TO USER TMP$C4648
 
     MSG                             step-4
     WHO_AM_I                        OZZY_OSBOURNE
@@ -217,7 +217,6 @@ expected_stdout_1 = """
 
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    GRANT CREATE DATABASE TO USER TMP$C4648
 
     MSG                             step-5
     WHO_AM_I                        OZZY_OSBOURNE
@@ -230,7 +229,6 @@ expected_stdout_1 = """
 
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    GRANT CREATE DATABASE TO USER TMP$C4648
 
     MSG                             step-6
     WHO_AM_I                        OZZY_OSBOURNE
@@ -261,7 +259,6 @@ expected_stdout_1 = """
 
     /* Grant permissions for this database */
     GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    GRANT CREATE DATABASE TO USER TMP$C4648
 
     MSG                             final
     WHO_AM_I                        SYSDBA
@@ -271,7 +268,8 @@ expected_stdout_1 = """
 
 
     Records affected: 1
-  """
+"""
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
@@ -281,10 +279,15 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     delete record error
     -no permission for DELETE access to TABLE PLG$VIEW_USERS
-  """
+"""
+
+# Well, we need to create/drop users in test script, but next user fioxtures are
+# defined to make sure that no user will be left behind in case the test fails
+user_ozzy = user_factory('db_1', name='ozzy_osbourne', password='123', admin=True, do_not_create=True)
+user_scott = user_factory('db_1', name='bon_scott', password='456', do_not_create=True)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_ozzy: User, user_scott: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

@@ -14,7 +14,7 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=xx'), ('COLL-VERSION=\\d+\\.\\d+', 'COLL-VERSION=xx')]
+substitutions_1 = [('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222')]
 
 init_script_1 = """
 recreate table td(id int);
@@ -107,7 +107,7 @@ CONSTRAINT TD_PK:
 DM_IDS                          BIGINT Nullable
 DM_NUMS                         VARCHAR(20) CHARACTER SET UTF8 Nullable
                                  COLLATE NUMS_COLL
-NUMS_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=xx;NUMERIC-SORT=1'
+NUMS_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=153.88;NUMERIC-SORT=1'
   """
 
 @pytest.mark.version('>=3.0')

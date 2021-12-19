@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3234
 # title:        Support for text BLOBs >= 32K as first argument for TRIM()
-# decription:   
+# decription:
 # tracker_id:   CORE-3234
 # min_versions: ['3.0']
 # versions:     3.0
@@ -24,19 +24,19 @@ test_script_1 = """
     -- For single-byte (ascii) charset this test was run also two blobs with length 50'000'000 (+3) bytes: result was OK.
 	-- Current settings check work of TRIM() on blobs with non-ascii characters with octet_length ~ 1'000'000 bytes.
 	-- Elapsed time on P-IV 3.0 GHz / RAM 2 Gb: ~7 second.
-	
+
     recreate sequence g;
     commit;
-    
+
     set list on;
     set term ^;
-    
+
     execute block returns(
-        b1_octet_len int, 
-        b2_octet_len int, 
+        b1_octet_len int,
+        b2_octet_len int,
         trimmed_octet_len int,
-        b1_char_len int, 
-        b2_char_len int, 
+        b1_char_len int,
+        b2_char_len int,
         trimmed_char_len int
     ) as
         declare b1 blob sub_type 1 character set utf8 = '';
@@ -47,7 +47,7 @@ test_script_1 = """
         declare k int = 500000;
     begin
         -- http://www.columbia.edu/kermit/cp1250.html
-        v_text = 
+        v_text =
         ''
         || '€' --  128  08/00  200  80  EURO SYMBOL
         || '‚' --  130  08/02  202  82  LOW 9 SINGLE QUOTE
@@ -172,7 +172,7 @@ test_script_1 = """
         || 'ý' --  253  15/13  375  FD  SMALL LETTER Y WITH ACUTE ACCENT
         || 'ţ' --  254  15/14  376  FE  SMALL LETTER T WITH CEDILLA
         || '˙' --  255  15/15  377  FF  DOT ABOVE
-        ;    
+        ;
 
         b2 = rpad( '', v_step, v_text );
 
@@ -212,6 +212,6 @@ expected_stdout_1 = """
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(charset='utf8')
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

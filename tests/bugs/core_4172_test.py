@@ -147,7 +147,7 @@ def test_1(act_1: Action, temp_db_1_a: Path, temp_db_1_b: Path):
     test_script = f"""
     create database '{str(temp_db_1_b)}';
     commit;
-    create database '%(tmpfdb_1)s';
+    create database '{str(temp_db_1_a)}';
 
     set autoddl off;
     commit;

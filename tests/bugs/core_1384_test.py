@@ -71,7 +71,7 @@ show collation;
 select * from v_test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1, charset='ISO8859_1')
+act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
 	COLL_ES, CHARACTER SET ISO8859_1, FROM EXTERNAL ('ES_ES_CI_AI'), 'SPECIALS-FIRST=1'
@@ -85,7 +85,7 @@ expected_stdout_1 = """
 @pytest.mark.version('>=2.1.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(charset='ISO8859_1')
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

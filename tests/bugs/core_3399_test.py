@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3399
 # title:        Allow write operations to temporary tables in read only transactions
-# decription:   
+# decription:
 # tracker_id:   CORE-3399
 # min_versions: ['2.5.1']
 # versions:     2.5.1
@@ -18,13 +18,13 @@ substitutions_1 = [('=.*', '')]
 
 init_script_1 = """"""
 
-db_1 = db_factory(from_backup='core3399-read_only.fbk', init=init_script_1)
+db_1 = db_factory(from_backup='core3399-read_only.fbk', init=init_script_1, async_write=False)
 
 test_script_1 = """
     -- ======= from the ticket: ========
     -- Implementation allows:
-    -- 1) writes into all kind of GTT's in read only transactions in read write database 
-    -- and also 
+    -- 1) writes into all kind of GTT's in read only transactions in read write database
+    -- and also
     -- 2) make writabe GTT ON COMMIT DELETE in read only transactions in read only database.
     -- =================================
     -- Database will be in the state "force write, no reserve, read only".
@@ -41,7 +41,7 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 expected_stdout_1 = """
          ID
     =======
-          1 
+          1
   """
 
 @pytest.mark.version('>=2.5.1')

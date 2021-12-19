@@ -15,7 +15,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User
 
 # version: 3.0.4
 # resources: None
@@ -28,9 +28,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     set list on;
-    create or alter user tmp$c5884_1 password '123' using plugin Srp;
-    create or alter user tmp$c5884_2 password '456' using plugin Srp;
-    commit;
 
     create or alter mapping lmap using plugin srp from user tmp$c5884_1 to user ltost;
     create or alter global mapping gmap using plugin srp from user tmp$c5884_2 to user gtost;
@@ -51,21 +48,20 @@ test_script_1 = """
     drop global mapping gmap;
     drop mapping lmap;
     commit;
-
-    drop user tmp$c5884_1 using plugin Srp;
-    drop user tmp$c5884_2 using plugin Srp;
-    commit;
   """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    WHOAMI                          LTOST
-    WHOAMI                          GTOST
-  """
+    WHOAMI                          TMP$C5884_1
+    WHOAMI                          TMP$C5884_2
+"""
+
+user_1a = user_factory('db_1', name='tmp$c5884_1', password='123', plugin='Srp')
+user_1b = user_factory('db_1', name='tmp$c5884_2', password='456', plugin='Srp')
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1a: User, user_1b: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

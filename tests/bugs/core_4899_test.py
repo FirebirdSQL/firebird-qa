@@ -90,10 +90,10 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-Attributes force write, full shutdown
-Attributes force write
-Attributes force write, full shutdown
-Attributes force write
+Attributes full shutdown
+Attributes
+Attributes full shutdown
+Attributes
 """
 
 @pytest.mark.version('>=3.0')

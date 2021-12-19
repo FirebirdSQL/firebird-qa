@@ -188,7 +188,6 @@ ddl_script = """
 
 @pytest.mark.version('>=2.5.9')
 def test_1(act_1: Action):
-    act_1.db.set_async_write()
     act_1.isql(switches=[], input=ddl_script)
     custom_tpb = tpb(isolation=Isolation.CONCURRENCY)
     #

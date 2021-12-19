@@ -907,7 +907,7 @@ SUMMDOC                           OUTPUT DOUBLE PRECISION
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-user', act_1.db.user, '-password', act_1.db.password],
+    act_1.isql(switches=[],
                input=test_script_1 % act_1.db.dsn, connect_db=False, charset='WIN1251')
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

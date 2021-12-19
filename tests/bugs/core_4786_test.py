@@ -2,11 +2,11 @@
 #
 # id:           bugs.core_4786
 # title:        Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters
-# decription:   
+# decription:
 # tracker_id:   CORE-4786
 # min_versions: ['2.5.5']
 # versions:     2.5.5
-# qmid:         
+# qmid:
 
 import pytest
 from firebird.qa import db_factory, isql_act, Action
@@ -21,13 +21,13 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    recreate table test_none(s varchar(250) character set none constraint test_cset_none_unq unique using index test_cset_none_unq); 
+    recreate table test_none(s varchar(250) character set none constraint test_cset_none_unq unique using index test_cset_none_unq);
     commit;
     insert into test_none values( rpad('', 245, '0123456789') || 'ABCDE' );
     insert into test_none values( rpad('', 245, '0123456789') || 'ABCDE');
     commit;
 
-    recreate table test_utf8(s varchar(169) character set utf8 constraint test_cset_utf8_unq unique using index test_cset_utf8_unq); 
+    recreate table test_utf8(s varchar(169) character set utf8 constraint test_cset_utf8_unq unique using index test_cset_utf8_unq);
     commit;
 
     -- One byte per character (not so interesting, but error message should display ALL of them, from 1st to last):
@@ -138,6 +138,6 @@ expected_stderr_1 = """
 @pytest.mark.version('>=2.5.5')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
+    act_1.execute(charset='utf8')
     assert act_1.clean_expected_stderr == act_1.clean_stderr
 

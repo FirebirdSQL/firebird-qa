@@ -32,7 +32,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    Attributes		force write, full shutdown
+    Attributes		full shutdown
 """
 
 @pytest.mark.version('>=2.5.5')

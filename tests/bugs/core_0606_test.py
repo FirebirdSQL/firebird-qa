@@ -17,46 +17,26 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
 
 # version: 2.5.6
 # resources: None
 
-substitutions_1 = [('Statement failed, SQLSTATE = HY000', ''), ('record not found for user:.*', ''), ('read/select', 'SELECT'), ('Data source : Firebird::.*', 'Data source : Firebird::'), ('-At block line: [\\d]+, col: [\\d]+', '-At block line'), ('335545254 : Effective user is.*', '')]
+substitutions_1 = [('Statement failed, SQLSTATE = HY000', ''),
+                   ('record not found for user:.*', ''), ('read/select', 'SELECT'),
+                   ('Data source : Firebird::.*', 'Data source : Firebird::'),
+                   ('-At block line: [\\d]+, col: [\\d]+', '-At block line'),
+                   ('335545254 : Effective user is.*', '')]
 
 init_script_1 = """"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    set term ^;
-    execute block as
-    begin
-        begin
-            execute statement 'drop role "FOR CVC"';
-        when any do begin end
-        end
-        begin
-            execute statement 'drop role "FOR"';
-        when any do begin end
-        end
-    end
-    ^set term ;^
-    commit;
-
-    drop user cvc;
-    commit;
-
     recreate table "t t"(data int);
     commit;
     insert into "t t" values(123456);
     commit;
-
-    create user cvc password 'pw';
-    commit;
-
-    create role "FOR CVC";
-    create role "FOR";
 
     grant "FOR CVC" to user cvc;
     grant select on table "t t" to "FOR";
@@ -107,12 +87,6 @@ test_script_1 = """
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
-
-    drop user cvc;
-    commit;
-    drop role "FOR CVC";
-    drop role "FOR";
-    commit;
   """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
@@ -121,11 +95,11 @@ expected_stdout_1 = """
 /* Grant permissions for this database */
 GRANT SELECT ON t t TO ROLE FOR
 GRANT FOR CVC TO CVC
-GRANT CREATE DATABASE TO USER TMP$C4648
 
 WHO_AM_I                        CVC
 I_M_PLAYING_ROLE                FOR CVC
 """
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     Execute statement error at isc_dsql_prepare :
@@ -135,8 +109,12 @@ expected_stderr_1 = """
     -At block line: 3, col: 7
   """
 
+for_cvc_role = role_factory('db_1', name='"FOR CVC"')
+for_role = role_factory('db_1', name='"FOR"')
+cvc_user = user_factory('db_1', name='cvc', password='pw')
+
 @pytest.mark.version('>=2.5.6')
-def test_1(act_1: Action):
+def test_1(act_1: Action, cvc_user: User, for_role: Role, for_cvc_role: Role):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

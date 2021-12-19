@@ -214,7 +214,6 @@ blob_src_1 = temp_file('core_5618.bin')
 
 @pytest.mark.version('>=3.0.3')
 def test_1(act_1: Action, blob_src_1: Path):
-    act_1.db.set_async_write()
     zipped_blob_file = zipfile.Path(act_1.vars['files'] / 'core_5618.zip',
                                     at='core_5618.bin')
     blob_src_1.write_bytes(zipped_blob_file.read_bytes())

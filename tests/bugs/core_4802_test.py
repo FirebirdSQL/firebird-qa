@@ -2,14 +2,14 @@
 #
 # id:           bugs.core_4802
 # title:        Regression: GRANT UPDATE(<some_column>) on <T> acts like grant update on ALL columns of <T>
-# decription:   
+# decription:
 # tracker_id:   CORE-4802
 # min_versions: ['3.0']
 # versions:     3.0
-# qmid:         
+# qmid:
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
 
 # version: 3.0
 # resources: None
@@ -26,25 +26,6 @@ test_script_1 = """
     recreate table test(fld_for_seniors varchar(70), fld_for_juniors varchar(70));
     commit;
 
-    create or alter user BIG_BROTHER password '123' revoke admin role;
-    create or alter user SENIOR_MNGR password '456' revoke admin role;
-    create or alter user JUNIOR_MNGR password '789' revoke admin role;
-    create role FLD_FOR_SENIORS_UPDATER;
-    create role FLD_FOR_JUNIORS_UPDATER;
-    commit;
-
-    revoke all on all from BIG_BROTHER;
-    revoke all on all from SENIOR_MNGR;
-    revoke all on all from JUNIOR_MNGR;
-
-    -- Statement failed, SQLSTATE = 28000
-    -- unsuccessful metadata update
-    -- -REVOKE failed
-    -- -SQL role FLD_FOR_SENIORS_UPDATER does not exist
-    -- -in security database
-    -- revoke all on all from role FLD_FOR_SENIORS_UPDATER;
-    -- revoke all on all from role FLD_FOR_JUNIORS_UPDATER;
-    commit;
     grant select on test to PUBLIC;
 
     grant update(fld_for_seniors) on test to BIG_BROTHER;
@@ -93,16 +74,7 @@ test_script_1 = """
     update test set fld_for_juniors ='updated by '||lower(current_user)||', role: '||lower(current_role);
     select * from test;
     commit;
-    ---------------------------------------------------------------
-
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    drop role FLD_FOR_SENIORS_UPDATER;
-    drop role FLD_FOR_JUNIORS_UPDATER;
-    drop user BIG_BROTHER;
-    drop user SENIOR_MNGR;
-    drop user JUNIOR_MNGR;
-    commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -135,7 +107,8 @@ expected_stdout_1 = """
     FLD_FOR_JUNIORS                 created by sysdba
     FLD_FOR_SENIORS                 updated by SENIOR_MNGR, role: FLD_FOR_SENIORS_UPDATER
     FLD_FOR_JUNIORS                 updated by junior_mngr, role: fld_for_juniors_updater
-  """
+"""
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     no permission for UPDATE access to COLUMN TEST.FLD_FOR_JUNIORS
@@ -145,10 +118,17 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 28000
     no permission for UPDATE access to COLUMN TEST.FLD_FOR_SENIORS
-  """
+"""
+
+user_1a = user_factory('db_1', name='BIG_BROTHER', password='123')
+user_1b = user_factory('db_1', name='SENIOR_MNGR', password='456')
+user_1c = user_factory('db_1', name='JUNIOR_MNGR', password='789')
+role_1a = role_factory('db_1', name='FLD_FOR_SENIORS_UPDATER')
+role_1b = role_factory('db_1', name='FLD_FOR_JUNIORS_UPDATER')
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1a: User, user_1b: User, user_1c: User, role_1a: Role,
+           role_1b: Role):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

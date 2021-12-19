@@ -118,7 +118,6 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
-    act_1.db.set_async_write()
     # Read FNC scripts from zip file and execute it
     script_file = Path(act_1.vars['files'] / 'core_4880.zip',
                     at='core_4880_fnc.tmp')

@@ -2,14 +2,14 @@
 #
 # id:           bugs.core_4342
 # title:        Non-privileged user can delete records from RDB$SECURITY_CLASSES table
-# decription:   
+# decription:
 # tracker_id:   CORE-4342
 # min_versions: ['3.0']
 # versions:     3.0, 4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User
 
 # version: 3.0
 # resources: None
@@ -21,11 +21,7 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    create or alter user boss password '123';
-    create or alter user mngr password '456';
-    commit;
-
-    -- Add these DDL privileges in order to have some rows in 
+    -- Add these DDL privileges in order to have some rows in
     -- rdb$security_classes table for user BOSS:
     grant create table to boss;
     grant alter any table to boss;
@@ -37,7 +33,7 @@ test_script_1 = """
 
     select 1 from rdb$security_classes where rdb$acl containing 'boss' with lock;
     update rdb$security_classes set rdb$security_class = rdb$security_class where rdb$acl containing 'boss';
-    delete from rdb$security_classes where rdb$acl containing 'boss'; 
+    delete from rdb$security_classes where rdb$acl containing 'boss';
     commit;
 
     connect '$(DSN)' user 'MNGR' password '456';
@@ -45,13 +41,9 @@ test_script_1 = """
 
     select 1 from rdb$security_classes where rdb$acl containing 'boss' with lock;
     update rdb$security_classes set rdb$security_class = rdb$security_class where rdb$acl containing 'boss';
-    delete from rdb$security_classes where rdb$acl containing 'boss'; 
+    delete from rdb$security_classes where rdb$acl containing 'boss';
     commit;
-
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    drop user mngr;
-    drop user boss;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -61,7 +53,8 @@ expected_stdout_1 = """
 
     USER                            MNGR
     ACL_COUNT                       1
-  """
+"""
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = HY000
     Cannot select system table RDB$SECURITY_CLASSES for update WITH LOCK
@@ -80,10 +73,13 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 28000
     no permission for DELETE access to TABLE RDB$SECURITY_CLASSES
-  """
+"""
+
+user_1_boss = user_factory('db_1', name='boss', password='123')
+user_1_mngr = user_factory('db_1', name='mngr', password='456')
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1_boss: User, user_1_mngr: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
@@ -100,11 +96,7 @@ init_script_2 = """"""
 db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
-    create or alter user boss password '123';
-    create or alter user mngr password '456';
-    commit;
-
-    -- Add these DDL privileges in order to have some rows in 
+    -- Add these DDL privileges in order to have some rows in
     -- rdb$security_classes table for user BOSS:
     grant create table to boss;
     grant alter any table to boss;
@@ -116,7 +108,7 @@ test_script_2 = """
 
     select 1 from rdb$security_classes where rdb$acl containing 'boss' with lock;
     update rdb$security_classes set rdb$security_class = rdb$security_class where rdb$acl containing 'boss';
-    delete from rdb$security_classes where rdb$acl containing 'boss'; 
+    delete from rdb$security_classes where rdb$acl containing 'boss';
     commit;
 
     connect '$(DSN)' user 'MNGR' password '456';
@@ -124,13 +116,9 @@ test_script_2 = """
 
     select 1 from rdb$security_classes where rdb$acl containing 'boss' with lock;
     update rdb$security_classes set rdb$security_class = rdb$security_class where rdb$acl containing 'boss';
-    delete from rdb$security_classes where rdb$acl containing 'boss'; 
+    delete from rdb$security_classes where rdb$acl containing 'boss';
     commit;
-
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    drop user mngr;
-    drop user boss;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -140,7 +128,8 @@ expected_stdout_2 = """
 
     USER                            MNGR
     ACL_COUNT                       1
-  """
+"""
+
 expected_stderr_2 = """
     Statement failed, SQLSTATE = HY000
     Cannot select system table RDB$SECURITY_CLASSES for update WITH LOCK
@@ -156,10 +145,13 @@ expected_stderr_2 = """
     Statement failed, SQLSTATE = 28000
     no permission for DELETE access to TABLE RDB$SECURITY_CLASSES
     -Effective user is MNGR
-  """
+"""
+
+user_2_boss = user_factory('db_2', name='boss', password='123')
+user_2_mngr = user_factory('db_2', name='mngr', password='456')
 
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action):
+def test_2(act_2: Action, user_2_boss: User, user_2_mngr: User):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()

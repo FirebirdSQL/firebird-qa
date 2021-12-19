@@ -9,12 +9,12 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User
 
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('-Effective user is.*', '')]
+substitutions_1 = [('-Effective user is.*', ''), ('Rolling back work.', '')]
 
 init_script_1 = """"""
 
@@ -22,23 +22,14 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     -- See also more complex test in CORE-4731 // Prohibit an ability to issue DML or DDL statements on RDB$ tables
-    set wng off;
-    create or alter user tmp$c3735 password '123';
-    commit;
-    revoke all on all from tmp$c3735;
-    commit;
 
     connect '$(DSN)' user tmp$c3735 password '123';
-
-    --show version;
 
     set list on;
     set blob all;
     select current_user from rdb$database;
     show grants;
     set count on;
-
-    --set echo on;
 
     insert into rdb$character_sets(
         rdb$character_set_name
@@ -149,22 +140,18 @@ test_script_1 = """
     ;
 
     commit;
-
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user tmp$c3735;
-    commit;
   """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     USER                            TMP$C3735
-
-/* Grant permissions for this database */
-GRANT CREATE DATABASE TO USER TMP$C4648
 """
 
+test_user = user_factory('db_1', name='tmp$c3735', password='123')
+
 expected_stderr_1 = """
+    There is no privilege granted in this database
     Statement failed, SQLSTATE = 28000
     no permission for INSERT access to TABLE RDB$CHARACTER_SETS
     Statement failed, SQLSTATE = 28000
@@ -186,7 +173,7 @@ expected_stderr_1 = """
   """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, test_user: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

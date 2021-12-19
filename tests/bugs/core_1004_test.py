@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_1004
 # title:        context already in use (BLR error)
-# decription:   
+# decription:
 # tracker_id:   CORE-1004
 # min_versions: []
 # versions:     2.0.1

@@ -171,8 +171,6 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
-    # Change FW to OFF in order to speed up initial data filling:
-    act_1.db.set_async_write()
     # prepare DB for testing: create lot of tables:
     num_of_tables = 1000
     sql_ddl = f'''

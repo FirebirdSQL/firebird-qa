@@ -273,7 +273,7 @@ def test_2(act_2: Action, capsys):
     # Sent letter to dimitr and alex, 05.01.2020 22:00.
     subs = {'dsn': act_2.db.dsn, 'user_name': act_2.db.user, 'user_password': act_2.db.password,
             'current_auth_plugin': None,}
-    for current_auth_plugin in ['Legacy_UserManager', ]:
+    for current_auth_plugin in ['Legacy_UserManager']:
         subs['current_auth_plugin'] = current_auth_plugin
         act_2.isql(switches=['-q'], input=sql_text % subs)
         for line in act_2.stdout.splitlines():

@@ -161,7 +161,7 @@ where rdb$trigger_source like 'check%%'
 order by cast(replace(rdb$trigger_name, 'CHECK_', '') as int);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1, charset='WIN1251')
+act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
 
@@ -201,7 +201,7 @@ check ((decision = 'адкрыта' and fixerkey is null and decisiondate is nul
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(charset='WIN1251')
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

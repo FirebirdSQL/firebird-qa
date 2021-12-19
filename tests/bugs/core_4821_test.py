@@ -243,12 +243,11 @@ test_role = role_factory('db_1', name='tmp$db_creator')
 def test_1(act_1: Action, test_user_1: User, capsys, fdb_test1: Path, fdb_test2: Path,
            fbk_name: Path, fdb_restored_using_gbak: Path, fdb_restored_using_smgr: Path,
            fdb_restored_unexpected: Path, test_role: Role):
+    pytest.skip("Requires changes to databases.conf")
+    # The role MUST be created in security database!
+    #with act_1.db.connect() as con:
+        #con.execute_immediate(f'grant create database to role {test_role.name}')
     with act_1.db.connect() as con:
-        # Next lines are here to show that role really exists
-        c = con.cursor()
-        c.execute('select * from rdb$roles')
-        act_1.print_data_list(c)
-        # yet next statement fails anyway with: SQL role TMP$DB_CREATOR does not exist
         con.execute_immediate(f'grant create database to role {test_role.name}')
         con.execute_immediate(f'grant {test_role.name} to {test_user_1.name}')
         con.commit()

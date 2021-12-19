@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_2018
 # title:        Only one client can access a readonly database
-# decription:   
+# decription:
 #                   Restored database contains GTT. According to CORE-3399 we can write in it even in read-only database.
 #                   This GTT serves as temp buffer for output row (we can not use windowed function in 2.5)
 #                   Checked on:
@@ -12,7 +12,7 @@
 #                       3.0.5.33178 CS: 2.383s.
 #                       2.5.9.27119 SS: 0.872s.
 #                       2.5.9.27146 SC: 0.435s.
-#                
+#
 # tracker_id:   CORE-2018
 # min_versions: ['2.5.1']
 # versions:     2.5.1
@@ -28,7 +28,7 @@ substitutions_1 = []
 
 init_script_1 = """"""
 
-db_1 = db_factory(from_backup='core2018-read_only.fbk', init=init_script_1)
+db_1 = db_factory(from_backup='core2018-read_only.fbk', init=init_script_1, async_write=False)
 
 test_script_1 = """
     set list on;
@@ -51,7 +51,7 @@ test_script_1 = """
         declare v_attach_id int;
     begin
         v_dbname = 'localhost:' || rdb$get_context('SYSTEM', 'DB_NAME');
-    
+
         while (n > 0 ) do
         begin
             execute statement v_stt
@@ -71,7 +71,7 @@ test_script_1 = """
         for
             select sequential_id, attaches_i_can_see
             from gtt_attaches
-           into sequential_attach_no, attaches_i_can_see 
+           into sequential_attach_no, attaches_i_can_see
         do suspend;
     end
     ^
@@ -92,7 +92,7 @@ test_script_1 = """
     -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
-    commit;    
+    commit;
 
   """
 
@@ -100,34 +100,34 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     MON$READ_ONLY                   1
-    
+
     SEQUENTIAL_ATTACH_NO            1
     ATTACHES_I_CAN_SEE              2
-    
+
     SEQUENTIAL_ATTACH_NO            2
     ATTACHES_I_CAN_SEE              3
-    
+
     SEQUENTIAL_ATTACH_NO            3
     ATTACHES_I_CAN_SEE              4
-    
+
     SEQUENTIAL_ATTACH_NO            4
     ATTACHES_I_CAN_SEE              5
-    
+
     SEQUENTIAL_ATTACH_NO            5
     ATTACHES_I_CAN_SEE              6
-    
+
     SEQUENTIAL_ATTACH_NO            6
     ATTACHES_I_CAN_SEE              7
-    
+
     SEQUENTIAL_ATTACH_NO            7
     ATTACHES_I_CAN_SEE              8
-    
+
     SEQUENTIAL_ATTACH_NO            8
     ATTACHES_I_CAN_SEE              9
-    
+
     SEQUENTIAL_ATTACH_NO            9
     ATTACHES_I_CAN_SEE              10
-    
+
     SEQUENTIAL_ATTACH_NO            10
     ATTACHES_I_CAN_SEE              11
   """

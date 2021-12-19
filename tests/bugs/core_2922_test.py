@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_2922
 # title:        Character set used in constants is not registered as dependency
-# decription:   
+# decription:
 # tracker_id:   CORE-2922
 # min_versions: ['3.0']
 # versions:     3.0
@@ -18,7 +18,7 @@ substitutions_1 = []
 
 init_script_1 = """"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db_1 = db_factory(sql_dialect=3, init=init_script_1, charset='utf8')
 
 test_script_1 = """
     set term ^;
@@ -35,7 +35,7 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     -- show proc;
     set width dep_name 10;
     set width dep_on 10;
@@ -54,17 +54,17 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-DEP_NAME                        P1                                                                                                                          
-DEP_ON                          WIN1250                                                                                                                     
-DEP_ON_TYPE                     COLLATION                                                                                                                   
+DEP_NAME                        P1
+DEP_ON                          WIN1250
+DEP_ON_TYPE                     COLLATION
 
-DEP_NAME                        P1                                                                                                                          
-DEP_ON                          UTF8                                                                                                                        
-DEP_ON_TYPE                     COLLATION                                                                                                                   
+DEP_NAME                        P1
+DEP_ON                          UTF8
+DEP_ON_TYPE                     COLLATION
 
-DEP_NAME                        P2                                                                                                                          
-DEP_ON                          WIN1250                                                                                                                     
-DEP_ON_TYPE                     COLLATION                                                                                                                   
+DEP_NAME                        P2
+DEP_ON                          WIN1250
+DEP_ON_TYPE                     COLLATION
 """
 
 @pytest.mark.version('>=3.0')

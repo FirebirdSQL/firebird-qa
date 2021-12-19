@@ -21,6 +21,8 @@
 #               [pcisar] 21.10.2021 - This test requires Legacy_UserManager to be listed
 #                   in firebird.conf UserManager option, which is NOT by default.
 #                   Otherwise it will FAIL with "Missing requested management plugin"
+#                   Also, it does not use user_factory fixtures as it's the point to
+#                   create/drop users in test script.
 #
 # tracker_id:   CORE-4607
 # min_versions: ['3.0.0']
@@ -58,7 +60,7 @@ test_script_1 = """
     drop user tmp$c4607_srp using plugin Srp;
     commit;
     select * from v_test;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -72,7 +74,7 @@ expected_stdout_1 = """
     Records affected: 2
 
     Records affected: 0
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):

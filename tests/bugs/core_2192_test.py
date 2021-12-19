@@ -520,15 +520,13 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
-    # CHANGE FW to OFF
-    act_1.db.set_async_write()
     # 1. FIRST RUN DML_TEST
     act_1.script = test_script_1
-    act_1.execute()
+    act_1.execute(charset='utf8')
     run_dml_log_1 = act_1.stdout
     # 2. EXTRACT METADATA-1
     act_1.reset()
-    act_1.isql(switches=['-x'])
+    act_1.isql(switches=['-x'], charset='utf8')
     extract_meta1_sql = act_1.stdout
     # 3. VALIDATE DATABASE-1
     # [pcisar] I don't understand the point of validation as the original test does not check
@@ -546,12 +544,12 @@ def test_1(act_1: Action):
         backup.close()
     # 5. EXTRACT METADATA-2
     act_1.reset()
-    act_1.isql(switches=['-x'])
+    act_1.isql(switches=['-x'], charset='utf8')
     extract_meta2_sql = act_1.stdout
     # 6. AGAIN RUN DML_TEST
     act_1.reset()
     act_1.script = test_script_1
-    act_1.execute()
+    act_1.execute(charset='utf8')
     run_dml_log_2 = act_1.stdout
     # 7. VALIDATE DATABASE-2
     with act_1.connect_server() as srv:

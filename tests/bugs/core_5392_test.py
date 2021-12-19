@@ -266,7 +266,7 @@ test_script_1 = f"""
 def test_1(act_1: Action):
     if act_1.get_server_architecture() == 'SS':
         # Bucgcheck is reproduced on 2.5.7.27030 only when FW = OFF
-        act_1.db.set_async_write()
+        act_1.db.set_async_write() # This should be by default, but we just make sure it's OFF
         # Test
         act_1.expected_stdout = expected_stdout_1
         act_1.isql(switches=[], input=test_script_1)

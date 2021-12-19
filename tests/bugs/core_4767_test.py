@@ -2,18 +2,18 @@
 #
 # id:           bugs.core_4767
 # title:        CREATE USER ... TAGS ( attr = 'prefix #suffix' ): suffix will be removed from storage because of character '#' in the value of attribute
-# decription:   
+# decription:
 #                   Checked on:
 #                       FB30SS, build 3.0.4.32985: OK, 0.985s.
 #                       FB40SS, build 4.0.0.1000: OK, 1.281s.
-#                
+#
 # tracker_id:   CORE-4767
 # min_versions: ['3.0.0']
 # versions:     3.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User
 
 # version: 3.0
 # resources: None
@@ -47,10 +47,7 @@ test_script_1 = """
 
     select * from v_user_tags;
     commit;
-
-    drop user tmp$c4767 using plugin Srp;
-    commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -69,10 +66,14 @@ expected_stdout_1 = """
 
     TAG                             ATTR00005
     VAL                             $$
-  """
+"""
+
+# cleanup fixture
+user_1=user_factory('db_1', name='tmp$c4767', password='123', plugin='Srp',
+                    do_not_create=True)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

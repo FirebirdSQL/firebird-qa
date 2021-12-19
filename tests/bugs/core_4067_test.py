@@ -78,6 +78,5 @@ def test_1(act_1: Action, temp_db_1: Path):
     select mon$sql_dialect as x from mon$database;
     """
     act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-user', act_1.db.user, '-password', act_1.db.password],
-               input=test_script, connect_db=False)
+    act_1.isql(switches=[], input=test_script, connect_db=False)
     assert act_1.clean_stdout == act_1.clean_expected_stdout

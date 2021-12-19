@@ -154,7 +154,6 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0.7')
 def test_1(act_1: Action, capsys):
-    act_1.db.set_async_write()
     #
     for step in range(2):
         FLD_COUNT = 8064 + step

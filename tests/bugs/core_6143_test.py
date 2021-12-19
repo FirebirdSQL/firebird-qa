@@ -22,7 +22,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
 
 # version: 3.0.5
 # resources: None
@@ -37,7 +37,7 @@ test_script_1 = """
     -- set echo on;
     set list on;
     set wng off;
-
+/*
     set term ^;
     execute block as
     begin
@@ -49,7 +49,7 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-
+*/
     create or alter view v_show_mapping as
     select
          a.rdb$map_name
@@ -67,13 +67,13 @@ test_script_1 = """
     commit;
     grant select on v_show_mapping to public;
 
-    create or alter user tmp$c6143_foo password '123' using plugin Srp;
-    commit;
-    revoke all on all from tmp$c6143_foo;
-    commit;
+    --create or alter user tmp$c6143_foo password '123' using plugin Srp;
+    --commit;
+    --revoke all on all from tmp$c6143_foo;
+    --commit;
 
-    create role tmp$r6143_boss;
-    commit;
+    --create role tmp$r6143_boss;
+    --commit;
 
     -- ++++++++++++++++++++++++ T E S T    L O C A L    M A P P I N G  +++++++++++++++++++++++
 
@@ -93,7 +93,7 @@ test_script_1 = """
     select
         'Connected OK when local mapping is duplicated.' as msg
         ,current_user as who_am_i     -- <<< TMP$C6143_BAR must be shown here, *NOT* tmp$c6143_foo
-        -- temply diabled, wait for solution by Alex, see letters to him 23.09.2019 12:02:
+        -- temply disabled, wait for solution by Alex, see letters to him 23.09.2019 12:02:
         -- ,current_role as what_my_role -- <<< WHAT ROLE MUST BE SHOWN HERE, *BOSS or *ACNT ???
     from rdb$database;
 
@@ -138,10 +138,10 @@ test_script_1 = """
     drop global mapping gmap_boss2mngr_a;
     drop global mapping gmap_boss2mngr_b;
     commit;
-    drop user tmp$c6143_foo using plugin Srp;
-    commit;
-    drop role tmp$r6143_boss;
-    commit;
+    --drop user tmp$c6143_foo using plugin Srp;
+    --commit;
+    --drop role tmp$r6143_boss;
+    --commit;
 
   """
 
@@ -195,8 +195,11 @@ expected_stdout_1 = """
     Records affected: 1
   """
 
+user_foo = user_factory('db_1', name='tmp$c6143_foo', password='123', plugin='Srp')
+role_boss = role_factory('db_1', name='tmp$r6143_boss')
+
 @pytest.mark.version('>=3.0.5')
-def test_1(act_1: Action):
+def test_1(act_1: Action, role_boss: Role, user_foo: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

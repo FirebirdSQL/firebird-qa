@@ -15,8 +15,7 @@ from firebird.qa import db_factory, isql_act, Action
 # resources: None
 
 substitutions_1 = [('SPECIFIC_ATTR_BLOB_ID.*', ''),
-                   ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=xx'),
-                   ('COLL-VERSION=\\d+\\.\\d+', 'COLL-VERSION=xx')]
+                   ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222')]
 
 init_script_1 = """"""
 
@@ -57,7 +56,7 @@ expected_stdout_1 = """
     RDB$BASE_COLLATION_NAME         UNICODE
 
     SPECIFIC_ATTR_BLOB_ID           1d:1e7
-    COLL-VERSION=xx;LOCALE=en_US
+    COLL-VERSION=153.88;LOCALE=en_US
     RDB$CHARACTER_SET_NAME          UTF8
 
     RDB$BYTES_PER_CHARACTER         4
@@ -74,7 +73,8 @@ def test_1(act_1: Action):
 # version: 4.0
 # resources: None
 
-substitutions_2 = [('SPECIFIC_ATTR_BLOB_ID.*', ''), ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=xx'), ('COLL-VERSION=\\d+\\.\\d+', 'COLL-VERSION=xx')]
+substitutions_2 = [('SPECIFIC_ATTR_BLOB_ID.*', ''),
+                   ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222')]
 
 init_script_2 = """"""
 
@@ -115,7 +115,7 @@ expected_stdout_2 = """
     RDB$BASE_COLLATION_NAME         UNICODE
 
     SPECIFIC_ATTR_BLOB_ID           1d:1e7
-    COLL-VERSION=xx;LOCALE=en_US
+    COLL-VERSION=153.88;LOCALE=en_US
     RDB$CHARACTER_SET_NAME          UTF8
 
     RDB$BYTES_PER_CHARACTER         4

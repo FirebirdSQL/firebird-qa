@@ -332,16 +332,15 @@ def test_1(act_1: Action, capsys):
     allowed_patterns = [re.compile(' Table "TMP_TEST_6278"', re.IGNORECASE),
                         re.compile('TMP_TEST_6278\\s+\\d+', re.IGNORECASE)
                         ]
-
-    with act_1.trace(db_events=trace_1, encoding='utf8'):
-        act_1.isql(switches=['-q'], input=test_script_1, charset='none')
-    # Process isql output
-    for line in act_1.stdout.splitlines():
-        if elements := line.rstrip().split():
-            print(f'{elements=}')
-            count_intermediate_rows = int(elements[0])
-            break
-    # Process trace
+    # For yet unknown reason, trace must be read as in 'cp1252' (neither ascii or utf8 works)
+    with act_1.trace(db_events=trace_1, encoding='cp1252'):
+        act_1.isql(switches=['-q'], input=test_script_1)
+        # Process isql output
+        for line in act_1.stdout.splitlines():
+            if elements := line.rstrip().split():
+                count_intermediate_rows = int(elements[0])
+                break
+        # Process trace
     for line in act_1.trace_log:
         for p in allowed_patterns:
             if p.search(line):
@@ -354,5 +353,5 @@ def test_1(act_1: Action, capsys):
                     print(line)
     # Check
     act_1.expected_stdout = expected_stdout_1
-    act_1.stdout
+    act_1.stdout = capsys.readouterr().out
     assert act_1.clean_stdout == act_1.clean_expected_stdout

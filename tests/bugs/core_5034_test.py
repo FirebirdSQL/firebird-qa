@@ -50,7 +50,7 @@
 # qmid:
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import db_factory, python_act, Action, user_factory, User
 
 # version: 3.0
 # resources: None
@@ -60,8 +60,6 @@ substitutions_1 = []
 init_script_1 = """
     set bail on;
 
-    create or alter user tmp$c5034 password '123';
-    commit;
     create or alter view v_top10_slow as select 1 x from rdb$database;
     commit;
 
@@ -459,8 +457,10 @@ expected_stdout_1 = """
     Records affected: 1
 """
 
+user_1 = user_factory('db_1', name='tmp$c5034', password='123')
+
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1: User):
     pytest.skip("New implementation postponed")
 
 

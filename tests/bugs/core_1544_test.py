@@ -2,8 +2,8 @@
 #
 # id:           bugs.core_1544
 # title:        RDB$procedures generator overflow
-# decription:   
-# tracker_id:   
+# decription:
+# tracker_id:
 # min_versions: []
 # versions:     3.0
 # qmid:         None
@@ -43,7 +43,7 @@ test_script_1 = """
     create procedure aux_sp1 as begin end;
     create procedure aux_sp2 as begin end;
     commit;
-    set list on; 
+    set list on;
     select gen_id(rdb$procedures,0) gen_rdb_proc_curr_value from rdb$database;
   """
 
@@ -54,7 +54,6 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.slow
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()

@@ -23,7 +23,7 @@ init_script_1 = """
 	recreate table t_test (id int);
 	commit;
 	set term ^;
-	execute block as 
+	execute block as
 	begin
 	  begin execute statement 'drop domain MEMO_UTF8'; when any do begin end end
 	  begin execute statement 'drop domain MEMO_WIN1250'; when any do begin end end
@@ -43,7 +43,7 @@ init_script_1 = """
 
 	recreate table t_test (
 		id bigint not null,
-		action varchar(80),	
+		action varchar(80),
 		memo_utf8 memo_utf8,
 		memo_win1250 memo_win1250,
 		constraint pk_t_test primary key (id)
@@ -82,14 +82,14 @@ init_script_1 = """
 			action = new.action,
 			memo_utf8 = new.memo_utf8,
 			memo_win1250 = new.memo_win1250
-		  where id = old.id;  
+		  where id = old.id;
 	  else
 		  delete from t_test
 		  where id = old.id;
 	end
 	^
 	set term ; ^
-	commit;	
+	commit;
   """
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
@@ -101,7 +101,7 @@ test_script_1 = """
 	begin
 
 		-- http://www.columbia.edu/kermit/cp1250.html
-		v_text = 
+		v_text =
 		''
 		|| '€' --  128  08/00  200  80  EURO SYMBOL
 		|| '‚' --  130  08/02  202  82  LOW 9 SINGLE QUOTE
@@ -242,24 +242,24 @@ test_script_1 = """
 			action,
 			memo_utf8,    -- isc_put_segment on V_T_TEST.MEMO_UTF8 with buffer as utf-8 is OK
 			memo_win1250  -- isc_put_segment on V_T_TEST.MEMO_WIN1250 with buffer as utf-8 not transliterate character set and stores in table incorrect as utf-8
-		) 
-		values( 
+		)
+		values(
 		   'insert through the view, connect charset = utf8, blob charset = utf8',
 			:v_text,   -- to be written in memo_utf8
 			:v_text    -- to be written in memo_win1250
 		);
-		
+
 		insert into v_t_test(
 			action,
 			memo_utf8,    -- isc_put_segment on V_T_TEST.MEMO_UTF8 with buffer as utf-8 is OK
 			memo_win1250  -- isc_put_segment on V_T_TEST.MEMO_WIN1250 with buffer as utf-8 not transliterate character set and stores in table incorrect as utf-8
-		) 
-		values( 
+		)
+		values(
 		   'insert through the view, connect charset = utf8, blob charset = win1250',
 			cast( :v_text as blob sub_type 1 character set win1250),   -- to be written in memo_utf8
 			cast( :v_text as blob sub_type 1 character set win1250)    -- to be written in memo_win1250
-		);	
-		
+		);
+
 	end
 	^
 	set term ;^
@@ -272,7 +272,7 @@ test_script_1 = """
 
 	set blob all;
 	set list on;
-	select 
+	select
 		id,
 		action,
 		memo_utf8,
@@ -318,12 +318,12 @@ expected_stdout_1 = """
 	MEMO_WIN1250                    0:25
 	€‚„…†‡‰Š‹ŚŤŽŹ‘’“”•–—™š›śťžź ˇ˘Ł¤Ą¦§¨©Ş«¬­®Ż°±˛ł´µ¶·¸ąş»Ľ˝ľżŔÁÂĂÄĹĆÇČÉĘËĚÍÎĎĐŃŇÓÔŐÖ×ŘŮÚŰÜÝŢßŕáâăäĺćçčéęëěíîďđńňóôőö÷řůúűüýţ˙
 	OCT_W1250                       123
-	CHR_W1250                       123 
+	CHR_W1250                       123
   """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(charset='utf8')
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

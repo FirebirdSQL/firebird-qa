@@ -2,9 +2,9 @@
 #
 # id:           bugs.core_3097
 # title:        Updating blob field cause server crash with ACCESS_VIOLATION exception
-# decription:   
+# decription:
 #                  Checked on: WI-V2.5.6.27001, WI-V3.0.0.32487, WI-T4.0.0.141
-#                
+#
 # tracker_id:   CORE-3097
 # min_versions: ['2.5']
 # versions:     3.0
@@ -91,7 +91,7 @@ test_script_1 = """
     ;
   """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1,charset=None)
+act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     ID                              32765

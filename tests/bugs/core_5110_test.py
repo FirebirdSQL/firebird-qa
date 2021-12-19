@@ -85,8 +85,6 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=2.5.6')
 def test_1(act_1: Action):
-    act_1.db.set_async_write()
-    #
     custom_tpb = tpb(isolation=Isolation.CONCURRENCY)
     with act_1.db.connect(no_gc=True) as con:
         tx1 = con.transaction_manager(custom_tpb)

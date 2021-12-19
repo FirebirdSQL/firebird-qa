@@ -2,14 +2,14 @@
 #
 # id:           bugs.core_0885
 # title:        It is impossible to take away rights on update of a column
-# decription:   
+# decription:
 # tracker_id:   CORE-885
 # min_versions: ['3.0']
 # versions:     3.0
-# qmid:         
+# qmid:
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
 
 # version: 3.0
 # resources: None
@@ -24,10 +24,6 @@ test_script_1 = """
     set wng off;
     set list on;
 
-    create or alter user john_senior password 'sen' revoke admin role;
-    create or alter user mick_junior password 'jun' revoke admin role;
-    commit;
-    
     recreate table test(id int, text varchar(30), changed_by_user varchar(31), changed_by_role varchar(31));
     commit;
 
@@ -40,18 +36,18 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     insert into test(id, text) values(1, 'Initial data, added by SYSDBA');
     insert into test(id, text) values(2, 'Initial data, added by SYSDBA');
     insert into test(id, text) values(3, 'Initial data, added by SYSDBA');
     select * from test;
     commit;
-    
+
     grant select on test to public;
     grant create role to john_senior;
     grant update(text) on test to john_senior with grant option;
     commit;
-    
+
     ----------------------------------------
 
     --set echo on;
@@ -82,7 +78,7 @@ test_script_1 = """
     -- ###########################################################################################
     -- ###   H e r e    w e    R E V O K E    r i g h t   t o    u p d a t e     c o l u m n   ###
     -- ###########################################################################################
-    -- ::: NB ::: See CORE-4836: 
+    -- ::: NB ::: See CORE-4836:
     -- As of WI-T3.0.0.31873, if we want to revoke privilege on certain COLUMN update, we must do
     -- it immediatelly after reconnect, NO issuing any DML here (like `select * from test` etc).
 
@@ -98,9 +94,7 @@ test_script_1 = """
 
     connect '$(DSN)' user 'SYSDBA' password 'masterkey';
 
-    drop user john_senior;
-    drop user mick_junior;
-    drop role modifier;
+    --drop role modifier;
     drop table test;
     commit;
   """
@@ -120,8 +114,8 @@ expected_stdout_1 = """
     TEXT                            Initial data, added by SYSDBA
     CHANGED_BY_USER                 SYSDBA
     CHANGED_BY_ROLE                 NONE
-    
-    
+
+
     USER                            MICK_JUNIOR
     ROLE                            MODIFIER
     ID                              1
@@ -136,7 +130,7 @@ expected_stdout_1 = """
     TEXT                            Initial data, added by SYSDBA
     CHANGED_BY_USER                 SYSDBA
     CHANGED_BY_ROLE                 NONE
-    
+
     USER                            JOHN_SENIOR
     ROLE                            NONE
     ID                              1
@@ -151,7 +145,7 @@ expected_stdout_1 = """
     TEXT                            Initial data, added by SYSDBA
     CHANGED_BY_USER                 SYSDBA
     CHANGED_BY_ROLE                 NONE
-    
+
     USER                            MICK_JUNIOR
     ROLE                            MODIFIER
     ID                              1
@@ -166,14 +160,19 @@ expected_stdout_1 = """
     TEXT                            Initial data, added by SYSDBA
     CHANGED_BY_USER                 SYSDBA
     CHANGED_BY_ROLE                 NONE
-  """
+"""
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     no permission for UPDATE access to TABLE TEST
-  """
+"""
+
+user_1_senior = user_factory('db_1', name='john_senior', password='sen')
+user_1_junior = user_factory('db_1', name='mick_junior', password='jun')
+role_1 = role_factory('db_1', name='modifier', do_not_create=True)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1_senior: User, user_1_junior: User, role_1: Role):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

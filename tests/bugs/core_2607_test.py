@@ -47,9 +47,9 @@ expected_stdout_1 = """
 def test_1(act_1: Action, capsys):
     act_1.expected_stdout = expected_stdout_1
     with act_1.db.connect() as con1:
-        c1 = con.cursor()
+        c1 = con1.cursor()
         with act_1.db.connect() as con2:
-            c2 = con.cursor()
+            c2 = con2.cursor()
             c1.execute("select _dos850 '123áé456' from rdb$database")
             c2.execute("select mon$sql_text from mon$statements s where s.mon$sql_text containing '_dos850'")
             for r in c2:

@@ -17,7 +17,8 @@ from firebird.qa import db_factory, python_act, Action, temp_file
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('^((?!HASH_IN_SOURCE|RDB\\$SHADOW_NUMBER|HASH_IN_RESTORED|Attributes).)*$', '')]
+substitutions_1 = [('^((?!HASH_IN_SOURCE|RDB\\$SHADOW_NUMBER|HASH_IN_RESTORED).)*$', ''),
+                   ('.*Shadow 1:.*', 'Shadow present')]
 
 init_script_1 = """
     -- Confirmed on WI-T3.0.0.31374:
@@ -55,10 +56,9 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-Creating shadow...
 HASH_IN_SOURCE                  1499836372373901520
 RDB$SHADOW_NUMBER               1
-Attributes		force write, active shadow
+Shadow present
 HASH_IN_RESTORED                1499836372373901520
 """
 
@@ -68,18 +68,17 @@ fbn_1 = temp_file('core_4715-restored.fdb')
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, fbk_1: Path, fbn_1: Path, capsys):
     act_1.isql(switches=['-q'],
-               input=f'''create shadow 1 '{fbn_1.with_suffix('.shd')}'; commit; insert into test select 'line #'||lpad(row_number()over(), 3, '0') from rdb$types rows 200; commit; set list on; select hash(list(s)) hash_in_source from test; select * from rdb$files;''')
+               input=f'''create shadow 1 '{act_1.db.db_path.with_suffix('.shd')}'; commit; insert into test select 'line #'||lpad(row_number()over(), 3, '0') from rdb$types rows 200; commit; set list on; select hash(list(s)) hash_in_source from test; select * from rdb$files;''')
     print(act_1.stdout)
     act_1.reset()
-    act_1.gstat(switches=['-h'])
+    act_1.isql(switches=[], input='show database;')
     print(act_1.stdout)
     act_1.reset()
     act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_1)])
     act_1.reset()
     act_1.gbak(switches=['-rep', '-k', str(fbk_1), str(fbn_1)])
     act_1.reset()
-    act_1.isql(switches=['-q', '-user', act_1.db.user, '-password', act_1.db.password,
-                         str(fbn_1)], connect_db=False,
+    act_1.isql(switches=['-q', str(fbn_1)], connect_db=False,
                input='set list on; select hash(list(s)) hash_in_restored from test;')
     print(act_1.stdout)
     #

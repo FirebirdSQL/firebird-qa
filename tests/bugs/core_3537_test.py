@@ -456,8 +456,6 @@ trace_1 = ['log_transactions = true',
 @pytest.mark.version('>=2.5.2')
 def test_1(act_1: Action, capsys):
     NUM_ROWS_TO_BE_ADDED = 45000
-    # Change FW to OFF in order to speed up initial data filling
-    act_1.db.set_async_write()
     # Make initial data filling into PERMANENT table for retrieving later number of data pages
     # (it should be the same for any kind of tables, including GTTs):
     with act_1.db.connect() as con:

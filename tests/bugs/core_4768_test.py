@@ -137,16 +137,17 @@ expected_stdout_1 = """
         Records affected: 1
 """
 
-test_user_1 = user_factory('db_1', name='tmp$c4768_1', password='123')
+# Cleanup fixture
+user_1 = user_factory('db_1', name='tmp$c4768_1', password='123', plugin='Srp',
+                      do_not_create=True)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, test_user_1: User):
+def test_1(act_1: Action, user_1: User):
     TAGS_COUNT = 100000
     check_lines = ['set bail on;',
-                    "create or alter user tmp$c4768_1 password '123' using plugin Srp tags ("]
+                   "create or alter user tmp$c4768_1 password '123' using plugin Srp tags ("]
     for i in range(TAGS_COUNT):
         check_lines.append(f"{'  ,' if i > 0 else '  '}arg_{i}='val{i}'")
-        #check_lines.append(('  ,' if i>0 else '  ') + 'arg_' + str(i) + "='val" + str(i) + "'")
     check_lines.append(');')
     check_lines.append('commit;')
     test_script = '\n'.join(check_lines) + """

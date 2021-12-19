@@ -27,7 +27,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, python_act, Action
+from firebird.qa import db_factory, isql_act, python_act, Action, user_factory, User
 
 # version: 3.0
 # resources: None
@@ -41,7 +41,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set wng off;
     set bail on;
-    create or alter user tmp$c3511 password '123' using plugin Srp;
     create or alter view v_whoami as
     select current_user as cur_user,mon$role as mon_role,current_role as cur_role
     from mon$attachments
@@ -99,12 +98,13 @@ expected_stdout_1 = """
     MON_ROLE                        Groß
     CUR_ROLE                        Groß
     PLAN (TEST NATURAL)
-  """
+"""
+
+user_1 = user_factory('db_1', name='tmp$c3511', password='123', plugin='Srp')
 
 @pytest.mark.version('>=3.0')
 @pytest.mark.platform('Linux')
-def test_1(act_1: Action):
-    act_1.db.set_async_write()
+def test_1(act_1: Action, user_1: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout
@@ -161,11 +161,13 @@ act_2 = python_act('db_2', substitutions=substitutions_2)
 
 expected_stdout_2 = """
     Done.
-  """
+"""
+
+test_user_2 = user_factory('db_2', name='tmp$c3511', password='123', plugin='Srp')
 
 @pytest.mark.version('>=3.0')
 @pytest.mark.platform('Windows')
-def test_2(act_2: Action):
+def test_2(act_2: Action, test_user_2: User):
     pytest.fail("Test not IMPLEMENTED")
 
 

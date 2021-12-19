@@ -233,7 +233,6 @@ worker_output = temp_file('core_6379.out')
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, worker_script: Path, worker_output: Path):
-    act_1.db.set_async_write()
     worker_script.write_text("""
     set autoddl off;
     commit;

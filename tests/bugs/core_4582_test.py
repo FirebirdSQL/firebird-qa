@@ -179,6 +179,8 @@ def test_1(act_1: Action, capsys):
     print(act_1.stdout)
     print (':::MSG::: ISQL for extract old and new value of page finished.')
     # Check
+    # [pcisar] 23.11.2021
+    # FAILs on v4.0.0.2496 as database couldn't be reverted to online state, not yet tested with 3.0
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = capsys.readouterr().out
     assert act_1.clean_expected_stdout == act_1.clean_expected_stdout

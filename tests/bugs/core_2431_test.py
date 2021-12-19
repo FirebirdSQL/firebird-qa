@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_2431
 # title:        String values in error messages are not converted to connection charset
-# decription:   
+# decription:
 # tracker_id:   CORE-2431
 # min_versions: ['3.0']
 # versions:     3.0
@@ -37,10 +37,10 @@ test_script_1 = """
     commit;
   """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1, charset='win1251')
+act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    CONNECTION_CSET                 WIN1251 
+    CONNECTION_CSET                 WIN1251
   """
 expected_stderr_1 = """
     Statement failed, SQLSTATE = HY000
@@ -54,7 +54,7 @@ expected_stderr_1 = """
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
+    act_1.execute(charset='win1251')
     assert act_1.clean_expected_stderr == act_1.clean_stderr
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

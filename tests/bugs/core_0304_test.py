@@ -2,26 +2,26 @@
 #
 # id:           bugs.core_0304
 # title:         ANY user can drop procedures, generators, exceptions.
-# decription:   
+# decription:
 #                   fb30Cs, build 3.0.4.32924: OK, 4.406s.
 #                   FB30SS, build 3.0.4.32939: OK, 1.563s.
-#               
+#
 #                   24.01.2019. Added separate code for running on FB 4.0+.
 #                   UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
-#                   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement 
+#                   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
 #                   in UDR library "udf_compat", see it in folder: ../plugins/udr/
 #                   Checked on:
 #                       4.0.0.1172: OK, 8.140s.
 #                       4.0.0.1340: OK, 4.797s.
 #                       4.0.0.1378: OK, 4.032s.
-#                
+#
 # tracker_id:   CORE-304
 # min_versions: ['3.0']
 # versions:     3.0, 4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User
 
 # version: 3.0
 # resources: None
@@ -33,8 +33,6 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    create or alter user tmp$c0304 password '123';
-    commit;
 
     DECLARE EXTERNAL FUNCTION strlen CSTRING(32767) RETURNS INTEGER BY VALUE ENTRY_POINT 'IB_UDF_strlen' MODULE_NAME 'ib_udf';
 
@@ -66,7 +64,7 @@ test_script_1 = """
     -- All following statements should FAIL if current user is not SYSDBA:
 
     execute procedure sp_test;
-    
+
     show sequence g_test;
 
     alter domain dm_test set default 123;
@@ -104,12 +102,11 @@ test_script_1 = """
     drop collation name_coll;
 
     rollback;
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    drop user tmp$c0304;
-    commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+
+user_1 = user_factory('db_1', name='tmp$c0304', password='123')
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
@@ -201,10 +198,10 @@ expected_stderr_1 = """
     -DROP COLLATION NAME_COLL failed
     -no permission for DROP access to COLLATION NAME_COLL
 
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1: User):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_expected_stderr == act_1.clean_stderr
@@ -218,10 +215,9 @@ init_script_2 = """"""
 
 db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
-test_script_2 = """
-    create or alter user tmp$c0304 password '123';
-    commit;
+user_2 = user_factory('db_2', name='tmp$c0304', password='123')
 
+test_script_2 = """
     -- See declaration sample in plugins\\udr\\UdfBackwardCompatibility.sql:
 
     create function UDR40_frac (
@@ -259,7 +255,7 @@ test_script_2 = """
     -- All following statements should FAIL if current user is not SYSDBA:
 
     execute procedure sp_test;
-    
+
     show sequence g_test;
 
     alter domain dm_test set default 123;
@@ -296,10 +292,7 @@ test_script_2 = """
     drop collation name_coll;
 
     rollback;
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    drop user tmp$c0304;
-    commit;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -409,10 +402,10 @@ unsuccessful metadata update
 -no permission for DROP access to COLLATION NAME_COLL
 -Effective user is TMP$C0304
 
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action):
+def test_2(act_2: Action, user_2: User):
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
     assert act_2.clean_expected_stderr == act_2.clean_stderr

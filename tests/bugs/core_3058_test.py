@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3058
 # title:        New generators are created with wrong value when more than 32K generators was previously created
-# decription:   
+# decription:
 # tracker_id:   CORE-3058
 # min_versions: ['2.5.1']
 # versions:     2.5.1
@@ -34,13 +34,13 @@ init_script_1 = """
           -- It is not so in 2.5, but I left code common for both FB versions. Zotov.
           in autonomous transaction do
             execute statement 'create sequence s' || n;
-    
+
           in autonomous transaction do
             execute statement 'select gen_id(s' || n || ', ' || k || ') from rdb$database' into x;
-    
+
           in autonomous transaction do
             execute statement 'drop sequence s' || n;
-    
+
           n = n + 1;
         end
     end
@@ -77,7 +77,6 @@ expected_stdout_1 = """
   """
 
 @pytest.mark.version('>=2.5.1')
-@pytest.mark.slow
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()

@@ -95,7 +95,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
-user_1 = user_factory(name='TMP$C1148', password='QweRtyUi')
+user_1 = user_factory('db_1', name='TMP$C1148', password='QweRtyUi')
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action, user_1: User):

@@ -44,7 +44,6 @@ SQL>"""
 
 @pytest.mark.version('>=2.1.5')
 def test_1(act_1: Action):
-    act_1.db.set_async_write()
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

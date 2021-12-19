@@ -40,13 +40,11 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 expected_stdout_1 = """
 /* Grant permissions for this database */
 GRANT SELECT ON TEST TO PUBLIC
-GRANT CREATE DATABASE TO USER TMP$C4648
 
 /* Grant permissions for this database */
 GRANT SELECT ON TEST TO PUBLIC
 GRANT USAGE ON SEQUENCE G_TEST TO PUBLIC
-GRANT CREATE DATABASE TO USER TMP$C4648
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):

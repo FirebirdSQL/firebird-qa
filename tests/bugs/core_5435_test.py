@@ -343,7 +343,6 @@ trace_1 = ['time_threshold = 0',
 
 @pytest.mark.version('>=3.0.2')
 def test_1(act_1: Action):
-    act_1.db.set_async_write()
     act_1.isql(switches=[], input=async_init_script_1)
     #
     with act_1.trace(db_events=trace_1):

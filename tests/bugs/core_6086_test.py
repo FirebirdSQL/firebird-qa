@@ -2,12 +2,12 @@
 #
 # id:           bugs.core_6086
 # title:        Creating of the large procedure crashes the server.
-# decription:   
-#                   Confirmed bug on: WI-T4.0.0.1534, WI-V3.0.5.33141 
+# decription:
+#                   Confirmed bug on: WI-T4.0.0.1534, WI-V3.0.5.33141
 #                   Checked on:
 #                       4.0.0.1535: OK, 2.051s.
 #                       3.0.5.33142: OK, 1.364s.
-#                
+#
 # tracker_id:   CORE-6086
 # min_versions: ['3.0.5']
 # versions:     3.0.5
@@ -297,23 +297,23 @@ test_script_1 = """
 				n1 = n1 - :items
 			  where id = :id1;
 			end
-	  
+
 			select sum(n11), sum(n12) from session_edit
 			where id_session = :id_session and vid = :vid7 and id_item = :id_item
 			into items, summa;
-	  
+
 			if (items <> items1 or summa <> summa1) then
 			update session_edit set
 			  n11 = n11 + :items1 - :items,
 			  n12 = n12 + :summa1 - :summa,
 			  n1 = n1 - :items1 + :items
 			where id = :id1;
-	  
+
 			update session_edit set
 			  n5 = :items1,
 			  n6 = :summa1
 			where id = :id0;
-	  
+
 			items0 = items0 - items1;
 			summa0 = summa0 - summa1;
 		  end
@@ -335,7 +335,7 @@ test_script_1 = """
 		if (items1 > 0) then
 		begin
 		  summa1 = iif(items1 = items0, summa0, 1e0*items1*summa0/items0);
-	  
+
 		  for select id, n1 from session_edit
 			  where id_session = :id_session and vid = :vid2 and id_item = :id_item
 			  order by 2
@@ -383,7 +383,7 @@ test_script_1 = """
 		  if (items1 > 0) then
 		  begin
 			summa1 = iif(items1 = items0, summa0, 1e0*items1*summa0/items0);
-		
+
 			for select id, n1 from session_edit
 				where id_session = :id_session and vid = :vid7 and id_item = :id_item
 				order by 2
@@ -391,30 +391,30 @@ test_script_1 = """
 			begin
 			  items = 1e0*items1*items/items2;
 			  summa = 1e0*items*summa0/items0;
-	  
+
 			  update session_edit set
 				n13 = :items,
 				n14 = :summa,
 				n1 = n1 - :items
 			  where id = :id1;
 			end
-	  
+
 			select sum(n13), sum(n14) from session_edit
 			where id_session = :id_session and vid = :vid7 and id_item = :id_item
 			into items, summa;
-	  
+
 			if (items <> items1 or summa <> summa1) then
 			update session_edit set
 			  n13 = n13 + :items1 - :items,
 			  n14 = n14 + :summa1 - :summa,
 			  n1 = n1 - :items1 + :items
 			where id = :id1;
-	  
+
 			update session_edit set
 			  n5 = :items1,
 			  n6 = :summa1
 			where id = :id0;
-	  
+
 			items0 = items0 - items1;
 			summa0 = summa0 - summa1;
 		  end
@@ -825,7 +825,7 @@ test_script_1 = """
 		  begin
 			items5  = minvalue(items3, items5);
 			items3 = items3 - items5;
-	  
+
 			if (items5 <> items + items4) then
 			begin
 			  items = maxvalue(minvalue(items5, items), 0);
@@ -876,11 +876,11 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Completed successfully.
-  """
+"""
 
 @pytest.mark.version('>=3.0.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(charset='utf8')
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

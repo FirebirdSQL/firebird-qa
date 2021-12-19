@@ -271,7 +271,8 @@ def test_1(act_1: Action, db_1_b: Database, capsys):
     act_1.expected_stderr = "We expect errors"
     act_1.svcmgr(switches=['action_repair', 'rpr_list_limbo_trans', 'dbname', act_1.db.dsn])
     mngr_log = act_1.stdout
-    #print(act_1.stderr)
+    # Show error returned, remove when svcmgr issue is resolved
+    print(act_1.stderr)
     #
     pattern_for_gfix_output = re.compile('Transaction\\s+\\d+\\s+.*limbo', re.IGNORECASE)
     pattern_for_fsvc_output = re.compile('Transaction\\s+in\\s+limbo:\\s+\\d+', re.IGNORECASE)

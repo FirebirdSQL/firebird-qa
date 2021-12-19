@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4452
 # title:        Can`t create two collations with different names if autoddl OFF in FB 2.5.3
-# decription:   
+# decription:
 # tracker_id:   CORE-4452
 # min_versions: ['3.0']
 # versions:     3.0
@@ -14,7 +14,7 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=xx'), ('COLL-VERSION=\\d+\\.\\d+', 'COLL-VERSION=xx')]
+substitutions_1 = [('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222')]
 
 init_script_1 = """"""
 
@@ -44,11 +44,11 @@ show collation;
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-NAME_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=xx'
-NUMS_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=xx;NUMERIC-SORT=1'
+NAME_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=153.88'
+NUMS_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=153.88;NUMERIC-SORT=1'
 
-NAME_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=xx'
-NUMS_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=xx;NUMERIC-SORT=1'
+NAME_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=153.88'
+NUMS_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=153.88;NUMERIC-SORT=1'
   """
 expected_stderr_1 = """
 There are no user-defined collations in this database

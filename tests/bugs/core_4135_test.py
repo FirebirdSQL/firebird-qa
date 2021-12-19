@@ -571,8 +571,6 @@ def test_1(act_1: Action, capsys):
      commit;
      """
      act_1.isql(switches=[], input=sql_ddl)
-     # Temporay change FW to OFF in order to make DML faster:
-     act_1.db.set_async_write()
      #
      sql_data = f"""
      set term ^;
@@ -604,7 +602,7 @@ def test_1(act_1: Action, capsys):
      act_1.reset()
      act_1.isql(switches=['-nod'], input=sql_data)
      # Restore FW to ON (make sweep to do its work "harder"):
-     act_1.db.set_async_write()
+     act_1.db.set_sync_write()
      # Trace
      with act_1.trace(db_events=trace_1):
           # Traced action

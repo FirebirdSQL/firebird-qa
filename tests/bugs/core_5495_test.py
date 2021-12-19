@@ -22,7 +22,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User
 
 # version: 4.0
 # resources: None
@@ -36,9 +36,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set list on;
     set bail on;
-    set echo on;
-    create user tmp$c5495 password '123' using plugin Legacy_UserManager;
-    commit;
     connect '$(DSN)' user tmp$c5495 password '123';
     --select mon$user,mon$remote_address,mon$remote_protocol,mon$client_version,mon$remote_version,mon$auth_method from mon$attachments
     select mon$user,mon$remote_protocol,mon$auth_method from mon$attachments
@@ -46,9 +43,7 @@ test_script_1 = """
     commit;
     connect '$(DSN)' user SYSDBA password 'masterkey';
     commit;
-    drop user tmp$c5495 using plugin Legacy_UserManager;
-    commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -56,10 +51,12 @@ expected_stdout_1 = """
      MON$USER                        TMP$C5495
      MON$REMOTE_PROTOCOL             TCP
      MON$AUTH_METHOD                 Legacy_Auth
-  """
+"""
+
+test_user_1 = user_factory('db_1', name='tmp$c5495', password='123', plugin='Legacy_UserManager')
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, test_user_1: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_expected_stdout == act_1.clean_stdout

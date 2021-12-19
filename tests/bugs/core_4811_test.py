@@ -2,19 +2,21 @@
 #
 # id:           bugs.core_4811
 # title:        Make user names behave according to SQL identifiers rules
-# decription:   
+# decription:
 # tracker_id:   CORE-4811
 # min_versions: ['3.0']
 # versions:     3.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
 
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('set echo.*', ''), ('Use CONNECT or CREATE DATABASE.*', ''), ('Your user name and password.*', ''), ('line: [0-9]+, col: [0-9]+', ''), ('exception [0-9]+', 'exception')]
+substitutions_1 = [('set echo.*', ''), ('Use CONNECT or CREATE DATABASE.*', ''),
+                   ('Your user name and password.*', ''), ('line: [0-9]+, col: [0-9]+', ''),
+                   ('exception [0-9]+', 'exception')]
 
 init_script_1 = """"""
 
@@ -24,13 +26,6 @@ test_script_1 = """
     set wng off;
     set list on;
     create or alter procedure sp_check_actual_role as begin end;
-    set term ^;
-    execute block as
-    begin
-        execute statement 'drop role Boss';
-        when any do begin end
-    end ^
-    set term ;^
     commit;
 
     recreate exception ex_have_no_role 'You''ve specified role: >@1< -- but your actual role is NONE.';
@@ -64,9 +59,6 @@ test_script_1 = """
 
     set bail on;
     set echo on;
-    create or alter user Tmp$c4811 password '1';
-    revoke all on all from Tmp$c4811;
-    create role Boss;
     grant Boss to Tmp$c4811;
     grant usage on exception ex_have_no_role to Tmp$c4811;
     grant execute on procedure sp_check_actual_role to Tmp$c4811;
@@ -138,20 +130,11 @@ test_script_1 = """
     connect '$(DSN)' user 'TMP$C4811' password '1' role "BOSS";
     select * from sp_check_actual_role( '"BOSS"' );    --------------- should return: BOSS
     commit;
-
-    -- ### CLEANUP ###
-    -- Do not forget about cleanup (other tests can query sec$users or run `show users`!)
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    drop user Tmp$c4811;
-    commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    create or alter user Tmp$c4811 password '1';
-    revoke all on all from Tmp$c4811;
-    create role Boss;
     grant Boss to Tmp$c4811;
     grant usage on exception ex_have_no_role to Tmp$c4811;
     grant execute on procedure sp_check_actual_role to Tmp$c4811;
@@ -185,7 +168,8 @@ expected_stdout_1 = """
 
     CHECKING                        role: >"BOSS"< - in double quotes, UPPER case
     RESULT                          BOSS
-  """
+"""
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     Statement failed, SQLSTATE = HY000
@@ -193,10 +177,13 @@ expected_stderr_1 = """
     -EX_HAVE_NO_ROLE
     -You've specified role: >"BoSs"< -- but your actual role is NONE.
     -At procedure 'SP_CHECK_ACTUAL_ROLE'
-  """
+"""
+
+user_1 = user_factory('db_1', name='tmp$c4811', password='1')
+role_1 = role_factory('db_1', name='Boss')
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1: User, role_1: Role):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

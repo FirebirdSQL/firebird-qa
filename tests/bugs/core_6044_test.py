@@ -25,7 +25,8 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 4.0
 # resources: None
 
-substitutions_1 = [('current value.*', 'current value'), ('COLL-VERSION=153\\.14', 'COLL-VERSION=153.88')]
+substitutions_1 = [('current value.*', 'current value'),
+                   ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222')]
 
 init_script_1 = """"""
 
@@ -72,6 +73,6 @@ expected_stdout_1 = """
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(charset='utf8')
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

@@ -247,7 +247,7 @@ def test_1(act_1: Action):
     meta = act_1.stdout
     # drop + recreate database
     act_1.db.drop()
-    act_1.db.create(charset='UTF8', sql_dialect=3)
+    act_1.db.create(sql_dialect=3)
     # Recereate metadata
     act_1.reset()
     act_1.isql(switches=[], input=meta, charset='utf8')

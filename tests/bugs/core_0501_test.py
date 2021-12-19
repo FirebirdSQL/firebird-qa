@@ -996,7 +996,7 @@ INPUT message field count: 3
   : table:   owner:
 
 OUTPUT message field count: 2
-01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32 charset: 4 UTF8
+01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 8 charset: 0 NONE
   :  name: CONSTANT  alias: MSG
   : table:   owner:
 02: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8

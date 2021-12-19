@@ -2,12 +2,12 @@
 #
 # id:           bugs.core_5695
 # title:        Position function does not consider the collation for blob
-# decription:   
+# decription:
 #                   Confirmed bug on 3.0.3.32837, 4.0.0.800
 #                   Checked on:
 #                       FB30SS, build 3.0.3.32876: OK, 1.094s.
 #                       FB40SS, build 4.0.0.852: OK, 1.109s.
-#                
+#
 # tracker_id:   CORE-5695
 # min_versions: ['3.0.3']
 # versions:     3.0.3
@@ -26,7 +26,7 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    set list on;        
+    set list on;
     set blob all;
     set term ^;
     execute block returns (res smallint) as
@@ -45,19 +45,19 @@ test_script_1 = """
         suspend;
     end
     ^
-    set term ;^  
-  """
+    set term ;^
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     RES                             1
-    RES                             1  
-  """
+    RES                             1
+"""
 
 @pytest.mark.version('>=3.0.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(charset='utf8')
     assert act_1.clean_expected_stdout == act_1.clean_stdout
 

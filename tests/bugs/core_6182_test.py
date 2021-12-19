@@ -290,8 +290,6 @@ commit;
 
 eds_user = user_factory('db_1', name='tmp$c6182_leg', password='123', plugin='Legacy_UserManager')
 
-TDELAY = 3
-
 def init_main_db(act_1: Action, eds_user: User):
     ddl_script = f"""
         set bail on;
@@ -325,17 +323,26 @@ def init_main_db(act_1: Action, eds_user: User):
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, db_1_a: Database, db_1_b: Database, db_1_c: Database,
            db_1_d: Database, eds_user: User, capsys):
-    #pytest.skip("Test not IMPLEMENTED")
+    pool_life = act_1.get_config('ExtConnPoolLifeTime')
+    if pool_life is None:
+        # It's pointless to run it
+        pytest.skip("ExtConnPoolLifeTime = 0")
+    pool_life = int(pool_life)
+    TDELAY = (pool_life / 4) + 1
+    if TDELAY > 60:
+        # It will take more than 4 minutes to run, so skip it
+        pytest.skip("ExtConnPoolLifeTime > 240")
     init_main_db(act_1, eds_user)
     for db in [db_1_a, db_1_b, db_1_c, db_1_d]:
         act_1.reset()
-        act_1.isql(switches=[db.dsn], input=ddl_eds, connect_db=False)
+        act_1.isql(switches=[], input=ddl_eds, use_db=db)
     #
     with act_1.db.connect(user=eds_user.name, password=eds_user.password) as con:
         with con.cursor() as c:
             for db in [db_1_a, db_1_b, db_1_c, db_1_d]:
                 c.execute('select * from sp_do_eds(?)', [db.db_path]).fetchall()
-            time.sleep(TDELAY)
+                con.commit()
+                time.sleep(TDELAY)
     #
     for db in [db_1_a, db_1_b, db_1_c, db_1_d]:
         with db.connect() as con:

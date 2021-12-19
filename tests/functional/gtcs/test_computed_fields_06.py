@@ -2,14 +2,14 @@
 #
 # id:           functional.gtcs.computed_fields_06
 # title:        computed-fields-06
-# decription:   
+# decription:
 #               	Original test see in:
 #                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_06.script
 #               	SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
 #                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
 #                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['2.5.0']
 # versions:     2.5
 # qmid:         None

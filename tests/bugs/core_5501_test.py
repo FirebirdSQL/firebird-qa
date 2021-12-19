@@ -32,14 +32,6 @@
 #
 #                  Checked on 3.0.2.32702 (CS/SC/SS), 4.0.0.563 (CS/SC/SS)
 #
-#               [pcisar] 8.12.2021
-#               Reimplementation does not work as expected on Linux 4.0
-#               gstat output:
-#                Data pages: total 97, encrypted 0, non-crypted 97
-#                Index pages: total 85, encrypted 0, non-crypted 85
-#                Blob pages: total 199, encrypted 0, non-crypted 199
-#                Generator pages: total 1, encrypted 0, non-crypted 1
-#               Validation does not report BLOB page errors, only data and index corruptions.
 #
 # tracker_id:   CORE-5501
 # min_versions: ['3.0.2']
@@ -685,12 +677,6 @@ def test_1(act_1: Action, capsys):
         for brk_page in (brk_datapage, brk_indxpage, brk_blobpage):
             w.seek(brk_page * con.info.page_size)
             w.write(bw)
-    #
-    act_1.gstat(switches=['-e'])
-    pattern = re.compile('(data|index|blob|other)\\s+pages[:]{0,1}\\s+total[:]{0,1}\\s+\\d+[,]{0,1}\\s+encrypted[:]{0,1}\\s+\\d+.*[,]{0,1}non-crypted[:]{0,1}\\s+\\d+.*', re.IGNORECASE)
-    for line in act_1.stdout.splitlines():
-        if pattern.match(line.strip()):
-            print(line.strip())
     # Validate DB - ensure that there are errors in pages
     # RESULT: validation log should contain lines with problems about three diff. page types:
     # expected data encountered unknown
@@ -699,6 +685,12 @@ def test_1(act_1: Action, capsys):
     with act_1.connect_server() as srv:
         srv.database.validate(database=act_1.db.db_path, lock_timeout=1)
         validation_log = srv.readlines()
+    # gstat
+    act_1.gstat(switches=['-e'])
+    pattern = re.compile('(data|index|blob|other)\\s+pages[:]{0,1}\\s+total[:]{0,1}\\s+\\d+[,]{0,1}\\s+encrypted[:]{0,1}\\s+\\d+.*[,]{0,1}non-crypted[:]{0,1}\\s+\\d+.*', re.IGNORECASE)
+    for line in act_1.stdout.splitlines():
+        if pattern.match(line.strip()):
+            print(line.strip())
     # Process validation log
     data_page_problem = indx_page_problem = blob_page_problem = False
     for line in validation_log:
@@ -715,4 +707,12 @@ def test_1(act_1: Action, capsys):
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = capsys.readouterr().out
+    # [pcisar] 8.12.2021
+    # Reimplementation does not work as expected on Linux FB 4.0
+    # gstat output:
+    #   Data pages: total 97, encrypted 0, non-crypted 97
+    #   Index pages: total 85, encrypted 0, non-crypted 85
+    #   Blob pages: total 199, encrypted 0, non-crypted 199
+    #   Generator pages: total 1, encrypted 0, non-crypted 1
+    # Validation does not report BLOB page errors, only data and index corruptions.
     assert act_1.clean_stdout == act_1.clean_expected_stdout

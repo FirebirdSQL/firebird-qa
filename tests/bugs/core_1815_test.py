@@ -2,30 +2,30 @@
 #
 # id:           bugs.core_1815
 # title:        Ability to grant role to another role
-# decription:   
-#                  ### NB ### This test was NOT completed! 
+# decription:
+#                  ### NB ### This test was NOT completed!
 #                  One need to check all nuances related to granting and revoking that is issued by NON sysdba user
 #                  which was granted admin option to manupulate appropriate DB objects.
-#                  Also, there is not clarity about issue 08/Aug/16 06:31 AM (when user Boss2 does grant-and-revoke 
+#                  Also, there is not clarity about issue 08/Aug/16 06:31 AM (when user Boss2 does grant-and-revoke
 #                  sequence with some role to other user Sales but this role already was granted by _other_ user, Boss1).
-#               
+#
 #                  We create two users (acnt and pdsk) and two roles for them (racnt and rpdsk).
 #                  Then we create two tables (tacnt & tpdsk) and grant access on these tables for acnt & pdsk.
-#                  Then we create user boss, role for him (rboss) and grant IMPLICITLY access on tables tacnt and tpdsk 
+#                  Then we create user boss, role for him (rboss) and grant IMPLICITLY access on tables tacnt and tpdsk
 #                  to user boss via his role (rboss).
 #                  Check is made to ensure that user boss HAS ability to read from both tables (being connected with role Rboss).
 #                  After all, we IMPLICITLY revoke access from these tables and check again that user boss now has NO access
 #                  on tables tacnt and tpdsk.
-#               
+#
 #                  Checked on WI-T4.0.0.322 -- all fine.
-#                
+#
 # tracker_id:   CORE-1815
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, user_factory, User
 
 # version: 4.0
 # resources: None
@@ -48,37 +48,16 @@ test_script_1 = """
     set width r_name 10;
     set width r_owner 10;
 
-    create or alter user tmp$c1815_boss password 'boss' revoke admin role; -- boss
-    create or alter user tmp$c1815_acnt password 'acnt' revoke admin role; -- accountant
-    create or alter user tmp$c1815_pdsk password 'pdsk' revoke admin role; -- paydesk
-    commit;
-
-    revoke all on all from tmp$c1815_boss;
-    revoke all on all from tmp$c1815_acnt;
-    revoke all on all from tmp$c1815_pdsk;
-    commit;
-
     create or alter view v_role_info as
-    select 
+    select
         current_user as whoami,
         current_role as my_role,
-        rdb$role_name as r_name, 
-        rdb$owner_name r_owner, 
+        rdb$role_name as r_name,
+        rdb$owner_name r_owner,
         rdb$role_in_use(rdb$role_name) r_in_use
     from rdb$roles
     where coalesce(rdb$system_flag,0) = 0
     ;
-    commit;
-
-    set term ^;
-    execute block as
-    begin
-      begin execute statement 'drop role rboss'; when any do begin end end
-      begin execute statement 'drop role racnt'; when any do begin end end
-      begin execute statement 'drop role rpdsk'; when any do begin end end
-    end
-    ^
-    set term ^;
     commit;
 
     create role rboss;
@@ -99,7 +78,7 @@ test_script_1 = """
 
     recreate table tacnt(id int, s varchar(5));
     recreate table tpdsk(id int, s varchar(5));
-    commit;                                    
+    commit;
 
     grant all on tacnt to role racnt;
     grant all on tpdsk to role rpdsk;
@@ -148,11 +127,11 @@ test_script_1 = """
     commit;
 
     -- check that *role* RBoss still HAS grants to both RAcnt and RPdsk roles:
-    connect '$(DSN)' user tmp$c1815_boss password 'boss' role 'rboss'; 
+    connect '$(DSN)' user tmp$c1815_boss password 'boss' role 'rboss';
 
     select * from v_role_info; -- should contain <true> in all three rows
 
-    -- should PASS because we revoked role from other USER (accountant) 
+    -- should PASS because we revoked role from other USER (accountant)
     -- rather than from current user (Boss) or its role (Rboss):
     select current_user as whoami, a.* from tacnt a;
     commit;
@@ -221,34 +200,27 @@ test_script_1 = """
     select * from v_role_info; -- should contain <true> for line with 'racnt'
     select current_user as whoami, a.* from tacnt a; -- should PASS
     commit;
-
-    -- cleanup
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user tmp$c1815_boss;
-    drop user tmp$c1815_acnt;
-    drop user tmp$c1815_pdsk;
-    commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     WHOAMI                          TMP$C1815_ACNT
     MY_ROLE                         RACNT
-    R_NAME                          RBOSS                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RBOSS
+    R_OWNER                         SYSDBA
     R_IN_USE                        <false>
 
     WHOAMI                          TMP$C1815_ACNT
     MY_ROLE                         RACNT
-    R_NAME                          RACNT                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RACNT
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_ACNT
     MY_ROLE                         RACNT
-    R_NAME                          RPDSK                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RPDSK
+    R_OWNER                         SYSDBA
     R_IN_USE                        <false>
 
 
@@ -259,20 +231,20 @@ expected_stdout_1 = """
 
     WHOAMI                          TMP$C1815_PDSK
     MY_ROLE                         RPDSK
-    R_NAME                          RBOSS                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RBOSS
+    R_OWNER                         SYSDBA
     R_IN_USE                        <false>
 
     WHOAMI                          TMP$C1815_PDSK
     MY_ROLE                         RPDSK
-    R_NAME                          RACNT                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RACNT
+    R_OWNER                         SYSDBA
     R_IN_USE                        <false>
 
     WHOAMI                          TMP$C1815_PDSK
     MY_ROLE                         RPDSK
-    R_NAME                          RPDSK                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RPDSK
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
 
@@ -283,20 +255,20 @@ expected_stdout_1 = """
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RBOSS                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RBOSS
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RACNT                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RACNT
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RPDSK                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RPDSK
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
 
@@ -311,20 +283,20 @@ expected_stdout_1 = """
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RBOSS                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RBOSS
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RACNT                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RACNT
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RPDSK                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RPDSK
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
 
@@ -335,20 +307,20 @@ expected_stdout_1 = """
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RBOSS                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RBOSS
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RACNT                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RACNT
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RPDSK                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RPDSK
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
 
@@ -359,58 +331,58 @@ expected_stdout_1 = """
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RBOSS                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RBOSS
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RACNT                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RACNT
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RPDSK                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RPDSK
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RBOSS                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RBOSS
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RACNT                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RACNT
+    R_OWNER                         SYSDBA
     R_IN_USE                        <false>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RPDSK                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RPDSK
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RBOSS                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RBOSS
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RACNT                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RACNT
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
     WHOAMI                          TMP$C1815_BOSS
     MY_ROLE                         RBOSS
-    R_NAME                          RPDSK                                                                                                                                                                                                                                                       
-    R_OWNER                         SYSDBA                                                                                                                                                                                                                                                      
+    R_NAME                          RPDSK
+    R_OWNER                         SYSDBA
     R_IN_USE                        <true>
 
 
@@ -418,7 +390,8 @@ expected_stdout_1 = """
     WHOAMI                          TMP$C1815_BOSS
     ID                              1
     S                               acnt
-  """
+"""
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     no permission for SELECT access to TABLE TPDSK
@@ -427,10 +400,15 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     no permission for SELECT access to TABLE TACNT
     -Effective user is TMP$C1815_BOSS
-  """
+"""
+
+
+user_1_boss = user_factory('db_1', name='tmp$c1815_boss', password='boss')
+user_1_acnt = user_factory('db_1', name='tmp$c1815_acnt', password='acnt')
+user_1_pdsk = user_factory('db_1', name='tmp$c1815_pdsk', password='pdsk')
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_1_boss: User, user_1_acnt: User, user_1_pdsk: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()

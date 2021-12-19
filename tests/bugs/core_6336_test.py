@@ -9695,7 +9695,6 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
-    act_1.db.set_async_write()
     act_1.expected_stdout = expected_stdout_1
     with act_1.envar('ISC_USER', act_1.db.user), act_1.envar('ISC_PASSWORD', act_1.db.password):
         act_1.execute()

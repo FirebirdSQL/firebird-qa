@@ -183,8 +183,7 @@ def test_1(act_1: Action, fake_db: Path):
     fake_db.write_bytes(bytes([1, 2, 3, 4, 5, 6, 0]))
     act_1.expected_stdout = ''
     act_1.expected_stderr = expected_stderr_1
-    act_1.isql(switches=['-user', act_1.db.user, '-password', act_1.db.password, str(fake_db)],
-               connect_db=False,
+    act_1.isql(switches=[str(fake_db)], connect_db=False,
                input='set heading off; select current_timestamp from rdb$database; quit;')
     assert act_1.clean_stderr == act_1.clean_expected_stderr
     assert act_1.clean_stdout == act_1.clean_expected_stdout

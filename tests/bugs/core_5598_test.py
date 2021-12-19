@@ -199,7 +199,6 @@ test_script_1 = """
 
 @pytest.mark.version('>=3.0.3')
 def test_1(act_1: Action):
-    act_1.db.set_async_write()
     with act_1.db.connect(charset='utf8') as con:
         con.execute_immediate('create table test(id int, s varchar(8191))')
         con.commit()

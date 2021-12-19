@@ -193,7 +193,6 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0.5')
 def test_1(act_1: Action):
-    act_1.db.set_async_write()
     # CONCURRENCY | WAIT | READ_WRITE
     dml_tpb = tpb(isolation=Isolation.CONCURRENCY)
     # READ_COMMITTED | NO_REC_VERSION | WAIT | READ_WRITE
