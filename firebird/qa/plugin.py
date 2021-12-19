@@ -37,7 +37,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 import os
 import re
 import shutil
@@ -212,7 +212,7 @@ class Database:
         self.db_path: Path = path / filename
         self.dsn: str = None
         self.charset: str = 'NONE' if charset is None else charset.upper()
-        self.io_enc: str = CHARSET_MAP[charset]
+        self.io_enc: str = CHARSET_MAP[self.charset]
         if _vars_['host']:
             self.dsn = f"{_vars_['host']}:{str(self.db_path)}"
         else:
@@ -253,8 +253,8 @@ class Database:
         self._make_config(page_size=page_size, sql_dialect=sql_dialect, charset=self.charset)
         charset = self.charset
         print(f"Creating db: {self.dsn} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
-        db = create_database('pytest')
-        db.close()
+        with create_database('pytest'):
+            pass
     def restore(self, backup: str) -> None:
         #__tracebackhide__ = True
         fbk_file: Path = _vars_['backups'] / backup
@@ -295,8 +295,12 @@ class Database:
             raise Exception("Database init script execution failed")
         return result
     def drop(self) -> None:
+        with connect_server(_vars_['server']) as srv:
+            srv.database.no_linger(database=self.db_path)
         self._make_config()
         db = connect('pytest')
+        db.execute_immediate('delete from mon$attachments where mon$attachment_id != current_connection')
+        db.commit()
         #print(f"Removing db: {self.db_path}")
         db.drop_database()
     def connect(self, *, user: str=None, password: str=None, role: str=None, no_gc: bool=None,
@@ -317,7 +321,7 @@ class Database:
 def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=None,
                copy_of: str=None, page_size: int=None, sql_dialect: int=None,
                charset: str=None, user: str=None, password: str=None,
-               do_not_create: bool=False, do_not_drop: bool=False, async_init: bool=False):
+               do_not_create: bool=False, do_not_drop: bool=False, async_write: bool=True):
 
     @pytest.fixture
     def database_fixture(request: FixtureRequest, db_path) -> Database:
@@ -329,12 +333,10 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
                 db.restore(from_backup)
             elif copy_of is not None:
                 db.copy(copy_of)
-            if init is not None:
-                if async_init:
-                    db.set_async_write()
+            if async_write:
+                db.set_async_write()
+            if init: # Do not check for None, we want to skip empty scripts as well
                 db.init(init)
-                if async_init:
-                    db.set_sync_write()
         yield db
         if not do_not_drop:
             db.drop()
@@ -356,7 +358,8 @@ def db_path(tmp_path) -> Path:
 class User:
     def __init__(self, db: Database, *, name: str, password: str, plugin: str, charset: str,
                  active: bool=True, tags: Dict[str]=None, first_name: str=None,
-                 middle_name: str=None, last_name: str=None, admin: bool=False):
+                 middle_name: str=None, last_name: str=None, admin: bool=False,
+                 do_not_create: bool=False):
         self.db: Database = db
         self.__name: str = name if name.startswith('"') else name.upper()
         self.__password: str = password
@@ -369,8 +372,9 @@ class User:
         self.__last_name: str = last_name
         self.__tags: Dict[str] = tags
         self.__admin: bool = admin
+        self.__create: bool = not do_not_create
     def __enter__(self) -> Role:
-        if not self.exists():
+        if self.__create and not self.exists():
             self.create()
         return self
     def __exit__(self, exc_type, exc_value, traceback) -> None:
@@ -404,8 +408,11 @@ class User:
     def drop(self) -> None:
         with self.db.connect(charset=self.charset) as con:
             c = con.cursor()
-            grants = c.execute('select count(*) from rdb$user_privileges where rdb$user = ?',
-                               [self.name]).fetchone()[0]
+            grants = c.execute('select count(*) from '\
+                               '(select rdb$user as a from rdb$user_privileges '\
+                               'union all select sec$user as a from sec$db_creators) '\
+                               'where a = ?',
+                               [self.name if self.name.startswith('"') else self.name.upper()]).fetchone()[0]
             if grants > 0:
                 c.execute(f'revoke all on all from {self.name}')
                 con.commit()
@@ -474,14 +481,14 @@ class User:
 def user_factory(db_fixture_name: str, *, name: str, password: str, plugin: str=None,
                  charset: str='utf8', active: bool=True, tags: Dict[str]=None,
                  first_name: str=None, middle_name: str=None, last_name: str=None,
-                 admin: bool=False):
+                 admin: bool=False, do_not_create: bool=False):
 
     @pytest.fixture
     def user_fixture(request: FixtureRequest) -> User:
         with User(request.getfixturevalue(db_fixture_name), name=name, password=password,
                   plugin=plugin, charset=charset, active=active, tags=tags,
                   first_name=first_name, middle_name=middle_name, last_name=last_name,
-                  admin=admin) as user:
+                  admin=admin, do_not_create=do_not_create) as user:
             yield user
 
     return user_fixture
@@ -1069,6 +1076,11 @@ class Action:
         return False
     def print_callback(self, line: str) -> None:
         print(line, end='')
+    def get_config(self, key: str) -> Optional[str]:
+        with connect('employee') as con:
+            c = con.cursor()
+            row = c.execute('select RDB$CONFIG_VALUE from rdb$config where upper(RDB$CONFIG_NAME) = ?', [key.upper()]).fetchone()
+        return row[0] if row else None
     @property
     def clean_stdout(self) -> str:
         if self._clean_stdout is None:
