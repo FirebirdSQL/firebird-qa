@@ -47,7 +47,7 @@ import pytest
 from _pytest.fixtures import FixtureRequest
 from subprocess import run, CompletedProcess, PIPE, STDOUT
 from pathlib import Path
-#from configparser import ConfigParser, ExtendedInterpolation
+from configparser import ConfigParser, ExtendedInterpolation
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse
 import time
@@ -55,7 +55,7 @@ from threading import Thread, Barrier
 from firebird.driver import connect, connect_server, create_database, driver_config, \
      NetProtocol, Server, CHARSET_MAP, Connection, Cursor, \
      DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope, DbInfoCode, \
-     DbWriteMode, DatabaseError
+     DbWriteMode, get_api
 from firebird.driver.core import _connect_helper
 
 _vars_ = {'server': None,
@@ -90,6 +90,7 @@ def pytest_report_header(config):
             f"  home: {_vars_['home-dir']}",
             f"  bin: {_vars_['bin-dir']}",
             f"  security db: {_vars_['security-db']}",
+            f"  client library: {_vars_['fbclient']}",
             f"  run slow tests: {_vars_['runslow']}",
             f"  save test output: {_vars_['save-output']}",
             ]
@@ -142,7 +143,18 @@ def pytest_configure(config):
     db_conf = driver_config.get_database('employee')
     db_conf.server.value = _vars_['server']
     db_conf.database.value = 'employee.fdb'
-    #
+    # Handle server-specific "fb_client_library" configuration option
+    _vars_['fbclient'] = 'UNKNOWN'
+    cfg = ConfigParser(interpolation=ExtendedInterpolation())
+    cfg.read(str(config_path))
+    if cfg.has_option(_vars_['server'], 'fb_client_library'):
+        fbclient = Path(cfg.get(_vars_['server'], 'fb_client_library'))
+        if not fbclient.is_file():
+            pytest.exit(f"Client library '{fbclient}' not found!")
+        driver_config.fb_client_library.value = str(fbclient)
+    cfg.clear()
+    # THIS should load the driver API, do not connect db or server earlier!
+    _vars_['fbclient'] = get_api().client_library_name
     with connect_server(_vars_['server'], user='SYSDBA',
                         password=_vars_['password']) as srv:
         _vars_['version'] = parse(srv.info.version.replace('-dev', ''))
@@ -187,16 +199,15 @@ def pytest_collection_modifyitems(session, config, items):
     items[:] = selected
     config.hook.pytest_deselected(items=deselected)
 
-#@pytest.fixture(autouse=True)
-#def firebird_server():
-    #try:
-        #with connect_server(_vars_['server']) as srv:
-            #yield srv
-    #except DatabaseError as e:
-        #print('ERROR WHILE DETACH FROM SERVER:', e)
-        ## Shield from crashing server
-        #if 'Error reading data from the connection' not in str(e):
-            #raise
+#@pytest.hookimpl(hookwrapper=True)
+#def pytest_runtest_makereport(item, call):
+    #outcome = yield
+    #report = outcome.get_result()
+
+    #test_fn = item.obj
+    #docstring = getattr(test_fn, '__doc__')
+    #if docstring:
+        #report.nodeid = docstring
 
 def substitute_macros(text: str, macros: Dict[str, str]):
     f_text = text
@@ -208,7 +219,8 @@ def substitute_macros(text: str, macros: Dict[str, str]):
 class Database:
     ""
     def __init__(self, path: Path, filename: str='test.fdb',
-                 user: str=None, password: str=None, charset: str=None):
+                 user: str=None, password: str=None, charset: str=None, debug: str=''):
+        self._debug: str = debug
         self.db_path: Path = path / filename
         self.dsn: str = None
         self.charset: str = 'NONE' if charset is None else charset.upper()
@@ -298,19 +310,30 @@ class Database:
         with connect_server(_vars_['server']) as srv:
             srv.database.no_linger(database=self.db_path)
         self._make_config()
-        db = connect('pytest')
-        db.execute_immediate('delete from mon$attachments where mon$attachment_id != current_connection')
-        db.commit()
-        #print(f"Removing db: {self.db_path}")
-        db.drop_database()
+        with connect('pytest') as db:
+            db._att._name = self._debug
+            try:
+                db.execute_immediate('delete from mon$attachments where mon$attachment_id != current_connection')
+                db.commit()
+            except:
+                pass
+            #print(f"Removing db: {self.db_path}")
+            try:
+                db.drop_database()
+            except:
+                pass
+        if self.db_path.is_file():
+            self.db_path.unlink(missing_ok=True)
     def connect(self, *, user: str=None, password: str=None, role: str=None, no_gc: bool=None,
                 no_db_triggers: bool=None, dbkey_scope: DBKeyScope=None,
                 session_time_zone: str=None, charset: str=None, sql_dialect: int=None,
                 auth_plugin_list: str=None) -> Connection:
         self._make_config(user=user, password=password, charset=charset, sql_dialect=sql_dialect)
-        return connect('pytest', role=role, no_gc=no_gc, no_db_triggers=no_db_triggers,
+        result = connect('pytest', role=role, no_gc=no_gc, no_db_triggers=no_db_triggers,
                        dbkey_scope=dbkey_scope, session_time_zone=session_time_zone,
                        auth_plugin_list=auth_plugin_list)
+        result._att._name = self._debug
+        return result
     def set_async_write(self) -> None:
         with connect_server(_vars_['server']) as srv:
             srv.database.set_write_mode(database=self.db_path, mode=DbWriteMode.ASYNC)
@@ -325,7 +348,7 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
 
     @pytest.fixture
     def database_fixture(request: FixtureRequest, db_path) -> Database:
-        db = Database(db_path, filename, user, password, charset)
+        db = Database(db_path, filename, user, password, charset, debug=str(request.module))
         if not do_not_create:
             if from_backup is None and copy_of is None:
                 db.create(page_size, sql_dialect)

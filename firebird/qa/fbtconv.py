@@ -41,6 +41,7 @@ from typing import Dict, List, Tuple
 import os
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pathlib import Path
+from operator import attrgetter
 from packaging.version import Version, parse
 
 PROG_NAME = 'fbt-convert'
@@ -69,6 +70,12 @@ tests = []
 
 slow_tests = ['bugs.core_1544', 'bugs.core_3058']
 
+def clean_last(txt: str) -> str:
+    if not txt:
+        return txt
+    l = txt.splitlines()
+    l[-1] = l[-1].strip()
+    return '\n'.join(l)
 
 class TestVersion:
     def __init__(self, id, platform, firebird_version, test_type,
@@ -82,10 +89,10 @@ class TestVersion:
         self.platform: str = platform
         self.firebird_version: Version = parse(firebird_version)
         self.test_type: str = test_type
-        self.test_script: str = test_script
+        self.test_script: str = clean_last(test_script)
         self.database: str = database
-        self.expected_stdout: str = '' if expected_stdout.strip() == '' else expected_stdout
-        self.expected_stderr: str = '' if expected_stderr.strip() == '' else expected_stderr
+        self.expected_stdout: str = clean_last('' if expected_stdout.strip() == '' else expected_stdout)
+        self.expected_stderr: str = clean_last('' if expected_stderr.strip() == '' else expected_stderr)
         self.database_name: str = database_name
         self.backup_file: str = backup_file
         self.user_name: str = user_name
@@ -98,6 +105,7 @@ class TestVersion:
         self.resources: List[str] = None if resources is None else list(resources)
         self.substitutions: List[str] = substitutions if substitutions is not None else []
         self.qmid: str = qmid
+        # Clean
     def escape(self, subs: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
         return [tuple([a.replace('\\', '\\\\'), b.replace('\\', '\\\\')]) for a, b in subs]
 
@@ -117,6 +125,7 @@ class Test:
         if versions:
             for i in versions:
                 self.versions.append(TestVersion(id, **i))
+            self.versions.sort(key=attrgetter('firebird_version'))
     def show(self):
         for attr in (a for a in dir(self) if not a.startswith('_')):
             if attr not in ('show'):
@@ -168,6 +177,7 @@ def load_tests(path: Path, verbose: bool=False):
 
 def clean_tests():
     v30: Version = parse('3.0')
+    v40: Version = parse('4.0')
     for t in tests:
         new_versions = []
         last: Version = parse('0.1')
@@ -179,15 +189,15 @@ def clean_tests():
                     if mv > v.firebird_version:
                         v.firebird_version = mv
             #
-            if last < v.firebird_version:
+            if (last < v.firebird_version) and (v.firebird_version < v30):
                 last = v.firebird_version
             if v.firebird_version >= v30:
-                has_30 = True
+                has_30 = has_30 or v.firebird_version < v40
                 new_versions.append(v)
         if not has_30:
             for v in t.versions:
-                if v.firebird_version >= last:
-                    new_versions.append(v)
+                if v.firebird_version == last:
+                    new_versions.insert(0, v)
         t.versions[:] = new_versions
 
 def list_tests(root_path: Path, verbose: bool=False):
@@ -233,7 +243,7 @@ def write_tests(root_path: Path, verbose: bool=False):
 # qmid:         {t.qmid}
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, {'isql_act' if t.versions[0].test_type == TYPE_ISQL else 'python_act'}, Action
 
 """
         # verbose output
@@ -292,25 +302,34 @@ from firebird.qa import db_factory, isql_act, Action
                     content += f'    act_{seq}.expected_stderr = expected_stderr_{seq}\n'
                 content += f'    act_{seq}.execute()\n'
                 if v.expected_stderr:
-                    content += f'    assert act_{seq}.clean_expected_stderr == act_{seq}.clean_stderr\n'
+                    content += f'    assert act_{seq}.clean_stderr == act_{seq}.clean_expected_stderr\n'
                 if v.expected_stdout:
-                    content += f'    assert act_{seq}.clean_expected_stdout == act_{seq}.clean_stdout\n'
+                    if v.expected_stderr:
+                        content += '\n'
+                    content += f'    assert act_{seq}.clean_stdout == act_{seq}.clean_expected_stdout\n'
                 content += '\n'
             elif v.test_type == TYPE_PYTHON:
                 #
                 content += f'''# test_script_{seq}\n#---\n# {multiline_comment(escape(v.test_script), 2)}\n#---\n'''
-                content += f"#act_{seq} = python_act('db_{seq}', test_script_{seq}, substitutions=substitutions_{seq})\n\n"
-                if v.expected_stdout:
-                    sep = "'''" if v.expected_stdout.startswith('"') or v.expected_stdout.endswith('"') else '"""'
-                    content += f'expected_stdout_{seq} = {sep}{escape(v.expected_stdout)}{sep}\n'
+                content += f"act_{seq} = python_act('db_{seq}', substitutions=substitutions_{seq})\n\n"
                 if v.expected_stderr:
                     sep = "'''" if v.expected_stderr.startswith('"') or v.expected_stderr.endswith('"') else '"""'
                     content += f'expected_stderr_{seq} = {sep}{escape(v.expected_stderr)}{sep}\n'
-                content += f"""\n@pytest.mark.version('>={str(v.firebird_version)}')\n"""
+                if v.expected_stdout:
+                    if v.expected_stderr:
+                        content += '\n'
+                    sep = "'''" if v.expected_stdout.startswith('"') or v.expected_stdout.endswith('"') else '"""'
+                    content += f'expected_stdout_{seq} = {sep}{escape(v.expected_stdout)}{sep}\n'
+                # Version specification
+                if seq < len(t.versions):
+                    ver_spec = f'>={str(v.firebird_version)},<{str(t.versions[seq].firebird_version)}'
+                else:
+                    ver_spec = f'>={str(v.firebird_version)}'
+                content += f"""\n@pytest.mark.version('{ver_spec}')\n"""
                 if v.platform != 'All':
                     content += f"""@pytest.mark.platform({", ".join([f"'{i}'" for i in v.platform.split(':')])})\n"""
-                content += "@pytest.mark.xfail\n"
-                content += f"""def test_{seq}(db_{seq}):\n    pytest.fail("Test not IMPLEMENTED")\n\n"""
+                #content += "@pytest.mark.xfail\n"
+                content += f"""def test_{seq}(act_{seq}: Action):\n    pytest.fail("Test not IMPLEMENTED")\n\n"""
                 content += '\n'
 
         #
