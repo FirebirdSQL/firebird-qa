@@ -33,7 +33,7 @@ test_script_1 = """
       constraint fix_detl_fk_to_fix foreign key(x,y) references fix_main(x, y), 
       constraint fix_detl_fk_to_gtt foreign key(x,y) references gtt_main(x, y) 
     );
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -46,11 +46,11 @@ expected_stderr_1 = """
     unsuccessful metadata update
     -CREATE TABLE FIX_DETL failed
     -persistent table "FIX_DETL" cannot reference global temporary table "GTT_MAIN" of type ON COMMIT DELETE ROWS
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

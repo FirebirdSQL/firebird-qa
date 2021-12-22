@@ -128,7 +128,7 @@ test_script_1 = """
     -- will fire. They all should run within current Tx, so we could see results of their activity in the table 'trg_log':
     set count on;
     select * from trg_log;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -149,11 +149,11 @@ expected_stdout_1 = """
     ID                              3
     MSG                             trigger tx_ciao
     Records affected: 3
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

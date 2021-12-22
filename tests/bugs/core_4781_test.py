@@ -705,7 +705,7 @@ ldlkdw89dw89d2kssdjkcsuic3892343kbmvasjhcvsdyucg872348234ejwehsj#'
         octet_length(bf),
         char_length(bf)
     from test;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -716,11 +716,11 @@ expected_stdout_1 = """
     BF_IS_NULL                      <false>
     OCTET_LENGTH                    32766
     CHAR_LENGTH                     32766
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -124,7 +124,7 @@ def test_1(act_1: Action, user_1: User, temp_db_1: Path, capsys):
     from mon$attachments a, mon$database m
     where a.mon$attachment_id=current_connection;
     commit;
-    """
+"""
     print ('Starting ISQL using NON sysdba user account...')
     act_1.isql(switches=['-q', '-user', 'tmp$c4648', '-pas', '123', act_1.get_dsn(temp_db_1)],
                connect_db=False, input=script, credentials=False)

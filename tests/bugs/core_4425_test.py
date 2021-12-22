@@ -43,7 +43,7 @@ test_script_1 = """
     select 'old table:' as msg, s1,s2,s1=s2 from test order by s1;
     select 'new table:' as msg, s1,s2,s1=s2 from test2 order by s2;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -73,11 +73,11 @@ expected_stdout_1 = """
     S1                              123qWe
     S2                              123QwE
     <true>
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

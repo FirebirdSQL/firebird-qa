@@ -27,18 +27,18 @@ test_script_1 = """
         select timestamp'2014-06-09 13:50:17.4971' as ts
         from rdb$database
     ) a;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     DTS                             2014-06-09 13:50:17.0000
     MS                              497.1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

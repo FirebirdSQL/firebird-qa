@@ -46,7 +46,7 @@ test_script_1 = """
     select fn_multiplier(191) as t from rdb$database;
 
     execute procedure sp_multiplier(191);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -58,11 +58,11 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 07001
     Dynamic SQL Error
     -Input parameter mismatch for procedure SP_MULTIPLIER
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

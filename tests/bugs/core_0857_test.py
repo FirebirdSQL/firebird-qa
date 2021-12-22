@@ -51,7 +51,7 @@ set bail on;
         commit;
         create view v_test as
         select octet_length(t.f01) - octet_length(replace(t.f01, 'ß', '')) as "octet_length diff:" from test t;
-  """
+"""
 
 db_1 = db_factory(charset='WIN1252', sql_dialect=3, init=init_script_1)
 
@@ -85,7 +85,7 @@ expected_stdout_1 = """
         ci_ai result:                   1
         between result:                 1
         octet_length diff:              1
-  """
+"""
 
 test_script_1 = """
     set list on;
@@ -107,6 +107,6 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

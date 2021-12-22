@@ -25,7 +25,7 @@ test_script_1 = """
     from rdb$types
     group by rdb$field_name, rdb$type_name
     having count(rdb$type_name) > 1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

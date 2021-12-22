@@ -170,7 +170,7 @@ init_script_1 = """
     insert into c1251( c, id, descr ) values('ю', 254, 'CYRILLIC SMALL LETTER YU');
     insert into c1251( c, id, descr ) values('я', 255, 'CYRILLIC SMALL LETTER YA');
 	commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1, charset='UTF8')
 
@@ -242,7 +242,7 @@ expected_stdout_1 = """
     HAS_NO_UPPER_CASE_EQUIV         MIDDLE DOT
     HAS_NO_UPPER_CASE_EQUIV         NUMERO SIGN
     HAS_NO_UPPER_CASE_EQUIV         RIGHT ANGLE QUOTATION MARK
-  """
+"""
 
 @pytest.mark.version('>=2.1.7')
 def test_1(act_1: Action):

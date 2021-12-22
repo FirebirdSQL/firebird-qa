@@ -27,7 +27,7 @@ init_script_1 = """
 
     recreate view v_test as select id, x, y, z from test;
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -47,7 +47,7 @@ test_script_1 = """
     insert into v_test(id) values(3) returning x as v_inserted_x, y as v_inserted_y, z as v_inserted_z;
     update v_test set id=-id, x=-2*y, y=-3*x where id=1 returning x as v_updated_x, y as v_updated_y, z as v_updated_z;
     delete from v_test where id < 0 returning x as v_deleted_x, y as v_deleted_y, z as v_deleted_z;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -71,11 +71,11 @@ expected_stdout_1 = """
     V_DELETED_X                     -400
     V_DELETED_Y                     -300
     V_DELETED_Z                     -700
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

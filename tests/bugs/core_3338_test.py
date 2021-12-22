@@ -36,18 +36,18 @@ test_script_1 = """
     
     select * from t where coalesce(n*2,0) = 0;
     select * from t where decode( mod(n, 3), 0, coalesce(n,0), 1, iif(mod(n,7)=0, 2, 3) ) = 1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     PLAN (T INDEX (T_N2_COALESCE))
     PLAN (T INDEX (T_N2_DECODE))
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

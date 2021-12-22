@@ -100,7 +100,7 @@ test_script_1 = """
     execute procedure sp_test1a;
     select * from test;
     select mon$variable_name as ctx_name, mon$variable_value ctx_value from mon$context_variables where mon$attachment_id = current_connection;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -122,21 +122,21 @@ expected_stdout_1 = """
 
     CTX_NAME                        point_3
     CTX_VALUE                       #null# #null# 100003 #null#
-  """
+"""
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22000
     no current record for fetch operation
     -At procedure 'SP_TEST1A'
-  """
+"""
 
 @pytest.mark.version('>=3.0.1,<4')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -228,7 +228,7 @@ test_script_2 = """
   execute procedure sp_test1a;
   select * from test;
   select mon$variable_name as ctx_name, mon$variable_value ctx_value from mon$context_variables where mon$attachment_id = current_connection;
-  """
+"""
 
 
 act_2 = isql_act('db_1', test_script_2, substitutions=substitutions_2)
@@ -252,5 +252,5 @@ expected_stdout_2 = """
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

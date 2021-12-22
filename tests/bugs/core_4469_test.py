@@ -47,7 +47,7 @@ test_script_1 = """
     drop user boss1;
     drop user boss2;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -56,7 +56,7 @@ expected_stdout_1 = """
     IS_ADMIN_BOSS2A                 <false>
     IS_ADMIN_BOSS2B                 <true>
     IS_ADMIN_BOSS2C                 <false>
-  """
+"""
 
 expected_stderr_1 = """
 Statement failed, SQLSTATE = HY000
@@ -70,5 +70,5 @@ def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

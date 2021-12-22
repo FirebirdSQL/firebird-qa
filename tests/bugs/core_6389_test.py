@@ -28,7 +28,7 @@ test_script_1 = """
     commit;
     -- This must pass w/o errors:
     insert into blob13 (blobfield) values (x'ab01'); 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

@@ -170,7 +170,7 @@ init_script_1 = """
     insert into test (name) values ('rdb$plan');
     insert into test (name) values ('rdb$1');
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -210,7 +210,7 @@ test_script_1 = """
       close c;
     end
     ^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -221,11 +221,11 @@ expected_stdout_1 = """
     RC                              1
     NAME                            rdb$1
     RC                              1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

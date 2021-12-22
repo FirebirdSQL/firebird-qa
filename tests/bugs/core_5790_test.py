@@ -202,6 +202,6 @@ def test_1(act_1: Action, test_user: User, fdb_file: Path):
 
     drop database;
     rollback;
-    """
+"""
     act_1.isql(switches=['-q'], input=test_script)
     assert not fdb_file.exists()

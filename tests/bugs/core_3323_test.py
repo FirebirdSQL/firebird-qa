@@ -352,7 +352,7 @@ expected_stdout_1 = """
     id_at_point_F:                  1
     STILL_ALIVE_ATTACHMENT_ID       <EXPECTED: NULL>
     pointG:                         finished kill hanged connection
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):

@@ -75,6 +75,6 @@ def test_1(act_1: Action):
     ^
     set term ;^
     commit;
-    """
+"""
     act_1.isql(switches=[], input=script)
     assert act_1.clean_stdout == act_1.clean_expected_stdout

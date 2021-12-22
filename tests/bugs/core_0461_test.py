@@ -524,18 +524,18 @@ test_script_1 = """
     ;
 
     select 'Query from issue 2002-jul-12 passed OK' as msg from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     MSG                             Query from issue 2000-oct-18 passed OK
     MSG                             Query from issue 2002-jul-12 passed OK
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

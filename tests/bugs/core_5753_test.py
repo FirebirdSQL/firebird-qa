@@ -56,7 +56,7 @@ test_script_1 = """
     -- following two statements have to raise error (but did not before fix):
     grant execute on procedure sp_test to function sa_func with grant option;
     grant execute on procedure sp_test to package pg_test with grant option;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -72,11 +72,11 @@ expected_stderr_1 = """
     -GRANT failed
     -Dynamic SQL Error
     -Using GRANT OPTION on packages not allowed
-  """
+"""
 
 @pytest.mark.version('>=3.0.4')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

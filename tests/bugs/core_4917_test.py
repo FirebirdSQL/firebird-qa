@@ -53,13 +53,13 @@ test_script_1 = """
     
     show domain;
     
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     rdb$2
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
@@ -84,13 +84,13 @@ expected_stderr_1 = """
     -ALTER DOMAIN rdb$2 failed
     -SQL error code = -637
     -Implicit domain name RDB$3 not allowed in user created domain
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

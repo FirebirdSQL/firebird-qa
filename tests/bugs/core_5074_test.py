@@ -33,7 +33,7 @@ test_script_1 = """
     );
     set sqlda_display on;
     select a[0] from test;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -44,11 +44,11 @@ expected_stdout_1 = """
     01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 10 charset: 1 OCTETS
       :  name: A  alias: A
       : table: TEST  owner: SYSDBA
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

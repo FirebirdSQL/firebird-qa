@@ -54,7 +54,7 @@ def test_1(act_1: Action):
     begin
       select mon$stat_id from mon$attachments rows 1 into :i;
     end
-    """
+"""
     with act_1.db.connect() as con:
         c = con.cursor()
         c.execute(sql)

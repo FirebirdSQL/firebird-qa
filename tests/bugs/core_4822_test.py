@@ -22,7 +22,7 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     --- SKIP any test for 3.0 for this ticket ---
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

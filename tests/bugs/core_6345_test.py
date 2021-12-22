@@ -27,18 +27,18 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set heading off;
     select -922337203685477.5808/-1.0 from rdb$database; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22003
     Integer overflow.  The result of an integer operation caused the most significant bit of the result to carry.
-  """
+"""
 
 @pytest.mark.version('>=3.0.6')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

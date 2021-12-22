@@ -44,7 +44,7 @@ init_script_1 = """
         data_reg timestamp -- can be used in this test instead of type 'date' (result the same: 2.1.0 crashes)
     );
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -62,17 +62,17 @@ test_script_1 = """
     end
     ^
     set term ;^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     MSG                             Done
-  """
+"""
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

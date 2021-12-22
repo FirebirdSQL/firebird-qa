@@ -47,7 +47,7 @@ test_script_1 = """
         inner join table3 on table1.id_breed = table3.id_breed
     where table1.id = 1
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

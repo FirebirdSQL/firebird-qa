@@ -45,7 +45,7 @@ test_script_1 = """
 
     insert into test1 default values;
     select * from test1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -58,11 +58,11 @@ expected_stdout_1 = """
     N_DM_BIGINT_ABSOL_MIN           -9223372036854775808
     N_DM_INT128_ABSOL_MAX                 170141183460469231731687303715884105727
     N_DM_INT128_ABSOL_MIN                -170141183460469231731687303715884105728
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

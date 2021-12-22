@@ -44,7 +44,7 @@ test_script_1 = """
         and upper(rf.rdb$field_name) starting with upper('vc_generated_')
     order by rf.rdb$field_position
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -58,11 +58,11 @@ expected_stdout_1 = """
 
     RDB$FIELD_LENGTH                804
     RDB$CHARACTER_LENGTH            201
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

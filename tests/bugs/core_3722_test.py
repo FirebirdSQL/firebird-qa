@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3722
 # title:        IS NOT DISTINCT FROM NULL doesn't use index
-# decription:   
+# decription:
 # tracker_id:   CORE-3722
 # min_versions: ['2.1.5']
 # versions:     2.1.5
@@ -31,7 +31,7 @@ select * from t where a is not distinct from nullif('', '');
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:btestnew	mpugs.core_3722.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbtestnew\\tmp\\bugs.core_3722.fdb, User: SYSDBA
 SQL> SQL>
 PLAN (T INDEX (T_A))
 SQL>
@@ -46,5 +46,5 @@ SQL>"""
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

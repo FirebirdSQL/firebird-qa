@@ -59,7 +59,7 @@ init_script_1 = """
     end ^
 
     commit ^
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 

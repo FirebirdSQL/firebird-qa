@@ -384,7 +384,7 @@ def test_1(act_1: Action, dba_privileged_user: User, non_privileged_user: User, 
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
-    """
+"""
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=['-q'], input=test_script)

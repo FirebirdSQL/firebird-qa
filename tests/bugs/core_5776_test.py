@@ -88,7 +88,7 @@ test_script_1 = """
 
     select rdb$argument_position, rdb$argument_name from rdb$function_arguments
      where rdb$function_name = 'SRIGHT'; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -116,13 +116,13 @@ expected_stdout_1 = """
 
     RDB$ARGUMENT_POSITION           2
     RDB$ARGUMENT_NAME               LEN                                                                                                                                                                                                                                                         
-  """
+"""
 
 @pytest.mark.version('>=3.0.4,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -172,7 +172,7 @@ test_script_2 = """
     select the_frac( -pi() ) as the_frac_2 from rdb$database;
     commit;
 
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -180,11 +180,11 @@ expected_stdout_2 = """
     THE_FRAC_0                      -1.177912798268244
     THE_FRAC_1                      -0.1415926535897931
     THE_FRAC_2                      0.8679747508826116
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

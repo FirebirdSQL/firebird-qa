@@ -52,7 +52,7 @@ test_script_1 = """
     ) t;
 
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -87,11 +87,11 @@ expected_stdout_1 = """
     hex_decode(hex_encode(uid))     CFA677DA45594D52A7D24EF9FA4C04D600000000
     b64_dec(b64_enc(uid)) result    <true>
     hex_dec(hex_enc(uid)) result    <true>
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

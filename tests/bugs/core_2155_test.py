@@ -34,7 +34,7 @@ init_script_1 = """
     select dummy_alias.rdb$relation_id, dummy_alias.rdb$field_id
     from rdb$relations as dummy_alias;
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -48,18 +48,18 @@ test_script_1 = """
     select v.rdb$relation_id, p.*
     from v_relations_b v
     INNER join sp_test(v.rdb$field_id) p on 1=1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     PLAN JOIN (V RDB$RELATIONS NATURAL, P NATURAL)
     PLAN JOIN (V DUMMY_ALIAS NATURAL, P NATURAL)
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

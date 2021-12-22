@@ -29,7 +29,7 @@ test_script_1 = """
     set planonly;
     select mon$guid,mon$file_id,mon$next_attachment,mon$next_statement, rdb$get_context('SYSTEM', 'DB_GUID'), rdb$get_context('SYSTEM', 'DB_FILE_ID')
     from mon$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -46,11 +46,11 @@ expected_stdout_1 = """
     :  name: RDB$GET_CONTEXT  alias: RDB$GET_CONTEXT
     06: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 255 charset: 0 NONE
     :  name: RDB$GET_CONTEXT  alias: RDB$GET_CONTEXT
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -99,7 +99,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -157,7 +157,7 @@ test_script_1 = """
 
     select rdb$get_context('USER_SESSION', 'tx_trig_log') from rdb$database;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -182,7 +182,7 @@ expected_stdout_1 = """
     trigger on transaction start, current tx=29
     exception on tx start, current tx=29
 
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = HY000
     exception 1
@@ -196,13 +196,13 @@ expected_stderr_1 = """
     -transaction 29 aborted
     -At trigger 'TX_START' line
     At procedure 'SP_USE_ATX' line
-  """
+"""
 
 @pytest.mark.version('>=3.0.4')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

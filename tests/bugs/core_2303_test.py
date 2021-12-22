@@ -40,7 +40,7 @@ test_script_1 = """
     s.mon$transaction_id = current_transaction
     and s.mon$sql_text containing 'from mon$statements' -- prevent from RDB$AUTH record, 4.0 Classic
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -54,11 +54,11 @@ expected_stdout_1 = """
     Select Expression
         -> Filter
             -> Table "MON$STATEMENTS" as "S" Full Scan
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

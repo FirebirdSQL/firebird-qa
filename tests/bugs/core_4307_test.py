@@ -31,13 +31,13 @@ init_script_1 = """
     recreate view v1 as select n1 from t1 where n1 < n2 with check option;
     commit;
     update v1 set n1 = n1 - 1;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     update v1 set n1 = n1 - 1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

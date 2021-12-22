@@ -28,7 +28,7 @@ init_script_1 = """
 
     grant select on v_my_attach to public;
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -72,7 +72,7 @@ expected_stdout_1 = """
     TMP$C1642_ALAN OK.
     TMP$C1642_JOHN OK.
     TMP$C1642_MICK OK.
-  """
+"""
 
 user_1 = user_factory('db_1', name='tmp$c1642_alan', password='123')
 user_2 = user_factory('db_1', name='tmp$c1642_john', password = '456')

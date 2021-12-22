@@ -47,7 +47,7 @@ test_script_1 = """
 	set list on;
 	select id, text, parentid, conditions, stmt, rulfname
 	from tree_test;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -72,11 +72,11 @@ expected_stdout_1 = """
 	CONDITIONS                       G.UIDORG = '7724261610     380000326'
 	STMT                            
 	RULFNAME                        KODORG       
-  """
+"""
 
 @pytest.mark.version('>=2.5.2')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -61,7 +61,7 @@ test_script_1 = """
     select substr(cast('abc' as char(1500)) || '123', 1, 1000)
     from rdb$database 
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -71,13 +71,13 @@ expected_stderr_1 = """
     -string right truncation
     -expected length 80, actual 1503
     -UDF: SUBSTR
-  """
+"""
 
 @pytest.mark.version('>=3.0.4,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
 # resources: None
@@ -100,7 +100,7 @@ test_script_2 = """
     commit;
     set list on;
     select UDR40_div( 1, 0) from rdb$database;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -109,11 +109,11 @@ expected_stderr_2 = """
     arithmetic exception, numeric overflow, or string truncation
     -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
     -At function 'UDR40_DIV'
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
 

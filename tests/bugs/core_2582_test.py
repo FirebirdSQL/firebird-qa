@@ -36,7 +36,7 @@ init_script_1 = """
     INTEGER, INTEGER
     RETURNS DOUBLE PRECISION BY VALUE
     ENTRY_POINT 'IB_UDF_div' MODULE_NAME 'ib_udf';
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -45,7 +45,7 @@ test_script_1 = """
     select dpower(1e120, 3) from rdb$database;
     select xasin(2) from rdb$database;
     select xdiv(10, 0) from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -64,13 +64,13 @@ expected_stderr_1 = """
     expression evaluation not supported
     -Floating point overflow in result from UDF XDIV
     -UDF: XDIV
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
 # resources: None
@@ -87,7 +87,7 @@ test_script_2 = """
      -- It is STRONGLY RECOMMENDED to add this ticket
      -- in the 'excluded-list file:
      -- %FBT_REPO%	ests\\qa4x-exclude-list.txt
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 

@@ -64,7 +64,7 @@ def test_1(act_1: Action):
         begin
           insert into log (PK) values (new.pk);
         end
-        """
+"""
         while i <= 4000:
             c.execute(cmd % i)
             i += 1

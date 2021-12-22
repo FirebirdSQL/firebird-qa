@@ -54,7 +54,7 @@ test_script_1 = """
     -- Statement failed, SQLSTATE = 22001
     -- arithmetic exception, numeric overflow, or string truncation
     -- -string right truncation
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -70,11 +70,11 @@ expected_stderr_1 = """
     -string right truncation
     -expected length 59, actual 60
     -At procedure 'SP_OVERFLOWED_2' line: 3, col: 5
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

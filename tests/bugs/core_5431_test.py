@@ -55,7 +55,7 @@ test_script_1 = """
     -- -generator RDB$nnn is not defined
     insert into test1 default values returning id as test1_id;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -63,18 +63,18 @@ expected_stdout_1 = """
     IDENTITY_SEQUENCES_COUNT_1      1
     TEST1_ID                        32767
     IDENTITY_SEQUENCES_COUNT_2      0
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     invalid request BLR at offset 47
     -generator RDB is not defined
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

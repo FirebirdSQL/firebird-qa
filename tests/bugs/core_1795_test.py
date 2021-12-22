@@ -76,7 +76,7 @@ test_script_1 = """
       f.colorid, c.colorname
     having
       c.colorname starting with 'b';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -88,11 +88,11 @@ expected_stdout_1 = """
     COLORID                         5
     COLORNAME                       black
     COUNT                           1
-  """
+"""
 
 @pytest.mark.version('>=2.1.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

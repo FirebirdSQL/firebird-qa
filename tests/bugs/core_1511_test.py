@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_1511
 # title:        POSITION(string_exp1, string_exp2 [, start])
-# decription:   
+# decription:
 # tracker_id:   CORE-1511
 # min_versions: ['2.1.0']
 # versions:     2.1.0
@@ -28,7 +28,7 @@ FROM RDB$DATABASE;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:btest2	mpugs.core_1511.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_1511.fdb, User: SYSDBA
 SQL> CON> CON> CON> CON>
     POSITION     POSITION     POSITION     POSITION
 ============ ============ ============ ============
@@ -40,5 +40,5 @@ SQL>"""
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

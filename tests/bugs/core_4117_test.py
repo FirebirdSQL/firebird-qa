@@ -72,14 +72,14 @@ init_script_1 = """
     -- -20 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< this is added here <<<<<<<<<<<<<
     -- -At trigger 'TEST1_BU' line: 3, col: 7
 
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     update test1 set id = 2;
     update test2 set id = 2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -94,11 +94,11 @@ expected_stderr_1 = """
     -EX_BAD_COMPUTED_FIELD_VALUE
     -20
     -At trigger 'TEST2_BU' line: 3, col: 7
-  """
+"""
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

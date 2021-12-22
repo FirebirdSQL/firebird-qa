@@ -100,7 +100,7 @@ init_script_1 = """
     -- So lets delete the record about trig_ddl_log_after creation.
     delete from ddl_log;
     commit;
-  """
+"""
 
 db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 
@@ -261,7 +261,7 @@ expected_stdout_1_b = """
     Τα πάντα ήταν επιτυχής
     DDL_EVENT                       CREATE TABLE
     OBJECT_NAME                     T1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):

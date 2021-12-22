@@ -79,17 +79,17 @@ test_script_1 = """
     where ((t1_nd.id = ? ))
       and t1_nd.id=t3_nd_dependantdevices_relation.prim_devid
       and t0_dep.id=t3_nd_dependantdevices_relation.secondary_devid;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     PLAN SORT (JOIN (T1_ND INDEX (PK_NET_NET_DEVICE), T3_ND_DEPENDANTDEVICES_RELATION INDEX (FK_NET_DEV_INTERCONNECTION_001), T0_DEP INDEX (PK_NET_NET_DEVICE)))
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

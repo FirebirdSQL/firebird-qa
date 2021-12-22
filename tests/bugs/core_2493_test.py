@@ -302,7 +302,7 @@ expected_stdout_1 = """
     String IP/port: valid, equal to 'CLIENT_ADDRESS'
     Port value: valid, positive integer.
     OS user: valid, passed getpass.getuser()
-  """
+"""
 
 @pytest.mark.version('>=2.5.9')
 @pytest.mark.platform('Windows')

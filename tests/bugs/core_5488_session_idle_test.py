@@ -313,7 +313,7 @@ def test_1(act_1: Action, capsys):
         {shell_sleep_cmd};
         select 2 as point_2 from rdb$database;
         quit;
-    """
+"""
     # Trace
     with act_1.trace(db_events=trace_1):
         act_1.expected_stderr = expected_stderr_1

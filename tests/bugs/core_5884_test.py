@@ -7,8 +7,6 @@
 #                  Checked on:
 #                    FB30SS, build 3.0.4.33021: OK, 2.312s.
 #
-#                  [pcisar] 3.11.2021 This test fails for 4.0 (returns tmp$ user names instead mapped ones)
-#
 # tracker_id:   CORE-5884
 # min_versions: ['3.0.4']
 # versions:     3.0.4
@@ -48,7 +46,7 @@ test_script_1 = """
     drop global mapping gmap;
     drop mapping lmap;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -64,5 +62,7 @@ user_1b = user_factory('db_1', name='tmp$c5884_2', password='456', plugin='Srp')
 def test_1(act_1: Action, user_1a: User, user_1b: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    # [pcisar]
+    # 3.11.2021 This test fails for 3.0.8/4.0 (returns tmp$ user names instead mapped ones)
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

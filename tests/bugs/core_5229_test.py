@@ -184,7 +184,7 @@ def test_1(act_1: Action):
         -- #############################################################################################
         delete from mon$attachments where mon$attachment_id != current_connection;
         commit;
-    """
+"""
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=['-q', f'inet4://{act_1.db.db_path}'], input=sql_chk, connect_db=False)
     assert act_1.clean_stdout == act_1.clean_expected_stdout

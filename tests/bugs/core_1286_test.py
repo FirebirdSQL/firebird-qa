@@ -53,6 +53,6 @@ select 1 as r from rdb$fields rows 1;
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=['-pag', '0'], input=test_script_1)
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

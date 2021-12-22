@@ -701,7 +701,7 @@ def test_1(act_1: Action, db_dml_sessions_1: Database, dml_logs_1: List[Path],
               from test
               group by att
           ) t on t.cnt_in_common_tx = 0 and t.cnt_in_autonom_tx > 0;
-          """
+"""
           act_1.isql(switches=['-nod', str(db_dml_sessions_1.dsn)], input=chk_script, connect_db=False)
           f_check_log.write(act_1.stdout)
           # Now we can compare two versions of firebird.log and check their difference.

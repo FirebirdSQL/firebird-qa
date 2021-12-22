@@ -93,17 +93,17 @@ test_script_1 = """
     -- Fixed in 3.0 since: http://sourceforge.net/p/firebird/code/62570
     -- Checked on 2.5.5.26952 - plans are the same now.
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     PLAN (ZF ORDER IXA_FK__ID__KONT_ID INDEX (FK_ZF__K))
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

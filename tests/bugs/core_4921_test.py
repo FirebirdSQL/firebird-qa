@@ -46,7 +46,7 @@ init_script_1 = """
     union all
     select * from t3;
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -55,18 +55,18 @@ test_script_1 = """
     select * from v_test where x is not distinct from 1;
     select * from v_test where x = 1 and y is not distinct from 1;
     set planonly;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     PLAN (V_TEST T1 INDEX (T1_SINGLE_X), V_TEST T2 INDEX (T2_SINGLE_X), V_TEST T3 INDEX (T3_SINGLE_X))
     PLAN (V_TEST T1 INDEX (T1_COMPOUND_X_Y), V_TEST T2 INDEX (T2_COMPOUND_X_Y), V_TEST T3 INDEX (T3_COMPOUND_X_Y))  
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -96,7 +96,7 @@ test_script_1 = """
         rank() over w2,
         e.dept_no,
         e.salary;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -143,11 +143,11 @@ expected_stdout_1 = """
     4 621                  97500.00                     4              36000.00              97500.00
     15 623                  67241.25                     5              35000.00              67241.25
     29 623                  69482.63                     5              35000.00              69482.63
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

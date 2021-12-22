@@ -24,7 +24,7 @@ test_script_1 = """
     set planonly;
     set sqlda_display;
     select cast(null as int) v1, cast(? as int) v2 from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -32,11 +32,11 @@ expected_stdout_1 = """
     01: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
     01: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
     02: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

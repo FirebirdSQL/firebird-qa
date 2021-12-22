@@ -23,7 +23,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     commit;
     connect 'localhost:bla' user 'qqq' password 'zzz';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -35,5 +35,5 @@ Your user name and password are not defined. Ask your database administrator to 
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

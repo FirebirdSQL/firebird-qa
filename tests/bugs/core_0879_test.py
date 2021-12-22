@@ -27,7 +27,7 @@ test_script_1 = """
     drop table tab;
     commit;
     show table tab;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -36,11 +36,11 @@ expected_stderr_1 = """
     unsuccessful metadata update
     -key size exceeds implementation restriction for index "IX"
     There is no table TAB in this database
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

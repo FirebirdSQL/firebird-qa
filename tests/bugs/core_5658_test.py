@@ -91,7 +91,7 @@ test_script_1 = """
     select 'case-3' as msg, p.* from sp_test(11, timestamp '11.01.2011 11:12:13', true) as p;
     select 'case-4' as msg, p.* from sp_test(null, timestamp '03.03.2003 03:13:23', null, 'q') as p;
     select 'case-5' as msg, p.* from sp_test(null, null, null, 'z') as p;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -118,11 +118,11 @@ expected_stdout_1 = """
 
     MSG                             case-5
     ID                              3
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

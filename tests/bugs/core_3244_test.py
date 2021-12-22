@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3244
 # title:        POSITION: Wrong result with '' if third argument present
-# decription:   
+# decription:
 # tracker_id:   CORE-3244
 # min_versions: ['2.1.4']
 # versions:     2.1.4
@@ -26,7 +26,7 @@ select position ('', 'Broehaha', 20) from rdb$database;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:btest2	mpugs.core_3244.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_3244.fdb, User: SYSDBA
 SQL>
     POSITION
 ============
@@ -48,5 +48,5 @@ SQL>"""
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

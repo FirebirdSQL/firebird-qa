@@ -316,7 +316,7 @@ def init_main_db(act_1: Action, eds_user: User):
         grant execute on procedure sp_do_eds to {eds_user.name};
         grant drop database to {eds_user.name};
         commit;
-        """
+"""
     act_1.isql(switches=[], input=ddl_script)
 
 

@@ -31,7 +31,7 @@ test_script_1 = """
     --============
     --Statement failed, SQLSTATE = 42000
     --validation error for variable ID, value "*** null ***"
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

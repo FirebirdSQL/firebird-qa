@@ -67,7 +67,7 @@ test_script_1 = """
     select timestamp '31.05.2017       11:22:33.4455' from rdb$database;
     select timestamp '31.05.2017
     22:33:44.5577' from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -81,7 +81,7 @@ expected_stdout_1 = """
     07:03:01.0000 
     07:03:02.1238 
     2017-05-31 11:22:33.4455  
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22009
     Invalid time zone region: 20 30
@@ -122,13 +122,13 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 22009
     Invalid time zone region: 
         22:33:44.5577
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -143,7 +143,7 @@ test_script_1 = """
     --drop role tmp$r6143_boss;
     --commit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -193,7 +193,7 @@ expected_stdout_1 = """
     WHO_AM_I                        TMP$C6143_RIO
 
     Records affected: 1
-  """
+"""
 
 user_foo = user_factory('db_1', name='tmp$c6143_foo', password='123', plugin='Srp')
 role_boss = role_factory('db_1', name='tmp$r6143_boss')
@@ -202,5 +202,5 @@ role_boss = role_factory('db_1', name='tmp$r6143_boss')
 def test_1(act_1: Action, role_boss: Role, user_foo: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

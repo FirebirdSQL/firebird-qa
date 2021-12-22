@@ -165,7 +165,7 @@ init_script_1 = """
     insert into bbb (tm, qi, vi, bv) values ('1-jun-2002 01:13:39', 22, 51, 50);
     insert into bbb (tm, qi, vi, bv) values ('1-jan-2003 01:13:05', 4, 37, 185); 
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -183,7 +183,7 @@ test_script_1 = """
     left join c t3 on t2.qi = t3.qi and t1.r = t3.r-2
     where t1.c = 'rio' and t2.c = 'foo' and t3.c = 'bar'
     order by 1,2,3;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -200,11 +200,11 @@ expected_stdout_1 = """
                    43                    44                    45 
                    46                    47                    48 
                    49                    50                    51 
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

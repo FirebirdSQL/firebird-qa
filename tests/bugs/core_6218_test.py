@@ -36,7 +36,7 @@ test_script_1 = """
     select n as n_grouped_from_test0 from test group by 1; --- [ 1 ]
     select distinct n as n_uniq_from_test0 from test; -- [ 2 ]
     select count(distinct n) as count_uniq_from_test0 from test; -- [ 3 ] 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -63,11 +63,11 @@ expected_stdout_1 = """
             -> Table "TEST" Full Scan
 
     COUNT_UNIQ_FROM_TEST0           1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -151,7 +151,7 @@ def test_1(act_1: Action, user_bill: User, user_john: User, user_mick: User, use
         group by mon$user, sec$user_name
         order by coalesce(mon$user, sec$user_name);
         commit;
-        """
+"""
         act_1.expected_stdout = expected_stdout_1
         act_1.isql(switches=['-q'], input=script)
         assert act_1.clean_stdout == act_1.clean_expected_stdout

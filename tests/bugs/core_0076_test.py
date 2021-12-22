@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0076
 # title:        Invalid ROW_COUNT variable value after DELETE
-# decription:   
+# decription:
 # tracker_id:   CORE-0076
 # min_versions: ['2.5.0']
 # versions:     2.5
@@ -22,7 +22,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     create or alter procedure test_del as begin end;
-    
+
     recreate table test (
         a integer not null,
         constraint test_pk primary key (a)
@@ -38,10 +38,10 @@ test_script_1 = """
     insert into test (a) values (9);
     insert into test (a) values (10);
     commit;
-    
+
     set list on;
     select count(*) as cnt from test where a between 4 and 7;
-    
+
     set term ^;
     create or alter procedure test_del (l integer, r integer) returns (rc integer) as
     begin
@@ -53,7 +53,7 @@ test_script_1 = """
     set term ;^
     execute procedure test_del (4, 7);
     select * from test;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -66,11 +66,11 @@ expected_stdout_1 = """
     A                               8
     A                               9
     A                               10
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

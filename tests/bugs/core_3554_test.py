@@ -89,13 +89,13 @@ test_script_1 = """
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     N                               32739
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     Execute statement error at isc_dsql_prepare :
@@ -103,15 +103,15 @@ expected_stderr_1 = """
     335544436 : SQL error code = -104
     335544851 : Unexpected end of command - line 1, column 1
     Statement :
-    Data source : Firebird::localhost:C:\\MIXirebird\\QAbt-repo	mp\\E30.FDB
+    Data source : Firebird::localhost:C:\\MIX\\firebird\\QA\\fbt-repo\\tmp\\E30.FDB
     -At block line: 4, col: 7
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

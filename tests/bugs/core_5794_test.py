@@ -72,7 +72,7 @@ test_script_1 = """
 
     set list on;
     select mon$variable_name as ctx_var, mon$variable_value as ctx_value from mon$context_variables;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -82,7 +82,7 @@ expected_stdout_1 = """
 
     CTX_VAR                         TRIGGER_OLD_VAL
     CTX_VALUE                       10
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = HY000
     exception 1
@@ -90,13 +90,13 @@ expected_stderr_1 = """
     -it is forbidden to delete row with val>0 (id = 1, val=10)
     -At trigger 'TEST_TABLE_BD' line: 6, col: 9
     At block line: 16, col: 9
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

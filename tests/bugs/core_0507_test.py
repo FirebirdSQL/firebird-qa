@@ -27,7 +27,7 @@ test_script_1 = """
     from rdb$relations r left join rdb$relation_constraints rc
     on r.rdb$relation_name = rc.rdb$relation_name
     order by rdb$relation_name;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -37,11 +37,11 @@ expected_stderr_1 = """
     -SQL error code = -204
     -Ambiguous field name between a field and a field in the select list with name
     -RDB$RELATION_NAME
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

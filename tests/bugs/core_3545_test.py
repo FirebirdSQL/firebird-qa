@@ -119,7 +119,7 @@ test_script_1 = """
     end
     ^
     set term ;^ 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -129,7 +129,7 @@ expected_stdout_1 = """
 
     ID                              3
     N                               4
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST"."N", value "399"
@@ -158,13 +158,13 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     validation error for variable VAR2_CAST_INT_TO_DOMAIN, value "399"
     -At block line: 4, col: 7
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

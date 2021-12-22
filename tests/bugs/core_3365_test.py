@@ -98,7 +98,7 @@ test_script_1 = """
     connect '$(DSN)' user SYSDBA password 'masterkey';
     drop user tmp$c3365 using plugin Srp;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -117,11 +117,11 @@ expected_stdout_1 = """
     after altering TMP$C3365  Ian        Srp                  INITNAME             Ian
     after altering TMP$C3365  Ian        Srp                  SURNAME              Gillan
     Records affected: 3
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

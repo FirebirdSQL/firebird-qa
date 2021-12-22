@@ -128,7 +128,7 @@ test_script_1 = """
     drop user tmp$c4464_3 using plugin Srp;
     commit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -143,7 +143,7 @@ expected_stdout_1 = """
     TMP$C4464_2  INITNAME             Ian                       Srp     
     TMP$C4464_2  SURNAME              Gillan                    Srp     
     TMP$C4464_3  <null>               <null>                    Srp     
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42702
     Duplicated user attribute INITNAME
@@ -156,13 +156,13 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 42702
     Duplicated user attribute INITNAME
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

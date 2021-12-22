@@ -344,7 +344,7 @@ def test_1(act_1: Action, heavy_script_1: Path, heavy_output_1: Path):
       iif(mon$remote_process containing 'isql', 'isql', null) as deleted_mon_process,
       mon$system_flag as deleted_mon_sys_flag
     ;
-    """
+"""
     heavy_script_1.write_text("""
     set bail on;
     set list on;

@@ -145,7 +145,7 @@ def test_1(act_1: Action):
     set list on;
     select datediff(second from timestamp '01.01.1970 00:00:00.000' to current_timestamp) as " "
     from rdb$types rows 1;
-    """
+"""
     act_1.execute()
     ms_before_detach = 0
     for line in act_1.stdout.splitlines():

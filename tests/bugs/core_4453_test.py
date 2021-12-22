@@ -26,25 +26,25 @@ init_script_1 = """
     commit;
     create table t_01(s dm_01, x int);
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     insert into t_01(x) values(100);
     select * from t_01 where s is null;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     validation error for column "T_01"."S", value "*** null ***"
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

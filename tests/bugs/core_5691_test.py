@@ -224,7 +224,7 @@ expected_stdout_1 = """
     'legacy_usermanager.dll' 	file description: firebird legacy user manager plugin (64-bit)
     'srp.dll' 					file description: firebird srp user manager plugin (64-bit)
     'udr_engine.dll' 			file description: firebird user defined routines engine (64-bit)
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')

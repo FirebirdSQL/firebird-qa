@@ -63,10 +63,14 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 def test_1(act_1: Action):
     with act_1.db.connect() as con:
         c = con.cursor()
-        c.prepare('select * from t order by b')
+        # Use with to free the Statement immediately
+        with c.prepare('select * from t order by b'):
+            pass
         with pytest.raises(DatabaseError, match='.*Datatype ARRAY is not supported for sorting operation.*'):
             c.prepare('select * from t order by a')
-        c.prepare('select b, count(*) from t group by b')
+        # Use with to free the Statement immediately
+        with c.prepare('select b, count(*) from t group by b'):
+            pass
         with pytest.raises(DatabaseError, match='.*Datatype ARRAY is not supported for sorting operation.*'):
             c.prepare('select a, count(*) from t group by a')
     # Passed.

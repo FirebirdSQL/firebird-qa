@@ -34,7 +34,7 @@ test_script_1 = """
     select p.* 
     from rdb$time_zone_util.transitions('Europe/Moscow', timestamp '0001-01-01 GMT', timestamp '9999-12-31 GMT') p
     order by p.rdb$zone_offset, p.rdb$dst_offset, p.rdb$effective_offset, p.rdb$start_timestamp, p.rdb$end_timestamp;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -509,11 +509,11 @@ expected_stdout_1 = """
 
 
     Records affected: 78
-  """
+"""
 
 @pytest.mark.version('>=4.0.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

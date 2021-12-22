@@ -59,7 +59,7 @@ test_script_1 = """
     r.rdb$relation_type = 1
     and r.rdb$relation_name in ('V1','V2','V3','V4')
     order by v_name, f_name;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -95,11 +95,11 @@ expected_stdout_1 = """
     select b as b1 from (select 1 b from rdb$database)
     F_NAME                          A1
     F_TYPE                          8
-  """
+"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

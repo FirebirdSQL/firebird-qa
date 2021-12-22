@@ -35,18 +35,18 @@ test_script_1 = """
         ,encrypt( a.s_origin using aes mode ofb key '0123456789012345' iv 'abcdefghhgfedcba') as s_encrypted
     from a
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     S_ORIGIN                        Encrypts/decrypts data using symmetric cipher
     S_ENCRYPTED                     910805BDA8B05C475E8B5D3D0971D58649EA0D549FEA1633A8811429183E925E1C2C77CE4E3B9DCDFA0C75997E
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

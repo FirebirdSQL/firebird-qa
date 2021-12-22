@@ -71,7 +71,7 @@ test_script_1 = """
         d.dts desc
     ;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -79,11 +79,11 @@ expected_stdout_1 = """
     PLAN SORT (JOIN (C INDEX (C5421_TMAIN_EKEY), D INDEX (C5421_TDETL_DOC_ID)))
     DOC_ID                          0
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=2.5.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

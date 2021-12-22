@@ -24,7 +24,7 @@ test_script_1 = """
     set sqlda_display;
     set list on;
     select current_timestamp - current_timestamp dts_diff from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -32,11 +32,11 @@ expected_stdout_1 = """
     01: sqltype: 580 INT64 scale: -9 subtype: 1 len: 8
     :  name: SUBTRACT  alias: DTS_DIFF
     DTS_DIFF 0.000000000
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

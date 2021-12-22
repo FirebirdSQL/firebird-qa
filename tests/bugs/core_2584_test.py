@@ -49,7 +49,7 @@ test_script_1 = """
     from rf
     where rp < 5
     group by 1, 2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -69,11 +69,11 @@ expected_stdout_1 = """
     A                               4
     B                               4
     CNT                             14
-  """
+"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

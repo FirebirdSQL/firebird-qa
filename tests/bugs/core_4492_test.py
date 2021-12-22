@@ -51,7 +51,7 @@ test_script_1 = """
     -- 27.12.2017: this works fine (fixed by dimitr, see letter 01.12.2017 09:57):
     select 5 from rdb$relations where rdb$db_key is not distinct from ?;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -61,11 +61,11 @@ expected_stdout_1 = """
     PLAN (V RDB$RELATIONS INDEX (), V RDB$RELATIONS INDEX ())
     PLAN HASH (B RDB$RELATIONS NATURAL, B RDB$RELATIONS NATURAL, A RDB$RELATIONS NATURAL, A RDB$RELATIONS NATURAL)
     PLAN (RDB$RELATIONS INDEX ())
-  """
+"""
 
 @pytest.mark.version('>=3.0.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

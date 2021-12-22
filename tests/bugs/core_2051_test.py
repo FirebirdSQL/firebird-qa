@@ -37,7 +37,7 @@ test_script_1 = """
     set plan on;
     set list on;
     select coalesce((select t2.id from test2 t2 where t2.id = t1.id), 0) id2 from test1 t1 order by t1.id;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -47,11 +47,11 @@ expected_stdout_1 = """
     ID2                             1
     ID2                             2
     ID2                             0
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

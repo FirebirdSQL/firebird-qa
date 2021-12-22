@@ -40,7 +40,7 @@ test_script_1 = """
     create unique index classidksgidx on testtable (classid, ksgfk);
     
     insert into testtable values(3,1,null);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -48,11 +48,11 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     attempt to store duplicate value (visible to active transactions) in unique index "CLASSIDKSGIDX"
     -Problematic key value is ("CLASSID" = 1, "KSGFK" = NULL)
-  """
+"""
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

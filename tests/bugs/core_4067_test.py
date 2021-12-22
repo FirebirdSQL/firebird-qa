@@ -76,7 +76,7 @@ def test_1(act_1: Action, temp_db_1: Path):
     create database 'localhost:{str(temp_db_1)}' page_size 4096 default character set win1251 collation win1251;
     set list on;
     select mon$sql_dialect as x from mon$database;
-    """
+"""
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=[], input=test_script, connect_db=False)
     assert act_1.clean_stdout == act_1.clean_expected_stdout

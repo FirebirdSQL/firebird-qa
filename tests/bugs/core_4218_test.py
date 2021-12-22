@@ -111,7 +111,7 @@ def test_1(act_1: Action, test_user_1: User, test_db_1: Path):
     commit;
     drop database;
     quit;
-    """
+"""
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=['-q'], input=test_script_1)
     assert act_1.clean_stdout == act_1.clean_expected_stdout

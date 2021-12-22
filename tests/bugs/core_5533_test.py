@@ -73,7 +73,7 @@ test_script_1 = """
     select count(distinct id) id_distinct_count_2 from tlog;
     quit; 
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -81,11 +81,11 @@ expected_stdout_1 = """
     ID_DISTINCT_COUNT_0             0
     ID_DISTINCT_COUNT_1             1
     ID_DISTINCT_COUNT_2             1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

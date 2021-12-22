@@ -27,7 +27,7 @@ test_script_1 = """
     commit;
     recreate table test (b int not null);
     commit; -- crash here 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

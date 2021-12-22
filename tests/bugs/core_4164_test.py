@@ -27,7 +27,7 @@ init_script_1 = """
     -- grant usage on exception e to mgr$4164 with grant option;
     -- commit;
     -- ==> and then do backup.
-  """
+"""
 
 db_1 = db_factory(from_backup='core4164.fbk', init=init_script_1)
 
@@ -54,7 +54,7 @@ test_script_1 = """
     from rdb$user_privileges p
     where upper(trim(p.rdb$relation_name)) in ( upper('g'), upper('e') )
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -67,11 +67,11 @@ expected_stdout_1 = """
     TMP$4164   SYSDBA     G               0 E                 8        7 <null>          
     MGR$4164   SYSDBA     G               1 G                 8       14 <null>          
     MGR$4164   SYSDBA     G               1 E                 8        7 <null>          
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

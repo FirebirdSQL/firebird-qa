@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_2783
 # title:        AV using recursive query as subquery in SELECT list and ORDER'ing by them
-# decription:   
+# decription:
 # tracker_id:   CORE-2783
 # min_versions: []
 # versions:     2.1.4
@@ -54,7 +54,7 @@ ORDER BY NNN;
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:btest2	mpugs.core_2783.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_2783.fdb, User: SYSDBA
 SQL> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON>
 RDB$RELATION_ID          NNN
 =============== ============
@@ -71,5 +71,5 @@ SQL>"""
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

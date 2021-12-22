@@ -163,7 +163,7 @@ expected_stdout_1 = """
     ID of thread:  13. OVERALL RESULT: PASSED=10, FAILED=0
     ID of thread:  14. OVERALL RESULT: PASSED=10, FAILED=0
     ID of thread:  15. OVERALL RESULT: PASSED=10, FAILED=0
-  """
+"""
 
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')

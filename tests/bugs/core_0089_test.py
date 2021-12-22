@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0089
 # title:        Using where params in SUM return incorrect results
-# decription:   
+# decription:
 # tracker_id:   CORE-0089
 # min_versions: ['2.5.0']
 # versions:     2.5
@@ -23,7 +23,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     -- DDL and data are based on text file (report) that is attached to ticket.
     -- No difference between FB 1.5.6 and 4.0.0 found.
-    -- Added PK on table categorygroup and index "schemacategories(typecol)"  
+    -- Added PK on table categorygroup and index "schemacategories(typecol)"
     -- after analyzing text of queries - it seems to me that such indices
     -- does exist on real schema.
 
@@ -37,7 +37,7 @@ test_script_1 = """
     );
     commit;
     create index sch_cat_typecol on schemacategories(typecol);
-    
+
     recreate table categorygroup(
         id int primary key
         ,parent int
@@ -47,7 +47,7 @@ test_script_1 = """
         ,displaytype int
     );
     commit;
-    
+
     insert into schemacategories values(11, 472, 10, 1, 10000175, 'TRUE');
     insert into schemacategories values(11, 463, 10, 1, 10000175, 'TRUE');
     insert into schemacategories values(11, 464, 10, 1, 10000175, 'TRUE');
@@ -90,8 +90,8 @@ test_script_1 = """
     insert into schemacategories values(11, 455, 1, 1, 10000090, 'TRUE');
     insert into schemacategories values(11, 456, 1, 1, 10000090, 'TRUE');
     commit;
-    
-    
+
+
     insert into categorygroup  values(1,0,1,'TRUE',1,1);
     insert into categorygroup  values(2,0,1,'TRUE',1,2);
     insert into categorygroup  values(3,0,1,'TRUE',1,2);
@@ -103,13 +103,13 @@ test_script_1 = """
     insert into categorygroup  values(9,0,1,'TRUE',1,2);
     insert into categorygroup  values(10,0,1,'TRUE',1,2);
     commit;
-    
+
     set list on;
-    select sc.schemanr,sc.catnr,sc.typecol,cg.id   
-    from schemacategories sc, categorygroup cg 
+    select sc.schemanr,sc.catnr,sc.typecol,cg.id
+    from schemacategories sc, categorygroup cg
     where sc.schemanr = 11 and sc.typecol = cg.id
     order by sc.catnr;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -318,11 +318,11 @@ expected_stdout_1 = """
     CATNR                           509
     TYPECOL                         5
     ID                              5
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

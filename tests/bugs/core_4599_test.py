@@ -73,7 +73,7 @@ test_script_1 = """
 	from f
 	order by utf_char
 	;  
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -837,11 +837,11 @@ expected_stdout_1 = """
 	SIMILAR_TO_ALPHA_TEST_LO        1
 	REPLACE_UTF8_TO_ASCII_LO        .*.
 	OVERLAY_UTF8_TO_ASCII_LO        1  
-  """
+"""
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

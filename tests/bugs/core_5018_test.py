@@ -118,17 +118,17 @@ test_script_1 = """
     -- WI-V3.0.0.32179 IR=25
     -- WI-T4.0.0.313:  IR=39
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     IDX_READS_ESTIMATION            ACCEPTABLE
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

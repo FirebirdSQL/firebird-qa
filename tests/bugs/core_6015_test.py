@@ -116,7 +116,7 @@ test_script_1 = """
     from test_dynamic_sql t
     order by id
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -130,13 +130,13 @@ expected_stderr_1 = """
     Attempt to evaluate index expression recursively
     -At procedure 'SP_EVAL_DYNAMIC_SQL' line: 3, col: 8
     -lock conflict on no wait transaction
-  """
+"""
 
 @pytest.mark.version('>=3.0.8,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
 # resources: None
@@ -217,7 +217,7 @@ test_script_2 = """
     from test_dynamic_sql t
     order by id
     ;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -232,11 +232,11 @@ expected_stderr_2 = """
     Expression evaluation error for index "TEST_DYNAMIC_SQL_EVAL" on table "TEST_DYNAMIC_SQL"
     -Attempt to evaluate index expression recursively
     -At procedure 'SP_EVAL_DYNAMIC_SQL' line: 3, col: 8
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
 

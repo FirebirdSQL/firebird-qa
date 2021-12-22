@@ -140,7 +140,7 @@ test_script_1 = """
     ;
 
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -170,13 +170,13 @@ expected_stderr_1 = """
     no permission for DELETE access to TABLE RDB$CHARACTER_SETS
     Statement failed, SQLSTATE = 28000
     no permission for DELETE access to TABLE RDB$DATABASE
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, test_user: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

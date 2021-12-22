@@ -30,7 +30,7 @@ test_script_1 = """
     commit;
     show table test;
     -- Passed on: WI-V2.5.5.26871, WI-T3.0.0.31844; LI-V2.5.3.26788, LI-T3.0.0.31842
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -43,11 +43,11 @@ expected_stdout_1 = """
                                      COLLATE UNICODE_CI
     NAME4                           VARCHAR(32) CHARACTER SET UTF8 Nullable
                                      COLLATE UNICODE_CI_AI
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

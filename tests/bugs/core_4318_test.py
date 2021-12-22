@@ -55,7 +55,7 @@ init_script_1 = """
     alter table t2 add constraint pk_t2 primary key (id);
     alter table t2 add constraint fk_t2_ref_t1 foreign key (t1_id) references t1(id);
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -93,7 +93,7 @@ test_script_1 = """
     --                -> Table "T T2" Access By ID
     --                    -> Index "FK_T2_REF_T1" Scan 
     -- (i.e. there was NO "Filter" between "Aggregate" and "Table "T T2" Access By ID")
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -105,11 +105,11 @@ expected_stdout_1 = """
                     -> Filter
                         -> Table "T2" as "T T2" Access By ID
                             -> Index "FK_T2_REF_T1" Range Scan (full match)
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

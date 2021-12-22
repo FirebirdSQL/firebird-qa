@@ -47,13 +47,13 @@ test_script_1 = """
     select get_arithmetic_progression_total(1001) as arithmetic_progression_total from rdb$database;
     select get_arithmetic_progression_total(1002) as arithmetic_progression_total from rdb$database;
     -- (a1 + an) * n / 2
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     ARITHMETIC_PROGRESSION_TOTAL                                        501501
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 54001
     Too many concurrent executions of the same request
@@ -74,13 +74,13 @@ expected_stderr_1 = """
     At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
     At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
     At sub function 'GET_SUB_TOTAL_RECURSIVELY'...
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

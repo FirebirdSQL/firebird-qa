@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3180
 # title:        ALTER VIEW with not matched columns in declaration and selection crashs the server
-# decription:   
+# decription:
 # tracker_id:   CORE-3180
 # min_versions: ['2.5.1']
 # versions:     3.0
@@ -31,7 +31,7 @@ SHOW VIEW TEST_VIEW;
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:\\Users\\win7\\Firebird_testsbt-repository	mpugs.core_3180.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbt-repository\\tmp\\bugs.core_3180.fdb, User: SYSDBA
 SQL> SQL> SQL> ID                              INTEGER Expression
 View Source:
 ==== ======
@@ -50,6 +50,6 @@ def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

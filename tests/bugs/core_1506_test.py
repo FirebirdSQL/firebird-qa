@@ -58,7 +58,7 @@ expected_stdout_1 = """
     Error while executing SQL statement:
     - SQLCODE: -104
     - Unexpected end of command
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):

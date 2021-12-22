@@ -47,7 +47,7 @@ test_script_1 = """
     --    invalid transaction handle (expecting explicit transaction start)
     -- 2.5.1 (WI-V2.5.1.26351): 
     --    the same as 2.5.2 + crash ("08006 / -Error reading data from the connection")
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

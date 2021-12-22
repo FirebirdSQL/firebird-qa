@@ -55,5 +55,5 @@ user_1b = user_factory('db_1', name='u30b', password='u30b', do_not_create=True)
 def test_1(act_1: Action, user_1a: User, user_1b: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

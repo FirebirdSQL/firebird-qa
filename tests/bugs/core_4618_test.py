@@ -78,7 +78,7 @@ test_script_1 = """
     --    after_rollback            1            2         -255 
     --    after_rollback            2            0            2 
     --    after_rollback            3            2            0 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -100,13 +100,13 @@ expected_stdout_1 = """
     after_rollback            1            1            1 
     after_rollback            2            0            2 
     after_rollback            3            1            0 
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -135,7 +135,7 @@ test_script_2 = """
     select 'after_merge' msg, t.* from test t;
     rollback;
     select 'after_rollback' msg, t.* from test t; 
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -160,17 +160,17 @@ expected_stdout_2 = """
     after_rollback            2            0            2 
     after_rollback            3            1            0 
 
-  """
+"""
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 21000
     Multiple source records cannot match the same target during MERGE
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0115
 # title:        bug with ALL keyword
-# decription:   
+# decription:
 # tracker_id:   CORE-0115
 # min_versions: ['2.5.0']
 # versions:     2.5
@@ -41,7 +41,7 @@ test_script_1 = """
     select * from test where i > 0 and i > all(select i from test where i > 0);
 
     set count off;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -57,11 +57,11 @@ expected_stdout_1 = """
     PLAN (TEST INDEX (TEST_PK))
     PLAN (TEST INDEX (TEST_PK))
     Records affected: 0
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -139,7 +139,7 @@ expected_stdout_1 = """
     MON_ATT_USER 	: TMP$C2233_ADAM
     MON_ATT_ROLE 	: TMP$R2233_BOSS
     MON_ATT_CNT 	: 1
-  """
+"""
 
 boss = role_factory('db_1', name='tmp$r2233_boss')
 acnt = role_factory('db_1', name='tmp$r2233_acnt')

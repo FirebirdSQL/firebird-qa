@@ -51,7 +51,7 @@ test_script_1 = """
 
     alter index testtable_idx1 inactive;
     alter index testtable_idx1 active; -- NOTE: could NOT reproduce error on WI-V2.5.1.26351
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

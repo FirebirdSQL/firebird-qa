@@ -181,7 +181,7 @@ test_script_1 = """
 
     -- Should produce "SQLSTATE = 23000 / validation error for column "TEST06"."X", value "*** null ***""
     update test06 set x = null where x = 2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -217,7 +217,7 @@ expected_stdout_1 = """
     
     INFO_06                         After try to set NN on DOMAIN when NO table exists with NULL in its data
     DM_06                           INTEGER Not Null
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 27000
     unsuccessful metadata update
@@ -242,13 +242,13 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST06"."X", value "*** null ***"
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -40,5 +40,5 @@ user_1 = user_factory('db_1', name='tmp$c0001', password='123')
 def test_1(act_1: Action, user_1: User):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

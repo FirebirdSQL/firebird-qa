@@ -54,18 +54,18 @@ test_script_1 = """
     -- because of SQLDA content:
     -- In 2.5.0: sqltype: 449 VARYING   Nullable sqlscale: 0 sqlsubtype: 4 sqllen: 28
     -- In 2.5.1: sqltype: 521 BLOB     Nullable sqlscale: 0 sqlsubtype: 0 sqllen: 8
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     N                               7
     N                               8
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

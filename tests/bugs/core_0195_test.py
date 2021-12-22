@@ -109,7 +109,7 @@ test_script_1 = """
     
     update tbl_bugcheck291b set Data=1 where Flag = 16;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

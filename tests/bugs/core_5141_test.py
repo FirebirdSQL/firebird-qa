@@ -27,7 +27,7 @@ test_script_1 = """
     recreate table t1 (a integer not null not null not null);
     recreate table t2 (a integer unique not null not null references t2(a));
     recreate table t3 (a integer unique not null references t2(a) not null);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -43,11 +43,11 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     SQL error code = -637
     -duplicate specification of NOT NULL - not supported
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

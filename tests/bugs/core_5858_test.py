@@ -28,7 +28,7 @@ test_script_1 = """
     set bail on;
     revoke all on all from any_name_here;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

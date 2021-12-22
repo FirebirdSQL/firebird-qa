@@ -172,7 +172,7 @@ expected_stdout_1 = """
     restore source_fbk=inaccessible        target_fdb=accessible          log_file=inaccessible:         1
     restore source_fbk=inaccessible        target_fdb=inaccessible        log_file=accessible:           1
     restore source_fbk=inaccessible        target_fdb=inaccessible        log_file=inaccessible:         1
-  """
+"""
 
 inaccessible_dir = temp_file(uuid4().hex)
 correct_fbk = temp_file('tmp_2251.fbk')

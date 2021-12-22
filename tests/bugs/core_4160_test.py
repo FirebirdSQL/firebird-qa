@@ -21,7 +21,7 @@ init_script_1 = """
     commit;
     recreate exception ex_negative_remainder ' @1 (@2)';
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
 
@@ -51,7 +51,7 @@ test_script_1 = """
     execute procedure sp_alert('gc', -4);
     execute procedure sp_alert('fr', -5);
     execute procedure sp_alert('jp', -6);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -85,11 +85,11 @@ expected_stderr_1 = """
     exception 1
     -EX_NEGATIVE_REMAINDER
     - Russian: Новый остаток будет меньше нуля (-6)
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

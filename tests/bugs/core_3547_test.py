@@ -25,7 +25,7 @@ init_script_1 = """
 
     recreate table t1_double_as_pk (col double precision, constraint t1_double_pk primary key(col) using index t1_double_pk);
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -48,7 +48,7 @@ test_script_1 = """
     -- NIX: -Problematic key value is ("COL" = 0.000000000000000)
     -- WIN: -Problematic key value is ("COL" = 0.0000000000000000)
     --                                                          ^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -61,12 +61,12 @@ expected_stdout_1 = """
     where 0e0 = -0e0                1
     t_float_no_pk: count(dist col)  1
     t_double_pk: col, count(*)      1
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     violation of PRIMARY or UNIQUE KEY constraint "T1_DOUBLE_PK" on table "T1_DOUBLE_AS_PK"
     -Problematic key value is ("COL" = 0.0000000000000000)
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 @pytest.mark.platform('Windows')
@@ -74,8 +74,8 @@ def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 2.5.1
 # resources: None
@@ -91,7 +91,7 @@ init_script_2 = """
 
     recreate table t1_double_as_pk (col double precision, constraint t1_double_pk primary key(col) using index t1_double_pk);
     commit;
-  """
+"""
 
 db_2 = db_factory(page_size=4096, sql_dialect=3, init=init_script_2)
 
@@ -114,7 +114,7 @@ test_script_2 = """
     -- NIX: -Problematic key value is ("COL" = 0.000000000000000)
     -- WIN: -Problematic key value is ("COL" = 0.0000000000000000)
     --                                                          ^
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -127,12 +127,12 @@ expected_stdout_2 = """
     where 0e0 = -0e0                1
     t_float_no_pk: count(dist col)  1
     t_double_pk: col, count(*)      1
-  """
+"""
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 23000
     violation of PRIMARY or UNIQUE KEY constraint "T1_DOUBLE_PK" on table "T1_DOUBLE_AS_PK"
     -Problematic key value is ("COL" = 0.000000000000000)
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 @pytest.mark.platform('Linux', 'MacOS', 'Solaris', 'FreeBSD', 'HP-UX')
@@ -140,6 +140,6 @@ def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

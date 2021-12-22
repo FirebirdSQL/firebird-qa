@@ -65,7 +65,7 @@ test_script_1 = """
      alter database exclude table test2, test3 from publication;
      commit;
      select 'rdb$pub after DROP LIST of some tables from publication' as msg, p.* from  rdb$database left join RDB$PUBLICATION_TABLES p on 1=1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -123,11 +123,11 @@ expected_stdout_1 = """
     RDB$PUBLICATION_NAME            <null>
     RDB$TABLE_NAME                  <null>
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=4.0.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

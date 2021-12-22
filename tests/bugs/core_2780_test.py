@@ -39,18 +39,18 @@ test_script_1 = """
               '(WI|LI|UI|UP|SI|SO|HU)[-](T|V){0,1}[0-9]+.[0-9]+.[0-9]+((.?[0-9]+)*)[[:WHITESPACE:]]+firebird[[:WHITESPACE:]]+[0-9]+((.?[0-9]+)*)%', 1, 0) is_client_version_valid
     from mon$attachments
     where mon$attachment_id = current_connection;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     IS_PROTOCOL_VALID               1
     IS_CLIENT_VERSION_VALID         1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

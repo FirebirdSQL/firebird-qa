@@ -45,7 +45,7 @@ test_script_1 = """
     select *
     from test_1
     where cast ('2007-09-09' as date) < comp_last_day;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -65,11 +65,11 @@ expected_stdout_1 = """
     ID                              2
     LAST_DAY                        <null>
     COMP_LAST_DAY                   2999-12-31
-  """
+"""
 
 @pytest.mark.version('>=2.0.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

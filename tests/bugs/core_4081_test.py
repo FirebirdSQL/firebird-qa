@@ -30,7 +30,7 @@ test_script_1 = """
     update or insert into test (uid)
     values ( (select uuid_to_char(gen_uuid()) from rdb$database) )
     matching (uid);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

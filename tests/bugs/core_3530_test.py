@@ -59,7 +59,7 @@ test_script_1 = """
     -- Statement failed, SQLSTATE = 0A000
     -- feature is not supported
     select * from test2 where z between 1 and 2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -69,11 +69,11 @@ expected_stdout_1 = """
     PLAN (TEST NATURAL)
     PLAN (TEST2 NATURAL)
     Records affected: 0
-  """
+"""
 
 @pytest.mark.version('>=3.0.2')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

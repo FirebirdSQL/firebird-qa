@@ -67,7 +67,7 @@ test_script_1 = """
             not exists (select * from t x where x.id = t2.id + 1)
     ) b
     on b.id >= a.id;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -114,11 +114,11 @@ expected_stdout_1 = """
                 -> Table "T" as "B T2" Access By ID
                     -> Bitmap
                         -> Index "T_ID" Range Scan (lower bound: 1/1)
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

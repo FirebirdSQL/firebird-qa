@@ -35,7 +35,7 @@ init_script_1 = """
   -- sql.ru/forum/actualutils.aspx?action=gotomsg&tid=945713&msg=12655568
   create index tc_lpad_z_noex on tc computed by( z_noex ); 
   commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -49,7 +49,7 @@ test_script_1 = """
   select count(*) cnt from tc where lpad('' || tc.z_expr, 10, 0) between '0000000302' and '0000000302'
   union all
   select count(*) from tc where '' || lpad('' || tc.z_expr, 10, 0) between '0000000302' and '0000000302';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -59,11 +59,11 @@ expected_stdout_1 = """
   CHECK_CNT                       1
   CHECK_CNT                       1
   CHECK_CNT                       1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -47,13 +47,13 @@ init_script_1 = """
         n246 int, n247 int, n248 int, n249 int, n250 int, n251 int, n252 int, n253 int, n254 int,
         n255 int, n256 int);
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
      select distinct * from t;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -62,11 +62,11 @@ expected_stderr_1 = """Statement failed, SQLSTATE = 54011
     -SQL error code = -104
     -Invalid command
     -Cannot have more than 255 items in DISTINCT / UNION DISTINCT list
- """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

@@ -61,7 +61,7 @@ test_script_1 = """
     -- All subsequent values are incremented by 1.
     -- Confirmed result in WI-T3.0.0.31374 Beta-1: 
     -- "internal Firebird consistency check (applied differences will not fit in record (177), file: sqz.cpp line: 147)"
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -133,13 +133,13 @@ expected_stdout_1 = """
     ID                              17
     VAL                             2000
     SEQ_INSIDE_MERGE                289
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -181,7 +181,7 @@ test_script_2 = """
     -- all values should remain unchanged:
     set list on;
     select * from t2 order by id;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -254,17 +254,17 @@ expected_stdout_2 = """
     VAL                             1000
     SEQ_INSIDE_MERGE                0
 
-  """
+"""
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 21000
     Multiple source records cannot match the same target during MERGE
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

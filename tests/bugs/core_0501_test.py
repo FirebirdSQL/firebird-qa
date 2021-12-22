@@ -356,7 +356,7 @@ test_script_1 = """
       from rdb$database
       where coalesce(3 + cast(? as bigint), null) = 0;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -1032,7 +1032,7 @@ arithmetic exception, numeric overflow, or string truncation
 Statement failed, SQLSTATE = 07002
 Dynamic SQL Error
 -SQLDA error
--Wrong number of parameters (expected 3, got 0)
+-No SQLDA for input values provided
 """
 
 @pytest.mark.version('>=3.0,<4')
@@ -1040,8 +1040,8 @@ def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 act_2 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -1076,12 +1076,13 @@ Dynamic SQL Error
 -SQLDA error
 -No SQLDA for input values provided
 """
+#-Wrong number of parameters (expected 3, got 0)
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_1
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

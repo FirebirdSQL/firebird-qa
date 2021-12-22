@@ -36,7 +36,7 @@ test_script_1 = """
     having count(*) not in (select r2.rdb$relation_id from rdb$database r2)
     and 1=0
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

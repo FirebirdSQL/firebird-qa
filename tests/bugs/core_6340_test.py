@@ -193,7 +193,7 @@ select 'point-5.09' as msg, q'qqQ'qq' as result from rdb$database; -- expected: 
 
 select 'point-5.10' as msg, q'q 'q 'q' as result from rdb$database; -- expected: [space]'q '
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -582,11 +582,11 @@ RESULT                          qQ'q
 
 MSG                             point-5.10
 RESULT                           'q '
-  """
+"""
 
 @pytest.mark.version('>=3.0.6')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

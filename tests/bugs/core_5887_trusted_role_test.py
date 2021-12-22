@@ -178,7 +178,7 @@ expected_stdout_1 = """
     MON$ROLE                        TMP$ROLE_5887
     MON$AUTH_METHOD                 Mapped from Win_Sspi
 
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')

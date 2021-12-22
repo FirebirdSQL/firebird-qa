@@ -28,7 +28,7 @@ test_script_1 = """
     set sqlda_display on;
     select 1 from rdb$database where current_connection = ? and current_transaction = ?;
     select 1 from rdb$database where current_connection = ? and current_transaction = ?;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -40,7 +40,7 @@ expected_stdout_1 = """
     01: sqltype: 580 INT64 scale: 0 subtype: 0 len: 8
     02: sqltype: 580 INT64 scale: 0 subtype: 0 len: 8
     01: sqltype: 496 LONG scale: 0 subtype: 0 len: 4
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 07002
     Dynamic SQL Error
@@ -51,13 +51,13 @@ expected_stderr_1 = """
     Dynamic SQL Error
     -SQLDA error
     -No SQLDA for input values provided
-  """
+"""
 
 @pytest.mark.version('>=3.0.8')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

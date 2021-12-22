@@ -34,7 +34,7 @@ test_script_1 = """
     select 3, 'c' from rdb$database;
     
     delete from mytable order by id desc rows 2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

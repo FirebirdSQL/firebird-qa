@@ -50,7 +50,7 @@ test_script_1 = """
 
     select 'after merge' as msg, e.* from t_payment_totals e order by person_id;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -80,17 +80,17 @@ expected_stdout_1 = """
     MSG                             after merge
     PERSON_ID                       22
     PAYMENT_SUM                     222
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 21000
     Multiple source records cannot match the same target during MERGE
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

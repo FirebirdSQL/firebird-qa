@@ -31,7 +31,7 @@ test_script_1 = """
     alter table test add constraint fk_key_ref foreign key (ref) references test(key);
     delete from test;
     commit; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -40,11 +40,11 @@ expected_stderr_1 = """
     violation of FOREIGN KEY constraint "FK_KEY_REF" on table "TEST"
     -Foreign key reference target does not exist
     -Problematic key value is ("REF" = -1)
-  """
+"""
 
 @pytest.mark.version('>=3.0.5')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

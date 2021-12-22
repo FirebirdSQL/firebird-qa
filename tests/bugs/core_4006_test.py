@@ -36,17 +36,17 @@ test_script_1 = """
     set list on;
     select substring('somestringwith \\ no meaning' from 1 for result) r
     from p_str_rpos; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     R                               somestringwith
-  """
+"""
 
 @pytest.mark.version('>=2.1.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -186,7 +186,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     EXPECTED.
-  """
+"""
 
 @pytest.mark.version('>=2.5.7')
 @pytest.mark.platform('Windows')

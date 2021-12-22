@@ -159,7 +159,7 @@ expected_stdout_1 = """
     NUMB                            αμορτισέρ
     ID                              4
     NUMB                            ρουλεμάν
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 @pytest.mark.platform('Windows')

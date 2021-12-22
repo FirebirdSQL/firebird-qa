@@ -23,7 +23,7 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 test_script_1 = """
     -- See ticket issue: Alexander Peshkov added a comment - 21/Mar/11 03:10 PM
     -- Does not require frontporting - FB3 is using another way to access security database 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

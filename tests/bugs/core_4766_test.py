@@ -275,7 +275,7 @@ def test_2(act_2: Action, capsys):
             'current_auth_plugin': None,}
     for current_auth_plugin in ['Legacy_UserManager']:
         subs['current_auth_plugin'] = current_auth_plugin
-        act_2.isql(switches=['-q'], input=sql_text % subs)
+        act_2.isql(switches=['-q'], input=sql_text % subs, combine_output=True)
         for line in act_2.stdout.splitlines():
             if line.strip():
                 print(current_auth_plugin[:3] + ': ' + line)

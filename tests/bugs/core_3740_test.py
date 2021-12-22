@@ -21,7 +21,7 @@ init_script_1 = """
     -- (despite ticket's issue "affected version(s) 2.5.1"), so these versions also can be tested here.
     -- Note-2. As of march-2015 (build 3.0.0.31756), there is some kind of regression in performance 
     -- of parsing huge literal lists in comparison with all 2.5.x versions, see CORE-4728.
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -1530,17 +1530,17 @@ test_script_1 = """
     ,2147482149
     ,1500
     );
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     X                               1
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

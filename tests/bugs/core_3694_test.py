@@ -37,7 +37,7 @@ test_script_1 = """
     select ( select result from dummy_proc(sum(t.rdb$type)) ) as is_correct
           ,count(*) from rdb$types t
     group by is_correct;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -46,11 +46,11 @@ expected_stderr_1 = """
     Dynamic SQL Error
     -SQL error code = -104
     -Cannot use an aggregate or window function in a GROUP BY clause
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

@@ -166,7 +166,7 @@ def test_1(act_1: Action, user_1: User):
     where u.sec$user_name = upper('tmp$c4768_1')
     group by 1,2 ;
     commit;
-    """
+"""
     act_1.expected_stdout = expected_stdout_1
     act_1 .isql(switches=['-q'], input=test_script)
     assert act_1.clean_stdout == act_1.clean_expected_stdout

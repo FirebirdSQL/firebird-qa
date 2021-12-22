@@ -42,7 +42,7 @@ init_script_1 = """
     commit;
 
 
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -123,7 +123,7 @@ test_script_1 = """
     ;
 
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -145,7 +145,7 @@ expected_stdout_1 = """
 
     Z1                              1
 
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
@@ -164,13 +164,13 @@ expected_stderr_1 = """
     -SQL error code
     -Column unknown
     -S.X
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

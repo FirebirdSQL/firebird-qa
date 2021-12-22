@@ -132,7 +132,7 @@ def test_1(act_1: Action, capsys):
     commit;
     set list on;
     select rdb$linger as ":::MSG::: linger_time" from rdb$database;
-    """
+"""
     print (':::MSG::: Starting ISQL setting new value for linger...')
     act_1.isql(switches=[], input=script_1)
     print (':::MSG::: ISQL setting new value for linger finished.')
@@ -159,6 +159,9 @@ def test_1(act_1: Action, capsys):
     act_1.gstat(switches=['-h'])
     print(act_1.stdout)
     act_1.reset()
+    # [pcisar] 21.12.2021
+    # FAILs on v4.0.0.2496 and v3.0.8.33535 as database couldn't be reverted to online
+    # state
     act_1.gfix(switches=[act_1.db.dsn, '-online'])
     act_1.reset()
     act_1.gfix(switches=['-mode','read_write', act_1.db.dsn])
@@ -173,14 +176,12 @@ def test_1(act_1: Action, capsys):
                 'N/A'
               ) as "GFIX could change buffers ? =>"
     from log g;
-    """
+"""
     act_1.reset()
     act_1.isql(switches=[], input=script_2)
     print(act_1.stdout)
     print (':::MSG::: ISQL for extract old and new value of page finished.')
     # Check
-    # [pcisar] 23.11.2021
-    # FAILs on v4.0.0.2496 as database couldn't be reverted to online state, not yet tested with 3.0
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = capsys.readouterr().out
-    assert act_1.clean_expected_stdout == act_1.clean_expected_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

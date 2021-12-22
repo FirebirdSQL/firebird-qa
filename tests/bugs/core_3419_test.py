@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_3419
 # title:        Recurse leads to hangs/crash server
-# decription:   
+# decription:
 # tracker_id:   CORE-3419
 # min_versions: ['2.5.1']
 # versions:     2.5.1
@@ -38,7 +38,7 @@ test_script_1 = """
     set term ;^
     commit;
     set transaction;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -68,11 +68,11 @@ expected_stderr_1 = """
     At trigger 'TRG_TRANS_START' line: 5, col: 9
     At trigger 'TRG_TRANS_START' line: 5, col: 9
     At trigger 'TRG_TRANS_START' ...
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    act_1.execute(charset='utf8')
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

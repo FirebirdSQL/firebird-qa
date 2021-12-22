@@ -2,18 +2,18 @@
 #
 # id:           bugs.core_0037
 # title:        Navigation vs IS NULL vs compound index
-# decription:   
+# decription:
 #                   24.01.2019. Added separate code for running on FB 4.0+.
 #                   UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
-#                   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement 
+#                   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
 #                   in UDR library "udf_compat", see it in folder: ../plugins/udr/
 #                   Checked on:
 #                       2.5.9.27126: OK, 0.656s.
 #                       3.0.5.33086: OK, 1.422s.
 #                       4.0.0.1172: OK, 4.109s.
 #                       4.0.0.1340: OK, 2.297s.
-#                       4.0.0.1378: OK, 2.204s.    
-#                
+#                       4.0.0.1378: OK, 2.204s.
+#
 # tracker_id:   CORE-0037
 # min_versions: ['2.5.0']
 # versions:     4.0
@@ -82,20 +82,20 @@ test_script_1 = """
 
     select x.*, y.*, UDR40_frac( mod(t2f1,100) / 100.000)
     from v1 x, v2 y
-    where x.t1f1 = y.t2f2 
+    where x.t1f1 = y.t2f2
     and UDR40_frac( mod(t2f1,100) / 100.000) < 0.03
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Records affected: 0
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -25,7 +25,7 @@ test_script_1 = """
         select 1 n from rdb$database
     )
     select * from x(10);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -36,11 +36,11 @@ expected_stderr_1 = """
     -Procedure unknown
     -X
     -At line 4, column 15
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

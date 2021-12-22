@@ -28,7 +28,7 @@ test_script_1 = """
     create table test (x dm_test, y numeric(20,2) default -9999999999999999991);
     set sqlda_display on;
     insert into test default values returning x as field_x, y as field_y;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -40,11 +40,11 @@ expected_stdout_1 = """
 
     FIELD_X                                               -9999999999999999991.00
     FIELD_Y                                               -9999999999999999991.00
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

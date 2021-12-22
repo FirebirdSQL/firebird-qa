@@ -59,5 +59,5 @@ test_user_1 = user_factory('db_1', name='tmp$c5495', password='123', plugin='Leg
 def test_1(act_1: Action, test_user_1: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

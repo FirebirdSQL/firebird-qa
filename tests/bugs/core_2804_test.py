@@ -34,7 +34,7 @@ test_script_1 = """
     select r.rdb$description as descr_blob_id
     from rdb$relations r where r.rdb$relation_name in ( upper('test1'), upper('test2') )
     order by r.rdb$relation_name;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -44,11 +44,11 @@ expected_stdout_1 = """
 
     DESCR_BLOB_ID                   0:6
     unicode_fss: Протокол собрания о помощи детям Германии  
-  """
+"""
 
 @pytest.mark.version('>=2.5.4')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

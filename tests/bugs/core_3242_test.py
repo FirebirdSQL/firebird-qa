@@ -136,7 +136,7 @@ test_script_1 = """
     connect '$(DSN)' user sysdba password 'masterkey';
     drop user tmp$c3242;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -145,11 +145,11 @@ expected_stdout_1 = """
     STANDALONE_FN_RESULT            5040
     PACKAGED_SP_RESULT              362880
     PACKAGED_FN_RESULT              39916800
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

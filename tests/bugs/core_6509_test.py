@@ -6,6 +6,7 @@
 #                   Confirmed crash on 4.0.0.2377 (Windows and Linux)
 #                   Checked on 4.0.0.2384 - all OK, get STDERR: "unable to allocate memory from operating system"
 #                   NB: currently acceptable value for '-buffers' is limited from 50 to 2147483646.
+#               [pcisar] 22.12.2021 Crashes v4.0.0.2496 64-bit Linux
 #
 # tracker_id:   CORE-6509
 # min_versions: ['4.0.0']

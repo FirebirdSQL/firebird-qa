@@ -28,18 +28,18 @@ test_script_1 = """
     commit;
     insert into test(s) values('1');
     select 1 from test f where right( f.s ) = '1';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 39000
     function RIGHT could not be matched
-  """
+"""
 
 @pytest.mark.version('>=3.0.6')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

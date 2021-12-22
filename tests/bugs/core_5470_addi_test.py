@@ -191,7 +191,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 expected_stdout_1 = """
     select 'point-1' from rdb$database
     select 'point-2' from rdb$database
-  """
+"""
 
 @pytest.mark.version('>=3.0.6')
 @pytest.mark.platform('Windows')

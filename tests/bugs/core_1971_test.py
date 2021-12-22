@@ -28,7 +28,7 @@ init_script_1 = """
     insert into t_links (link_type,right_id,prop_value) values(2,161,'2003');
     insert into t_links (link_type,right_id,prop_value) values(10,161,'any string');
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -39,7 +39,7 @@ test_script_1 = """
 
     select * from t_links
     where cast(prop_value as integer)<>2001 and (right_id=161 and link_type=2);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -59,17 +59,17 @@ expected_stdout_1 = """
 	LINK_TYPE                       2
 	RIGHT_ID                        161
 	PROP_VALUE                      2003  
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22018
     conversion error from string "any string"
-  """
+"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

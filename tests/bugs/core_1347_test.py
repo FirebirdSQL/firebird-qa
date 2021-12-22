@@ -141,7 +141,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 expected_stdout_1 = """
     RDB$PROCEDURE_NAME              SP_TEST
     Records affected: 1
-  """
+"""
 
 tmp_file_1 = temp_file('non_ascii_ddl.sql')
 
@@ -183,6 +183,6 @@ def test_1(act_1: Action, tmp_file_1: Path):
     tmp_file_1.write_bytes(sql_txt.encode('cp1251'))
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=['-q'], input_file=tmp_file_1, charset='win1251', io_enc='cp1251')
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

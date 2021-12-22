@@ -77,8 +77,8 @@ def test_1(act_1: Action, user_1_boss: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -149,6 +149,6 @@ def test_2(act_2: Action, user_2_boss: User):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

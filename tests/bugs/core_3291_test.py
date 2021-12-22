@@ -28,7 +28,7 @@ test_script_1 = """
     update test set id=-id returning current_transaction - rdb$record_version as diff_upd;
     commit;
     delete from test returning sign(current_transaction - rdb$record_version) as diff_del;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -36,11 +36,11 @@ expected_stdout_1 = """
     DIFF_INS                        0
     DIFF_UPD                        0
     DIFF_DEL                        1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

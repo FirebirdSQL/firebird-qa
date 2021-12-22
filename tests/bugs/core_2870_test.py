@@ -152,7 +152,7 @@ init_script_1 = """
     alter table department add foreign key (mngr_no) references employee (emp_no);
     commit;
 
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -182,7 +182,7 @@ test_script_1 = """
     join department d on e.dept_no = d.dept_no
     left join country c on e.job_country = c.country
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -1026,11 +1026,11 @@ expected_stdout_1 = """
     PHONE_NO                        (408) 555-1234
     COUNTRY                         usa
     CURRENCY                        dollar
-  """
+"""
 
 @pytest.mark.version('>=2.5.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

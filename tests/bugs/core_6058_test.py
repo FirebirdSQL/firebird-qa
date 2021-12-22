@@ -56,14 +56,14 @@ test_script_1 = """
         to 
         timestamp '2017-03-12 02:30 -05'
     ) from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     2017-11-05 01:30:00.0000 America/New_York
     2017-03-12 03:30:00.0000 America/New_York
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22009
     Invalid time zone offset: -04 - must use format +/-hours:minutes and be between -14:00 and +14:00
@@ -73,13 +73,13 @@ expected_stderr_1 = """
     Invalid time zone offset: -05 - must use format +/-hours:minutes and be between -14:00 and +14:00
     Statement failed, SQLSTATE = 22009
     Invalid time zone offset: -05 - must use format +/-hours:minutes and be between -14:00 and +14:00
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

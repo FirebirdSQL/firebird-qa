@@ -30,18 +30,18 @@ test_script_1 = """
          iif( rdb$get_context('SYSTEM','WIRE_COMPRESSED') is not null, 'DEFINED', '<NULL>') as ctx_wire_compressed
         ,iif( rdb$get_context('SYSTEM','WIRE_ENCRYPTED') is not null, 'DEFINED', '<NULL>') as ctx_wire_encrypted
     from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     CTX_WIRE_COMPRESSED             DEFINED
     CTX_WIRE_ENCRYPTED              DEFINED
-  """
+"""
 
 @pytest.mark.version('>=3.0.4')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

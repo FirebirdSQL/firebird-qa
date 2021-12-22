@@ -115,7 +115,7 @@ test_script_1 = """
         PERC_HORA_MAQUINA      NUMERIC(5,2)
     );
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

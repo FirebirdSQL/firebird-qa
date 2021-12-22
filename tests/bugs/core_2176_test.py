@@ -58,7 +58,7 @@ test_script_1 = """
       select coalesce(rid, 0) as a, coalesce(rnm, '') as b from v_rel
     ) group by 1, 2 ;
     -- ERROR: conversion error
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -317,11 +317,11 @@ expected_stdout_1 = """
     A                               30
     B                               RDB$EXCEPTIONS                                                                               
     Records affected: 31
-  """
+"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

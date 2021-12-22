@@ -37,7 +37,7 @@ test_script_1 = """
     -- Fields that were used before:
     -- MON$CONNECTION_COMPRESSED in (false, true)
     -- and MON$CONNECTION_ENCRYPTED in (false, true)
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -53,11 +53,11 @@ expected_stdout_1 = """
     02: sqltype: 32764 BOOLEAN Nullable scale: 0 subtype: 0 len: 1
       :  name: MON$WIRE_ENCRYPTED  alias: MON$WIRE_ENCRYPTED
       : table: MON$ATTACHMENTS  owner: SYSDBA
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

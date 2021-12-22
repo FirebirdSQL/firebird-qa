@@ -240,7 +240,7 @@ def test_1(act_1: Action):
     set sqlda_display on;
     select * from t1;
     exit;
-    """
+"""
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1_b
     act_1.isql(switches=['-q', '-m'], input=sql_script)

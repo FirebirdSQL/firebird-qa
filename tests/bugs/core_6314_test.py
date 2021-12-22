@@ -27,7 +27,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set list on;
     select octet_length(x) as cast_dbkey_to_char2_length from (select cast(rdb$db_key as char(2) character set utf8) x from rdb$database);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -36,11 +36,11 @@ expected_stderr_1 = """
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -expected length 2, actual 8
-  """
+"""
 
 @pytest.mark.version('>=3.0.6')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

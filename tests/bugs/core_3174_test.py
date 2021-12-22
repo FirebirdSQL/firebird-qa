@@ -33,7 +33,7 @@ init_script_1 = """
     create index t_c_nopad_trim_right on t computed by (trim(trailing from c_nopad));
     create index t_c_nopad_trim_left on t computed by (trim(leading from c_nopad));
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -56,7 +56,7 @@ test_script_1 = """
     select '2.d' as test_no, id,'.' || c_nopad || '.' as c_nopad from t where trim(leading from c_nopad) = '123';
     select '2.f' as test_no, id,'.' || c_nopad || '.' as c_nopad from t where trim(trailing from c_nopad) starting with '123';
     select '2.g' as test_no, id,'.' || c_nopad || '.' as c_nopad from t where trim(leading from c_nopad) starting with '123';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -164,11 +164,11 @@ expected_stdout_1 = """
     2.g                2 . 123.
     2.g                3 .123  .
     2.g                4 . 123  .
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

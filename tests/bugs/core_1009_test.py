@@ -23,7 +23,7 @@ db_1 = db_factory(from_backup='core1009.fbk', init=init_script_1)
 test_script_1 = """
   set list on;
   select rdb$field_name, rdb$base_field from rdb$relation_fields where rdb$relation_name = 'TEST_VIEW';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -32,11 +32,11 @@ expected_stdout_1 = """
     RDB$BASE_FIELD                  ID
     RDB$FIELD_NAME                  EXPR
     RDB$BASE_FIELD                  <null>
-  """
+"""
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

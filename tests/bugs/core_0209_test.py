@@ -70,7 +70,7 @@ test_script_1 = """
     update v_test set col='x' where id=13;
     
     select * from test;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -117,7 +117,7 @@ expected_stdout_1 = """
     ID                              14
     COL                             E
     Records affected: 4
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST"."COL", value "Z"
@@ -125,13 +125,13 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST"."COL", value "X"
     -At trigger 'V_TEST_BIU' line: 8, col: 5
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

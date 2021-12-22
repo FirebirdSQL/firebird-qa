@@ -33,7 +33,7 @@ test_script_1 = """
     select t.rel_name
     from t
     order by '0' || t.rel_name;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -78,11 +78,11 @@ expected_stdout_1 = """
     REL_NAME                        RDB$TYPES
     REL_NAME                        RDB$USER_PRIVILEGES
     REL_NAME                        RDB$VIEW_RELATIONS
-  """
+"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

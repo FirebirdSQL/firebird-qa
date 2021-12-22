@@ -248,7 +248,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 expected_stdout_1 = """
     EXPECTED BACKUP FINISH FOUND: GBAK:CLOSING FILE, COMMITTING, AND FINISHING.
     EXPECTED RESTORE FINISH FOUND: GBAK:ADJUSTING THE ONLINE AND FORCED WRITES FLAGS
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')

@@ -55,7 +55,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -379,7 +379,7 @@ def test_1(act_1: Action):
     ^
     set term ;^
     commit;
-    """
+"""
     # Case 1: Trace functions enabled
     with act_1.trace(db_events=trace_1):
         act_1.isql(switches=['-n', '-q'], input=func_script % (123, 456))

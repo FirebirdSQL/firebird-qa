@@ -174,7 +174,7 @@ expected_stdout_1 = """
     Found patterns in firebird.log diff file:
     Available context\\.*
     Missing\\s+security\\s+context\\.*
-  """
+"""
 
 @pytest.mark.version('>=3.0.7')
 @pytest.mark.platform('Windows')

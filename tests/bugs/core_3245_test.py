@@ -43,7 +43,7 @@ test_script_1 = """
       ,right(sub_nofor, 3) as "blob_right(sub_nofor, 3)"
     from q cross join r
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -54,11 +54,11 @@ expected_stdout_1 = """
     ail
     char_length(sub_nofor)          90306
     ail
-  """
+"""
 
 @pytest.mark.version('>=2.1.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

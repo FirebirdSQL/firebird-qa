@@ -27,7 +27,7 @@ test_script_1 = """
     from rdb$indices ri join rdb$index_segments rs 
     using (rdb$index_name) 
     where ri.rdb$relation_name='RDB$FUNCTIONS' and rdb$field_name='RDB$FUNCTION_ID'; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -35,11 +35,11 @@ expected_stdout_1 = """
     RDB$RELATION_NAME               RDB$FUNCTIONS
     RDB$FIELD_NAME                  RDB$FUNCTION_ID
     RDB$FIELD_POSITION              0
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

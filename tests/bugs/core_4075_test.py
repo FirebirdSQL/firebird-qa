@@ -41,7 +41,7 @@ init_script_1 = """
     create index T_INDEX on T_TABLE computed by (cast(F_YEAR || '.' || F_MONTH_DAY as date));
     commit;
 
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -50,7 +50,7 @@ test_script_1 = """
 
     -- from core-4603:
     insert into T_TABLE (F_YEAR, F_MONTH_DAY) values ('2014', '02.33');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -63,11 +63,11 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 22018
     Expression evaluation error for index "T_INDEX" on table "T_TABLE"
     -conversion error from string "2014.02.33"
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

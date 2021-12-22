@@ -23,7 +23,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set list on;
     select rdb$field_name,rdb$type,rdb$type_name,rdb$system_flag from rdb$types where upper(rdb$field_name) = upper('rdb$map_to_type') order by rdb$type;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -37,11 +37,11 @@ expected_stdout_1 = """
    RDB$TYPE                        1
    RDB$TYPE_NAME                   ROLE                                                                                         
    RDB$SYSTEM_FLAG                 1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

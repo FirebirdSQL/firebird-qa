@@ -42,7 +42,7 @@ test_script_1 = """
         d.rdb$depended_on_type = t.rdb$type
         and t.rdb$field_name = upper('RDB$OBJECT_TYPE')
     where d.rdb$dependent_name = upper('P_V');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -53,11 +53,11 @@ expected_stdout_1 = """
     RDB$TYPE_NAME                   VIEW                                                                                         
     RDB$DEPENDED_ON_TYPE            1
     RDB$TYPE_NAME                   VIEW                                                                                         
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

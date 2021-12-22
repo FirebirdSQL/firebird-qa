@@ -82,7 +82,7 @@ test_script_1 = """
 
     **************/
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -95,11 +95,11 @@ expected_stderr_1 = """
     unsuccessful metadata update
     -GRANT failed
     -Function WRONG_FUNC does not exist
-  """
+"""
 
 @pytest.mark.version('>=3.0.4')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

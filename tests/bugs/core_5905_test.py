@@ -89,7 +89,7 @@ test_script_1 = """
 
     drop function substrlen;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -99,7 +99,7 @@ expected_stdout_1 = """
 
     FUNC_NAME                       SUBSTRLEN
     LEGACY_FLAG                     0
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 38000
     unsuccessful metadata update
@@ -112,15 +112,15 @@ expected_stderr_1 = """
     -cannot delete
     -Function SUBSTRLEN
     -there are 1 dependencies
-  """
+"""
 
 @pytest.mark.version('>=3.0.4,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -199,7 +199,7 @@ test_script_2 = """
 
     drop function the_frac; -- should again FAIL because procedure SP_MAIN still depends on it.
     commit;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -215,7 +215,7 @@ expected_stdout_2 = """
     THE_FRAC_2                      7.062513305931052
 
     THE_FRAC_3                      -0.1415926535897931
-  """
+"""
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 38000
     unsuccessful metadata update
@@ -228,13 +228,13 @@ expected_stderr_2 = """
     -cannot delete
     -Function THE_FRAC
     -there are 1 dependencies
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

@@ -53,7 +53,7 @@ test_script_1 = """
         ,name as blob_id_1
         ,surname as blob_id_2
     from operation where abs(id) in (1,2,3);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -69,11 +69,11 @@ expected_stdout_1 = """
     ID                              3
     foo
     bar
-  """
+"""
 
 @pytest.mark.version('>=3.0.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

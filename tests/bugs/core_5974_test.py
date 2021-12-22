@@ -36,7 +36,7 @@ test_script_1 = """
     select distinct d+0 as d_distinct from test;
     select d+0 as d_grouped_nat from test group by d+0;
     select d as d_grouped_idx from test group by d;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -44,11 +44,11 @@ expected_stdout_1 = """
     D_DISTINCT                                                           15514
     D_GROUPED_NAT                                                        15514
     D_GROUPED_IDX                                                        15514
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

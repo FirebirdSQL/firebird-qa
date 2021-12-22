@@ -515,7 +515,7 @@ def fill_dbo(con: Connection, map_dbo: Dict):
         where
             coalesce(r.rel_type,0) = 0 --  exclude views, GTT and external tables
             and r.sys_flag is distinct from 1
-    """
+"""
     cur.execute(sql)
     for r in cur:
         map_dbo[r[0], r[2]] = (r[1].strip(), r[3].strip())
@@ -648,7 +648,7 @@ def test_1(act_1: Action, capsys):
     where r.rdb$relation_name=upper('TEST') and p.rdb$page_type = 4
     order by p.rdb$page_number
     rows 1
-    """
+"""
     with act_1.db.connect() as con:
         fill_dbo(con, map_dbo)
         c = con.cursor()

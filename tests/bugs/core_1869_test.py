@@ -95,7 +95,7 @@ test_script_1 = """
     drop user tmp$c1869_u02;
     commit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -129,11 +129,11 @@ expected_stdout_1 = """
     ROLE_OWNER                      SYSDBA
     GRANTED_BY                      SYSDBA
     GRANT_OPTION                    0
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

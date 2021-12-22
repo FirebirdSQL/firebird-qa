@@ -38,7 +38,7 @@ test_script_1 = """
     select rdb$exception_name, rdb$message 
     from rdb$exceptions
     order by rdb$exception_name;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -53,11 +53,11 @@ expected_stdout_1 = """
     RDB$MESSAGE                     123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345
 
     Records affected: 3
-  """
+"""
 
 @pytest.mark.version('>=2.5.6')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

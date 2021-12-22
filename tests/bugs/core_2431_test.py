@@ -35,26 +35,26 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     CONNECTION_CSET                 WIN1251
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_BAD_REMAINDER
     -Новый остаток изделия будет отрицательным: -8
     -At block line: 3, col: 7
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute(charset='win1251')
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

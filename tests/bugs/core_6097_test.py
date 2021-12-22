@@ -131,7 +131,7 @@ expected_stdout_1 = """
 	MON_PROTOCOL                    TCP
 	MON_AUTH_METHOD                 Srp
 	Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')

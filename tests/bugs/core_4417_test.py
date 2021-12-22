@@ -22,7 +22,7 @@ db_1 = db_factory(from_backup='core4417-ods-11_2.fbk', init=init_script_1)
 
 test_script_1 = """
     -- Confirmed crash of restoring on WI-V2.5.2.26540: message about abnnormal program termination appeared.
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

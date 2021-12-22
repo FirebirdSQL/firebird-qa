@@ -52,7 +52,7 @@ init_script_1 = """
 
     insert into t1 values (1);
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -67,7 +67,7 @@ test_script_1 = """
     select t.* from t1 t;
     select 'case-2' as msg, p.val from p_t1(1) p;
     exit; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -83,11 +83,11 @@ expected_stdout_1 = """
     F2                              id = 1
     MSG                             case-2
     VAL                             id = 1
-  """
+"""
 
 @pytest.mark.version('>=3.0.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

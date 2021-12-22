@@ -78,7 +78,7 @@ test_script_1 = """
     join (select split(line) f1, split(line, 2) f2 from lines1) a on a.f1 = u.f1 and a.f2 = u.f2
     join (select split(line) f1, split(line, 2) f2 from lines2) b on b.f1 = u.f1 and b.f2 = u.f2
     order by 1, 2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -91,11 +91,11 @@ expected_stdout_1 = """
 
     F1                              2008
     F2                              defdefdef
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -501,7 +501,7 @@ Database encrypted
 14598365    ddc0de    NOT FOUND.
 14600925    ddcade    NOT FOUND.
 2147483646  feffff7f  NOT FOUND.
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):

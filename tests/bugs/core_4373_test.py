@@ -51,7 +51,7 @@ test_script_1 = """
     end^
     
     set term ; ^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -63,11 +63,11 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     CREATE PACKAGE BODY NEW_PACKAGE failed
     -Duplicate PROCEDURE INTERNAL_PROC
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

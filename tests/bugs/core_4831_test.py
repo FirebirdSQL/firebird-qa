@@ -30,7 +30,7 @@ test_script_1 = """
     -- commit;
     -- drop role r_20150608_20h03m;
     --commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

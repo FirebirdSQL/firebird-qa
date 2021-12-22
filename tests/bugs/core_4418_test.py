@@ -74,7 +74,7 @@ drop domain dm_ids;
 drop collation nums_coll;
 
 rollback;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
 
@@ -86,7 +86,7 @@ show domain dm_nums;
 show collation nums_coll;
 -- oel64: coll-version=49.192.5.41
 -- winxp: coll-version=58.0.6.50
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -108,11 +108,11 @@ DM_IDS                          BIGINT Nullable
 DM_NUMS                         VARCHAR(20) CHARACTER SET UTF8 Nullable
                                  COLLATE NUMS_COLL
 NUMS_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=153.88;NUMERIC-SORT=1'
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

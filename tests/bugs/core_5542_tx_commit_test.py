@@ -134,7 +134,7 @@ test_script_1 = """
     order by c.mon$variable_VALUE
     ;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -155,11 +155,11 @@ expected_stdout_1 = """
     MON$VARIABLE_NAME               RUN_DB_LEVEL_TRG_CIAO
     MON$VARIABLE_VALUE              3: TRG_TX_COMMIT_CIAO
     Records affected: 3
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

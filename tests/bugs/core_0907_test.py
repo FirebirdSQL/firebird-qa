@@ -25,7 +25,7 @@ init_script_1 = """
     commit;
     alter table crash add a5 computed by (a2*a3*a4);
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -58,7 +58,7 @@ test_script_1 = """
     update crash set a1=null, a2=null, a3=null,a4=null rows 1;
     commit;
     show table crash;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -68,20 +68,20 @@ expected_stdout_1 = """
     A3                              INTEGER Not Null 
     A4                              INTEGER Not Null 
     A5                              Computed by: (a2*a3*a4)
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22006
     unsuccessful metadata update
     -Cannot make field A5 of table CRASH NOT NULL because there are NULLs present
     Statement failed, SQLSTATE = 23000
     validation error for column "CRASH"."A1", value "*** null ***"
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

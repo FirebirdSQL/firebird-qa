@@ -307,7 +307,7 @@ def isql_job(act: Action, b: Barrier, lock: Lock, result_list: List[str]):
      end
      ^ set term ;^
      quit;
-     """
+"""
      b.wait()
      result: CompletedProcess = run([act.vars['isql'], '-user', act.db.user,
                                      '-password', act.db.password, act.db.dsn],

@@ -88,7 +88,7 @@ test_script_1 = """
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -104,11 +104,11 @@ expected_stdout_1 = """
     RUNNING_TRN_ID                  224
     RUNNING_STT_TEXT                0:1
     select s.mon$statement_id, s.mon$transaction_id, s.mon$sql_text from mon$statements s where s.mon$sql_text containing 'test' and s.mon$transaction_id = current_transaction rows 1
-  """
+"""
 
 @pytest.mark.version('>=2.5.6')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

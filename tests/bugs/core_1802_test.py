@@ -37,5 +37,5 @@ expected_stdout_1 = """CU UNIQUE INDEX ON TAB21(A)
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

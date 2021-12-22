@@ -32,7 +32,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -40,7 +40,7 @@ test_script_1 = """
     set list on;
     set blob all;
     select rdb$debug_info from rdb$procedures where upper(rdb$procedure_name) = upper('sp_test');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -65,11 +65,11 @@ expected_stdout_1 = """
     94          7         11
     116         8         11
     142        10          9
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

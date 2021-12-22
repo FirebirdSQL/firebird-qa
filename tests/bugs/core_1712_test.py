@@ -37,17 +37,17 @@ test_script_1 = """
     set list on;
     select replace(cast(f1 as varchar(30)),'0','') f1_as_varchar30 from testtable;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     F1_AS_VARCHAR30                 1.e+19
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

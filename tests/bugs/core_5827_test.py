@@ -89,7 +89,7 @@ test_script_1 = """
     drop user tmp$c5827 using plugin Srp;
     commit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

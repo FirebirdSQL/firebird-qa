@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0010
 # title:        Navigation vs IS NULL vs compound index
-# decription:   
+# decription:
 # tracker_id:   CORE-0010
 # min_versions: ['2.5.0']
 # versions:     2.5
@@ -34,18 +34,18 @@ test_script_1 = """
     from t
     where f1 is null
     order by f1, f2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     F1                              <null>
     F2                              2
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

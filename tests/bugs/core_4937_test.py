@@ -133,7 +133,7 @@ test_script_1 = """
 
     -- Output statistics. Natural reads in all cases should be 0 (zero):
     select 'run_' || a.rowset as run_no, a.natural_reads from v_agg_stat a;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -151,11 +151,11 @@ expected_stdout_1 = """
     NATURAL_READS                   0
     RUN_NO                          run_4
     NATURAL_READS                   0
-  """
+"""
 
 @pytest.mark.version('>=2.5.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

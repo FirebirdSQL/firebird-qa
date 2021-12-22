@@ -320,7 +320,7 @@ sttm_list = [
             n = n - 1;
         end
     end
-    """
+"""
 ]
 
 @pytest.mark.version('>=4.0')

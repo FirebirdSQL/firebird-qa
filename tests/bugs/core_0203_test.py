@@ -111,7 +111,7 @@ test_script_1 = """
     select * from v_test4 v4;                                                                       -- 15
 
     select * from v_test4 v4 PLAN (V4 V_TEST3 T INDEX (TEST_X_Y));                                  -- 16
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -150,11 +150,11 @@ expected_stdout_1 = """
 
     PLAN (V4 V_TEST3 T INDEX (TEST_X_Y))
 
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

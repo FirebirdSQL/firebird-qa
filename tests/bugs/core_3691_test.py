@@ -31,7 +31,7 @@ test_script_1 = """
     insert into tdetl values(1,2);
     commit;
     alter table tdetl add constraint tdetl_fk foreign key(pid) references tmain(id);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -40,11 +40,11 @@ expected_stderr_1 = """
     violation of FOREIGN KEY constraint "TDETL_FK" on table "TDETL"
     -Foreign key reference target does not exist
     -Problematic key value is ("PID" = 2)
-  """
+"""
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

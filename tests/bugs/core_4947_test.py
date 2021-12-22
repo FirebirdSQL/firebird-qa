@@ -25,7 +25,7 @@ test_script_1 = """
     alter table t
         add constraint cx check(x > 0),
         drop constraint cx; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

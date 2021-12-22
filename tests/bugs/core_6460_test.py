@@ -50,7 +50,7 @@ test_script_1 = """
           w4 as (w2 RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
     order by e.emp_no 
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -58,11 +58,11 @@ expected_stdout_1 = """
  EMP_NO DEPT_NO                SALARY                LAST_2               LAST_W2                LAST_3               LAST_W3               LAST_W4 
      85 d01                  99999.00              99999.00              99999.00              99999.00              99999.00              99999.00 
     127 d01                  11111.00              11111.00              11111.00              99999.00              99999.00              99999.00 
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

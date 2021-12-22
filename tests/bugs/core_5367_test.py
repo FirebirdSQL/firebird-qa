@@ -28,7 +28,7 @@ substitutions_1 = []
 
 init_script_1 = """
     recreate table test(id int,boo boolean);
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -37,7 +37,7 @@ test_script_1 = """
     set planonly;
     select * from test where ?;
     set planonly;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -56,11 +56,11 @@ expected_stdout_1 = """
     02: sqltype: 32764 BOOLEAN Nullable scale: 0 subtype: 0 len: 1
       :  name: BOO  alias: BOO
       : table: TEST  owner: SYSDBA
-  """
+"""
 
 @pytest.mark.version('>=3.0.2')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

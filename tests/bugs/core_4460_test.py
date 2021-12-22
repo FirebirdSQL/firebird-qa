@@ -48,7 +48,7 @@ test_script_1 = """
       select rdb$field_name from rdb$fields
     ) as dt (name) where dt.name = rpad('', 0, '')
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -57,11 +57,11 @@ expected_stdout_1 = """
     PLAN SORT (DT RDB$RELATIONS INDEX (RDB$INDEX_0), DT RDB$FIELDS INDEX (RDB$INDEX_2))
     PLAN SORT (DT RDB$RELATIONS INDEX (RDB$INDEX_0), DT RDB$FIELDS INDEX (RDB$INDEX_2))
     PLAN SORT (DT RDB$RELATIONS INDEX (RDB$INDEX_0), DT RDB$FIELDS INDEX (RDB$INDEX_2))
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

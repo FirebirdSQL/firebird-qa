@@ -62,27 +62,27 @@ test_script_1 = """
     drop user tmp$c5248_usr0;
     drop user tmp$c5248_usrx;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     COUNT                           1
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     unsuccessful metadata update
     -DROP ROLE TEST_ROLE1 failed
     -no permission for DROP access to ROLE TEST_ROLE1
-  """
+"""
 
 @pytest.mark.version('>=3.0.1,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -260,7 +260,7 @@ test_script_2 = """
     drop user tmp$c5248_usrx;
     commit;
 
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -406,7 +406,7 @@ expected_stdout_2 = """
     Records affected: 3
     Records affected: 0
     Records affected: 0
-  """
+"""
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
@@ -417,7 +417,7 @@ expected_stderr_2 = """
     unsuccessful metadata update
     -DROP ROLE TEST_ROLE1 failed
     -no permission for DROP access to ROLE TEST_ROLE1
-  """
+"""
 
 
 usr0_2 = user_factory('db_2', name='tmp$c5248_usr0', password='c5248$u0')
@@ -433,6 +433,6 @@ def test_2(act_2: Action, usr0_2: User, usr1_2: User, usr2_2: User, usr3_2: User
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

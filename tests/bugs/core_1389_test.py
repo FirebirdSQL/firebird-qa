@@ -48,7 +48,7 @@ init_script_1 = """
     create index test_x on test(x);
     create descending index test_y on test(y);
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 

@@ -30,7 +30,7 @@ test_script_1 = """
     commit;
     show grants;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -38,7 +38,7 @@ expected_stdout_1 = """
     /* Grant permissions for this database */
     GRANT USAGE ON SEQUENCE GEN_BAR TO USER TMP$C4839
     GRANT USAGE ON EXCEPTION EXC_FOO TO USER TMP$C4839
-  """
+"""
 
 test_user = user_factory('db_1', name='tmp$c4839', password='123')
 
@@ -46,5 +46,5 @@ test_user = user_factory('db_1', name='tmp$c4839', password='123')
 def test_1(act_1: Action, test_user: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

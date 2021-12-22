@@ -55,7 +55,7 @@ test_script_1 = """
     insert into test2 values( null, null, null);
     insert into test2 values( true, true, true);
     update test2 set u=true, v=null, w=true where coalesce(u,v,w) is null rows 1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -70,7 +70,7 @@ expected_stdout_1 = """
     Records affected: 1
     Records affected: 0
     Records affected: 0
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     violation of PRIMARY or UNIQUE KEY constraint "TEST1_X_UNQ" on table "TEST1"
@@ -83,13 +83,13 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     violation of PRIMARY or UNIQUE KEY constraint "TEST2_UVW_UNQ" on table "TEST2"
     -Problematic key value is ("U" = TRUE, "V" = NULL, "W" = TRUE)
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

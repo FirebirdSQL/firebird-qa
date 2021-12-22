@@ -26,7 +26,7 @@ test_script_1 = """
     select rdb$relation_id as r_id, rdb$character_set_name
     from rdb$database
     group by rdb$relation_id, rdb$character_set_name; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -35,11 +35,11 @@ expected_stdout_1 = """
     : table: RDB$DATABASE  owner: SYSDBA
     :  name: RDB$CHARACTER_SET_NAME  alias: RDB$CHARACTER_SET_NAME
     : table: RDB$DATABASE  owner: SYSDBA
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

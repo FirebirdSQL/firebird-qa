@@ -49,7 +49,7 @@ test_script_1 = """
         and rt.rdb$type_name containing upper('COLLATION')
     order by 1;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -71,5 +71,5 @@ DEP_ON_TYPE                     COLLATION
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

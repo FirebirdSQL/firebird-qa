@@ -27,7 +27,7 @@ init_script_1 = """
     --    about possible regression. After multiple runs it was found that ratio for
     --    2.1 vs 2.2 is about 1.05 ... 1.10.  Constant <X> (threshold) was selected
     --    to be enough for not to be "violated".
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -180,7 +180,7 @@ test_script_1 = """
     
     end
     ^ set term ;^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -190,11 +190,11 @@ expected_stdout_1 = """
     RATIO_FOR_1E3                   Acceptable, <= 3.0000
     RATIO_FOR_1E4                   Acceptable, <= 3.0000
     RATIO_FOR_1E5                   Acceptable, <= 3.0000
-  """
+"""
 
 @pytest.mark.version('>=2.5.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

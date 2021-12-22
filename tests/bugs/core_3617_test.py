@@ -37,7 +37,7 @@ test_script_1 = """
     select s, id, cume_dist()over(order by s) as c_dist
     from test_ciai
     order by cume_dist()over(order by id desc);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -57,11 +57,11 @@ expected_stdout_1 = """
     S                               CANción
     ID                              1
     C_DIST                          0.5000000000000000
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

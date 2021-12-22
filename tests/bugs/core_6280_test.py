@@ -25,7 +25,7 @@ substitutions_1 = []
 
 init_script_1 = """
     recreate table t(i int not null primary key, j int);
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -80,7 +80,7 @@ def test_1(act_1: Action):
                 delete
             when not matched then
                 insert (i, j) values (1, ?)
-        """
+"""
         # PROBLEM:
         # Original test used two parameter values where 3 parameters are expected, but
         # new driver does not even allow that as it checks number of values with number of

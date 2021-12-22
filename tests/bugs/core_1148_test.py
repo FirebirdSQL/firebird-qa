@@ -97,11 +97,13 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 user_1 = user_factory('db_1', name='TMP$C1148', password='QweRtyUi')
 
-@pytest.mark.version('>=2.5')
+@pytest.mark.version('>=3.0')
 def test_1(act_1: Action, user_1: User):
+    if act_1.is_version('<4'):
+        pattern = 'You must be either SYSDBA or owner of the database'
+    else:
+        pattern = 'You must have SYSDBA rights at this server'
     with act_1.connect_server(user=user_1.name, password=user_1.password) as srv:
-        with pytest.raises(DatabaseError, match='Unable to perform operation\n-You must have SYSDBA rights at this server'):
+        with pytest.raises(DatabaseError, match=pattern):
             srv.info.get_log()
-
-
 

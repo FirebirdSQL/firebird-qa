@@ -47,7 +47,7 @@ test_script_1 = """
     )
     select * from a
     where blob_id collate PXW_CYRL_CI_AI like '%update%';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -55,11 +55,11 @@ expected_stdout_1 = """
     update
     UPDATE
     Records affected: 2
-  """
+"""
 
 @pytest.mark.version('>=3.0.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute(charset='WIN1251')
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -25,7 +25,7 @@ init_script_1 = """
     
     insert into t (f1,f2) values ('0123456789','abcdefghij');
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -49,7 +49,7 @@ test_script_1 = """
     from rdb$fields a 
     join rdb$relation_fields b  on a.rdb$field_name = b.rdb$field_source
     where b.rdb$field_name = upper('CF');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -67,19 +67,19 @@ expected_stdout_1 = """
     
     FIELD_NAME                      CF                                                                                           
     COMPUTED_SOURCE_AFTER_ALTERING  (f1 || ' - ' || f2)
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -ALTER TABLE T failed
     -Cannot add or remove COMPUTED from column CF
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

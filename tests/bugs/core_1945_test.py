@@ -103,7 +103,7 @@ test_script_1 = """
 	select s_norm from test order by s_norm;
 	select s_ci from test order by s_ci;
 	select s_ciai from test order by s_ciai;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -179,11 +179,11 @@ expected_stdout_1 = """
 	S_CIAI                          š5
 	S_CIAI                          Š55
 	S_CIAI                          ş555
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

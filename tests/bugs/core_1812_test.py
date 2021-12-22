@@ -37,18 +37,18 @@ test_script_1 = """
     set planonly;
     select * from test where dts = localtimestamp;
     select * from test where dts = current_timestamp;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     PLAN (TEST INDEX (TEST_DTS))
     PLAN (TEST NATURAL)
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

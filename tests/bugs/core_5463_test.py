@@ -86,7 +86,7 @@ test_script_1 = """
 
     -- 2) check ability to pass allowed value but it also must be overriden by default one:
     insert into test_default(id_default) overriding user value values(-7654322) returning id_default; -- expected: -121
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -97,7 +97,7 @@ expected_stdout_1 = """
     ID_ALWAYS                       7654321
     ID_DEFAULT                      -33
     ID_DEFAULT                      -55
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     OVERRIDING SYSTEM VALUE should be used
@@ -107,13 +107,13 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST_ALWAYS"."ID_ALWAYS", value "*** null ***"
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

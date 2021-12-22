@@ -333,7 +333,7 @@ def test_1(act_1: Action, work_script_1: Path, capsys):
     --order by mon$stat_id
     ;
     quit;
-    """
+"""
     try:
         act_1.isql(switches=[], input=drop_sql)
         delete_from_mon_sttm_log = act_1.stdout
@@ -354,7 +354,7 @@ def test_1(act_1: Action, work_script_1: Path, capsys):
         select gen_id(g,0) as current_gen, c.n * c.n * c.n as total_rows
         from (select (select count(*) from rdb$types) as n from rdb$database) c
     );
-    """
+"""
     act_1.isql(switches=[], input=check_sql)
     #
     for line in delete_from_mon_sttm_log.splitlines():

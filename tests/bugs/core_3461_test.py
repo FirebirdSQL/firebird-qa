@@ -33,7 +33,7 @@ test_script_1 = """
       select id, id2 from test_tbl2 into :id, :id2;
     end ^
     commit^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

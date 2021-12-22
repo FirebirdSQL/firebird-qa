@@ -328,7 +328,7 @@ expected_stdout_1 = """
 	Zz             42
 	Žb             43
 	Žz             44
-  """
+"""
 
 
 script_file = temp_file('test-script.sql')

@@ -58,14 +58,14 @@ test_script_1 = """
     commit;
 
     alter domain dm_int set not null;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     MSG                             intro proc p: a=null
     X                               <null>
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     validation error for variable A, value "*** null ***"
@@ -75,13 +75,13 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 22006
     unsuccessful metadata update
     -Cannot make field X of table T NOT NULL because there are NULLs present
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

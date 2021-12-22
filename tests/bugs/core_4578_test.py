@@ -81,7 +81,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 expected_stdout_1 = """
     ID                              1
     Unable to open
-  """
+"""
 
 @pytest.mark.version('>=2.5.4')
 @pytest.mark.platform('Windows')

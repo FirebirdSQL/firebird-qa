@@ -196,7 +196,7 @@ test_script_1 = """
 
     select * from sp_zero_div( '170141183460469231731687303715884105727' );
     rollback;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -233,7 +233,7 @@ expected_stdout_1 = """
     P_MAX -170141183460469231731687303715884105728
     P_MIN 1
     P_MIN -1
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST2"."I_MIN", value "-2"
@@ -244,13 +244,13 @@ expected_stderr_1 = """
     -EX_ZERO_DIV_NOT_ALLOWED
     -Can not delete -170141183460469231731687303715884105728 by zero
     -At procedure 'SP_ZERO_DIV' line: 8, col: 12
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

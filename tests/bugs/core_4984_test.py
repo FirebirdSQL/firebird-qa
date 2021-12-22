@@ -82,7 +82,7 @@ test_script_1 = """
     from test_idx where val in (1,2,3);
 
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -111,11 +111,11 @@ expected_stdout_1 = """
     CHECKED_RESULT_4                1999-09-09
     MSG                             index_scan_descending
     CHECKED_RESULT_5                1999-09-09
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

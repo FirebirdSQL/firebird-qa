@@ -116,7 +116,7 @@ test_script_1 = """
     insert into test default values;
     select 'case-19' as msg, id from test;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -148,11 +148,11 @@ expected_stdout_1 = """
     case-18   9223372034707292160
     case-19                     1
     case-19           -2147483646
-   """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

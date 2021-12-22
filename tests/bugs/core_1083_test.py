@@ -53,7 +53,7 @@ test_script_1 = """
     set echo off;
     commit;
     --  ('-TMP\\$C1083 is not grantor.*', '')
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -62,19 +62,19 @@ expected_stdout_1 = """
     revoke update(col1) on tab1 from role1;
     revoke update(col2) on tab2 from role1;
     drop user tmp$c1083;
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -REVOKE failed
     -TMP$C1083 is not grantor of UPDATE on TAB2 to ROLE1.
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -74,7 +74,7 @@ test_script_1 = """
      
     select p.b as "blob_int128_explicit_cast" from "blob_int128_explicit_cast"('0x7fffffffffffffffffffffffffffffff') p;
     select p.b as "blob_int128_explicit_cast" from "blob_int128_explicit_cast"('0x80000000000000000000000000000000') p;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -87,11 +87,11 @@ expected_stdout_1 = """
     -9223372036854775808
     170141183460469231731687303715884105727
     -170141183460469231731687303715884105728
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

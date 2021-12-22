@@ -249,7 +249,7 @@ expected_stdout_1 = """
     CLEANUP: RDB$MAP_TO                      <null>
     CLEANUP: RDB$SYSTEM_FLAG                 <null>
     CLEANUP: Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')
@@ -474,7 +474,7 @@ expected_stdout_2 = """
     CLEANUP: RDB$MAP_TO                      <null>
     CLEANUP: RDB$SYSTEM_FLAG                 <null>
     CLEANUP: Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')

@@ -135,7 +135,7 @@ expected_stdout_1 = """
     Attach: r2utf8. othr ; sql_text_hash:  98490476833044645 ; charset_name NONE
     Attach: r2none. othr ; sql_text_hash:  97434734411675813 ; charset_name UTF8
     Attach: r2utf8. othr ; sql_text_hash:  97434734411675813 ; charset_name UTF8
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action, capsys):

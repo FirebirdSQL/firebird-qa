@@ -25,7 +25,7 @@ substitutions_1 = [('RDB\\$DEFAULT_SOURCE.*', '')]
 init_script_1 = """
     recreate table test(x integer default 0);
     commit;
-  """
+"""
 
 db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
 

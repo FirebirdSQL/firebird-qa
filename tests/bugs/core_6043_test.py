@@ -232,7 +232,7 @@ expected_stdout_1 = """
 
     When ClearGTTAtRetaining = 1: Records affected: 0
     When ClearGTTAtRetaining = 1: Records affected: 0
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4')
 def test_1(act_1: Action):
@@ -267,7 +267,7 @@ test_script_2 = """
 
     set count on;
     select * from gtt; -- point 2
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -277,11 +277,11 @@ expected_stdout_2 = """
 
     ID 4
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

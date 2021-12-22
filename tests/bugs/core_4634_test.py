@@ -30,7 +30,7 @@ test_script_1 = """
     where (order_status like '1%' or order_status like '%1%')
     order by order_status
     rows 1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

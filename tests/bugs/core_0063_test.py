@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0063
 # title:        Sequence of commands crash FB server
-# decription:   
+# decription:
 # tracker_id:   CORE-0063
 # min_versions: ['2.5.0']
 # versions:     2.5
@@ -43,17 +43,17 @@ test_script_1 = """
     update movimento set complemento = complemento2;
     set list on;
     select 'OK' as result from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     RESULT                          OK
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

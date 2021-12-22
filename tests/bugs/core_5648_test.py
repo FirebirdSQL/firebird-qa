@@ -285,7 +285,7 @@ def test_1(act_1: Action, eds_script_1: Path):
         --                                      #################
         from rdb$database
     );
-    """
+"""
     #
     remote_host = '192.0.2.2'
     eds_script_1.write_text(eds_sql % locals())

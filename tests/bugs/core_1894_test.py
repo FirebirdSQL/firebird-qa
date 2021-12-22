@@ -48,7 +48,7 @@ test_script_1 = """
     select * from t;
     select * from t2; -- THIS LEAD SERVER CRASH (checked on WI-T4.0.0.399)
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -71,11 +71,11 @@ expected_stderr_1 = """
     -cannot delete
     -COLUMN T2.C1
     -there are 1 dependencies
-  """
+"""
 
 @pytest.mark.version('>=3.0.2')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

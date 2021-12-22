@@ -52,7 +52,7 @@ test_script_1 = """
     --Doesn't uses a proper index: PLAN (TEST NATURAL)
     select * from test where (UPPER(COALESCE(FIELD_2,''))||UPPER(COALESCE(FIELD_3,''))) = 'TEST1TEST1_1';
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -66,11 +66,11 @@ expected_stdout_1 = """
     PLAN (TEST INDEX (TEST_IDX2))
 
     PLAN (TEST INDEX (TEST_IDX1))
-  """
+"""
 
 @pytest.mark.version('>=3.0.8')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

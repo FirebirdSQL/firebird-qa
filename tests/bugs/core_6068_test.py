@@ -3614,7 +3614,7 @@ GRANT USAGE ON EXCEPTION EXC$CANCEL TO PROCEDURE OPER$EXCEPTION$CANCEL;
 GRANT USAGE ON SEQUENCE SEQ_SYS$LOG$EXCEPTION_ID TO PROCEDURE OPER$EXCEPTION$CANCEL;
 exit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -3624,11 +3624,11 @@ Dynamic SQL Error
 -SQL error code = -104
 -Token unknown - line 1735, column 9
 -IF  
-  """
+"""
 
 @pytest.mark.version('>=3.0.5')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

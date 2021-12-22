@@ -60,5 +60,5 @@ role_1 = role_factory('db_1', name='tmp$r4836')
 def test_1(act_1: Action, user_1: User, role_1: Role):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

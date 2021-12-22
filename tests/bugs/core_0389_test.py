@@ -24,7 +24,7 @@ init_script_1 = """
     insert into t values(2);
     insert into t values(null);
     insert into t values(null);
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -61,7 +61,7 @@ test_script_1 = """
 
     order by 1 nulls first
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -100,11 +100,11 @@ expected_stdout_1 = """
               22 
              222 
             2222
-  """
+"""
 
 @pytest.mark.version('>=2.0.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

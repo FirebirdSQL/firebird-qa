@@ -215,7 +215,7 @@ def test_1(act_1: Action, db_1_repl: Database, capsys):
             external name 'udrcpp_example!replicate_persons!ds1'
             engine udr;
         commit;
-    """
+"""
     act_1.isql(switches=['-q'], input=ddl_for_replication)
     # Test
     with act_1.db.connect() as con:

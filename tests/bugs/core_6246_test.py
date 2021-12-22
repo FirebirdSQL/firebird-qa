@@ -156,7 +156,7 @@ def test_1(act_1: Action):
         select
             {fld_list}
         from rdb$fields as x1 rows 1;
-        """
+"""
     act_1.isql(switches=['-q'], input=test_script)
     # 1. For FB 3.x: only "charset: 3" must present in any string that describes column:
     #     NN: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 93 charset:   3 UNICODE_FSS

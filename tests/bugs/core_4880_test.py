@@ -162,7 +162,7 @@ def test_1(act_1: Action):
         from log
       )
     ) x;
-    """
+"""
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=['-q'], input=test_script)

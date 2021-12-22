@@ -33,7 +33,7 @@ test_script_1 = """
     select gen_id(g,0) value_on_step_2 from rdb$database;
     commit;
     select gen_id(g,0) value_on_step_3 from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -41,11 +41,11 @@ expected_stdout_1 = """
     VALUE_ON_STEP_1                 111
     VALUE_ON_STEP_2                 333
     VALUE_ON_STEP_3                 333
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

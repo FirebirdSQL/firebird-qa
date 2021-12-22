@@ -44,7 +44,7 @@ test_script_1 = """
 
     select iif( t2 between 0 and 6, 1, 0 ) t2_check from test1; 
     select c1 || '' as c1_check from test2; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -56,11 +56,11 @@ expected_stdout_1 = """
     02: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
     T2_CHECK                        1
     C1_CHECK                        1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

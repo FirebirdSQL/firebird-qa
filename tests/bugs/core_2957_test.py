@@ -55,7 +55,7 @@ test_script_1 = """
         ,rank()over()       rnk_ovr_n64
         ,dense_rank()over() drn_ovr_n64
     from test;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -72,13 +72,13 @@ expected_stdout_1 = """
     05: sqltype: 580 INT64 scale: 0 subtype: 0 len: 8
     06: sqltype: 580 INT64 scale: 0 subtype: 0 len: 8
     07: sqltype: 580 INT64 scale: 0 subtype: 0 len: 8
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -116,7 +116,7 @@ test_script_2 = """
         ,rank()over()       rnk_ovr_n64
         ,dense_rank()over() drn_ovr_n64
     from test;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -136,11 +136,11 @@ expected_stdout_2 = """
     07: sqltype: 580 INT64 scale: 0 subtype: 0 len: 8
     08: sqltype: 580 INT64 scale: 0 subtype: 0 len: 8
     09: sqltype: 580 INT64 scale: 0 subtype: 0 len: 8
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

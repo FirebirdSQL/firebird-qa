@@ -38,7 +38,7 @@ test_script_1 = """
     ^
     set term ;^ 
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

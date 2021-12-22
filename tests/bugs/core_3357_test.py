@@ -105,7 +105,7 @@ act_2 = python_act('db_2', substitutions=substitutions_2)
 expected_stdout_2 = """
     Generator G1, current value: -9223372034707292162, initial value: 9223372036854775807, increment: -2147483647
     Generator G2, current value: 9223372034707292161, initial value: -9223372036854775808, increment: 2147483647
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):

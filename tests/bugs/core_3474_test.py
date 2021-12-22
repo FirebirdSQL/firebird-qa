@@ -40,7 +40,7 @@ test_script_1 = """
         left join project p on p.proj_id = proc.proj_id
     order by 1,2,3
     rows 1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -48,20 +48,20 @@ expected_stdout_1 = """
     EMP_2                           2
     NAME_2                          Nelson
     PROJ_2                          <null>
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
     -Column unknown
     -E.EMP_NO
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

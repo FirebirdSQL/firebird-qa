@@ -105,7 +105,7 @@ test_script_1 = """
     set list on;
     set count on;
 
-    select 
+    select
          ulzid, datum, broj_racuna, dobid, dobavljac, napid, nacin_placanja, datumprispeca
         ,cast(vrednost as numeric(10,2)) as vrednost
         ,cast(rvrednost as numeric(10,2)) as rvrednost
@@ -119,19 +119,19 @@ test_script_1 = """
     select
          ulzid, artid, artikal, kolicina,
          cast(cena as numeric(12,2)) as cena,
-         rabat, 
+         rabat,
          cast(ukupno as numeric(12,2)) as ukupno,
          vratio
     from ulaz_detalji;
 
-    select 
+    select
          ulzid, datum, broj_racuna, dobid, dobavljac, napid, nacin_placanja, datumprispeca
         ,cast(vrednost as numeric(10,2)) as vrednost
         ,cast(rvrednost as numeric(10,2)) as rvrednost
         ,status
     from ulaz_master;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -177,11 +177,11 @@ expected_stdout_1 = """
     STATUS                          0
 
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

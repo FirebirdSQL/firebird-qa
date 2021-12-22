@@ -35,7 +35,7 @@ test_script_1 = """
     select 4 as chk_4, date '01.02.2020' - -9223372036854775807 from rdb$database;
     select 5 as chk_5, date '01.02.2020' + -9223372036854775808 from rdb$database;
     select 6 as chk_6, date '01.02.2020' - -9223372036854775808 from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -57,11 +57,11 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 22008
     value exceeds the range for valid dates
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

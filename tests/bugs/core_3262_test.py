@@ -48,7 +48,7 @@ test_script_1 = """
     
     with q (l) as (select list(s) from vc)
       select ascii_val(substring(l from 4066 for 1)), ascii_val(substring(l from 4067 for 1)) from q;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -75,11 +75,11 @@ expected_stdout_1 = """
 
     ASCII_VAL                       32
     ASCII_VAL                       32
-  """
+"""
 
 @pytest.mark.version('>=2.1.4')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -186,7 +186,7 @@ test_script_1 = """
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;    
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -196,18 +196,18 @@ expected_stdout_1 = """
     RESULT_2                        Acceptable
     GDS_IN_WHEN_ANY_BLOCK           335544926
     END_OF_EB_CNT                   EXPECTED, <null>
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = HY008
     operation was cancelled
     -Attachment level timeout expired.
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

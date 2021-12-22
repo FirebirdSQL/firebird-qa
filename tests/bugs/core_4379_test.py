@@ -25,7 +25,7 @@ init_script_1 = """
     insert into t select gen_id(g,1), gen_id(g,0)*10 from rdb$types,rdb$types
     rows 20000;
     commit;
-  """
+"""
 
 db_1 = db_factory(from_backup='mon-stat-gathering-3_0.fbk', init=init_script_1)
 
@@ -113,7 +113,7 @@ test_script_1 = """
 
     -- On LI-T3.0.0.30981 (29-mar02014) it was 200049999 indexed reads here:
     select natural_reads, indexed_reads from v_agg_stat_tabs where table_name = upper('T');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -135,11 +135,11 @@ expected_stdout_1 = """
     PLAN (T INDEX ())
     NATURAL_READS                   20000
     INDEXED_READS                   59999
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

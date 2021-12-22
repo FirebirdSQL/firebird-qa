@@ -22,7 +22,7 @@ db_1 = db_factory(from_backup='core3282.fbk', init=init_script_1)
 
 test_script_1 = """
     execute procedure TESTSP; -- 2.5.0 only: get "Malformed string" when connect with cset=utf8, confirmed 26.02.2015
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

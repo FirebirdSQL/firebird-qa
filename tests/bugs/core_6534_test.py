@@ -33,7 +33,7 @@ test_script_1 = """
     select 5 from (select cast('+0' as double precision) as d from rdb$database) natural join (select cast('-0' as double precision) as d from rdb$database);
     select 6 from (select cast('0E-6176' as decfloat) as d from rdb$database) natural join (select cast('0e0' as decfloat) as d from rdb$database);
     select 7 from (select time '05:05:05.5555' at time zone '-10:0' t from rdb$database) natural join (select time '05:05:05.5555' at time zone '+14:0' t from rdb$database);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -45,11 +45,11 @@ expected_stdout_1 = """
     5
     6
     7
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

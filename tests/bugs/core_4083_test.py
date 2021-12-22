@@ -51,7 +51,7 @@ test_script_1 = """
       (select 2 as field2 from rdb$database) b on b.field2=a.field1
     order by 1,2
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -73,11 +73,11 @@ expected_stdout_1 = """
     FIELD2                          2
     FIELD1                          1
     FIELD2                          <null>
-  """
+"""
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

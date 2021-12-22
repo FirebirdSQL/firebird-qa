@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0104
 # title:        Dropping and recreating a table in the same txn disables PK
-# decription:   
+# decription:
 # tracker_id:   CORE-104
 # min_versions: []
 # versions:     2.5.3
@@ -46,5 +46,5 @@ violation of PRIMARY or UNIQUE KEY constraint "INTEG_4" on table "TEST"
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

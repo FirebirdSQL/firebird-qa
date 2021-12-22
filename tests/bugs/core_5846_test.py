@@ -33,7 +33,7 @@ test_script_1 = """
     select fld1 from table1
     ; 
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

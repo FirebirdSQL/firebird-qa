@@ -29,7 +29,7 @@ test_script_1 = """
     select rdb$relation_name, lag(rdb$relation_name, ?) over (order by rdb$relation_name) from rdb$relations;
     select rdb$relation_name, lead(rdb$relation_name, ?) over (order by rdb$relation_name) from rdb$relations;
     select rdb$relation_name, nth_value(rdb$relation_name, ?) over (order by rdb$relation_name) from rdb$relations;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

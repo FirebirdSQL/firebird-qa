@@ -153,7 +153,7 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 28000
     unsuccessful metadata update
-    -DROP TABLE V_TEST failed
+    -DROP VIEW V_TEST failed
     -no permission for DROP access to VIEW V_TEST
 
     Statement failed, SQLSTATE = 28000
@@ -204,7 +204,7 @@ expected_stderr_1 = """
 def test_1(act_1: Action, user_1: User):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
 # resources: None
@@ -408,5 +408,4 @@ unsuccessful metadata update
 def test_2(act_2: Action, user_2: User):
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-
+    assert act_2.clean_stderr == act_2.clean_expected_stderr

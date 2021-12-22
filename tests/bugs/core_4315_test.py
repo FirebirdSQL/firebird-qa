@@ -20,7 +20,7 @@ init_script_1 = """
     recreate view v1 as select 1 id from rdb$database;
     commit;
     recreate table t1 (n1 integer, n2 integer);
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -40,7 +40,7 @@ test_script_1 = """
     from rdb$triggers 
     where upper(trim(rdb$relation_name))=upper('v1')
     order by rdb$trigger_name;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -83,11 +83,11 @@ RDB$TRIGGER_BLR                 c:2d3
         	      blr_abort, blr_gds_code, 16, 'c','h','e','c','k','_','c','o','n','s','t','r','a','i','n','t',
         	   blr_end,
         	blr_eoc
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

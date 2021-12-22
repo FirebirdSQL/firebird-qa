@@ -64,7 +64,7 @@ init_script_1 = """
         ,add constraint test_fixerkey check ((decision = 'адкрыта' and fixerkey is null and decisiondate is null) or (decision <> 'адкрыта' and not fixerkey is null and not decisiondate is null))
     ;
     commit;
-  """
+"""
 
 db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 

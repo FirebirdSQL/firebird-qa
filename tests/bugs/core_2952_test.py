@@ -66,7 +66,8 @@ test_script_1 = """
         from d join r on r.i <= char_length(d.s)
     )
     select
-         decode( e.c, ascii_char(9),'	', ascii_char(10),'', ascii_char(32), '\\w', e.c ) c
+         decode( e.c, ascii_char(9),'	', ascii_char(10),'
+', ascii_char(32), '\\w', e.c ) c
          -- ALPHA Latin letters a..z and A..Z. With an accent-insensitive collation,
          -- this class also matches accented forms of these characters.
         ,iif( e.c collate co_utf8_ci_ai similar to '[[:aLPHA:]]', 1, 0 ) s_alpha_ci_ai
@@ -87,7 +88,7 @@ test_script_1 = """
         ,iif( e.c similar to '[[:WhiTespacE:]]', 1, 0 ) s_white_space
     from e
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -1089,13 +1090,13 @@ expected_stdout_1 = """
     S_UPPER_CS_AS                   0
     S_UPPER_CI_AS                   0
     S_WHITE_SPACE                   1  
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -1157,7 +1158,8 @@ test_script_2 = """
         from d join r on r.i <= char_length(d.s)
     )
     select
-         decode( e.c, ascii_char(9),'	', ascii_char(10),'', ascii_char(32), '\\w', e.c ) c
+         decode( e.c, ascii_char(9),'	', ascii_char(10),'
+', ascii_char(32), '\\w', e.c ) c
          -- ALPHA Latin letters a..z and A..Z. With an accent-insensitive collation,
          -- this class also matches accented forms of these characters.
         ,iif( e.c collate co_utf8_ci_ai similar to '[[:aLPHA:]]', 1, 0 ) s_alpha_ci_ai
@@ -1178,7 +1180,7 @@ test_script_2 = """
         ,iif( e.c similar to '[[:WhiTespacE:]]', 1, 0 ) s_white_space
     from e
     ;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -2274,11 +2276,11 @@ expected_stdout_2 = """
 	S_UPPER_CS_AS                   0
 	S_UPPER_CI_AS                   0
 	S_WHITE_SPACE                   0
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

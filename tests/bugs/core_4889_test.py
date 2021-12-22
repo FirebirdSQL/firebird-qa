@@ -276,7 +276,7 @@ def test_1(act_1: Action, capsys):
         from rdb$database r
         left join mon$attachments a on a.mon$attachment_id = current_connection and a.mon$system_flag = 0;
         commit;
-        """
+"""
         act_1.isql(switches=['-n', '-user', 'tmp$no$such$user$4889', str(act_1.db.db_path)],
                    connect_db=False, credentials=False, input=isq_script)
     # Process trace log

@@ -245,7 +245,7 @@ ddl_lst = ["""recreate
             'foo
             bar'
     """,
-       """
+"""
 
             create
     or

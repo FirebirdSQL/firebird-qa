@@ -123,7 +123,7 @@ test_script_1 = """
     APPROX_BLR_LENGTH               2359000
 
     **************************************/
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -132,11 +132,11 @@ expected_stdout_1 = """
     PROC_DDL_LENGTH                 786480
     PROC_SRC_LENGTH                 786420
     APPROX_BLR_LENGTH               2359000
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

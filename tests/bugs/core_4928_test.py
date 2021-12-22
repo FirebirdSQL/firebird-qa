@@ -118,6 +118,6 @@ def test_1(act_1: Action, fbk_file_1: Path):
         iif(att_dts is not null, 1, 0) is_att_dts_ok
     from att_log
     where att_id <> current_connection;
-    """
+"""
     act_1.execute()
     assert act_1.clean_stdout == act_1.clean_expected_stdout

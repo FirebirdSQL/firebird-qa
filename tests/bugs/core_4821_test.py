@@ -259,7 +259,7 @@ def test_1(act_1: Action, test_user_1: User, capsys, fdb_test1: Path, fdb_test2:
     create database 'localhost:{fdb_test2}' user {test_user_1.name} password '123' role {test_role.name};
     set list on;
     select mon$database_name as created_db_name from mon$database;
-    """
+"""
     act_1.isql(switches=['-q'], input=sql_test)
     print(act_1.stdout)
     # Must PASS because user test_user_1 is the owner of this DB:

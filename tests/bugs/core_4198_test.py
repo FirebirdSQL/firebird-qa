@@ -24,18 +24,18 @@ test_script_1 = """
     set list on; 
     select 1 v_passed from rdb$database where 1 = 0x1 ;
     select 2 v_failed from rdb$database where 1 = 0x1; -- confirmed fail on 3.0 Alpha1 (passes OK on Alpha2)
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     V_PASSED                        1
     V_FAILED                        2
-  """
+"""
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

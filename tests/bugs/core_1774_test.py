@@ -32,17 +32,17 @@ test_script_1 = """
     
     set list on;
     select * from table_a where field_a like '%HACK%';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     FIELD_A                         The web is hacked
-  """
+"""
 
 @pytest.mark.version('>=2.0.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

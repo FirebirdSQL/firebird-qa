@@ -54,7 +54,7 @@ test_script_1 = """
     -- But it means that these NULLS will be treated as ZEROEs in expression of computed-by index `tmain_difference_unq_idx`
     -- and thus again will violate its uniquness:
     update tmain set id=0 where id=200;  -- uniq idx tmain_difference_unq_idx, At trigger 'CHECK_nn'
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -79,11 +79,11 @@ expected_stderr_1 = """
     attempt to store duplicate value (visible to active transactions) in unique index "TMAIN_DIFFERENCE_UNQ_IDX"
     -Problematic key value is (<expression> = 0)
     -At trigger 'CHECK_2'
-  """
+"""
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

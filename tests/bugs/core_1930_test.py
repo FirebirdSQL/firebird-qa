@@ -112,7 +112,7 @@ test_script_1 = """
     ^
     commit
     ^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -126,13 +126,13 @@ expected_stderr_1 = """
     Statement : create or alter procedure sp3 as begin  execute procedure sp2; end
     Data source : Firebird::localhost:C:\\MIX\\FIREBIRD\\QA\\FBT-REPO\\TMP\\C1930.FDB
     -At block line: 3, col: 9
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
 # resources: None
@@ -208,7 +208,7 @@ test_script_2 = """
 
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -228,11 +228,11 @@ expected_stderr_2 = """
     Statement : create or alter procedure sp3 as begin  execute procedure sp2; end
     Data source : Firebird::localhost:
     -At block line
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
 

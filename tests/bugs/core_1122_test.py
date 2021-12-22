@@ -31,7 +31,7 @@ init_script_1 = """
     insert into tb_menus values (1, 0, 1, 'm1 - sub1', 'app1.exe', null);
     insert into tb_menus values (2, 0, 1, 'm1 - sub2', 'app2.exe', null);
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -76,7 +76,7 @@ test_script_1 = """
     select menu_icon from tb_menus
     UNION ALL
     select menu_icon from tb_menus;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -106,11 +106,11 @@ expected_stdout_1 = """
     MENU_ICON                       <null>
     MENU_ICON                       <null>
     MENU_ICON                       <null>
-  """
+"""
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

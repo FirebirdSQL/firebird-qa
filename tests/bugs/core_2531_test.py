@@ -216,7 +216,7 @@ expected_stdout_1 = """
     CONNECTION_CHARSET              WIN1252
     select 'gång' as non_ascii_literal from rdb$database
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):

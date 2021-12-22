@@ -65,18 +65,18 @@ test_script_1 = """
 
     select result_msg from sp_block_test('aes');
     select encrypt( 'fooriobar' using CHACHA20 key q'{1110FB89-AD32-4E}' iv q'{114E811E}' counter cast(null as bigint) ) as encrypt_str from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     RESULT_MSG                      String has been encrypted.
     ENCRYPT_STR                     8E709DDA89912F172C
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

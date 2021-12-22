@@ -37,7 +37,7 @@ test_script_1 = """
     where sec$user_name = upper('tmp$c4430');
     drop user tmp$c4430;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -45,11 +45,11 @@ expected_stdout_1 = """
     SEC$USER_NAME                   TMP$C4430
     FIRST_NAME_WITH_DOT             john.
     LAST_NAME_WITH_DOT              smith.
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

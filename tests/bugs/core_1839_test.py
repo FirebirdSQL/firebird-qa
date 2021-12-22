@@ -95,18 +95,18 @@ test_script_1 = """
         order by cast( x.full_caption as varchar(8000) )
     ) x;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     ALL_CAPTIONS                    0:1
     earth:africa:egypt:al-qāhirah:30°3'0"N 31°14'0"E;earth:africa:kenya:nairobi:1°17'S 36°49"E;earth:asia:iran:tehran:35°41'46"N 51°25'23"E;earth:asia:turkey:istanbul:41°00'49"N 28°57'18"E;earth:europe:Dänemarks:København:55°40'34"N 12°34'6"E;earth:europe:Norge:oslo:59°57"N 10°45"E;earth:europe:Sverige:stockholm:59°19'46"N 18°4'7"E
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

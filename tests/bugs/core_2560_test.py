@@ -95,7 +95,7 @@ test_script_1 = """
     ^
     set term ^;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -212,13 +212,13 @@ expected_stderr_1 = """
     Dynamic SQL Error
     -SQL error code = -104
     -Zero length identifiers are not allowed
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
 # resources: None
@@ -382,7 +382,7 @@ u2345678901234567890123456789012345678901234567890123456789012345 password 'q';
     ^
     set term ^;
 
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -537,11 +537,11 @@ expected_stderr_2 = """
     -SQL error code = -104
     -Zero length identifiers are not allowed
     After line 144 in file c2560-x.sql
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
 

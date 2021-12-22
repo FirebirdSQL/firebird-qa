@@ -38,7 +38,7 @@ test_script_1 = """
     select x from (select substring( s similar 'c#"harc#"har' escape '#') x from test ) where x is not null;
     select x from (select substring( b similar 'b#"lobb#"lob' escape '#') x from test ) where x is not null;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -50,11 +50,11 @@ expected_stdout_1 = """
     01: sqltype: 520 BLOB Nullable
     lobb
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

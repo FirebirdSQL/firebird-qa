@@ -72,7 +72,7 @@ test_script_1 = """
 
 	-- Padding in WI-T3.0.0.31767 looks OK: checked output on NotePad++ 6.6.9
 	select * from p1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -85,11 +85,11 @@ expected_stdout_1 = """
 	12345  12345      12345  12345
 	1234   1234       1234   1234
 	áéíóú  áéíóú      áéíóú  áéíóú
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -29,7 +29,7 @@ init_script_1 = """
     create or alter trigger tmain_ai for tmain active after insert as begin end ^
     set term ;^
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -117,7 +117,7 @@ test_script_1 = """
     union all
     select 'alter trigger '||trim(trg_name)||' active'
     from t;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -130,11 +130,11 @@ delete from TMAIN
 alter trigger TDETL_BI active
 alter trigger TDETL_AI active
 alter trigger TMAIN_AI active
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

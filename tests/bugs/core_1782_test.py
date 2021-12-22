@@ -23,7 +23,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set list on;
     select 1 as test567890test567890test567890test567890 from rdb$database; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -32,13 +32,13 @@ expected_stderr_1 = """
     Dynamic SQL Error
     -SQL error code = -104
     -Name longer than database column size
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
 # resources: None
@@ -56,7 +56,7 @@ test_script_2 = """
 select 'Check column title, ASCII, width = 256' as 
 i2345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890i2345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890i23456789012345678901234567890123456
 from rdb$database;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -65,11 +65,11 @@ expected_stderr_2 = """
     Dynamic SQL Error
     -SQL error code = -104
     -token size exceeds limit
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
 

@@ -54,7 +54,7 @@ test_script_1 = """
     select -(count(s) - count(distinct hash(s using sha256))) as hash_sha256_result from test;
     select -(count(s) - count(distinct hash(s using sha512))) as hash_sha512_result from test;
     */
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -63,11 +63,11 @@ expected_stdout_1 = """
     HASH_SHA1_RESULT                0
     HASH_SHA256_RESULT              0
     HASH_SHA512_RESULT              0
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

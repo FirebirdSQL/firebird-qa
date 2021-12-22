@@ -34,7 +34,7 @@ test_script_1 = """
     ;
     -- 3.0.0.30472:
     -- cursor identified in the UPDATE or DELETE statement is not positioned on a row. no current record for fetch operation
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -42,11 +42,11 @@ expected_stdout_1 = """
     PLAN SORT (TEST INDEX (TEST_X))
     RN                              1
     X                               qwerty
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

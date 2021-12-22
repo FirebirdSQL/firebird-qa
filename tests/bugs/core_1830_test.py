@@ -25,7 +25,7 @@ init_script_1 = """
 
 	insert into a (id) values ('1');
 	commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -45,7 +45,7 @@ test_script_1 = """
 
 	commit;
 	select * from a ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -61,19 +61,19 @@ expected_stdout_1 = """
 	
 	ID                              1
 	NAME                            <null>  
-  """
+"""
 expected_stderr_1 = """
 	Statement failed, SQLSTATE = HY000
 	exception 1
 	-EX_PERM
 	-Something wrong occurs...  
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

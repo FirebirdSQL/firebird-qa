@@ -61,7 +61,7 @@ init_script_1 = """
     alter table emisiones add foreign key (cod_anuncio) references anuncios (cod_anuncio) on update cascade on delete no action ;
     alter table emisiones add foreign key (cod_medio) references medios (cod_medio) on update cascade on delete no action ;
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -143,7 +143,7 @@ test_script_1 = """
                                         where m1.provincia=e.provincia
                           );
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -152,11 +152,11 @@ expected_stdout_1 = """
     COD_ANUNCIO                     2
     Records affected: 1
     Records affected: 0
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -21,7 +21,7 @@ init_script_1 = """"""
 db_1 = db_factory(from_backup='core3733.fbk', init=init_script_1)
 
 test_script_1 = """
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

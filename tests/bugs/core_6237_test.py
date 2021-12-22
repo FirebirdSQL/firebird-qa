@@ -117,7 +117,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     EXPECTED. Ratio of total elapsed time when use Srp vs Legacy is less then threshold.
-  """
+"""
 
 leg_user = user_factory('db_1', name='tmp_c6237_leg', password='123', plugin='Legacy_UserManager')
 srp_user = user_factory('db_1', name='tmp_c6237_srp', password='123', plugin='Srp')

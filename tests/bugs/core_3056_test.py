@@ -238,7 +238,7 @@ test_script_1 = """
     set echo on;
     select * from v_test_fields_ddl;
     select * from rdb$collations co where co.rdb$collation_name starting with 'COLL_';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -401,7 +401,7 @@ expected_stdout_1 = """
     Records affected: 0
     select * from rdb$collations co where co.rdb$collation_name starting with 'COLL_';
     Records affected: 0
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22021
     unsuccessful metadata update
@@ -409,13 +409,13 @@ expected_stderr_1 = """
     -Dynamic SQL Error
     -SQL error code = -204
     -COLLATION COLL_01 for CHARACTER SET NONE is not defined
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

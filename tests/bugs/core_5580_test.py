@@ -54,7 +54,7 @@ test_script_1 = """
 
     select pk1.f1() as f1_result from rdb$database;
     select pk1.f2() as f2_result  from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -67,11 +67,11 @@ expected_stderr_1 = """
     Cannot execute function F1 of the unimplemented package PK1
     Statement failed, SQLSTATE = 2F000
     Cannot execute function F2 of the unimplemented package PK1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

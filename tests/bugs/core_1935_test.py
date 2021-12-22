@@ -53,7 +53,7 @@ test_script_1 = """
     select 51 as r from rdb$database where '5a' SIMILAR TO '%[[:DIGIT:][:ALNUM:]%]'; -- 51
 
     select 52 as r from rdb$database where '5a' similar to '[%[:DIGIT:][:ALPHA:]][[:ALNUM:]%]'; -- 52
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -65,11 +65,11 @@ expected_stdout_1 = """
     R                               41
     R                               51
     R                               52
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

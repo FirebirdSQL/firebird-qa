@@ -23,7 +23,7 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set blob all;
     select cast('a' as blob) a, 1, cast('a' as blob) x2345678901234567890, 2 from rdb$database; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -34,11 +34,11 @@ A:
 a
 X2345678901234567890:  
 a
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

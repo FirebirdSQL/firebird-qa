@@ -65,7 +65,7 @@ init_script_1 = f"""
     create index test_coll_ci on test_collated(txt_ci);
     create index test_coll_ai_ci on test_collated(txt_ai_ci);
     commit;
-    """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1, page_size=32784)
 

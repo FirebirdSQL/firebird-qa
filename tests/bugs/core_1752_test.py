@@ -32,7 +32,7 @@ test_script_1 = """
     join t2 b on b.artikelnr = a.artikelnr collate de_de 
     order by 1,2
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -61,11 +61,11 @@ ZEITSTEMPEL                      ARTIKELNR
 119981811832e8ec4bb875a5d54ca202            9510 
 1199823157b3f2d13b93184ab1e3b29d            9703 
 1199827557240a59c5148b42a9374fc9            9920 
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

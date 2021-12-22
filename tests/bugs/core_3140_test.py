@@ -118,7 +118,7 @@ test_script_1 = """
     from rdb$procedure_parameters 
     where rdb$procedure_name='SP_01'
     order by par_name;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -171,11 +171,11 @@ expected_stdout_1 = """
     PAR_NAME                        O_08                           
     PAR_DESC                        added OUTPUT par 'o_08', mech = 1
     PAR_MECH                        1
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

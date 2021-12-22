@@ -59,7 +59,7 @@ test_script_1 = """
     select cast('01 01' || ascii_char(9) || '00' || ascii_char(9) || '3:45:5.9' as timestamp) from rdb$database;
 
     select cast( ascii_char(9) || '01 01 00' || ascii_char(9) || '3:4:5.678' as timestamp) from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -84,11 +84,11 @@ expected_stdout_1 = """
     2000-01-01 23:02:00.2000
     2000-01-01 03:45:05.9000
     2000-01-01 03:04:05.6780
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

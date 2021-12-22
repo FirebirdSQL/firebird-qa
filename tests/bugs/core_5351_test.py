@@ -73,17 +73,17 @@ test_script_1 = """
     left join test_table2 t2 on t2.id=t1.testtable2_id
     where psql_strlen(t2.groupcode) = 0 ;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Records affected: 0
-  """
+"""
 
 @pytest.mark.version('>=3.0.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

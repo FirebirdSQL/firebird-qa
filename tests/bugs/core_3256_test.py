@@ -182,7 +182,7 @@ test_script_1 = """
     --#####################################################
     select * from vt where id=1 PLAN (vt T1 INDEX (PK_T1));
     --#####################################################
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

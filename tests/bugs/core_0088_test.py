@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0088
 # title:        Join on diffrent datatypes
-# decription:   
+# decription:
 # tracker_id:   CORE-88
 # min_versions: []
 # versions:     2.5
@@ -80,5 +80,5 @@ PLAN (TEST_B NATURAL)
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

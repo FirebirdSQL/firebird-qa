@@ -313,7 +313,7 @@ def test_1(act_1: Action, temp_db_1: Path):
     select mon$database_name from mon$database;
     commit;
     drop database;
-    """
+"""
 
     # Get content of firebird.log BEFORE test
     log_before = act_1.get_firebird_log()

@@ -87,7 +87,7 @@ test_script_1 = """
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -107,7 +107,7 @@ expected_stderr_1 = """
     Statement : select data from "t t"
     Data source : Firebird::localhost:C:\\FBTESTING\\QA\\FBT-REPO\\TMP\\E30.FDB
     -At block line: 3, col: 7
-  """
+"""
 
 for_cvc_role = role_factory('db_1', name='"FOR CVC"')
 for_role = role_factory('db_1', name='"FOR"')
@@ -118,6 +118,6 @@ def test_1(act_1: Action, cvc_user: User, for_role: Role, for_cvc_role: Role):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

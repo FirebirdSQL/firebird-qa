@@ -124,7 +124,7 @@ test_script_1 = """
         --or f01_ci_numsort similar to 'ä'
     order by f01_ci_numsort asc
     ;  
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -152,11 +152,11 @@ expected_stdout_1 = """
     F01_CI_NUMSORT                  Ö
     F01_CI_NUMSORT                  Ø
     Records affected: 10
- """
+"""
 
 @pytest.mark.version('>=3.0.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

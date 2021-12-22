@@ -54,7 +54,7 @@ test_script_1 = """
 
     -- one else test (suggested by Dmitry) in this ticket:
     select 1 x from rdb$database where rdb$db_key = cast((select rdb$db_key from rdb$database) as varchar(8));
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -69,11 +69,11 @@ expected_stdout_1 = """
                X
     ============
                1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

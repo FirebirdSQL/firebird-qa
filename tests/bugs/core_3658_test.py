@@ -199,7 +199,7 @@ Expected line found.
 Expected line found.
 Expected line found.
 Expected line found.
-  """
+"""
 
 @pytest.mark.version('>=2.5.2')
 def test_1(act_1: Action):

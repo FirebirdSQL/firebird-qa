@@ -415,7 +415,7 @@ def run_script(act: Action):
     drop mapping trusted_auth;
     drop mapping win_admins;
     commit;
-    """
+"""
     act.isql(switches=['-n'], input=script)
 
 @pytest.mark.version('>=4.0')

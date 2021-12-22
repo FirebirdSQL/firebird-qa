@@ -37,7 +37,7 @@ init_script_1 = """
     union all
     select '3.1', '3.2', '3.3' from rdb$database
     ;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -74,7 +74,7 @@ test_script_1 = """
       from v_test t
     ) t;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -99,11 +99,11 @@ expected_stdout_1 = """
     F123_CONCAT                     3.1; 3.2; 3.3
     F3_CONCAT                       3.3
     Records affected: 3
-  """
+"""
 
 @pytest.mark.version('>=2.5.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

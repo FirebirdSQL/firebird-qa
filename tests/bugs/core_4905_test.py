@@ -33,17 +33,17 @@ test_script_1 = """
     select cast(p.rdb$procedure_blr as blob sub_type text) sp_blr_blob
     from rdb$procedures p 
     where p.rdb$procedure_name = upper('SP_TEST');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     blr_version5,blr_begin,    blr_message, 0, 2,0,       blr_column_name, 0, 9, 'R','D','B','$','T','Y','P','E','S', 14, 'R','D','B','$','F','I','E','L','D','_','N','A','M','E',      blr_short, 0,    blr_message, 1, 1,0,       blr_short, 0,    blr_receive, 0,       blr_begin,          blr_stall,          blr_label, 0,             blr_begin,                blr_end,          blr_end,    blr_send, 1,       blr_begin,          blr_assignment,             blr_literal, blr_short, 0, 0,0,            blr_parameter, 1, 0,0,          blr_end,    blr_end, blr_eoc
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

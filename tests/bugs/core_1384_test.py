@@ -45,7 +45,7 @@ init_script_1 = """
 	   ,iif( _iso8859_1 'kà ' collate coll_fr like _iso8859_1 '% à %' collate coll_fr, 1, 0) result_for_fr_ci_ai
 	from rdb$database
 	;
-  """
+"""
 
 db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 
@@ -80,7 +80,7 @@ expected_stdout_1 = """
 	RESULT_FOR_FR_CI_AI             0
 	RESULT_FOR_ES_CI_AI             0
 	RESULT_FOR_FR_CI_AI             0
-  """
+"""
 
 @pytest.mark.version('>=2.1.7')
 def test_1(act_1: Action):

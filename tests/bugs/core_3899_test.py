@@ -27,7 +27,7 @@ test_script_1 = """
     from rdb$database;
     -- NB: on dialect-3 output is:
     -- sqltype: 580 INT64 ...
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -38,11 +38,11 @@ expected_stdout_1 = """
       :  name: RANK  alias: RNK
     03: sqltype: 480 DOUBLE scale: 0 subtype: 0 len: 8
       :  name: DENSE_RANK  alias: DRK
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

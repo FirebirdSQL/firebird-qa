@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0053
 # title:        FIRST 1 vs ORDER DESC vs explicit plan (ODS11)
-# decription:   
+# decription:
 #                   Test uses pre-created database which has several procedures for analyzing performance by with the help of MON$ tables.
 #                   Performance results are gathered in the table STAT_LOG, each odd run will save mon$ counters with "-" sign and next
 #                   (even) run will save them with "+" -- see SP_GATHER_STAT.
@@ -10,25 +10,25 @@
 #                   difference between them means performance expenses which we want to evaluate).
 #                   NOTE. Before each new measure we have to set generator G_GATHER_STAT to zero in order to make it produce proper values
 #                   starting with 1 (odd --> NEGATIVE sign for counters). This is done in SP_TRUNCATE_STAT.
-#               
+#
 #                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
 #                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
 #                   statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1. 
+#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
 #                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
 #                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#               
+#
 #                   Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
 #                   reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
-#               
+#
 #                   Checked on:
 #                       4.0.0.2164 SS: 2.511s.
 #                       4.0.0.2164 CS: 2.533s.
 #                       3.0.7.33356 SS: 1.495s.
 #                       3.0.7.33356 CS: 2.865s.
 #                       2.5.9.27150 SC: 0.730s.
-#                
+#
 # tracker_id:   CORE-0053
 # min_versions: ['2.5.1']
 # versions:     2.5.1
@@ -52,7 +52,7 @@ test_script_1 = """
     create or alter procedure gendata as begin end;
     recreate table test (F1 integer, F2 date);
     commit;
-      
+
     set term ^;
     create or alter procedure GenData as
       declare i integer;
@@ -66,7 +66,7 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-      
+
     execute procedure gendata;
     commit;
 
@@ -77,7 +77,7 @@ test_script_1 = """
     commit;
 
     -- #################### MEASURE-1 #################
-    
+
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
 
@@ -91,13 +91,13 @@ test_script_1 = """
 
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
- 
+
     -- #################### MEASURE-2 #################
 
 
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
-  
+
     set plan on;
     select first 1 f1
     from test t
@@ -112,15 +112,15 @@ test_script_1 = """
     -- #################### ANALYZING RESULTS #################
 
     set list on;
-    select 
+    select
         iif( idx_1 / idx_2 > max_ratio, 'PLAN (T ORDER <idx_name>) is slow! Ratio > ' || max_ratio,
              iif( idx_2 / idx_1 > max_ratio, 'PLAN (T ORDER <idx_name> INDEX(<idx_name>)) is slow! Ratio > '|| max_ratio,
                                              'PERFORMANCE IS THE SAME.'
                 )
            ) result
     from (
-        select 
-            cast(min(idx_1) as double precision) as idx_1, 
+        select
+            cast(min(idx_1) as double precision) as idx_1,
             cast( min(idx_2)  as double precision) as idx_2,
             3.00 as max_ratio
         from (
@@ -130,7 +130,7 @@ test_script_1 = """
     );
     -- Difference of indexed reads that is reported by MON$ tables:
     -- on 2.5 = {5, 5}, on 3.0 = {5, 3} ==> ratio 3.00 should be always enough.
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -140,11 +140,11 @@ expected_stdout_1 = """
     PLAN (T ORDER TEST_F1_F2 INDEX (TEST_F1_F2))
     F1                              17
     RESULT                          PERFORMANCE IS THE SAME.
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -121,7 +121,7 @@ test_script_1 = """
     -- Do not forget about cleanup - remember that other tests can query sec$users or run `show users`!
     drop user tmp$c4054;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -129,11 +129,11 @@ expected_stdout_1 = """
     WHO_AM_I                        TMP$C4054
     WHATS_MY_ROLE                   R4054
     WHAT_I_SEE                      789654123
-  """
+"""
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

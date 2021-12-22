@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_1409
 # title:        Support for autonomous transactions
-# decription:   
+# decription:
 # tracker_id:   CORE-1409
 # min_versions: ['2.5.0']
 # versions:     2.5.0
@@ -46,7 +46,7 @@ test_script_1 = """select msg from log;
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:btest2	mpugs.core_1409.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_1409.fdb, User: SYSDBA
 SQL>
 MSG
 ============================================================
@@ -58,5 +58,5 @@ SQL>"""
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

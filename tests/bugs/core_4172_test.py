@@ -133,6 +133,7 @@ expected_stdout_1 = """
 """
 
 expected_stderr_1 = """
+    Rolling back work.
     Statement failed, SQLSTATE = 39000
     invalid request BLR at offset
     -function DUMMY_EXT is not defined
@@ -174,7 +175,7 @@ def test_1(act_1: Action, temp_db_1_a: Path, temp_db_1_b: Path):
     connect '{str(temp_db_1_b)}';
     set list on;
     select 1 as x from rdb$database;
-    """
+"""
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.isql(switches=['-q'], input=test_script)
@@ -366,7 +367,7 @@ def test_2(act_2: Action):
 
     select * from v_check;
     rollback;
-    """
+"""
     act_2.expected_stderr = 'We expect error, but ignore it'
     act_2.expected_stdout = expected_stdout_2
     act_2.isql(switches=[], input=test_script)

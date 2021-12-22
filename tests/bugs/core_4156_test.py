@@ -29,7 +29,7 @@ test_script_1 = """
     -- Result is value that equal to constant from src/dsql/sqlda_pub.h, i.e:
     -- #define SQL_VARYING 448
     -- #define SQL_LONG    496
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -38,11 +38,11 @@ expected_stdout_1 = """
     02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 80 charset: 0 NONE
     03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 255 charset: 0 NONE
     01: sqltype: 496 LONG scale: 0 subtype: 0 len: 4
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

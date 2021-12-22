@@ -76,7 +76,7 @@ test_script_1 = """
     
     select * from v_table_field_cset where tab_name=upper('tab_foo');
     select * from v_table_field_cset where tab_name=upper('tab_bar');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -102,7 +102,7 @@ expected_stdout_1 = """
     FLD_NAME                        TXT_8859_4
     FLD_CSET                        WIN1252
     DB_DEFAULT_CSET                 WIN1252
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 2C000
     unsuccessful metadata update
@@ -116,13 +116,13 @@ expected_stderr_1 = """
     -SQL error code = -204
     -Data type unknown
     -CHARACTER SET FOO_BAR_8859_4 is not defined
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

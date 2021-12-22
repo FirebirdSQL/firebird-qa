@@ -50,7 +50,7 @@ test_script_1 = """
     select rdb$exception_name, rdb$message 
     from rdb$exceptions
     order by rdb$exception_name;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -62,7 +62,7 @@ expected_stdout_1 = """
     RDB$MESSAGE                     Invalid remainder found for case-2.
 
     Records affected: 2
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = HY000
     unsuccessful metadata update
@@ -71,13 +71,13 @@ expected_stderr_1 = """
     -DDL_EXCEPTION
     -You have no right to create exceptions. Learn DDL triggers first!
     -At trigger 'T_DDL' line: 6, col: 9
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

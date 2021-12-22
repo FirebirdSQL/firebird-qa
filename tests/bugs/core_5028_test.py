@@ -61,7 +61,7 @@ def test_1(act_1: Action, capsys):
             select cast(substring(mon$remote_address from 1 + position('/' in mon$remote_address)) as int) as port
             from mon$attachments
             where mon$attachment_id = current_connection)
-        """
+"""
         for row in c.execute(cmd):
             print(row[0])
     # Check

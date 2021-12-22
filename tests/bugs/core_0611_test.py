@@ -30,7 +30,7 @@ test_script_1 = """
     set list on;
     select skip 0 id from a order by id;
     select skip 2 id from a order by id;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -39,11 +39,11 @@ expected_stdout_1 = """
     ID                              2
     ID                              3
     ID                              3
-  """
+"""
 
 @pytest.mark.version('>=2.1.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

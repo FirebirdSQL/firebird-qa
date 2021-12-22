@@ -714,7 +714,7 @@ test_script_1 = """
     where mod(seq_no,2)=1 and seq_no >= 1
     order by seq_no
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -868,11 +868,11 @@ expected_stdout_1 = """
     THRESHOLD_VIOLATIONS_COUNT      OK
     DIFF_PERCENT_IN_MAX_USED_MEMORY OK
     DIFF_PERCENT_IN_MAX_ALLOC_MEMORY OK
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

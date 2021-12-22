@@ -69,7 +69,7 @@ test_script_1 = """
 
     -- NB: textual key representation has a limit of 249 _bytes_, so full key can be seen only for single-byte characters.
     -- Multi-byte values will be printed shorter.
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -133,11 +133,11 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
     -Problematic key value is ("S" = 'Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑...)
-  """
+"""
 
 @pytest.mark.version('>=2.5.5')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute(charset='utf8')
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

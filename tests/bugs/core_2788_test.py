@@ -148,7 +148,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 expected_stdout_1 = """
     DM_TEST                         ARRAY OF [2]
     CHAR(1) CHARACTER SET ISO8859_1 Nullable
- """
+"""
 
 expected_stderr_1_a = """
     Statement failed, SQLSTATE = 42000

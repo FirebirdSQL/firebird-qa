@@ -54,7 +54,7 @@ init_script_1 = """
     create index test_col123 on test (col1, col2, col3);
     create index test_col132 on test (col1, col3, col2);
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -95,7 +95,7 @@ test_script_1 = """
     ------
     select 1 from test where col1 = 0 and col3 = 0 order by col1, col3;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -186,11 +186,11 @@ expected_stdout_1 = """
             -> Table "TEST" Access By ID
                 -> Index "TEST_COL132" Range Scan (partial match: 2/3)
 
-   """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

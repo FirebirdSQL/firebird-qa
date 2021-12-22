@@ -55,7 +55,7 @@ test_script_1 = """
     group by 1;
     commit;
     connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -64,11 +64,11 @@ expected_stdout_1 = """
     PG_SEQ_DISTINCT                 1
     PG_TYPE                         3
     PG_SEQ_DISTINCT                 2
-  """
+"""
 
 @pytest.mark.version('>=2.5.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

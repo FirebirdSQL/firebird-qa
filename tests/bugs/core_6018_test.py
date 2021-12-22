@@ -164,7 +164,7 @@ def test_1(act_1: Action):
                 in autonomous transaction do
                 insert into tsn(sn) values( -1 );
             end
-        """
+"""
         tx1b = con1.transaction_manager(custom_tpb)
         cur1 = tx1b.cursor()
         snap_num = cur1.execute(sql_get_sn).fetchone()[0]
@@ -184,7 +184,7 @@ def test_1(act_1: Action):
                 select 'Tx base snapshot: {msg}' as msg, t.sn as set_tx_snapshot_at_number_N from tsn t order by sn;
                 commit;
                 quit;
-            """
+"""
             act_1.reset()
             act_1.expected_stdout = expect_out
             act_1.expected_stderr = expect_err

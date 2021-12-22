@@ -80,7 +80,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-  """
+"""
 
 db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
 
@@ -132,7 +132,7 @@ test_script_1 = """
     commit;
 
     delete from test where auftragsjahr = 2016 and auftragsnr = 2953;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

@@ -46,7 +46,7 @@ test_script_1 = """
     select cast('12345678.901' as DECFLOAT(34)) as test_03 from rdb$database; -- 12345678.901
     select cast('12345678.90' as DECFLOAT(34)) as test_04 from rdb$database; -- Expected result is: 12345678.900
     select cast('9223372036854775.807' as DECFLOAT(34)) as test_05 from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -56,11 +56,11 @@ expected_stdout_1 = """
     TEST_03                         12345678.901
     TEST_04                         12345678.900
     TEST_05                         9223372036854775.807
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

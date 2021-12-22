@@ -28,18 +28,18 @@ test_script_1 = """
         d = 'now';
     end
     ^ 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stderr_1 = """
     SQL warning code = 301
     -DATE data type is now called TIMESTAMP
-  """
+"""
 
 @pytest.mark.version('>=2.5.2')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

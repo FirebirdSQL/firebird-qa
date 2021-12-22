@@ -159,7 +159,7 @@ def test_1(act_1: Action, capsys):
         from rdb$fields f
         where f.rdb$character_set_id > 1
         order by f.rdb$field_name
-    """
+"""
     chk_script = []
     with act_1.db.connect() as con:
         c = con.cursor()

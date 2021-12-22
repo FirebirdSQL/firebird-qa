@@ -29,7 +29,7 @@ test_script_1 = """select cast(lower(f1) as varchar(20)) lf1, cast(upper(f1) as 
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:btest	mpugs.core_655.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbtest\\tmp\\bugs.core_655.fdb, User: SYSDBA
 SQL>
 LF1                  UF1                  TF1                  CF1                  SF1
 ==================== ==================== ==================== ==================== ====================
@@ -41,5 +41,5 @@ SQL>"""
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -55,7 +55,7 @@ init_script_1 = """
       commit;
       insert into test(id) select gen_id(g,1) from rdb$types,rdb$types rows 1000;
       commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -166,7 +166,7 @@ expected_stdout_1 = """
     Data pages: 7, average fill: 45[percent_sign]
     Root page: 197, depth: 1, leaf buckets: 1, nodes: 1000
     Gstat completion time Fri Nov 17 12:37:29 2017
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):

@@ -81,7 +81,7 @@ init_script_1 = """
     ^
     set term ;^
     commit; 
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -95,7 +95,7 @@ test_script_1 = """
     insert into z_doc(id, agent_id) values (102, 1);
     select * from sp_test;
     rollback;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -112,11 +112,11 @@ expected_stdout_1 = """
     
     DOC_FOR_HANDLING                102
     AGENT_FOR_HANDLING              <null>
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

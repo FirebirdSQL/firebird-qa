@@ -216,7 +216,7 @@ def test_1(act_1: Action, capsys):
                val = a_id * 10;
                suspend;
             end
-        """
+"""
         con.execute_immediate(sp_test_ddl)
         con.commit()
         test_table_ddl = """
@@ -225,7 +225,7 @@ def test_1(act_1: Action, capsys):
                 txt varchar(80),
                 calc_val computed by ((select val from sp_calc_val(test.id)))
             )
-        """
+"""
         con.execute_immediate(test_table_ddl)
         con.commit()
         #
@@ -241,7 +241,7 @@ def test_1(act_1: Action, capsys):
             val = a_id * 7;
             suspend;
         end
-        """
+"""
         con.execute_immediate(sp_alter_ddl)
         c.execute('select count(*), sum(calc_val) from test').fetchall()
         con.commit()

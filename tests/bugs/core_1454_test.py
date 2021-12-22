@@ -27,7 +27,7 @@ init_script_1 = """
     
     insert into t (f1,f2) values ('0123456789','abcdefghij');
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -54,7 +54,7 @@ test_script_1 = """
     join rdb$relation_fields b
         on a.rdb$field_name = b.rdb$field_source
     where b.rdb$field_name = upper('cf');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -86,5 +86,5 @@ FLD_LENGTH                      120
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -454,7 +454,7 @@ test_script_1 = """
     =
     vv.vrsta)
     FROM vv;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

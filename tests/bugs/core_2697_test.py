@@ -31,7 +31,7 @@ init_script_1 = """
     insert into t2 values(33, 3, 333);
     insert into t2 values(34, 3, 334);
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -58,18 +58,18 @@ test_script_1 = """
     --    Dynamic SQL Error
     --    -SQL error code = -804
     --    -Data type unknown
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     X_IN_T2                         100
     X_IN_T2                         300
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

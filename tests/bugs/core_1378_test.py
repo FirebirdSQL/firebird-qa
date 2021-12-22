@@ -220,13 +220,13 @@ expected_stdout_1 = """
     RDB$COLLATION_ID                126
     RDB$CHARACTER_SET_NAME          WIN1251
     RDB$COLLATION_NAME              вид прописи
-  """
+"""
 
 @pytest.mark.version('>=2.5.9')
 def test_1(act_1: Action, tmp_file_1: Path):
     tmp_file_1.write_bytes(sql_txt.encode('cp1251'))
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=['-q'], input_file=tmp_file_1, charset='win1251', io_enc='cp1251')
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 

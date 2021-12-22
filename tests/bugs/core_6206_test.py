@@ -45,7 +45,7 @@ test_script_1 = """
     set bind of int128 to char;
     select 12345678901234567890123456789012345678 as n38_to_varchar from rdb$database;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -54,11 +54,11 @@ expected_stdout_1 = """
     01: sqltype: 448 VARYING scale: 0 subtype: 0 len: 42
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 47
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 47
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

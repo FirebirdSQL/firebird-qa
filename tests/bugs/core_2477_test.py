@@ -95,7 +95,7 @@ init_script_1 = """
     -- Aux. table for make ISQL some small delay just after it will be loaded and establish connection:
     recreate table test(id int primary key);
 
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -383,7 +383,7 @@ expected_stdout_1 = """
     3 statement
     * DELTA of mon$memory_used: OK, expected: increased significantly.
     * DELTA of mon$memory_allo: OK, expected: increased significantly.
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):

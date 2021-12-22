@@ -295,7 +295,7 @@ def run_work(act: Action):
     end
     ^
     set term ;^
-    """
+"""
     act.expected_stderr = expected_stderr_1
     act.isql(switches=['-n'], input=test_script)
 

@@ -84,7 +84,7 @@ test_script_1 = """
 
     select lead(n)over(order by n) as data_lead_n from test0;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -138,11 +138,11 @@ expected_stdout_1 = """
     DATA_LEAD_N                                                           sNaN
     DATA_LEAD_N                                                            NaN
     DATA_LEAD_N                     <null>
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

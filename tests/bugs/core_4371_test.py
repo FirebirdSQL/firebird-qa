@@ -34,7 +34,7 @@ test_script_1 = """
   end
   ^
   set term ;^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -43,11 +43,11 @@ Statement failed, SQLSTATE = 2F000
 Error while parsing function FN_TEST's BLR
 -invalid request BLR at offset 55
 -exception EX_SOME_NON_EXISTENT_NAME not defined
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

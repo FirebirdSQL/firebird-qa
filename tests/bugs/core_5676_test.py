@@ -61,7 +61,7 @@ test_script_1 = """
     order by id;
     -- OLD: PLAN SORT (JOIN (DOC_IP_DOC NATURAL, DOCUMENT INDEX (PK_DOCUMENT))) 
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -70,11 +70,11 @@ expected_stdout_1 = """
     PLAN JOIN (DOC_IP_DOC ORDER PK_DOC_IP_DOC, DOCUMENT INDEX (PK_DOCUMENT))
     PLAN JOIN (DOC_IP_DOC ORDER PK_DOC_IP_DOC, DOCUMENT INDEX (PK_DOCUMENT))
     PLAN JOIN (DOC_IP_DOC ORDER PK_DOC_IP_DOC, DOCUMENT INDEX (PK_DOCUMENT))
-  """
+"""
 
 @pytest.mark.version('>=3.0.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

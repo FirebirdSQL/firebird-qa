@@ -26,18 +26,18 @@ test_script_1 = """
     set sqlda_display on;
     set list on;
     select a.mon$idle_timer, s.mon$statement_timer from mon$attachments a join mon$statements s using(mon$attachment_id) rows 0;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     01: sqltype: 32754 TIMESTAMP WITH TIME ZONE Nullable scale: 0 subtype: 0 len: 12
     02: sqltype: 32754 TIMESTAMP WITH TIME ZONE Nullable scale: 0 subtype: 0 len: 12
-  """
+"""
 
 @pytest.mark.version('>=4.0.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

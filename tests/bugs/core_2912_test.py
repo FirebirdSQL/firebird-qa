@@ -38,7 +38,7 @@ init_script_1 = """
     commit;
     create index test_cu on test computed by (upper (c collate iso8859_1));
     commit;
-  """
+"""
 
 db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
 

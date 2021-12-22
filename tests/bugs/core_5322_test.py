@@ -54,7 +54,7 @@ test_script_1 = """
     commit;
 
     delete from tmain where (id = 1);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

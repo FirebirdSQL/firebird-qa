@@ -44,7 +44,7 @@ init_script_1 = """
     from rdb$relation_fields rf
     where rf.rdb$relation_name = 'TEST'
     order by fld_rnk;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -89,7 +89,7 @@ test_script_1 = """
     commit;
 
     select 'step-4' msg, v.* from v_pos v;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -140,11 +140,11 @@ expected_stdout_1 = """
     step-4       6 F09      
     step-4       7 N05      
     step-4       8 F10     
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

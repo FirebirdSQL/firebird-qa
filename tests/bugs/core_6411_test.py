@@ -180,7 +180,7 @@ def test_1(act_1: Action, capsys):
             set list on ;
             {sel_expr} ;
             quit ;
-        """
+"""
         #
         act_1.reset()
         act_1.isql(switches=[], input=sql_expr, combine_output=True)

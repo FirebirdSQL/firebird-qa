@@ -592,7 +592,7 @@ make_garbage_1 = """
     select current_time from rdb$database;
     --show database;
     quit;
-    """
+"""
 
 expected_stdout_1 = """
     CONNECTION SHUTDOWN

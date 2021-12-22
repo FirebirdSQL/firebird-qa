@@ -80,7 +80,7 @@ test_script_1 = """
     recreate table testa(inserting int);
     recreate table testb(updating int);
     recreate table testc(deleting int);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -117,7 +117,7 @@ expected_stdout_1 = """
     recreate table testa(inserting int);
     recreate table testb(updating int);
     recreate table testc(deleting int);
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
@@ -136,13 +136,13 @@ expected_stderr_1 = """
     -SQL error code = -104
     -Token unknown - line 1, column 20
     -deleting
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

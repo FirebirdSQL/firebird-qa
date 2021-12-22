@@ -67,7 +67,7 @@ test_script_1 = """
     select name "test-3"
     from test a
     where cast(a.name as char(31)) starting with coalesce(null, '');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -161,11 +161,11 @@ expected_stdout_1 = """
     test-3                          RDB$TRIGGER_34
     test-3                          RDB$TRIGGER_35
     test-3                          RDB$TRIGGER_36
-  """
+"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

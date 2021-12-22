@@ -186,7 +186,7 @@ expected_stdout_1 = """
     CRYPT CHECKSUM: MUB2NTJQCHH9RSHMP6XFAIIC2II=
     KEY HASH: ASK88TFWBINVC6B1JVS9MFUH47C=
     ENCRYPTION KEY NAME: RED
-  """
+"""
 
 @pytest.mark.version('>=3.0.4')
 def test_1(act_1: Action):

@@ -94,18 +94,18 @@ test_script_1 = """
     commit;
     connect '$(DSN)' user 'SYSDBA' password 'masterkey';
     select calc_fld as value_after_reconnect from test where ID = 0;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     VALUE_BEFORE_RECONNECT          20
     VALUE_AFTER_RECONNECT           20
-  """
+"""
 
 @pytest.mark.version('>=3.0.8')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -46,7 +46,7 @@ init_script_1 = """
        n numeric(38,38)
     );
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -56,25 +56,25 @@ test_script_1 = """
     insert into test(n) values( 1.70141183460469231731687303715884105727001 );
     set sqlda_display on;
     select n as "max_precise_number" from test;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     01: sqltype: 32752 INT128 Nullable scale: -38 subtype: 1 len: 16
     max_precise_number 1.70141183460469231731687303715884105727
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22003
     arithmetic exception, numeric overflow, or string truncation
     -numeric value is out of range
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -230,10 +230,6 @@ LIMBO_COUNT = 255
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, db_1_b: Database, capsys):
-    #pytest.skip('PROBLEM WITH TEST')
-    # On Firebird 4, the fbsvcmngr reports error:
-    # unavailable database
-    # gfix works fine, although the outpout is more verbose than original test expected
     dt_list = []
     custom_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
     with act_1.db.connect() as con1, db_1_b.connect() as con2:
@@ -291,4 +287,9 @@ def test_1(act_1: Action, db_1_b: Database, capsys):
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1
     act_1.stdout = capsys.readouterr().out
+    # [pcisar] 21.12.2021
+    # On v3.0.8 & 4.0, the fbsvcmngr reports error: "unavailable database"
+    # Which makes the test fail
+    # gfix works fine, although the outpout is more verbose than original test expected
+    # See also: core_6309_test.py
     assert act_1.clean_stdout == act_1.clean_expected_stdout

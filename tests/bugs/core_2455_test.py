@@ -83,7 +83,7 @@ test_script_1 = """
     select 4 as run_no, (select RESULT from factorial(i,1)) as RS from onerow ;
 
     drop database ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -95,19 +95,19 @@ expected_stdout_1 = """
     RN                              5
     RUN_NO                          2
     RS                              120
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 21000
     multiple rows in singleton select
     Statement failed, SQLSTATE = 21000
     multiple rows in singleton select
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

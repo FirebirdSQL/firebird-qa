@@ -27,7 +27,7 @@ init_script_1 = """
       code integer
     );
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -51,7 +51,7 @@ test_script_1 = """
     )
     select * from x
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

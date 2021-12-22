@@ -38,7 +38,7 @@ test_script_1 = """
      ,iif( coalesce(pp.rdb$parameter_mechanism,0) = 0, 'ZERO_OR_NULL', 'BAD_VALUE' ) p_mechanism
     from rdb$procedure_parameters pp
     where pp.rdb$procedure_name = upper('SP_TEST');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -48,11 +48,11 @@ expected_stdout_1 = """
 
     P_NAME                          OUT_ARG
     P_MECHANISM                     ZERO_OR_NULL
-  """
+"""
 
 @pytest.mark.version('>=2.1.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

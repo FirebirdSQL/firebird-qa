@@ -82,7 +82,7 @@ def test_1(act_1: Action, capsys):
     ) returns( n integer not null )
         external name 'udrcpp_foo!gen_rows'
         engine udr
-    """
+"""
     pattern = re.compile('\\.*module\\s+not\\s+(found|loaded)\\.*', re.IGNORECASE)
     with act_1.db.connect() as con:
         try:

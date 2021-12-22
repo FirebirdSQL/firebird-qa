@@ -23,7 +23,7 @@ init_script_1 = """
     select cast(r1.i*100 + r0.i as varchar(10)) as fx
     from r r1, r r0;
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
 
@@ -51,17 +51,17 @@ test_script_1 = """
       suspend;
     end
     ^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     RESULT                          TIME RATIO IS OK.
-  """
+"""
 
 @pytest.mark.version('>=2.5.3')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

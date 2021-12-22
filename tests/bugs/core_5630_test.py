@@ -178,7 +178,7 @@ def test_1(act_1: Action, fdb_file_1: Path, fbk_file_1: Path, shd_file_1: Path):
     select * from v_shadow_info;
     select hash( list(s) ) as s_hash_before from test;
     quit;
-    """
+"""
     act_1.expected_stdout = expected_stdout_1_a
     act_1.isql(switches=['-q'], input=init_ddl)
     assert act_1.clean_stdout == act_1.clean_expected_stdout
@@ -197,7 +197,7 @@ def test_1(act_1: Action, fdb_file_1: Path, fbk_file_1: Path, shd_file_1: Path):
         set list on;
         select * from v_shadow_info;
         select hash( list(s) ) as s_hash_after from test;
-    """
+"""
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1_b
     act_1.isql(switches=['-q', act_1.get_dsn(fdb_file_1)], input=sql_text, connect_db=False)

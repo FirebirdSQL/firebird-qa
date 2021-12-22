@@ -36,7 +36,7 @@ test_script_1 = """
     ----------------------------------------------------------------
     create domain dm_test_07 as boolean default true;
     create domain dm_test_08 as bigint default 0x0F0000000;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

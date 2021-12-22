@@ -382,7 +382,7 @@ expected_stderr_1_a_40 = """
 Statement failed, SQLSTATE = 22018
 arithmetic exception, numeric overflow, or string truncation
 -Cannot transliterate character between character sets
-After line 4 in file /tmp/pytest/pytest-124/test/non_ascii_ddl.sql
+After line 4 in file non_ascii_ddl.sql
 """
 
 expected_stderr_1_a_30 = """
@@ -390,6 +390,7 @@ Statement failed, SQLSTATE = 22000
 unsuccessful metadata update
 -CREATE COLLATION Циферки failed
 -Malformed string
+After line 4 in file non_ascii_ddl.sql
 """
 
 non_ascii_ddl='''

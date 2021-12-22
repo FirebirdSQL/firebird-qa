@@ -28,17 +28,17 @@ test_script_1 = """
     set sqlda_display on;
     set list on;
     select cast(1 as numeric(18,2)) * cast(1 as numeric(18,2)) from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     01: sqltype: 32752 INT128 scale: -4 subtype: 1 len: 16
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -89,18 +89,18 @@ test_script_1 = """
     drop user tmp$c5225 using plugin Legacy_UserManager;
     commit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     WHOAMI_LEG                      TMP$C5225
     WHOAMI_SRP                      TMP$C5225
-  """
+"""
 
 @pytest.mark.version('>=3.0.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

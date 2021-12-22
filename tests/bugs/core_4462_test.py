@@ -260,7 +260,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 expected_stdout_1 = """
     + VALIDATION STARTED
     + VALIDATION FINISHED: 0 ERRORS, 0 WARNINGS, 0 FIXED
-  """
+"""
 
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')

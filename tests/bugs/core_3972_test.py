@@ -30,7 +30,7 @@ test_script_1 = """
     set list on;
     select mon$sql_dialect from mon$database;
     select n1, n1 / 2 from t1; 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -42,11 +42,11 @@ expected_stdout_1 = """
     DIVIDE                          5.115000000000000
     N1                              3.567
     DIVIDE                          1.783500000000000
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

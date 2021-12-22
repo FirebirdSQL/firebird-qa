@@ -178,7 +178,7 @@ def test_1(act_1: Action):
     ^
     set term ;^
     commit;
-    """
+"""
     with act_1.connect_server() as srv:
         srv.info.get_log()
         log_before = srv.readlines()

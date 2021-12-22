@@ -84,7 +84,7 @@ test_script_1 = """
          left join rdb$fields f on pp.rdb$field_source = f.rdb$field_name
     where upper(trim(pp.rdb$procedure_name)) = upper('sp_test');
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -102,11 +102,11 @@ expected_stdout_1 = """
     IN10            RDB$4                               =    current_user                   RDB$4           <null>
     IN11            DM_VC_USER                          =    current_user                   DM_VC_USER      default current_user
     IN12            DM_VC_USER                          =    current_user                   DM_VC_USER      default current_user
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

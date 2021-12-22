@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_1640
 # title:        Create or Alter view
-# decription:   
+# decription:
 # tracker_id:   CORE-1640
 # min_versions: ['2.5.0']
 # versions:     2.5.0
@@ -48,7 +48,7 @@ show view v_users_name;
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:btest2	mpugs.core_1640.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_1640.fdb, User: SYSDBA
 SQL> CON> SQL> SQL> NAME                            VARCHAR(20) Nullable
 View Source:
 ==== ======
@@ -78,5 +78,5 @@ SQL> SQL> SQL>"""
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

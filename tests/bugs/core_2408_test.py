@@ -125,7 +125,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-  """
+"""
 
 db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 

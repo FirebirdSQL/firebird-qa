@@ -45,7 +45,7 @@ init_script_1 = """
 
     insert into param (id, p1) values (2, 11);
     commit;
-  """
+"""
 
 db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 
@@ -54,7 +54,7 @@ test_script_1 = """
     commit;
     set list on;
     select id, t1, code from macro;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -62,11 +62,11 @@ expected_stdout_1 = """
     ID                              1
     T1                              2
     CODE                            fsdfdsf
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

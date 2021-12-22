@@ -45,7 +45,7 @@ init_script_1 = """
        collate name_coll
        ;
     commit;
-  """
+"""
 
 db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 
@@ -89,7 +89,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     ALTER DOMAIN DM_TEST ADD CONSTRAINT
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):

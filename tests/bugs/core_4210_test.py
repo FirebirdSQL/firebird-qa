@@ -78,7 +78,7 @@ test_script_1 = """
     comment on parameter sp_test.a_dts2 is 'input timestamp2';
     comment on parameter sp_test.o_dts2 is 'output timestamp2';
     show comments;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -96,11 +96,11 @@ expected_stdout_1 = """
     COMMENT ON    PROCEDURE PARAMETER SP_TEST.A_DTS2 IS input timestamp2;
     COMMENT ON    PROCEDURE PARAMETER SP_TEST.O_ID1 IS output id1;
     COMMENT ON    PROCEDURE PARAMETER SP_TEST.O_DTS2 IS output timestamp2;
-   """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

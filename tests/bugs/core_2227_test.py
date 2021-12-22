@@ -30,7 +30,7 @@ init_script_1 = """
    RECREATE TABLE TESTING (
       "CÓDIGO" INTEGER
   );
- """
+"""
 
 db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
 
@@ -42,7 +42,7 @@ test_script_1 = """
     BEGIN
       NEW."CÓDIGO" = 1;
     END ^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

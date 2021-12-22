@@ -36,7 +36,7 @@ init_script_1 = """
     commit;
     recreate table t2(c dm_vc25);
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -45,7 +45,7 @@ test_script_1 = """
     set echo on;
     insert into t1(c) values ('1234567890123456789012345xxxxxx');
     insert into t2(c) values ('1234567890123456789012345xxxxxx');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -54,7 +54,7 @@ expected_stdout_1 = """
     Records affected: 0
     insert into t2(c) values ('1234567890123456789012345xxxxxx');
     Records affected: 0
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22001
     arithmetic exception, numeric overflow, or string truncation
@@ -64,13 +64,13 @@ expected_stderr_1 = """
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -expected length 25, actual 31
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

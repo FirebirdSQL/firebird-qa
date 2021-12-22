@@ -51,7 +51,7 @@ test_script_1 = """
     when not matched and s.id = 1 then insert values(s.id, 2222)
     when matched then delete
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -59,11 +59,11 @@ expected_stdout_1 = """
    Records affected: 8
    Records affected: 3
    Records affected: 10
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

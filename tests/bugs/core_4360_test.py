@@ -24,7 +24,7 @@ test_script_1 = """
 select c from( select 'a' c from rdb$database group by 'a' );
 select c from( select 123 c from rdb$database group by 1 );
 select c from( select dateadd(999 millisecond to timestamp '31.12.9999 23:59:59') c from rdb$database group by 1 );
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -38,11 +38,11 @@ a
                         C
 =========================
 9999-12-31 23:59:59.9990
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

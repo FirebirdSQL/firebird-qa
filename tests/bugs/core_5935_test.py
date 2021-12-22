@@ -189,7 +189,7 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Passed.
-  """
+"""
 
 @pytest.mark.version('>=3.0.5')
 def test_1(act_1: Action):
@@ -211,7 +211,7 @@ def test_1(act_1: Action):
               in autonomous transaction do
                 i = i + 1;
         end
-        """
+"""
         con.execute_immediate(sql)
         con.commit()
     # Test

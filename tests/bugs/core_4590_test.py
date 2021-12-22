@@ -31,7 +31,7 @@ test_script_1 = """
     -- No more output of charset name for NON-text field, see:
     -- http://sourceforge.net/p/firebird/code/61779 // 10.06.2015
     -- Enhance metadata display - show charset only for fields where it makes sense
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -39,11 +39,11 @@ expected_stdout_1 = """
     01: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
     02: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
     03: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

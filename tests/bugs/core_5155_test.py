@@ -27,7 +27,7 @@ test_script_1 = """
     create or alter user tmp$c5155 lastname 'adams' grant admin role firstname 'mick' password '123'; 
     create or alter user tmp$c5155 revoke admin role lastname 'adams' firstname 'mick' password '123'; 
     drop user tmp$c5155;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

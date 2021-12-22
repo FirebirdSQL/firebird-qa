@@ -39,7 +39,7 @@ init_script_1 = """
     from rdb$database r
     left join sec$users s on lower(s.sec$user_name) in (lower('tmp$c2004_foo'), lower('tmp$c2004_bar'), lower('tmp$c2004_rio'))
     ;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 

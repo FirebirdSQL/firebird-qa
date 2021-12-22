@@ -50,18 +50,18 @@ test_script_1 = """
         ,sum((select count(*) from B where B.ID2 = A.ID)) s2
         -- must be (3,0) (FB2.5) , but not (3,3) (FB3.0)
     from a;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     S1                              3
     S2                              0
-  """
+"""
 
 @pytest.mark.version('>=2.1.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

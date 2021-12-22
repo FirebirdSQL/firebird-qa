@@ -32,7 +32,7 @@ test_script_1 = """
 
     set bind of timestamp with time zone to extended;
     select timestamp '2018-12-31 12:31:42.543 Pacific/Fiji' as "check_bind_timestamp_with_zone_to_extended" from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -44,11 +44,11 @@ expected_stdout_1 = """
     01: sqltype: 32748 EXTENDED TIMESTAMP WITH TIME ZONE scale: 0 subtype: 0 len: 12
       :  name: CONSTANT  alias: check_bind_timestamp_with_zone_to_extended
     check_bind_timestamp_with_zone_to_extended
-  """
+"""
 
 @pytest.mark.version('>=4.0.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

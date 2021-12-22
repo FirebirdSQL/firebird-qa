@@ -37,7 +37,7 @@ test_script_1 = """
     update rdb$procedures set rdb$procedure_source = null where rdb$procedure_name = upper('sp_test');
     commit;
     select iif(rdb$procedure_source is null, 'NO_SOURCE', 'HAS_SOURCE') sp_src from rdb$procedures where rdb$procedure_name = upper('sp_test');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -47,11 +47,11 @@ expected_stdout_1 = """
        suspend;
     end
     SP_SRC                          NO_SOURCE
-  """
+"""
 
 @pytest.mark.version('>=2.0.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

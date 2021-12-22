@@ -93,7 +93,7 @@ test_script_1 = """
     -- cleanup:
     drop user tmp$c5162 using plugin Legacy_UserManager;
     drop user tmp$c5162 using plugin Srp;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -111,11 +111,11 @@ expected_stdout_1 = """
     TMP$C5162  Mary       Srp                  KEY1   val111 Srp
     TMP$C5162  Mary       Srp                  KEY2   val222 Srp
     TMP$C5162  Mary       Srp                  KEY3   val333 Srp
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

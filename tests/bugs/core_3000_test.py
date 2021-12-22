@@ -26,7 +26,7 @@ test_script_1 = """
     -- Following users should NOT be created:
     create user 'ADMIN' password '123';
     create user 'CHECK' password '123';
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -42,11 +42,11 @@ expected_stderr_1 = """
     -SQL error code = -104
     -Token unknown
     -'CHECK'
-  """
+"""
 
 @pytest.mark.version('>=2.5.7')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

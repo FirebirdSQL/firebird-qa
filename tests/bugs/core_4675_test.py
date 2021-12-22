@@ -42,7 +42,7 @@ init_script_1 = """
     
     create index t2_x on t2(x);
     commit;
-  """
+"""
 
 db_1 = db_factory(from_backup='mon-stat-gathering-3_0.fbk', init=init_script_1)
 
@@ -108,7 +108,7 @@ test_script_1 = """
     -- NATURAL_READS                   100000 <<<< this is bad and has been fixed in CORE_4675
     -- INDEXED_READS                   100
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -120,11 +120,11 @@ expected_stdout_1 = """
     TABLE_NAME                      T2
     NATURAL_READS                   0
     INDEXED_READS                   200
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

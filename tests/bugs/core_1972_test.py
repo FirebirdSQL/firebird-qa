@@ -131,7 +131,7 @@ expected_stdout_1 = """
 
     Successfully removed non-privileged user
     Successfully finished script
-  """
+"""
 
 user_1 = user_factory('db_1', name='TMP$C1972', password='123')
 

@@ -2,11 +2,11 @@
 #
 # id:           bugs.core_3401
 # title:        Collation errors with [type of] <domain>, type of column
-# decription:   
+# decription:
 # tracker_id:   CORE-3401
 # min_versions: ['3.0']
 # versions:     3.0
-# qmid:         
+# qmid:
 
 import pytest
 from firebird.qa import db_factory, isql_act, Action
@@ -29,15 +29,15 @@ test_script_1 = """
     -- NB-2. Attribute 'connection_character_set': 'UTF8' - is MANDATORY in this test,
     -- otherwise fbt_run raises exception:
     -- traceback:
-    --    File "c:\\mixirebird\\qabtestbtest.py", line 2103, in run
+    --    File "c:\\mix\\firebird\\qa\\fbtest\\fbtest.py", line 2103, in run
     --      test_recipe.run(self,result)
-    --    File "c:\\mixirebird\\qabtestbtest.py", line 731, in run
+    --    File "c:\\mix\\firebird\\qa\\ftest\\fbtest.py", line 731, in run
     --      script = self.test_script.encode('ascii')
     --  ----------------------------------------------------------------------
     --  exception:
     --  UnicodeEncodeError:
     --  ascii
-    -- . . . 
+    -- . . .
     -- 505
     -- 511
     -- ordinal not in range(128)
@@ -79,7 +79,7 @@ test_script_1 = """
       col_ci_dom dom_ci,
       col_ci_dir varchar(150) character set utf8 collate unicode_ci
     );
-    commit; 
+    commit;
 
     set list on;
 
@@ -95,8 +95,8 @@ test_script_1 = """
     ------------------------------------------------------------------------------------
 
     -- (Case 2) test <lower> = <UPPER> in domain dom_ci, using local vars in an executable block:
-    -- (With "type of dom_ci" and "type of column t.col_ci_dom", the result is also 1. 
-    -- But with "type of column t.col_ci_dir", the result is 0.) 
+    -- (With "type of dom_ci" and "type of column t.col_ci_dom", the result is also 1.
+    -- But with "type of column t.col_ci_dir", the result is 0.)
     set term ^;
     execute block returns (msg varchar(10), equal smallint)
     as
@@ -128,9 +128,9 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    select 'case-3' msg, p.equal 
+    select 'case-3' msg, p.equal
     from selproc_dom(
-      'áéíóúý àèìòù âêîôû ãñõ äëïöüÿ çš δθλξσψω ąęłźż йё њћџ ăşţ', 
+      'áéíóúý àèìòù âêîôû ãñõ äëïöüÿ çš δθλξσψω ąęłźż йё њћџ ăşţ',
       'ÁÉÍÓÚÝ ÀÈÌÒÙ ÂÊÎÔÛ ÃÑÕ ÄËÏÖÜŸ ÇŠ ΔΘΛΞΣΨΩ ĄĘŁŹŻ ЙЁ ЊЋЏ ĂŞŢ'
     ) p;
 
@@ -139,9 +139,9 @@ test_script_1 = """
 
     set term ^;
     create or alter procedure selproc_typeof_col_ci_dir(
-      x type of column t.col_ci_dir, 
+      x type of column t.col_ci_dir,
       y type of column t.col_ci_dir
-    ) 
+    )
     returns (equal smallint) as
     begin
       equal = case when x = y then 1 else 0 end;
@@ -150,12 +150,12 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    select 'case-4' msg, p.* 
+    select 'case-4' msg, p.*
     from selproc_typeof_col_ci_dir(
-      'áéíóúý àèìòù âêîôû ãñõ äëïöüÿ çš δθλξσψω ąęłźż йё њћџ ăşţ', 
+      'áéíóúý àèìòù âêîôû ãñõ äëïöüÿ çš δθλξσψω ąęłźż йё њћџ ăşţ',
       'ÁÉÍÓÚÝ ÀÈÌÒÙ ÂÊÎÔÛ ÃÑÕ ÄËÏÖÜŸ ÇŠ ΔΘΛΞΣΨΩ ĄĘŁŹŻ ЙЁ ЊЋЏ ĂŞŢ'
     ) p;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -168,11 +168,11 @@ expected_stdout_1 = """
     EQUAL                           1
     MSG                             case-4
     EQUAL                           1
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    act_1.execute(charset='utf8')
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

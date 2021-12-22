@@ -569,7 +569,7 @@ def test_1(act_1: Action, capsys):
      ^
      set term ;^
      commit;
-     """
+"""
      act_1.isql(switches=[], input=sql_ddl)
      #
      sql_data = f"""
@@ -597,7 +597,7 @@ def test_1(act_1: Action, capsys):
 
      delete from test;
      commit; -- ==> lot of garbage in indexed pages will be after this.
-     """
+"""
      #
      act_1.reset()
      act_1.isql(switches=['-nod'], input=sql_data)
@@ -628,7 +628,7 @@ def test_1(act_1: Action, capsys):
                ^
                set term ;^
                commit;
-               """
+"""
                for i in range(PLANNED_ATTACH_CNT):
                     act_1.reset()
                     act_1.isql(switches=['-n'], input=check_sql)
@@ -675,7 +675,7 @@ def test_1(act_1: Action, capsys):
      -- */
 
      commit;
-     """
+"""
      act_1.reset()
      act_1.expected_stdout = expected_stdout_1_a
      act_1.isql(switches=['-pag', '99999', '-nod'], input=con_sql)

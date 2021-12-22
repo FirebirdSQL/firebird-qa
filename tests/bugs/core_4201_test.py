@@ -38,7 +38,7 @@ init_script_1 = """
     ^
     set term ; ^
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -51,7 +51,7 @@ test_script_1 = """
       ,cast(rdb$get_context('USER_TRANSACTION','FLD_CALC') as bigint) as fld_calc
       ,cast(rdb$get_context('USER_TRANSACTION','NEW_FLD2') as bigint) as new_fld2
     from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -59,11 +59,11 @@ expected_stdout_1 = """
     NEW_FLD1                        1
     FLD_CALC                        2
     NEW_FLD2                        2
-  """
+"""
 
 @pytest.mark.version('>=2.0.7')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

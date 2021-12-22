@@ -48,7 +48,7 @@ init_script_1 = """
     engine udr;
 
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 

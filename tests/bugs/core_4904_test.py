@@ -191,7 +191,7 @@ def test_1(act_1: Action, capsys):
         ^
         set term ;^
         commit;
-        """
+"""
         act_1.expected_stderr = "We expect errors"
         act_1.isql(switches=[], input=long_keys_cmd)
         print(act_1.stdout)

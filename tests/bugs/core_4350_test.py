@@ -48,7 +48,7 @@ test_script_1 = """
     commit;
     
     show sequ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -62,13 +62,13 @@ expected_stdout_1 = """
     Generator G2, current value: -9223372036854775808, initial value: -9223372036854775808, increment: 2147483647
     Generator G3, current value: 9223372036854775807, initial value: 9223372036854775807, increment: 2147483647
     Generator G4, current value: -9223372036854775808, initial value: -9223372036854775808, increment: -2147483647
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -96,7 +96,7 @@ test_script_2 = """
     commit;
     
     show sequ;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -109,11 +109,11 @@ expected_stdout_2 = """
     Generator G2, current value: 9223372034707292161, initial value: -9223372036854775808, increment: 2147483647
     Generator G3, current value: 9223372034707292160, initial value: 9223372036854775807, increment: 2147483647
     Generator G4, current value: -9223372034707292161, initial value: -9223372036854775808, increment: -2147483647
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

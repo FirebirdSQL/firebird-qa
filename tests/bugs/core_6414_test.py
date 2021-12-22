@@ -85,7 +85,7 @@ test_script_1 = """
 	   ,alter nm5 type dm_utf8_nullable -- leads to "expected length 1, actual 8"
 	;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -139,11 +139,11 @@ expected_stderr_1 = """
 	arithmetic exception, numeric overflow, or string truncation
 	-string right truncation
 	-expected length 1, actual 8
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

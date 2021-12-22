@@ -2034,7 +2034,7 @@ test_script_1 = """
     -- *** All *** versions of 2.5 will produce here the NUMBER of variable rather than its name:
     -- validation error for variable number 2001, value "*** null ***"
     -- (though "Affected version/s 2.1.3, 3.0 Initial, 2.5 RC1, 2.5 RC2")
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -2042,11 +2042,11 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     validation error for variable V_NN, value "*** null ***"
     -At block line: 2004, col: 9
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

@@ -64,14 +64,14 @@ test_script_1 = """
 
     select date '01.02.2020' + -9223372036854775808 from rdb$database; -- ISSUED WRONG RESULT: 2020-02-01
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     EXPECTED_9999_12_31             9999-12-31
     EXPECTED_0001_01_01             0001-01-01
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22008
     value exceeds the range for valid dates
@@ -108,13 +108,13 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 22008
     value exceeds the range for valid dates
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

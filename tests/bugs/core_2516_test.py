@@ -18,7 +18,7 @@ substitutions_1 = []
 
 init_script_1 = """
     create domain t_smallint_array as smallint [0:2];
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -32,7 +32,7 @@ test_script_1 = """
       suspend;
     end
     ^ set term ;^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -47,5 +47,5 @@ expected_stderr_1 = """
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

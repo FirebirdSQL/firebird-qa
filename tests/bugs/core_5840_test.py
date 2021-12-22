@@ -71,14 +71,14 @@ test_script_1 = """
     connect '$(DSN)' user 'SYSDBA' password 'masterkey'; -- mandatory!
     drop user tmp$c5840;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     RDB$RELATION_NAME               TEST1
     RDB$RELATION_NAME               TEST3
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     unsuccessful metadata update
@@ -99,15 +99,15 @@ expected_stderr_1 = """
     unsuccessful metadata update
     -ALTER TABLE TEST1 failed
     -no permission for ALTER access to TABLE TEST1
-  """
+"""
 
 @pytest.mark.version('>=3.0.4,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -165,14 +165,14 @@ test_script_2 = """
     connect '$(DSN)' user 'SYSDBA' password 'masterkey'; -- mandatory!
     drop user tmp$c5840;
     commit;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stdout_2 = """
     RDB$RELATION_NAME               TEST1
     RDB$RELATION_NAME               TEST3
-  """
+"""
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 28000
     unsuccessful metadata update
@@ -197,13 +197,13 @@ expected_stderr_2 = """
     -ALTER TABLE TEST1 failed
     -no permission for ALTER access to TABLE TEST1
     -Effective user is TMP$C5840
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

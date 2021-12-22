@@ -63,7 +63,7 @@ test_script_1 = """
     -- in 2.1 and 2.5: PLAN SORT (JOIN (M NATURAL, D INDEX (THORSES_COLOR_ID))) -- doesn`t see 'rows 1'
     -- in 3.0 plan should CHANGE and take in account 'rows N' limit:
     select * from tcolor m join thorses d on m.id = d.color_id order by d.id rows 1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -72,11 +72,11 @@ expected_stdout_1 = """
     HORSES_CNT                      50000
 
     PLAN JOIN (D ORDER THORSES_ID, M INDEX (TCOLOR_ID))
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

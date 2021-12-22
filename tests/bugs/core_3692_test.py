@@ -21,7 +21,7 @@ init_script_1 = """
     commit; 
     alter table cset add constraint uq_cset unique (cname); 
     commit; 
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -80,7 +80,7 @@ show table cset;
     commit;
     
     show table cset;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -89,11 +89,11 @@ CNAME                           VARCHAR(250) Not Null
 CONSTRAINT UQ_CSET:
   Unique key (CNAME)
 CNAME                           VARCHAR(250) Nullable 
-  """
+"""
 
 @pytest.mark.version('>=2.5.2')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

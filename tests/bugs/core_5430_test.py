@@ -52,7 +52,7 @@ test_script_1 = """
     insert into test1 default values returning id as test1_restarted_id;
     insert into test2 default values returning id as test2_restarted_id;
     insert into test3 default values returning id as test3_chng_incr_id;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -63,11 +63,11 @@ expected_stdout_1 = """
     TEST1_RESTARTED_ID              12345
     TEST2_RESTARTED_ID              23456
     TEST3_CHNG_INCR_ID              -22222
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

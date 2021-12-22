@@ -52,7 +52,7 @@ test_script_1 = """
 
     set plan on;
     select id, x from t where id = 1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -68,18 +68,18 @@ expected_stdout_1 = """
     X                               -888888888
     ID                              1
     X                               -999999999
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     attempt to store duplicate value (visible to active transactions) in unique index "T_ID_UNIQUE"
     -Problematic key value is ("ID" = 1)
-  """
+"""
 
 @pytest.mark.version('>=2.5.6')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

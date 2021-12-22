@@ -53,7 +53,7 @@ test_script_1 = """
     select a as field_a, lag(a, 1, -1.0e-6143)over(order by a) lag_for_decfloat_2 from test4;
     select a as field_a, lag(a, 1, 1.0e-6143)over(order by a) lag_for_decfloat_3 from test4;
     select a as field_a, lag(a, 1, 9.999999999999999999999999999999999e6144)over(order by a) lag_for_decfloat_4 from test4;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -138,11 +138,11 @@ expected_stdout_1 = """
     LAG_FOR_DECFLOAT_4               9.999999999999999999999999999999999E+6144
     FIELD_A                                                                  2
     LAG_FOR_DECFLOAT_4                                                       1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

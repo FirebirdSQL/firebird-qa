@@ -44,7 +44,7 @@ test_script_1 = """
     select '|'  || substring('€åßðéæø' from -2 for 5) || '|' n05 from rdb$database;
     select '|'  || substring('€åßðéæø' from -2147483645 for 2147483647) || '|' n06 from rdb$database;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -68,5 +68,5 @@ expected_stdout_1 = """
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute(charset='utf8')
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

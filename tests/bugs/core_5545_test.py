@@ -260,7 +260,7 @@ test_script_1 = """
     set count on;
     select rdb$trigger_name as accepted_ddl from rdb$triggers where rdb$system_flag is distinct from 1;
     select * from ddl_audit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -375,11 +375,11 @@ expected_stdout_1 = """
 
 
     Records affected: 9
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

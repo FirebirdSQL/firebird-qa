@@ -163,7 +163,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -228,7 +228,7 @@ test_script_1 = """
     from emp
     order by empno
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -283,11 +283,11 @@ expected_stdout_1 = """
     sample2-b      30    7900       950.00                     0                     3
     sample2-b      20    7902      3000.00                     2                     0
     sample2-b      10    7934      1300.00                     0                     2
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

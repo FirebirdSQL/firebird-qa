@@ -27,7 +27,7 @@ init_script_1 = """
     commit;
     insert into test(c1) values (null);
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -45,7 +45,7 @@ test_script_1 = """
 
     -- still passed on 3.0 (does not verifies old data on new check condition):
     -- alter table test add constraint test_nn check(c1 is not null); -- :(((
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -65,11 +65,11 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 22006
     unsuccessful metadata update
     -Cannot make field C3 of table TEST NOT NULL because there are NULLs present
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

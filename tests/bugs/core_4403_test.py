@@ -36,7 +36,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-  """
+"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
@@ -106,7 +106,7 @@ test_script_1 = """
     set term ;^
     commit;
     set  list off;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -120,22 +120,22 @@ expected_stdout_1 = """
    T3_ID                           3
    T3_X                            10
    T3_Y                            33  
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column
 
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -162,7 +162,7 @@ init_script_2 = """
     ^
     set term ;^
     commit;
-  """
+"""
 
 db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
@@ -232,7 +232,7 @@ test_script_2 = """
     set term ;^
     commit;
     set  list off;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -246,20 +246,20 @@ expected_stdout_2 = """
    T3_ID                           3
    T3_X                            10
    T3_Y                            33  
-  """
+"""
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column CE.X
 
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column CE.Y
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_expected_stderr == act_2.clean_stderr
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stderr == act_2.clean_expected_stderr
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

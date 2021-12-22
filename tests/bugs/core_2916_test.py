@@ -29,7 +29,7 @@ test_script_1 = """
     commit;
     set list on;
     select * from tab where cast(col as int) is null;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -39,11 +39,11 @@ expected_stderr_1 = """
     -conversion error from string "2004-02-29"
     Statement failed, SQLSTATE = 22018
     conversion error from string "2004-02-29"
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

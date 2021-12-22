@@ -53,7 +53,7 @@ init_script_1 = """
     insert into tci(id, name) values(8, 'oNE rOW');
     insert into tci(id, name) values(1, 'one row');
     commit;
-  """
+"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -72,7 +72,7 @@ test_script_1 = """
       order by rand()
     )
     group by n1, n2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -81,11 +81,11 @@ N1                              one row
 N2                              one row
 N3                              ONE ROW
 N4                              ONE ROW
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

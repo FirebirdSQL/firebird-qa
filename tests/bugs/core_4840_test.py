@@ -105,7 +105,7 @@ def test_1(act_1: Action):
             out3 = 3 * in1;
             suspend;
         end
-        """
+"""
         #
         sp_rem = "comment on procedure sp_test is 'Det är inte alla präster, som göra prästgården eller dess torp till änkesäte åt orkeslösa trotjänarinnor, hade biskopen en gång sagt om Helenas prost.'"
         # For confirmation of ticket issues it is enough to do just this:

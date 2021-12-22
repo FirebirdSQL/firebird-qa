@@ -132,7 +132,7 @@ expected_stdout_1 = """
     select s_latin from tlatin;
     S_LATIN                         Käse
     Records affected: 1
-  """
+"""
 
 expected_stderr_1 = """
 Statement failed, SQLSTATE = 22018

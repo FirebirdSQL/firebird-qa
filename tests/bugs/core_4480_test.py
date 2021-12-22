@@ -29,13 +29,13 @@ init_script_1 = """
     --    -function FN_A is not defined
     --    -module name or entrypoint could not be found
     --    -Error while parsing procedure SP_A's BLR
-  """
+"""
 
 db_1 = db_factory(from_backup='core4480.fbk', init=init_script_1)
 
 test_script_1 = """
     execute procedure sp_a;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

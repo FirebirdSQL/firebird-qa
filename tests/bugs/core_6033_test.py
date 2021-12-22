@@ -37,7 +37,7 @@ test_script_1 = """
         c = substring(current_timestamp from 1);
     end
     ^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

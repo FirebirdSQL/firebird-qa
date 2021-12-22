@@ -67,7 +67,7 @@ init_script_1 = """
         select 'опечатка' as msg, t.id
         from rdb$database left join "опечатка" t on 1=1
       ;
-  """
+"""
 
 db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 

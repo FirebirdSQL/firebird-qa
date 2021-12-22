@@ -65,7 +65,7 @@ test_script_1 = """
     where t.unit starting with 'foo'
     order by t.y; 
     set plan off;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -110,11 +110,11 @@ expected_stdout_1 = """
                3 foo                5555        21822 
                2 foo                8888        22520 
                1 foo                9999        23636 
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
