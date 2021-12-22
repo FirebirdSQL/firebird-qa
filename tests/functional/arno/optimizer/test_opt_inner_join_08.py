@@ -122,8 +122,7 @@ SELECT
   Count(*)
 FROM
   View_B vb
-  JOIN View_A va ON (va.ID1 = vb.ID100);
-"""
+JOIN View_A va ON (va.ID1 = vb.ID100);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -132,12 +131,11 @@ expected_stdout_1 = """PLAN JOIN (JOIN (VA T1 NATURAL, VA T250 INDEX (PK_TABLE_2
                 COUNT
 =====================
                     1
-
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

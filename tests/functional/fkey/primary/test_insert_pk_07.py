@@ -8,13 +8,14 @@
 #               Detail transaction inserts record in detail_table.
 #               Expected: no errors.
 #               Related to: CORE-1606. Ability to insert child record if parent record is locked but foreign key target unchanged.
-# tracker_id:   
+# tracker_id:
 # min_versions: []
 # versions:     2.5
 # qmid:         functional.fkey.primary.ins_07
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import tpb, Isolation
 
 # version: 2.5
 # resources: None
@@ -56,28 +57,36 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  db_conn.begin(tpb=TPB_master)
 #  cm_1 = db_conn.cursor()
 #  cm_1.execute('UPDATE MASTER_TABLE SET INT_F=2')
-#  
+#
 #  #Create second connection for change detail table
 #  con_detail = kdb.connect(
 #       dsn=dsn.encode(),
 #       user=user_name.encode(),
 #       password=user_password.encode()
 #  )
-#  
+#
 #  try:
 #     con_detail.begin(tpb=TPB_detail)
 #     cd = con_detail.cursor()
 #     cd.execute("INSERT INTO DETAIL_TABLE (ID, FKEY_1, FKEY_2) VALUES (1, 1, 'one')")
 #     con_detail.commit()
 #  except Exception, e:
-#    print (e[0])
+#  print (e[0])
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=2.5')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    with act_1.db.connect() as con:
+        cust_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
+        con.begin(cust_tpb)
+        with con.cursor() as c:
+            c.execute('UPDATE MASTER_TABLE SET INT_F=2')
+            #Create second connection for change detail table
+            with act_1.db.connect() as con_detail:
+                con_detail.begin(cust_tpb)
+                with con_detail.cursor() as cd:
+                    cd.execute("INSERT INTO DETAIL_TABLE (ID, FKEY_1, FKEY_2) VALUES (1, 1, 'one')")
+                con_detail.commit()
+    # Passed.

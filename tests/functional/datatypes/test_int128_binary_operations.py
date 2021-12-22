@@ -48,7 +48,7 @@ test_script_1 = """
     select bin_xor(bi_least, bi_great) from test_i128; -- expected: -1
     select bin_xor(bi_least, bi_great) from test_i128; -- expected: -1
     select bin_xor(bi_least, bin_xor(bi_least, bi_great)) from test_i128; -- expected: 170141183460469231731687303715884105727
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -64,11 +64,11 @@ expected_stdout_1 = """
     -1
     -1
     170141183460469231731687303715884105727
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

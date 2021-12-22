@@ -36,8 +36,7 @@ COMMIT;
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """SHOW PROCEDURE NEW_PROCEDURE;
-SELECT * FROM NEW_PROCEDURE('TEST');
-"""
+SELECT * FROM NEW_PROCEDURE('TEST');"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -57,12 +56,11 @@ NOM3                              OUTPUT VARCHAR(20) CHARACTER SET ISO8859_1
 NOM3
 ====================
 TEST
-
 """
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

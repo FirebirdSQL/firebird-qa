@@ -167,7 +167,7 @@ test_script_1 = """
     set width object_name 15;
     select s.whoami, s.call_level, s.object_name, s.object_type, s.source_line
     from dbg_stack s;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -179,11 +179,11 @@ p_04              2 P_02                      5            6
 p_04              3 P_03                      5            7
 p_04              4 P_04                      5            8
 p_04              5 DBG_GET_STACK             5           13
-  """
+"""
 
 @pytest.mark.version('>=2.5.4')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

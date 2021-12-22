@@ -56,7 +56,7 @@
 # qmid:         
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -326,9 +326,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  '''
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     target_object_type: table, checked_DML = upd, iter = 0, restarts number to be tested: 10
@@ -438,7 +437,8 @@ expected_stdout_1 = """
     target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: deadlock
     target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: -update conflicts with concurrent update
     target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: -concurrent transaction number is 343
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
+    target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
 
     target_object_type: table, checked_DML = mer, iter = 0, restarts number to be tested: 10
     target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
@@ -547,7 +547,8 @@ expected_stdout_1 = """
     target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: deadlock
     target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: -update conflicts with concurrent update
     target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: -concurrent transaction number is 696
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
+    target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
 
     target_object_type: table, checked_DML = del, iter = 0, restarts number to be tested: 10
     target_object_type: table, checked_DML = del, iter = 0, worker STDLOG: Records affected: 12
@@ -640,7 +641,8 @@ expected_stdout_1 = """
     target_object_type: table, checked_DML = del, iter = 1, worker STDERR: deadlock
     target_object_type: table, checked_DML = del, iter = 1, worker STDERR: -update conflicts with concurrent update
     target_object_type: table, checked_DML = del, iter = 1, worker STDERR: -concurrent transaction number is 1049
-    target_object_type: table, checked_DML = del, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
+    target_object_type: table, checked_DML = del, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
 
     target_object_type: table, checked_DML = lok, iter = 0, restarts number to be tested: 10
     target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:
@@ -688,7 +690,8 @@ expected_stdout_1 = """
     target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: -update conflicts with concurrent update
     target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: -concurrent transaction number is 1282
     target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: -At block line: 1, col: 39
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: After line 19 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
+    target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: After line 19 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
 
     target_object_type: view, checked_DML = upd, iter = 0, restarts number to be tested: 10
     target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 12
@@ -797,7 +800,8 @@ expected_stdout_1 = """
     target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: deadlock
     target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: -update conflicts with concurrent update
     target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: -concurrent transaction number is 1630
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
+    target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
 
     target_object_type: view, checked_DML = mer, iter = 0, restarts number to be tested: 10
     target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
@@ -906,7 +910,8 @@ expected_stdout_1 = """
     target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: deadlock
     target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: -update conflicts with concurrent update
     target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: -concurrent transaction number is 1983
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
+    target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
 
     target_object_type: view, checked_DML = del, iter = 0, restarts number to be tested: 10
     target_object_type: view, checked_DML = del, iter = 0, worker STDLOG: Records affected: 12
@@ -999,7 +1004,8 @@ expected_stdout_1 = """
     target_object_type: view, checked_DML = del, iter = 1, worker STDERR: deadlock
     target_object_type: view, checked_DML = del, iter = 1, worker STDERR: -update conflicts with concurrent update
     target_object_type: view, checked_DML = del, iter = 1, worker STDERR: -concurrent transaction number is 2336
-    target_object_type: view, checked_DML = del, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
+    target_object_type: view, checked_DML = del, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
 
     target_object_type: view, checked_DML = lok, iter = 0, restarts number to be tested: 10
     target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:
@@ -1024,7 +1030,8 @@ expected_stdout_1 = """
     target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: Dynamic SQL Error
     target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: -SQL error code = -104
     target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: -WITH LOCK can be used only with a single physical table
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: After line 19 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
+    target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: After line 19 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
 
     target_object_type: view, checked_DML = lok, iter = 1, restarts number to be tested: 12
     target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:
@@ -1051,12 +1058,12 @@ expected_stdout_1 = """
     target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: Dynamic SQL Error
     target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: -SQL error code = -104
     target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: -WITH LOCK can be used only with a single physical table
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: After line 19 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
-  """
+    target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: After line 19 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

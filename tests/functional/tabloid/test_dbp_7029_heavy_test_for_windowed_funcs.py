@@ -135,7 +135,7 @@ test_script_1 = """
     where mc < 11 and mq = az
     group by c, az
     order by 1,2,3;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -383,11 +383,11 @@ expected_stdout_1 = """
     F01                             96,48,61
     F02                             9
     F03                             7066,7067,8105,8106,8153,8154,8201,8202,9250
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

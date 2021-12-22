@@ -53,7 +53,7 @@ test_script_1 = """
     select 'point-5' msg, p.a, avg(p.c) from proc4 p group by p.a having avg(p.c) > 35;
     select 'point-6' msg, p.a, avg(p.c) from proc4 p group by p.a ;
     select 'point-7' msg, p.a, p.c from proc4 p where p.c = (select avg(x.c) from proc4 x);
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -86,11 +86,11 @@ expected_stdout_1 = """
     MSG     A                 C
     point-7 Red              19
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

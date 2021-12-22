@@ -8,6 +8,9 @@
 #                   09.07.2020, 4.0.0.2091:
 #                       NO more overflow since INT128 was introduced. AVG() is evaluated successfully.
 #                       Removed error message from expected_stderr, added result into expected_stdout.
+#               
+#                   27.07.2021: changed sqltype in FB 4.x+ to 580 INT64: this is needed since fix #6874.
+#                   Checked on 5.0.0.113, 4.0.1.2539.
 #                
 # tracker_id:   
 # min_versions: []
@@ -39,7 +42,7 @@ test_script_1 = """
     set list on;
     set sqlda_display on;
     select * from v_test;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -49,19 +52,20 @@ expected_stdout_1 = """
     01: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
     : name: AVG_RESULT alias: AVG_RESULT
     : table: V_TEST owner: SYSDBA
-   """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22003
     Integer overflow.  The result of an integer operation caused the most significant bit of the result to carry.
-   """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -85,21 +89,21 @@ test_script_2 = """
     set list on;
     set sqlda_display on;
     select * from v_test;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stdout_2 = """
-    01: sqltype: 32752 INT128 Nullable scale: 0 subtype: 0 len: 16
+      01: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
       :  name: AVG_RESULT  alias: AVG_RESULT
       : table: V_TEST  owner: SYSDBA
 
     AVG_RESULT                                                4410000000000000000    
-   """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

@@ -3,13 +3,14 @@
 # id:           functional.database.alter.03
 # title:        Alter database: add file with name of this database or previously added files must fail
 # decription:   Add same file twice must fail
-# tracker_id:   
+# tracker_id:
 # min_versions: []
 # versions:     3.0
-# qmid:         
+# qmid:
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import DatabaseError
 
 # version: 3.0
 # resources: None
@@ -35,19 +36,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #    print ("Unexpected exception",sys.exc_info()[0])
 #    print ("Arguments",sys.exc_info()[1])
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """
-  Error while executing SQL statement:
-    - SQLCODE: -607
-    - unsuccessful metadata update
-    - ALTER DATABASE failed
-    - Cannot add file with the same name as the database or added files
-  """
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, capsys):
+    with act_1.db.connect() as con:
+        with con.cursor() as c:
+            c.execute(f"ALTER DATABASE ADD FILE '{act_1.db.db_path.with_name('TEST.G00')}' STARTING 10000")
+            con.commit()
+            with pytest.raises(DatabaseError, match='.*Cannot add file with the same name as the database or added files.*'):
+                c.execute(f"ALTER DATABASE ADD FILE '{act_1.db.db_path.with_name('TEST.G00')}' STARTING 20000")
+    # Passed

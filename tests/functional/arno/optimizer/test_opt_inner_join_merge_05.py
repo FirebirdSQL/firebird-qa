@@ -98,8 +98,7 @@ SELECT
   Count(*)
 FROM
   Table_1000 t1000
-  JOIN View_A va ON (va.ID100 = t1000.ID);
-"""
+JOIN View_A va ON (va.ID100 = t1000.ID);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -108,12 +107,11 @@ expected_stdout_1 = """PLAN HASH (T1000 NATURAL, VA T100 NATURAL, VA T10 NATURAL
                 COUNT
 =====================
                    10
-
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

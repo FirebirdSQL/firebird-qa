@@ -55,7 +55,7 @@ test_script_1 = """
     -- old test code:
     -- select dateadd(-1 month TO date '2008-02-06' ) as yesterday from rdb$database;
     -- select dateadd(month,-1, date '2008-02-06' ) as yesterday from rdb$database;
- """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -83,11 +83,11 @@ expected_stdout_1 = """
     NONL_FEB_28_MINUS_11_MONTH      2002-03-28
     NONL_FEB_28_MINUS_12_MONTH      2002-02-28
     NONL_MAR_31_MINUS_01_MONTH      2003-02-28
- """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

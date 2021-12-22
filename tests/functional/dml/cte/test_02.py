@@ -79,7 +79,6 @@ FROM TYPE_PRODUCT_RECUR T
 left join  COUNT_BY_TYPE C
 on C.ID_TYPE_PRODUCT = T.id_type_product;
 
-
 """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
@@ -92,12 +91,11 @@ ID_TYPE_PRODUCT NAME                                 COUNT_P
               4  - FILM ACTION                             1
               5  - FILM ROMANCE                            2
               2 + BOOK                                <null>
-
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

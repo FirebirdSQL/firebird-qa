@@ -19,7 +19,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -272,9 +272,16 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  ##########
 #  runProgram('isql',[dsn, '-user', user_name, '-pas', user_password], 'drop user u01; commit;')
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+expected_stderr_1 = """
+    Statement failed, SQLSTATE = 42000
+    Execute statement error at attach :
+    335544528 : database shutdown
+    Data source : Firebird::localhost:
+    -At block line: 4, col: 9
+"""
 
 expected_stdout_1 = """
     WHO_AMI                         U01
@@ -299,18 +306,10 @@ expected_stdout_1 = """
 
     tmp_dbshut_u01.err : no permission for shutdown access to database
     tmp_online_u01.err : no permission for bring online access to database
-  """
-expected_stderr_1 = """
-    Statement failed, SQLSTATE = 42000
-    Execute statement error at attach :
-    335544528 : database shutdown
-    Data source : Firebird::localhost:
-    -At block line: 4, col: 9
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

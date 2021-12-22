@@ -129,7 +129,7 @@ test_script_1 = """
 
     drop user u01;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -147,11 +147,11 @@ expected_stdout_1 = """
     WHO_ELSE_HERE                   SYSDBA
     WHAT_HE_IS_DOING                select current_user from rdb$database
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

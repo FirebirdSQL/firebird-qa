@@ -18,7 +18,7 @@
 # qmid:         
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -134,20 +134,18 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  time.sleep(1)
 #  cleanup( (f_init_log,f_curr_log,f_diff_txt) )
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     + Error at disconnect:
     + arithmetic exception, numeric overflow, or string truncation
     + Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
     + At trigger 'TRG_DISCONNECT' line: 4, col: 9
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

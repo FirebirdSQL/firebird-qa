@@ -36,7 +36,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -635,14 +635,12 @@ db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 #  f_list |= set( ( f_init_ddl, f_init_log, f_meta_log1, f_meta_log2, f_backup_log, f_restore_log, tmpfbk, tmpfdb) )
 #  cleanup( f_list )
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

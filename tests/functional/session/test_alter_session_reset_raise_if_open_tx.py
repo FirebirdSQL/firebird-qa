@@ -23,7 +23,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -58,9 +58,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  db_conn.close()
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Error while executing SQL statement:
@@ -69,11 +68,10 @@ expected_stdout_1 = """
     - There are open transactions (3 active)
     -901
     335545206
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

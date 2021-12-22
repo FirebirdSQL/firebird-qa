@@ -32,12 +32,11 @@ SHOW TABLE test;"""
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """TEXT                            VARCHAR(32) Nullable
-ID                              INTEGER Not Null
-"""
+ID                              INTEGER Not Null"""
 
 @pytest.mark.version('>=1.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

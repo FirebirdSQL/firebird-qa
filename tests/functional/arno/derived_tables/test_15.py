@@ -45,8 +45,7 @@ test_script_1 = """SELECT
 FROM
   (SELECT t1.ID, t1.DESCRIPTION FROM Table_10 t1 WHERE t1.ID <= 4
    UNION ALL
-   SELECT t1.ID, t1.DESCRIPTION FROM Table_10 t1 WHERE t1.ID >= 5) dt (ID, DESCRIPTION);
-"""
+SELECT t1.ID, t1.DESCRIPTION FROM Table_10 t1 WHERE t1.ID >= 5) dt (ID, DESCRIPTION);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -61,11 +60,11 @@ expected_stdout_1 = """          ID DESCRIPTION
            6 six
            7 seven
            8 eight
-           9 nine"""
+9 nine"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

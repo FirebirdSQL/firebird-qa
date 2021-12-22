@@ -99,8 +99,7 @@ FROM
 WHERE
   RDB$RELATION_NAME = 'SELECTIVITYTEST'
 ORDER BY
-  RDB$INDEX_NAME;
-"""
+RDB$INDEX_NAME;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -114,12 +113,11 @@ I_F02_DESC                                    0.00200
 I_F05_ASC                                     0.00498
 I_F05_DESC                                    0.00498
 I_F50_ASC                                     0.04762
-I_F50_DESC                                    0.04762
-"""
+I_F50_DESC                                    0.04762"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

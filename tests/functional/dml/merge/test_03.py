@@ -62,7 +62,7 @@ test_script_1 = """
     ;
 
     rollback;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -74,20 +74,21 @@ expected_stdout_1 = """
     OLD_X                           100
     NEW_ID                          -2
     NEW_X                           -101
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
     -Column unknown
     -TEST_B.ID
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

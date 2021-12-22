@@ -70,7 +70,7 @@
 # qmid:         
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -342,9 +342,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  ##########
 #  time.sleep(1)
 #  cleanup( (f_init_log, f_init_err, f_worker_sql, f_worker_log, f_worker_err)  )
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     target_object_type: table, worker STDLOG: Records affected: 2
@@ -377,7 +376,8 @@ expected_stdout_1 = """
     target_object_type: table, worker STDLOG: Records affected: 10
     target_object_type: table, worker STDERR: Statement failed, SQLSTATE = 21000
     target_object_type: table, worker STDERR: Multiple source records cannot match the same target during MERGE
-    target_object_type: table, worker STDERR: After line 18 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
+    target_object_type: table, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
     target_object_type: view, worker STDLOG: Records affected: 2
     target_object_type: view, worker STDLOG:
     target_object_type: view, worker STDLOG:      ID       X
@@ -408,12 +408,12 @@ expected_stdout_1 = """
     target_object_type: view, worker STDLOG: Records affected: 10
     target_object_type: view, worker STDERR: Statement failed, SQLSTATE = 21000
     target_object_type: view, worker STDERR: Multiple source records cannot match the same target during MERGE
-    target_object_type: view, worker STDERR: After line 18 in file C:\\FBTESTING\\qabt-repo	mp	mp_sttm_restart_max_limit.sql
-  """
+    target_object_type: view, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
+bt-repo	mp	mp_sttm_restart_max_limit.sql
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

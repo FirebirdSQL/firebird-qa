@@ -64,8 +64,7 @@ FROM
   SelectionTest st
 WHERE
   st.F1 = 1 or
-  st.F1 = 5000;
-"""
+st.F1 = 5000;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -74,12 +73,11 @@ expected_stdout_1 = """PLAN (ST INDEX (I_F1_UNIQUE_ASC, I_F1_UNIQUE_ASC))
           F1
 ============
 
-           1
-"""
+1"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

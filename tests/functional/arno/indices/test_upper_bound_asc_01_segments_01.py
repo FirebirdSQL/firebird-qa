@@ -63,7 +63,7 @@ SELECT
 FROM
   Table_66 t66
 WHERE
-  t66.ID <= -131072;"""
+t66.ID <= -131072;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -86,11 +86,11 @@ expected_stdout_1 = """PLAN (T66 INDEX (I_TABLE_66_ASC))
     -1048576
      -524288
      -262144
-     -131072"""
+-131072"""
 
 @pytest.mark.version('>=1.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

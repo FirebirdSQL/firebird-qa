@@ -119,7 +119,7 @@ test_script_1 = """
 
     insert into test default values;
     select * from test where fff > 0;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -141,11 +141,11 @@ expected_stdout_1 = """
     F15                              1.239999999999999999999955600000000E+1022
     F16                             -1.239999999999999999999955600000000E+1022
     FFF                              1.115999999999999999999960040000000E+1023
- """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

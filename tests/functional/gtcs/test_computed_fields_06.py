@@ -2,14 +2,14 @@
 #
 # id:           functional.gtcs.computed_fields_06
 # title:        computed-fields-06
-# decription:
+# decription:   
 #               	Original test see in:
 #                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_06.script
 #               	SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
 #                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
 #                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#
-# tracker_id:
+#                
+# tracker_id:   
 # min_versions: ['2.5.0']
 # versions:     2.5
 # qmid:         None
@@ -72,7 +72,7 @@ test_script_1 = """
     update t10 set a = 13         where a = 11;
     select 'Passed 3 - Update' from t10 where a_b_const = a/10*b having count(*) = 2;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -83,11 +83,11 @@ expected_stdout_1 = """
     Passed 2 - Update
     Passed 3 - Insert
     Passed 3 - Update
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

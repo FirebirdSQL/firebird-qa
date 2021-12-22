@@ -42,8 +42,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """SELECT
   dt.*
 FROM
-  (SELECT * FROM Table_10 t10) dt (ID, ID);
-"""
+(SELECT * FROM Table_10 t10) dt (ID, ID);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -51,12 +50,11 @@ expected_stderr_1 = """Statement failed, SQLSTATE = 42000
 Dynamic SQL Error
 -SQL error code = -104
 -Invalid command
--column ID was specified multiple times for derived table DT
-"""
+-column ID was specified multiple times for derived table DT"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

@@ -123,7 +123,7 @@ test_script_1 = """
     
     select 'with_utf8_cast' as msg, str, pattern, iif(cast(str as varchar(20) character set utf8) similar to cast(pattern as varchar(20) character set utf8) escape '\\', 1, 0) from tests order by id;
  
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -248,11 +248,11 @@ with_utf8_cast    2                    [1-53-7^5-2]                    1
 with_utf8_cast    4                    [1-53-7^5-2]                    1 
 with_utf8_cast    6                    [1-53-7^5-2]                    1 
 with_utf8_cast    8                    [1-53-7^5-2]                    0 
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -7,6 +7,10 @@
 #                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_13.script
 #               	SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
 #                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
+#               
+#                   Check that it is not allowed to drop column which is referenced by computed-by column.
+#               
+#                   
 #                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
 #                
 # tracker_id:   
@@ -56,14 +60,14 @@ test_script_1 = """
     /*---------------------------------------------------------------------*/
     alter table t1 drop af;
     select 'point-2' msg, p.* from t1 p;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     point-1 10 30
     point-2 11 44 220
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE 42000
     unsuccessful metadata update
@@ -76,13 +80,14 @@ expected_stderr_1 = """
     -cannot delete
     -COLUMN T1.AF
     -there are 1 dependencies
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

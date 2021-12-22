@@ -70,18 +70,18 @@ test_script_1 = """
 
     select rdb$get_context('USER_SESSION', 'TEST_VAR') as session_level_context_var_after_reset from rdb$database;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     SESSION_LEVEL_CONTEXT_VAR_BEFORE_RESET 123
     SESSION_LEVEL_CONTEXT_VAR_AFTER_RESET <null>
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

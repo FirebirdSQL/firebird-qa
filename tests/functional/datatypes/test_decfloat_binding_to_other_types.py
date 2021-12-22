@@ -89,7 +89,7 @@ test_script_1 = """
     select cast( 1701411834604692317316873037158841.05727 as decfloat(34)) as decfloat_to_int128
     from rdb$database;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -115,11 +115,11 @@ expected_stdout_1 = """
     01: sqltype: 32752 INT128 scale: 0 subtype: 0 len: 16
     :  name: CAST  alias: DECFLOAT_TO_INT128
     DECFLOAT_TO_INT128                         1701411834604692317316873037158841
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

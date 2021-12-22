@@ -48,7 +48,7 @@ test_script_1 = """
         ,9223372036854775808 as behind_bigint_min
     from rdb$database; -- ==> FAILS on 3.0; must be interpreted as DECFLOAT(34) on 4.0.0
     */
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -65,11 +65,11 @@ expected_stdout_1 = """
     :  name: CONSTANT  alias: ALMOST_ZERO_DECFLOAT_34
     : table:   owner:
     ALMOST_ZERO_DECFLOAT_34                                             1E-309
- """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -31,8 +31,7 @@ test_script_1 = """CREATE TABLE test(
  c3 BLOB SUB_TYPE TEXT CHARACTER SET DOS437,
  c4 test
 );
-SHOW TABLE test;
-"""
+SHOW TABLE test;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -41,11 +40,11 @@ C2                              VARCHAR(40) CHARACTER SET DOS437 Nullable
                                  COLLATE DB_DEU437
 C3                              BLOB segment 80, subtype TEXT CHARACTER SET DOS437 Nullable
 C4                              (TEST) ARRAY OF [40000]
-                                VARCHAR(32765) Nullable"""
+VARCHAR(32765) Nullable"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

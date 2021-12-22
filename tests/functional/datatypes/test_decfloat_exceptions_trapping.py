@@ -102,7 +102,7 @@ test_script_1 = """
     -- Decimal float invalid operation.  An indeterminant error occurred during an operation.
     select cast('34ffd' as decfloat(16)) nan_when_df_trap_inv_op
     from rdb$database;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -113,7 +113,7 @@ expected_stdout_1 = """
     ADD_HUGES_WHEN_DF_TRAP_EMPTY                                      Infinity
     NAN_WHEN_DF_TRAP_EMPTY                              NaN
                                                         
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22012
     Decimal float divide by zero.  The code attempted to divide a DECFLOAT value by zero.
@@ -129,13 +129,14 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 22000
     Decimal float invalid operation.  An indeterminant error occurred during an operation.
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

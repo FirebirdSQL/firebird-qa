@@ -43,8 +43,7 @@ test_script_1 = """SELECT
   dt.*
 FROM
   Table_10 t10
-  LEFT JOIN (SELECT * FROM Table_10 t2 WHERE t2.ID = t10.ID) dt ON (1 = 1);
-"""
+LEFT JOIN (SELECT * FROM Table_10 t2 WHERE t2.ID = t10.ID) dt ON (1 = 1);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -54,12 +53,11 @@ Dynamic SQL Error
 -Column unknown
 -T10.ID
 -At line 5, column 58
-
 """
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

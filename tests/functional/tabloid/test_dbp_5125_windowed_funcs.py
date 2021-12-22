@@ -54,7 +54,7 @@ test_script_1 = """
     on c1.tbi = d.vx and c1.ari=d.q1 and c2.ari=d.q2
     order by 1,2,3
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -66,11 +66,11 @@ expected_stdout_1 = """
           44           17           19 
           45           18           17 
           45           20           17 
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

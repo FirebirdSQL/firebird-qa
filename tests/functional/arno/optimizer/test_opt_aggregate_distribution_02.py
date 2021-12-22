@@ -81,7 +81,7 @@ HAVING
   Count(DISTINCT f.FlowerID) >= 2 and
   MIN(DISTINCT f.FlowerID) >= 1 and
   MAX(DISTINCT f.FlowerID) >= 1 and
-  AVG(DISTINCT f.FlowerID) >= 1;"""
+AVG(DISTINCT f.FlowerID) >= 1;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -93,12 +93,11 @@ expected_stdout_1 = """PLAN SORT (JOIN (F NATURAL, C INDEX (PK_COLORS)))
            2 White                                    2
            3 Blue                                     2
            4 Yellow                                   2
-
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

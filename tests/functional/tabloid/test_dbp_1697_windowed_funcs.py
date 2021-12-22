@@ -97,7 +97,7 @@ test_script_1 = """
     -- check result of subsequent inserts (instead of heavy full join) for mimatches:
     ---------------
     select id,count(*) from tresult group by id having count(*)<>2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 

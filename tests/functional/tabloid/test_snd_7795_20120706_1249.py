@@ -213,7 +213,7 @@ test_script_1 = """
     select gate,dts,retail_sum,purchase_sum
     from c7
     order by 1,2;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -257,11 +257,11 @@ expected_stdout_1 = """
     DTS                             2001-03-22
     RETAIL_SUM                      24096.00
     PURCHASE_SUM                    24500.00
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

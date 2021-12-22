@@ -12,7 +12,7 @@
 # qmid:         
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -209,17 +209,15 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  ###########
 #  cleanup( ( f_sql_cmd, f_prepare_log, f_trc_log, f_trc_err, f_trc_cfg, f_trc_lst ) )
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     EXPECTED output found in the trace log
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

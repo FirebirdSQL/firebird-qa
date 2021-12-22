@@ -25,7 +25,7 @@ test_script_1 = """
     set count on;
     -- NB: rdb$role_name is UNIQUE column.
     select * from rdb$roles order by rdb$role_name;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -34,16 +34,16 @@ expected_stdout_1 = """
     RDB$OWNER_NAME                  SYSDBA
     RDB$DESCRIPTION                 <null>
     RDB$SYSTEM_FLAG                 1
-    RDB$SECURITY_CLASS              <null>
+    RDB$SECURITY_CLASS              SQL$162
 
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -59,7 +59,7 @@ test_script_2 = """
     set count on;
     -- NB: rdb$role_name is UNIQUE column.
     select * from rdb$roles order by rdb$role_name;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -72,11 +72,11 @@ expected_stdout_2 = """
     RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
 
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

@@ -40,7 +40,7 @@ test_script_1 = """
     select 'point-1' msg, p.* from p;
     execute procedure proc_insert 'P7', 'Widget', 'Pink', 23, 'Hoboken';
     select 'point-2' msg, p.* from p;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -61,11 +61,11 @@ expected_stdout_1 = """
     point-2 P5     Cam                  Blue             12 Paris
     point-2 P6     Cog                  Red              19 London
     point-2 P7     Widget               Pink             23 Hoboken
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

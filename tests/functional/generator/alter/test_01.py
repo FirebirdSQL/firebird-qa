@@ -66,7 +66,7 @@ test_script_1 = """
     select 'point-08' as msg, v.* from v_info v;
     commit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -82,13 +82,13 @@ expected_stdout_1 = """
     point-06                    -1            1                    -1
     point-07                     1           -1                     1
     point-08                     1            1                     1
-  """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -160,7 +160,7 @@ test_script_2 = """
     -----------------------------------------------------------------------
     recreate generator g start with 7654321; commit; alter sequence g restart with 1234567 increment by 23456789; commit;
     select 'point-08' as msg, p.* from sp_gen_info p;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -176,11 +176,11 @@ expected_stdout_2 = """
     point-06               7654321              23456789             -24691356              -1234567 
     point-07               7654321             -23456789              24691356               1234567 
     point-08               7654321              23456789             -22222222               1234567 
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

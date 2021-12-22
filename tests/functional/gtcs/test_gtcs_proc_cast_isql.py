@@ -17,7 +17,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0.6
 # resources: None
@@ -109,9 +109,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # Exception raised while executing Python test script. exception: WindowsError: 32
 #  time.sleep(1)
 #  cleanup( ( f_init_run, f_init_err, f_cast_log, f_cast_err ) )
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     bigint_bigint                   80 
@@ -373,11 +372,10 @@ expected_stdout_1 = """
     varchar(30)_numeric(5,2)        80.45 
     varchar(30)_smallint            32767 
     varchar(30)_time                01:02:03.4560 
-  """
+"""
 
 @pytest.mark.version('>=3.0.6')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

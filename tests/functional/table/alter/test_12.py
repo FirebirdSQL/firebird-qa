@@ -539,7 +539,7 @@ test_script_1 = """
     alter table test2 add f254 int;
     alter table test2 add f255 int;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -799,19 +799,20 @@ expected_stdout_1 = """
     F252                            INTEGER Nullable 
     F253                            INTEGER Nullable 
     F254                            INTEGER Nullable 
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 54000
     unsuccessful metadata update
     -TABLE TEST2
     -too many versions
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -40,7 +40,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -549,9 +549,235 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  runProgram( 'isql', ['-q', '-i', f_run_sql.name] )
 #              
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+expected_stderr_1 = """
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_SML of table TEST NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_SML", value "0"
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_SML", value "0"
+
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_INT of table TEST NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_INT", value "500"
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_INT", value "500"
+
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_DATE of table TEST NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_DATE", value "2021-04-20"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_DATE", value "2021-04-20"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_CHAR of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_CHAR", value "Wisła              "
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_CHAR", value "Wisła              "
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_VCHR of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_VCHR", value "Norrström"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_VCHR", value "Norrström"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_NUM of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_NUM", value "-327.68"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_NUM", value "-327.68"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_DEC of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 22003
+    arithmetic exception, numeric overflow, or string truncation
+    -numeric value is out of range
+    
+    Statement failed, SQLSTATE = 22003
+    arithmetic exception, numeric overflow, or string truncation
+    -numeric value is out of range
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_DP of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_DP", value "0.0000000000000000"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_DP", value "0.0000000000000000"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_BIG of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_BIG", value "9223372036854775807"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_BIG", value "9223372036854775807"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_NC of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_NC", value "Y"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_NC", value "Y"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_BIN of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_BIN", value "Ÿ"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_BIN", value "Ÿ"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_VB of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_VB", value "Ÿ"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_VB", value "Ÿ"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_BOO of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_BOO", value "FALSE"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_BOO", value "FALSE"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_DF16 of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_DF16", value "-9.999999999999999E+384"
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_DF16", value "-9.999999999999999E+384"
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_DF34 of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 42000
+    expression evaluation not supported
+    -Argument for LOG10 must be positive
+    
+    Statement failed, SQLSTATE = 42000
+    expression evaluation not supported
+    -Argument for LOG10 must be positive
+    
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_I128 of table TEST NOT NULL because there are NULLs present
+    
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_I128", value "170141183460469231731687303715884105727"
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_I128", value "170141183460469231731687303715884105727"
+
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_TMTZ of table TEST NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_TMTZ", value "11:11:11.1110 Indian/Cocos"
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_TMTZ", value "11:11:11.1110 Indian/Cocos"
+
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_DTS of table TEST NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_DTS", value "01-JAN-0001 0:00:01.0010"
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_DTS", value "01-JAN-0001 0:00:01.0010"
+
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_TSTZ of table TEST NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_TSTZ", value "21-DEC-2013 11:11:11.1110 Indian/Cocos"
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."X_TSTZ", value "21-DEC-2013 11:11:11.1110 Indian/Cocos"
+
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_BLOB_20 of table TEST NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 22018
+    conversion error from string "BLOB"
+
+    Statement failed, SQLSTATE = 22018
+    conversion error from string "BLOB"
+
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_BLOB_21 of table TEST NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 22018
+    conversion error from string "BLOB"
+
+    Statement failed, SQLSTATE = 22018
+    conversion error from string "BLOB"
+
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X_BLOB_22 of table TEST NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 22018
+    conversion error from string "BLOB"
+
+    Statement failed, SQLSTATE = 22018
+    conversion error from string "BLOB"
+
+"""
 
 expected_stdout_1 = """
     DM_NAME                         DOM22_01
@@ -889,237 +1115,10 @@ expected_stdout_1 = """
     Ätran
     X_BLOB_22                       97:0
     16
-  """
-expected_stderr_1 = """
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_SML of table TEST NOT NULL because there are NULLs present
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_SML", value "0"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_SML", value "0"
-
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_INT of table TEST NOT NULL because there are NULLs present
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_INT", value "500"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_INT", value "500"
-
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_DATE of table TEST NOT NULL because there are NULLs present
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_DATE", value "2021-04-20"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_DATE", value "2021-04-20"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_CHAR of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_CHAR", value "Wisła              "
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_CHAR", value "Wisła              "
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_VCHR of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_VCHR", value "Norrström"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_VCHR", value "Norrström"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_NUM of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_NUM", value "-327.68"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_NUM", value "-327.68"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_DEC of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 22003
-    arithmetic exception, numeric overflow, or string truncation
-    -numeric value is out of range
-    
-    Statement failed, SQLSTATE = 22003
-    arithmetic exception, numeric overflow, or string truncation
-    -numeric value is out of range
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_DP of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_DP", value "0.0000000000000000"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_DP", value "0.0000000000000000"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_BIG of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_BIG", value "9223372036854775807"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_BIG", value "9223372036854775807"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_NC of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_NC", value "Y"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_NC", value "Y"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_BIN of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_BIN", value "Ÿ"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_BIN", value "Ÿ"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_VB of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_VB", value "Ÿ"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_VB", value "Ÿ"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_BOO of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_BOO", value "FALSE"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_BOO", value "FALSE"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_DF16 of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_DF16", value "-9.999999999999999E+384"
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_DF16", value "-9.999999999999999E+384"
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_DF34 of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 42000
-    expression evaluation not supported
-    -Argument for LOG10 must be positive
-    
-    Statement failed, SQLSTATE = 42000
-    expression evaluation not supported
-    -Argument for LOG10 must be positive
-    
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_I128 of table TEST NOT NULL because there are NULLs present
-    
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_I128", value "170141183460469231731687303715884105727"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_I128", value "170141183460469231731687303715884105727"
-
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_TMTZ of table TEST NOT NULL because there are NULLs present
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_TMTZ", value "11:11:11.1110 Indian/Cocos"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_TMTZ", value "11:11:11.1110 Indian/Cocos"
-
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_DTS of table TEST NOT NULL because there are NULLs present
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_DTS", value "01-JAN-0001 0:00:01.0010"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_DTS", value "01-JAN-0001 0:00:01.0010"
-
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_TSTZ of table TEST NOT NULL because there are NULLs present
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_TSTZ", value "21-DEC-2013 11:11:11.1110 Indian/Cocos"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X_TSTZ", value "21-DEC-2013 11:11:11.1110 Indian/Cocos"
-
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_BLOB_20 of table TEST NOT NULL because there are NULLs present
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "BLOB"
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "BLOB"
-
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_BLOB_21 of table TEST NOT NULL because there are NULLs present
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "BLOB"
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "BLOB"
-
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X_BLOB_22 of table TEST NOT NULL because there are NULLs present
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "BLOB"
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "BLOB"
-
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

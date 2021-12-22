@@ -43,18 +43,17 @@ ivan
 NAME
 ====================
 bob
-
 """
 expected_stderr_1 = """Statement failed, SQLSTATE = 22000
 Dynamic SQL Error
--Primary key required on table TMPTEST_NOKEY
-"""
+-Primary key required on table TMPTEST_NOKEY"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

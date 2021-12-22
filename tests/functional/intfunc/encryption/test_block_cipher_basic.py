@@ -1,15 +1,15 @@
 #coding:utf-8
 #
 # id:           functional.intfunc.encryption.block_cipher_basic
-# title:
+# title:        
 #                   Verify block crypto algorithms that are implemented in ENCRYPT/DECRYPT built-in functions.
 #                   See doc\\sql.extensions\\README.builtin_functions.txt for details.
-#
+#               
 #                   Checked on 4.0.0.1691: OK, 1.561s.
-#
-# decription:
-#
-# tracker_id:
+#                
+# decription:   
+#                
+# tracker_id:   
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
@@ -56,7 +56,7 @@ test_script_1 = """
         'cfb',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         '0101010101010101',
-        lpad('',16, uuid_to_char( gen_uuid() ))
+        lpad('',16, uuid_to_char( gen_uuid() )) 
     );
 
 
@@ -71,7 +71,7 @@ test_script_1 = """
         'ctr',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         lpad('',16, replace(uuid_to_char(gen_uuid()),'-','') ),
-        lpad('',16, uuid_to_char( gen_uuid() ))
+        lpad('',16, uuid_to_char( gen_uuid() )) 
     );
 
 
@@ -102,7 +102,7 @@ test_script_1 = """
         'ofb',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         lpad('',16, replace(uuid_to_char(gen_uuid()),'-','') ),
-        lpad('',16, uuid_to_char( gen_uuid() ))
+        lpad('',16, uuid_to_char( gen_uuid() )) 
     );
 
     ------------------------------------------------------
@@ -117,7 +117,7 @@ test_script_1 = """
     from test_char
     where crypto_alg = 'AES'
     ;
-
+  
 
     insert into test_char
     select
@@ -141,7 +141,7 @@ test_script_1 = """
     from test_char
     where crypto_alg = 'AES'
     ;
-
+  
 
     insert into test_char
     select
@@ -153,7 +153,7 @@ test_script_1 = """
     from test_char
     where crypto_alg = 'AES'
     ;
-
+  
 
     insert into test_char
     select
@@ -165,7 +165,7 @@ test_script_1 = """
     from test_char
     where crypto_alg = 'AES'
     ;
-
+  
 
     insert into test_char
     select
@@ -229,7 +229,7 @@ test_script_1 = """
         do begin
             v_encrypt_sttm = 'select encrypt( q''{' || c.source_text || '}'' using ' || c.crypto_alg || coalesce( ' mode ' || c.mode , '' ) || ' key q''{' || c.crypto_key || '}''' || coalesce(' iv q''{' || c.crypto_iv || '}'' ', '') || ') from rdb$database';
             execute statement v_encrypt_sttm into v_encrypted;
-
+            
             --v_decrypt_sttm = 'select decrypt( q''{' || v_encrypted || '}'' using ' || c.crypto_alg || coalesce( ' mode ' || c.mode , '' ) || ' key q''{' || c.crypto_key || '}''' || coalesce(' iv q''{' || c.crypto_iv || '}'' ', '') || ') from rdb$database';
             --v_decrypt_sttm = 'select decrypt( x''' || v_encrypted || ''' using ' || c.crypto_alg || coalesce( ' mode ' || c.mode , '' ) || ' key q''{' || c.crypto_key || '}''' || coalesce(' iv q''{' || c.crypto_iv || '}'' ', '') || ') from rdb$database';
             v_decrypt_sttm = 'select decrypt( cast(? as varbinary(32700)) using ' || c.crypto_alg || coalesce( ' mode ' || c.mode , '' ) || ' key q''{' || c.crypto_key || '}''' || coalesce(' iv q''{' || c.crypto_iv || '}'' ', '') || ') from rdb$database';
@@ -250,234 +250,233 @@ test_script_1 = """
     set term ;^
     commit;
 
-    select * from sp_char_block_test;
+    select * from sp_char_block_test; 
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     CRYPTO_ALG                      AES
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      ANUBIS
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      ANUBIS
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      ANUBIS
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      ANUBIS
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      BLOWFISH
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      BLOWFISH
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      BLOWFISH
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      BLOWFISH
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      KHAZAD
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      KHAZAD
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      KHAZAD
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      KHAZAD
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      RC5
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      RC5
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      RC5
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      RC5
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      RC6
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      RC6
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      RC6
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      RC6
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      "SAFER+"
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      "SAFER+"
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      "SAFER+"
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      "SAFER+"
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      TWOFISH
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      TWOFISH
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      TWOFISH
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      TWOFISH
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      XTEA
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      XTEA
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      XTEA
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      XTEA
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.
+    RESULT_MSG                      Source and decrypted strings are identical.  
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
-    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

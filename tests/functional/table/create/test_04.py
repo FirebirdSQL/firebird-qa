@@ -57,12 +57,11 @@ CONSTRAINT TEST:
 CONSTRAINT INTEG_9:
   CHECK (c2>c1)
 CONSTRAINT TEST3:
-  CHECK (NOT c3>c1)
-"""
+CHECK (NOT c3>c1)"""
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

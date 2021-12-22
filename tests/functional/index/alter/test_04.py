@@ -36,12 +36,11 @@ unsuccessful metadata update
 -ALTER INDEX PKINDX failed
 -action cancelled by trigger (3) to preserve data integrity
 -Cannot deactivate index used by a PRIMARY/UNIQUE constraint
-
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

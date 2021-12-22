@@ -68,7 +68,7 @@ test_script_1 = """
     connect '$(DSN)' user sysdba password 'masterkey';
     drop user u01;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -87,11 +87,11 @@ expected_stdout_1 = """
      RDB$ROLE_NAME                   ROLE_FOR_USE_GRANTED_BY_CLAUSE
      RDB$ROLE_IN_USE                 <false>
      RDB$SYSTEM_PRIVILEGES           0000100000000000
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

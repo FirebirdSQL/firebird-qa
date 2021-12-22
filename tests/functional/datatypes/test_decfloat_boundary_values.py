@@ -57,7 +57,7 @@ test_script_1 = """
             ,c.max_df34_for_pos_scope - c.max_df34_for_pos_scope as zero_max_df34_for_pos
     from c
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -78,11 +78,11 @@ expected_stdout_1 = """
     ZERO_MAX_DF34_FOR_NEG                                              0E-6144
     ZERO_MIN_DF34_FOR_POS                                              0E-6144
     ZERO_MAX_DF34_FOR_POS                                              0E+6111
- """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

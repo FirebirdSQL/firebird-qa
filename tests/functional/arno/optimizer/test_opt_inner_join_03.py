@@ -2,13 +2,13 @@
 #
 # id:           functional.arno.optimizer.opt_inner_join_03
 # title:        INNER JOIN join order
-# decription:
-#                  With a INNER JOIN the relation with the smallest expected result should be the first one in process order.
-#                  The next relation should be the next relation with expected smallest result based on previous relation
+# decription:   
+#                  With a INNER JOIN the relation with the smallest expected result should be the first one in process order. 
+#                  The next relation should be the next relation with expected smallest result based on previous relation 
 #                  and do on till last relation.
 #                  Before 2.0, Firebird did stop checking order possibilties above 7 relations.
-#
-# tracker_id:
+#                
+# tracker_id:   
 # min_versions: []
 # versions:     2.0
 # qmid:         functional.arno.optimizer.opt_inner_join_03
@@ -113,35 +113,20 @@ FROM
   JOIN Table_4K t4K ON (t4K.ID = t3K.ID)
   JOIN Table_1K t1K ON (t1K.ID = t4K.ID)
   JOIN Table_2K t2K ON (t2K.ID = t1K.ID)
-  JOIN Table_1 t1 ON (t1.ID = t2K.ID);
-"""
+JOIN Table_1 t1 ON (t1.ID = t2K.ID);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T5K INDEX (PK_TABLE_5K), T4K INDEX (PK_TABLE_4K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
+expected_stdout_1 = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T4K INDEX (PK_TABLE_4K), T5K INDEX (PK_TABLE_5K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
 
-                COUNT
-=====================
-                    1
-"""
+       COUNT
+============
 
-@pytest.mark.version('>=2.0,<4')
+1"""
+
+@pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
-
-expected_stdout_2 = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T4K INDEX (PK_TABLE_4K), T5K INDEX (PK_TABLE_5K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
-
-                COUNT
-=====================
-                    1
-"""
-
-@pytest.mark.version('>=4')
-def test_1(act_1: Action):
-    act_1.charset = 'NONE'
-    act_1.expected_stdout = expected_stdout_2
-    act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

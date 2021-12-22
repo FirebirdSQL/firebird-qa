@@ -43,8 +43,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """SELECT
   dt.*
 FROM
-  (SELECT t2.ID, t2.GROUPID, (SELECT t1.GROUPID FROM Table_10 t1 WHERE t1.ID = t2.ID) FROM Table_10 t2) dt (ID, GROUPID1, GROUPID2);
-"""
+(SELECT t2.ID, t2.GROUPID, (SELECT t1.GROUPID FROM Table_10 t1 WHERE t1.ID = t2.ID) FROM Table_10 t2) dt (ID, GROUPID1, GROUPID2);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -59,11 +58,11 @@ expected_stdout_1 = """          ID     GROUPID1     GROUPID2
            6            3            3
            7            3            3
            8            3            3
-           9            3            3"""
+9            3            3"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

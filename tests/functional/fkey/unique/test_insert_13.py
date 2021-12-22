@@ -10,13 +10,14 @@
 #               4 Master transaction modifies unique field.
 #               Detail transaction inserts record in detail_table record.
 #               Expected: referential integrity error
-# tracker_id:   
+# tracker_id:
 # min_versions: []
 # versions:     2.5.3
 # qmid:         functional.fkey.unique.ins_13
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
+from firebird.driver import DatabaseError, tpb, Isolation
 
 # version: 2.5.3
 # resources: None
@@ -53,18 +54,18 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      + chr(kdb.isc_tpb_read_committed) + chr(kdb.isc_tpb_rec_version)
 #      + chr(kdb.isc_tpb_nowait)
 #                    )
-#  
+#
 #  db_conn.begin(tpb=TPB_master)
 #  c = db_conn.cursor()
 #  c.execute("update master_table set int_f = 10 WHERE ID=1")
-#  
+#
 #  #Create second connection for change detail table
 #  con_detail = kdb.connect(
 #       dsn=dsn.encode(),
 #       user=user_name.encode(),
 #       password=user_password.encode()
 #  )
-#  
+#
 #  try:
 #    con_detail.begin(tpb=TPB_detail)
 #    c = con_detail.cursor()
@@ -72,25 +73,36 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #    con_detail.commit()
 #  except Exception, e:
 #    print (e[1])
-#  
+#
 #  try:
 #    c = db_conn.cursor()
 #    c.execute("update master_table set UF=10 WHERE ID=1")
 #  except Exception, e:
-#    print (e[0])
+#  print (e[0])
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """Error while executing SQL statement:
 - SQLCODE: -530
 - violation of FOREIGN KEY constraint "FK_DETAIL_TABLE" on table "DETAIL_TABLE"
 - Foreign key references are present for the record
-- Problematic key value is ("UF" = 1)
-"""
+- Problematic key value is ("UF" = 1)"""
 
 @pytest.mark.version('>=2.5.3')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action):
+    with act_1.db.connect() as con:
+        cust_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
+        con.begin(cust_tpb)
+        with con.cursor() as c:
+            c.execute("update master_table set int_f = 10 WHERE ID=1")
+            #Create second connection for change detail table
+            with act_1.db.connect() as con_detail:
+                con_detail.begin(cust_tpb)
+                with con_detail.cursor() as cd:
+                    cd.execute("INSERT INTO DETAIL_TABLE (ID, FKEY) VALUES (1,1)")
+                con_detail.commit()
+                with pytest.raises(DatabaseError,
+                                   match='.*Foreign key references are present for the record.*'):
+                    c.execute("update master_table set UF=10 WHERE ID=1")
+    # Passed.

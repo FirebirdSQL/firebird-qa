@@ -91,7 +91,7 @@ test_script_1 = """
     select * from tmain where id >= 0;
     
     select * from tmain;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -125,20 +125,21 @@ expected_stdout_1 = """
     ID                              1
     NAME                            qwerty
     Records affected: 1
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = HY000
     exception 2
     -EX_FOO
     -ex_foo
     -At procedure 'SP_TEST' line: 6, col: 8
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -133,7 +133,7 @@ test_script_1 = """
     update t35 set s = 'by' where s = 'computed';
     select 'Passed 8 - Update' from t35 where sc = 'test '||' test' having count(*) = 2;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -152,11 +152,11 @@ expected_stdout_1 = """
     Passed 7 - Update
     Passed 8 - Insert
     Passed 8 - Update
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

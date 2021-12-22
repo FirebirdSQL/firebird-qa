@@ -124,7 +124,7 @@ test_script_1 = """
     update t25 set d_end = cast('today' as date) + 5 where d_start = 'today';
     select 'Passed 6 - Update' from t25 where date_diff = d_end - d_start having count(*) = 3;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -141,11 +141,11 @@ expected_stdout_1 = """
     Passed 5 - Update
     Passed 6 - Insert
     Passed 6 - Update
-  """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

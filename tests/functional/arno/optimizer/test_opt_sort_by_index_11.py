@@ -143,7 +143,7 @@ test_script_1 = """
     order by t.id2 desc, t.id1 desc
     ;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -199,11 +199,11 @@ expected_stdout_1 = """
                 -> Index "TEST_ID2_ID1_DES" Range Scan (upper bound: 1/2)
                     -> Bitmap
                         -> Index "TEST_ID1_ASC" Range Scan (lower bound: 1/1)
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

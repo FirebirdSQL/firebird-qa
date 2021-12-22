@@ -91,7 +91,7 @@ test_script_1 = """
     from test x
     where x.rel_name starting with upper('rdb$')
     group by 1;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -219,11 +219,11 @@ expected_stdout_1 = """
     REL_NAME                        RDB$VIEW_RELATIONS
     list_blob_id                    0:1f
     RDB$INDEX_33,RDB$INDEX_34
-  """
+"""
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

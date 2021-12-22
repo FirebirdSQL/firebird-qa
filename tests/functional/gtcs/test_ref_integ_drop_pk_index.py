@@ -13,7 +13,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0
 # resources: None
@@ -47,13 +47,9 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  '''
 #  
 #  runProgram('isql', [ dsn], os.linesep.join( (sql_init, sql_addi) ) )
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
-expected_stdout_1 = """
-    Records affected: 0
-  """
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 27000
     unsuccessful metadata update
@@ -64,11 +60,14 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     violation of PRIMARY or UNIQUE KEY constraint "DEPT_KEY" on table "DEPARTMENT"
     -Problematic key value is ("DEPT_NO" = '1')
-  """
+"""
+
+expected_stdout_1 = """
+    Records affected: 0
+"""
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

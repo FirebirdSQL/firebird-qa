@@ -2,8 +2,8 @@
 #
 # id:           functional.datatypes.decfloat_binding_to_legacy
 # title:        Test ability for DECFLOAT values to be represented as other data types using LEGACY keyword.
-# decription:
-#                   We check here that values from DECFLOAT will be actually converted to legacy datatypes
+# decription:   
+#                   We check here that values from DECFLOAT will be actually converted to legacy datatypes 
 #                   according to following table from sql.extensions\\README.set_bind.md:
 #                       ----------------------------------------------------------
 #                       | Native datatype          | Legacy datatype             |
@@ -16,20 +16,20 @@
 #                       ----------------------------------------------------------
 #                    SQLDA must contain the same datatypes when we use either explicit rule or LEGACY keyword.
 #                    Checked on 4.0.0.1691 SS: 1.113s.
-#
+#               
 #                    WARNING, 11.03.2020.
 #                    Test verifies binding of TIME WITH TIMEZONE data and uses America/Los_Angeles timezone.
 #                    But there is daylight saving time in the USA, they change clock at the begining of March.
-#
+#               
 #                    For this reason query like: "select time '10:00 America/Los_Angeles' from ..." will return
 #                    different values depending on current date. For example, if we are in Moscow timezone then
-#                    returned value will be either 20:00 in February or 21:00 in March.
+#                    returned value will be either 20:00 in February or 21:00 in March. 
 #                    Result for other timezone (e.g. Tokyo) will be differ, etc.
 #                    For this reason, special replacement will be done in 'substitution' section: we replace
 #                    value of hours with '??' because it is no matter what's the time there, we have to ensure
 #                    only the ability to work with such time using SET BIND clause.
-#
-# tracker_id:
+#                
+# tracker_id:   
 # min_versions: ['4.0.0']
 # versions:     4.0
 # qmid:         None
@@ -88,7 +88,7 @@ test_script_1 = """
     select timestamp '2018-01-01 12:00 GMT' as "check_bind_timestamp_with_zone_to_legacy" from rdb$database;
 
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -122,12 +122,11 @@ expected_stdout_1 = """
 
     01: sqltype: 510 TIMESTAMP scale: 0 subtype: 0 len: 8
     check_bind_timestamp_with_zone_to_legacy 2018-01-01 ??:00:00.0000
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
-    act_1.charset = 'NONE'
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

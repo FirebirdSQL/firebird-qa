@@ -80,7 +80,7 @@ test_script_1 = """
     select sign(-power_2_127_dec_1) as sign_a, sign(-power_2_127_exact) as sign_b from test;
 
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -108,11 +108,11 @@ expected_stdout_1 = """
     SQRT_B                                 13043817825332782212.34957180625251
     SIGN_A                          -1
     SIGN_B                          -1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

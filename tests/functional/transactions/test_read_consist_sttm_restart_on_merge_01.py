@@ -117,7 +117,7 @@
 # qmid:         
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -336,9 +336,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  ##########
 #  time.sleep(1)
 #  cleanup( (f_init_log, f_init_err, f_worker_sql, f_worker_log, f_worker_err) )
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     checked_mode: table, STDLOG: Records affected: 5
@@ -385,11 +384,10 @@ expected_stdout_1 = """
     checked_mode: view, STDLOG:       2 UPD                        2
     checked_mode: view, STDLOG:       3 UPD                        2
     checked_mode: view, STDLOG: Records affected: 7
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

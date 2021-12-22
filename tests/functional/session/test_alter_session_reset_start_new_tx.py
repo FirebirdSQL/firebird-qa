@@ -136,7 +136,7 @@ test_script_1 = """
         ,count(distinct trn_auto_undo) as trn_auto_undo_distinct_cnt
     from test;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -146,11 +146,11 @@ expected_stdout_1 = """
     TRN_LOCK_TIMEOUT_DISTINCT_CNT   1
     TRN_READ_DISTINCT_CNT           1
     TRN_AUTO_UNDO_DISTINCT_CNT      1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -15,7 +15,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -152,9 +152,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  time.sleep(1)
 #  cleanup( (fbk_name, fdb_test, f_backup_restore) )
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     DB_NAME                         FUNCTIONAL.SYSPRIV.DROP_DATABASE.TMP
@@ -169,11 +168,10 @@ expected_stdout_1 = """
     RDB_ROLE_IN_USE                 <true>
     RDB$SYSTEM_PRIVILEGES           0004000000000000
     Records affected: 2
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

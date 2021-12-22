@@ -45,20 +45,18 @@ test_script_1 = """SELECT
 FROM
   (SELECT t1.GROUPID, Count(t1.ID) FROM Table_10 t1 GROUP BY t1.GROUPID) dt (GROUPID, ID_COUNT)
 WHERE
-  dt.ID_COUNT = 2;
-"""
+dt.ID_COUNT = 2;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """     GROUPID              ID_COUNT
 ============ =====================
            1                     2
-
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

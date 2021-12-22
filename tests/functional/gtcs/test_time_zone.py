@@ -685,7 +685,7 @@ test_script_1 = """
     select * from t1^
 
     set term ;^
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -1291,7 +1291,7 @@ expected_stdout_1 = """
     START_TZM 0
     END_TZH -8
     END_TZM 0
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22018
     conversion error from string "01:23:45.0000 -03:00"
@@ -1318,13 +1318,14 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 23000
     attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
     -Problematic key value is ("V" = '2018-01-01 14:33:33.0000 +02:00')
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

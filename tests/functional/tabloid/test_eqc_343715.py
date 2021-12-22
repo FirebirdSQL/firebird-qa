@@ -149,7 +149,7 @@ test_script_1 = """
     select v.table_name, v.natural_reads, v.indexed_reads
     from v_agg_stat_tabs v
     where table_name = upper('TEST1');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -157,11 +157,11 @@ expected_stdout_1 = """
     TABLE_NAME                      TEST1                                                                                                                                                                                                                                                                                  
     NATURAL_READS                   0
     INDEXED_READS                   6
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -76,7 +76,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0
 # resources: None
@@ -577,9 +577,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  cleanup( f_list )
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Expected error in the trace: 335544665 : violation of PRIMARY or UNIQUE KEY constraint "TEST_UNQ" on table "TEST"
@@ -593,12 +592,11 @@ expected_stdout_1 = """
     Pattern 5. DB_RESTORE : FOUND in the trace log
     Pattern 6. DB_NBACKUP : FOUND in the trace log
     Pattern 7. DB_NRESTORE : FOUND in the trace log
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

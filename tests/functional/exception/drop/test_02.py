@@ -38,7 +38,7 @@ test_script_1 = """
     select e.rdb$exception_name, d.rdb$dependent_name 
     from rdb$exceptions e join rdb$dependencies d on e.rdb$exception_name = d.rdb$depended_on_name
     where e.rdb$exception_name = upper('exc_test');
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -46,20 +46,21 @@ expected_stdout_1 = """
     RDB$EXCEPTION_NAME              EXC_TEST
     RDB$DEPENDENT_NAME              SP_TEST
     Records affected: 1
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
     -EXCEPTION EXC_TEST
     -there are 1 dependencies
-  """
+"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -48,8 +48,7 @@ test_script_1 = """CREATE TABLE test(
  c22 BLOB SEGMENT SIZE 512,
  c23 BLOB (1024,1)
 );
-SHOW TABLE test;
-"""
+SHOW TABLE test;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -81,5 +80,5 @@ C23                             BLOB segment 1024, subtype TEXT Nullable"""
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

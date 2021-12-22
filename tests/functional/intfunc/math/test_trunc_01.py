@@ -25,7 +25,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """select trunc(-2.8), trunc(2.8)
        from rdb$database;  -- returns -2, 2
 select trunc(987.65, 1), trunc(987.65, -1)
-       from rdb$database;  -- returns 987.60, 980.00"""
+from rdb$database;  -- returns 987.60, 980.00"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -36,11 +36,11 @@ expected_stdout_1 = """                      TRUNC                 TRUNC
 
                       TRUNC                 TRUNC
       ===================== =====================
-                     987.60                980.00"""
+987.60                980.00"""
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

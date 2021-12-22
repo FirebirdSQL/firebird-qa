@@ -9,7 +9,7 @@
 # qmid:         functional.monitoring.monitoring_04
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 3.0
 # resources: None
@@ -103,9 +103,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  '''
 #  
 #  runProgram('isql',[  '-pag','99999','-q' ], sql_chk)
-#  
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     CHECK_NO  WHO_AM_I     WHO_ELSE                  TID_ROWN ISOL_MODE  ISOL_DESCR
@@ -121,11 +120,10 @@ expected_stdout_1 = """
     2         SYSDBA       U02                              2         1  SNAPSHOT
     2         SYSDBA       U02                              3         0  CONSISTENCY
     Records affected: 6
-  """
+"""
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

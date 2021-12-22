@@ -35,12 +35,11 @@ unsuccessful metadata update
 -SQL error code = -607
 -Invalid command
 -number of columns does not match select list
-There is no view TEST in this database
-"""
+There is no view TEST in this database"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

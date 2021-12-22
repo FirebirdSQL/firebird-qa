@@ -107,7 +107,7 @@ test_script_1 = """
 
     set count off;
     select * from test3;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -123,7 +123,7 @@ expected_stdout_1 = """
     N                                9.999999999999999999999999999999999E+6144
     X                                9.999999999999999E+384
 
- """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
@@ -132,13 +132,14 @@ expected_stderr_1 = """
 
     Statement failed, SQLSTATE = 22003
     Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
- """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

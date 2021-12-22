@@ -45,7 +45,7 @@ test_script_1 = """
            ,exp( cast( -14221.4586815117860898045324562520950 as decfloat) ) as df2
         from rdb$database 
     );
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -60,11 +60,11 @@ expected_stdout_1 = """
     SUM_CMP_RESULT_2                  <true>
     DIVISION_RESULT_2                                                        1
     SUM_AND_CMP_RESULT_2            <true>
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -65,7 +65,7 @@ SELECT
 FROM
   Table_66 t66
 ORDER BY
-  t66.ID ASC;"""
+t66.ID ASC;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -147,11 +147,11 @@ expected_stdout_1 = """PLAN (T66 ORDER I_TABLE_66_ASC)
    268435455
    536870911
   1073741823
-  2147483647"""
+2147483647"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -44,8 +44,7 @@ test_script_1 = """SELECT
   (SELECT dt.Description FROM (SELECT t1.Description FROM
     Table_10 t1 WHERE t1.ID = t10.ID) dt) AS Description
 FROM
-  Table_10 t10;
-"""
+Table_10 t10;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -60,11 +59,11 @@ expected_stdout_1 = """          ID DESCRIPTION
            6 six
            7 seven
            8 eight
-           9 nine"""
+9 nine"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

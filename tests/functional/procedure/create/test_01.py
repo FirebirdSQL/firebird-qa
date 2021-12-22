@@ -39,12 +39,11 @@ expected_stdout_1 = """Procedure text:
 BEGIN
   POST_EVENT 'Test';
 END
-=============================================================================
-"""
+============================================================================="""
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

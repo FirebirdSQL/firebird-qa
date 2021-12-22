@@ -29,7 +29,7 @@
 #                           SecurityDatabase = tmp_ecp_01
 #                           RemoteAccess = true
 #                       }
-#                   File $FB_HOME/security4.fdb is copied to the <test_fdb>.
+#                   File $FB_HOME/securityN.fdb is copied to the <test_fdb>.
 #               
 #                   After this test launches new Firebird instance *as application* (see async. call of Popen()) and make
 #                   some actions with just created test DB (alias = tmp_ecp_01). Because this DB is self-secutity, we can
@@ -76,6 +76,12 @@
 #               
 #                   Checked on 4.0.0.2235, FB instances were launched as 'Super' and 'SuperClassic'. Time: ~52s.
 #               
+#                   22.05.2021: definition of full path and name to security.db was wrong because it supposed that FB major version
+#                   corresponds to numeric suffix of security database (FB 3.x --> security3.fdb; FB 4.x --> security4.fdb).
+#                   But in major version FB 5.x currently remains to use security4.fdb.
+#                   Proper way is either to use Services API (call to get_security_database_path()) or get this info from fbtest
+#                   built-in context variable context['isc4_path'].
+#                   Checked on 5.0.0.47 (Linux, Windows).
 #                
 # tracker_id:   
 # min_versions: ['4.0']
@@ -83,7 +89,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -158,9 +164,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  #
 #  ITER_LOOP_CNT = 3
 #  
-#  
-#  FB_HOME = services.connect(host='localhost', user=user_name, password=user_password).get_home_directory()
+#  svc = fdb.services.connect(host='localhost', user=user_name, password=user_password)
+#  FB_HOME = svc.get_home_directory()
 #  FB_BINS = os.path.join( FB_HOME, 'bin'+os.sep if platform.system() == 'Linux' else '' )
+#  svc.close()
+#  SEC_FDB = context['isc4_path']
+#  
 #  
 #  #--------------------------------------------
 #  
@@ -277,10 +286,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  #-------------------------------------------------
 #  
-#  fb_vers = str(db_conn.engine_version)[:1] # character for security.db file: engine = 4.0  --> '4'
 #  db_conn.close()
-#  
-#  sec_db = os.path.join( FB_HOME, 'security' + fb_vers+ '.fdb')
 #  
 #  fdb_test = os.path.join(context['temp_directory'],'ext-conn-pool-01.fdb')
 #  cleanup( (fdb_test,) )
@@ -293,7 +299,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  dbconf_cur = os.path.join(FB_HOME, 'databases.conf')
 #  dbconf_bak = os.path.join(context['temp_directory'], 'databases_'+dts+'.bak')
 #  
-#  shutil.copy2( sec_db, fdb_test )
+#  shutil.copy2( SEC_FDB, fdb_test )
 #  f_init_err = 0
 #  
 #  #################################
@@ -683,9 +689,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  ##########
 #  cleanup( [ i.name for i in f_list ] + [fdb_test] )
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     SRVMODE      WHO            ATT      ID EVT                                      ACTIVE_CNT IDLE_CNT 
@@ -768,11 +773,10 @@ expected_stdout_1 = """
     SuperClassic RARE             3      21 BYE                                               0        0 
 
     Records affected: 76
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

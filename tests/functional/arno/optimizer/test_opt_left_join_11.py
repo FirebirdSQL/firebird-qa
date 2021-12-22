@@ -72,17 +72,17 @@ test_script_1 = """
     WHERE
       c.ColorName STARTING WITH 'R' -- index I_Colors_Name exists for this field
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     PLAN JOIN (F NATURAL, C INDEX (I_COLORS_NAME))
-  """
+"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

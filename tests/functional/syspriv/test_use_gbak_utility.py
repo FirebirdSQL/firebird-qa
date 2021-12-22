@@ -18,7 +18,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -237,9 +237,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  runProgram('isql',[dsn,'-user',user_name, '-pas', user_password], 'drop user u01; commit;')
 #  cleanup( (fbk_name, fdb_test, f_backup_u01_log,f_backup_u01_err,f_restore_u01_log,f_restore_u01_err,f_restore_sys_log,f_restore_sys_err) )
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     U01 BACKUP STDLOG: GBAK:CLOSING FILE, COMMITTING, AND FINISHING
@@ -262,11 +261,10 @@ expected_stdout_1 = """
     X                               1
     QWERTYUIOPLKJHGFDSAZXCVBNM
     Records affected: 1
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

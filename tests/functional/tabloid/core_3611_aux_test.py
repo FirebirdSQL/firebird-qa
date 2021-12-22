@@ -31,7 +31,7 @@ test_script_1 = """
     from tab f1 cross join tab f2
     group by f1.p1
     ;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -40,11 +40,11 @@ expected_stderr_1 = """
     Dynamic SQL Error
     -SQL error code = -104
     -Invalid expression in the select list (not contained in either an aggregate function or the GROUP BY clause)
-  """
+"""
 
 @pytest.mark.version('>=2.5.2')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

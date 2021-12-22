@@ -29,12 +29,11 @@ expected_stderr_1 = """Statement failed, SQLSTATE = 42000
 Dynamic SQL Error
 -SQL error code = -104
 -Token unknown - line 1, column 15
--INT
-"""
+-INT"""
 
 @pytest.mark.version('>=2.5.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

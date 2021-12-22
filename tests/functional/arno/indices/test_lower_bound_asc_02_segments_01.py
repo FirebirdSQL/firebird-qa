@@ -61,7 +61,7 @@ SELECT
 FROM
   Table_2_10 t
 WHERE
-  t.F1 = 2 and t.F2 >= 6;"""
+t.F1 = 2 and t.F2 >= 6;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -74,12 +74,11 @@ expected_stdout_1 = """PLAN (T INDEX (I_TABLE_2_10_ASC))
            2            7
            2            8
            2            9
-           2           10
-"""
+2           10"""
 
 @pytest.mark.version('>=1.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -32,19 +32,19 @@ test_script_1 = """
     select *
     from rdb$function_arguments fa
     order by fa.rdb$function_name, fa.rdb$argument_position;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Records affected: 0
- """
+"""
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 # resources: None
@@ -61,7 +61,7 @@ test_script_2 = """
     select *
     from rdb$function_arguments fa
     order by fa.rdb$function_name, fa.rdb$argument_position;
-  """
+"""
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
@@ -90,11 +90,11 @@ expected_stdout_2 = """
     RDB$DESCRIPTION                 <null>
 
     Records affected: 1
- """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
-    assert act_2.clean_expected_stdout == act_2.clean_stdout
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

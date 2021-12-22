@@ -210,7 +210,7 @@ test_script_1 = """
     drop user tmp$user4test;
     commit;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -255,7 +255,7 @@ expected_stdout_1 = """
     CONTEXT_VAR_NAME                <null>
     CONTEXT_VAR_VALUE               <null>
 
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22003
     Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
@@ -277,13 +277,14 @@ expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     no permission for SELECT access to TABLE GTT_TEST
     -Effective user is TMP$USER4TEST
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

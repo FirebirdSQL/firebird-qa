@@ -43,7 +43,7 @@ test_script_1 = """
     select * from t as t3 where x<=0.5; -- NO 'plan order' must be here; bitmap is enough!
 
     select * from t as t4 where x<=0.5 order by x desc; -- here PLAN ORDER is much efficient than bitmap + PLAN SORT
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -55,11 +55,11 @@ expected_stdout_1 = """
     PLAN (T3 INDEX (T_X_ASC))
 
     PLAN (T4 ORDER T_X_DEC)
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

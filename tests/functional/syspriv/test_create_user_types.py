@@ -24,7 +24,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     set wng off;
     set list on;
-    set count on;
 
     create or alter view v_check as
     select 
@@ -37,8 +36,8 @@ test_script_1 = """
     grant select on v_check to public;
     commit;
 
-    create or alter user u01 password '123' revoke admin role;
-    revoke all on all from u01;
+    create or alter user dba_helper_create_usr_types password '123' revoke admin role;
+    revoke all on all from dba_helper_create_usr_types;
     commit;
 
     set term ^;
@@ -53,10 +52,10 @@ test_script_1 = """
     -- Add/change/delete non-system records in RDB$TYPES
     create role role_for_create_user_types set system privileges to CREATE_USER_TYPES;
     commit;
-    grant default role_for_create_user_types to user u01;
+    grant default role_for_create_user_types to user dba_helper_create_usr_types;
     commit;
 
-    connect '$(DSN)' user u01 password '123';
+    connect '$(DSN)' user dba_helper_create_usr_types password '123';
     select * from v_check;
     commit;
 
@@ -94,25 +93,23 @@ test_script_1 = """
     commit;
 
     connect '$(DSN)' user sysdba password 'masterkey';
-    drop user u01;
+    drop user dba_helper_create_usr_types;
     drop role role_for_create_user_types;
     commit;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    WHO_AMI                         U01
+    WHO_AMI                         DBA_HELPER_CREATE_USR_TYPES
     RDB$ROLE_NAME                   RDB$ADMIN                                                                                                                                                                                                                                                   
     RDB_ROLE_IN_USE                 <false>
     RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
 
-    WHO_AMI                         U01
+    WHO_AMI                         DBA_HELPER_CREATE_USR_TYPES
     RDB$ROLE_NAME                   ROLE_FOR_CREATE_USER_TYPES                                                                                                                                                                                                                                  
     RDB_ROLE_IN_USE                 <true>
     RDB$SYSTEM_PRIVILEGES           0800000000000000
-
-    Records affected: 2
 
     RDB$FIELD_NAME                  amount_avaliable                                                                                                                                                                                                                                            
     RDB$TYPE                        -32767
@@ -121,8 +118,6 @@ expected_stdout_1 = """
     Total number of units that can be sold immediately to any customer
     RDB$SYSTEM_FLAG                 0
 
-    Records affected: 0
-
     RDB$FIELD_NAME                  <null>
     RDB$TYPE                        -32768
     RDB$TYPE_NAME                   stock_amount                                                                                                                                                                                                                                                
@@ -135,17 +130,18 @@ expected_stdout_1 = """
     RDB$TYPE                        -32768
     RDB$TYPE_NAME                   stock_amount                                                                                                                                                                                                                                                
     RDB$SYSTEM_FLAG                 0
-  """
+"""
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     INSERT operation is not allowed for system table RDB$TYPES
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

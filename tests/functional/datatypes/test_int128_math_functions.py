@@ -112,7 +112,7 @@ test_script_1 = """
     --   1.7014118346046923071280032718565510658506726293419382...*10E38 -- value for exp(88.02969193111305429) in wolfram
     select cast( exp(88.02969193111305429) as int128 ) as math_exp_cast_to_int128 from test;
 
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -143,11 +143,11 @@ expected_stdout_1 = """
     MATH_ATAN                       1.570796326794897
     MATH_ATAN2                      -0.7853981633974483
     MATH_EXP_CAST_TO_INT128               170141183460468400595186318658326495232
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

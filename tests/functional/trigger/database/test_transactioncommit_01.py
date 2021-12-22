@@ -57,7 +57,7 @@ test_script_1 = """SET AUTODDL OFF;
 	SELECT RDB$GET_CONTEXT('USER_SESSION', 'Trn_ID') AS CTX_VAR  FROM RDB$DATABASE;
 	COMMIT;
 	SELECT RDB$GET_CONTEXT('USER_SESSION', 'Trn_ID') AS CTX_VAR  FROM RDB$DATABASE;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -66,11 +66,11 @@ expected_stdout_1 = """
 	CTX_VAR                         3
 	CTX_VAR                         3
 	CTX_VAR                         4  
-  """
+"""
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -3,13 +3,13 @@
 # id:           functional.database.alter.02
 # title:        ALter database: adding secondary file with alternate keyword
 # decription:   Adding secondary file with alternate keyword for database.
-# tracker_id:   
+# tracker_id:
 # min_versions: []
 # versions:     1.0
-# qmid:         
+# qmid:
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 1.0
 # resources: None
@@ -28,7 +28,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cursor.execute("SELECT cast(RDB$FILE_NAME as varchar(150)),RDB$FILE_SEQUENCE,RDB$FILE_START,RDB$FILE_LENGTH  FROM RDB$FILES")
 #  printData(cursor)
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """CAST                                                                                                                                                   RDB$FILE_SEQUENCE RDB$FILE_START RDB$FILE_LENGTH
 ------------------------------------------------------------------------------------------------------------------------------------------------------ ----------------- -------------- ---------------
@@ -36,8 +37,14 @@ C:\\JOB\\QA\\FBTEST\\TMP\\TEST.G00                                              
 """
 
 @pytest.mark.version('>=1.0')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+def test_1(act_1: Action, capsys):
+    with act_1.db.connect() as con:
+        with con.cursor() as c:
+            c.execute(f"ALTER SCHEMA ADD FILE '{act_1.db.db_path.with_name('TEST.G00')}' STARTING 10000")
+            con.commit()
+            c.execute("SELECT cast(RDB$FILE_NAME as varchar(150)),RDB$FILE_SEQUENCE,RDB$FILE_START,RDB$FILE_LENGTH  FROM RDB$FILES")
+            act_1.print_data(c)
+    # Check
+    act_1.expected_stdout = expected_stdout_1
+    act_1.stdout = capsys.readouterr().out
+    assert act_1.clean_stdout == act_1.clean_expected_stdout

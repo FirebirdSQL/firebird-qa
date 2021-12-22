@@ -11,7 +11,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -199,9 +199,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # Cleanup:
 #  ##########
 #  cleanup( (f_shutdown_log, f_dbheader_log, f_ret2online_log) )
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Records affected: 0
@@ -215,11 +214,10 @@ expected_stdout_1 = """
     RDB$SYSTEM_PRIVILEGES           2060000000000000
     Records affected: 2
     DB HEADER: ATTRIBUTES FORCE WRITE, FULL SHUTDOWN
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

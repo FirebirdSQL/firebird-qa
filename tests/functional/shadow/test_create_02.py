@@ -38,7 +38,7 @@ test_script_1 = """
        ,rdb$file_flags as file_flags
        ,rdb$shadow_number as shadow_number
     from rdb$files;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -58,11 +58,11 @@ expected_stdout_1 = """
     SHADOW_NUMBER                   1
 
     Records affected: 2
- """
+"""
 
 @pytest.mark.version('>=2.5')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

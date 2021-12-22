@@ -25,7 +25,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """
     help;
     help set;
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -70,11 +70,11 @@ expected_stdout_1 = """
     SET TERM <string>      -- change statement terminator string
     SET WIDTH <col> [<n>]  -- set/unset print width to <n> for column <col>
     All commands may be abbreviated to letters in CAPitals
-  """
+"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

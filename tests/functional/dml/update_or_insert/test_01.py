@@ -23,8 +23,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 test_script_1 = """UPDATE OR INSERT INTO TMPTEST(id, name) VALUES (1,'bob' );
 select name from TMPTEST where id =1;
 UPDATE OR INSERT INTO TMPTEST(id, name) VALUES (1,'ivan' );
-select name from TMPTEST where id =1;
-"""
+select name from TMPTEST where id =1;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -37,12 +36,11 @@ bob
 NAME
 ====================
 ivan
-
 """
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

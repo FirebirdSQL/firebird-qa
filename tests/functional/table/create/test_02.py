@@ -56,12 +56,11 @@ CONSTRAINT INTEG_7:
 CONSTRAINT INTEG_5:
   Unique key (C3)
 CONSTRAINT INTEG_9:
-  CHECK (c6>c5)
-"""
+CHECK (c6>c5)"""
 
 @pytest.mark.version('>=2.1')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

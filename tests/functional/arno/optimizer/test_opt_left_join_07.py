@@ -63,8 +63,7 @@ FROM
   Flowers f
   JOIN Colors c1 ON (c1.ColorID = f.ColorID)
   LEFT JOIN Colors c2 ON (c2.ColorID = c1.ColorID)
-  JOIN Colors c3 ON (c3.ColorID = c1.ColorID);
-"""
+JOIN Colors c3 ON (c3.ColorID = c1.ColorID);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -75,12 +74,11 @@ expected_stdout_1 = """PLAN JOIN (JOIN (JOIN (F NATURAL, C1 INDEX (PK_COLORS)), 
 
            1            1            1            1
            2            2            2            2
-           0            0            0            0
-"""
+0            0            0            0"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

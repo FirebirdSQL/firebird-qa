@@ -23,7 +23,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -274,9 +274,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  
 #  cleanup( (f_db_stat_log, f_db_stat_err, f_db_encr_log, f_db_encr_err) )
 #  
-#    
 #---
-#act_1 = python_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Found in base "sts_" output: rdb$database
@@ -303,11 +302,10 @@ expected_stdout_1 = """
     Found in "sts_encryption" output: blob pages: total 0, encrypted 0, non-crypted 0
     Found in "sts_encryption" output: generator pages: total 1, encrypted 0, non-crypted 1
     Records affected: 0
-  """
+"""
 
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(db_1):
+def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 
 

@@ -100,7 +100,7 @@ test_script_1 = """
 
     set decfloat round reround;
     select 'reround' as round_mode, v.* from v_test2 v; --   +80.44; -80.44
-  """
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -177,11 +177,11 @@ expected_stdout_1 = """
     R6 -12.34
     RX 80.44
     RY -80.44
- """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

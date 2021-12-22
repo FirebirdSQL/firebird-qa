@@ -2,35 +2,35 @@
 #
 # id:           functional.gtcs.dsql_domain_21
 # title:        GTCS/tests/DSQL_DOMAIN_21. Verify result of ALTER DOMAIN with changing DEFAULT values and DROP constraints when a table exists with field based on this domain.
-# decription:
+# decription:   
 #               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_21.script
-#
+#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_21.script 
+#               
 #                   Comment in GTCS:
 #                       This script will test using the alter domain statement on domains that are already in use in table definitions,
 #                       with domain defaults and check constraints.
 #                       Related bugs: have to exit db for changes made to domains to affect data being entered into tables.
-#
+#               
 #                   We create domains with default values and constraints. Initially we use such default values that PASS requirements of check-constraints.
 #                   Statement INSERT DEFAULT and query to the test table is used in order to ensure that we have ability to use such values.
-#
+#               
 #                   Then we change values in DEFAULT clause so that all of them will VILOLATE check expressions. Here take domains one-by-one and try to user
 #                   INSERT DEFAULT after each such change of DEFAULT value. Every such attempt must fail.
-#
+#               
 #                   Then we drop CHECK constraints in all domains and again try INSERT DEFAULT. It must pass and new default values must be stored in the test table.
 #                   Finally, we drop DEFAULT in all domains and try INSERT DEFAULT one more time. It must result to NULL value in all fields.
-#
+#               
 #                   ::: NB::: Changing default value for BLOB field to one that violates CHECK-expression of domain leads to strange message that does not
-#                   relates to actual problem: SQLSTATE = 22018 / conversion error from string "BLOB". See CORE-6297 for details.
-#
+#                   relates to actual problem: SQLSTATE = 22018 / conversion error from string "BLOB". See CORE-6297 for details. 
+#                   
 #                   ::: NOTE :::
 #                   Added domains with datatype that did appear only in FB 4.0: DECFLOAT and TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
-#
+#               
 #                   Checked on 4.0.0.1954.
-#
+#               
 #                   08.04.2021: changed expected output for date 01-jan-0001 after discuss with Adriano.
-#
-# tracker_id:
+#                
+# tracker_id:   
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
@@ -75,7 +75,7 @@ test_script_1 = """
     commit;
 
     create domain dom21_01 as smallint default -32768 check (value not in ( select r.rdb$relation_id from rdb$relations r where r.rdb$system_flag = 1 ) );
-
+	
     create domain dom21_02 as int default 1500
 	check (
         value in (
@@ -203,13 +203,13 @@ test_script_1 = """
           67,66,65,64,63,62,61,60,59,58,57,56,55,54,53,52,51,50,49,48,47,46,45,44,43,42,41,40,39,38,37,36,35,34,33,32,
           31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1
        )
-    )
+    )	
 	;
-
+	
     create domain dom21_04 as date default '01.01.1980' check ( value >='01.01.0001' and value <= '30.12.9999');
-
+	
     create domain dom21_05 as time default '23:59:59.999' check ( extract(hour from value) >=21 );
-
+	
     create domain dom21_06 as time with time zone default '11:11:11.111 Indian/Cocos' check ( extract(hour from value) <=12 );
     create domain dom21_07 as timestamp default '01.01.0001 00:00:01.001' check ( extract(minute from value) = 0 );
     create domain dom21_08 as timestamp with time zone default '21.12.2013 11:11:11.111 Indian/Cocos'  check ( extract(minute from value) <=30 );
@@ -221,30 +221,30 @@ test_script_1 = """
 	create domain dom21_11 as nchar(1) default 'Ö' check( value in ('Ö', 'Ø') );
     create domain dom21_12 as binary(2) default 'Œ' check( value in ('Œ', 'Ÿ', '¿') ); -- this datatype is alias for char(N) character set octets
     create domain dom21_13 as varbinary(2) default 'Œ' check( value in ('Œ', 'Ÿ', '¿') );
-
+	
     create domain dom21_14 as numeric(2,2) default -327.68 check ( value < 0 );
 	create domain dom21_15 as decimal(20,2) default -999999999999999999 check( value < 0 );
-
+	
 	-- Online evaluation of expressions: https://www.wolframalpha.com
 
 	-- https://en.wikipedia.org/wiki/Single-precision_floating-point_format
 	-- (largest number less than one):  1 - power(2,-24)
 	create domain dom21_16 as float default 0.999999940395355224609375 check( abs(value) < 1 );
-
+	
 	-- https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 	-- Max Double: power(2,1023) * ( 1+(1-power(2,-52) )
 	create domain dom21_17 as double precision default 1.7976931348623157e308 check( abs(value) > 1 );
-
+    
 	create domain dom21_18 as blob default 'Ø' check( value in ('Ö', 'Ø') );
     create domain dom21_19 as blob sub_type text default 'W' check (value > '');
     create domain dom21_20 as blob sub_type binary default 'f' check (value similar to '([0-9]|[a-f]){1,}');
-
+	
 
     create domain dom21_21 as boolean default false check ( value is not true );
     create domain dom21_22 as decfloat(16) default -9.999999999999999E+384 check( log10(abs(value)) >= 384 );
     create domain dom21_23 as decfloat default -9.999999999999999999999999999999999E6144 check( log10(abs(value)) >= 6144 );
-    commit;
-
+    commit;	
+	
 	--select * from v_test;
 
     recreate table test(
@@ -273,19 +273,19 @@ test_script_1 = """
         ,f23 dom21_23
 	);
 	commit;
-
+    
 	set bail off; -- ### NB ###
-
+	
 	insert into test default values; -- this must PASS
 	select 'point-1' as msg, t.* from test t;
 	rollback;
-
+	
 	----------------------------------
 	-- Now we change DEFAULT values of domains so that they become violate CHECK expressions:
 	alter domain dom21_01 set default 1;
 	insert into test default values; -- this must FAIL with SQLSTATE = 23000 / validation error for column "TEST"."F01", value "1"
 	alter domain dom21_01 drop constraint; -- in order to have ability to test next domain and field
-
+	
 	alter domain dom21_02 set default -1;
 	insert into test default values; -- validation error for column "TEST"."F02", value "-1"
 	alter domain dom21_02 drop constraint;
@@ -293,7 +293,7 @@ test_script_1 = """
 	alter domain dom21_03 set default 1;
 	insert into test default values; -- validation error for column "TEST"."F03", value "1"
 	alter domain dom21_03 drop constraint;
-
+	
 	alter domain dom21_04 set default '31.12.9999';
 	insert into test default values; -- validation error for column "TEST"."F04", value "9999-12-31"
 	alter domain dom21_04 drop constraint;
@@ -305,7 +305,7 @@ test_script_1 = """
 	alter domain dom21_06 set default '13:00:00 Indian/Cocos';
 	insert into test default values; -- validation error for column "TEST"."F06", value "13:00:00.0000 Indian/Cocos"
 	alter domain dom21_06 drop constraint;
-
+	
 	alter domain dom21_07 set default '01.01.0001 01:01:01.001';
 	insert into test default values; -- validation error for column "TEST"."F07", value "01-JAN-1 1:01:01.0010" // changed 08.04.2021, was: '1-jan'
 	alter domain dom21_07 drop constraint;
@@ -375,12 +375,12 @@ test_script_1 = """
 	alter domain dom21_23 drop constraint;
 
     ---------------------------------------
-	-- Now we have NO constraints in any domain.
+	-- Now we have NO constraints in any domain. 
 	-- We can run again INSERT DEFAULT and verify that new values appear in the table
 	insert into test default values; -- this must PASS
 	select 'point-2' as msg, t.* from test t; -- all values must have now NEW defaults for domains
 	rollback;
-
+	
 	alter domain dom21_01 drop default;
 	alter domain dom21_02 drop default;
 	alter domain dom21_03 drop default;
@@ -408,13 +408,13 @@ test_script_1 = """
 	insert into test default values; -- this must PASS
 	select 'point-3' as msg, t.* from test t; -- all values now must be NULL
 	rollback;
-
-  """
+  
+"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-	MSG                             point-1
+	MSG                             point-1                     
 	F01                             -32768
 	F02                             1500
 	F03                             -9223372036854775807
@@ -423,9 +423,9 @@ expected_stdout_1 = """
 	F06                             11:11:11.1110 Indian/Cocos
 	F07                             0001-01-01 00:00:01.0010
 	F08                             2013-12-21 11:11:11.1110 Indian/Cocos
-	F09                             €
+	F09                             € 
 	F10                             ¢
-	F11                             Ö
+	F11                             Ö  
 	F12                             C592
 	F13                             C592
 	F14                             -327.68
@@ -444,7 +444,7 @@ expected_stdout_1 = """
 
 
 
-	MSG                             point-2
+	MSG                             point-2                     
 	F01                             1
 	F02                             -1
 	F03                             1
@@ -453,9 +453,9 @@ expected_stdout_1 = """
 	F06                             13:00:00.0000 Indian/Cocos
 	F07                             0001-01-01 01:01:01.0010
 	F08                             2013-12-21 10:31:00.0000 Indian/Cocos
-	F09                             Ő
-	F10
-	F11
+	F09                             Ő  
+	F10                             
+	F11                                 
 	F12                             C398
 	F13                             C2A2
 	F14                             327.67
@@ -474,7 +474,7 @@ expected_stdout_1 = """
 
 
 
-	MSG                             point-3
+	MSG                             point-3                     
 	F01                             <null>
 	F02                             <null>
 	F03                             <null>
@@ -498,7 +498,7 @@ expected_stdout_1 = """
 	F21                             <null>
 	F22                             <null>
 	F23                             <null>
-  """
+"""
 expected_stderr_1 = """
 	Statement failed, SQLSTATE = 23000
 	validation error for column "TEST"."F01", value "1"
@@ -568,13 +568,14 @@ expected_stderr_1 = """
 
 	Statement failed, SQLSTATE = 23000
 	validation error for column "TEST"."F23", value "-9.999999999999999999999999999999999E+6142"
-  """
+"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
-    act_1.execute(charset='utf8')
-    assert act_1.clean_expected_stderr == act_1.clean_stderr
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    act_1.execute()
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

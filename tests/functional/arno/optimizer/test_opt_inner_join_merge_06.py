@@ -84,8 +84,7 @@ SELECT
 FROM
   Table_100 t100
   JOIN Table_10 t10 ON (t10.ID = t100.ID)
-  JOIN PR_List_1000 sp1000 ON (sp1000.ID = t10.ID);
-"""
+JOIN PR_List_1000 sp1000 ON (sp1000.ID = t10.ID);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -94,12 +93,11 @@ expected_stdout_1 = """PLAN HASH (T100 NATURAL, T10 NATURAL, SP1000 NATURAL)
                 COUNT
 =====================
                     5
-
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

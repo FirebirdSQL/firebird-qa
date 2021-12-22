@@ -45,17 +45,17 @@ test_script_1 = """SELECT
 FROM
   Table_10 t10
 WHERE
-  t10.ID IN (SELECT MAX(t1.ID) FROM Table_10 t1);"""
+t10.ID IN (SELECT MAX(t1.ID) FROM Table_10 t1);"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """          ID DESCRIPTION
 ============ ===========
-           9 nine"""
+9 nine"""
 
 @pytest.mark.version('>=2.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 

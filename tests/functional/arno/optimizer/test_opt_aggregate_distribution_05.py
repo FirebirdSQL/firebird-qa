@@ -88,7 +88,7 @@ SELECT
 FROM
   UsedColors v
 WHERE
-  v.ColorID >= 1;"""
+v.ColorID >= 1;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
@@ -102,12 +102,11 @@ expected_stdout_1 = """PLAN SORT (JOIN (V F INDEX (FK_FLOWERS_COLORS), V C INDEX
            4 Yellow                                   2
            5 Black                                    1
            6 Purple                                   1
-
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
-    assert act_1.clean_expected_stdout == act_1.clean_stdout
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
