@@ -1146,6 +1146,9 @@ class Action:
     def bin_dir(self) -> Path:
         return _vars_['bin-dir']
     @property
+    def files_dir(self) -> Path:
+        return _vars_['files']
+    @property
     def platform(self) -> str:
         return _platform
 
