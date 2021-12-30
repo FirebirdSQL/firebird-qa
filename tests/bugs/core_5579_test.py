@@ -168,7 +168,7 @@ fdb_file_1 = temp_file('core_5579_broken_nn.fdb')
 @pytest.mark.version('>=2.5.8')
 def test_1(act_1: Action, fdb_file_1: Path, fbk_file_1: Path):
     pattern = re.compile('[.*]*request\\s+synchronization\\s+error\\.*', re.IGNORECASE)
-    zipped_fbk_file = zipfile.Path(act_1.vars['files'] / 'core_5579_broken_nn.zip',
+    zipped_fbk_file = zipfile.Path(act_1.files_dir / 'core_5579_broken_nn.zip',
                                    at='core_5579_broken_nn.fbk')
     fbk_file_1.write_bytes(zipped_fbk_file.read_bytes())
     with act_1.connect_server() as srv:

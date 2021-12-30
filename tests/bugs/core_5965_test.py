@@ -175,7 +175,7 @@ fbk_file = temp_file('core_5965.fbk')
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, fbk_file: Path, db_1_tmp: Database, capsys):
-    zipped_fbk_file = zipfile.Path(act_1.vars['files'] / 'core_5965.zip',
+    zipped_fbk_file = zipfile.Path(act_1.files_dir / 'core_5965.zip',
                                    at='core_5965.fbk')
     fbk_file.write_bytes(zipped_fbk_file.read_bytes())
     #

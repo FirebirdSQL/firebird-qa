@@ -267,7 +267,7 @@ expected_stdout_2 = """
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action, capsys):
-    sql_text = (act_2.vars['files'] / 'core_4766.sql').read_text()
+    sql_text = (act_2.files_dir / 'core_4766.sql').read_text()
     # ::: NB :::
     # Only Legacy_UserManager is checked for FB 4.0. Srp has totally different behaviour, at  least for 4.0.0.1714.
     # Sent letter to dimitr and alex, 05.01.2020 22:00.

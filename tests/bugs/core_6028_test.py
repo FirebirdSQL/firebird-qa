@@ -254,7 +254,7 @@ ddl_probes = ["""
 
 @pytest.mark.version('>=3.0.5')
 def test_1(act_1: Action, fbk_file_1: Path, db_1_tmp: Database, capsys):
-    zipped_fbk_file = zipfile.Path(act_1.vars['files'] / 'core_6028_25.zip',
+    zipped_fbk_file = zipfile.Path(act_1.files_dir / 'core_6028_25.zip',
                                    at='core_6028_25.fbk')
     fbk_file_1.write_bytes(zipped_fbk_file.read_bytes())
     #

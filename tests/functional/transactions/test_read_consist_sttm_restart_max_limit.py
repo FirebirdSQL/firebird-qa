@@ -1063,6 +1063,7 @@ bt-repo	mp	mp_sttm_restart_max_limit.sql
 """
 
 @pytest.mark.version('>=4.0')
+@pytest.mark.xfail
 def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 

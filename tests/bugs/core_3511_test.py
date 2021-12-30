@@ -167,6 +167,7 @@ test_user_2 = user_factory('db_2', name='tmp$c3511', password='123', plugin='Srp
 
 @pytest.mark.version('>=3.0')
 @pytest.mark.platform('Windows')
+@pytest.mark.xfail
 def test_2(act_2: Action, test_user_2: User):
     pytest.fail("Test not IMPLEMENTED")
 

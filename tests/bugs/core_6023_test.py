@@ -138,7 +138,7 @@ fbk_file = temp_file('core_6023.fbk')
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, fdb_112_file: Path, fbk_file: Path):
-    zipped_fdb_file = zipfile.Path(act_1.vars['files'] / 'core_6023-ods-11_2-fdb.zip',
+    zipped_fdb_file = zipfile.Path(act_1.files_dir / 'core_6023-ods-11_2-fdb.zip',
                                    at='core_6023-ods-11_2.fdb')
     fdb_112_file.write_bytes(zipped_fdb_file.read_bytes())
     # Change permissions

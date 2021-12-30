@@ -185,10 +185,10 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     # Read script and expected stdout from zip file
-    datafile = Path(act_1.vars['files'] / 'core_2115.zip',
+    datafile = Path(act_1.files_dir / 'core_2115.zip',
                     at='tmp_core_2115_queries_with_long_plans.sql')
     act_1.script = datafile.read_text()
-    datafile = Path(act_1.vars['files'] / 'core_2115.zip',
+    datafile = Path(act_1.files_dir / 'core_2115.zip',
                     at='tmp_core_2115_check_txt_of_long_plans.log')
     act_1.expected_stdout = datafile.read_text()
     act_1.execute()

@@ -193,7 +193,7 @@ fdb_file_1 = temp_file('check_restored_5719.fdb')
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path):
-    zipped_fbk_file = zipfile.Path(act_1.vars['files'] / 'core_5719-ods-11_2.zip',
+    zipped_fbk_file = zipfile.Path(act_1.files_dir / 'core_5719-ods-11_2.zip',
                                    at='core5719-ods-11_2.fbk')
     fbk_file_1.write_bytes(zipped_fbk_file.read_bytes())
     log_before = act_1.get_firebird_log()

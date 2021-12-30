@@ -44,7 +44,7 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
-    script_file = Path(act_1.vars['files'] / 'core_4881.zip',
+    script_file = Path(act_1.files_dir / 'core_4881.zip',
                        at='core_4881_script.sql')
     act_1.script = script_file.read_text()
     act_1.expected_stdout = expected_stdout_1

@@ -119,12 +119,12 @@ expected_stdout_1 = """
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     # Read FNC scripts from zip file and execute it
-    script_file = Path(act_1.vars['files'] / 'core_4880.zip',
+    script_file = Path(act_1.files_dir / 'core_4880.zip',
                     at='core_4880_fnc.tmp')
     act_1.script = script_file.read_text()
     act_1.execute()
     # Read PKG scripts from zip file and execute it
-    script_file = Path(act_1.vars['files'] / 'core_4880.zip',
+    script_file = Path(act_1.files_dir / 'core_4880.zip',
                     at='core_4880_pkg.tmp')
     act_1.script = script_file.read_text()
     act_1.execute()

@@ -81,6 +81,7 @@ expected_stdout_1 = """[(65,)]
 [(0,)]"""
 
 @pytest.mark.version('>=2.1')
+@pytest.mark.xfail
 def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 

@@ -34,6 +34,7 @@ expected_stdout_1 = """RDB$SYSTEM_FLAG LIST
 1               SYSDBA"""
 
 @pytest.mark.version('>=2.1')
+@pytest.mark.xfail
 def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 

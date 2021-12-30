@@ -296,7 +296,7 @@ non_privileged_user = user_factory('db_1', name='tmp_c4731_manager', password='1
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action, dba_privileged_user: User, non_privileged_user: User, capsys):
     # Run prepare script
-    prep_script = (act_1.vars['files'] / 'core_4731.sql').read_text()
+    prep_script = (act_1.files_dir / 'core_4731.sql').read_text()
     prep_script = prep_script % {'dba_privileged_name': dba_privileged_user.name,
                                  'non_privileged_name': non_privileged_user.name}
     act_1.isql(switches=['-q'], input=prep_script)

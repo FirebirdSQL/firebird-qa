@@ -275,7 +275,7 @@ def test_1(act_1: Action, user_0_1: User, user_1_1: User, user_2_1: User):
     script_vars = {'dsn': act_1.db.dsn,
                    'user_name': act_1.db.user,
                    'user_password': act_1.db.password,}
-    script_file = act_1.vars['files'] / 'core_6078.sql'
+    script_file = act_1.files_dir / 'core_6078.sql'
     script = script_file.read_text() % script_vars
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=['-q'], input=script, combine_output=True)
@@ -532,7 +532,7 @@ def test_2(act_2: Action, user_0_2: User, user_1_2: User, user_2_2: User):
     script_vars = {'dsn': act_2.db.dsn,
                    'user_name': act_2.db.user,
                    'user_password': act_2.db.password,}
-    script_file = act_2.vars['files'] / 'core_6078.sql'
+    script_file = act_2.files_dir / 'core_6078.sql'
     script = script_file.read_text() % script_vars
     act_2.expected_stdout = expected_stdout_2
     act_2.isql(switches=['-q'], input=script, combine_output=True)

@@ -63,6 +63,7 @@ expected_stdout_1 = """Error while connecting to database:
 335544517"""
 
 @pytest.mark.version('>=2.1')
+@pytest.mark.xfail
 def test_1(act_1: Action):
     pytest.fail("Test not IMPLEMENTED")
 

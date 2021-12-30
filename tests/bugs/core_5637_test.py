@@ -219,7 +219,7 @@ sec_fdb_1 = temp_file('core5637-security3.fdb')
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, sec_fbk_1: Path, sec_fdb_1: Path):
-    zipped_fbk_file = zipfile.Path(act_1.vars['files'] / 'core_5637.zip',
+    zipped_fbk_file = zipfile.Path(act_1.files_dir / 'core_5637.zip',
                                    at='core5637-security3.fbk')
     sec_fbk_1.write_bytes(zipped_fbk_file.read_bytes())
     #

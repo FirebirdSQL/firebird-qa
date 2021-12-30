@@ -56,7 +56,7 @@ expected_stdout_1 = """
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=[], input_file=act_1.vars['files'] / 'core_4882.sql')
+    act_1.isql(switches=[], input_file=act_1.files_dir / 'core_4882.sql')
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 
