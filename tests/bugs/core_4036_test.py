@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_4036
 # title:        Bugcheck or database corruption when attempting to store long incompressible data into a table
-# decription:
+# decription:   
 # tracker_id:   CORE-4036
 # min_versions: ['2.1.6']
 # versions:     2.1.6
@@ -16,7 +16,7 @@ from firebird.qa import db_factory, isql_act, Action
 
 substitutions_1 = []
 
-init_script_1 = """create table tw(s01 varchar(32600) character set octets, s02 varchar(32600) character set octets);
+init_script_1 = """create table tw(s01 varchar(32600), s02 varchar(32600));
 commit;"""
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)

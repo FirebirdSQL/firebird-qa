@@ -10,16 +10,26 @@
 #               
 #                   Currently we check only ability to change TAGS list using 'ALTER CURRENT USER' statement.
 #                   See also test for CORE-3365, but it checks only 'old' attributes which existed before FB 3.0.
+#               
+#                   25.05.2021. Checked on:
+#                       5.0.0.47 SS: 1.764s.
+#                       5.0.0.40 CS: 2.257s.
+#                       4.0.0.2491 SS: 1.476s.
+#                       4.1.0.2468 CS: 2.386s.
+#                       3.0.8.33468 SS: 1.091s.
+#                       3.0.8.33452 CS: 2.456s.
+#                   Test can be enabled for execution (was excluded 23-jan-2019).
+#               
 #                 
 # tracker_id:   CORE-5827
-# min_versions: ['4.0.0']
-# versions:     4.0
+# min_versions: ['3.0.4']
+# versions:     3.0.4
 # qmid:         None
 
 import pytest
 from firebird.qa import db_factory, isql_act, Action
 
-# version: 4.0
+# version: 3.0.4
 # resources: None
 
 substitutions_1 = []
@@ -48,11 +58,9 @@ test_script_1 = """
     create user tmp$c5827
         password 'UseSrp'
         firstname 'Mary'
-
     -- NB: no error will be raised if we UNCOMMENT this line; IMO this is bug, see ticket issue; 
     -- TODO: comment must be here, put it later when this ticket issue will be fixed.
-    grant admin role
-
+    -- >>> commented 25.05.2021 >>> grant admin role <<< all OK.
     using plugin Srp
         tags (
              key1 = 'val111'
@@ -94,7 +102,7 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=3.0.4')
 def test_1(act_1: Action):
     act_1.execute()
 

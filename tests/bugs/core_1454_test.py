@@ -27,7 +27,7 @@ init_script_1 = """
     
     insert into t (f1,f2) values ('0123456789','abcdefghij');
     commit;
-"""
+  """
 
 db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 
@@ -59,32 +59,23 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-F1                              0123456789
-F2                              abcdefghij
-CF                              0123456789 - abcdefghij
-
-
-
-FLD_NAME                        CF                                                                                                                          
-FLD_EXPR                        (f1 || ' - ' || f2)
-FLD_LENGTH                      92
-
-
-
-F1                              0123456789
-F2                              abcdefghij
-CF                              0123456789 - abcdefghij - more
-
-
-
-FLD_NAME                        CF                                                                                                                          
-FLD_EXPR                        (f1 || ' - ' || f2 || ' - more')
-FLD_LENGTH                      120
+    F1                              0123456789
+    F2                              abcdefghij
+    CF                              0123456789 - abcdefghij
+    FLD_NAME                        CF                                                                                           
+    FLD_EXPR                        (f1 || ' - ' || f2)
+    FLD_LENGTH                      23
+    F1                              0123456789
+    F2                              abcdefghij
+    CF                              0123456789 - abcdefghij - more
+    F1                              0123456789
+    F2                              abcdefghij
+    CF                              0123456789 - abcdefghij - more
+    FLD_NAME                        CF                                                                                           
+    FLD_EXPR                        (f1 || ' - ' || f2 || ' - more')
+    FLD_LENGTH                      30
 """
 
 @pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 

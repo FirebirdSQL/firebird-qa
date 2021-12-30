@@ -5,6 +5,7 @@
 # decription:   
 #                  Checked on 4.0.0.477
 #                  18.08.2020: replaced expected_stdout, checked on 4.0.0.2164.
+#                  31.08.2021: added substitution for ignore difference in BLR offset values.
 #                
 # tracker_id:   CORE-5431
 # min_versions: ['4.0']
@@ -17,7 +18,7 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 4.0
 # resources: None
 
-substitutions_1 = [('RDB\\$[\\d]+', 'RDB')]
+substitutions_1 = [('RDB\\$[\\d]+', 'RDB'), ('.*at offset [\\d]+', 'at offset')]
 
 init_script_1 = """"""
 
@@ -76,5 +77,6 @@ def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_stderr == act_1.clean_expected_stderr
+
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 

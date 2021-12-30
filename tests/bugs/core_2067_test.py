@@ -50,7 +50,6 @@ expected_stdout_1 = """
            1 8000000001000000
            2 8000000002000000
            3 8000000003000000
-
 """
 expected_stderr_1 = """Statement failed, SQLSTATE = 42000
 Dynamic SQL Error
@@ -64,5 +63,6 @@ def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_stderr == act_1.clean_expected_stderr
+
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 

@@ -2,11 +2,11 @@
 #
 # id:           bugs.core_5884
 # title:        Initial global mapping from srp plugin does not work
-# decription:
+# decription:   
 #                  Confirmed bug on: 3.0.4.33020, 4.0.0.1143 ('TEST2' was shown instead of 'GTOST').
 #                  Checked on:
 #                    FB30SS, build 3.0.4.33021: OK, 2.312s.
-#
+#                
 # tracker_id:   CORE-5884
 # min_versions: ['3.0.4']
 # versions:     3.0.4
@@ -28,7 +28,7 @@ test_script_1 = """
     set list on;
 
     create or alter mapping lmap using plugin srp from user tmp$c5884_1 to user ltost;
-    create or alter global mapping gmap using plugin srp from user tmp$c5884_2 to user gtost;
+    create or alter global mapping gmap using plugin srp from user tmp$c5884_2 to user gtost; 
     commit;
 
     connect '$(DSN)' user tmp$c5884_1 password '123';
@@ -51,8 +51,8 @@ test_script_1 = """
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    WHOAMI                          TMP$C5884_1
-    WHOAMI                          TMP$C5884_2
+    WHOAMI                          LTOST
+    WHOAMI                          GTOST
 """
 
 user_1a = user_factory('db_1', name='tmp$c5884_1', password='123', plugin='Srp')

@@ -19,13 +19,13 @@
 #                
 # tracker_id:   CORE-2756
 # min_versions: ['2.5.1']
-# versions:     4.0
+# versions:     2.5.1, 4.0
 # qmid:         None
 
 import pytest
 from firebird.qa import db_factory, isql_act, Action
 
-# version: 4.0
+# version: 2.5.1
 # resources: None
 
 substitutions_1 = []
@@ -35,6 +35,38 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
+    set list on;
+    select
+        iif( dts similar to '[[:DIGIT:]]{4}[-][[:DIGIT:]]{2}[-][[:DIGIT:]]{2}[ ]', 1, 0) matching_result
+    from (
+        select
+        substring(current_timestamp from 1 for 11) dts
+        from rdb$database
+    ) x;
+"""
+
+act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+
+expected_stdout_1 = """
+    MATCHING_RESULT                 1
+"""
+
+@pytest.mark.version('>=2.5.1,<4.0')
+def test_1(act_1: Action):
+    act_1.expected_stdout = expected_stdout_1
+    act_1.execute()
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
+
+# version: 4.0
+# resources: None
+
+substitutions_2 = []
+
+init_script_2 = """"""
+
+db_2 = db_factory(sql_dialect=3, init=init_script_2)
+
+test_script_2 = """
     set list on;
     set time zone '+00:00';
 
@@ -65,9 +97,9 @@ test_script_1 = """
     ) x;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
-expected_stdout_1 = """
+expected_stdout_2 = """
     YEAR_AS_NUMERIC                 Looks as expected
     YEAR_MONTH_SEPARATOR            Looks as expected
     MONTH_AS_NUMERIC                Looks as expected
@@ -89,8 +121,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_2(act_2: Action):
+    act_2.expected_stdout = expected_stdout_2
+    act_2.execute()
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 

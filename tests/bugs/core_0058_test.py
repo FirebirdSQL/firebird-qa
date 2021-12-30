@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0058
 # title:        WHERE CURRENT OF doesn't work
-# decription:
+# decription:   
 # tracker_id:   CORE-0058
 # min_versions: ['2.5.0']
 # versions:     2.5
@@ -22,7 +22,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     -- NB: changed expected value of SQLSTATE to actual. See comment in git:
-    -- "Prevent stack trace (line/column info) from overriding the real error's SQLSTATE", 30-apr-2016
+    -- "Prevent stack trace (line/column info) from overriding the real error's SQLSTATE", 30-apr-2016 
     -- https://github.com/FirebirdSQL/firebird/commit/d1d8b36a07d4f11d98d2c8ec16fb8ec073da442b // FB 4.0
     -- https://github.com/FirebirdSQL/firebird/commit/849bfac745bc9158e9ef7990f5d52913f8b72f02 // FB 3.0
     -- https://github.com/FirebirdSQL/firebird/commit/b9d4142c4ed1fdf9b7c633edc7b2425f7b93eed0 // FB 2.5
@@ -36,13 +36,13 @@ test_script_1 = """
     commit;
 
     set term ^;
-    create procedure test_upd(d integer) as
+    create procedure test_upd(d integer) as 
         declare c cursor for (
             select a from test
         );
     begin
         open c;
-        update test set a = a + :d
+        update test set a = a + :d 
         where current of c;
         close c;
     end
@@ -65,5 +65,5 @@ expected_stderr_1 = """
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
 

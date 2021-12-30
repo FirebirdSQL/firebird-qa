@@ -7,6 +7,12 @@
 #                 Query to isc_database_info does not perform.
 #               
 #                 Checked on 4.0.0.2342.
+#               
+#                 11.10.2021: adjusted output because variable 'REPLICA_MODE' now returns as NULL rather than empty string.
+#                 Checked on 4.0.1.2628, 5.0.0.249.
+#                 See commits:
+#                     https://github.com/FirebirdSQL/firebird/commit/1ab406491282f06d8d8d7df260b500310b157aa1
+#                     https://github.com/FirebirdSQL/firebird/commit/bedaf9d235c81f76a0ef170ed81dc1e7f47adbfa
 # tracker_id:   CORE-6474
 # min_versions: ['4.0']
 # versions:     4.0
@@ -34,7 +40,7 @@ act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
     MON_REPLICA_MODE                0
-    CTX_REPLICA_MODE                ><
+    CTX_REPLICA_MODE                <null>
 """
 
 @pytest.mark.version('>=4.0')

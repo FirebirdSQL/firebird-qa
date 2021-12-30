@@ -11,15 +11,26 @@
 #                       -too many versions
 #                  NB: we have to change FW to OFF in order to increase speed of this test run thus use test_type = Python.
 #
+#                  05.05.2021.
+#                  Reduced min_version to 3.0.8 after this feature was backported to FB 3.x, see:
+#                  https://github.com/FirebirdSQL/firebird/commit/14eac8b76bb4d2fb339e5387dd86927961e77d46
+#
+#                  Re-implemented in order to generate SQL script with more than 2K changes of view format
+#                  (see 'FORMAT_CHANGES_LIMIT': this value must be multiplied for 2 in order to get actual number of format changes)
+#
+#                  Checked on intermediate build 3.0.8.33465, timestamp: 05.05.2021 11:26.
+#                  Duration: 4.0.0.2465 ~17s; 3.0.8.33465: ~24s
+#                  21.05.2021: changed connection protocol to local, time reduced from 19 to 15 seconds.
+#
 # tracker_id:   CORE-5647
-# min_versions: ['4.0']
-# versions:     4.0
+# min_versions: ['3.0.8']
+# versions:     3.0.8
 # qmid:
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
 
-# version: 4.0
+# version: 3.0.8
 # resources: None
 
 substitutions_1 = []
@@ -110,7 +121,7 @@ test_script_1 = """
     quit;
 """
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=3.0.8')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.isql(switches=[], input=test_script_1)

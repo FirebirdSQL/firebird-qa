@@ -25,7 +25,6 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 test_script_1 = """SET PLANONLY;
 select * from t as t1
   left join t as t2 on t2.dbkey = t1.rdb$db_key;
-
 """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
