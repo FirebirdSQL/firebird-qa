@@ -227,6 +227,9 @@ def write_tests(root_path: Path, verbose: bool=False):
         if test_file.name.startswith('core_'):
             if not test_file.stem.endswith('_test'):
                 test_file = test_file.with_name(test_file.stem + '_test.py')
+        elif test_file.name.startswith('gh_'):
+            if not test_file.stem.endswith('_test'):
+                test_file = test_file.with_name(test_file.stem + '_test.py')
         else:
             if not test_file.name.startswith('test_'):
                 test_file = test_file.with_name('test_' + test_file.name)
