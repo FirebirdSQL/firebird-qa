@@ -868,7 +868,6 @@ expected_stdout_2 = """
 def test_2(act_2: Action):
     pytest.skip("Requires change to databases.conf / firebird.conf")
 
-
 # version: 5.0
 # resources: None
 
@@ -1179,6 +1178,7 @@ db_3 = db_factory(sql_dialect=3, init=init_script_3)
 #  # cleanup( [ i.name for i in f_list ] + [fdb_test] )
 #
 #---
+
 act_3 = python_act('db_3', substitutions=substitutions_3)
 
 expected_stdout_3 = """
@@ -1264,7 +1264,6 @@ expected_stdout_3 = """
 @pytest.mark.platform('Linux')
 def test_3(act_3: Action):
     pytest.skip("Requires change to databases.conf / firebird.conf")
-
 
 # version: 5.0
 # resources: None
@@ -1666,6 +1665,3 @@ expected_stdout_4 = """
 @pytest.mark.platform('Windows')
 def test_4(act_4: Action):
     pytest.skip("Requires change to databases.conf / firebird.conf")
-
-
-

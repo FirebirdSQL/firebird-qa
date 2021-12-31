@@ -110,8 +110,7 @@ test_script_2 = """
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
-
 @pytest.mark.version('>=4.0.1')
 def test_2(act_2: Action):
     act_2.execute()
-
+    assert act_2.clean_stdout == act_2.clean_expected_stdout

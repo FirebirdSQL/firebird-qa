@@ -3,20 +3,56 @@
 # id:           bugs.core_6348
 # title:        Wire compression causes freezes
 # decription:
-#                   Test does TWO measures related to speed of loading big blob into database:
-#                       1) when WireCompression = true
-#                       2) when WireCompression = false
-#                   (see below usage of 'WIRE_COMPRESSION_VALUE' variable)
-#                   Then we compare elapsed time (stored in milliseconds) between these two measures.
+#                   Test was created at JULY-2020.
+#                   Lot of runs of this test *previous* version often showed outcome = 'F' (failed).
 #
-#                   Time of loading when WireCompression = true will be greater than time for WireCompression = false.
-#                   RATIO (i.e. <wc_ON> / <wc_OFF>) instead of absolute values is used as criteria for passing this test.
-#                   This ratio must not exceed threshold that was defined beforehand
-#                   I ran this test five times for each server mode, for FB 3.x and 4.x, both on Windows and Linux.
+#                   Following snapshots were deep tested DURING 15...19-NOV-2021 in order to get reason this:
+#                       ----------------------------------------
+#                        FB | Without fix     | With fix
+#                       ----|-----------------|-----------------
+#                       3.x | WI-V3.0.6.33330 | WI-V3.0.6.33332
+#                       4.x | WI-V4.0.0.2084  | WI-V4.0.0.2089
 #
-#                   Results depend primarily on OS: about 3.05 for Windows and 1.48 for Linux.
-#                   This difference looks strange and may be it is a good  idea to discussed this with FB developers.
-#                   CURRENTLY threshold is set to approx. double value of maximal detected ratio (see 'MAX_RATIO_THRESHOLD').
+#                   It was found out that:
+#                   1) there is no sence to compare performance of two possible cases of WireCompression parameter
+#                      in one snapshot (i.e. NO sense to set this parameter to false, then change it on true and compare results):
+#                      ratio between elapsed time in *all* four snapshots is approximately the same, about 1.20 ... 1.30
+#                      (and thus we can not to get difference between snapshots which have and have no fix of this bug).
+#                   2) It is NOT enough to see difference in performance by just changing from one snapshot to another.
+#                      Data that is used for loading into blob column must have GOOD or EXCELLENT degree of compression.
+#                      This is completely opposite to the data which was used in *previous* version of this test (.7z file)
+#                   3) One need to carefully choose length of data. If we use string with length >= 4 Mb then snapshots which
+#                      have this bug (3.0.6.33330 and 4.0.0.2084) can/will do their work EXTREMELY slow and all further tests
+#                      will not be executed because pof job termination (by scheduler when new instance of this job starts).
+#                      On the other hand, we must not use too short strings (less than 64 Kb) because otherwise one can not
+#                      to see how performance suffers on builds w/o fix.
+#                      After lot of runs (on Windows 2008 Server and Windows 10) it was decided to use length from 256 to 512 Kb.
+#                   4) There is no sense to measure CPU user_time (for example, using psutil package): all snapshots show almost
+#                      equal values of this value.
+#                   5) There is no sense to evaluate performance using trace because prepare and executing duration is about 0 ms.
+#                      But it must be noted snashots w/o fix have strange delay after PREPARE_STATEMENT and before EXECUTE_STATEMENT_START
+#                      actions.
+#                      This is example for blob length = 512K and FB 3.0.6.33330:
+#                      =====
+#                      2021-11-19T23:48:25.4400 ... PREPARE_STATEMENT
+#                      insert into test(b) values(?)
+#                      0 ms
+#
+#                      2021-11-19T23:48:33.6880 ... EXECUTE_STATEMENT_START
+#                      insert into test(b) values(?)
+#
+#                      2021-11-19T23:48:33.6880 ... EXECUTE_STATEMENT_FINISH
+#                      insert into test(b) values(?)
+#                      param0 = blob, "0000000000000001"
+#                      0 ms, 13 fetch(es), 9 mark(s)
+#                      =====
+#                      (NOTE on difference between 23:48:25.4400 and 23:48:33.6880 - it is more that 8000 ms!)
+#                    6) Bulds with fix can load blob very fast, for about 5...10 ms. Because of this, it was decided to use trivial way
+#                       for estimating outcome of this test: if we can load blob with length = <BLOB_LEN_KB> Kb for time less then
+#                       <MAX_THRESHOLD_MS> ms then test can be considered as passed (see apropriate settings below).
+#
+#                   ::: NB :::
+#                   Median value of list that has <N_MEASURES> results of measures is used for comparison with <MAX_THRESHOLD_MS>.
 #
 #                   NOTE-1
 #                       Test temporary changes firebird.conf, so any abnormal termination of it can cause
@@ -27,28 +63,22 @@
 #                       Otherwise one can not reproduce problem described in the ticket if original firebird.conf
 #                       We have to launch NEW (child) Python process which will run fully separately from current.
 #
-#                   NOTE-3
-#                       Test uses pre-created large binary file which can not be compressed: it is compressed trace log
-#                       with original size about 2.2 Gb which was processed by 7-Zip with '-mx9 -mfb273' switches.
-#
-#                   Confirmed bug on 4.0.0.1994: blob loading time is more than 120s.
-#                   Checked on 4.0.0.2089.
-#
-#
-#                   15.04.2021. Adapted for run both on Windows and Linux. Checked on:
-#                      Windows: 3.0.8.33445 SS/CS, 4.0.0.2422 SS/CS
-#                      Linux:   3.0.8.33445 SS/CS, 4.0.0.2422 SS/CS
+#                   19.11.2021: pre-created large binary file which was used for this test not needed anymore and has been deleted.
+#                   Checked on:
+#                       5.0.0.311 SS:   17.677s;   5.0.0.311 CS:   27.820s.
+#                       4.0.1.2660 SS:  17.589s;   4.0.1.2660 CS:  25.918s.
+#                       3.0.8.33535 SS: 13.108s;   3.0.8.33535 CS: 21.583s.
 #
 #
 # tracker_id:   CORE-6348
-# min_versions: ['3.0.6']
-# versions:     3.0.6
+# min_versions: ['3.0.7']
+# versions:     3.0.7
 # qmid:         None
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
 
-# version: 3.0.6
+# version: 3.0.7
 # resources: None
 
 substitutions_1 = []
@@ -72,18 +102,33 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#
-#  #############################
-#  ###   T H R E S H O L D   ###
-#  #############################
-#  MAX_SECONDS_FOR_LOAD = 15
-#
 #  db_conn.close()
 #
-#  #-----------------------------------
+#  ###########################
+#  ###   S E T T I N G S   ###
+#  ###########################
+#
+#  # Number of measures (how many times we must recreate table and load blob into it):
+#  N_MEASURES = 20
+#
+#  # Length of generated blob, Kb
+#  BLOB_LEN_KB = 512
+#
+#  # Max allowed value for median or milliseconds which were spent for loading:
+#  MAX_THRESHOLD_MS = 500
+#
+#  #--------------------------------------------
+#
 #  def showtime():
 #       global dt
 #       return ''.join( (dt.now().strftime("%H:%M:%S.%f")[:11],'.') )
+#
+#  #--------------------------------------------
+#
+#  def median(lst):
+#      n = len(lst)
+#      s = sorted(lst)
+#      return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
 #
 #  #--------------------------------------------
 #
@@ -134,131 +179,95 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
 #
 #  fbconf_cur = os.path.join( FB_HOME, 'firebird.conf')
-#  fbconf_bak = os.path.join( FB_HOME, 'firebird'+dts+'.bak')
+#  fbconf_bak = os.path.join( FB_HOME, 'firebird.'+dts+'.bak')
 #
 #  shutil.copy2( fbconf_cur, fbconf_bak )
 #
-#  blob_load_elapsed_time = {}
+#  f_fbconf=open( fbconf_cur, 'r')
+#  fbconf_content=f_fbconf.readlines()
+#  f_fbconf.close()
+#  for i,s in enumerate( fbconf_content ):
+#      line = s.lower().lstrip()
+#      if line.startswith( 'wirecompression'.lower() ):
+#          fbconf_content[i] = '# [temply commented by fbtest for core_6348.fbt] ' + s
 #
-#  for iter in (1,2):
-#      # Restore original content of firebird.conf:
-#      ##################
-#      shutil.copy2( fbconf_bak, fbconf_cur )
+#  text2app='''
+#  ### TEMPORARY CHANGED FOR CORE_6348.FBT ###
+#  WireCompression = true
+#  ##############################################
+#  ''' % locals()
 #
-#      f_fbconf=open( fbconf_cur, 'r')
-#      fbconf_content=f_fbconf.readlines()
-#      f_fbconf.close()
-#      for i,s in enumerate( fbconf_content ):
-#          line = s.lower().lstrip()
-#          if line.startswith( 'wirecompression'.lower() ):
-#              fbconf_content[i] = '# [temply commented by fbtest for core_6348.fbt] ' + s
+#  fbconf_content += [ os.linesep + x for x in text2app.split( os.linesep ) ]
 #
+#  f_fbconf=open( fbconf_cur, 'w')
+#  f_fbconf.writelines( fbconf_content )
+#  flush_and_close( f_fbconf )
 #
-#      WIRE_COMPRESSION_VALUE = 'true' if iter == 1 else 'false'
+#  external_python_code='''    from __future__ import print_function
+#      from datetime import datetime as dt
+#      from datetime import timedelta
+#      import fdb
+#      con = fdb.connect( dsn = r'%(dsn)s', user='%(user_name)s', password='%(user_password)s', fb_library_name = r'%(FB_CLNT)s' )
+#      con.execute_immediate('recreate table test(b blob)')
+#      con.commit()
 #
-#      text2app=    '''
-#      ### TEMPORARY CHANGED FOR CORE_6348.FBT ###
-#      WireCompression = %(WIRE_COMPRESSION_VALUE)s
-#      ##############################################
-#      ''' % locals()
+#      da = dt.now()
+#      cur=con.cursor()
+#      cur.execute("insert into test(b) values(?)", ('a' * %(BLOB_LEN_KB)s * 1024,) )
+#      db = dt.now()
 #
-#      fbconf_content += [ os.linesep + x for x in text2app.split( os.linesep ) ]
+#      diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
+#      print( str(diff_ms) )
 #
-#      f_fbconf=open( fbconf_cur, 'w', buffering = 0)
-#      f_fbconf.writelines( fbconf_content )
-#      flush_and_close( f_fbconf )
+#      cur.close()
+#      con.commit()
+#      con.close()
+#  ''' % dict(globals(), **locals())
 #
+#  f_extern_py = open( os.path.join(context['temp_directory'],'tmp_6348.py'), 'w')
+#  f_extern_py.write( '\\n'.join( [i.strip() for i in external_python_code.split('\\n')] ) )
+#  flush_and_close( f_extern_py )
 #
-#      BLOB_FILE = os.path.join(context['files_location'],'core_6348.bin')
+#  blob_load_elapsed_time = []
+#  for iter in range(0,N_MEASURES):
 #
-#      external_python_code='''        from __future__ import print_function
-#          from datetime import datetime as dt
-#          from datetime import timedelta
-#          import fdb
-#          con = fdb.connect( dsn = r'%(dsn)s', user='%(user_name)s', password='%(user_password)s', fb_library_name = r'%(FB_CLNT)s' )
-#          con.execute_immediate('recreate table test(b blob)')
-#          con.commit()
-#
-#          cur=con.cursor()
-#          blob_src = r'%(BLOB_FILE)s'
-#          blob_handle = open( blob_src, 'rb')
-#
-#          da = dt.now()
-#          cur.execute('insert into test(b) values(?)',[blob_handle])
-#          db = dt.now()
-#
-#          blob_handle.close()
-#          diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
-#          print( str(diff_ms) )
-#
-#          cur.close()
-#          con.commit()
-#          con.close()
-#      ''' % dict(globals(), **locals())
-#
-#      f_extern_py = open( os.path.join(context['temp_directory'],'tmp_6348.' + str(iter) + '.py'), 'w')
-#      f_extern_py.write( '\\n'.join( [i.strip() for i in external_python_code.split('\\n')] ) )
-#      flush_and_close( f_extern_py )
-#      # f_extern_py.close()
-#
-#      f_external_py_log = open( os.path.join(context['temp_directory'],'tmp_6348_py.' + str(iter) +  '.log' ), 'w')
+#      f_external_py_log = open( os.path.join(context['temp_directory'],'tmp_6348_py.log' ), 'w')
 #      subprocess.call( [sys.executable, f_extern_py.name], stdout = f_external_py_log, stderr = subprocess.STDOUT )
 #      flush_and_close( f_external_py_log )
 #
 #      with open(f_external_py_log.name,'r') as f:
-#          blob_load_elapsed_time[ WIRE_COMPRESSION_VALUE ] = int(f.read().strip())
-#      cleanup( ( f_extern_py, f_external_py_log ) )
+#          blob_load_elapsed_time.append( int(f.read().strip()) )
+#
+#
+#  cleanup( ( f_extern_py, f_external_py_log ) )
 #
 #  # Restore original content of firebird.conf:
 #  ##################
 #  shutil.move( fbconf_bak, fbconf_cur )
 #
-#  #print(blob_load_elapsed_time)
-#  #print( 1.00 * blob_load_elapsed_time['true'] / blob_load_elapsed_time['false'] )
 #
-#  # 4.0.0.1994 SC:  {'false': 2036, 'true': 126711}, ratio: 62.24
-#  # 4.0.0.2422 SS:  {'false': 831, 'true': 3722},    ratio:  4.48 // LINUX: 3.42; 3.11; 3.49; 3.44; 3.45
-#  # 4.0.0.2422 CS:  {'false': 2088, 'true': 6903},   ratio:  3.31 // LINUX: 1.46; 1.46; 1.48; 1.46; 1.51
-#  # 3.0.8.33445 SS: {'false': 1135, 'true': 3862},   ratio:  3.40 // LINUX: 1.52; 1.63; 1.52; 1.48; 1.51
-#  # 3.0.8.33445 CS: {'false': 2160, 'true': 7675},   ratio:  3.55 // LINUX: 1.56; 1.61; 1.56; 1.55; 1.54
-#
-#  ratio = 1.00 * blob_load_elapsed_time['true'] / blob_load_elapsed_time['false']
-#
-#  if os.name == 'nt':
-#      MAX_RATIO_THRESHOLD = 7
+#  msg = 'Median time for loading blob: '
+#  if median(blob_load_elapsed_time) < MAX_THRESHOLD_MS:
+#      msg += 'acceptable.'
+#      print(msg)
 #  else:
-#      MAX_RATIO_THRESHOLD = 20
-#  #                         ^
-#  #                         |
-#  #                         |
-#  #                ##################
-#  #                ### THRESHOLD ####
-#  #                ##################
-#
-#  msg = 'Ratio is acceptable.'      if ratio < MAX_RATIO_THRESHOLD      else (
-#              'Performance degradation when WireCompression = true is too high. ' +
-#              'Without compression: %15.2f, with compression: %15.2f, ratio is %15.2f - more than max. threshold = %3d' % ( blob_load_elapsed_time['false'], blob_load_elapsed_time['true'], ratio, MAX_RATIO_THRESHOLD)
-#            )
-#
-#  print(msg)
+#      msg += 'INACCEPTABLE, TOO SLOW. Check values for %d measurements:' % N_MEASURES
+#      print(msg)
+#      for i,p in enumerate(blob_load_elapsed_time):
+#          print( '%3d : %12.2f' % (i,p) )
 #
 #  # Cleanup
 #  #########
-#  time.sleep(1)
-#  f_list=( f_extern_py, f_external_py_log )
-#  cleanup( [ i.name for i in f_list ] )
-#
+#  cleanup( ( f_extern_py, f_external_py_log ) )
 #
 #---
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    Ratio is acceptable.
+    Median time for loading blob: acceptable.
 """
 
-@pytest.mark.version('>=3.0.6')
+@pytest.mark.version('>=3.0.7')
 def test_1(act_1: Action):
     pytest.skip("Requires changes to firebird.conf")
-
-

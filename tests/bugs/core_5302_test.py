@@ -202,6 +202,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          print( '%12.2f' % p )
 #
 #---
+
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """

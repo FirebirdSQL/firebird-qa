@@ -2,16 +2,41 @@
 #
 # id:           bugs.core_5664
 # title:        SIMILAR TO is substantially (500-700x) slower than LIKE on trivial pattern matches with VARCHAR data.
-# decription:
-#                    Confirmed normal work (ratio is about 1) on WI-T4.0.0.1598
-#
+# decription:   
+#               
+#                    21.11.2021. Totally re-implemented, package 'psutil' must be installed.
+#               
+#                    We make two calls of psutil.Process(fb_pid).cpu_times() (before and after SQL code) and obtain CPU User Time
+#                    values from each result.
+#                    Difference between them can be considered as much more accurate performance estimation.
+#               
+#                    On each calls of procedural code (see variable N_MEASURES) dozen execution of LIKE <pattern%> and 
+#                    SIMILAR_TO statements are performed (see variable N_COUNT_PER_MEASURE). Name of procedures which do work:
+#                    'sp_like_test' and 'sp_sim2_test' (first of them uses 'LIKE' statement, second uses 'SIMILAR TO'). Both procedures
+#                    uses the same data for handling.
+#               
+#                    Each result (difference between cpu_times().user values when PSQL code finished) is added to the list.
+#                    Finally, we evaluate MEDIAN of ratio values between cpu user time which was received for SIMILAR_TO and LIKE statements.
+#                    If this median is less then threshold (see var. SIM2_LIKE_MAX_RATIO) then result can be considered as ACCEPTABLE.
+#               
+#                    See also:
+#                    https://psutil.readthedocs.io/en/latest/#psutil.cpu_times
+#               
+#                    Confirmed bug on WI-T4.0.0.1575
+#                    Checked on Windows:
+#                        5.0.0.311 : 12.620s  ; 4.0.1.2660 : 13.388s.
+#               
+#                    21.11.2021. Checked on Linux (after installing pakage psutil):
+#                        5.0.0.313: 10.107s ; 4.0.1.2668: 8.519s ; 
+#                    
+#                
 # tracker_id:   CORE-5664
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 4.0
 # resources: None
@@ -22,123 +47,159 @@ init_script_1 = """"""
 
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
-test_script_1 = """
-    set list on;
-    set bail on;
-    set term ^;
+# test_script_1
+#---
+# 
+#  
+#  import os
+#  import psutil
+#  
+#  os.environ["ISC_USER"] = user_name
+#  os.environ["ISC_PASSWORD"] = user_password
+#  
+#  #------------------
+#  def median(lst):
+#      n = len(lst)
+#      s = sorted(lst)
+#      return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+#  #------------------
+#  
+#  ###########################
+#  ###   S E T T I N G S   ###
+#  ###########################
+#  # How many times we call PSQL code (two stored procedures:
+#  # one for performing comparisons based on LIKE, second based on SIMILAR TO statements):
+#  N_MEASURES = 30
+#  
+#  # How many iterations must be done in each of stored procedures when they work.
+#  # DO NOT set this value less then 10'000 otherwise lot of measures will last ~0 ms
+#  # and we will not able to evaluate ratio properly:
+#  #
+#  N_COUNT_PER_MEASURE = 1000
+#  
+#  # Maximal value for MEDIAN of ratios between CPU user time when comparison was made
+#  # using SIMILAR TO vs LIKE. Lot of measurements show that SIMILAR_TO is FASTER then LIKE
+#  # when handling long string and pattern that are used in this test, ratio is ~0.9 ... 1.1
+#  #
+#  SIM2_LIKE_MAX_RATIO = 5.0
+#  ###########################
+#  
+#  
+#  # Patternized code for creating TWO procedures:
+#  # 1) for applying LIKE
+#  # 2) for applying SIMILAR TO
+#  ############################
+#  sp_ddl = '''    create or alter procedure sp_%(sp_prefix)s_test (
+#          n_count int
+#         ,long_string_form  varchar(20) -- 'starts_with' | 'ends_with'
+#      ) as 
+#          declare i int = 0;
+#          declare long_text varchar(32761);
+#          declare word_to_search varchar(16384);
+#          declare pattern_to_chk varchar(32761);
+#          declare v_guid varchar(32755);
+#      begin
+#          v_guid = lpad( '', 16384, uuid_to_char(gen_uuid()) );
+#          v_guid = replace(v_guid,'-','');
+#  
+#          -- ::: NB :::
+#          -- Text that we want to search (word_to_search)
+#          -- must either be in the beginning or at the end of string.
+#          -- No sense to search text if it differs with string at first characters
+#          -- because evaluating of result for STARTS_WITH will be instant in that case
+#          -- (rather thanresult for ENDS_WITH).
+#          -- Also, we have to remove '-' from both text and pattern because this is special 
+#          -- character in SIMILAR TO operator (we do this just for simplification of test).
+#  
+#          word_to_search = replace(left(v_guid, 4096),'-','');
+#  
+#          if ( long_string_form = 'starts_with' ) then
+#              -- ............ "starts with" ..........
+#              begin
+#                  long_text = word_to_search || v_guid; 
+#                  pattern_to_chk = word_to_search || '%%'; ------------ 'ABCDEF' LIKE/SIMILAR_TO 'ABC<wildcard_char>'
+#              end
+#          else -- ............ "ends with" ..........
+#              begin
+#                  long_text = v_guid || word_to_search; 
+#                  pattern_to_chk = '%%' || word_to_search; ------------ 'ABCDEF' LIKE/SIMILAR_TO '<wildcard_char>DEF'
+#              end
+#      
+#          while (i < n_count) do 
+#          begin 
+#              -- ##############################################
+#              -- evaluating result: applying LIKE or SIMILAR_TO
+#              -- ##############################################
+#              i = i + iif( long_text %(sp_statement)s pattern_to_chk, 1, 1); 
+#          end 
+#      end
+#  '''
+#  
+#  op_map = {'like' : 'LIKE', 'sim2' : 'SIMILAR TO'}
+#  for sp_prefix,sp_statement in op_map.items():
+#      db_conn.execute_immediate( sp_ddl % locals() )    
+#  db_conn.commit()
+#  
+#  # Result: procedures with names: 'sp_like_test' and 'sp_sim2_test' have been created.
+#  # Both of them use input parameter, n_count -- number of iterations.
+#  
+#  cur=db_conn.cursor()
+#  cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
+#  
+#  fb_pid = int(cur.fetchone()[0])
+#  
+#  # test_1: string ENDS with pattern (s like '%QWERTY' == vs== s similar to '%QWERTY' )
+#  # test_2: string STARTS with pattern (s like 'QWERTY%' == vs == s similar to 'QWERTY%' )
+#  
+#  sp_call_data = {}
+#  for long_text_form in ('starts_with', 'ends_with'):
+#      ratio_list = []
+#  
+#      for i in range(0, N_MEASURES):
+#          sp_time = {}
+#          for sp_name in op_map.keys():
+#              fb_info_init = psutil.Process(fb_pid).cpu_times()
+#              cur.callproc('sp_' + sp_name + '_test', (N_COUNT_PER_MEASURE, long_text_form) )
+#              fb_info_curr = psutil.Process(fb_pid).cpu_times()
+#  
+#              sp_time[ sp_name ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
+#          try:
+#              # print('measure: %5d' % i, 'ratio:', "{:9.2f}".format( sp_time['sim2'] / sp_time['like'] ), sp_time )
+#              ratio_list.append( sp_time['sim2'] / sp_time['like'] )
+#              sp_call_data[long_text_form, i] = (sp_time['sim2'], sp_time['like'])
+#          except ZeroDivisionError as e:
+#              print(e)
+#              # print('sim2:', sp_time['sim2'], ';  like:', sp_time['like'])
+#  
+#  
+#      # print( 'String form: "%s", median ratio: %s' % ( long_text_form, 'acceptable' if median(ratio_list) <= SIM2_LIKE_MAX_RATIO else 'TOO BIG: ' + str(median(ratio_list))  ) )
+#  
+#      if median(ratio_list) <= SIM2_LIKE_MAX_RATIO:
+#          print('String %s pattern, result: acceptable.' % long_text_form.upper().replace('_',' '))
+#      else:
+#          print('THE SEARCH WAS TOO SLOW when string %s pattern' % long_text_form.upper().replace('_',' '))
+#          print("\\nCheck sp_call_data values (k=[long_text_form, i], v = (sp_time['sim2'], sp_time['like'])):" )
+#          for k,v in sorted(sp_call_data.items()):
+#              print(k,':',v, '; ratio:', v[0]/v[1])
+#  
+#          print('\\nCheck ratio values:')
+#          for i,p in enumerate(ratio_list):
+#              print( "%d : %12.2f" % (i,p) )
+#          print('\\nMedian value: %12.2f' % median(ratio_list))
+#          
+#  cur.close()
+#  
+#  
+#---
 
-
-    -- test#1: <long_string> SIMILAR TO '%QWERTY'
-    --         ##################################
-
-    execute block returns(
-        ratio_in_test_1 varchar(255)
-    ) as
-        declare i int = 0;
-        declare t0 timestamp;
-        declare t1 timestamp;
-        declare elap_ms_using_like int;
-        declare elap_ms_using_similar_to int;
-        declare s varchar(32761);
-        declare ratio_similar_vs_like numeric(15,4);
-        declare MAX_RATIO numeric(15,4) = 2;
-        --            ^
-        --      #############
-        --      MAX THRESHOLD
-        --      #############
-        declare n_count int = 5000; -- do not set it to values less than 500: duration should not be zero!
-    begin
-        s = lpad('', 32755, uuid_to_char(gen_uuid())) || 'QWERTY';
-
-        t0 = cast('now' as timestamp);
-        while (i < n_count) do
-        begin
-            i = i + iif( s like '%QWERTY', 1, 1);
-        end
-        t1 = cast('now' as timestamp);
-        elap_ms_using_like = datediff(millisecond from t0 to t1);
-
-        i = 0;
-        while (i < n_count) do
-        begin
-            i = i + iif( s similar to '%QWERTY', 1, 1);
-        end
-        elap_ms_using_similar_to = datediff(millisecond from t1 to cast('now' as timestamp));
-
-        ratio_similar_vs_like = 1.0000 * elap_ms_using_similar_to / elap_ms_using_like;
-
-        ratio_in_test_1 = iif( ratio_similar_vs_like < MAX_RATIO
-                        ,'acceptable'
-                        ,'TOO LOG: '|| ratio_similar_vs_like ||' times. This is more than max threshold = ' || MAX_RATIO || ' times'
-                      )
-        ;
-        suspend;
-    end
-    ^
-
-
-    -- test#2: <long_string> SIMILAR TO 'QWERTY%'
-    --         ##################################
-
-    execute block returns(
-        ratio_in_test_2 varchar(255)
-    ) as
-        declare i int = 0;
-        declare t0 timestamp;
-        declare t1 timestamp;
-        declare elap_ms_using_like int;
-        declare elap_ms_using_similar_to int;
-        declare s varchar(32761);
-        declare ratio_similar_vs_like numeric(15,4);
-        declare MAX_RATIO numeric(15,4) = 2;
-        --            ^
-        --      #############
-        --      MAX THRESHOLD
-        --      #############
-        declare n_count int = 5000; -- do not set it to values less than 500: duration should not be zero!
-    begin
-
-        s = 'QWERTY' || lpad('', 32755, uuid_to_char(gen_uuid())) ;
-
-        t0 = cast('now' as timestamp);
-        while (i < n_count) do
-        begin
-            i = i + iif( s similar to 'QWERTY%', 1, 1);
-        end
-        t1 = cast('now' as timestamp);
-        elap_ms_using_like = datediff(millisecond from t0 to t1);
-
-        i = 0;
-        while (i < n_count) do
-        begin
-            i = i + iif( s similar to 'QWERTY%', 1, 1);
-        end
-        elap_ms_using_similar_to = datediff(millisecond from t1 to cast('now' as timestamp));
-
-        ratio_similar_vs_like = 1.0000 * elap_ms_using_similar_to / elap_ms_using_like;
-
-        ratio_in_test_2 = iif( ratio_similar_vs_like < MAX_RATIO
-                        ,'acceptable'
-                        ,'TOO LONG: '|| ratio_similar_vs_like ||' times. This is more than max threshold = ' || MAX_RATIO || ' times'
-                      )
-        ;
-        suspend;
-    end
-    ^
-    set term ;^
-
-"""
-
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    RATIO_IN_TEST_1                 acceptable
-    RATIO_IN_TEST_2                 acceptable
+    String STARTS WITH pattern, result: acceptable.
+    String ENDS WITH pattern, result: acceptable.  
 """
 
 @pytest.mark.version('>=4.0')
+@pytest.mark.xfail
 def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+    pytest.fail("Test not IMPLEMENTED")

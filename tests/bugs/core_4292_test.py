@@ -211,7 +211,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #  killer_sql='''
 #     set list on;
-#     set count on;
+#     -- set count on;
 #     /*
 #     select a.*, s.*
 #     from mon$attachments a
@@ -296,7 +296,6 @@ act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1_killer = """
 Found worker ?                  1
-Records affected: 1
 DELETED_MON_ATT_ID              1
 DELETED_MON_USER                SYSDBA
 DELETED_MON_PROTOCOL            tcp
@@ -316,7 +315,6 @@ heavy_output_1 = temp_file('heavy_script.out')
 def test_1(act_1: Action, heavy_script_1: Path, heavy_output_1: Path):
     killer_sql = """
     set list on;
-    set count on;
     /*
     select a.*, s.*
     from mon$attachments a

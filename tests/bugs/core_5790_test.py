@@ -165,7 +165,7 @@ expected_stdout_1 = """
     RDB$RELATION_NAME               SQL$DATABASE
     RDB$FIELD_NAME                  <null>
     RDB$USER_TYPE                   8
-    rdb_object_type_is_expected ?   1
+    rdb_object_type_is_expected ?   YES
     Records affected: 1
     Records affected: 0
 """
@@ -192,7 +192,7 @@ def test_1(act_1: Action, test_user: User, fdb_file: Path):
         ,r.rdb$relation_name  --           sql$database
         ,r.rdb$field_name     --           <null>
         ,r.rdb$user_type      --           8
-        ,iif( r.rdb$object_type = decode( left(rdb$get_context('SYSTEM', 'ENGINE_VERSION'),1), '3',20, '4',21), 1, 0) "rdb_object_type_is_expected ?"
+        ,iif( r.rdb$object_type = decode( left(rdb$get_context('SYSTEM', 'ENGINE_VERSION'),1), '3',20, '4',21, '5', 21), 'YES', 'NO: ' || r.rdb$object_type) "rdb_object_type_is_expected ?"
     from rdb$user_privileges r
     where r.rdb$user=upper('{test_user.name}');
 

@@ -64,6 +64,7 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #  # Server version: WI-V4.0.0.2491 Firebird 4.0 Release Candidate 1
 #  runProgram('fbsvcmgr',['localhost:qwe_mnb_zxc_9','user', user_name, 'password', user_password, 'info_server_version'])
 #---
+
 act_2 = python_act('db_2', substitutions=substitutions_2)
 
 expected_stdout_2 = """

@@ -2,83 +2,161 @@
 #
 # id:           bugs.core_3058
 # title:        New generators are created with wrong value when more than 32K generators was previously created
-# decription:
+# decription:    
+#                   New URL: https://github.com/FirebirdSQL/firebird/issues/3438
+#               
+#                   Re-implemented in order to generate SQL script with more than 32K create / get gen_id / drop sequences.
+#                   Total number of created sequences is set by 'TOTAL_SEQUENCES_COUNT' variable.
+#               
+#                   uses LOCAL connection protocol 
+#                   In order to reduce time:
+#                       * FW is changed OFF
+#                       * test uses LOCAL connection protocol 
+#                   Confirmed bug on 2.5.0.26074:
+#                       sequence 'g_1' that is created after <TOTAL_SEQUENCES_COUNT> iterations
+#                       has current value = 59049 (instead of expected 0).
+#                   Checked on:
+#                       5.0.0.43 SS: 78.226s.
+#                       5.0.0.40 CS: 79.564s.
+#                       4.0.0.2491 SS: 78.766s.
+#                       4.0.0.2489 CS: 79.419s.
+#                       3.0.8.33468 SS: 76.687s.
+#                       3.0.8.33452 CS: 84.176s.
+#                       2.5.9.27152 SC: 116.247s.
+#                
 # tracker_id:   CORE-3058
 # min_versions: ['2.5.1']
 # versions:     2.5.1
-# qmid:         None
+# qmid:         
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, python_act, Action
 
 # version: 2.5.1
 # resources: None
 
 substitutions_1 = []
 
-init_script_1 = """
-    set term ^;
-    execute block
-    as
-        declare n int = 1;
-        declare x int;
-        declare k int;
-        declare c int;
-    begin
-        while (n < 33000) do
-        begin
-          k = 1000000 + cast(rand() * 1000000 as int);
+init_script_1 = """"""
 
-          -- ::: NB ::: As of Firebird 3.0 we need to make EVERY operation (creation, select gen_id, dropping)
-          -- in AUTONOMOUS transaction because physically appearance of generator in database will be on COMMIT only.
-          -- It is not so in 2.5, but I left code common for both FB versions. Zotov.
-          in autonomous transaction do
-            execute statement 'create sequence s' || n;
+db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
-          in autonomous transaction do
-            execute statement 'select gen_id(s' || n || ', ' || k || ') from rdb$database' into x;
+# test_script_1
+#---
+# 
+#  
+#  import os
+#  import subprocess
+#  import time
+#  
+#  os.environ["ISC_USER"] = user_name
+#  os.environ["ISC_PASSWORD"] = user_password
+#  db_name = db_conn.database_name
+#  db_conn.close()
+#  runProgram('gfix',[dsn,'-w','async'])
+#  
+#  ###########################
+#  TOTAL_SEQUENCES_COUNT=33000
+#  ###########################
+#  
+#  #--------------------------------------------
+#  
+#  def flush_and_close( file_handle ):
+#      # https://docs.python.org/2/library/os.html#os.fsync
+#      # If you're starting with a Python file object f, 
+#      # first do f.flush(), and 
+#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
+#      global os
+#      
+#      file_handle.flush()
+#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
+#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
+#          os.fsync(file_handle.fileno())
+#      file_handle.close()
+#  
+#  #--------------------------------------------
+#  
+#  def cleanup( f_names_list ):
+#      global os
+#      for i in range(len( f_names_list )):
+#         if type(f_names_list[i]) == file:
+#            del_name = f_names_list[i].name
+#         elif type(f_names_list[i]) == str:
+#            del_name = f_names_list[i]
+#         else:
+#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
+#            del_name = None
+#  
+#         if del_name and os.path.isfile( del_name ):
+#             os.remove( del_name )
+#  
+#  #--------------------------------------------
+#  
+#  
+#  script='''
+#      set bail on;
+#      set list on;
+#      select mon$forced_writes from mon$database;
+#      set term #;
+#  '''
+#  
+#  for i in range(1,TOTAL_SEQUENCES_COUNT+1):
+#      script = '\\n'.join(
+#                            (  script
+#                              ,'create sequence g_%d#' % i
+#                              ,'execute block as declare c int; begin c = gen_id(g_%d, %d); end#' % (i, i**2)
+#                              ,'drop sequence g_%d#' % i
+#                            )
+#                         )
+#  
+#  script = '\\n'.join(
+#                        (   script
+#                           ,'set term ;#'
+#                           ,'create sequence g_%d;' % 1
+#                           ,'commit;'
+#                           ,'select gen_id(g_1,0) from rdb$database;'
+#                        )
+#                    )
+#  
+#  
+#  f_isql_cmd=open(os.path.join(context['temp_directory'],'tmp_core_3058.sql'), 'w')
+#  f_isql_cmd.write(script)
+#  flush_and_close( f_isql_cmd )
+#  
+#  f_isql_log=open(os.path.join(context['temp_directory'],'tmp_core_3058.log'),'w')
+#  f_isql_err=open(os.path.join(context['temp_directory'],'tmp_core_3058.err'),'w')
+#  
+#  # NB: use local connection here in order to increase speed:
+#  subprocess.call([ context['isql_path'], db_name, "-i", f_isql_cmd.name],stdout = f_isql_log, stderr = f_isql_err)
+#  
+#  flush_and_close( f_isql_log )
+#  flush_and_close( f_isql_err )
+#  
+#  with open(f_isql_err.name,'r') as f:
+#      for line in f:
+#          if line.split():
+#              print('UNEXPECTED STDERR: ' + line.strip())
+#  
+#  with open(f_isql_log.name,'r') as f:
+#      for line in f:
+#          if line.split():
+#              print(line.strip())
+#  
+#  
+#  # cleanup:
+#  ##########
+#  time.sleep(1)
+#  cleanup((f_isql_cmd, f_isql_log, f_isql_err))
+#---
 
-          in autonomous transaction do
-            execute statement 'drop sequence s' || n;
-
-          n = n + 1;
-        end
-    end
-    ^
-    set term ;^
-    rollback;
-"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    -- Updated code: remove dependency on: 1) version FB and 2) output of 'show sequence' command.
-    -- Also we check here that NO sequences exists at this point and after we create and drop sequence 's1'
-    set list on;
-    select iif( exists(select * from rdb$generators g where coalesce(g.rdb$system_flag,0) = 0), 'some_gen_exists!', 'none_gen_remains' ) as msg_1
-    from rdb$database;
-    create sequence s1;
-    commit;
-    select gen_id(s1,0) as current_val_of_s1 from rdb$database;
-    commit;
-    drop sequence s1;
-    commit;
-    select iif( exists(select * from rdb$generators g where coalesce(g.rdb$system_flag,0) = 0), 'some_gen_exists!', 'none_gen_remains' ) as msg_2
-    from rdb$database;
-    set list off;
-"""
-
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    MSG_1                           none_gen_remains
-    CURRENT_VAL_OF_S1               0
-    MSG_2                           none_gen_remains
+    MON$FORCED_WRITES               0
+    GEN_ID                          0
 """
 
 @pytest.mark.version('>=2.5.1')
+@pytest.mark.xfail
 def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+    pytest.fail("Test not IMPLEMENTED")

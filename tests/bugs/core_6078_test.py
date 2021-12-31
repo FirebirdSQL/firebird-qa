@@ -285,7 +285,7 @@ def test_1(act_1: Action, user_0_1: User, user_1_1: User, user_2_1: User):
 # version: 4.0
 # resources: None
 
-substitutions_2 = [('.*After line \\d+.*', '')]
+substitutions_2 = [('.*After line \\d+.*', ''), ('ALTERED_TRIGGER_SOURCE.*', 'ALTERED_TRIGGER_SOURCE')]
 
 init_script_2 = """"""
 

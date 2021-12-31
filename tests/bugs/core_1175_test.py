@@ -21,18 +21,56 @@
 #
 # tracker_id:   CORE-1175
 # min_versions: []
-# versions:     4.0
+# versions:     2.1, 4.0
 # qmid:         bugs.core_1175
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
 
-# version: 4.0
+# version: 2.1
 # resources: None
 
 substitutions_1 = []
 
-init_script_1 = """
+init_script_1 = """DECLARE EXTERNAL FUNCTION rtrim
+   CSTRING(255)
+   RETURNS CSTRING(255) FREE_IT
+   ENTRY_POINT 'IB_UDF_rtrim' MODULE_NAME 'ib_udf';
+commit;
+"""
+
+db_1 = db_factory(sql_dialect=3, init=init_script_1)
+
+# test_script_1
+#---
+# c = db_conn.cursor()
+#  try:
+#      c.prep('select * from RDB$DATABASE where RDB$CHARACTER_SET_NAME = rtrim(trim(?))')
+#      print ('Test PASSED!')
+#  except Exception,e:
+#      print ('Test FAILED!')
+#      print (e)
+#---
+
+act_1 = python_act('db_1', substitutions=substitutions_1)
+
+expected_stdout_1 = """Test PASSED!"""
+
+@pytest.mark.version('>=2.1,<4.0')
+def test_1(act_1: Action):
+    with  act_1.db.connect() as con:
+        c = con.cursor()
+        try:
+            c.prepare('select * from RDB$DATABASE where RDB$CHARACTER_SET_NAME = rtrim(trim(?))')
+        except:
+            pytest.fail('Test FAILED')
+
+# version: 4.0
+# resources: None
+
+substitutions_2 = []
+
+init_script_2 = """
     -- See declaration sample in plugins\\udr\\UdfBackwardCompatibility.sql:
     create function UDR40_frac (
         val double precision
@@ -48,11 +86,11 @@ init_script_1 = """
     engine udr;
 
     commit;
-"""
+  """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
-# test_script_1
+# test_script_2
 #---
 # \\
 #  c = db_conn.cursor()
@@ -62,14 +100,13 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  except Exception,e:
 #      print( 'Test FAILED!' )
 #      print( e )
-#
 #---
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act_2 = python_act('db_2', substitutions=substitutions_2)
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    with  act_1.db.connect() as con:
+def test_1(act_2: Action):
+    with  act_2.db.connect() as con:
         c = con.cursor()
         try:
             c.prepare('select 1 from rdb$database where UDR40_frac(?) != UDR40_div(?, ?) / ?')
