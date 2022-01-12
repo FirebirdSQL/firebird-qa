@@ -24,7 +24,7 @@ init_script_1 = """
       f2 varchar(10),
       cf computed by (f1 || ' - ' || f2)
     );
-    
+
     insert into t (f1,f2) values ('0123456789','abcdefghij');
     commit;
   """
@@ -37,18 +37,18 @@ test_script_1 = """
     set width fld_expr 80;
 
     select f1,f2,cf from t;
-    
+
     select b.rdb$field_name fld_name, cast(a.rdb$computed_source as varchar(80)) fld_expr, a.rdb$field_length fld_length
     from rdb$fields a
     join rdb$relation_fields b
         on a.rdb$field_name = b.rdb$field_source
     where b.rdb$field_name = upper('cf');
-    
+
     alter table t alter cf type varchar(30) computed by (f1 || ' - ' || f2 || ' - more');
     commit;
-    
+
     select f1,f2,cf from t;
-    
+
     select b.rdb$field_name fld_name, cast(a.rdb$computed_source as varchar(80)) fld_expr, a.rdb$field_length fld_length
     from rdb$fields a
     join rdb$relation_fields b
@@ -62,7 +62,7 @@ expected_stdout_1 = """
     F1                              0123456789
     F2                              abcdefghij
     CF                              0123456789 - abcdefghij
-    FLD_NAME                        CF                                                                                           
+    FLD_NAME                        CF
     FLD_EXPR                        (f1 || ' - ' || f2)
     FLD_LENGTH                      23
     F1                              0123456789
@@ -71,11 +71,13 @@ expected_stdout_1 = """
     F1                              0123456789
     F2                              abcdefghij
     CF                              0123456789 - abcdefghij - more
-    FLD_NAME                        CF                                                                                           
+    FLD_NAME                        CF
     FLD_EXPR                        (f1 || ' - ' || f2 || ' - more')
     FLD_LENGTH                      30
 """
 
 @pytest.mark.version('>=2.5.0')
+def test_1(act_1: Action):
+    act_1.expected_stdout = expected_stdout_1
+    act_1.execute()
     assert act_1.clean_stdout == act_1.clean_expected_stdout
-
