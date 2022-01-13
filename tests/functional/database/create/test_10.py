@@ -75,11 +75,11 @@ expected_stdout_1 = """
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     script = f"""
-    create database '{act_2.db.dsn}' user '{act_2.db.user}'
-      password '{act_2.db.password}'
-      FILE '{act_2.db.db_path.with_name('TMP_CREATE_DB_10.F00')}' STARTING AT PAGE 201
-      FILE '{act_2.db.db_path.with_name('TMP_CREATE_DB_10.F01')}' STARTING AT PAGE 601
-      FILE '{act_2.db.db_path.with_name('TMP_CREATE_DB_10.F02')}' STARTING AT PAGE 1001
+    create database '{act_1.db.dsn}' user '{act_1.db.user}'
+      password '{act_1.db.password}'
+      FILE '{act_1.db.db_path.with_name('TMP_CREATE_DB_10.F00')}' STARTING AT PAGE 201
+      FILE '{act_1.db.db_path.with_name('TMP_CREATE_DB_10.F01')}' STARTING AT PAGE 601
+      FILE '{act_1.db.db_path.with_name('TMP_CREATE_DB_10.F02')}' STARTING AT PAGE 1001
     ;
     set list on ;
     select
@@ -89,9 +89,9 @@ def test_1(act_1: Action):
         ,rdb$file_length
     from rdb$files ;
     """
-    act_2.expected_stdout = expected_stdout_2
-    act_2.isql(switches=[], input=script, connect_db=False)
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+    act_1.expected_stdout = expected_stdout_1
+    act_1.isql(switches=[], input=script, connect_db=False)
+    assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 
 # version: 4.0
