@@ -219,7 +219,7 @@ trace_conf = temp_file('trace.conf')
 
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action, db_1_nonexistent: Database, trace_conf: Path, capsys):
-    with ServerKeeper(act_1, None): # User embedded server for trace
+    with ServerKeeper(act_1, None): # Use embedded server for trace
         with act_1.trace(config=trace_1):
             try:
                 with db_1_nonexistent.connect():
