@@ -217,9 +217,10 @@ expected_stdout_1 = """
 """
 
 isql_script = temp_file('test-script.sql')
+isql_output = temp_file('test-script.out')
 
 @pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action, isql_script: Path, capsys):
+def test_1(act_1: Action, isql_script: Path, isql_output: Path, capsys):
     isql_script.write_text('''    set list on;
      set term ^;
      execute block returns (dts timestamp, sql varchar(80)) as
@@ -247,17 +248,17 @@ def test_1(act_1: Action, isql_script: Path, capsys):
      ''')
     with act_1.connect_server() as srv:
         # Get content of firebird.log BEFORE test
-        srv.info.get_log()
-        log_before = srv.readlines()
-        p_isql = subprocess.Popen([act_1.vars['isql'], act_1.db.dsn, '-i', str(isql_script)],
-                                 stderr=subprocess.STDOUT)
+        log_before = act_1.get_firebird_log()
+        with open(isql_output, mode='w') as isql_out:
+            p_isql = subprocess.Popen([act_1.vars['isql'], '-u', act_1.db.user, '-pas',
+                                       act_1.db.password, act_1.db.dsn, '-i', str(isql_script)],
+                                      stdout=isql_out, stderr=subprocess.STDOUT)
         time.sleep(2)
         # LAUNCH SWEEP while ISQL is working
         srv.database.sweep(database=act_1.db.db_path)
         p_isql.terminate()
         # Get content of firebird.log AFTER test
-        srv.info.get_log()
-        log_after = srv.readlines()
+        log_after = act_1.get_firebird_log()
         for line in unified_diff(log_before, log_after):
             if line.startswith('+') and line.split('+'):
                 print(line.replace('+', ' '))

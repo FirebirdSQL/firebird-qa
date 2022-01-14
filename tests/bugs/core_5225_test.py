@@ -25,7 +25,7 @@
 # qmid:         None
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import db_factory, isql_act, Action, User, user_factory
 
 # version: 3.0.1
 # resources: None
@@ -38,10 +38,6 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     set list on;
-
-    create or alter user tmp$c5225 password 'srp' using plugin Srp;
-    create or alter user tmp$c5225 password 'leg' using plugin Legacy_UserManager;
-    commit;
 
     set term ^;
     execute block returns(whoami_leg varchar(31)) as
@@ -84,11 +80,6 @@ test_script_1 = """
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
-
-    drop user tmp$c5225 using plugin Srp;
-    drop user tmp$c5225 using plugin Legacy_UserManager;
-    commit;
-
 """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
@@ -98,8 +89,11 @@ expected_stdout_1 = """
     WHOAMI_SRP                      TMP$C5225
 """
 
+user_srp = user_factory('db_1', name='tmp$c5225', password='srp', plugin='Srp')
+user_leg = user_factory('db_1', name='tmp$c5225', password='leg', plugin='Legacy_UserManager')
+
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
+def test_1(act_1: Action, user_srp: User, user_leg: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_stdout == act_1.clean_expected_stdout

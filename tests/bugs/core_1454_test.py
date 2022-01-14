@@ -29,7 +29,7 @@ init_script_1 = """
     commit;
   """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1, charset='win1252')
 
 test_script_1 = """
     set list on;
@@ -65,9 +65,6 @@ expected_stdout_1 = """
     FLD_NAME                        CF
     FLD_EXPR                        (f1 || ' - ' || f2)
     FLD_LENGTH                      23
-    F1                              0123456789
-    F2                              abcdefghij
-    CF                              0123456789 - abcdefghij - more
     F1                              0123456789
     F2                              abcdefghij
     CF                              0123456789 - abcdefghij - more

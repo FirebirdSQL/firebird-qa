@@ -2,17 +2,17 @@
 #
 # id:           bugs.gh_6866
 # title:        Some orphan records left at RDB$SECURITY_CLASSES and RDB$USER_PRIVILEGES after DROP PROCEDURE\\FUNCTION
-# decription:   
+# decription:
 #                   https://github.com/FirebirdSQL/firebird/issues/6866
-#               
+#
 #                   Note: code for 3.0.8 was separated from 4.x+: there is no 'sql security definer|invoker' clause before FB 4.x.
 #                   Only procedures, functions and packages are checked here.
 #                   More checks (for all other kinds of DB objects: tables, views etc) will be done in the test for GH-6868.
-#               
+#
 #                   Confirmed bug on 5.0.0.82
 #                   Checked on 5.0.0.85; 4.0.1.2520; 3.0.8.33476.
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['3.0.8']
 # versions:     3.0.8, 3.0.8
 # qmid:         None
@@ -208,7 +208,7 @@ expected_stdout_1 = """
     MSG                             Number of rows in rdb$security_classes and rdb$user_privileges was not changed.
 """
 
-@pytest.mark.version('>=3.0.8,<3.0.8')
+@pytest.mark.version('>=3.0.8,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
@@ -402,7 +402,7 @@ expected_stdout_2 = """
     MSG                             Number of rows in rdb$security_classes and rdb$user_privileges was not changed.
 """
 
-@pytest.mark.version('>=3.0.8')
+@pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()

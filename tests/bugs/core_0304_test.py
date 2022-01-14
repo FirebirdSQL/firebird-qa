@@ -2,26 +2,26 @@
 #
 # id:           bugs.core_0304
 # title:         ANY user can drop procedures, generators, exceptions.
-# decription:   
+# decription:
 #                   fb30Cs, build 3.0.4.32924: OK, 4.406s.
 #                   FB30SS, build 3.0.4.32939: OK, 1.563s.
-#               
+#
 #                   24.01.2019. Added separate code for running on FB 4.0+.
 #                   UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
-#                   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement 
+#                   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
 #                   in UDR library "udf_compat", see it in folder: ../plugins/udr/
 #                   Checked on:
 #                       4.0.0.1172: OK, 8.140s.
 #                       4.0.0.1340: OK, 4.797s.
 #                       4.0.0.1378: OK, 4.032s.
-#               
+#
 #                   01.06.2021. Adjusted STDERR caused by fixes
 #                       https://github.com/FirebirdSQL/firebird/pull/6833
 #                       https://github.com/FirebirdSQL/firebird/pull/6825
 #                       ("Correct error message for DROP VIEW")
 #                   Checked on 3.0.8.33470; 4.0.0.2502; 5.0.0.60.
-#               
-#                
+#
+#
 # tracker_id:   CORE-304
 # min_versions: ['3.0']
 # versions:     3.0, 4.0
@@ -71,7 +71,7 @@ test_script_1 = """
     -- All following statements should FAIL if current user is not SYSDBA:
 
     execute procedure sp_test;
-    
+
     show sequence g_test;
 
     alter domain dm_test set default 123;
@@ -207,7 +207,7 @@ expected_stderr_1 = """
 
 """
 
-@pytest.mark.version('>=3.0,<4.0')
+@pytest.mark.version('>=3.0.8,<4.0')
 def test_1(act_1: Action, user_1: User):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
@@ -262,7 +262,7 @@ test_script_2 = """
     -- All following statements should FAIL if current user is not SYSDBA:
 
     execute procedure sp_test;
-    
+
     show sequence g_test;
 
     alter domain dm_test set default 123;

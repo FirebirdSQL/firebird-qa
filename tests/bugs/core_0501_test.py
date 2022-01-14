@@ -1032,10 +1032,10 @@ arithmetic exception, numeric overflow, or string truncation
 Statement failed, SQLSTATE = 07002
 Dynamic SQL Error
 -SQLDA error
--No SQLDA for input values provided
+-Wrong number of parameters (expected 3, got 0)
 """
 
-@pytest.mark.version('>=3.0,<4')
+@pytest.mark.version('>=3.0,<3.0.8')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
@@ -1078,7 +1078,7 @@ Dynamic SQL Error
 """
 #-Wrong number of parameters (expected 3, got 0)
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=3.0.8')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_1
     act_2.expected_stderr = expected_stderr_2

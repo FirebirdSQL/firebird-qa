@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_2916
 # title:        Broken error handling in the case of a conversion error happened during index creation
-# decription:   
+# decription:
 # tracker_id:   CORE-2916
 # min_versions: ['2.1.4']
 # versions:     2.5.0, 4.0
@@ -29,8 +29,7 @@ select * from tab where cast(col as int) is null;"""
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
-expected_stdout_1 = """Database:  localhost:C:
-btest2  mpugs.core_2916.fdb, User: SYSDBA
+expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_2916.fdb, User: SYSDBA
 SQL> SQL> SQL>
         COL
 ===========

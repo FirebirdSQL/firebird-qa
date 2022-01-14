@@ -567,11 +567,10 @@ def test_1(act_1: Action):
         srv.database.local_restore(backup_stream=backup, database=act_1.db.db_path,
                                    flags=SrvRestoreFlag.DEACTIVATE_IDX | SrvRestoreFlag.REPLACE)
         # Get FB log before validation, run validation and get FB log after it:
-        srv.info.get_log()
-        log_before = srv.readlines()
+        log_before = act_1.get_firebird_log()
         srv.database.repair(database=act_1.db.db_path, flags=SrvRepairFlag.CORRUPTION_CHECK)
-        srv.info.get_log()
-        log_after = srv.readlines()
+        #act_1.gfix(switches=['-v', '-full', act_1.db.dsn])
+        log_after = act_1.get_firebird_log()
     # Extract metadata from restored DB
     act_1.isql(switches=['-nod', '-x'])
     meta_2 = act_1.stdout

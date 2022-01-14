@@ -64,7 +64,7 @@ db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
-    Root page: 203, depth: 1, leaf buckets: 1, nodes: 2
+    Root page: 203, depth: 1, leaf buckets: 1, nodes: 1
 """
 
 @pytest.mark.version('>=2.5.4,<4.0')
@@ -117,7 +117,7 @@ db_2 = db_factory(page_size=4096, sql_dialect=3, init=init_script_2)
 act_2 = python_act('db_2', substitutions=substitutions_2)
 
 expected_stdout_2 = """
-    Root page: 203, depth: 1, leaf buckets: 1, nodes: 2
+    Root page: 203, depth: 1, leaf buckets: 1, nodes: 1
 """
 
 @pytest.mark.version('>=4.0')
