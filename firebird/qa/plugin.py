@@ -42,7 +42,6 @@ import os
 import re
 import shutil
 import platform
-import difflib
 import pytest
 from _pytest.fixtures import FixtureRequest
 from subprocess import run, CompletedProcess, PIPE, STDOUT
@@ -67,7 +66,10 @@ _vars_ = {'server': None,
 _platform = platform.system()
 
 def pytest_addoption(parser, pluginmanager):
-    ""
+    """Adds plugin-specific pytest command-line options.
+
+    .. seealso:: `pytest documentation <_pytest.hookspec.pytest_addoption>` for details.
+    """
     grp = parser.getgroup('firebird', "Firebird server", 'general')
     grp.addoption('--server', help="Server configuration name", default='')
     grp.addoption('--bin-dir', metavar='PATH', help="Path to directory with Firebird utilities")
@@ -78,6 +80,10 @@ def pytest_addoption(parser, pluginmanager):
     grp.addoption('--save-output', action='store_true', default=False, help="Save test std[out|err] output to files")
 
 def pytest_report_header(config):
+    """Returns plugin-specific test session header.
+
+    .. seealso:: `pytest documentation <_pytest.hookspec.pytest_report_header>` for details.
+    """
     return ["Firebird:",
             f"  root: {_vars_['root']}",
             f"  databases: {_vars_['databases']}",
@@ -96,6 +102,7 @@ def pytest_report_header(config):
             ]
 
 def set_tool(tool: str):
+    "Helper function for `pytest_configure`."
     path: Path = _vars_['bin-dir'] / tool
     if not path.is_file():
         path = path.with_suffix('.exe')
@@ -104,6 +111,10 @@ def set_tool(tool: str):
     _vars_[tool] = path
 
 def pytest_configure(config):
+    """Plugin configuration.
+
+    .. seealso:: `pytest documentation <_pytest.hookspec.pytest_configure>` for details.
+    """
     # pytest.ini
     config.addinivalue_line(
         "markers", "version(versions): Firebird version specifications"
@@ -139,8 +150,7 @@ def pytest_configure(config):
     _vars_['port'] = srv_conf.port.value if srv_conf is not None else ''
     _vars_['password'] = srv_conf.password.value
     #
-    driver_config.register_database('employee')
-    db_conf = driver_config.get_database('employee')
+    db_conf = driver_config.register_database('employee')
     db_conf.server.value = _vars_['server']
     db_conf.database.value = 'employee.fdb'
     # Handle server-specific "fb_client_library" configuration option
@@ -153,8 +163,8 @@ def pytest_configure(config):
             pytest.exit(f"Client library '{fbclient}' not found!")
         driver_config.fb_client_library.value = str(fbclient)
     cfg.clear()
-    # THIS should load the driver API, do not connect db or server earlier!
     _vars_['fbclient'] = get_api().client_library_name
+    # THIS should load the driver API, do not connect db or server earlier!
     with connect_server(_vars_['server'], user='SYSDBA',
                         password=_vars_['password']) as srv:
         _vars_['version'] = parse(srv.info.version.replace('-dev', ''))
@@ -177,7 +187,6 @@ def pytest_configure(config):
 
 def pytest_collection_modifyitems(session, config, items):
     skip_slow = pytest.mark.skip(reason="need --runslow option to run")
-    skip_platform = pytest.mark.skip(reason=f"test not designed for {_platform}")
     # Apply skip markers
     for item in items:
         if 'slow' in item.keywords and not _vars_['runslow']:
@@ -210,6 +219,13 @@ def pytest_collection_modifyitems(session, config, items):
         #report.nodeid = docstring
 
 def substitute_macros(text: str, macros: Dict[str, str]):
+    """Helper function to substitute `$(name)` macros in text.
+
+    .. important::
+
+       Used only for backward compatibility with `fbtest`. The use of `$(name)` macros in
+       tests is **deprecated**.
+    """
     f_text = text
     for (pattern, replacement) in macros.items():
         replacement = replacement.replace(os.path.sep,'/')
@@ -217,18 +233,37 @@ def substitute_macros(text: str, macros: Dict[str, str]):
     return f_text
 
 class Database:
-    ""
-    def __init__(self, path: Path, filename: str='test.fdb',
-                 user: str=None, password: str=None, charset: str=None, debug: str=''):
+    """Object to access and manage single test database.
+
+    Arguments:
+        path: Path to directory where test database should be located.
+        filename: Database filename.
+        user: User name used to create/restore/connect the test database. Default is taken
+            from server configuration.
+        password: User password used to create/restore/connect the test database. Default
+            is taken from server configuration.
+        charset: Character set for test database.
+
+    .. important::
+
+        Do not create instances of this class directly! Use **only** fixtures created by `db_factory`.
+    """
+    def __init__(self, path: Path, filename: str, user: str=None, password: str=None,
+                 charset: str=None, debug: str=''):
         self._debug: str = debug
+        #: Full path to test database.
         self.db_path: Path = path / filename
+        #: DSN to test database.
         self.dsn: str = None
+        #: Firebird CHARACTER SET name for the database
         self.charset: str = 'NONE' if charset is None else charset.upper()
-        self.io_enc: str = CHARSET_MAP[self.charset]
         if _vars_['host']:
             self.dsn = f"{_vars_['host']}:{str(self.db_path)}"
         else:
             self.dsn = str(self.db_path)
+        #: Substitutions for `$(name)` macros. Do not use them directly, as use of
+        #: `$(name)` macros in tests is **deprecated**, and supported only for backward
+        #: compatibility with `fbtest`.
         self.subs = {'temp_directory': str(path / 'x')[:-1],
                      'database_location': str(path / 'x')[:-1],
                      'DATABASE_PATH': str(path / 'x')[:-1],
@@ -238,11 +273,17 @@ class Database:
                      'suite_database_location': str(_vars_['root'] / 'databases'),
                      }
         srv_conf = driver_config.get_server(_vars_['server'])
+        #: User name
         self.user: str = srv_conf.user.value if user is None else user
+        #: User password
         self.password: str = srv_conf.password.value if password is None else password
     def _make_config(self, *, page_size: int=None, sql_dialect: int=None, charset: str=None,
                      user: str=None, password: str=None) -> None:
-        db_conf = driver_config.get_database('pytest')
+        """Helper method that sets `firebird-driver`_ configuration for `pytest` database
+        to work with this particular test database instance. Used before methods that
+        need to call `~firebird.driver.core.connect` or `~firebird.driver.core.create_database` methods.
+        """
+        db_conf = self.get_config()
         db_conf.clear()
         db_conf.server.value = _vars_['server']
         db_conf.database.value = str(self.db_path)
@@ -259,16 +300,41 @@ class Database:
         if _vars_['protocol'] is not None:
             db_conf.protocol.value = NetProtocol._member_map_[_vars_['protocol'].upper()]
     def get_config(self) -> DatabaseConfig:
+        """Returns `firebird-driver`_ configuration for test database (`pytest`).
+        """
         return driver_config.get_database('pytest')
     def create(self, page_size: int=None, sql_dialect: int=None) -> None:
-        #__tracebackhide__ = True
+        """Create the test database.
+
+        Arguments:
+            page_size: Database page size.
+            sql_dialect: Database SQL dialect.
+
+        .. note::
+
+           Typically, this method is used only by `db_factory` to create the test database
+           (during fixture setup) unless `do_not_create` argument is set to True.
+
+        """
+        __tracebackhide__ = True
         self._make_config(page_size=page_size, sql_dialect=sql_dialect, charset=self.charset)
         charset = self.charset
         print(f"Creating db: {self.dsn} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
         with create_database('pytest'):
             pass
     def restore(self, backup: str) -> None:
-        #__tracebackhide__ = True
+        """Create the test database from backup.
+
+        Arguments:
+            backup: Backup filename.
+
+        .. note::
+
+           Typically, this method is used only by `db_factory` to create the test database
+           (during fixture setup) unless `do_not_create` argument is set to True.
+
+        """
+        __tracebackhide__ = True
         fbk_file: Path = _vars_['backups'] / backup
         if not fbk_file.is_file():
             raise ValueError(f"Backup file '{fbk_file}' not found")
@@ -282,12 +348,20 @@ class Database:
             print(f"-- stderr {'-' * 20}")
             print(result.stderr)
             raise Exception("Database restore failed")
-        # Fix permissions
-        #if platform.system != 'Windows':
-            #os.chmod(self.db_path, 16895)
         return result
     def copy(self, filename: str) -> None:
-        #__tracebackhide__ = True
+        """Create the test database as copy of template database.
+
+        Arguments:
+            filename: Template database filename.
+
+        .. note::
+
+           Typically, this method is used only by `db_factory` to create the test database
+           (during fixture setup) unless `do_not_create` argument is set to True.
+
+        """
+        __tracebackhide__ = True
         src_path = _vars_['databases'] / filename
         #print(f"Copying db: {self.db_path} from {src_path}")
         shutil.copyfile(src_path, self.db_path)
@@ -295,6 +369,18 @@ class Database:
         if platform.system != 'Windows':
             os.chmod(self.db_path, 16895)
     def init(self, script: str) -> CompletedProcess:
+        """Initialize the test database by running ISQL script.
+
+        Arguments:
+            script: SQL script content to be executed by ISQL.
+
+        .. note::
+
+           Typically, this method is used only by `db_factory` to initialize the test database
+           (during fixture setup) unless `do_not_create` argument is set to True.
+
+        """
+        __tracebackhide__ = True
         result = run([_vars_['isql'], '-ch', 'UTF8', '-user', self.user,
                       '-password', self.password, str(self.dsn)],
                      input=substitute_macros(script, self.subs),
@@ -307,6 +393,16 @@ class Database:
             raise Exception("Database init script execution failed")
         return result
     def drop(self) -> None:
+        """Drop the test database.
+
+        .. note::
+
+           Typically, this method is used only by `db_factory` to drop the test database
+           after test execution (during fixture teardown) unless `do_not_drop` argument is
+           set to True.
+
+        """
+        __tracebackhide__ = True
         with connect_server(_vars_['server']) as srv:
             srv.database.no_linger(database=self.db_path)
         self._make_config()
@@ -328,6 +424,28 @@ class Database:
                 no_db_triggers: bool=None, dbkey_scope: DBKeyScope=None,
                 session_time_zone: str=None, charset: str=None, sql_dialect: int=None,
                 auth_plugin_list: str=None) -> Connection:
+        """Create new connection to test database.
+
+        Arguments:
+            user: User name for this connection.
+            password: User password for this connection.
+            role: Role name.
+            no_gc: When `True`, the Garbage Collection is disabled for this connection.
+            no_db_triggers: When `True`, the database triggers are disabled for this connection.
+            dbkey_scope: Scope for `db_key's` for this connection.
+            session_time_zone: Session time zone.
+            charset: Character set for this connection.
+            sql_dialect: SQL dialect used for connection.
+            auth_plugin_list: List of authentication plugins override.
+
+        .. tip::
+
+           It's highly recommended to use the :ref:`with <with>` statement to ensure that
+           the returned `~firebird.driver.core.Connection` is properly closed even if test
+           fails or raises an error. Otherwise the teardown of test database fixture may
+           fail as well, adding unnecessary clutter to test session report.
+        """
+        __tracebackhide__ = True
         self._make_config(user=user, password=password, charset=charset, sql_dialect=sql_dialect)
         result = connect('pytest', role=role, no_gc=no_gc, no_db_triggers=no_db_triggers,
                        dbkey_scope=dbkey_scope, session_time_zone=session_time_zone,
@@ -335,9 +453,13 @@ class Database:
         result._att._name = self._debug
         return result
     def set_async_write(self) -> None:
+        "Set the database to `async write` mode."
+        __tracebackhide__ = True
         with connect_server(_vars_['server']) as srv:
             srv.database.set_write_mode(database=self.db_path, mode=DbWriteMode.ASYNC)
     def set_sync_write(self) -> None:
+        "Set the database to `sync write` mode."
+        __tracebackhide__ = True
         with connect_server(_vars_['server']) as srv:
             srv.database.set_write_mode(database=self.db_path, mode=DbWriteMode.SYNC)
 
@@ -345,6 +467,29 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
                copy_of: str=None, page_size: int=None, sql_dialect: int=None,
                charset: str=None, user: str=None, password: str=None,
                do_not_create: bool=False, do_not_drop: bool=False, async_write: bool=True):
+    """Factory function that returns :doc:`fixture <fixture>` providing the `Database` instance.
+
+    Arguments:
+        filename: Test database filename (without path).
+        init:     Test database initialization script (isql format).
+        from_backup: Backup filename (without path) from which the test database should be restored.
+            File must be located in `backups` directory.
+        copy_of:  Filename (without path) of the database that should be copied as test database.
+            File must be located in `databases` directory.
+        page_size: Test database page size.
+        sql_dialect: SQL dialect for test database.
+        charset: Character set for test database.
+        user: User name used to create/restore/connect the test database. Default is taken
+            from server configuration.
+        password: User password used to create/restore/connect the test database. Default
+            is taken from server configuration.
+        do_not_create: When `True`, the preparation of test database is skipped. Use this
+            option to define test databases created by test itself, so they are properly
+            removed.
+        do_not_drop: When `True`, the ficture will not drop the test database. Use this
+           option when test database is removed by test itself (as part of test routine).
+        async_write: When `True`, the database is set to async write before initialization.
+    """
 
     @pytest.fixture
     def database_fixture(request: FixtureRequest, db_path) -> Database:
@@ -368,6 +513,13 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
 
 @pytest.fixture
 def db_path(tmp_path) -> Path:
+    """:doc:`fixture <fixture>` function that returns path to temporary directory for database files.
+
+    On non-Windows platforms makes sure that directory has permissions that user, group and
+    other can write there.
+
+    .. seealso:: `tmp_path <_pytest.tmpdir.tmp_path>` fixture.
+    """
     if platform.system != 'Windows':
         base = _vars_['basetemp']
         if base is None:
@@ -379,15 +531,51 @@ def db_path(tmp_path) -> Path:
     return tmp_path
 
 class User:
+    """Object to access and manage single Firebird test user.
+
+    Arguments:
+        db: Database used to manage test user.
+        filename: Database filename.
+        name: User name.
+        password: User password.
+        plugin: Secutiry plugin name used to manage this user.
+        charset: Firebird CHARACTER SET used for connections that manage this user.
+        active: Create user as active.
+        tags: Tags for user.
+        first_name: User's first name.
+        middle_name: User's middle name.
+        last_name: User's last name.
+        admin: ADMIN flag.
+        do_not_create: When `True`, the user is not created when `with` context is entered.
+
+    .. note::
+
+       Users are managed through SQL commands executed on connection to specified test
+       database to ensure that security database configuration for this test database is
+       respected.
+
+    .. important::
+
+       It's NOT RECOMMENDED to create instances of this class directly! The preffered way
+       is to use fixtures created by `user_factory`.
+
+       As test databases are managed by fixtures, it's necessary to ensure that users are
+       created after database initialization, and removed before test database is removed.
+       So, user `setup` and `teardown` is managed via context manager protocol and the
+       :ref:`with <with>` statement that must be executed within scope of used database.
+       Fixture created by `user_factory` does this automatically.
+    """
     def __init__(self, db: Database, *, name: str, password: str, plugin: str, charset: str,
                  active: bool=True, tags: Dict[str]=None, first_name: str=None,
                  middle_name: str=None, last_name: str=None, admin: bool=False,
                  do_not_create: bool=False):
+        #: Database used to manage test user.
         self.db: Database = db
         self.__name: str = name if name.startswith('"') else name.upper()
         self.__password: str = password
         self.__plugin: str = plugin
         self.__p = ''  if self.__plugin is None else f" USING PLUGIN {self.__plugin}"
+        #: Firebird CHARACTER SET used for connections that manage this user.
         self.charset: str = charset
         self.__active: bool = active
         self.__first_name: str = first_name
@@ -397,13 +585,15 @@ class User:
         self.__admin: bool = admin
         self.__create: bool = not do_not_create
     def __enter__(self) -> Role:
-        if self.__create and not self.exists():
+        if self.__create:
             self.create()
         return self
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self.exists():
             self.drop()
     def exists(self) -> bool:
+        "Returns `True` if user exists."
+        __tracebackhide__ = True
         with self.db.connect(charset=self.charset) as con:
             c = con.cursor()
             name = self.name[1:-1] if self.name.startswith('"') else self.name
@@ -413,6 +603,14 @@ class User:
             cnt = c.execute(cmd).fetchone()[0]
         return cnt > 0
     def create(self) -> None:
+        """Creates user in security context of defined test database. Called automatically
+        when `with` context is entered and `do_not_create` is `False`.
+
+        .. note:: Sets all user attributes (names, tags etc.).
+
+        .. important:: If user already exists, it's removed before it's re-created.
+        """
+        __tracebackhide__ = True
         if self.exists():
             self.drop()
         with self.db.connect(charset=self.charset) as con:
@@ -429,6 +627,12 @@ class User:
             con.commit()
         print(f"CREATE user: {self.name} PLUGIN: {self.plugin}")
     def drop(self) -> None:
+        """Drop user in security context of defined test database. Called automatically
+        on `with` context exit.
+
+        .. note:: If needed, also removes all grants for this user via REVOKE ALL ON ALL.
+        """
+        __tracebackhide__ = True
         with self.db.connect(charset=self.charset) as con:
             c = con.cursor()
             grants = c.execute('select count(*) from '\
@@ -444,18 +648,33 @@ class User:
             con.execute_immediate(f"DROP USER {self.name}{self.__p}")
             con.commit()
     def set_tag(self, name: str, *, value: str) -> None:
+        """Create/Set user tag value.
+
+        Arguments:
+           name: Tag name.
+           value: Tag value.
+        """
+        __tracebackhide__ = True
         with self.db.connect(charset=self.charset) as con:
             con.execute_immediate(f"ALTER USER {self.name} TAGS ({name} = '{value}'){self.__p}")
             con.commit()
     def drop_tag(self, name: str) -> None:
+        """Drop user tag.
+
+        Arguments:
+           name: Tag name.
+        """
+        __tracebackhide__ = True
         with self.db.connect(charset=self.charset) as con:
             con.execute_immediate(f"ALTER USER {self.name} TAGS (DROP {name}){self.__p}")
             con.commit()
     @property
     def name(self) -> str:
+        "User name [R/O]"
         return self.__name
     @property
     def plugin(self) -> str:
+        "Security plugin [R/O]"
         if self.__plugin is None:
             with self.db.connect() as con:
                 c = con.cursor()
@@ -463,6 +682,7 @@ class User:
         return self.__plugin
     @property
     def password(self) -> str:
+        "User password [R/W]"
         return self.__password
     @password.setter
     def password(self, value: str) -> None:
@@ -472,6 +692,7 @@ class User:
         self.__password = value
     @property
     def first_name(self) -> str:
+        "First name [R/W]"
         return self.__first_name
     @first_name.setter
     def first_name(self, value: str) -> None:
@@ -481,6 +702,7 @@ class User:
         self.__first_name = value
     @property
     def middle_name(self) -> str:
+        "Middle name [R/W]"
         return self.__middle_name
     @middle_name.setter
     def middle_name(self, value: str) -> None:
@@ -490,6 +712,7 @@ class User:
         self.__middle_name = value
     @property
     def last_name(self) -> str:
+        "Last name [R/W]"
         return self.__last_name
     @last_name.setter
     def last_name(self, value: str) -> None:
@@ -499,12 +722,41 @@ class User:
         self.__last_name = value
     @property
     def tags(self) -> Dict[str]:
+        "User tags [R/O]"
         return dict(self.__tags)
 
 def user_factory(db_fixture_name: str, *, name: str, password: str, plugin: str=None,
                  charset: str='utf8', active: bool=True, tags: Dict[str]=None,
                  first_name: str=None, middle_name: str=None, last_name: str=None,
                  admin: bool=False, do_not_create: bool=False):
+    """Factory function that returns :doc:`fixture <fixture>` providing the `User` instance.
+
+    Arguments:
+        db_fixture_name: Name of database fixture.
+        name: User name.
+        password: User password.
+        plugin: Secutiry plugin name used to manage this user.
+        charset: Firebird CHARACTER SET used for connections that manage this user.
+        active: Create user as active.
+        tags: Tags for user.
+        first_name: User's first name.
+        middle_name: User's middle name.
+        last_name: User's last name.
+        admin: ADMIN flag.
+        do_not_create: When `True`, the user is not created when `with` context is entered.
+
+    .. important::
+
+       The `db_fixture_name` must be name of variable that holds the fixture created by
+       `db_factory` function.
+
+       **Test must use both, user and database fixtures!**
+
+    .. note::
+
+       Database must exists before user is created by fixture, so you cannot use database
+       fixtures created with `do_not_create` option!
+    """
 
     @pytest.fixture
     def user_fixture(request: FixtureRequest) -> User:
@@ -516,7 +768,18 @@ def user_factory(db_fixture_name: str, *, name: str, password: str, plugin: str=
 
     return user_fixture
 
-def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], keep_log: bool, encoding: str):
+def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], keep_log: bool,
+                 encoding: str):
+    """Function used by `TraceSession` for execution in separate thread to run trace session.
+
+    Arguments:
+        act: Action instance.
+        b: Barrier instance used for synchronization.
+        cfg: Trace configuration.
+        output: List used to store trace session output.
+        keep_log: When `True`, the trace session output is discarded.
+        encoding: Encoding for trace session output.
+    """
     with act.connect_server() as srv:
         srv.encoding = encoding
         srv.trace.start(config='\n'.join(cfg))
@@ -526,12 +789,46 @@ def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], kee
                 output.append(line)
 
 class TraceSession:
+    """Object to manage Firebird trace session.
+
+    Arguments:
+       act: Action instance.
+       config: Trace session configuration.
+       keep_log: When `True`, the trace session output is discarded.
+       encoding: Encoding for trace session output.
+
+    .. important::
+
+       Do not create instances of this class directly! Always use `Action.trace` method and the
+       :ref:`with <with>` statement.
+
+       Example::
+
+          with act.trace(db_events=trace_cfg):
+              # your test here
+          # Process trace output, for example by passing to stdout
+          act_1.trace_to_stdout()
+
+       The trace session is automatically stopped on exit from `with` context, and trace
+       output is copied to `Action.trace_log` attribute.
+
+       .. note::
+
+          For simplicity, we stop **ALL** trace sessions and `Action` keeps only one session
+          log, so you should not run multiple trace session simultaneously!
+    """
     def __init__(self, act: Action, config: List[str], keep_log: bool=True, encoding: str='ascii'):
+        #: Action instance.
         self.act: Action = act
+        #: Trace session configuration.
         self.config: List[str] = config
+        #: List used to store trace session output.
         self.output: List[str] = []
+        #: When `True`, the trace session output is discarded.
         self.keep_log: bool = keep_log
+        #: Thread used to execute trace session
         self.trace_thread: Thread = None
+        #: Encoding for trace session output.
         self.encoding: str = encoding
     def __enter__(self) -> TraceSession:
         b = Barrier(2)
@@ -552,6 +849,20 @@ class TraceSession:
         self.act.trace_log = self.output
 
 class ServerKeeper:
+    """Helper context manager class to temporary change the server used by `Action`.
+
+    Arguments:
+        atc: Action instance.
+        server: New server specification.
+
+    Example::
+
+       with ServerKeeper(act_1, None): # Use embedded server for trace
+           with act_1.trace(config=trace_1):
+               # Your test here
+       # Process trace output, for example by passing to stdout
+       act_1.trace_to_stdout()
+    """
     def __init__(self, act: Action, server: str):
         self.act: Action = act
         self.server:str = server
@@ -565,6 +876,27 @@ class ServerKeeper:
             self.act.vars['server'] = self.old_value
 
 class Envar:
+    """Object to manage environment variables in tests.
+
+    Arguments:
+        name: Variable name.
+        value: Variable value.
+
+    .. important::
+
+       It's NOT RECOMMENDED to create instances of this class directly! The preffered way
+       is to use fixtures created by `envar_factory`.
+
+       Environment variable `setup` and `teardown` is managed via context manager protocol
+       and the :ref:`with <with>` statement. Fixture created by `envar_factory` does this
+       automatically.
+
+       .. note::
+
+          If environment variable already exists when context is entered, its value is
+          preserved and restored at context exit. If the variable does not exist before,
+          it is deleted.
+    """
     def __init__(self, name: str, value: str):
         self.name = name
         self.value = value
@@ -577,8 +909,22 @@ class Envar:
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self.old_value is not None:
             os.environ[self.name] = self.old_value
+        else:
+            del os.environ[self.name]
 
 def envar_factory(*, name: str, value: str):
+    """Factory function that returns :doc:`fixture <fixture>` providing the `Envar` instance.
+
+    Arguments:
+        name: Variable name.
+        value: Variable value.
+
+    .. note::
+
+       If environment variable already exists before test execution, its value is preserved
+       and restored when test execution is finished. If the variable does not exist before,
+       it is deleted.
+    """
 
     @pytest.fixture
     def envar_fixture() -> User:
@@ -588,29 +934,70 @@ def envar_factory(*, name: str, value: str):
     return envar_fixture
 
 class Role:
+    """Object to access and manage single Firebird test role.
+
+    Arguments:
+        database: Database used to manage test role.
+        name: Role name.
+        charset: Firebird CHARACTER SET used for connections that manage this role.
+        do_not_create: When `True`, the role is not created when `with` context is entered.
+
+    .. note::
+
+       Roles are managed through SQL commands executed on connection to specified test
+       database.
+
+    .. important::
+
+       It's NOT RECOMMENDED to create instances of this class directly! The preffered way
+       is to use fixtures created by `role_factory`.
+
+       As test databases are managed by fixtures, it's necessary to ensure that roles are
+       created after database initialization, and removed before test database is removed.
+       So, role `setup` and `teardown` is managed via context manager protocol and the
+       :ref:`with <with>` statement that must be executed within scope of used database.
+       Fixture created by `role_factory` does this automatically.
+    """
     def __init__(self, database: Database, name: str, charset: str, do_not_create: bool):
+        #: Database used to manage test role.
         self.db: Database = database
+        #: Role name.
         self.name: str = name if name.startswith('"') else name.upper()
+        #: Firebird CHARACTER SET used for connections that manage this role.
         self.charset = charset
+        #: When `True`, the role is not created when `with` context is entered.
         self.do_not_create: bool = do_not_create
     def __enter__(self) -> Role:
-        if not self.exists() and not self.do_not_create:
+        if not self.do_not_create:
             self.create()
         return self
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self.exists():
             self.drop()
     def create(self) -> None:
+        """Creates role in test database. Called automatically when `with` context is
+        entered and `do_not_create` is `False`.
+
+        .. important:: If role already exists, it's removed before it's re-created.
+        """
+        __tracebackhide__ = True
+        if self.exists():
+            self.drop()
         with self.db.connect(charset=self.charset) as con:
             con.execute_immediate(f'CREATE ROLE {self.name}')
             con.commit()
             print(f"CREATE role: {self.name}")
     def drop(self) -> None:
+        """Drop role in defined test database. Called automatically on `with` context exit.
+        """
+        __tracebackhide__ = True
         with self.db.connect(charset=self.charset) as con:
             con.execute_immediate(f'DROP ROLE {self.name}')
             con.commit()
             print(f"DROP role: {self.name}")
     def exists(self) -> bool:
+        "Returns `True` if role exists."
+        __tracebackhide__ = True
         with self.db.connect(charset=self.charset) as con:
             c = con.cursor()
             name = self.name[1:-1] if self.name.startswith('"') else self.name
@@ -628,25 +1015,47 @@ def role_factory(db_fixture_name: str, *, name: str, charset: str='utf8', do_not
     return role_fixture
 
 class Action:
+    """Class to manage and execute Firebird tests.
+
+    Arguments:
+      db: Primary test database.
+      script: Test ISQL script.
+      substitutions: REGEX substitutions to be applied on stdout/stderr on cleanup.
+      outfile: Base path/filename for stdout/stderr protocols of external Firebird tool execution.
+
+    .. important::
+
+        Do not create instances of this class directly! Use **only** fixtures created by
+        `isql_act` or `python_act`.
+    """
     def __init__(self, db: Database, script: str, substitutions: List[str], outfile: Path):
+        #: Primary test database.
         self.db: Database = db
+        #: Test script
         self.script: str = script
+        #: Return code from last external Firebird tool execution.
         self.return_code: int = 0
+        #: Content of standard output from last external Firebird tool execution.
         self.stdout: str = ''
         self._clean_stdout: str = None
+        #: Content of error output from last external Firebird tool execution.
         self.stderr: str = ''
         self._clean_stderr: str = None
+        #: Expected standard output.
         self.expected_stdout: str = ''
         self._clean_expected_stdout: str = None
+        #: Expected error output.
         self.expected_stderr: str = ''
         self._clean_expected_stderr: str = None
+        #: REGEX substitutions applied on stdout/stderr on cleanup.
         self.substitutions: List[str] = [x for x in substitutions]
+        #: Base path/filename for stdout/stderr protocols of external Firebird tool execution.
         self.outfile: Path = outfile
+        #: Output from last executed trace session.
         self.trace_log: List[str] = []
-    def make_diff(self, left: str, right: str) -> str:
-        return '\n'.join(difflib.ndiff(left.splitlines(), right.splitlines()))
     def space_strip(self, value: str) -> str:
-        """Reduce spaces in value"""
+        """Reduce spaces in value.
+        """
         value= re.sub("(?m)^\\s+", "", value)
         return re.sub("(?m)\\s+$", "", value)
     def string_strip(self, value: str, substitutions: List[str]=[], isql: bool=True,
@@ -665,8 +1074,29 @@ class Action:
         if remove_space:
             value = self.space_strip(value)
         return value
-    def execute(self, *, do_not_connect: bool=False, charset: str=None,
+    def execute(self, *, do_not_connect: bool=False, charset: str=None, io_enc: str=None,
                 combine_output: bool=False) -> None:
+        """Execute test `script` using ISQL.
+
+        Arguments:
+           do_not_connect: Do not connect to primary test database on ISQL execution.
+           charset: Charset to be used for connection instead charset of primary test database.
+           io_enc: Python encoding to be used to decode text output instead encoding that
+              corresponds to used character set.
+           combine_output: Combine stdout/stderr into stdout.
+
+        By default, script is executed on primary test database with NONE charset. ISQL
+        output is captured into `stdout` and `stderr`, and exit code is stored into
+        `return_code`. If pytest `--save-output` command-line option is used, the content
+        of stdout/stderr is also stored into test protocol files with `.out`/`.err` suffix.
+
+        .. important::
+
+           If `return_code` is not zero, and script execution failure is not expected (either
+           via defined `expected_stderr` value or using `combine_output` = True), it raises and
+           `Exception` with "ISQL script execution failed" message and prints content of stdout
+           and stderr.
+        """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -674,12 +1104,9 @@ class Action:
             out_file.unlink()
         if err_file.is_file():
             err_file.unlink()
-        if charset is not None:
-            charset = charset.upper()
+        charset = charset.upper() if charset else self.db.charset
+        if io_enc is None:
             io_enc = CHARSET_MAP[charset]
-        else:
-            charset = self.db.charset
-            io_enc = self.db.io_enc
         params = [_vars_['isql'], '-ch', charset]
         if not do_not_connect:
             params.extend(['-user', self.db.user, '-password', self.db.password, str(self.db.dsn)])
@@ -705,8 +1132,27 @@ class Action:
                 out_file.write_text(self.stdout, encoding='utf8')
             if self.stderr:
                 err_file.write_text(self.stderr, encoding='utf8')
-    def extract_meta(self, *, from_db: Database=None, charset: str=None,
-                     io_enc: str=None) -> str:
+    def extract_meta(self, *, from_db: Database=None, charset: str=None, io_enc: str=None) -> str:
+        """Call ISQL to extract database metadata (using `-x` option).
+
+        Arguments:
+           from_db: Extract metadata from specified database instead primary test database.
+           charset: Charset to be used for connection instead charset of primary test database.
+           io_enc: Python encoding to be used to decode text output instead encoding that
+              corresponds to used character set.
+
+        By default, metadata are extracted from primary test database using NONE connection
+        charset. ISQL output is captured into `stdout` and `stderr`, and exit code is stored
+        into `return_code`. If pytest `--save-output` command-line option is used, the content
+        of stdout/stderr is also stored into test protocol files with `.out`/`.err` suffix.
+
+        .. important::
+
+           If `return_code` is not zero, and isql execution failure is not expected (either
+           via defined `expected_stderr` value or using `combine_output` = True), it raises
+           and `Exception` with "ISQL execution failed" message and prints content
+           of stdout and stderr.
+        """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -733,12 +1179,38 @@ class Action:
         # Store output
         if _vars_['save-output']:
             if self.stdout:
-                out_file.write_text(self.stdout, encoding=self.db.io_enc)
+                out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
-                err_file.write_text(self.stderr, encoding=self.db.io_enc)
+                err_file.write_text(self.stderr, encoding=io_enc)
         return self.stdout
-    def gstat(self, *, switches: List[str], charset: str=None, connect_db: bool=True,
-              credentials: bool=True) -> None:
+    def gstat(self, *, switches: List[str], charset: str=None, io_enc: str=None,
+              connect_db: bool=True, credentials: bool=True) -> None:
+        """Run `gstat` utility.
+
+        Arguments:
+           switches: List with command-line switches (passed to `subprocess.run`).
+           charset: Decode output using encoding that corresponds to this charset instead
+             charset of primary test database.
+           connect_db: When `True` adds primary test database DSN to switches.
+           credentials: When `True` adds switches to connect as primary test database user.
+
+        By default, GSTAT is executed on primary test database, and output is captured into
+        `stdout` and `stderr`, and exit code is stored to `return_code`. If pytest `--save-output`
+        command-line option is used, the content of stdout/stderr is also stored into test
+        protocol files with `.out`/`.err` suffix.
+
+        Example::
+
+           act_1.gstat(switches=['-h'])
+           act_1.gstat(switches=['-h', str(test_db)], connect_db=False)
+
+        .. important::
+
+           If `return_code` is not zero, and script execution failure is not expected (either
+           via defined `expected_stderr` value or using `combine_output` = True), it raises and
+           `Exception` with "gstat execution failed" message and prints content of stdout
+           and stderr.
+        """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -748,15 +1220,15 @@ class Action:
             err_file.unlink()
         #
         charset = charset.upper() if charset else self.db.charset
-        io_enc = CHARSET_MAP[charset]
+        if io_enc is None:
+            io_enc = CHARSET_MAP[charset]
         params = [_vars_['gstat']]
         if credentials:
             params.extend(['-user', self.db.user, '-password', self.db.password])
         params.extend(switches)
         if connect_db:
             params.append(str(self.db.dsn))
-        result: CompletedProcess = run(params,
-                                       encoding=io_enc, capture_output=True)
+        result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
             print(f"-- gstat stdout {'-' * 20}")
             print(result.stdout)
@@ -769,11 +1241,37 @@ class Action:
         # Store output
         if _vars_['save-output']:
             if self.stdout:
-                out_file.write_text(self.stdout, encoding=self.db.io_enc)
+                out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
-                err_file.write_text(self.stderr, encoding=self.db.io_enc)
+                err_file.write_text(self.stderr, encoding=io_enc)
     def gsec(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
              input: str=None, credentials: bool=True) -> None:
+        """Run `gstat` utility.
+
+        Arguments:
+           switches: List with command-line switches (passed to `subprocess.run`).
+           charset: Decode output using encoding that corresponds to this charset instead
+             charset of primary test database.
+           connect_db: When `True` adds primary test database DSN to switches.
+           credentials: When `True` adds switches to connect as primary test database user.
+
+        By default, GSTAT is executed on primary test database, and output is captured into
+        `stdout` and `stderr`, and exit code is stored to `return_code`. If pytest `--save-output`
+        command-line option is used, the content of stdout/stderr is also stored into test
+        protocol files with `.out`/`.err` suffix.
+
+        Example::
+
+           act_1.gstat(switches=['-h'])
+           act_1.gstat(switches=['-h', str(test_db)], connect_db=False)
+
+        .. important::
+
+           If `return_code` is not zero, and script execution failure is not expected (either
+           via defined `expected_stderr` value or using `combine_output` = True), it raises and
+           `Exception` with "gstat execution failed" message and prints content of stdout
+           and stderr.
+        """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -809,6 +1307,27 @@ class Action:
                 err_file.write_text(self.stderr, encoding=io_enc)
     def gbak(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
              input: str=None, credentials: bool=True, combine_output: bool=False) -> None:
+        """Run `gbak` utility.
+
+        Arguments:
+           do_not_connect: Do not connect to primary test database on ISQL execution.
+           charset: Firebird CHARACTER SET name.
+           combine_output: Combine stdout/stderr into stdout.
+
+        By default, script is executed on primary test database with NONE charset, and
+        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
+        `return_code`.
+
+        If pytest `--save-output` command-line option is used, the content of stdout/stderr
+        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+
+        .. important::
+
+           If `return_code` is not zero, and script execution failure is not expected (either
+           via defined `expected_stderr` value or using `combine_output` = True), it raises and
+           `Exception` with "ISQL script execution failed" message and prints content of stdout
+           and stderr.
+        """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -846,8 +1365,29 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def nbackup(self, *, switches: List[str], charset: str=None, credentials: bool=True,
-                combine_output: bool=False) -> None:
+    def nbackup(self, *, switches: List[str], charset: str=None, io_enc: str=None,
+                credentials: bool=True, combine_output: bool=False) -> None:
+        """Run `nbackup` utility.
+
+        Arguments:
+           do_not_connect: Do not connect to primary test database on ISQL execution.
+           charset: Firebird CHARACTER SET name.
+           combine_output: Combine stdout/stderr into stdout.
+
+        By default, script is executed on primary test database with NONE charset, and
+        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
+        `return_code`.
+
+        If pytest `--save-output` command-line option is used, the content of stdout/stderr
+        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+
+        .. important::
+
+           If `return_code` is not zero, and script execution failure is not expected (either
+           via defined `expected_stderr` value or using `combine_output` = True), it raises and
+           `Exception` with "ISQL script execution failed" message and prints content of stdout
+           and stderr.
+        """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -857,7 +1397,8 @@ class Action:
             err_file.unlink()
         #
         charset = charset.upper() if charset else self.db.charset
-        io_enc = CHARSET_MAP[charset]
+        if io_enc is None:
+            io_enc = CHARSET_MAP[charset]
         params = [_vars_['nbackup']]
         params.extend(switches)
         if credentials:
@@ -878,11 +1419,32 @@ class Action:
         # Store output
         if _vars_['save-output']:
             if self.stdout:
-                out_file.write_text(self.stdout, encoding=self.db.io_enc)
+                out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
-                err_file.write_text(self.stderr, encoding=self.db.io_enc)
+                err_file.write_text(self.stderr, encoding=io_enc)
     def gfix(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
              input: str=None, credentials: bool=True) -> None:
+        """Run `gfix` utility.
+
+        Arguments:
+           do_not_connect: Do not connect to primary test database on ISQL execution.
+           charset: Firebird CHARACTER SET name.
+           combine_output: Combine stdout/stderr into stdout.
+
+        By default, script is executed on primary test database with NONE charset, and
+        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
+        `return_code`.
+
+        If pytest `--save-output` command-line option is used, the content of stdout/stderr
+        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+
+        .. important::
+
+           If `return_code` is not zero, and script execution failure is not expected (either
+           via defined `expected_stderr` value or using `combine_output` = True), it raises and
+           `Exception` with "ISQL script execution failed" message and prints content of stdout
+           and stderr.
+        """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -919,6 +1481,27 @@ class Action:
     def isql(self, *, switches: List[str], charset: str=None, io_enc: str=None,
              input: str=None, input_file: Path=None, connect_db: bool=True,
              credentials: bool=True, combine_output: bool=False, use_db: Database=None) -> None:
+        """Run `isql` utility.
+
+        Arguments:
+           do_not_connect: Do not connect to primary test database on ISQL execution.
+           charset: Firebird CHARACTER SET name.
+           combine_output: Combine stdout/stderr into stdout.
+
+        By default, script is executed on primary test database with NONE charset, and
+        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
+        `return_code`.
+
+        If pytest `--save-output` command-line option is used, the content of stdout/stderr
+        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+
+        .. important::
+
+           If `return_code` is not zero, and script execution failure is not expected (either
+           via defined `expected_stderr` value or using `combine_output` = True), it raises and
+           `Exception` with "ISQL script execution failed" message and prints content of stdout
+           and stderr.
+        """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -962,6 +1545,27 @@ class Action:
                 err_file.write_text(self.stderr, encoding=io_enc)
     def svcmgr(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
                connect_mngr: bool=True) -> None:
+        """Run `fbsvcmgr` utility.
+
+        Arguments:
+           do_not_connect: Do not connect to primary test database on ISQL execution.
+           charset: Charset for use by ISQL.
+           combine_output: Combine stdout/stderr into stdout.
+
+        By default, script is executed on primary test database with NONE charset, and
+        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
+        `return_code`.
+
+        If pytest `--save-output` command-line option is used, the content of stdout/stderr
+        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+
+        .. important::
+
+           If `return_code` is not zero, and script execution failure is not expected (either
+           via defined `expected_stderr` value or using `combine_output` = True), it raises and
+           `Exception` with "ISQL script execution failed" message and prints content of stdout
+           and stderr.
+        """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
         err_file: Path = self.outfile.with_suffix('.err')
@@ -996,10 +1600,12 @@ class Action:
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
     def connect_server(self, *, user: str='SYSDBA', password: str=None, role: str=None) -> Server:
+        __tracebackhide__ = True
         return connect_server(_vars_['server'], user=user,
                               password=_vars_['password'] if password is None else password,
                               role=role)
     def get_firebird_log(self) -> List[str]:
+        __tracebackhide__ = True
         with self.connect_server() as srv:
             srv.info.get_log()
             return srv.readlines()
@@ -1106,50 +1712,67 @@ class Action:
         return row[0] if row else None
     @property
     def clean_stdout(self) -> str:
+        """Content of `stdout` with unwanted isql noise removed and applied `substitutions` [R/O].
+        """
         if self._clean_stdout is None:
             self._clean_stdout = self.string_strip(self.stdout, self.substitutions)
         return self._clean_stdout
     @property
     def clean_stderr(self) -> str:
+        """Content of `stderr` with unwanted isql noise removed and applied `substitutions` [R/O].
+        """
         if self._clean_stderr is None:
             self._clean_stderr = self.string_strip(self.stderr, self.substitutions)
         return self._clean_stderr
     @property
     def clean_expected_stdout(self) -> str:
+        """Content of `expected_stdout` with unwanted isql noise removed and applied `substitutions` [R/O].
+        """
         if self._clean_expected_stdout is None:
             self._clean_expected_stdout = self.string_strip(self.expected_stdout, self.substitutions)
         return self._clean_expected_stdout
     @property
     def clean_expected_stderr(self) -> str:
+        """Content of `expected_stderr` with unwanted isql noise removed and applied `substitutions` [R/O].
+        """
         if self._clean_expected_stderr is None:
             self._clean_expected_stderr = self.string_strip(self.expected_stderr, self.substitutions)
         return self._clean_expected_stderr
     @property
     def vars(self) -> Dict[str]:
+        "Directory with plugin various configuration parameters and variables."
         return _vars_
     @property
     def host(self) -> str:
+        "Host machine of tested Firebird server."
         return _vars_['host']
     @property
     def port(self) -> str:
+        "Port of tested Firebird server."
         return _vars_['port']
     @property
     def protocol(self) -> str:
+        "Default protocol for connections to databases."
         return _vars_['protocol']
     @property
     def security_db(self) -> str:
+        "Path to Firebird security database."
         return _vars_['security-db']
     @property
     def home_dir(self) -> Path:
+        "Path to Firebird home directory."
         return _vars_['home-dir']
     @property
     def bin_dir(self) -> Path:
+        "Path to directory with Firebird utilities."
         return _vars_['bin-dir']
     @property
     def files_dir(self) -> Path:
+        "Path to directory with test suite data files."
         return _vars_['files']
     @property
     def platform(self) -> str:
+        "Current execution platform identifier."
         return _platform
 
 def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None):
@@ -1180,10 +1803,21 @@ def python_act(db_fixture_name: str, *, substitutions: List[str]=None):
 
     return python_act_fixture
 
-def temp_file(filename: str):
+def temp_file(filename: Union[str, Path]):
+    """Factory function that returns :doc:`fixture <fixture>` providing the `Path` to
+    temporary file.
+
+    Arguments:
+        filename: File name.
+
+    .. note::
+
+       Created fixture has only one purpose: if specified temporary file exists at fixture
+       `teardown`, it is removed.
+    """
 
     @pytest.fixture
-    def temp_file_fixture(tmp_path):
+    def temp_file_fixture(tmp_path) -> Path:
         tmp_file = tmp_path / filename
         yield tmp_file
         if tmp_file.is_file():
@@ -1191,10 +1825,21 @@ def temp_file(filename: str):
 
     return temp_file_fixture
 
-def temp_files(filenames: List[str]):
+def temp_files(filenames: List[Union[str, Path]]):
+    """Factory function that returns :doc:`fixture <fixture>` providing the list of `Path`
+    instances to temporary files.
+
+    Arguments:
+        filenames: List of file names.
+
+    .. note::
+
+       Created fixture has only one purpose: if any from specified temporary file exists
+       at fixture `teardown`, it is removed.
+    """
 
     @pytest.fixture
-    def temp_files_fixture(tmp_path):
+    def temp_files_fixture(tmp_path) -> List[Path]:
         tmp_files = []
         for filename in filenames:
             tmp_files.append(tmp_path / filename)
