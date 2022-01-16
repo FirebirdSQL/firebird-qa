@@ -183,6 +183,9 @@ def pytest_configure(config):
     # tools
     for tool in ['isql', 'gbak', 'nbackup', 'gstat', 'gfix', 'gsec', 'fbsvcmgr']:
         set_tool(tool)
+    # Driver encoding for NONE charset
+    CHARSET_MAP['NONE'] = 'utf-8'
+    CHARSET_MAP[None] = 'utf-8'
 
 
 def pytest_collection_modifyitems(session, config, items):
@@ -1032,7 +1035,7 @@ class Action:
         #: Primary test database.
         self.db: Database = db
         #: Test script
-        self.script: str = script
+        self.script: str = substitute_macros(script, self.db.subs)
         #: Return code from last external Firebird tool execution.
         self.return_code: int = 0
         #: Content of standard output from last external Firebird tool execution.
@@ -1114,7 +1117,7 @@ class Action:
             result: CompletedProcess = run(params, input=substitute_macros(self.script, self.db.subs),
                                            encoding=io_enc, stdout=PIPE, stderr=STDOUT)
         else:
-            result: CompletedProcess = run(params, input=substitute_macros(self.script, self.db.subs),
+            result: CompletedProcess = run(params, input=self.script,
                                            encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr) and not combine_output:
             print(f"-- ISQL script stdout {'-' * 20}")
