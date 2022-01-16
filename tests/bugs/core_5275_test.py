@@ -605,13 +605,13 @@ def test_1(act_1: Action, bulk_insert_script_1: Path, bulk_insert_output_1: Path
             finally:
                 p_bulk_insert.terminate()
         # Print logs
-        for line in bulk_insert_output_1.read_text().splitlines():
+        for line in act_1.string_strip(bulk_insert_output_1.read_text()).splitlines():
             if line:
                 print(f'{step}: BULK INSERTS LOG: {line.strip().upper()}')
         for line in create_idx_output_1.read_text().splitlines():
             if line:
                 print(f'{step}: CREATE INDEX LOG: {line.strip().upper()}')
-        for line in act_1.stdout.splitlines():
+        for line in act_1.string_strip(act_1.stdout).splitlines():
             if line:
                 print(f'{step}: KILL ATTACH LOG: {line.strip().upper()}')
     # Get Firebird log after test

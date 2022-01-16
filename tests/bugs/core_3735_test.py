@@ -14,7 +14,8 @@ from firebird.qa import db_factory, isql_act, Action, user_factory, User
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('-Effective user is.*', ''), ('Rolling back work.', '')]
+substitutions_1 = [('-Effective user is.*', ''), ('Rolling back work.', ''),
+                   ('Commit current transaction \\(y/n\\)\\?', '')]
 
 init_script_1 = """"""
 

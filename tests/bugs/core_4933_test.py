@@ -256,7 +256,7 @@ main_script_1 = temp_file('main_script.sql')
 tmp_db_1 = temp_file('tmp_addi_4933.fdb')
 
 @pytest.mark.version('>=3.0.6')
-def test_1(act_1: Action, addi_script_1: Path, main_script_1: Path):
+def test_1(act_1: Action, addi_script_1: Path, main_script_1: Path, tmp_db_1: Path):
     addi_script_1.write_text(f"""
         create database 'localhost:{tmp_db_1}' user {act_1.db.user} password '{act_1.db.password}';
 

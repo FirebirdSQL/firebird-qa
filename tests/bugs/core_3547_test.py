@@ -135,7 +135,7 @@ expected_stderr_2 = """
 """
 
 @pytest.mark.version('>=2.5.1')
-@pytest.mark.platform('Linux', 'MacOS', 'Solaris', 'FreeBSD', 'HP-UX')
+@pytest.mark.platform('Linux', 'Darwin', 'Solaris', 'FreeBSD', 'HP-UX')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2

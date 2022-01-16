@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_0479
 # title:        Grants overwrite previous rdb$security_classes entries
-# decription:   
+# decription:
 #                  Test attempts to create all kinds of objects (<K>) that can be 'target' for GRANT ON <K> statement.
 #                  Length of  each object is equal to implementation maximum for 2.5.x, 3.0.x and 4.0.
 #                  Pairs of objects differ only in last character.
@@ -10,7 +10,7 @@
 #                  NOTE-1: for 3.0.x and 4.0 we create objects as quoted, in UTF8, - for additional checking that we have no problem with non-ascii characters.
 #                  NOTE-2: max length in 4.0 is 63 utf8 CHARACTERS (not bytes).
 #                  Checked on WI-V2.5.7.27027, WI-V3.0.2.32630, WI-T4.0.0.454.
-#                
+#
 # tracker_id:   CORE-0479
 # min_versions: ['2.5.0']
 # versions:     3.0, 4.0
@@ -26,7 +26,7 @@ substitutions_1 = []
 
 init_script_1 = """"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db_1 = db_factory(sql_dialect=3, init=init_script_1, charset='utf8')
 
 test_script_1 = """
     set bail on;
@@ -38,7 +38,7 @@ test_script_1 = """
 
         select r.rdb$relation_name as obj_name, r.rdb$security_class as sec_class, 'table/view' as obj_type
         from rdb$relations r
-        
+
         union all
 
         select p.rdb$procedure_name, p.rdb$security_class, 'stored proc'
@@ -79,23 +79,23 @@ test_script_1 = """
     -----------------------------------------------------------------
     create view
     "vÁÃÀÅĂÂÄĀČĒĻŅŠŪŽ"
-    as select * from 
+    as select * from
     "tÁÃÀÅĂÂÄĀČĒĻŅŠŪŽ"
     ;
 
     create view
     "VÁÃÀÅĂÂÄĀČĒĻŅŠŪŽ"
-    as select * from 
+    as select * from
     "TÁÃÀÅĂÂÄĀČĒĻŅŠŪŽ"
     ;
     -----------------------------------------------------------------
 
-    create procedure 
+    create procedure
     "pÁÃÀÅĂÂÄĀČĒĻŅŠŪŽ"
     as begin
     end;
 
-    create procedure 
+    create procedure
     "PÁÃÀÅĂÂÄĀČĒĻŅŠŪŽ"
     as begin
     end;
@@ -118,11 +118,11 @@ test_script_1 = """
     ^
     -----------------------------------------------------------------
 
-    create package 
+    create package
     "gÁÃÀÅĂÂÄĀČĒĻŅŠŪŽ"
     as begin end
     ^
-    create package 
+    create package
     "GÁÃÀÅĂÂÄĀČĒĻŅŠŪŽ"
     as begin end
     ^
@@ -142,7 +142,7 @@ test_script_1 = """
     SET LIST ON;
     SET COUNT ON;
 
-    select * from v_check;  
+    select * from v_check;
 """
 
 act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
@@ -164,7 +164,7 @@ substitutions_2 = []
 
 init_script_2 = """"""
 
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
+db_2 = db_factory(sql_dialect=3, init=init_script_2, charset='utf8')
 
 test_script_2 = """
     set bail on;
@@ -176,7 +176,7 @@ test_script_2 = """
 
         select r.rdb$relation_name as obj_name, r.rdb$security_class as sec_class, 'table/view' as obj_type
         from rdb$relations r
-        
+
         union all
 
         select p.rdb$procedure_name, p.rdb$security_class, 'stored proc'
@@ -214,23 +214,23 @@ test_script_2 = """
     -----------------------------------------------------------------
     recreate view
     "vÁÃÀÅĂÂÄĀČĒĻŅŠŪŽĪáéíóúýàèìòùâêîôûãñõäëïöüÿçšδθλξσψωąęłźżњћџăşţŹ"
-    as select * from 
+    as select * from
     "tÁÃÀÅĂÂÄĀČĒĻŅŠŪŽĪáéíóúýàèìòùâêîôûãñõäëïöüÿçšδθλξσψωąęłźżњћџăşţŹ"
     ;
 
     recreate view
     "vÁÃÀÅĂÂÄĀČĒĻŅŠŪŽĪáéíóúýàèìòùâêîôûãñõäëïöüÿçšδθλξσψωąęłźżњћџăşţŻ"
-    as select * from 
+    as select * from
     "tÁÃÀÅĂÂÄĀČĒĻŅŠŪŽĪáéíóúýàèìòùâêîôûãñõäëïöüÿçšδθλξσψωąęłźżњћџăşţŻ"
     ;
     -----------------------------------------------------------------
 
-    create procedure 
+    create procedure
     "pÁÃÀÅĂÂÄĀČĒĻŅŠŪŽĪáéíóúýàèìòùâêîôûãñõäëïöüÿçšδθλξσψωąęłźżњћџăşţŹ"
     as begin
     end;
 
-    create procedure 
+    create procedure
     "pÁÃÀÅĂÂÄĀČĒĻŅŠŪŽĪáéíóúýàèìòùâêîôûãñõäëïöüÿçšδθλξσψωąęłźżњћџăşţŻ"
     as begin
     end;
@@ -253,11 +253,11 @@ test_script_2 = """
     ^
     -----------------------------------------------------------------
 
-    create package 
+    create package
     "gÁÃÀÅĂÂÄĀČĒĻŅŠŪŽĪáéíóúýàèìòùâêîôûãñõäëïöüÿçšδθλξσψωąęłźżњћџăşţŹ"
     as begin end
     ^
-    create package 
+    create package
     "gÁÃÀÅĂÂÄĀČĒĻŅŠŪŽĪáéíóúýàèìòùâêîôûãñõäëïöüÿçšδθλξσψωąęłźżњћџăşţŻ"
     as begin end
     ^
@@ -277,7 +277,7 @@ test_script_2 = """
     SET LIST ON;
     SET COUNT ON;
 
-    select * from v_check;  
+    select * from v_check;
 """
 
 act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)

@@ -35,7 +35,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
-expected_stderr_1 = """
+expected_stderr_1_a = """
 GSEC> invalid switch specified in interactive mode
 GSEC> invalid switch specified in interactive mode
 GSEC> invalid switch specified in interactive mode
@@ -46,9 +46,7 @@ error in switch specifications
 GSEC>
 """
 
-@pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    commands = """add BADPARAM -pa PWD
+commands_1 = """add BADPARAM -pa PWD
 add BADPARAM -pas PWD
 add BADPARAM -password PWD
 add BADPARAM -user USR
@@ -56,8 +54,30 @@ add BADPARAM -database DB
 add BADPARAM -trusted
 quit
 """
-    act_1.expected_stderr = expected_stderr_1
-    act_1.gsec(input=commands)
+
+@pytest.mark.version('>=3.0')
+@pytest.mark.platform('Linux', 'Darwin')
+def test_1_a(act_1: Action):
+    act_1.expected_stderr = expected_stderr_1_a
+    act_1.gsec(input=commands_1)
     assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+expected_stderr_1_b = """
+GSEC> invalid switch specified in interactive mode
+GSEC> invalid switch specified in interactive mode
+GSEC> invalid switch specified in interactive mode
+GSEC> invalid switch specified in interactive mode
+GSEC> invalid switch specified in interactive mode
+GSEC> invalid switch specified in interactive mode
+GSEC>
+"""
+
+@pytest.mark.version('>=3.0')
+@pytest.mark.platform('Windows')
+def test_1_b(act_1: Action):
+    act_1.expected_stderr = expected_stderr_1_b
+    act_1.gsec(input=commands_1)
+    assert act_1.clean_stderr == act_1.clean_expected_stderr
+
 
 

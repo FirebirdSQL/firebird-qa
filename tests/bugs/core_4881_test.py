@@ -46,7 +46,7 @@ expected_stdout_1 = """
 def test_1(act_1: Action):
     script_file = Path(act_1.files_dir / 'core_4881.zip',
                        at='core_4881_script.sql')
-    act_1.script = script_file.read_text()
+    act_1.script = script_file.read_text(encoding='utf-8')
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_stdout == act_1.clean_expected_stdout

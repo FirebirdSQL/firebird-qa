@@ -269,7 +269,7 @@ def test_1(act_1: Action, fbk_file: Path, fdb_file: Path):
     # Query RDB$TRIGGERS before b/r:
     act_1.reset()
     act_1.isql(switches=[], input=test_script_1)
-    meta_before = [line for line in act_1.stdout.splitlines() if not line.startswith('BLOB_ID_FOR_TRG')]
+    meta_before = [line for line in act_1.clean_stdout.splitlines() if not line.startswith('BLOB_ID_FOR_TRG')]
     # B/S
     act_1.reset()
     act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file)])
@@ -278,6 +278,6 @@ def test_1(act_1: Action, fbk_file: Path, fdb_file: Path):
     # Query RDB$TRIGGERS after b/r:
     act_1.reset()
     act_1.isql(switches=[act_1.get_dsn(fdb_file)], input=test_script_1, connect_db=False)
-    meta_after = [line for line in act_1.stdout.splitlines() if not line.startswith('BLOB_ID_FOR_TRG')]
+    meta_after = [line for line in act_1.clean_stdout.splitlines() if not line.startswith('BLOB_ID_FOR_TRG')]
     # Check
     assert list(unified_diff(meta_before, meta_after)) == []

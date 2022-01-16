@@ -2,7 +2,7 @@
 #
 # id:           bugs.core_1331
 # title:        Charset transliterations don't work with EXECUTE STATEMENT
-# decription:   
+# decription:
 # tracker_id:   CORE-1331
 # min_versions: []
 # versions:     3.0
@@ -18,7 +18,7 @@ substitutions_1 = []
 
 init_script_1 = """"""
 
-db_1 = db_factory(from_backup='core1331-25.fbk', init=init_script_1)
+db_1 = db_factory(from_backup='core1331-25.fbk', init=init_script_1, charset='utf8')
 
 test_script_1 = """
 	set list on;

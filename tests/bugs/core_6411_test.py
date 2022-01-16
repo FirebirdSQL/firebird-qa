@@ -184,7 +184,7 @@ def test_1(act_1: Action, capsys):
         #
         act_1.reset()
         act_1.isql(switches=[], input=sql_expr, combine_output=True)
-        for line in act_1.stdout.splitlines():
+        for line in act_1.string_strip(act_1.stdout).splitlines():
             if line.strip():
                 print(f'step: {step}, FLD_COUNT: {FLD_COUNT}, result: {line}')
     # Check

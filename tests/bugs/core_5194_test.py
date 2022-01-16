@@ -205,7 +205,7 @@ def test_1(act_1: Action):
     #
     act_1.reset()
     act_1.isql(switches=[], input=init_meta)
-    assert act_1.stdout == ''
+    assert act_1.clean_stdout == ''
     # This should issue DDL of table TEST which was just created by extracted metadata:
     act_1.reset()
     act_1.expected_stdout = expected_stdout_1

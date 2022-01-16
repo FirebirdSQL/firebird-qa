@@ -14,7 +14,8 @@ from firebird.qa import db_factory, isql_act, Action
 # version: 3.0
 # resources: None
 
-substitutions_1 = [('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222')]
+substitutions_1 = [('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
+                   ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
 
 init_script_1 = """
 recreate table td(id int);

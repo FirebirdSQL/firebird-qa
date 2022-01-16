@@ -32,7 +32,7 @@ from firebird.qa import db_factory, python_act, Action
 # resources: None
 
 substitutions_1 = [('[ \t]+', ' '), ('.*RECORD LENGTH:[ \t]+[\\d]+[ \t]*\\)', ''),
-                   ('.*COUNT[ \t]+[\\d]+', '')]
+                   ('.*COUNT[ \t]+[\\d]+', ''), ('(?m)DATABASE:.*\\n?', '')]
 
 init_script_1 = """"""
 
@@ -207,6 +207,6 @@ def test_1(act_1: Action):
         con.commit()
     #
     act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=[], input=test_script_1)
+    act_1.isql(switches=['-q'], input=test_script_1)
     act_1.stdout = act_1.stdout.upper()
     assert act_1.clean_stdout == act_1.clean_expected_stdout

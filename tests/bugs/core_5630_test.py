@@ -29,7 +29,7 @@ from firebird.qa import db_factory, python_act, Action, temp_file
 # version: 3.0.3
 # resources: None
 
-substitutions_1 = []
+substitutions_1 = [('Commit current transaction \\(y/n\\)\\?', '')]
 
 init_script_1 = """"""
 

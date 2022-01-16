@@ -421,6 +421,7 @@ def test_1(act_1: Action, hang_script_1: Path, hang_stdout_1: Path, hang_stderr_
     with act_1.connect_server() as srv:
         srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
                               method=ShutdownMethod.FORCED, timeout=0)
+        time.sleep(2)
         srv.database.bring_online(database=act_1.db.db_path)
     #
     output = []
@@ -439,7 +440,7 @@ def test_1(act_1: Action, hang_script_1: Path, hang_stdout_1: Path, hang_stderr_
                 msg = line
         output.append(f'HANGED ATTACH, STDERR: {msg}')
     for step in killer_output:
-        for line in step.splitlines():
+        for line in act_1.string_strip(step).splitlines():
             if line.strip():
                 output.append(f"KILLER ATTACH, STDOUT: {' '.join(line.split())}")
     # Check

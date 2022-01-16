@@ -15,7 +15,7 @@ from firebird.qa import db_factory, python_act, Action, user_factory, User, temp
 # version: 3.0
 # resources: None
 
-substitutions_1 = []
+substitutions_1 = [('Commit current transaction \\(y/n\\)\\?', '')]
 
 init_script_1 = """"""
 
@@ -104,6 +104,7 @@ def test_1(act_1: Action, test_user_1: User, test_db_1: Path):
     test_script_1 = f"""
     create database 'localhost:{test_db_1}' user 'TMP_U4218' password '123';
     set list on;
+    set list on; -- Needed on Windows to really set list ON.
     select current_user as who_am_i, mon$owner as who_is_owner from mon$database;
     commit;
     connect 'localhost:{test_db_1}';

@@ -56,6 +56,7 @@
 # qmid:         None
 
 import pytest
+import time
 from pathlib import Path
 from firebird.qa import db_factory, python_act, Action, user_factory, User
 from firebird.driver import ShutdownMode, ShutdownMethod
@@ -304,6 +305,7 @@ def test_1(act_1: Action, dba_privileged_user: User, non_privileged_user: User, 
     with act_1.connect_server() as srv:
         srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
                               method=ShutdownMethod.FORCED, timeout=0)
+        time.sleep(2)
         srv.database.bring_online(database=act_1.db.db_path)
     #
     test_script = f"""

@@ -180,6 +180,11 @@ trace_1 = ['time_threshold = 0',
 
 @pytest.mark.version('>=3.0')
 def test_1(act_1: Action):
+    # [pcisar] 15.1.2022
+    # This test fails on localized Windows due to encoding error and other
+    # expected output differences, so we skip it for now
+    if act_1.platform == 'Windows':
+        pytest.skip("Windows: See note in test")
     with act_1.trace(db_events=trace_1):
         act_1.expected_stderr = expected_stderr_1
         act_1.isql(switches=['-n'],

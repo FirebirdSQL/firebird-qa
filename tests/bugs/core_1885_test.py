@@ -22,10 +22,6 @@ init_script_1 = """"""
 db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
-    -- [pcisar] 20.10.2021
-    -- For 3.0.7 on Linux this PASS (uses system ICU) but on Windows (includes ICU 52)
-    -- it FAIL unless newer ICU (63) is installed.
-
     set list on;
     set count on;
     create collation unicode_enus_ci_4x for utf8 from unicode case insensitive 'LOCALE=en_US';
@@ -64,7 +60,13 @@ expected_stdout_1 = """
     Records affected: 1
 """
 
+# [pcisar] 20.10.2021
+# For 3.0.7 on Linux this PASS (uses system ICU) but on Windows (includes ICU 52)
+# it FAIL unless newer ICU (63) is installed.
+# 15.1.2022 As this issue was POSIX-only, we'll not run it on Windows.
+
 @pytest.mark.version('>=3.0,<4.0')
+@pytest.mark.platform('Linux', 'Darwin')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
@@ -74,7 +76,8 @@ def test_1(act_1: Action):
 # resources: None
 
 substitutions_2 = [('SPECIFIC_ATTR_BLOB_ID.*', ''),
-                   ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222')]
+                   ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
+                   ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
 
 init_script_2 = """"""
 

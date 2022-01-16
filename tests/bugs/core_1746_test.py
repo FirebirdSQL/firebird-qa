@@ -455,12 +455,14 @@ def test_1(act_1: Action, tmp_file_bi_in: Path, tmp_file_bi_out: Path, capsys):
         bulk_insert_log = tmp_file_bi_out.read_text()
         create_indx_log = act_1.stdout + act_1.stderr
 
-        for line in bulk_insert_log.splitlines():
-            if line.split():
+        log = act_1.string_strip(bulk_insert_log, act_1.substitutions)
+        for line in log.splitlines():
+            if line.strip():
                 print( str(i)+': BULK INSERTS LOG: '+line.strip().upper() )
 
-        for line in create_indx_log.splitlines():
-            if line.split():
+        log = act_1.string_strip(create_indx_log, act_1.substitutions)
+        for line in log.splitlines():
+            if line.strip():
                 print( str(i)+': CREATE INDEX LOG: '+line.strip().upper() )
         #
         i += 1
@@ -468,4 +470,6 @@ def test_1(act_1: Action, tmp_file_bi_in: Path, tmp_file_bi_out: Path, capsys):
     act_1.reset()
     act_1.stdout = capsys.readouterr().out
     act_1.expected_stdout = expected_stdout_1
+    # pcisar [15.1.2022]
+    # This test may FAIL when run on slow machine (like VM)!
     assert act_1.clean_stdout == act_1.clean_expected_stdout
