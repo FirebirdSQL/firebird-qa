@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_0002
-# title:        Incorrect value returned with execute statement calculation
-# decription:
-# tracker_id:   CORE-0002
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          bugs.core_0002
+ISSUE:       320
+TITLE:       Incorrect value returned with execute statement calculation
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     create table t1 (
         campo1 numeric(15,2),
@@ -46,15 +38,15 @@ test_script_1 = """
     select * from teste;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RETORNO                         57.75
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

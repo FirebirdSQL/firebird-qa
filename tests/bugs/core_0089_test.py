@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_0089
-# title:        Using where params in SUM return incorrect results
-# decription:
-# tracker_id:   CORE-0089
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          bugs.core_0089
+ISSUE:       414
+TITLE:       Wrong return from simple SQL
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- DDL and data are based on text file (report) that is attached to ticket.
     -- No difference between FB 1.5.6 and 4.0.0 found.
     -- Added PK on table categorygroup and index "schemacategories(typecol)"
@@ -111,9 +103,9 @@ test_script_1 = """
     order by sc.catnr;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     SCHEMANR                        11
     CATNR                           244
     TYPECOL                         5
@@ -320,9 +312,9 @@ expected_stdout_1 = """
     ID                              5
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

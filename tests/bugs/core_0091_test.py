@@ -1,31 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_0091
-# title:        Recreate and self-referencing indexes
-# decription:   
-# tracker_id:   CORE-91
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_91
+
+"""
+ID:          bugs.core_0091
+ISSUE:       416
+TITLE:       Recreate and self-referencing indexes
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """recreate table t2 (
+init_script = """recreate table t2 (
     i integer not null primary key,
     p integer references t2(i) on delete set null
  );
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select * from t2;
+test_script = """select * from t2;
 insert into t2 values (1, null);
 delete from t2 where i=1;
 commit;
@@ -41,10 +35,10 @@ delete from t2 where i=1;
 commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.execute()
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.execute()
+    # PASSES if it does not fail to execute
 

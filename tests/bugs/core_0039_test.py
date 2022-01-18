@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_0039
-# title:        cannot create procedure with long chain of else-if clauses
-# decription:
-# tracker_id:   CORE-0039
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          bugs.core_0039
+ISSUE:       363
+TITLE:       Cannot create procedure with long chain of else-if clauses
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Checked on FB 4.0.0 with length = 20'000.
     -- Current length (1000) was choosen after discuss with dimitr.
     -- Batch scenario for generating script with arbitrary number of if-else:
@@ -1078,15 +1070,15 @@ test_script_1 = """
     select * from sp_ifel(1000);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     R                               31.62277660168379
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

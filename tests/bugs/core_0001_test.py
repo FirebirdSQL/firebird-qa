@@ -1,44 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_0001
-# title:        FBserver shutsdown when a user password is attempted to be modified to a empty string
-# decription:
-# tracker_id:   CORE-0001
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          bugs.core_0001
+ISSUE:       319
+TITLE:       Server shutdown
+DESCRIPTION: Server shuts down when user password is attempted to be modified to a empty string
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     alter user tmp$c0001 password '';
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -ALTER USER TMP$C0001 failed
     -Password should not be empty string
 """
 
-user_1 = user_factory('db_1', name='tmp$c0001', password='123')
+user = user_factory('db', name='tmp$c0001', password='123')
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1: User):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action, user: User):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

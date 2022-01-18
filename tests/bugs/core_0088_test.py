@@ -1,22 +1,16 @@
 #coding:utf-8
-#
-# id:           bugs.core_0088
-# title:        Join on diffrent datatypes
-# decription:
-# tracker_id:   CORE-88
-# min_versions: []
-# versions:     2.5
-# qmid:         bugs.core_88
+
+"""
+ID:          bugs.core_0088
+ISSUE:       413
+TITLE:       Join on diffrent datatypes
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE TEST_A (
+init_script = """CREATE TABLE TEST_A (
     ID INTEGER NOT NULL PRIMARY KEY,
     SNUM CHAR(10) UNIQUE
 );
@@ -43,9 +37,9 @@ INSERT INTO TEST_B (ID, NUM) VALUES (4, 4);
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 
 SELECT * FROM test_b WHERE num NOT IN (SELECT snum FROM test_a) ;
 
@@ -53,9 +47,9 @@ SELECT * FROM test_b WHERE num IN (SELECT snum FROM test_a) ;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 PLAN (TEST_A NATURAL)
 PLAN (TEST_A NATURAL)
 PLAN (TEST_B NATURAL)
@@ -76,9 +70,9 @@ PLAN (TEST_B NATURAL)
 
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

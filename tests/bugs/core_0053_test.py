@@ -1,52 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_0053
-# title:        FIRST 1 vs ORDER DESC vs explicit plan (ODS11)
-# decription:
-#                   Test uses pre-created database which has several procedures for analyzing performance by with the help of MON$ tables.
-#                   Performance results are gathered in the table STAT_LOG, each odd run will save mon$ counters with "-" sign and next
-#                   (even) run will save them with "+" -- see SP_GATHER_STAT.
-#                   Aggegation of results is done in the view V_AGG_STAT (negative values relate to start, positive to the end of measure,
-#                   difference between them means performance expenses which we want to evaluate).
-#                   NOTE. Before each new measure we have to set generator G_GATHER_STAT to zero in order to make it produce proper values
-#                   starting with 1 (odd --> NEGATIVE sign for counters). This is done in SP_TRUNCATE_STAT.
-#
-#                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
-#                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-#                   statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
-#                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-#                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-#                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#
-#                   Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
-#                   reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
-#
-#                   Checked on:
-#                       4.0.0.2164 SS: 2.511s.
-#                       4.0.0.2164 CS: 2.533s.
-#                       3.0.7.33356 SS: 1.495s.
-#                       3.0.7.33356 CS: 2.865s.
-#                       2.5.9.27150 SC: 0.730s.
-#
-# tracker_id:   CORE-0053
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          bugs.core_0053
+ISSUE:       377
+TITLE:       FIRST 1 vs ORDER DESC vs explicit plan (ODS11)
+DESCRIPTION:
+    Test uses pre-created database which has several procedures for analyzing performance by with the help of MON$ tables.
+    Performance results are gathered in the table STAT_LOG, each odd run will save mon$ counters with "-" sign and next
+    (even) run will save them with "+" -- see SP_GATHER_STAT.
+    Aggegation of results is done in the view V_AGG_STAT (negative values relate to start, positive to the end of measure,
+    difference between them means performance expenses which we want to evaluate).
+    NOTE. Before each new measure we have to set generator G_GATHER_STAT to zero in order to make it produce proper values
+    starting with 1 (odd --> NEGATIVE sign for counters). This is done in SP_TRUNCATE_STAT.
+
+    :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
+    18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
+    statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
+    gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
+    See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
+    ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
+
+    Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
+    reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
+db = db_factory(from_backup='mon-stat-gathering-2_5.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='mon-stat-gathering-2_5.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     create or alter procedure gendata as begin end;
@@ -132,9 +116,9 @@ test_script_1 = """
     -- on 2.5 = {5, 5}, on 3.0 = {5, 3} ==> ratio 3.00 should be always enough.
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (T ORDER TEST_F1_F2)
     F1                              17
     PLAN (T ORDER TEST_F1_F2 INDEX (TEST_F1_F2))
@@ -142,9 +126,9 @@ expected_stdout_1 = """
     RESULT                          PERFORMANCE IS THE SAME.
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

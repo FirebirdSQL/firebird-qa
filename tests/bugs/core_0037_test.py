@@ -1,35 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_0037
-# title:        Navigation vs IS NULL vs compound index
-# decription:   
-#                   24.01.2019. Added separate code for running on FB 4.0+.
-#                   UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
-#                   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement 
-#                   in UDR library "udf_compat", see it in folder: ../plugins/udr/
-#                   Checked on:
-#                       2.5.9.27126: OK, 0.656s.
-#                       3.0.5.33086: OK, 1.422s.
-#                       4.0.0.1172: OK, 4.109s.
-#                       4.0.0.1340: OK, 2.297s.
-#                       4.0.0.1378: OK, 2.204s.    
-#                
-# tracker_id:   CORE-0037
-# min_versions: ['2.5.0']
-# versions:     2.5, 4.0
-# qmid:         None
+
+"""
+ID:          bugs.core_0037
+ISSUE:       361
+TITLE:       Error "no current record for fetch operation" on view select
+DESCRIPTION:
+NOTES:
+[24.01.2019] Added separate code for running on FB 4.0+.
+             UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
+             Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe
+             replacement in UDR library "udf_compat", see it in folder: ../plugins/udr/
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory()
 
 test_script_1 = """
     set bail on;
@@ -41,7 +27,7 @@ test_script_1 = """
     execute block as
     begin
         execute statement 'drop function udf_frac';
-    when any do 
+    when any do
         begin end
     end
     ^
@@ -91,32 +77,24 @@ test_script_1 = """
 
     select x.*, y.*, udf_frac( mod(t2f1,100) / 100.000)
     from v1 x, v2 y
-    where x.t1f1 = y.t2f2 
+    where x.t1f1 = y.t2f2
     and udf_frac( mod(t2f1,100) / 100.000) < 0.03
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
-expected_stdout_1 = """
+expected_stdout = """
     Records affected: 0
 """
 
-@pytest.mark.version('>=2.5,<4.0')
+@pytest.mark.version('>=3,<4.0')
 def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
+    act_1.expected_stdout = expected_stdout
     act_1.execute()
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
 test_script_2 = """
     set bail on;
 
@@ -168,20 +146,16 @@ test_script_2 = """
 
     select x.*, y.*, UDR40_frac( mod(t2f1,100) / 100.000)
     from v1 x, v2 y
-    where x.t1f1 = y.t2f2 
+    where x.t1f1 = y.t2f2
     and UDR40_frac( mod(t2f1,100) / 100.000) < 0.03
     ;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
-
-expected_stdout_2 = """
-    Records affected: 0
-"""
+act_2 = isql_act('db', test_script_2)
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
+    act_2.expected_stdout = expected_stdout
     act_2.execute()
     assert act_2.clean_stdout == act_2.clean_expected_stdout
 
