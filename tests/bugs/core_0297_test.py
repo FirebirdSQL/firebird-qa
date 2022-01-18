@@ -1,36 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_0297
-# title:        bug #585624 IB server stalled by simple script
-# decription:   
-#               	::: NB ::: 
-#               	### Name of original test has no any relation with actual task of this test: ###
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_23.script
-#               
-#                   Issue in original script: bug #585624 IB server stalled by simple script"
-#                   Found in FB tracker as: http://tracker.firebirdsql.org/browse/CORE-297
-#                   Fixed in 1.5.0
-#               
-#                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-628
+ISSUE:       628
+TITLE:       IB server stalled by simple script
+DESCRIPTION:
+  ::: NB :::
+  ### Name of original test has no any relation with actual task of this test: ###
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_23.script
+
+  Issue in original script: bug #585624 IB server stalled by simple script"
+  Found in FB tracker as: http://tracker.firebirdsql.org/browse/CORE-297
+  Fixed in 1.5.0
+JIRA:        CORE-297
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(charset='ISO8859_1')
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create procedure group_copy (
         source integer,
@@ -89,7 +79,7 @@ test_script_1 = """
         declare anz integer;
     begin
         anz = 0;
-        
+
         while ( anz < cont ) do
         begin
             if ( not exists (
@@ -124,9 +114,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     COUNT                           6000
     GR_ID                           1
     GR_NAME                         Group1
@@ -134,9 +124,9 @@ expected_stdout_1 = """
     GR_NAME                         Group2
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,34 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0805
-# title:        Privileges of dynamic statements in SP
-# decription:   
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.650s.
-#                       4.0.0.1633 CS: 1.714s.
-#                       3.0.5.33180 SS: 0.960s.
-#                       3.0.5.33178 CS: 1.203s.
-#                       2.5.9.27119 SS: 0.324s.
-#                       2.5.9.27146 SC: 0.342s.
-#                
-# tracker_id:   CORE-805
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         
+
+"""
+ID:          issue-1192
+ISSUE:       1192
+TITLE:       Privileges of dynamic statements in SP
+DESCRIPTION:
+JIRA:        CORE-805
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     -- Drop old account if it remains from prevoius run:
     set term ^;
@@ -54,25 +39,25 @@ test_script_1 = """
     create user tmp$c0805_senior password 'qwe';
     create user tmp$c0805_junior password '123';
     commit;
-    
+
     create role tmp$r4junior;
     commit;
-    
+
     create or alter procedure sp_test as begin  end;
-    
+
     recreate table test(id int, x int);
     commit;
-    
+
     insert into test values(1, 100);
     commit;
-    
+
     set term ^;
     create or alter procedure sp_test returns(id int, x int) as
     begin
       for select id, x from test into id, x do suspend;
     end
     ^
-    
+
     create or alter procedure sp_main(a_usr varchar(31), a_pwd varchar(31), a_role varchar(31) = 'NONE')
       returns(who_am_i varchar(31), what_is_my_role varchar(31), id int, x int) as
     begin
@@ -88,12 +73,12 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     revoke all on all from tmp$c0805_senior;
     revoke all on all from tmp$c0805_junior;
     revoke all on all from tmp$r4junior; --restored as uncommented statement, 05.03.2018
     commit;
-    
+
     grant select on test to procedure sp_test;
     grant execute on procedure sp_main to tmp$c0805_senior;
     grant execute on procedure sp_main to tmp$r4junior;
@@ -109,9 +94,9 @@ test_script_1 = """
     -- 2.2) indirectly by ROLE 'tmp$r4junior' which is granted to user 'tmp$c0805_junior'.
 
     -- Both these users should be able to see data of table 'TEST':
-    
+
     set list on;
-    
+
     set term ^;
     execute block returns(who_am_i varchar(31), what_is_my_role varchar(31), id int, x int) as
     begin
@@ -142,31 +127,31 @@ test_script_1 = """
     -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
-    commit;    
-    
+    commit;
+
     drop user tmp$c0805_senior;
     drop user tmp$c0805_junior;
     drop role tmp$r4junior;
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AM_I                        TMP$C0805_SENIOR
     WHAT_IS_MY_ROLE                 NONE
     ID                              1
     X                               100
-    
+
     WHO_AM_I                        TMP$C0805_JUNIOR
     WHAT_IS_MY_ROLE                 TMP$R4JUNIOR
     ID                              1
     X                               100
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

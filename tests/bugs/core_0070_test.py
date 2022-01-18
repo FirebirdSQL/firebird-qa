@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0070
+ID:          issue-394
 ISSUE:       394
 TITLE:       Expression index regression since 2.0a3
 DESCRIPTION:
+JIRA:        CORE-70
 """
 
 import pytest

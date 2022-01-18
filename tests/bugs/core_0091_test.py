@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0091
+ID:          issue-416
 ISSUE:       416
 TITLE:       Recreate and self-referencing indexes
 DESCRIPTION:
+JIRA:        CORE-91
 """
 
 import pytest
@@ -39,6 +40,9 @@ act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.execute()
-    # PASSES if it does not fail to execute
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)
+
 

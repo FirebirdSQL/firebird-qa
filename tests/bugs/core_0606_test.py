@@ -1,38 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_0606
-# title:         Tricky role defeats basic SQL security
-# decription:
-#                   CHecked on:
-#                       4.0.0.1635 SS: 1.482s.
-#                       4.0.0.1633 CS: 1.954s.
-#                       3.0.5.33180 SS: 0.976s.
-#                       3.0.5.33178 CS: 1.265s.
-#                       2.5.9.27119 SS: 0.297s.
-#                       2.5.9.27146 SC: 0.306s.
-#
-# tracker_id:   CORE-0606
-# min_versions: ['2.5']
-# versions:     2.5.6
-# qmid:         None
+
+"""
+ID:          issue-965
+ISSUE:       965
+TITLE:       Tricky role defeats basic SQL security
+DESCRIPTION:
+JIRA:        CORE-606
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
+from firebird.qa import *
 
-# version: 2.5.6
-# resources: None
-
-substitutions_1 = [('Statement failed, SQLSTATE = HY000', ''),
+substitutions = [('Statement failed, SQLSTATE = HY000', ''),
                    ('record not found for user:.*', ''), ('read/select', 'SELECT'),
                    ('Data source : Firebird::.*', 'Data source : Firebird::'),
                    ('-At block line: [\\d]+, col: [\\d]+', '-At block line'),
                    ('335545254 : Effective user is.*', '')]
 
-init_script_1 = """"""
+db = db_factory()
+for_cvc_role = role_factory('db', name='"FOR CVC"')
+for_role = role_factory('db', name='"FOR"')
+cvc_user = user_factory('db', name='cvc', password='pw')
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table "t t"(data int);
     commit;
     insert into "t t" values(123456);
@@ -89,9 +79,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
 /* Grant permissions for this database */
 GRANT SELECT ON t t TO ROLE FOR
 GRANT FOR CVC TO CVC
@@ -100,7 +90,7 @@ WHO_AM_I                        CVC
 I_M_PLAYING_ROLE                FOR CVC
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Execute statement error at isc_dsql_prepare :
     335544352 : no permission for SELECT access to TABLE t t
@@ -109,15 +99,12 @@ expected_stderr_1 = """
     -At block line: 3, col: 7
 """
 
-for_cvc_role = role_factory('db_1', name='"FOR CVC"')
-for_role = role_factory('db_1', name='"FOR"')
-cvc_user = user_factory('db_1', name='cvc', password='pw')
 
-@pytest.mark.version('>=2.5.6')
-def test_1(act_1: Action, cvc_user: User, for_role: Role, for_cvc_role: Role):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action, cvc_user: User, for_role: Role, for_cvc_role: Role):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

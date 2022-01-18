@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0089
+ID:          issue-414
 ISSUE:       414
 TITLE:       Wrong return from simple SQL
 DESCRIPTION:
+JIRA:        CORE-89
 """
 
 import pytest

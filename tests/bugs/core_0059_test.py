@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0059
+ID:          issue-384
 ISSUE:       384
 TITLE:       Automatic not null in PK columns incomplete
 DESCRIPTION:
+JIRA:        CORE-59
 """
 
 import pytest

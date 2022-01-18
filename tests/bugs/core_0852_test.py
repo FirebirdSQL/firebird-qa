@@ -1,40 +1,32 @@
 #coding:utf-8
-#
-# id:           bugs.core_0852
-# title:        substring(current_user from 4) fails
-# decription:   select substring( current_user from 4) from rdb$database;
-#               fails on string truncation
-# tracker_id:   CORE-852
-# min_versions: []
-# versions:     2.0
-# qmid:         bugs.core_852
+
+"""
+ID:          issue-1241
+ISSUE:       1241
+TITLE:       substring(current_user from 4) fails
+DESCRIPTION:
+JIRA:        CORE-852
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    set list on; 
+test_script = """
+    set list on;
     select substring(current_user from 4) from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     SUBSTRING                       DBA
 """
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0198
-# title:        wrong order by in table join storedproc
-# decription:   
-# tracker_id:   CORE-0198
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-525
+ISSUE:       525
+TITLE:       Wrong order by in table join storedproc
+DESCRIPTION:
+JIRA:        CORE-198
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table my_table
     (
         k varchar(10) not null,
@@ -50,7 +43,7 @@ test_script_1 = """
     insert into my_table values ('two', 2, 98, 'yy');
     insert into my_table values ('three', 3, 97, 'xx');
     commit;
-    
+
     set list on;
 
     select *
@@ -69,9 +62,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     K                               one
     D1                              1
     D2                              99
@@ -109,9 +102,9 @@ expected_stdout_1 = """
     DATA                            three
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

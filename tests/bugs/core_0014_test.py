@@ -1,8 +1,9 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0014
+ID:          issue-333
 ISSUE:       333
+JIRA:        CORE-14
 TITLE:       Trigger do it wrong
 DESCRIPTION: Computed by columns inside triggers always=NULL
 """

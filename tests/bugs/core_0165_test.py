@@ -1,29 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_0165
-# title:        Query using VIEW with UNION causes crash
-# decription:   
-#                   Original test see im:
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_24.script
-#                
-# tracker_id:   CORE-0165
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-494
+ISSUE:       494
+TITLE:       Query using VIEW with UNION causes crash
+DESCRIPTION:
+NOTES:
+Original test see im:
+https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_24.script
+JIRA:        CORE-165
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate view v_test1 ( id, x ) as select 1, 2 from rdb$database;
     recreate view v_test2 ( id, x ) as select 1, 2 from rdb$database;
     commit;
@@ -31,18 +24,18 @@ test_script_1 = """
     recreate table test1 (
       id int not null,
       x int not null);
-    
+
     recreate table test2 (
       id int not null,
       y int not null);
-    
+
     recreate view v_test1 ( id, x ) as
     select id, x
     from test1
     union
     select id, x
     from test1;
-    
+
     recreate view v_test2 ( id, y ) as
     select id, y
     from test2
@@ -67,18 +60,18 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID_1                            2
     X                               456
     ID_2                            2
     Y                               456
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

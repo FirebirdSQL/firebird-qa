@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0856
-# title:        Unable to set FName, MName, LName fields in security to blank
-# decription:   
-# tracker_id:   CORE-856
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_856
+
+"""
+ID:          issue-1246
+ISSUE:       1246
+TITLE:       Unable to set FName, MName, LName fields in security to blank
+DESCRIPTION:
+JIRA:        CORE-856
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter user tmp$c0856 password '123'
       firstname  '....:....1....:....2....:....3..'
       middlename '....:....1....:....2....:....3..'
@@ -39,24 +32,24 @@ test_script_1 = """
     ;
 
     commit;
-    select 
-        sec$user_name, 
-        octet_length(sec$first_name), 
-        octet_length(sec$middle_name), 
-        octet_length(sec$last_name), 
-        ascii_val(left(sec$first_name,1)), 
-        ascii_val(left(sec$middle_name,1)), 
+    select
+        sec$user_name,
+        octet_length(sec$first_name),
+        octet_length(sec$middle_name),
+        octet_length(sec$last_name),
+        ascii_val(left(sec$first_name,1)),
+        ascii_val(left(sec$middle_name,1)),
         ascii_val(left(sec$last_name,1))
     from sec$users where upper(sec$user_name)=upper('tmp$c0856');
     commit;
-    
+
     drop user tmp$c0856;
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     SEC$USER_NAME                   TMP$C0856
     SEC$FIRST_NAME                  ....:....1....:....2....:....3..
     SEC$MIDDLE_NAME                 ....:....1....:....2....:....3..
@@ -72,8 +65,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0053
+ID:          issue-377
 ISSUE:       377
 TITLE:       FIRST 1 vs ORDER DESC vs explicit plan (ODS11)
 DESCRIPTION:
@@ -23,6 +23,7 @@ DESCRIPTION:
 
     Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
     reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
+JIRA:        CORE-53
 """
 
 import pytest

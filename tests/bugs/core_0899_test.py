@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_0899
-# title:        Problems with explicit cursors in unwanted states
-# decription:   
-# tracker_id:   CORE-899
-# min_versions: []
-# versions:     2.5.0
-# qmid:         bugs.core_899-250
+
+"""
+ID:          issue-1296
+ISSUE:       1296
+TITLE:       Problems with explicit cursors in unwanted states
+DESCRIPTION:
+JIRA:        CORE-899
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = [('line:\\s[0-9]+,', 'line: x'), ('col:\\s[0-9]+', 'col: y')]
-
-init_script_1 = """create table T (ID integer, TXT varchar(30));
+init_script = """create table T (ID integer, TXT varchar(30));
 commit;
 
 insert into T values (1,'Text description');
@@ -93,18 +88,19 @@ set term ; ^
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select * from SP_OK;
+test_script = """select * from SP_OK;
 select * from SP_CLOSED;
 select * from SP_NOTOPEN;
 select * from SP_FETCHED;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+               substitutions=[('line:\\s[0-9]+,', 'line: x'), ('col:\\s[0-9]+', 'col: y')])
 
-expected_stdout_1 = """
+expected_stdout = """
           ID TXT
 ============ ==============================
            1 Text description
@@ -121,7 +117,8 @@ expected_stdout_1 = """
 ============ ==============================
            1 OK
 """
-expected_stderr_1 = """Statement failed, SQLSTATE = 22000
+
+expected_stderr = """Statement failed, SQLSTATE = 22000
 no current record for fetch operation
 -At procedure 'SP_CLOSED' line: 14, col: 3
 Statement failed, SQLSTATE = 22000
@@ -132,11 +129,11 @@ no current record for fetch operation
 -At procedure 'SP_FETCHED' line: 13, col: 3
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

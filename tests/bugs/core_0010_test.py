@@ -1,8 +1,9 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0010
+ID:          issue-328
 ISSUE:       328
+JIRA:        CORE-10
 TITLE:       Navigation vs IS NULL vs compound index
 DESCRIPTION:
 """

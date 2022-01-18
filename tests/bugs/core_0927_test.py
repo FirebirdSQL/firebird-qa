@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0927
-# title:        Grants don't work for procedures used inside views
-# decription:   
-#                   Checked on: 4.0.0.1635: OK, 2.209s; 3.0.5.33180: OK, 1.838s; 2.5.9.27119: OK, 0.292s.
-#                
-# tracker_id:   CORE-927
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         
+
+"""
+ID:          issue-1328
+ISSUE:       1328
+TITLE:       Grants don't work for procedures used inside views
+DESCRIPTION:
+JIRA:        CORE-927
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.2
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set list on;
 
@@ -42,10 +33,10 @@ test_script_1 = """
     commit;
     revoke all on all from tmp$c0927;
     commit;
-    
+
     create or alter view v_test as select 1 id from rdb$database;
     commit;
-    
+
     set term ^;
     create or alter procedure sp_test returns (result integer) as
     begin
@@ -55,10 +46,10 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     create or alter view v_test as
     select (select result from sp_test) as result from rdb$database;
-    
+
     grant execute on procedure sp_test to view v_test;
     grant select on v_test to tmp$c0927;
     commit;
@@ -75,16 +66,16 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AM_I                        TMP$C0927
     RESULT                          1
 """
 
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0063
+ID:          issue-388
 ISSUE:       388
 TITLE:       Sequence of commands crash server
 DESCRIPTION:
+JIRA:        CORE-63
 """
 
 import pytest

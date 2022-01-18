@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_0886
-# title:        SPs in views
-# decription:
-# tracker_id:   CORE-886
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-1279
+ISSUE:       1279
+TITLE:       SPs in views
+DESCRIPTION:
+JIRA:        CORE-886
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """set term !!;
+init_script = """set term !!;
 create procedure MY_PROCEDURE (input1 INTEGER)
 returns (output1 INTEGER)
 as begin
@@ -28,18 +23,18 @@ commit;
 
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """create view a_view as
+test_script = """create view a_view as
 select * from MY_PROCEDURE(1);
 commit;
 show view a_view;
 select *from a_view;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_0886.fdb, User: SYSDBA
+expected_stdout = """Database:  test.fdb, User: SYSDBA
 SQL> CON> SQL> SQL> OUTPUT1                         INTEGER Nullable
 View Source:
 ==== ======
@@ -52,9 +47,9 @@ SQL>
 
 SQL> SQL>"""
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

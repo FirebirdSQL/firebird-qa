@@ -1,41 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_0851
-# title:        Field can be used multiple times in multi-segment index definition
-# decription:   
-# tracker_id:   CORE-851
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_851-250
+
+"""
+ID:          issue-1240
+ISSUE:       1240
+TITLE:       Field can be used multiple times in multi-segment index definition
+DESCRIPTION:
+JIRA:        CORE-851
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table t (i integer);
+init_script = """create table t (i integer);
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """create index ti on t(i,i);
+test_script = """create index ti on t(i,i);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """Statement failed, SQLSTATE = 42000
+expected_stderr = """Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -CREATE INDEX TI failed
 -Field I cannot be used twice in index TI
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

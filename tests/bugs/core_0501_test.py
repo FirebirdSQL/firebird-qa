@@ -1,35 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_0501
-# title:        Lot of syntax tests for COALESCE()
-# decription:
-#                   It tests many problems Adriano found when fixing CORE-501, CORE-1343 and CORE-2041.
-#
-#                   25.04.2020. Fixed lot of bugs related to wrong count of updatable columns (they were not specified in DML).
-#                   Replaced test_type to 'ISQL' because all can be done wo Python calls. Checked on 3.0.6.33289, 4.0.0.1935.
-#
-#                   18.11.2020. Changed expected_stderr for parametrized statement "select coalesce(1 + cast(? ...), 2 + cast(? ...)) ...":
-#                   now it must be "-No SQLDA for input values provided" (was: "-Wrong number of parameters (expected 3, got 0)").
-#                   Output became proper since CORE-6447 was fixed.
-#
-# tracker_id:   CORE-501
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-852
+ISSUE:       852
+TITLE:       Optimization problem with COALESCE
+DESCRIPTION:
+  It tests many problems Adriano found when fixing CORE-501, CORE-1343 and CORE-2041.
+NOTES:
+[25.04.2020] Fixed lot of bugs related to wrong count of updatable columns (they were not specified in DML).
+  Replaced test_type to 'ISQL' because all can be done wo Python calls. Checked on 3.0.6.33289, 4.0.0.1935.
+[18.11.2020] Changed expected_stderr for parametrized statement "select coalesce(1 + cast(? ...), 2 + cast(? ...)) ...":
+  now it must be "-No SQLDA for input values provided" (was: "-Wrong number of parameters (expected 3, got 0)").
+  Output became proper since CORE-6447 was fixed.
+JIRA:        CORE-501
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+substitutions = [('[ \t]+', ' ')]
 
-substitutions_1 = [('[ \t]+', ' ')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     create sequence s1;
 
@@ -358,9 +351,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
 MSG                             point-01
 N                               1
 X                               100
@@ -1003,6 +996,7 @@ OUTPUT message field count: 2
   :  name: COALESCE  alias: COALESCE
   : table:   owner:
 """
+
 expected_stderr_1 = """
 Statement failed, SQLSTATE = 42000
 Dynamic SQL Error
@@ -1037,13 +1031,13 @@ Dynamic SQL Error
 
 @pytest.mark.version('>=3.0,<3.0.8')
 def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
+    act_1.expected_stdout = expected_stdout
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert (act_1.clean_stderr == act_1.clean_expected_stderr and
+            act_1.clean_stdout == act_1.clean_expected_stdout)
 
-act_2 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_2 = isql_act('db', test_script, substitutions=substitutions)
 
 expected_stderr_2 = """
 Statement failed, SQLSTATE = 42000
@@ -1080,9 +1074,9 @@ Dynamic SQL Error
 
 @pytest.mark.version('>=3.0.8')
 def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_1
+    act_2.expected_stdout = expected_stdout
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_stderr == act_2.clean_expected_stderr
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+    assert (act_2.clean_stderr == act_2.clean_expected_stderr and
+            act_2.clean_stdout == act_2.clean_expected_stdout)
 

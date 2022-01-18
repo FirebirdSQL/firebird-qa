@@ -1,45 +1,37 @@
 #coding:utf-8
-#
-# id:           bugs.core_0461
-# title:        JOIN including a complex view kills the server
-# decription:   
-#                  NB: all versions of 2.1 and 2.5 fail on 2nd query (issue 2002-jul-12) with message about
-#                  "too many contexts, max = 256" so this test checks only FB 3.0 and above.
-#                
-# tracker_id:   CORE-0461
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-807
+ISSUE:       807
+TITLE:       JOIN including a complex view kills the server
+DESCRIPTION:
+  NB: all versions of 2.1 and 2.5 fail on 2nd query (issue 2002-jul-12) with message about
+  "too many contexts, max = 256" so this test checks only FB 3.0 and above.
+JIRA:        CORE-461
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
 
     create domain d_global_id as varchar(15) not null ;
     create domain d_long_desc as varchar(200);
     create domain d_group as integer default 0 check ((value is not null));
-    
+
     create domain d_global_ref as varchar(15);
     create domain d_icon as smallint check (((value is null) or (value between 0 and 8)));
-    
+
     recreate table knowledgestreams (
             stream_id d_global_id not null,
             name d_long_desc,
             content_groups d_group,
             constraint pk_knowledgestreams primary key (stream_id)
     );
-    
+
     recreate table mainmenu (
             menu_id d_global_id not null,
             parent_id d_global_ref,
@@ -48,31 +40,31 @@ test_script_1 = """
             icon d_icon,
             constraint pk_mainmenu primary key (menu_id)
     );
-    
+
     alter table mainmenu add constraint fk_mainmenu foreign key (parent_id)
     references mainmenu(menu_id) on delete cascade on update cascade;
-    
+
     recreate table menu_groups (
             menu_id d_global_id not null,
             content_id d_global_id not null
     );
-    
+
     create index menu_groups_idx1 on menu_groups (menu_id);
     create index menu_groups_idx2 on menu_groups (content_id);
-    
+
     recreate table streammenu (
             stream_id d_global_id not null,
             parent d_global_id not null,
             constraint pk_streammenu primary key (parent, stream_id)
     );
-    
+
     alter table streammenu add constraint fk_streammenu_parent foreign key
     (parent) references mainmenu(menu_id) on delete cascade;
-    
+
     alter table streammenu add constraint fk_streammenu_stream_id foreign
     key (stream_id) references knowledgestreams(stream_id) on delete
     cascade;
-    
+
     create view fullmenu (
         code,
         parent,
@@ -98,7 +90,7 @@ test_script_1 = """
         grupa integer not null,
         primary key (pozivnibrojdrzave)
     );
-    
+
     create table log
     (
         broj varchar(25) not null,
@@ -108,21 +100,21 @@ test_script_1 = """
         linija integer,
         cena numeric(8,2) not null
     );
-    
+
     create table lokal
     (
         brojlokala integer not null,
         nazivlokala varchar(25) not null,
         primary key (brojlokala)
     );
-    
+
     create table mesni
     (
         ptt char(5) not null,
         lokalniprefix varchar(5) not null,
         primary key (ptt, lokalniprefix)
     );
-    
+
     create table mreza
     (
         brojmreze varchar(4) not null,
@@ -130,7 +122,7 @@ test_script_1 = """
         zona integer not null,
         primary key (brojmreze, pozivnibroj)
     );
-    
+
     create table vrstart
     (
     sifravrt char(7) not null,
@@ -138,14 +130,14 @@ test_script_1 = """
     jm varchar(6),
     primary key (sifravrt)
     );
-    
+
     create table poslovnica
     (
     sifraposlovnice char(2) not null,
     nazivposlovnice varchar(18) not null,
     primary key (sifraposlovnice)
     );
-    
+
     create table rezijskitrosak
     (
     rednibroj integer not null,
@@ -158,10 +150,10 @@ test_script_1 = """
     iznos decimal(8,2) not null,
     primary key (rednibroj)
     );
-    
+
     create generator gen_rt_id;
     set generator gen_rt_id to 0;
-    
+
     create table vrstamt
     (
     sifravmt char(7) not null,
@@ -169,7 +161,7 @@ test_script_1 = """
     defaultjm varchar(6),
     primary key (sifravmt)
     );
-    
+
     create table roba
     (
     sifrarobe char(6) not null,
@@ -182,7 +174,7 @@ test_script_1 = """
     napomena varchar(100),
     primary key (sifrarobe)
     );
-    
+
     create table mesto
     (
     ptt char(5) not null,
@@ -190,7 +182,7 @@ test_script_1 = """
     pozivnibroj char(4),
     primary key (ptt)
     );
-    
+
     create table komitent
     (
     sifrakomitenta integer not null,
@@ -201,10 +193,10 @@ test_script_1 = """
     owner char(8),
     primary key (sifrakomitenta)
     );
-    
+
     create generator gen_komitent_id;
     set generator gen_komitent_id to 0;
-    
+
     create table vrstadetalja
     (
     sifravd integer not null,
@@ -213,10 +205,10 @@ test_script_1 = """
     check (telefon is null or telefon = 'd' or telefon = 'z'),
     primary key(sifravd)
     );
-    
+
     create generator gen_vrstadetalja_id;
     set generator gen_vrstadetalja_id to 0;
-    
+
     create table komitentdetaljno
     (
     sifrakd integer not null,
@@ -229,10 +221,10 @@ test_script_1 = """
     cistbroj varchar(25),
     primary key(sifrakd)
     );
-    
+
     create generator gen_komitentdetaljno_id;
     set generator gen_komitentdetaljno_id to 0;
-    
+
     create table prijem
     (
     brdok integer not null,
@@ -241,10 +233,10 @@ test_script_1 = """
     (sifrakomitenta) on update cascade,
     primary key (brdok)
     );
-    
+
     create generator gen_prij_id;
     set generator gen_prij_id to 0;
-    
+
     create table prijemst
     (
     brdok integer not null references prijem
@@ -255,7 +247,7 @@ test_script_1 = """
     cena decimal(8,2) not null,
     primary key (brdok, sifrarobe)
     );
-    
+
     create table alokacija
     (
     brdok integer not null,
@@ -264,10 +256,10 @@ test_script_1 = """
     (sifraposlovnice) on update cascade,
     primary key (brdok)
     );
-    
+
     create generator gen_alok_id;
     set generator gen_alok_id to 1;
-    
+
     create table alokacijast
     (
     brdok integer not null references alokacija
@@ -278,22 +270,22 @@ test_script_1 = """
     cena decimal(8,2) not null,
     primary key (brdok, sifrarobe)
     );
-    
+
     create table vrstagoriva
     (
         sifravrstegoriva integer not null,
         nazivvrstegoriva varchar(10) not null,
         primary key (sifravrstegoriva)
     );
-    
-    
+
+
     create table vrstavozila
     (
         sifravrste char(2) not null,
         nazivvrste varchar(18) not null,
         primary key (sifravrste)
     );
-    
+
     create table vozilo
     (
         sifravozila char(12) not null,
@@ -313,21 +305,21 @@ test_script_1 = """
         boja char(20),
         brojosovina char(1),
         rokppaparata timestamp,
-        
+
         primary key (sifravozila)
     );
-    
+
     create table vozac
     (
         sifravozaca integer not null,
         ime char(25) not null,
         kategorije char(5) not null,
         datumvazenjadozvole timestamp,
-        
+
         primary key (sifravozaca)
     );
-    
-    
+
+
     create table sipanjegoriva
     (
         sifrasg integer not null,
@@ -345,13 +337,13 @@ test_script_1 = """
         cena decimal(8,2) not null,
         pundocepa char(1),
         check (pundocepa = 'n' or pundocepa = 'd'),
-        
+
         primary key (sifrasg)
     );
-    
+
     create generator gen_gorivo_id;
     set generator gen_gorivo_id to 1;
-    
+
     create table popravka
     (
         datum timestamp not null,
@@ -363,11 +355,11 @@ test_script_1 = """
     poslovnica (sifraposlovnice) on update cascade,
         iznos decimal(12,2) not null,
         opis varchar(200),
-        
+
         primary key (datum,sifravozila)
     );
-    
-    
+
+
     create table registracija
     (
         datum timestamp not null,
@@ -378,32 +370,32 @@ test_script_1 = """
         ostalitroskovi decimal(12,2),
         sifraposlovnice char(2) not null references
     poslovnica (sifraposlovnice) on update cascade,
-        
+
         primary key (datum,sifravozila)
     );
-    
+
     create table dummy
     (
         foobar integer not null primary key,
         check (foobar = 1)
     );
-    
+
     insert into dummy values (1);
-    
-    
+
+
     /* then, i create few views to make summary report */
-    
+
     create view apromet(datum, so, vrsta, iznos)
     as
-     
+
     select rt.datumtroska, sifraposlovnice, cast
     (vrt.nazivvrt as varchar
     (30)), cast (rt.iznos as numeric(18, 2))
     from rezijskitrosak rt
     left join vrstart vrt on rt.sifravrt = vrt.sifravrt
-     
+
     union all
-     
+
     select al.datum, sifraposlovnice, cast ('kancmat'
     as varchar(30)),
     cast(sum(alst.kolicina * alst.cena) as numeric(18, 2))
@@ -412,9 +404,9 @@ test_script_1 = """
     left join roba r on alst.sifrarobe = r.sifrarobe
     where r.vrstarobe = 'km'
     group by al.datum, sifraposlovnice
-     
+
     union all
-     
+
     select al.datum, sifraposlovnice, cast ('hemikalije'
     as varchar(30)),
     cast(sum(alst.kolicina * alst.cena) as numeric(18, 2))
@@ -423,9 +415,9 @@ test_script_1 = """
     left join roba r on alst.sifrarobe = r.sifrarobe
     where r.vrstarobe = 'he'
     group by al.datum, sifraposlovnice
-     
+
     union all
-     
+
     select al.datum, sifraposlovnice, cast ('prehrana'
     as varchar(30)),
     cast(sum(alst.kolicina * alst.cena) as numeric(18, 2))
@@ -435,15 +427,15 @@ test_script_1 = """
     where r.vrstarobe = 'hr'
     group by al.datum, sifraposlovnice
     union all
-    
+
     select pp.datum, sifraposlovnice, cast ('popravke'
     as varchar(30)),
     cast(sum(iznos) as numeric(18,2))
     from popravka pp
     group by pp.datum, sifraposlovnice
-    
+
     union all
-    
+
     select rg.datum, sifraposlovnice, cast ('registracije'
     as varchar
     (30)), cast(sum(cenatehnickog + cenaosiguranja +
@@ -451,23 +443,23 @@ test_script_1 = """
     numeric(18,2))
     from registracija rg
     group by rg.datum, sifraposlovnice
-    
+
     union all
-    
+
     select sg.datum, sifraposlovnice, cast ('gorivo' as
     varchar(30)), cast
     (sum(kolicina * cena) as numeric(18,2))
     from sipanjegoriva sg
     group by sg.datum, sifraposlovnice
     ;
-    
-    
+
+
     create view vv(vrsta)
     as
     select distinct vrsta
     from apromet a
     ;
-    
+
     -------------------------------------------------
 
     set list on;
@@ -476,11 +468,11 @@ test_script_1 = """
     from fullmenu fm
     join menu_groups mg on fm.code = mg.menu_id
     ;
-    
+
     select 'Query from issue 2000-oct-18 passed OK' as msg from rdb$database;
 
     -------------------------------------------------
-   
+
     select
         vv.vrsta,
         (select sum(ap.iznos) from apromet ap where ap.vrsta =
@@ -526,16 +518,16 @@ test_script_1 = """
     select 'Query from issue 2002-jul-12 passed OK' as msg from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             Query from issue 2000-oct-18 passed OK
     MSG                             Query from issue 2002-jul-12 passed OK
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

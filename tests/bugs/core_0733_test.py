@@ -1,52 +1,38 @@
 #coding:utf-8
-#
-# id:           bugs.core_0733
-# title:        Compress Data over the Network
-# decription:
-#                   CHANGED 22.12.2019: CODE REDUCTION: REMOVED MEASURES OT TIME.
-#                   Results are completely opposite to those which were obtained on snapshots when this test was implenmented (3.0.5.33084, 4.0.0.1347).
-#                   Requirement to compress data leads to DEGRADATION of performance when data are stored on local machine, and we have no ability
-#                   to change storage when fbt_run is in work (at least for nowadays).
-#                   After discuss with dimitr it was decided to remove any logging and its analysis.
-#                   We only verify matching of RDB$GET_CONTEXT('SYSTEM', 'WIRE_COMPRESSED') and value that was stored in the firebird.conf
-#                   for current check.
-#
-#                   ### NOTE ###
-#                   Changed value of parameter WireCompression (in firebird.conf) will be seen by application if it reloads client library.
-#                   Reconnect is NOT enough for this. For this reason we use subprocess and call ISQL utility to do above mentioned actions
-#                   in new execution context.
-#
-#                   See also tests for:
-#                       CORE-5536 - checks that field mon$wire_compressed actually exists in MON$ATTACHMENTS table;
-#                       CORE-5913 - checks that built-in rdb$get_context('SYSTEM','WIRE_ENCRYPTED') is avaliable;
-#
-#                   Checked on:
-#                       4.0.0.1693 SS: 3.031s.
-#                       4.0.0.1346 SC: 2.890s.
-#                       4.0.0.1691 CS: 3.678s.
-#                       3.0.5.33215 SS: 1.452s.
-#                       3.0.5.33084 SC: 1.344s.
-#                       3.0.5.33212 CS: 3.175s.
-#
-#               [pcisar] 9.11.2021
-#               This test was fragile from start, usualy lefts behind resources and requires
-#               temporary changes to firebird.conf on run-time. It's questionable whether
-#               wire-compression should be tested at all.
-#
-# tracker_id:   CORE-0733
-# min_versions: ['3.0.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-1108
+ISSUE:       1108
+TITLE:       Compress Data over the Network
+DESCRIPTION:
+  Results are completely opposite to those which were obtained on snapshots when this test
+  was implenmented (3.0.5.33084, 4.0.0.1347). Requirement to compress data leads to DEGRADATION
+  of performance when data are stored on local machine, and we have no ability to change
+  storage when fbt_run is in work (at least for nowadays).
+  After discuss with dimitr it was decided to remove any logging and its analysis.
+  We only verify matching of RDB$GET_CONTEXT('SYSTEM', 'WIRE_COMPRESSED') and value that
+  was stored in the firebird.conf for current check.
+
+  ### NOTE ###
+  Changed value of parameter WireCompression (in firebird.conf) will be seen by application
+  if it reloads client library. Reconnect is NOT enough for this. For this reason we use
+  subprocess and call ISQL utility to do above mentioned actions in new execution context.
+
+  See also tests for:
+    CORE-5536 - checks that field mon$wire_compressed actually exists in MON$ATTACHMENTS table;
+    CORE-5913 - checks that built-in rdb$get_context('SYSTEM','WIRE_ENCRYPTED') is avaliable;
+NOTES:
+[9.11.2021] pcisar
+  This test was fragile from start, usualy lefts behind resources and requires
+  temporary changes to firebird.conf on run-time. It's questionable whether
+  wire-compression should be tested at all.
+JIRA:        CORE-733
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create domain dm_dump varchar(32700) character set none;
     recreate table t_log( required_value varchar(5), actual_value varchar(5), elap_ms int );
     commit;
@@ -76,9 +62,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
+# ORIGINAL fbtest test_script
 #---
 #
 #  import os
@@ -349,12 +335,13 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #---
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act = python_act('db')
 
-expected_stdout_1 = """
+expected_stdout = """
     RESULT_OF_REQ_COMPARE_TO_ACTUAL EXPECTED: actual values were equal to required.
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(db_1):
-    pytest.skip("Requires changes to firebird.conf")
+@pytest.mark.skip("Test fate to be determined")
+def test_1():
+    pytest.fail("NOT IMPLEMENTED")

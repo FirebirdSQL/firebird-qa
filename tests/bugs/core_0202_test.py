@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_202
-# title:        ORDER BY works wrong with collate PT_PT
-# decription:   
-# tracker_id:   CORE-202
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_202
+
+"""
+ID:          issue-529
+ISSUE:       529
+TITLE:       ORDER BY works wrong with collate PT_PT
+DESCRIPTION:
+JIRA:        CORE-202
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE STOCKS (
+init_script = """CREATE TABLE STOCKS (
     MNEN    INTEGER NOT NULL,
     ACTIVO  VARCHAR(50) CHARACTER SET ISO8859_1 COLLATE PT_PT
 );
@@ -52,16 +47,16 @@ COMMIT WORK;
 
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SELECT ACTIVO FROM STOCKS ORDER BY ACTIVO;
+test_script = """SELECT ACTIVO FROM STOCKS ORDER BY ACTIVO;
 
 SELECT ACTIVO FROM STOCKS2 ORDER BY ACTIVO;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """ACTIVO
+expected_stdout = """ACTIVO
 ==================================================
 B&A
 Banif
@@ -79,9 +74,9 @@ BES
 
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

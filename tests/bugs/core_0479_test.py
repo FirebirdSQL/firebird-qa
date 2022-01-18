@@ -1,32 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_0479
-# title:        Grants overwrite previous rdb$security_classes entries
-# decription:
-#                  Test attempts to create all kinds of objects (<K>) that can be 'target' for GRANT ON <K> statement.
-#                  Length of  each object is equal to implementation maximum for 2.5.x, 3.0.x and 4.0.
-#                  Pairs of objects differ only in last character.
-#                  After all, we check that no dupicates are created in rdb$security_classes table for field rdb$security_class.
-#                  NOTE-1: for 3.0.x and 4.0 we create objects as quoted, in UTF8, - for additional checking that we have no problem with non-ascii characters.
-#                  NOTE-2: max length in 4.0 is 63 utf8 CHARACTERS (not bytes).
-#                  Checked on WI-V2.5.7.27027, WI-V3.0.2.32630, WI-T4.0.0.454.
-#
-# tracker_id:   CORE-0479
-# min_versions: ['2.5.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-827
+ISSUE:       827
+TITLE:       Grants overwrite previous rdb$security_classes entries
+DESCRIPTION:
+  Test attempts to create all kinds of objects (<K>) that can be 'target' for GRANT ON <K> statement.
+  Length of  each object is equal to implementation maximum for 2.5.x, 3.0.x and 4.0.
+  Pairs of objects differ only in last character.
+  After all, we check that no dupicates are created in rdb$security_classes table for field rdb$security_class.
+  NOTE-1: for 3.0.x and 4.0 we create objects as quoted, in UTF8, - for additional checking
+          that we have no problem with non-ascii characters.
+  NOTE-2: max length in 4.0 is 63 utf8 CHARACTERS (not bytes).
+JIRA:        CORE-479
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+db = db_factory(charset='utf8')
 
 # version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1, charset='utf8')
 
 test_script_1 = """
     set bail on;
@@ -145,7 +139,7 @@ test_script_1 = """
     select * from v_check;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
     Records affected: 0
@@ -158,13 +152,6 @@ def test_1(act_1: Action):
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2, charset='utf8')
 
 test_script_2 = """
     set bail on;
@@ -280,7 +267,7 @@ test_script_2 = """
     select * from v_check;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2)
 
 expected_stdout_2 = """
     Records affected: 0

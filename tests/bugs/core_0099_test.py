@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0099
+ID:          issue-423
 ISSUE:       423
 TITLE:       Strange/Inconsistent query results
 DESCRIPTION:
+JIRA:        CORE-99
 """
 
 import pytest

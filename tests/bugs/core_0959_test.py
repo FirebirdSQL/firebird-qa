@@ -1,55 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_0959
-# title:        GSTAT does not work using the localhost connection string
-# decription:
-#                   Refactored 17.11.2017. Covers ticket CORE-5629.
-#
-#                   For 3.0+ we check in log of GSTAT presense of following lines:
-#                       * with timestamp of GSTAT start
-#                       * with DB name
-#                       * with DB attributes
-#                       * with table 'TEST' pointer page and index root page numbers
-#                       * with count of data pages and average fill for table 'TEST'
-#                       * with number of index root page, depath of index and number of buckets and nodes for index 'TEST_S'
-#                       * with timestamp of GSTAT finish.
-#                   If line from log matches to any of patterns then we do output if this line for checking in 'expected_stdout' section.
-#                   Otherwise line is ignored.
-#
-#                   Check is done using regexp searches -- see definition of patterns hdr_dbname_ptn, hdr_dbattr_ptn, table_ppip_ptn etc.
-#
-#                   For 2.5.x check was changed only by added line with with timestamp of GSTAT start in 'expected_stdout' section.
-#
-#                   Checked on:
-#                       FB25SC, build 2.5.8.27078: OK, 0.297s.
-#                       FB30SS, build 3.0.3.32837: OK, 2.344s.
-#                       FB40SS, build 4.0.0.800: OK, 2.437s.
-#
-#               [pcisar] 9.11.2021
-#               This test is wrong as it uses service manager.
-#               It should use gstat directly with pseudo-remote path (i.e. localhost:filename)
-#
-# tracker_id:   CORE-959
-# min_versions: ['2.5']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-1362
+ISSUE:       1362
+TITLE:       GSTAT does not work using the localhost connection string
+DESCRIPTION:
+JIRA:        CORE-959
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 import re
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('Database ".*', 'Database'),
-                   ('Gstat execution time .*', 'Gstat execution time'),
-                   ('Attributes .*', 'Attributes'),
-                   ('Primary pointer page: \\d+, Index root page: \\d+\\s*', 'Primary pointer page, Index root page'),
-                   ('Data pages: \\d+, average fill: \\d+[percent_sign]', 'Data pages, average fill'),
-                   ('Root page: \\d+, depth: \\d+, leaf buckets: \\d+, nodes: \\d+\\s*', 'Root page, depth, leaf buckets, nodes'),
-                   ('Gstat completion time .*', 'Gstat completion time')]
-
-init_script_1 = """
+init_script = """
       create sequence g;
       create table test(id int primary key using index test_id_pk);
       commit;
@@ -57,108 +20,19 @@ init_script_1 = """
       commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#  import time
-#  import re
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  hdr_dbname_ptn=re.compile('Database\\s+"', re.IGNORECASE)
-#  hdr_dbattr_ptn=re.compile('Attributes\\s+\\.*', re.IGNORECASE)
-#  table_ppip_ptn=re.compile('Primary\\s+pointer\\s+page:\\s+\\d+,\\s+Index root page:\\s+\\d+\\s*', re.IGNORECASE)
-#  table_dpaf_ptn=re.compile('Data\\s+pages:\\s+\\d+,\\s+average\\s+fill:\\s+\\d+%\\s*', re.IGNORECASE)
-#  index_root_ptn=re.compile('Root\\s+page:\\s+\\d+,\\s+depth:\\s+\\d+,\\s+leaf\\s+buckets:\\s+\\d+,\\s+nodes:\\s+\\d+\\s*', re.IGNORECASE)
-#
-#  gstat_init_ptn=re.compile('Gstat\\s+execution\\s+time\\s+', re.IGNORECASE)
-#  gstat_fini_ptn=re.compile('Gstat\\s+completion\\s+time\\s+', re.IGNORECASE)
-#
-#  watched_ptn_list=(
-#      hdr_dbname_ptn
-#      ,hdr_dbattr_ptn
-#      ,table_ppip_ptn
-#      ,table_dpaf_ptn
-#      ,index_root_ptn
-#      ,gstat_init_ptn
-#      ,gstat_fini_ptn
-#  )
-#  db_name=db_conn.database_name
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  f_dbstat_log = open( os.path.join(context['temp_directory'],'tmp_local_host_0959.log'), 'w')
-#  f_dbstat_err = open( os.path.join(context['temp_directory'],'tmp_local_host_0959.err'), 'w')
-#  context['isql_path']
-#  subprocess.check_call([context['fbsvcmgr_path']
-#                         ,"localhost:service_mgr"
-#                         ,"action_db_stats"
-#                         ,"dbname", db_name
-#                         ,"sts_record_versions"
-#                         ,"sts_data_pages"
-#                         ,"sts_idx_pages"
-#                        ],
-#                        stdout=f_dbstat_log,
-#                        stderr=f_dbstat_err
-#                       )
-#
-#  flush_and_close( f_dbstat_log )
-#  flush_and_close( f_dbstat_err )
-#
-#  with open( f_dbstat_log.name,'r') as f:
-#    for line in f:
-#        if line.split():
-#            for p in watched_ptn_list:
-#                if p.search( line ):
-#                    print( ' '.join(line.replace('%','[percent_sign]').split()) )
-#
-#  with open( f_dbstat_err.name,'r') as f:
-#    for line in f:
-#        if line.split():
-#          print('UNEXPECTED STDERR in '+f_dbstat_err.name+': '+line)
-#
-#
-#  #####################
-#  # Cleanup.
-#  time.sleep(1)
-#
-#  f_list=(
-#       f_dbstat_log
-#      ,f_dbstat_err
-#  )
-#
-#  for i in range(len(f_list)):
-#      if os.path.isfile(f_list[i].name):
-#          os.remove(f_list[i].name)
-#
-#
-#---
+substitutions = [('Database ".*', 'Database'),
+                 ('Gstat execution time .*', 'Gstat execution time'),
+                 ('Attributes .*', 'Attributes'),
+                 ('Primary pointer page: \\d+, Index root page: \\d+\\s*', 'Primary pointer page, Index root page'),
+                 ('Data pages: \\d+, average fill: \\d+[percent_sign]', 'Data pages, average fill'),
+                 ('Root page: \\d+, depth: \\d+, leaf buckets: \\d+, nodes: \\d+\\s*', 'Root page, depth, leaf buckets, nodes'),
+                 ('Gstat completion time .*', 'Gstat completion time')]
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act = python_act('db', substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     Database "C:\\MIX\\FIREBIRD\\QA\\FBT-REPO\\TMP\\BUGS.CORE_0959.FDB"
     Gstat execution time Fri Nov 17 12:37:29 2017
     Attributes force write
@@ -169,7 +43,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act: Action):
     hdr_dbname_ptn = re.compile('Database\\s+"', re.IGNORECASE)
     hdr_dbattr_ptn = re.compile('Attributes\\s+\\.*', re.IGNORECASE)
     table_ppip_ptn = re.compile('Primary\\s+pointer\\s+page:\\s+\\d+,\\s+Index root page:\\s+\\d+\\s*', re.IGNORECASE)
@@ -182,18 +56,17 @@ def test_1(act_1: Action):
     watched_ptn_list = [hdr_dbname_ptn, hdr_dbattr_ptn, table_ppip_ptn, table_dpaf_ptn,
                         index_root_ptn, gstat_init_ptn, gstat_fini_ptn]
     #
-    act_1.expected_stdout = expected_stdout_1
-    act_1.gstat(switches=['-d', '-i', '-r'])
+    act.expected_stdout = expected_stdout
+    act.gstat(switches=['-d', '-i', '-r'])
     #
     matched = []
-    for line in act_1.stdout.splitlines():
+    for line in act.stdout.splitlines():
         for p in watched_ptn_list:
             if p.search(line):
                 matched.append(' '.join(line.replace('%','[percent_sign]').split()))
     #
     actual = '\n'.join(matched)
-    actual = act_1.string_strip(actual, act_1.substitutions)
-    assert 'localhost' in act_1.db.dsn
-    assert act_1.clean_expected_stdout == actual
+    actual = act.string_strip(actual, act.substitutions)
+    assert ('localhost' in act.db.dsn and act.clean_expected_stdout == actual)
 
 

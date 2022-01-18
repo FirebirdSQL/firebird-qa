@@ -1,43 +1,29 @@
 #coding:utf-8
-#
-# id:           bugs.core_0304
-# title:         ANY user can drop procedures, generators, exceptions.
-# decription:
-#                   fb30Cs, build 3.0.4.32924: OK, 4.406s.
-#                   FB30SS, build 3.0.4.32939: OK, 1.563s.
-#
-#                   24.01.2019. Added separate code for running on FB 4.0+.
-#                   UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
-#                   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
-#                   in UDR library "udf_compat", see it in folder: ../plugins/udr/
-#                   Checked on:
-#                       4.0.0.1172: OK, 8.140s.
-#                       4.0.0.1340: OK, 4.797s.
-#                       4.0.0.1378: OK, 4.032s.
-#
-#                   01.06.2021. Adjusted STDERR caused by fixes
-#                       https://github.com/FirebirdSQL/firebird/pull/6833
-#                       https://github.com/FirebirdSQL/firebird/pull/6825
-#                       ("Correct error message for DROP VIEW")
-#                   Checked on 3.0.8.33470; 4.0.0.2502; 5.0.0.60.
-#
-#
-# tracker_id:   CORE-304
-# min_versions: ['3.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-637
+ISSUE:       637
+TITLE:       Any user can drop procedures, generators, exceptions
+DESCRIPTION:
+NOTES:
+[24.01.2019] Added separate code for running on FB 4.0+.
+  UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
+  Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
+  in UDR library "udf_compat", see it in folder: ../plugins/udr/
+[01.06.2021] Adjusted STDERR caused by fixes
+    https://github.com/FirebirdSQL/firebird/pull/6833
+    https://github.com/FirebirdSQL/firebird/pull/6825
+    ("Correct error message for DROP VIEW")
+JIRA:        CORE-304
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
 # version: 3.0
-# resources: None
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory()
+tmp_user = user_factory('db', name='tmp$c0304', password='123')
 
 test_script_1 = """
 
@@ -111,9 +97,8 @@ test_script_1 = """
     rollback;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
-user_1 = user_factory('db_1', name='tmp$c0304', password='123')
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
@@ -208,21 +193,12 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.8,<4.0')
-def test_1(act_1: Action, user_1: User):
+def test_1(act_1: Action, tmp_user: User):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-user_2 = user_factory('db_2', name='tmp$c0304', password='123')
 
 test_script_2 = """
     -- See declaration sample in plugins\\udr\\UdfBackwardCompatibility.sql:
@@ -301,7 +277,7 @@ test_script_2 = """
     rollback;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2)
 
 expected_stderr_2 = """
 Statement failed, SQLSTATE = 28000
@@ -412,7 +388,7 @@ unsuccessful metadata update
 """
 
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action, user_2: User):
+def test_2(act_2: Action, tmp_user: User):
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
     assert act_2.clean_stderr == act_2.clean_expected_stderr

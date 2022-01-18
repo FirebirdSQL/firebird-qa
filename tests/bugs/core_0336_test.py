@@ -1,39 +1,32 @@
 #coding:utf-8
-#
-# id:           bugs.core_336
-# title:        DateTime math imprecision
-# decription:   
-# tracker_id:   CORE-336
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_336-21
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """select (cast('01.01.2004 10:01:00' as timestamp)-cast('01.01.2004 10:00:00' as timestamp))+cast('01.01.2004 10:00:00' as timestamp) from rdb$database ;
+"""
+ID:          issue-673
+ISSUE:       673
+TITLE:       DateTime math imprecision
+DESCRIPTION:
+JIRA:        CORE-336
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+import pytest
+from firebird.qa import *
 
-expected_stdout_1 = """ADD
+db = db_factory()
+
+test_script = """select (cast('01.01.2004 10:01:00' as timestamp)-cast('01.01.2004 10:00:00' as timestamp))+cast('01.01.2004 10:00:00' as timestamp) from rdb$database ;
+"""
+
+act = isql_act('db', test_script)
+
+expected_stdout = """ADD
 =========================
 2004-01-01 10:01:00.0000
 
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

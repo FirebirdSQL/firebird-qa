@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0058
+ID:          issue-383
 ISSUE:       383
 TITLE:       WHERE CURRENT OF doesn't work
 DESCRIPTION:
+JIRA:        CORE-58
 """
 
 import pytest

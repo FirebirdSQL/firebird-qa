@@ -1,8 +1,9 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0001
+ID:          issue-319
 ISSUE:       319
+JIRA:        CORE-1
 TITLE:       Server shutdown
 DESCRIPTION: Server shuts down when user password is attempted to be modified to a empty string
 """

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0610
-# title:        FIRST is applied before aggregation
-# decription:   
-# tracker_id:   CORE-0610
-# min_versions: ['2.1.7']
-# versions:     2.1.7
-# qmid:         None
+
+"""
+ID:          issue-969
+ISSUE:       969
+TITLE:       FIRST is applied before aggregation
+DESCRIPTION:
+JIRA:        CORE-610
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create table A (id integer not null);
     create table B (id integer not null, A integer not null, v integer);
     commit;
@@ -42,9 +35,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     COUNT                           3
     ID                              1
     SUM                             2
@@ -52,9 +45,9 @@ expected_stdout_1 = """
     SUM                             4
 """
 
-@pytest.mark.version('>=2.1.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

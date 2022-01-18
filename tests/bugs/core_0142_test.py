@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0142
-# title:        index breaks = ANY result
-# decription:
-# tracker_id:   CORE-0142
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-469
+ISSUE:       469
+TITLE:       Index breaks = ANY result
+DESCRIPTION:
+JIRA:        CORE-142
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Confirmed wrong output on WI-V1.5.6.5026.
     -- Since 2.0.0 works fine.
 
@@ -66,9 +59,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CNUM                            2001
     CNAME                           hoffman
     CITY                            london
@@ -94,9 +87,9 @@ expected_stdout_1 = """
     SNUM                            1004
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

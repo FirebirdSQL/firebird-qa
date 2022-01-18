@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0085
+ID:          issue-411
 ISSUE:       411
 TITLE:       Query with not in (select) returns wrong result
 DESCRIPTION:
+JIRA:        CORE-85
 """
 
 import pytest

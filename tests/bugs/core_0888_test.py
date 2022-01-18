@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0888
-# title:        DDL - object in use
-# decription:   
-# tracker_id:   CORE-888
-# min_versions: []
-# versions:     2.0.1
-# qmid:         bugs.core_888
+
+"""
+ID:          issue-1281
+ISSUE:       1281
+TITLE:       DDL - object in use
+DESCRIPTION:
+JIRA:        CORE-888
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SET TERM ^ ;
+test_script = """SET TERM ^ ;
 CREATE PROCEDURE TestProc
 AS
 BEGIN
@@ -33,10 +26,12 @@ EXECUTE PROCEDURE TestProc;
 DROP PROCEDURE TestProc;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
 
-@pytest.mark.version('>=2.0.1')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

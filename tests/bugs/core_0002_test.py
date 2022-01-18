@@ -1,8 +1,9 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0002
+ID:          issue-320
 ISSUE:       320
+JIRA:        CORE-2
 TITLE:       Incorrect value returned with execute statement calculation
 DESCRIPTION:
 """

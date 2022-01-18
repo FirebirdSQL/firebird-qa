@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0883
-# title:        The built-in BLR printer doesn't support all FB2 features
-# decription:   
-# tracker_id:   CORE-883
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_883
+
+"""
+ID:          issue-1276
+ISSUE:       1276
+TITLE:       The built-in BLR printer doesn't support all FB2 features
+DESCRIPTION:
+JIRA:        CORE-883
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='core0883-ods12.fbk')
 
-substitutions_1 = [('RDB\\$PROCEDURE_BLR.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core0883-ods12.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set blob all;
     select rdb$procedure_blr
@@ -28,9 +21,9 @@ test_script_1 = """
     where rdb$procedure_name = upper('sp1');
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('RDB\\$PROCEDURE_BLR.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
 RDB$PROCEDURE_BLR               1a:f1
         	blr_version5,
         	blr_begin,
@@ -80,7 +73,7 @@ RDB$PROCEDURE_BLR               1a:f1
         	                  blr_current_timestamp,
         	                  blr_variable, 1,0,
         	               blr_cursor_stmt, 0, 0,0,
-        	
+
         	               blr_begin,
         	                  blr_end,
         	               blr_label, 1,
@@ -93,7 +86,7 @@ RDB$PROCEDURE_BLR               1a:f1
         	                           blr_begin,
         	                              blr_begin,
         	                                 blr_cursor_stmt, 2, 0,0,
-        	
+
         	                                 blr_begin,
         	                                    blr_assignment,
         	                                       blr_field, 0, 16, 'R','D','B','$','P','R','O','C','E','D','U','R','E','_','I','D',
@@ -117,7 +110,7 @@ RDB$PROCEDURE_BLR               1a:f1
         	                           blr_leave, 1,
         	                        blr_end,
         	               blr_cursor_stmt, 1, 0,0,
-        	
+
         	               blr_begin,
         	                  blr_end,
         	               blr_end,
@@ -134,8 +127,8 @@ RDB$PROCEDURE_BLR               1a:f1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

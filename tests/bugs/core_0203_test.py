@@ -1,45 +1,29 @@
 #coding:utf-8
-#
-# id:           bugs.core_0203
-# title:        CREATE VIEW ignores PLAN
-# decription:   
-#                   Test verifies that:
-#                   1. "PLAN <...>" clause inside view DLL is always ignored and actual plan will be one of following:
-#                       1.1. That is specified explicitly by client who runs a query to this view;
-#                       1.2. If no explicitly specified plan that optimizer will be allowed to choose that.
-#                   2. One may to specify PLAN on client side and it *WILL* be taken in account.
-#               
-#                   ::: NOTE :::
-#                   Suppose that some view contains explicitly specified PLAN NATURAL it its DDL.
-#                   If underlying query became suitable to be run with PLAN INDEX (e.g. such index was added to the table)
-#                   then this 'PLAN NATURAL' will be IGNORED until it is explicitly specified in the client query.
-#                   See below example #4 for view v_test1 defined as "select * from ... plan (t natural)".
-#               
-#                   Checked on:
-#                       4.0.0.1743 SS: 1.781s.
-#                       4.0.0.1714 CS: 6.500s.
-#                       3.0.6.33236 SS: 1.313s.
-#                       3.0.6.33236 CS: 1.891s.
-#                       2.5.9.27149 SC: 1.047s.
-#                
-# tracker_id:   CORE-0203
-# min_versions: ['2.5']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-530
+ISSUE:       530
+TITLE:       CREATE VIEW ignores PLAN
+DESCRIPTION:
+Test verifies that:
+1. "PLAN <...>" clause inside view DLL is always ignored and actual plan will be one of following:
+    1.1. That is specified explicitly by client who runs a query to this view;
+    1.2. If no explicitly specified plan that optimizer will be allowed to choose that.
+2. One may to specify PLAN on client side and it *WILL* be taken in account.
+NOTES:
+Suppose that some view contains explicitly specified PLAN NATURAL it its DDL.
+If underlying query became suitable to be run with PLAN INDEX (e.g. such index was added to the table)
+then this 'PLAN NATURAL' will be IGNORED until it is explicitly specified in the client query.
+See below example #4 for view v_test1 defined as "select * from ... plan (t natural)".
+JIRA:        CORE-203
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ ]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
 
     recreate view v_test4 as select 1 x from rdb$database;
@@ -113,9 +97,9 @@ test_script_1 = """
     select * from v_test4 v4 PLAN (V4 V_TEST3 T INDEX (TEST_X_Y));                                  -- 16
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ ]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (T NATURAL)
 
     PLAN (V1 T INDEX (TEST_X_ASC))
@@ -152,9 +136,9 @@ expected_stdout_1 = """
 
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0166
-# title:        cannot specify PLAN in UPDATE statement
-# decription:   
-# tracker_id:   CORE-0166
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-495
+ISSUE:       495
+TITLE:       Cannot specify PLAN in UPDATE statement
+DESCRIPTION:
+JIRA:        CORE-166
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table company(id int not null primary key, contact_id int, company_name varchar(60));
     recreate table contact(id int not null  primary key using index contact_id, contact_name varchar(60));
     alter table company add constraint company_fk foreign key(contact_id) references contact(id);
@@ -47,9 +40,9 @@ test_script_1 = """
     set plan on;
     set count on;
 
-    update company c set c.company_name = 
-    ( select k.contact_name 
-      from contact k 
+    update company c set c.company_name =
+    ( select k.contact_name
+      from contact k
       where k.id = c.contact_id
       PLAN (K INDEX (CONTACT_ID))
     )
@@ -64,16 +57,16 @@ test_script_1 = """
     from company c order by c.id;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              100
     CONTACT_ID                      1
     COMPANY_NAME                    Pepsico, Inc.
 
     ID                              101
     CONTACT_ID                      1
-    COMPANY_NAME                    
+    COMPANY_NAME
 
     ID                              102
     CONTACT_ID                      2
@@ -81,7 +74,7 @@ expected_stdout_1 = """
 
     ID                              103
     CONTACT_ID                      2
-    COMPANY_NAME                    
+    COMPANY_NAME
 
     ID                              104
     CONTACT_ID                      2
@@ -128,9 +121,9 @@ expected_stdout_1 = """
     COMPANY_NAME                    Firebird Foundation
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

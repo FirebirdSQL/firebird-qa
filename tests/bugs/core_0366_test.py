@@ -1,40 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_0366
-# title:        Complex view crashes server
-# decription:   
-#               	NOTE-1.
-#               	Name of original test has no any relation with actual task of this test: ###
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_26.script
-#               
-#                   Issue in original script: bug #583690 Complex view crashes server
-#                   Found in FB tracker as: http://tracker.firebirdsql.org/browse/CORE-366
-#                   Fixed on 2.0 Beta 1
-#               
-#                   NOTE-2.
-#                   We expect that compilation of this test script finished OK, without any errors/warnings.
-#                   2.5 issues "too many contexts / max allowed 255'; because of this, min_version=3.0
-#               
-#                   Checked on: 4.0.0.1803; 3.0.6.33265
-#                
-# tracker_id:   CORE-0366
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-708
+ISSUE:       708
+TITLE:       Complex view crashes server
+DESCRIPTION:
+  Name of original test has no any relation with actual task of this test: ###
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_26.script
+
+  Issue in original script: bug #583690 Complex view crashes server
+  Found in FB tracker as: http://tracker.firebirdsql.org/browse/CORE-366
+  Fixed on 2.0 Beta 1
+
+  We expect that compilation of this test script finished OK, without any errors/warnings.
+  2.5 issues "too many contexts / max allowed 255'; because of this, min_version=3.0
+JIRA:        CORE-366
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     CREATE TABLE DRZAVA(
     	POZIVNIBROJDRZAVE VARCHAR(4) NOT NULL,
     	NAZIVDRZAVE VARCHAR(20),
@@ -86,7 +74,7 @@ test_script_1 = """
     CREATE TABLE RezijskiTrosak(
     	RedniBroj integer NOT NULL,
     	DatumTroska timestamp NOT NULL,
-    	SifraPoslovnice char(2) NOT NULL 
+    	SifraPoslovnice char(2) NOT NULL
     		REFERENCES Poslovnica (SifraPoslovnice) ON UPDATE CASCADE,
     	SifraVRT char(7) NOT NULL
     		REFERENCES VrstaRT(SifraVRT) ON UPDATE CASCADE,
@@ -107,7 +95,7 @@ test_script_1 = """
 
     CREATE TABLE Roba(
     	SifraRobe char(6) NOT NULL,
-    	VrstaRobe char(7) NOT NULL 
+    	VrstaRobe char(7) NOT NULL
     		REFERENCES VrstaMT (SifraVMT) ON UPDATE CASCADE,
     	NazivRobe varchar(30) NOT NULL,
     	JM varchar(6) NOT NULL,
@@ -127,7 +115,7 @@ test_script_1 = """
     CREATE TABLE Komitent(
     	SifraKomitenta integer NOT NULL,
     	Naziv varchar(25) NOT NULL ,
-    	PTT char(5) NOT NULL 
+    	PTT char(5) NOT NULL
     		REFERENCES Mesto(PTT) ON UPDATE CASCADE,
     	Napomena varchar(100),
     	Owner char(8),
@@ -150,7 +138,7 @@ test_script_1 = """
 
     CREATE TABLE KomitentDetaljno (
     	SifraKD integer NOT NULL,
-    	SifraKomitenta integer NOT NULL 
+    	SifraKomitenta integer NOT NULL
     		REFERENCES Komitent (SifraKomitenta) ON UPDATE CASCADE ON DELETE CASCADE,
     	SifraVD integer NOT NULL
     		REFERENCES VrstaDetalja (SifraVD) ON UPDATE CASCADE,
@@ -165,7 +153,7 @@ test_script_1 = """
     CREATE TABLE Prijem(
     	BRDOK integer NOT NULL,
     	DatumUlaza timestamp NOT NULL,
-    	SifraKomitenta integer 
+    	SifraKomitenta integer
     		REFERENCES Komitent(SifraKomitenta) ON UPDATE CASCADE,
     	PRIMARY KEY(BRDOK)
     );
@@ -174,9 +162,9 @@ test_script_1 = """
     SET GENERATOR GEN_PRIJ_ID TO 0;
 
     CREATE TABLE Prijemst(
-    	BRDOK integer NOT NULL 
+    	BRDOK integer NOT NULL
     		REFERENCES Prijem(BRDOK) ON UPDATE CASCADE ON DELETE CASCADE,
-    	SifraRobe char(6) NOT NULL 
+    	SifraRobe char(6) NOT NULL
     		REFERENCES ROBA(SifraRobe) ON UPDATE CASCADE,
     	Kolicina decimal(8,2) NOT NULL,
     	Cena decimal(8,2) NOT NULL,
@@ -195,9 +183,9 @@ test_script_1 = """
     SET GENERATOR GEN_ALOK_ID TO 1;
 
     CREATE TABLE Alokacijast(
-    	Brdok integer NOT NULL 
+    	Brdok integer NOT NULL
     		REFERENCES Alokacija(BRDOK) ON UPDATE CASCADE ON DELETE CASCADE,
-    	SifraRobe char(6) NOT NULL 
+    	SifraRobe char(6) NOT NULL
     		REFERENCES ROBA(SifraRobe) ON UPDATE CASCADE,
     	Kolicina decimal(8,2) NOT NULL,
     	Cena decimal(8,2) NOT NULL,
@@ -251,7 +239,7 @@ test_script_1 = """
     	Datum Timestamp NOT NULL,
     	SifraVozila char(12) NOT NULL
     		REFERENCES Vozilo(SifraVozila) ON UPDATE CASCADE,
-    	SifraVozaca integer NOT NULL 
+    	SifraVozaca integer NOT NULL
     		REFERENCES Vozac(SifraVozaca) ON UPDATE CASCADE,
     	SifraVrsteGoriva integer NOT NULL
     		REFERENCES VrstaGoriva (SifraVrsteGoriva) ON UPDATE CASCADE,
@@ -270,7 +258,7 @@ test_script_1 = """
 
     CREATE TABLE Popravka(
     	Datum Timestamp NOT NULL,
-    	SifraVozila char(12) NOT NULL 
+    	SifraVozila char(12) NOT NULL
     		REFERENCES Vozilo(SifraVozila) ON UPDATE CASCADE,
     	SifraVozaca integer NOT NULL
     		REFERENCES Vozac(SifraVozaca) ON UPDATE CASCADE,
@@ -283,12 +271,12 @@ test_script_1 = """
 
     CREATE TABLE Registracija(
     	Datum Timestamp NOT NULL,
-    	SifraVozila char(12) NOT NULL 
+    	SifraVozila char(12) NOT NULL
     		REFERENCES Vozilo(SifraVozila) ON UPDATE CASCADE,
     	CenaTehnickog decimal(12,2),
     	CenaOsiguranja decimal(12,2),
     	OstaliTroskovi decimal(12,2),
-    	SifraPoslovnice char(2) NOT NULL 
+    	SifraPoslovnice char(2) NOT NULL
     		REFERENCES Poslovnica (SifraPoslovnice) ON UPDATE CASCADE,
     	PRIMARY KEY(Datum,SifraVozila)
     );
@@ -303,32 +291,32 @@ test_script_1 = """
 
 
     CREATE VIEW APROMET(DATUM, SO, VRSTA,IZNOS) AS
-    	select 
+    	select
     	rt.datumtroska,
-    	SIFRAPOSLOVNICE, 
+    	SIFRAPOSLOVNICE,
     	cast(vrt.nazivvrt as varchar(30)),
     	cast(rt.iznos as numeric(18, 2))
-    	from rezijskitrosak rt 
+    	from rezijskitrosak rt
     	left join VRSTART vrt on rt.sifravrt = vrt.sifravrt
 
     	union all
 
-    	SELECT 
-    	AL.DATUM, 
-    	SIFRAPOSLOVNICE, 
+    	SELECT
+    	AL.DATUM,
+    	SIFRAPOSLOVNICE,
     	cast('KancMat'as varchar(30)),
     	cast(sum(alst.kolicina * alst.cena) as numeric(18, 2))
     	FROM ALOKACIJAST ALST
-    	LEFT JOIN ALOKACIJA AL ON ALST.brdok=AL.brdok 
+    	LEFT JOIN ALOKACIJA AL ON ALST.brdok=AL.brdok
     	LEFT JOIN ROBA R ON ALST.sifrarobe = R.sifrarobe
     	WHERE R.vrstarobe = 'KM'
     	GROUP BY AL.DATUM, SIFRAPOSLOVNICE
 
     	union all
 
-    	SELECT 
+    	SELECT
     	AL.DATUM,
-    	SIFRAPOSLOVNICE, 
+    	SIFRAPOSLOVNICE,
     	cast ('Hemikalije' as varchar(30)),
     	cast(sum(alst.kolicina * alst.cena) as numeric(18, 2))
     	FROM ALOKACIJAST ALST
@@ -354,7 +342,7 @@ test_script_1 = """
 
     	SELECT
     	pp.datum,
-    	SIFRAPOSLOVNICE, 
+    	SIFRAPOSLOVNICE,
     	cast('Popravke' as varchar(30)),
     	cast(sum(iznos) as numeric(18,2))
     	FROM popravka pp
@@ -375,7 +363,7 @@ test_script_1 = """
     	SELECT
     	sg.datum,
     	SIFRAPOSLOVNICE,
-    	cast('Gorivo' as varchar(30)), 
+    	cast('Gorivo' as varchar(30)),
     	cast(sum(kolicina * cena) as numeric(18,2))
     	FROM sipanjegoriva sg
     	GROUP BY
@@ -456,10 +444,11 @@ test_script_1 = """
     FROM vv;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

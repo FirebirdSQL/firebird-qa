@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0039
+ID:          issue-363
 ISSUE:       363
 TITLE:       Cannot create procedure with long chain of else-if clauses
 DESCRIPTION:
+JIRA:        CORE-39
 """
 
 import pytest

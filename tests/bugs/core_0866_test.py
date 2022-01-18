@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_0866
-# title:        Removing a NOT NULL constraint is not visible until reconnect
-# decription:   
-# tracker_id:   CORE-866
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_866
+
+"""
+ID:          issue-1257
+ISSUE:       1257
+TITLE:       Removing a NOT NULL constraint is not visible until reconnect
+DESCRIPTION:
+JIRA:        CORE-866
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table test (
         id integer not null,
         col varchar(20) not null
@@ -25,9 +20,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     update rdb$relation_fields
       set rdb$null_flag = null
       where (rdb$field_name = upper('col')) and (rdb$relation_name = upper('test'));
@@ -36,9 +31,9 @@ test_script_1 = """
     update test set col = null where id = 1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     UPDATE operation is not allowed for system table RDB$RELATION_FIELDS
     Statement failed, SQLSTATE = 23000
@@ -46,8 +41,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

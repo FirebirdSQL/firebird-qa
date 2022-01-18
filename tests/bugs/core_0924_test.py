@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_0924
-# title:        An attempt to select DB_KEY from a procedure crashes the server
-# decription:   
-# tracker_id:   CORE-924
-# min_versions: []
-# versions:     2.5
-# qmid:         bugs.core_924-250
+
+"""
+ID:          issue-1324
+ISSUE:       1324
+TITLE:       An attempt to select DB_KEY from a procedure crashes the server
+DESCRIPTION:
+JIRA:        CORE-924
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = [('line\\s[0-9]+,', 'line x'), ('column\\s[0-9]+', 'column y')]
-
-init_script_1 = """CREATE TABLE T1 (ID1 INTEGER NOT NULL);
+init_script = """CREATE TABLE T1 (ID1 INTEGER NOT NULL);
 SET TERM ^;
 CREATE PROCEDURE AP
 returns (output1 INTEGER)
@@ -34,14 +29,15 @@ INSERT INTO T1 VALUES (1);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SELECT RDB$DB_KEY from AP;
+test_script = """SELECT RDB$DB_KEY from AP;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+               substitutions=[('line\\s[0-9]+,', 'line x'), ('column\\s[0-9]+', 'column y')])
 
-expected_stderr_1 = """Statement failed, SQLSTATE = 42S22
+expected_stderr = """Statement failed, SQLSTATE = 42S22
 Dynamic SQL Error
 -SQL error code = -206
 -Column unknown
@@ -49,9 +45,9 @@ Dynamic SQL Error
 -At line 1, column 8
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

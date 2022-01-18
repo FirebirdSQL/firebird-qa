@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0088
+ID:          issue-413
 ISSUE:       413
 TITLE:       Join on diffrent datatypes
 DESCRIPTION:
+JIRA:        CORE-88
 """
 
 import pytest

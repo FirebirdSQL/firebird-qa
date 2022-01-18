@@ -1,24 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_0800
-# title:        Easy metadata extract improvements
-# decription:
-#                  Domain DDL: move its CHECK clause from 'create' to 'alter' statement.
-#
-# tracker_id:   CORE-0800
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-1186
+ISSUE:       1186
+TITLE:       Easy metadata extract improvements
+DESCRIPTION: Domain DDL: move its CHECK clause from 'create' to 'alter' statement.
+JIRA:        CORE-800
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     set term ^;
     execute block as
     begin
@@ -47,55 +40,19 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-# test_script_1
-#---
-# import os
-#  import subprocess
-#
-#  db_conn.close()
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  db_file="$(DATABASE_LOCATION)bugs.core_0800.fdb"
-#
-#  f_extract_meta = open( os.path.join(context['temp_directory'],'tmp_meta_0800_init.sql'), 'w')
-#  subprocess.call( [context['isql_path'], dsn, "-x", "-ch", "utf8"],
-#                   stdout = f_extract_meta,
-#                   stderr = subprocess.STDOUT
-#                 )
-#  f_extract_meta.close()
-#
-#  with open( f_extract_meta.name, 'r') as f:
-#      for line in f:
-#          if 'ALTER DOMAIN' in line.upper():
-#              print( line )
-#
-#  ###############################
-#  # Cleanup.
-#
-#  f_list=[]
-#  f_list.append(f_extract_meta)
-#
-#  for i in range(len(f_list)):
-#      if os.path.isfile(f_list[i].name):
-#          os.remove(f_list[i].name)
-#
-#
-#---
+act = python_act('db')
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     ALTER DOMAIN DM_TEST ADD CONSTRAINT
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.extract_meta()
-    expected = ''.join([x for x in act_1.clean_stdout.splitlines() if 'ALTER DOMAIN' in x.upper()])
-    assert act_1.clean_expected_stdout == expected
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.extract_meta()
+    expected = ''.join([x for x in act.clean_stdout.splitlines() if 'ALTER DOMAIN' in x.upper()])
+    assert act.clean_expected_stdout == expected
 
 

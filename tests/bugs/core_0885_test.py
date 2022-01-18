@@ -1,26 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_0885
-# title:        It is impossible to take away rights on update of a column
-# decription:
-# tracker_id:   CORE-885
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:
+
+"""
+ID:          issue-1278
+ISSUE:       1278
+TITLE:       It is impossible to take away rights on update of a column
+DESCRIPTION:
+JIRA:        CORE-885
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
+user_1_senior = user_factory('db', name='john_senior', password='sen')
+user_1_junior = user_factory('db', name='mick_junior', password='jun')
+role_1 = role_factory('db', name='modifier', do_not_create=True)
 
-substitutions_1 = [('-Effective user is.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set list on;
 
@@ -99,9 +95,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-Effective user is.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     TEXT                            Initial data, added by SYSDBA
     CHANGED_BY_USER                 SYSDBA
@@ -162,20 +158,17 @@ expected_stdout_1 = """
     CHANGED_BY_ROLE                 NONE
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     no permission for UPDATE access to TABLE TEST
 """
 
-user_1_senior = user_factory('db_1', name='john_senior', password='sen')
-user_1_junior = user_factory('db_1', name='mick_junior', password='jun')
-role_1 = role_factory('db_1', name='modifier', do_not_create=True)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1_senior: User, user_1_junior: User, role_1: Role):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, user_1_senior: User, user_1_junior: User, role_1: Role):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

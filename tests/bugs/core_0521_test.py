@@ -1,27 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0521
-# title:        Permissions are checked case-insensitively
-# decription:   
-#                
-# tracker_id:   CORE-521
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-875
+ISSUE:       875
+TITLE:       Permissions are checked case-insensitively
+DESCRIPTION:
+JIRA:        CORE-521
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('execute', 'EXECUTE'), ('-Effective user is.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create user tmp$c0521 password '123';
     commit;
 
@@ -58,21 +50,22 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('execute', 'EXECUTE'), ('-Effective user is.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     WHOAMI                          TMP$C0521
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     no permission for EXECUTE access to PROCEDURE PeRm
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0629
-# title:        Grouping on derived fields processing NULL data kills IB
-# decription:   
-# tracker_id:   CORE-0629
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-991
+ISSUE:       991
+TITLE:        Grouping on derived fields processing NULL data kills IB
+DESCRIPTION:
+JIRA:        CORE-629
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     create or alter view v_test as select 1 id from rdb$database;
@@ -92,32 +85,32 @@ test_script_1 = """
     select c from test group by c;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     DY                              <null>
     DY                              0
     DY                              1
-    
+
     C                               <null>
     C                               0
-    
+
     DD                              <null>
     DD                              0
-    
+
     DD                              <null>
     DD                              2015-05-24
-    
+
     DT                              <null>
     DT                              2015-05-24 00:00:00.0000
-    
+
     C                               <null>
     C                               15:00:29.1910
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

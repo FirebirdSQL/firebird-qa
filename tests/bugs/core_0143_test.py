@@ -1,34 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_0143
-# title:        Using where params in SUM return incorrect results
-# decription:
-#                   30.10.2019. NB: new datatype in FB 4.0 was introduces: numeric(38,0).
-#                   It can lead to additional ident of values when we show them in form "SET LIST ON",
-#                   so we have to ignore all internal spaces - see added 'substitution' section below.
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.061s.
-#                       3.0.5.33182 SS: 0.754s.
-#                       2.5.9.27146 SC: 0.190s.
-#
-# tracker_id:   CORE-0143
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-472
+ISSUE:       472
+TITLE:       Using where params in SUM return incorrect results
+DESCRIPTION:
+NOTES:
+[30.10.2019] NB: new datatype in FB 4.0 was introduces: numeric(38,0).
+  It can lead to additional ident of values when we show them in form "SET LIST ON",
+  so we have to ignore all internal spaces - see added 'substitution' section below.
+JIRA:        CORE-143
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+substitutions = [('[ \t]+', ' ')]
 
-substitutions_1 = [('[ \t]+', ' ')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table yeardata
     (
       id integer not null,
@@ -68,18 +59,18 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     AVALUE_2004_1                   16.00
     AVALUE_2005_1                   10.00
     AVALUE_2004_2                   16.00
     AVALUE_2005_2                   10.00
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

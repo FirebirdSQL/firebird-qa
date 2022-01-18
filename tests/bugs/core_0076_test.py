@@ -1,10 +1,11 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0076
+ID:          issue-400
 ISSUE:       400
 TITLE:       Invalid ROW_COUNT variable value after DELETE
 DESCRIPTION:
+JIRA:        CORE-76
 """
 
 import pytest

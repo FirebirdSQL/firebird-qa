@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_555
-# title:        Inconsistent results using STARTING WITH and COALESCE
-# decription:   
-# tracker_id:   CORE-555
-# min_versions: []
-# versions:     2.0
-# qmid:         bugs.core_555
+
+"""
+ID:          issue-910
+ISSUE:       910
+TITLE:       Inconsistent results using STARTING WITH and COALESCE
+DESCRIPTION:
+JIRA:        CORE-555
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(name char(31) character set unicode_fss);
     commit;
     insert into test (name) values ('RDB$TRIGGER_1');
@@ -59,19 +52,19 @@ test_script_1 = """
     select name "test-1"
     from test a
     where a.name starting with '';
-    
+
     select name "test-2"
     from test a
     where a.name starting with coalesce(null, '');
-    
+
     select name "test-3"
     from test a
     where cast(a.name as char(31)) starting with coalesce(null, '');
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     test-1                          RDB$TRIGGER_1
     test-1                          RDB$TRIGGER_8
     test-1                          RDB$TRIGGER_9
@@ -101,7 +94,7 @@ expected_stdout_1 = """
     test-1                          RDB$TRIGGER_34
     test-1                          RDB$TRIGGER_35
     test-1                          RDB$TRIGGER_36
-    
+
     test-2                          RDB$TRIGGER_1
     test-2                          RDB$TRIGGER_8
     test-2                          RDB$TRIGGER_9
@@ -131,7 +124,7 @@ expected_stdout_1 = """
     test-2                          RDB$TRIGGER_34
     test-2                          RDB$TRIGGER_35
     test-2                          RDB$TRIGGER_36
-    
+
     test-3                          RDB$TRIGGER_1
     test-3                          RDB$TRIGGER_8
     test-3                          RDB$TRIGGER_9
@@ -163,9 +156,9 @@ expected_stdout_1 = """
     test-3                          RDB$TRIGGER_36
 """
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

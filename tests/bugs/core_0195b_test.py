@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_195
-# title:        Bugcheck 291
-# decription:   
-# tracker_id:   CORE-195
-# min_versions: ['1.5.0']
-# versions:     1.5.0
-# qmid:         None
+
+"""
+ID:          issue-522-B
+ISSUE:       522
+TITLE:       Bugcheck 291
+DESCRIPTION:
+JIRA:        CORE-195
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table tbl_bugcheck291
+init_script = """create table tbl_bugcheck291
 (
  ID integer NOT NULL PRIMARY KEY,
  DATA integer
@@ -128,21 +123,21 @@ commit;
 
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(page_size=4096, init=init_script)
 
-test_script_1 = """update tbl_bugcheck291 set data=105 where id=1;
+test_script = """update tbl_bugcheck291 set data=105 where id=1;
 commit;
 update tbl_bugcheck291 set data=105 where id=1;
 commit;
 update t1 set Data=1 where Flag = 16;
 commit;
-
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=1.5.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

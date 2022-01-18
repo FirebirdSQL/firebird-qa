@@ -1,22 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_426
-# title:        Wrong sort order when using es_ES collate
-# decription:   Check if sort order for collate ES_ES is the one of DRAE , the oficial organization for standarization of spanish
-# tracker_id:   CORE-426
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_426
+
+"""
+ID:          issue-770
+ISSUE:       770
+TITLE:       Wrong sort order when using es_ES collate
+DESCRIPTION:
+  Check if sort order for collate ES_ES is the one of DRAE , the oficial organization for
+  standarization of spanish
+JIRA:        CORE-426
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """SET NAMES ISO8859_1;
+init_script = """SET NAMES ISO8859_1;
 CREATE TABLE TAB (A CHAR(3) CHARACTER SET ISO8859_1);
 COMMIT;
 INSERT INTO TAB VALUES ('zo');
@@ -74,15 +71,15 @@ INSERT INTO TAB VALUES ('be');
 INSERT INTO TAB VALUES ('ao');
 INSERT INTO TAB VALUES ('ae');"""
 
-db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='ISO8859_1', init=init_script)
 
-test_script_1 = """SET HEADING OFF;
+test_script = """SET HEADING OFF;
 SELECT A FROM TAB ORDER BY A COLLATE ES_ES;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """ae
+expected_stdout = """ae
 ao
 be
 bo
@@ -139,9 +136,9 @@ zo
 
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0475
-# title:        ORDER BY has no effect
-# decription:   
-# tracker_id:   CORE-0475
-# min_versions: ['2.5.6']
-# versions:     2.5.6
-# qmid:         None
+
+"""
+ID:          issue-821
+ISSUE:       821
+TITLE:       ORDER BY has no effect
+DESCRIPTION:
+JIRA:        CORE-475
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure getChilds as begin end;
     recreate table test (
         code integer not null primary key using index test_pk,
@@ -32,14 +25,14 @@ test_script_1 = """
     set term ^;
     create or alter procedure getChilds(par integer) returns (code integer,children integer) as
     begin
-        for 
-            select 
+        for
+            select
                 m.code, Min(c.code) from
-            test m 
+            test m
             left join test c on m.code = c.parent
             where m.parent = :par or (m.parent is null and :par is null)
-            group by m.code 
-        into :code,:children 
+            group by m.code
+        into :code,:children
         do
             suspend;
     end
@@ -62,25 +55,25 @@ test_script_1 = """
 
     set list on;
 
-    select * 
-    from getChilds(0) 
-    inner join test 
+    select *
+    from getChilds(0)
+    inner join test
     on getChilds.code = test.code
     order by name
     ;
 
 
-    select * 
-    from getChilds(0) 
-    inner join test 
+    select *
+    from getChilds(0)
+    inner join test
     on getChilds.code = test.code
     order by name desc
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CODE                            1
     CHILDREN                        <null>
     CODE                            1
@@ -132,9 +125,9 @@ expected_stdout_1 = """
     PARENT                          0
 """
 
-@pytest.mark.version('>=2.5.6')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

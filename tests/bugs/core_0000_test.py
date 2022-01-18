@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          bugs.dummy
+ID:          dummy
 TITLE:       Dummy test
 """
 
@@ -18,5 +18,9 @@ act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.execute()
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)
+
 

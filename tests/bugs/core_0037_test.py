@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          bugs.core_0037
+ID:          issue-361
 ISSUE:       361
 TITLE:       Error "no current record for fetch operation" on view select
 DESCRIPTION:
@@ -10,6 +10,7 @@ NOTES:
              UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
              Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe
              replacement in UDR library "udf_compat", see it in folder: ../plugins/udr/
+JIRA:        CORE-37
 """
 
 import pytest

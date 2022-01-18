@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_0878
-# title:        problem when dropping column that is a primary key
-# decription:   
-# tracker_id:   CORE-878
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_878
+
+"""
+ID:          issue-1271
+ISSUE:       1271
+TITLE:       Problem when dropping column that is a primary key
+DESCRIPTION:
+JIRA:        CORE-878
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """create table pk1 (i1 integer not null, i2 integer);
+test_script = """create table pk1 (i1 integer not null, i2 integer);
 alter table pk1 add primary key (i1);
 commit;
 show table pk1;
@@ -47,9 +40,9 @@ show table pk2;
 show table pk3;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """I1                              INTEGER Not Null
+expected_stdout = """I1                              INTEGER Not Null
 I2                              INTEGER Nullable
 CONSTRAINT INTEG_2:
   Primary key (I1)
@@ -66,9 +59,9 @@ I2                              INTEGER Nullable
 I2                              INTEGER Nullable
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

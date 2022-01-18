@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_0925
-# title:        ALL predicate works incorrectly for some subqueries
-# decription:   
-# tracker_id:   CORE-925
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_925
+
+"""
+ID:          issue-1325
+ISSUE:       1325
+TITLE:       ALL predicate works incorrectly for some subqueries
+DESCRIPTION:
+JIRA:        CORE-925
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE STAFF (EMPNUM CHAR(3) NOT NULL UNIQUE,
+init_script = """CREATE TABLE STAFF (EMPNUM CHAR(3) NOT NULL UNIQUE,
                      EMPNAME CHAR(20),
                      GRADE DECIMAL(4),
                      CITY CHAR(15));
@@ -47,9 +42,9 @@ init_script_1 = """CREATE TABLE STAFF (EMPNUM CHAR(3) NOT NULL UNIQUE,
  COMMIT;
 """
 
-db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='ISO8859_1', init=init_script)
 
-test_script_1 = """SELECT EMPNUM
+test_script = """SELECT EMPNUM
 FROM WORKS
 GROUP BY EMPNUM
 HAVING EMPNUM = ALL
@@ -59,10 +54,11 @@ HAVING EMPNUM = ALL
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

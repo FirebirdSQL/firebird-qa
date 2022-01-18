@@ -1,42 +1,34 @@
 #coding:utf-8
-#
-# id:           bugs.core_0335
-# title:        Unsuccessful execution caused by system error <...> bad BLR -- invalid stream
-# decription:   
-#                  Original ticket title: "Lost connexion with Big request"
-#                  Test checks that:
-#                  1) we *can* run query with <N> unions, where <N> is limit specific for 2.5.x vs 3.x
-#                  2) we can *not* run query with <N+1> unions.
-#                  Actual value of <N> is 128 for 2.5.x (NOT 255 as errormessage issues!) and 255 for 3.0.
-#               
-#                  Checked on WI-V2.5.7.27025, WI-V3.0.1.32598.
-#                
-# tracker_id:   CORE-335
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-671
+ISSUE:       671
+TITLE:       Unsuccessful execution caused by system error <...> bad BLR -- invalid stream
+DESCRIPTION:
+  Original ticket title: "Lost connexion with Big request"
+  Test checks that:
+  1) we *can* run query with <N> unions, where <N> is limit specific for 2.5.x vs 3.x
+  2) we can *not* run query with <N+1> unions.
+  Actual value of <N> is 128 for 2.5.x (NOT 255 as errormessage issues!) and 255 for 3.0.
+JIRA:        CORE-335
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table test(id int);
     commit;
     insert into test select 1 from rdb$types rows 10;
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     set count on;
-    
+
     -- ##########################
     -- FIRST  QUERY: SHOULD PASS.
     -- ##########################
@@ -169,7 +161,7 @@ test_script_1 = """
     select first 5 * from test union
     select first 5 * from test union
     select first 5 * from test union -- last allowed in 2.5.7; add subsequent leads in 2.5.x to Too many Contexts of Relation/Procedure/Views. Maximum allowed is 255
-    select first 5 * from test union 
+    select first 5 * from test union
     select first 5 * from test union --130
     select first 5 * from test union
     select first 5 * from test union
@@ -432,7 +424,7 @@ test_script_1 = """
     select first 5 * from test union
     select first 5 * from test union
     select first 5 * from test union -- last allowed in 2.5.7; add subsequent leads in 2.5.x to Too many Contexts of Relation/Procedure/Views. Maximum allowed is 255
-    select first 5 * from test union 
+    select first 5 * from test union
     select first 5 * from test union --130
     select first 5 * from test union
     select first 5 * from test union
@@ -564,23 +556,24 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     Records affected: 1
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 54001
     Dynamic SQL Error
     -Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 
