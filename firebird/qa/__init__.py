@@ -37,4 +37,5 @@
 """
 
 from .plugin import db_factory, Database, user_factory, User, isql_act, python_act, Action, \
-     temp_file, temp_files, role_factory, Role, envar_factory, Envar, ServerKeeper
+     temp_file, temp_files, role_factory, Role, envar_factory, Envar, ServerKeeper, \
+     ExecutionError

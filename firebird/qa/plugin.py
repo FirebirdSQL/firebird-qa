@@ -75,6 +75,10 @@ FIELD_ISSUE = 'ISSUE:'
 FIELD_TITLE = 'TITLE:'
 FIELD_DECRIPTION = 'DESCRIPTION:'
 FIELD_NOTES = 'NOTES:'
+FIELD_JIRA = 'JIRA:'
+
+class ExecutionError(Exception):
+    pass
 
 def format_title(title, patterns):
     return _remove_patterns(title, patterns).replace('_', ' ').strip()
@@ -385,6 +389,7 @@ def pytest_collection_modifyitems(session, config, items):
     for item in items:
         item._qa_id_ = item.nodeid
         item._qa_issue_ = None
+        item._qa_jira_ = None
         item._qa_title_ = 'UNKNOWN'
         item._qa_description_ = ''
         item._qa_notes_ = ''
@@ -401,6 +406,9 @@ def pytest_collection_modifyitems(session, config, items):
             elif uline.startswith(FIELD_ISSUE):
                 current_field = FIELD_ISSUE
                 item._qa_issue_ = line[len(FIELD_ISSUE):].strip()
+            elif uline.startswith(FIELD_JIRA):
+                current_field = FIELD_JIRA
+                item._qa_jira_ = line[len(FIELD_JIRA):].strip()
             elif uline.startswith(FIELD_TITLE):
                 current_field = FIELD_TITLE
                 item._qa_title_ = line[len(FIELD_TITLE):].strip()
@@ -1232,7 +1240,8 @@ class Action:
         Do not create instances of this class directly! Use **only** fixtures created by
         `isql_act` or `python_act`.
     """
-    def __init__(self, db: Database, script: str, substitutions: List[str], outfile: Path):
+    def __init__(self, db: Database, script: str, substitutions: List[str], outfile: Path, node: pytest.Item):
+        self._node: pytest.Item = node
         #: Primary test database.
         self.db: Database = db
         #: Test script
@@ -1321,11 +1330,9 @@ class Action:
             result: CompletedProcess = run(params, input=self.script,
                                            encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr) and not combine_output:
-            print(f"-- ISQL script stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- ISQL script stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("ISQL script execution failed")
+            self._node.add_report_section('call', 'ISQL stdout', result.stdout)
+            self._node.add_report_section('call', 'ISQL stderr', result.stderr)
+            raise ExecutionError("ISQL script execution failed")
 
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
@@ -1372,11 +1379,9 @@ class Action:
                       '-password', db.password, str(db.dsn)],
                      encoding=io_enc, capture_output=True)
         if result.returncode:
-            print(f"-- ISQL stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- ISQL stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("ISQL execution failed")
+            self._node.add_report_section('call', 'ISQL stdout', result.stdout)
+            self._node.add_report_section('call', 'ISQL stderr', result.stderr)
+            raise ExecutionError("ISQL execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -1434,11 +1439,9 @@ class Action:
             params.append(str(self.db.dsn))
         result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
-            print(f"-- gstat stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- gstat stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("gstat execution failed")
+            self._node.add_report_section('call', 'gstat stdout', result.stdout)
+            self._node.add_report_section('call', 'gstat stderr', result.stderr)
+            raise ExecutionError("gstat execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -1495,11 +1498,9 @@ class Action:
         result: CompletedProcess = run(params, input=input,
                                        encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
-            print(f"-- gsec stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- gsec stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("gsec execution failed")
+            self._node.add_report_section('call', 'gsec stdout', result.stdout)
+            self._node.add_report_section('call', 'gsec stderr', result.stderr)
+            raise ExecutionError("gsec execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -1555,11 +1556,9 @@ class Action:
             result: CompletedProcess = run(params, input=input,
                                            encoding=io_enc, capture_output=True)
         if result.returncode and not (bool(self.expected_stderr) or combine_output):
-            print(f"-- gbak stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- gbak stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("gbak execution failed")
+            self._node.add_report_section('call', 'gbak stdout', result.stdout)
+            self._node.add_report_section('call', 'gbak stderr', result.stderr)
+            raise ExecutionError("gbak execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -1612,11 +1611,9 @@ class Action:
         else:
             result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
         if result.returncode and not (bool(self.expected_stderr) or combine_output):
-            print(f"-- nbackup stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- nbackup stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("nbackup execution failed")
+            self._node.add_report_section('call', 'nbackup stdout', result.stdout)
+            self._node.add_report_section('call', 'nbackup stderr', result.stderr)
+            raise ExecutionError("nbackup execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -1668,11 +1665,9 @@ class Action:
         result: CompletedProcess = run(params, input=input,
                                        encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
-            print(f"-- gfix stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- gfix stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("gfix execution failed")
+            self._node.add_report_section('call', 'gfix stdout', result.stdout)
+            self._node.add_report_section('call', 'gfix stderr', result.stderr)
+            raise ExecutionError("gfix execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -1733,11 +1728,9 @@ class Action:
             result: CompletedProcess = run(params, input=input,
                                            encoding=io_enc, capture_output=True)
         if result.returncode and not (bool(self.expected_stderr) or combine_output):
-            print(f"-- isql stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- isql stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("isql execution failed")
+            self._node.add_report_section('call', 'ISQL stdout', result.stdout)
+            self._node.add_report_section('call', 'ISQL stderr', result.stderr)
+            raise ExecutionError("ISQL execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -1789,11 +1782,9 @@ class Action:
             params.extend(switches)
         result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
         if result.returncode and not bool(self.expected_stderr):
-            print(f"-- fbsvcmgr stdout {'-' * 20}")
-            print(result.stdout)
-            print(f"-- fbsvcmgr stderr {'-' * 20}")
-            print(result.stderr)
-            raise Exception("fbsvcmgr execution failed")
+            self._node.add_report_section('call', 'fbsvcmgr stdout', result.stdout)
+            self._node.add_report_section('call', 'fbsvcmgr stderr', result.stderr)
+            raise ExecutionError("fbsvcmgr execution failed")
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -1817,29 +1808,7 @@ class Action:
         spec = SpecifierSet(version_spec)
         return _vars_['version'] in spec
     def get_server_architecture(self) -> str:
-        with self.db.connect() as con1, self.db.connect() as con2:
-            sql = f"""
-            select count(distinct a.mon$server_pid), min(a.mon$remote_protocol),
-            max(iif(a.mon$remote_protocol is null, 1, 0))
-            from mon$attachments a
-            where a.mon$attachment_id in ({con1.info.id}, {con2.info.id}) or upper(a.mon$user) = upper('cache writer')
-        """
-            cur1 = con1.cursor()
-            cur1.execute(sql)
-            server_cnt, server_pro, cache_wrtr = cur1.fetchone()
-            if server_pro is None:
-                result = 'Embedded'
-            elif cache_wrtr == 1:
-                result = 'SS'
-            elif server_cnt == 2:
-                result = 'CS'
-            else:
-                f1 = con1.info.get_info(DbInfoCode.FETCHES)
-                cur2 = con2.cursor()
-                cur2.execute('select 1 from rdb$database').fetchall()
-                f2 = con1.info.get_info(DbInfoCode.FETCHES)
-                result = 'SC' if f1 == f2 else 'SS'
-        return result
+        return _vars_['server-arch']
     def get_dsn(self, filename: Union[str, Path], protocol: str=None) -> str:
         return _connect_helper('', self.host, self.port, str(filename),
                                protocol if protocol else self.protocol)
@@ -1988,7 +1957,7 @@ def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None
         if _vars_['save-output'] and not f.parent.exists():
             f.parent.mkdir(parents=True)
         f = f.with_name(f'{f.stem}-{request.function.__name__}.out')
-        result: Action = Action(db, script, substitutions, f)
+        result: Action = Action(db, script, substitutions, f, request.node)
         return result
 
     return isql_act_fixture
@@ -2002,7 +1971,7 @@ def python_act(db_fixture_name: str, *, substitutions: List[str]=None):
         if _vars_['save-output'] and not f.parent.exists():
             f.parent.mkdir(parents=True)
         f = f.with_name(f'{f.stem}-{request.function.__name__}.out')
-        result: Action = Action(db, '', substitutions, f)
+        result: Action = Action(db, '', substitutions, f, request.node)
         return result
 
     return python_act_fixture
