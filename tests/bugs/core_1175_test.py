@@ -1,36 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_1175
-# title:        Error "Data type unknown" when any UDF argument is a built-in function containing a DSQL parameter reference
-# decription:
-#                   For FB 2.5 and 3.x - this test uses UDF from ib_udf.
-#
-#                   24.01.2019. Added separate code for running on FB 4.0+.
-#                   UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
-#                   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
-#                   in UDR library "udf_compat", see it in folder: ../plugins/udr/
-#
-#                   Checked on:
-#                       4.0.0.1340: OK, 2.594s.
-#                       4.0.0.1378: OK, 5.579s.
-#
-#                   NOTE. Build 4.0.0.1172 (date: 25.08.2018) raises here:
-#                       SQLCODE: -902... expression evaluation not supported...
-#                       Invalid data type for division in dialect 3
-#                       gdscode = 335544569.
-#
-# tracker_id:   CORE-1175
-# min_versions: []
-# versions:     2.1, 4.0
-# qmid:         bugs.core_1175
+
+"""
+ID:          issue-1597
+ISSUE:       1597
+TITLE:       Error "Data type unknown" when any UDF argument is a built-in function containing a DSQL parameter reference
+DESCRIPTION:
+  For FB 3.x - this test uses UDF from ib_udf.
+  UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
+  Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
+  in UDR library "udf_compat", see it in folder: ../plugins/udr/
+JIRA:        CORE-1175
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
+# version: 3.0
 
 init_script_1 = """DECLARE EXTERNAL FUNCTION rtrim
    CSTRING(255)
@@ -39,24 +24,13 @@ init_script_1 = """DECLARE EXTERNAL FUNCTION rtrim
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db_1 = db_factory(init=init_script_1)
 
-# test_script_1
-#---
-# c = db_conn.cursor()
-#  try:
-#      c.prep('select * from RDB$DATABASE where RDB$CHARACTER_SET_NAME = rtrim(trim(?))')
-#      print ('Test PASSED!')
-#  except Exception,e:
-#      print ('Test FAILED!')
-#      print (e)
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act_1 = python_act('db_1')
 
 expected_stdout_1 = """Test PASSED!"""
 
-@pytest.mark.version('>=2.1,<4.0')
+@pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     with  act_1.db.connect() as con:
         c = con.cursor()
@@ -66,9 +40,6 @@ def test_1(act_1: Action):
             pytest.fail('Test FAILED')
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
 
 init_script_2 = """
     -- See declaration sample in plugins\\udr\\UdfBackwardCompatibility.sql:
@@ -88,24 +59,12 @@ init_script_2 = """
     commit;
   """
 
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
+db_2 = db_factory(init=init_script_2)
 
-# test_script_2
-#---
-# \\
-#  c = db_conn.cursor()
-#  try:
-#      c.prep( 'select 1 from rdb$database where UDR40_frac( ? ) != UDR40_div( ?, ?) / ? ' )
-#      print ( 'Test PASSED!' )
-#  except Exception,e:
-#      print( 'Test FAILED!' )
-#      print( e )
-#---
-
-act_2 = python_act('db_2', substitutions=substitutions_2)
+act_2 = python_act('db_2')
 
 @pytest.mark.version('>=4.0')
-def test_1(act_2: Action):
+def test_2(act_2: Action):
     with  act_2.db.connect() as con:
         c = con.cursor()
         try:

@@ -1,78 +1,51 @@
 #coding:utf-8
-#
-# id:           bugs.core_1156
-# title:        Prepare fails when having a parameter in a DSQL statement before a sub query
-# decription:
-# tracker_id:   CORE-1156
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1156
+
+"""
+ID:          issue-1577
+ISSUE:       1577
+TITLE:       Prepare fails when having a parameter in a DSQL statement before a sub query
+DESCRIPTION:
+NOTES:
+[19.1.2022]
+  Using WITH for prepare() call is important to dispose returned prepared statement before
+  connection is closed. Otherwise pytest will report unhandled exceptions in __del__ calls
+  as prepared statement objects are destructed at wrong time.
+JIRA:        CORE-1156
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-# c = db_conn.cursor()
-#  try:
-#    c.prep('select count(*) from rdb$database where ? < (select count(*) from rdb$database)')
-#  except:
-#    print ('Test FAILED in case 1')
-#
-#  try:
-#    c.prep('select count(*) from rdb$database where (select count(*) from rdb$database) > ?')
-#  except:
-#    print ('Test FAILED in case 2')
-#
-#  try:
-#    c.prep('select count(*) from rdb$database where ? < cast ((select count(*) from rdb$database) as integer)')
-#  except:
-#    print ('Test FAILED in case 3')
-#
-#  try:
-#    c.prep('select count(*) from rdb$database where 0 < (select count(*) from rdb$database)')
-#  except:
-#    print ('Test FAILED in case 4')
-#
-#  try:
-#    c.prep('select count(*) from rdb$database where cast (? as integer) < (select count(*) from rdb$database)')
-#  except:
-#    print ('Test FAILED in case 5')
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    with act_1.db.connect() as con:
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    with act.db.connect() as con:
         c = con.cursor()
         try:
-            c.prepare('select count(*) from rdb$database where ? < (select count(*) from rdb$database)')
+            with c.prepare('select count(*) from rdb$database where ? < (select count(*) from rdb$database)'):
+                pass
         except:
             pytest.fail('Test FAILED in case 1')
         try:
-            c.prepare('select count(*) from rdb$database where (select count(*) from rdb$database) > ?')
+            with c.prepare('select count(*) from rdb$database where (select count(*) from rdb$database) > ?'):
+                pass
         except:
             pytest.fail('Test FAILED in case 2')
         try:
-            c.prepare('select count(*) from rdb$database where ? < cast ((select count(*) from rdb$database) as integer)')
+            with c.prepare('select count(*) from rdb$database where ? < cast ((select count(*) from rdb$database) as integer)'):
+                pass
         except:
             pytest.fail('Test FAILED in case 3')
         try:
-            c.prepare('select count(*) from rdb$database where 0 < (select count(*) from rdb$database)')
+            with c.prepare('select count(*) from rdb$database where 0 < (select count(*) from rdb$database)'):
+                pass
         except:
             pytest.fail('Test FAILED in case 4')
         try:
-            c.prepare('select count(*) from rdb$database where cast (? as integer) < (select count(*) from rdb$database)')
+            with c.prepare('select count(*) from rdb$database where cast (? as integer) < (select count(*) from rdb$database)'):
+                pass
         except:
             pytest.fail('Test FAILED in case 5')

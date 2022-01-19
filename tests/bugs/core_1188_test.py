@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1188
-# title:        Select Starting with :Param (Empty string) doesn't work if using index with many fields
-# decription:   
-# tracker_id:   CORE-1188
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-1613
+ISSUE:       1613
+TITLE:       Select Starting with :Param (Empty string) doesn't work if using index with many fields
+DESCRIPTION:
+JIRA:        CORE-1188
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- NB! As of 17.04.2015 this ticket resolves trouble only for FB-3.0.
     -- Build WI-V2.5.4.26857 returns NO rows!
     -- 23.10.2016: WI-V2.5.7.27026 - result the same (bad).
@@ -41,8 +34,8 @@ test_script_1 = """
 
     set term ^;
     execute block returns(
-        msg varchar(10), 
-        f01 type of column test_1.f01, 
+        msg varchar(10),
+        f01 type of column test_1.f01,
         f02 type of column test_1.f02
         ) as
         declare v_stt1 varchar(255);
@@ -80,7 +73,7 @@ test_script_1 = """
     set term ^;
     execute block returns(
         msg varchar(10),
-        f01 type of column test_2.field_id, 
+        f01 type of column test_2.field_id,
         f02 type of column test_2.field_desc,
         f03 type of column test_2.field_sel
         ) as
@@ -101,9 +94,9 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             test_1
     F01                             a
     F02                             b
@@ -125,8 +118,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1183
-# title:        View cannot be created if its WHERE clause contains IN <subquery> with a procedure reference
-# decription:   
-# tracker_id:   CORE-1183
-# min_versions: []
-# versions:     2.0.2
-# qmid:         bugs.core_1183
+
+"""
+ID:          issue-1609
+ISSUE:       1609
+TITLE:       View cannot be created if its WHERE clause contains IN <subquery> with a procedure reference
+DESCRIPTION:
+JIRA:        CORE-1183
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     set term ^;
     create or alter procedure p
       returns (col int)
@@ -27,7 +22,7 @@ init_script_1 = """
     end^
     set term ;^
     commit;
-    
+
     create or alter view v
     as
       select
@@ -39,25 +34,25 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select v_descr, sign(v_rel_id) as v_rel_id, v_cset_name
     from v;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     V_DESCR                         <null>
     V_REL_ID                        1
-    V_CSET_NAME                     NONE                                                                                         
+    V_CSET_NAME                     NONE
 """
 
-@pytest.mark.version('>=2.0.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

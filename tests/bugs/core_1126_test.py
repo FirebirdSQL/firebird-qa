@@ -1,42 +1,35 @@
 #coding:utf-8
-#
-# id:           bugs.core_1126
-# title:        UNION vs UTF8 literals : arithmetic exception is thrown
-# decription:   
-# tracker_id:   CORE-1126
-# min_versions: []
-# versions:     2.5
-# qmid:         bugs.core_1126
+
+"""
+ID:          issue-1547
+ISSUE:       1547
+TITLE:       Incorrect results when left join on subquery with constant column
+DESCRIPTION:
+JIRA:        CORE-1126
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SELECT _UTF8 'Z' FROM RDB$DATABASE
+test_script = """SELECT _UTF8 'Z' FROM RDB$DATABASE
 UNION ALL
 SELECT _UTF8 'A' FROM RDB$DATABASE;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """CONSTANT
+expected_stdout = """CONSTANT
 ========
 Z
 A
 
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

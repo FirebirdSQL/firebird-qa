@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1271
-# title:        Ceation of invalid procedures/triggers allowed
-# decription:   invalid procedures/triggers (with invalid plans, for example) was allowed to be created
-# tracker_id:   CORE-1271
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_1271-250
+
+"""
+ID:          issue-1692
+ISSUE:       1692
+TITLE:       Ceation of invalid procedures/triggers allowed
+DESCRIPTION:
+JIRA:        CORE-1271
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create procedure p returns (out int) as
     begin
@@ -37,17 +30,17 @@ test_script_1 = """
     commit^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 2F000
     Error while parsing procedure P's BLR
     -index RDB$INDEX_1 cannot be used in the specified plan
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

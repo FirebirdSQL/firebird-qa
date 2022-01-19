@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1181
-# title:        Union returns inconsistent field names
-# decription:   
-# tracker_id:   CORE-1181
-# min_versions: ['2.0.7']
-# versions:     2.0.7
-# qmid:         None
+
+"""
+ID:          issue-1607
+ISSUE:       1607
+TITLE:       Union returns inconsistent field names
+DESCRIPTION:
+JIRA:        CORE-1181
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test1(id numeric(15, 2));
     commit;
 
@@ -34,26 +27,26 @@ test_script_1 = """
     insert into test2 values(1e0); ---- do NOT use 0e0! something weird occurs on linux: aux '0' in fractional part!
     commit;
 
-   
+
     set list on;
 
-    select id as test1_id 
+    select id as test1_id
     from test1
     group by id
-    
+
     union
-    
+
     select cast(0 as numeric(15,2))
     from rdb$database;
 
     -----------------------------------
 
-    select id as test2_id 
+    select id as test2_id
     from test2
     group by id
-    
+
     union
-    
+
     select cast(1 as double precision)
     from rdb$database;
 
@@ -61,16 +54,16 @@ test_script_1 = """
     -- Results were checked both on dialect 1 & 3, they are identical.
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TEST1_ID                        0.00
     TEST2_ID                        1.000000000000000
 """
 
-@pytest.mark.version('>=2.0.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

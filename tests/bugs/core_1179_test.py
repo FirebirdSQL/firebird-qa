@@ -1,36 +1,29 @@
 #coding:utf-8
-#
-# id:           bugs.core_1179
-# title:        "CH" and "LL" are not separate spanish alphabet letters since 1994
-# decription:   
-# tracker_id:   CORE-1179
-# min_versions: ['2.1.7']
-# versions:     2.1.7
-# qmid:         None
+
+"""
+ID:          issue-1605
+ISSUE:       1605
+TITLE:       "CH" and "LL" are not separate spanish alphabet letters since 1994
+DESCRIPTION:
+JIRA:        CORE-1179
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.7
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test_utf8(id int, esp varchar(10));
     commit;
-    
+
     insert into test_utf8 values(-2,'CH');
     insert into test_utf8 values(-1,'LL');
     insert into test_utf8 values( 1,'C');
     insert into test_utf8 values( 2,'CA');
     insert into test_utf8 values( 3,'CZ');
     insert into test_utf8 values( 5,'D');
-    
+
     insert into test_utf8 values( 6,'L');
     insert into test_utf8 values( 7,'LA');
     insert into test_utf8 values( 8,'LZ');
@@ -47,7 +40,7 @@ test_script_1 = """
     insert into test_iso values( 2,'CA');
     insert into test_iso values( 3,'CZ');
     insert into test_iso values( 5,'D');
-    
+
     insert into test_iso values( 6,'L');
     insert into test_iso values( 7,'LA');
     insert into test_iso values( 8,'LZ');
@@ -58,40 +51,40 @@ test_script_1 = """
     select id, esp from test_iso order by esp collate es_es;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
-              ID ESP        
-    ============ ========== 
-               1 C          
-               2 CA         
-              -2 CH         
-               3 CZ         
-               5 D          
-               6 L          
-               7 LA         
-              -1 LL         
-               8 LZ         
-              10 M          
-    
-    
-              ID ESP        
-    ============ ========== 
-               1 C          
-               2 CA         
-              -2 CH         
-               3 CZ         
-               5 D          
-               6 L          
-               7 LA         
-              -1 LL         
-               8 LZ         
-              10 M          
+expected_stdout = """
+              ID ESP
+    ============ ==========
+               1 C
+               2 CA
+              -2 CH
+               3 CZ
+               5 D
+               6 L
+               7 LA
+              -1 LL
+               8 LZ
+              10 M
+
+
+              ID ESP
+    ============ ==========
+               1 C
+               2 CA
+              -2 CH
+               3 CZ
+               5 D
+               6 L
+               7 LA
+              -1 LL
+               8 LZ
+              10 M
 """
 
-@pytest.mark.version('>=2.1.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

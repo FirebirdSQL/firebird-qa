@@ -1,24 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1018
-# title:        Provide mechanism to get engine version without needing to call API function
-# decription:   
-# tracker_id:   CORE-1018
-# min_versions: []
-# versions:     3.0, 4.0, 5.0
-# qmid:         bugs.core_1018-211
+
+"""
+ID:          issue-632
+ISSUE:       632
+TITLE:       Provide mechanism to get engine version without needing to call API function
+DESCRIPTION:
+JIRA:        CORE-1018
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
 # version: 3.0
-# resources: None
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory()
 
 test_script_1 = """
     set list on;
@@ -32,7 +27,7 @@ test_script_1 = """
     )t;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
     VERSION                         3.0
@@ -45,13 +40,6 @@ def test_1(act_1: Action):
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('4\\.\\d+', '4\\.')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     set list on;
@@ -65,7 +53,8 @@ test_script_2 = """
     )t;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2, substitutions=[('4\\.\\d+', '4\\.')]
+)
 
 expected_stdout_2 = """
     VERSION                         4.0
@@ -78,13 +67,6 @@ def test_2(act_2: Action):
     assert act_2.clean_stdout == act_2.clean_expected_stdout
 
 # version: 5.0
-# resources: None
-
-substitutions_3 = [('5\\.\\d+', '5\\.')]
-
-init_script_3 = """"""
-
-db_3 = db_factory(sql_dialect=3, init=init_script_3)
 
 test_script_3 = """
     set list on;
@@ -98,7 +80,7 @@ test_script_3 = """
     )t;
 """
 
-act_3 = isql_act('db_3', test_script_3, substitutions=substitutions_3)
+act_3 = isql_act('db', test_script_3, substitutions=[('5\\.\\d+', '5\\.')])
 
 expected_stdout_3 = """
     VERSION                         5.0

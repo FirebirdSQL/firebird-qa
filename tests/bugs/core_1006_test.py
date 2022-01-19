@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1006
-# title:        AV at rollback and \\ or garbage collection if updated table have expression index with SELECT in it
-# decription:   This test takes the server down.
-# tracker_id:   CORE-1006
-# min_versions: []
-# versions:     2.0.1
-# qmid:         bugs.core_1006
+
+"""
+ID:          issue-1417
+ISSUE:       1417
+TITLE:       AV at rollback and \\ or garbage collection if updated table have expression index with SELECT in it
+DESCRIPTION:
+JIRA:        CORE-1006
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.1
-# resources: None
+db = db_factory(from_backup='core1006.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core1006.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     execute block
     as
@@ -44,10 +37,11 @@ test_script_1 = """
     rollback;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.0.1')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

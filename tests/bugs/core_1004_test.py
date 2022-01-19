@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1004
-# title:        context already in use (BLR error)
-# decription:
-# tracker_id:   CORE-1004
-# min_versions: []
-# versions:     2.0.1
-# qmid:         bugs.core_1004
+
+"""
+ID:          issue-1415
+ISSUE:       1415
+TITLE:       Context already in use (BLR error)
+DESCRIPTION:
+JIRA:        CORE-1004
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """SET TERM ^;
+init_script = """SET TERM ^;
 
 CREATE OR ALTER PROCEDURE GET_REL_NAME (REL_ID INT) RETURNS (REL_NAME VARCHAR(32))
 AS
@@ -35,9 +30,9 @@ COMMIT;
 
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET TERM ^;
+test_script = """SET TERM ^;
 
 CREATE OR ALTER PROCEDURE BUG
 AS
@@ -64,10 +59,11 @@ SET TERM ;^
 COMMIT;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.0.1')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

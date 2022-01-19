@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1292
-# title:        Can't create table using long username and UTF8 as attachment charset
-# decription:   
-#                   Checked on: 4.0.0.1635 SS/CS; 3.0.5.33180 SS/CS; 2.5.9.27119 SC/SS
-#                
-# tracker_id:   CORE-1292
-# min_versions: []
-# versions:     2.5
-# qmid:         bugs.core_1292
+
+"""
+ID:          issue-1713
+ISSUE:       1713
+TITLE:       Can't create table using long username and UTF8 as attachment charset
+DESCRIPTION:
+JIRA:        CORE-1292
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = [('PRIV_LIST.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
 
     -- Drop old account if it remains from prevoius run:
@@ -59,7 +50,7 @@ test_script_1 = """
 
     create table test(n int);
     commit;
-    
+
     connect '$(DSN)' user 'SYSDBA' password 'masterkey';
 
     set list on;
@@ -77,16 +68,16 @@ test_script_1 = """
         where upper(trim(p.rdb$relation_name)) = upper('test')
         order by priv
     )
-    group by usr_name, grantor, can_grant, tab_name,usr_type,obj_type;  
+    group by usr_name, grantor, can_grant, tab_name,usr_type,obj_type;
     commit;
 
     drop user Nebuchadnezzar2_King_of_Babylon;
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('PRIV_LIST.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     USR_NAME                        NEBUCHADNEZZAR2_KING_OF_BABYLON
     GRANTOR                         NEBUCHADNEZZAR2_KING_OF_BABYLON
     CAN_GRANT                       1
@@ -96,9 +87,9 @@ expected_stdout_1 = """
     D,I,R,S,U
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

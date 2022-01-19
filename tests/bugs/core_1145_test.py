@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1145
-# title:        Server locks up while attempting to commit a deletion of an expression index
-# decription:   This test may lock up the server.
-# tracker_id:   CORE-1145
-# min_versions: []
-# versions:     2.0.2
-# qmid:         bugs.core_1145
+
+"""
+ID:          issue-1567
+ISSUE:       1567
+TITLE:       Server locks up while attempting to commit a deletion of an expression index
+DESCRIPTION:
+JIRA:        CORE-1145
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table expt1 (col1 int);
+init_script = """create table expt1 (col1 int);
 create table expt2 (col2 int);
 commit;
 
@@ -32,9 +27,9 @@ create index iexpt2 on expt2 computed (col2 + 1);
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """set plan on;
+test_script = """set plan on;
 select * from expt1 where col1 + 1 = 2;
 select * from expt2 where col2 + 1 = 2;
 commit;
@@ -47,9 +42,9 @@ select * from expt2 where col2 + 1 = 2;
 commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 PLAN (EXPT1 INDEX (IEXPT1))
 
         COL1
@@ -79,9 +74,9 @@ PLAN (EXPT2 NATURAL)
 
 """
 
-@pytest.mark.version('>=2.0.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

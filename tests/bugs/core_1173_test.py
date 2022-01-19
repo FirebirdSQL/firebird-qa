@@ -1,33 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1173
-# title:        Expression index based on computed fields
-# decription:   
-#                   Index based on COMPUTED-BY column must be taken in account by optimizer.
-#                   13.08.2020: replaced expected_stdout with only PLAN output (concrete data values no matter in this test).
-#                   Checked on:
-#                       4.0.0.2151 SS: 1.475s.
-#                       3.0.7.33348 SS: 1.172s.
-#                       2.5.9.27150 SC: 0.311s.
-#                 
-# tracker_id:   
-# min_versions: ['2.5.4']
-# versions:     2.5.4
-# qmid:         bugs.core_1173
+
+"""
+ID:          issue-1595
+ISSUE:       1595
+TITLE:       Expression index based on computed fields
+DESCRIPTION: Index based on COMPUTED-BY column must be taken in account by optimizer.
+JIRA:        CORE-1173
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create sequence g;
     recreate table test (
       fcode integer not null,
@@ -88,18 +74,18 @@ test_script_1 = """
     set plan off;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (TEST INDEX (TEST_ON_COMPUTED_FIELD_ASC))
     PLAN (TEST INDEX (TEST_FDATE_FTIME_ASC))
     PLAN (TEST INDEX (TEST_ON_COMPUTED_FIELD_DEC))
     PLAN (TEST INDEX (TEST_FDATE_FTIME_DEC))
 """
 
-@pytest.mark.version('>=2.5.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

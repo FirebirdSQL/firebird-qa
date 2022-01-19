@@ -1,40 +1,35 @@
 #coding:utf-8
-#
-# id:           bugs.core_1058
-# title:        ALTER DOMAIN and ALTER TABLE don't allow to change character set and/or collation
-# decription:   
-# tracker_id:   CORE-1058
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1058
+
+"""
+ID:          issue-1479
+ISSUE:       1479
+TITLE:       ALTER DOMAIN and ALTER TABLE don't allow to change character set and/or collation
+DESCRIPTION:
+JIRA:        CORE-1058
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE DOMAIN D_TEST AS VARCHAR(100) CHARACTER SET WIN1251;
+init_script = """CREATE DOMAIN D_TEST AS VARCHAR(100) CHARACTER SET WIN1251;
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """ALTER DOMAIN D_TEST TYPE VARCHAR(100) CHARACTER SET UTF8;
+test_script = """ALTER DOMAIN D_TEST TYPE VARCHAR(100) CHARACTER SET UTF8;
 COMMIT;
 SHOW DOMAIN D_TEST;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """D_TEST                          VARCHAR(100) CHARACTER SET UTF8 Nullable
+expected_stdout = """D_TEST                          VARCHAR(100) CHARACTER SET UTF8 Nullable
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

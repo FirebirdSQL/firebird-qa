@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1246
-# title:        Incorrect column values with outer joins and derived tables
-# decription:   
-# tracker_id:   CORE-1246
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-1670
+ISSUE:       1670
+TITLE:       Incorrect column values with outer joins and derived tables
+DESCRIPTION:
+JIRA:        CORE-1246
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE T1 (N INTEGER);
+init_script = """CREATE TABLE T1 (N INTEGER);
 CREATE TABLE T2 (N INTEGER);
 
 insert into t1 values (1);
@@ -24,9 +19,9 @@ insert into t1 values (2);
 insert into t2 values (2);
 commit;"""
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select *
+test_script = """select *
     from (select 1 n from rdb$database) t1
     full join (select 2 n from rdb$database) t2
         on (t2.n = t1.n)
@@ -34,9 +29,9 @@ test_script_1 = """select *
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
            N            N
 ============ ============
       <null>            2
@@ -44,9 +39,9 @@ expected_stdout_1 = """
 
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

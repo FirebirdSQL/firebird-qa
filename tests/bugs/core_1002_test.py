@@ -1,32 +1,27 @@
 #coding:utf-8
-#
-# id:           bugs.core_1002
-# title:        bad handling of  /*/ comments in ISQL
-# decription:   
-# tracker_id:   CORE-1002
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1002
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """/*/ select * from rdb$database; /*/
+"""
+ID:          issue-1413
+ISSUE:       1413
+TITLE:       Bad handling of /*/ comments in ISQL
+DESCRIPTION:
+  Original title is: "set echo on" didn't work after /*////////////*/ comments in input file
+JIRA:        CORE-1002
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+import pytest
+from firebird.qa import *
 
+db = db_factory()
+
+test_script = """/*/ select * from rdb$database; /*/
+"""
+
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

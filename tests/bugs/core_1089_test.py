@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1089
-# title:        Wrong ordering with views, distinct, left join and order by
-# decription:   
-# tracker_id:   CORE-1089
-# min_versions: ['2.0.6']
-# versions:     2.0.6
-# qmid:         None
+
+"""
+ID:          issue-1510
+ISSUE:       1510
+TITLE:       Wrong ordering with views, distinct, left join and order by
+DESCRIPTION:
+JIRA:        CORE-1089
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create table fat(
         idxxfat varchar(26) not null,
         progfat int,
@@ -43,7 +36,7 @@ test_script_1 = """
         sca.idxxfat,
         fat.idxxccb,
         fat.ndonfat
-    from sca 
+    from sca
     left join fat on sca.idxxfat=fat.idxxfat;
 
 
@@ -59,7 +52,7 @@ test_script_1 = """
 
     -- test-1:
     set list on;
-    select 'test-1' as msg, v.* 
+    select 'test-1' as msg, v.*
     from vw$_sca v
     order by 2 desc;
     commit;
@@ -85,16 +78,16 @@ test_script_1 = """
 
     set list on;
 
-    select 'test-2' as msg, v.* 
+    select 'test-2' as msg, v.*
     from test_view v
     order by myfield1 desc;
     commit;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             test-1
     IDXXSCA                         2007.4
     PROGSCA                         4
@@ -133,9 +126,9 @@ expected_stdout_1 = """
     MYFIELD2                        1
 """
 
-@pytest.mark.version('>=2.0.6')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

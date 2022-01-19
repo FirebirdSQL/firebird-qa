@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1122
-# title:        Recursive Query bug in FB2.1
-# decription:   
-# tracker_id:   CORE-1122
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1122
+
+"""
+ID:          issue-1543
+ISSUE:       1543
+TITLE:       Recursive Query bug in FB2.1
+DESCRIPTION:
+JIRA:        CORE-1122
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table tb_menus(
         record_id integer,
         parent_id integer,
@@ -26,16 +21,16 @@ init_script_1 = """
         menu_icon blob sub_type 0 segment size 80
     );
     commit;
-    
+
     insert into tb_menus values (0, null, 1, 'm1', null, null);
     insert into tb_menus values (1, 0, 1, 'm1 - sub1', 'app1.exe', null);
     insert into tb_menus values (2, 0, 1, 'm1 - sub2', 'app2.exe', null);
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     -------------------- 1st query ------------------
     with recursive
@@ -50,9 +45,9 @@ test_script_1 = """
             cast('' as varchar(255)) ident
         from tb_menus
         where parent_id is null
-    
+
         UNION ALL
-    
+
         select
             m.parent_id,
             m.record_id,
@@ -78,9 +73,9 @@ test_script_1 = """
     select menu_icon from tb_menus;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PARENT_ID                       <null>
     RECORD_ID                       0
     ORDER_ITEM                      1
@@ -108,9 +103,9 @@ expected_stdout_1 = """
     MENU_ICON                       <null>
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

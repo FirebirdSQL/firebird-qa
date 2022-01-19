@@ -1,25 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1291
-# title:        Can't transliterate character set when look at procedure text in database just created from script (and thus in ODS 11.1)
-# decription:
-# tracker_id:   CORE-1291
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1291
+
+"""
+ID:          issue-1712
+ISSUE:       1712
+TITLE:       Can't transliterate character set when look at procedure text in database just created from script (and thus in ODS 11.1)
+DESCRIPTION:
+JIRA:        CORE-1291
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = [('Use CONNECT or CREATE DATABASE to specify a database', ''),
-                   ('SQL> ', ''), ('CON> ', '')]
-
-init_script_1 = """"""
-
-test_script_1 = """
+test_script = """
 SET SQL DIALECT 3;
 SET NAMES WIN1251;
 CREATE DATABASE '%s' DEFAULT CHARACTER SET WIN1251;
@@ -666,30 +658,11 @@ SHOW PROCEDURE PRC_EXPSUMM_8;
 EXIT;
 """
 
-db_1 = db_factory(do_not_create=True)
+db = db_factory(do_not_create=True)
 
-# test_script_1
-#---
-# import os
-#
-#  script = """SET SQL DIALECT 3;
-#
-#  SET NAMES WIN1251;
-#
-#  CREATE DATABASE '%s'
-#  DEFAULT CHARACTER SET WIN1251;
-#  """ % dsn
-#
-#  scriptfile = open(os.path.join(context['files_location'],'core_1291.sql'),'r')
-#  script = script + ''.join(scriptfile)
-#  scriptfile.close()
-#
-#  runProgram('isql',['-user',user_name,'-pas',user_password],script)
-#---
+act = python_act('db')
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """Procedure text:
+expected_stdout = """Procedure text:
 =============================================================================
 DECLARE VARIABLE NDSDiv DOUBLE PRECISION;
 DECLARE VARIABLE ID_ExportFieldDoc Integer;
@@ -904,11 +877,11 @@ SUMMRUS                           OUTPUT DOUBLE PRECISION
 SUMMDOC                           OUTPUT DOUBLE PRECISION
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=[],
-               input=test_script_1 % act_1.db.dsn, connect_db=False, charset='WIN1251')
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.isql(switches=[],
+               input=test_script % act.db.dsn, connect_db=False, charset='WIN1251')
+    assert act.clean_stdout == act.clean_expected_stdout
 
 

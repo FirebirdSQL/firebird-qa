@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1165
-# title:        WHEN <list of exceptions> tracks only the dependency on the first exception in PSQL
-# decription:   
-# tracker_id:   CORE-1165
-# min_versions: []
-# versions:     2.5.0
-# qmid:         bugs.core_1165-250
+
+"""
+ID:          issue-1588
+ISSUE:       1588
+TITLE:       WHEN <list of exceptions> tracks only the dependency on the first exception in PSQL
+DESCRIPTION:
+JIRA:        CORE-1165
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """recreate exception e1 'e1' ;
+init_script = """recreate exception e1 'e1' ;
 recreate exception e2 'e2' ;
 
 set term ^;
@@ -32,21 +27,22 @@ end^
 set term ;^
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """show depend p;
+test_script = """show depend p;
 
 recreate exception e1 'e1';
 recreate exception e2 'e2';
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """[P:Procedure]
+expected_stdout = """[P:Procedure]
 E2:Exception, E1:Exception
 +++
 """
-expected_stderr_1 = """Statement failed, SQLSTATE = 42000
+
+expected_stderr = """Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -cannot delete
 -EXCEPTION E1
@@ -58,11 +54,11 @@ unsuccessful metadata update
 -there are 1 dependencies
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

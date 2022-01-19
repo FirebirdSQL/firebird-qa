@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1130
-# title:        Bad optimization -- <procedure> left join <subquery> (or <view>)
-# decription:   
-# tracker_id:   
-# min_versions: []
-# versions:     2.0.1
-# qmid:         bugs.core_1130
+
+"""
+ID:          issue-1552
+ISSUE:       1552
+TITLE:       Bad optimization -- <procedure> left join <subquery> (or <view>)
+DESCRIPTION:
+JIRA:        CORE-1130
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """SET TERM ^;
+init_script = """SET TERM ^;
 create procedure p
   returns (r int)
 as
@@ -29,9 +24,9 @@ SET TERM ;^
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 select *
 from p
   left join ( select rdb$relation_id from rdb$relations ) r
@@ -39,9 +34,9 @@ from p
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN JOIN (P NATURAL, R RDB$RELATIONS INDEX (RDB$INDEX_1))
+expected_stdout = """PLAN JOIN (P NATURAL, R RDB$RELATIONS INDEX (RDB$INDEX_1))
 
            R RDB$RELATION_ID
 ============ ===============
@@ -49,9 +44,9 @@ expected_stdout_1 = """PLAN JOIN (P NATURAL, R RDB$RELATIONS INDEX (RDB$INDEX_1)
 
 """
 
-@pytest.mark.version('>=2.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

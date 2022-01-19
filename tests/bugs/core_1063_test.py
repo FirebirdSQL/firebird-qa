@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1063
-# title:        Server hangs eating CPU and performs huge I/O copying different codepage fields
-# decription:   
-# tracker_id:   CORE-1063
-# min_versions: []
-# versions:     2.0.1
-# qmid:         bugs.core_1063
+
+"""
+ID:          issue-1484
+ISSUE:       1484
+TITLE:       Server hangs eating CPU and performs huge I/O copying different codepage fields
+DESCRIPTION:
+JIRA:        CORE-1063
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.1
-# resources: None
+db = db_factory(from_backup='core1063.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core1063.fbk', init=init_script_1)
-
-test_script_1 = """alter table cms_wiki
+test_script = """alter table cms_wiki
 add u_name varchar(100) character set UTF8,
 add u_title varchar(100) character set UTF8,
 add u_description blob sub_type 1 character set UTF8,
@@ -54,9 +47,9 @@ set heading off;
 select name from CMS_WIKI;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	.menu
 	awards.htm
 	affiliate_program.htm
@@ -114,9 +107,9 @@ expected_stdout_1 = """
 	.menu_zonetick
 """
 
-@pytest.mark.version('>=2.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

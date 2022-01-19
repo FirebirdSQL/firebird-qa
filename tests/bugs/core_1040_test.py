@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1040
-# title:        Wrong single-segment ascending index on character field with NULL and empty string values
-# decription:   Wrong single-segment ascending index on character field with NULL and empty string values
-# tracker_id:   CORE-1040
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_1040
+
+"""
+ID:          issue-1457
+ISSUE:       1457
+TITLE:       Wrong single-segment ascending index on character field with NULL and empty string values
+DESCRIPTION:
+JIRA:        CORE-1040
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """recreate table t (str varchar(10));
+init_script = """recreate table t (str varchar(10));
 commit;
 
 insert into t values ('');
@@ -27,21 +22,21 @@ create index t_i on t (str);
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select count(*) from t where str is null;"""
+test_script = """select count(*) from t where str is null;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """                COUNT
+expected_stdout = """                COUNT
 =====================
                     1
 
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1146
-# title:        AV in rse\\invalidate_child_rpbs for recursive queies
-# decription:   This may crash the server with AV
-# tracker_id:   CORE-1146
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1146
+
+"""
+ID:          issue-1568
+ISSUE:       1568
+TITLE:       AV in rse\\invalidate_child_rpbs for recursive queies
+DESCRIPTION:
+JIRA:        CORE-1146
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table c (
       id integer,
       name varchar(100)
@@ -29,9 +24,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     -- Updated code to recent FB version: add prefixes to every field from the query
     with recursive x as
     (
@@ -40,9 +35,9 @@ test_script_1 = """
         from t inner join c c1 on c1.id = t.code
                left join c c2 on c2.id = t.ownercode
         where ownercode = 0
-    
+
       union all
-    
+
       select --x.step+1
              t.id, t.ownercode, x.code, c2.name as ownclass, c1.name as class
         from t inner join c c1 on c1.id = t.code
@@ -53,10 +48,11 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

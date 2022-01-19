@@ -1,58 +1,41 @@
 #coding:utf-8
-#
-# id:           bugs.core_1286
-# title:        isql: zero divide + coredump when use "-pag 0" command switch & set heading on inside .sql script
-# decription:
-# tracker_id:   CORE-1286
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         bugs.core_1286
+
+"""
+ID:          issue-4153
+ISSUE:       4153
+TITLE:       isql: zero divide + coredump when use "-pag 0" command switch & set heading on inside .sql script
+DESCRIPTION:
+JIRA:        CORE-3810
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table test(id int);
+init_script = """create table test(id int);
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# script = """
-#      set heading on;
-#      select 1 as r from rdb$fields rows 1;
-#      -- Crash of ISQL (not server) is reproduced when make connect by ISQL of WI-V2.5.1.26351.
-#      -- After ISQL crash firebird.log contains: INET/inet_error: read errno = 10054
-#    """
-#  runProgram('isql',[dsn,'-pag','0','-user',user_name,'-pas',user_password],script)
-#
-#---
+act = python_act('db')
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
            R
 ============
            1
 """
 
-test_script_1 = """
+test_script = """
 set heading on;
 select 1 as r from rdb$fields rows 1;
 -- Crash of ISQL (not server) is reproduced when make connect by ISQL of WI-V2.5.1.26351.
 -- After ISQL crash firebird.log contains: INET/inet_error: read errno = 10054
 """
 
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-pag', '0'], input=test_script_1)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-pag', '0'], input=test_script)
+    assert act.clean_stdout == act.clean_expected_stdout
 
 

@@ -1,45 +1,37 @@
 #coding:utf-8
-#
-# id:           bugs.core_1255
-# title:        String truncation error when concatenating _UTF8 string onto extract(year result
-# decription:   The query
-#               
-#               SELECT ((EXTRACT(YEAR FROM CAST('2007-01-01' AS DATE)) || _UTF8'')) col FROM rdb$database GROUP BY 1;
-#               
-#               Produces the error
-#               Statement failed, SQLCODE = -802
-#               arithmetic exception, numeric overflow, or string truncation
-# tracker_id:   CORE-1255
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_1255
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
+"""
+ID:          issue-1679
+ISSUE:       1679
+TITLE:       String truncation error when concatenating _UTF8 string onto extract(year result
+DESCRIPTION:
+  SELECT ((EXTRACT(YEAR FROM CAST('2007-01-01' AS DATE)) || _UTF8'')) col FROM rdb$database GROUP BY 1;
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SELECT ((EXTRACT(YEAR FROM CAST('2007-01-01' AS DATE)) || _UTF8'')) col FROM rdb$database GROUP BY 1;
+  Produces the error
+    Statement failed, SQLCODE = -802
+    arithmetic exception, numeric overflow, or string truncation
+JIRA:        CORE-1255
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+import pytest
+from firebird.qa import *
 
-expected_stdout_1 = """COL
+db = db_factory()
+
+test_script = """SELECT ((EXTRACT(YEAR FROM CAST('2007-01-01' AS DATE)) || _UTF8'')) col FROM rdb$database GROUP BY 1;
+"""
+
+act = isql_act('db', test_script)
+
+expected_stdout = """COL
 ======
 2007
 
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

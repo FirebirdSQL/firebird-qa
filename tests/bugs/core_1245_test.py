@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1245
-# title:        Incorrect column values with outer joins and views
-# decription:   
-# tracker_id:   CORE-1245
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-1669
+ISSUE:       1669
+TITLE:       Incorrect column values with outer joins and views
+DESCRIPTION:
+JIRA:        CORE-1245
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE T1 (N INTEGER);
+init_script = """CREATE TABLE T1 (N INTEGER);
 CREATE TABLE T2 (N INTEGER);
 CREATE VIEW V (N1, N2, N3) AS
     select t1.n, t2.n, 3
@@ -30,18 +25,18 @@ insert into t1 values (2);
 insert into t2 values (2);
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select rdb$relation_id, v.rdb$db_key, v.*
+test_script = """select rdb$relation_id, v.rdb$db_key, v.*
     from rdb$database
     full outer join v
         on (1 = 0)
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 RDB$RELATION_ID DB_KEY                                     N1           N2           N3
 =============== ================================ ============ ============ ============
          <null> 81000000010000008000000002000000            2            2            3
@@ -50,9 +45,9 @@ RDB$RELATION_ID DB_KEY                                     N1           N2      
 
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

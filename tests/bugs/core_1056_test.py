@@ -1,29 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_1056
-# title:        A query could produce different results, depending on the presence of an index
-# decription:   
-# tracker_id:   CORE-1056
-# min_versions: []
-# versions:     2.0
-# qmid:         bugs.core_1056
+
+"""
+ID:          issue-1475
+ISSUE:       1475
+TITLE:       A query could produce different results, depending on the presence of an index
+DESCRIPTION:
+JIRA:        CORE-1056
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table t (c varchar(10) character set win1250 collate pxw_csy);
+init_script = """create table t (c varchar(10) character set win1250 collate pxw_csy);
 insert into t values ('ch');
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """set plan on;
+test_script = """set plan on;
 
 select * from t where c starting with 'c';
 commit;
@@ -34,9 +29,9 @@ commit;
 select * from t where c starting with 'c';
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 PLAN (T NATURAL)
 
 C
@@ -52,9 +47,9 @@ ch
 
 """
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1153
-# title:        Activating index change "STARTING" working as "LIKE" in join condition
-# decription:   
-# tracker_id:   CORE-1153
-# min_versions: []
-# versions:     2.0.2
-# qmid:         bugs.core_1153
+
+"""
+ID:          issue-1574
+ISSUE:       1574
+TITLE:       Activating index change "STARTING" working as "LIKE" in join condition
+DESCRIPTION:
+JIRA:        CORE-1153
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE D (
+init_script = """CREATE TABLE D (
     ID  VARCHAR(40)
 );
 
@@ -49,9 +44,9 @@ CREATE INDEX M_IDX1 ON M COMPUTED BY (UPPER(ID));
 COMMIT WORK;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 
 ALTER INDEX D_IDX1 INACTIVE;
 
@@ -70,9 +65,9 @@ left outer join d dd
 order by mm.id ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN SORT (JOIN (MM NATURAL, DD NATURAL))
+expected_stdout = """PLAN SORT (JOIN (MM NATURAL, DD NATURAL))
 
 MID                                      DID
 ======================================== ========================================
@@ -100,9 +95,9 @@ DDD Ddd                                  <null>
 
 """
 
-@pytest.mark.version('>=2.0.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1108
-# title:        Wrong results with GROUP BY on constants
-# decription:   This test may hang (or take very long time to finish) the server version 1.5.x
-# tracker_id:   CORE-1108
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_1108-21
+
+"""
+ID:          issue-1528
+ISSUE:       1528
+TITLE:       Wrong results with GROUP BY on constants
+DESCRIPTION:
+JIRA:        CORE-1108
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE EMPLOYEE (
+init_script = """CREATE TABLE EMPLOYEE (
     EMP_NO SMALLINT,
     JOB_COUNTRY VARCHAR(15));
 
@@ -68,15 +63,15 @@ INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (145, 'USA');
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """Select 'Country:', Job_Country, Count(*)
+test_script = """Select 'Country:', Job_Country, Count(*)
   From Employee
   Group By 1,2;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """CONSTANT JOB_COUNTRY                     COUNT
+expected_stdout = """CONSTANT JOB_COUNTRY                     COUNT
 ======== =============== =====================
 Country: Canada                              1
 Country: England                             3
@@ -89,8 +84,8 @@ Country: USA                                33
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
