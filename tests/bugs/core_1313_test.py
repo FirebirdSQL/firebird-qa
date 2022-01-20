@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1313
-# title:        RDB$DB_KEY not supported in derived tables and merge command
-# decription:   
-# tracker_id:   CORE-1313
-# min_versions: []
-# versions:     2.5
-# qmid:         bugs.core_1313
+
+"""
+ID:          issue-1732
+ISSUE:       1732
+TITLE:       RDB$DB_KEY not supported in derived tables and merge command
+DESCRIPTION:
+JIRA:        CORE-1313
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create table t (c1 integer);
     commit;
 
@@ -29,7 +22,7 @@ test_script_1 = """
     insert into t values (3);
 
     commit;
-      
+
     select 'point-1' msg, t1.*
     from t t1
     right join (select t.rdb$db_key as dbkey from t) t2 on t2.dbkey = t1.rdb$db_key;
@@ -42,9 +35,9 @@ test_script_1 = """
     select 'point-2' msg, t.* from t;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG     C1
     point-1  1
     point-1  2
@@ -56,9 +49,9 @@ expected_stdout_1 = """
     point-2  3
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

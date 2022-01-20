@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1810
-# title:        Usernames with '.' character
-# decription:
-# tracker_id:   CORE-1810
-# min_versions: ['2.1.7']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2240
+ISSUE:       2240
+TITLE:       Usernames with '.' character
+DESCRIPTION:
+JIRA:        CORE-1810
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('Statement failed, SQLSTATE.*', ''), ('record not found for user:.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set wng off;
     recreate table test(id int, x int, y int, z int);
@@ -59,9 +52,10 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+                 substitutions=[('Statement failed, SQLSTATE.*', ''), ('record not found for user:.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     USER                            $.$
     ROLE                            #.#
     IS_REMOTE_CONNECTION            YES
@@ -72,16 +66,16 @@ expected_stdout_1 = """
     Z                               300
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     record not found for user: $.$
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)
 

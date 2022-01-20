@@ -1,30 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_1482
-# title:        Make optimizer to consider ORDER BY optimization when making decision about join order
-# decription:   
-# tracker_id:   CORE-1482
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-1898
+ISSUE:       1898
+TITLE:       Make optimizer to consider ORDER BY optimization when making decision about join order
+DESCRIPTION:
+JIRA:        CORE-1482
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table tcolor(id int , name varchar(20) );
     recreate table thorses(id int, color_id int, name varchar(20));
     commit;
-    
+
     set term ^;
     execute block as
       declare i int;
@@ -49,13 +42,13 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     create index tcolor_id on tcolor(id);
     create index thorses_color_id on thorses(color_id);
     -- this index was forgotten in previous revisions:
     create index thorses_id on thorses(id);
     commit;
-    
+
     set list on;
     select (select count(*) from tcolor) colors_cnt, (select count(*) from thorses) horses_cnt
     from rdb$database;
@@ -65,9 +58,9 @@ test_script_1 = """
     select * from tcolor m join thorses d on m.id = d.color_id order by d.id rows 1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     COLORS_CNT                      50
     HORSES_CNT                      50000
 
@@ -75,8 +68,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

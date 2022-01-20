@@ -1,42 +1,35 @@
 #coding:utf-8
-#
-# id:           bugs.core_1815
-# title:        Ability to grant role to another role
-# decription:
-#                  ### NB ### This test was NOT completed!
-#                  One need to check all nuances related to granting and revoking that is issued by NON sysdba user
-#                  which was granted admin option to manupulate appropriate DB objects.
-#                  Also, there is not clarity about issue 08/Aug/16 06:31 AM (when user Boss2 does grant-and-revoke
-#                  sequence with some role to other user Sales but this role already was granted by _other_ user, Boss1).
-#
-#                  We create two users (acnt and pdsk) and two roles for them (racnt and rpdsk).
-#                  Then we create two tables (tacnt & tpdsk) and grant access on these tables for acnt & pdsk.
-#                  Then we create user boss, role for him (rboss) and grant IMPLICITLY access on tables tacnt and tpdsk
-#                  to user boss via his role (rboss).
-#                  Check is made to ensure that user boss HAS ability to read from both tables (being connected with role Rboss).
-#                  After all, we IMPLICITLY revoke access from these tables and check again that user boss now has NO access
-#                  on tables tacnt and tpdsk.
-#
-#                  Checked on WI-T4.0.0.322 -- all fine.
-#
-# tracker_id:   CORE-1815
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-2245
+ISSUE:       2245
+TITLE:       Ability to grant role to another role
+DESCRIPTION:
+  ### NB ### This test was NOT completed!
+  One need to check all nuances related to granting and revoking that is issued by NON sysdba user
+  which was granted admin option to manupulate appropriate DB objects.
+  Also, there is not clarity about issue 08/Aug/16 06:31 AM (when user Boss2 does grant-and-revoke
+  sequence with some role to other user Sales but this role already was granted by _other_ user, Boss1).
+
+  We create two users (acnt and pdsk) and two roles for them (racnt and rpdsk).
+  Then we create two tables (tacnt & tpdsk) and grant access on these tables for acnt & pdsk.
+  Then we create user boss, role for him (rboss) and grant IMPLICITLY access on tables tacnt and tpdsk
+  to user boss via his role (rboss).
+  Check is made to ensure that user boss HAS ability to read from both tables (being connected with role Rboss).
+  After all, we IMPLICITLY revoke access from these tables and check again that user boss now has NO access
+  on tables tacnt and tpdsk.
+JIRA:        CORE-1815
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
+user_boss = user_factory('db', name='tmp$c1815_boss', password='boss')
+user_acnt = user_factory('db', name='tmp$c1815_acnt', password='acnt')
+user_pdsk = user_factory('db', name='tmp$c1815_pdsk', password='pdsk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     --show version;
     --set bail on;
@@ -202,9 +195,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHOAMI                          TMP$C1815_ACNT
     MY_ROLE                         RACNT
     R_NAME                          RBOSS
@@ -392,7 +385,7 @@ expected_stdout_1 = """
     S                               acnt
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     no permission for SELECT access to TABLE TPDSK
     -Effective user is TMP$C1815_BOSS
@@ -402,16 +395,11 @@ expected_stderr_1 = """
     -Effective user is TMP$C1815_BOSS
 """
 
-
-user_1_boss = user_factory('db_1', name='tmp$c1815_boss', password='boss')
-user_1_acnt = user_factory('db_1', name='tmp$c1815_acnt', password='acnt')
-user_1_pdsk = user_factory('db_1', name='tmp$c1815_pdsk', password='pdsk')
-
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action, user_1_boss: User, user_1_acnt: User, user_1_pdsk: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, user_boss: User, user_acnt: User, user_pdsk: User):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

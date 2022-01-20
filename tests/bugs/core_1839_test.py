@@ -1,26 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_1839
-# title:        AV when sorting by field, calculated using recursive CTE
-# decription:   Bug happened only when table, used in CTE, contained records with different formats
-# tracker_id:   CORE-1839
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2268
+ISSUE:       2268
+TITLE:       AV when sorting by field, calculated using recursive CTE
+DESCRIPTION:
+  Bug happens only when table used in CTE contains records with different formats
+JIRA:        CORE-1839
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = [('ALL_CAPTIONS.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(id int, pid int, name varchar(20));
     commit;
     insert into test values(1, null, 'earth');
@@ -97,16 +91,16 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('ALL_CAPTIONS.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ALL_CAPTIONS                    0:1
     earth:africa:egypt:al-qāhirah:30°3'0"N 31°14'0"E;earth:africa:kenya:nairobi:1°17'S 36°49"E;earth:asia:iran:tehran:35°41'46"N 51°25'23"E;earth:asia:turkey:istanbul:41°00'49"N 28°57'18"E;earth:europe:Dänemarks:København:55°40'34"N 12°34'6"E;earth:europe:Norge:oslo:59°57"N 10°45"E;earth:europe:Sverige:stockholm:59°19'46"N 18°4'7"E
 """
 
 @pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

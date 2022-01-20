@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1306
-# title:        Indices not used for views
-# decription:   
-# tracker_id:   CORE-1306
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_1306
+
+"""
+ID:          issue-1726
+ISSUE:       1726
+TITLE:       Indices not used for views
+DESCRIPTION:
+JIRA:        CORE-1306
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE "TABLE" (ID INTEGER NOT NULL PRIMARY KEY);
+init_script = """CREATE TABLE "TABLE" (ID INTEGER NOT NULL PRIMARY KEY);
 
 COMMIT;
 
@@ -30,18 +25,18 @@ CREATE VIEW "VIEW" AS SELECT * FROM "TABLE";
 
 commit;"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """set plan on;
+test_script = """set plan on;
 
 SELECT * FROM "TABLE" WHERE ID = 1
 UNION ALL
 SELECT * FROM "VIEW" WHERE ID = 1 ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 PLAN (TABLE INDEX (RDB$PRIMARY1), VIEW TABLE INDEX (RDB$PRIMARY1))
 
           ID
@@ -52,8 +47,8 @@ PLAN (TABLE INDEX (RDB$PRIMARY1), VIEW TABLE INDEX (RDB$PRIMARY1))
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

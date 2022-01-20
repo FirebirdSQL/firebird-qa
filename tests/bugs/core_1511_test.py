@@ -1,44 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_1511
-# title:        POSITION(string_exp1, string_exp2 [, start])
-# decription:
-# tracker_id:   CORE-1511
-# min_versions: ['2.1.0']
-# versions:     2.1.0
-# qmid:         None
+
+"""
+ID:          issue-1926
+ISSUE:       1926
+TITLE:       POSITION(string_exp1, string_exp2 [, start])
+DESCRIPTION:
+JIRA:        CORE-1511
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SELECT position ('be', 'To be or not to be')
+test_script = """SELECT position ('be', 'To be or not to be')
 ,position ('be', 'To be or not to be', 4)
 ,position ('be', 'To be or not to be', 8)
 ,position ('be', 'To be or not to be', 18)
 FROM RDB$DATABASE;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_1511.fdb, User: SYSDBA
-SQL> CON> CON> CON> CON>
+expected_stdout = """
     POSITION     POSITION     POSITION     POSITION
 ============ ============ ============ ============
            4            4           17            0
 
-SQL>"""
+"""
 
 @pytest.mark.version('>=2.1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

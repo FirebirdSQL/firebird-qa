@@ -1,54 +1,45 @@
 #coding:utf-8
-#
-# id:           bugs.core_1746
-# title:        Expression index can be created while doing inserts into table
-# decription:
-#                   We check three cases of Tx setting: WAIT, NO WAIT and LOCK TIMEOUT n.
-#
-#                   First ISQL session always inserts some number of rows and falls in delay (it is created
-#                   artificially by attempting to insert duplicate key in index in Tx with lock timeout = 7).
-#
-#                   Second ISQL is launched in SYNC mode after small delay (3 seconds) and starts transaction
-#                   with corresponding WAIT/NO WAIT/LOCK TIMEOUT clause.
-#
-#                   If Tx starts with NO wait or lock timeout then this (2nd) ISQL always MUST FAIL.
-#
-#                   After 2nd ISQL will finish, we have to wait yet 5 seconds for 1st ISQL will gone.
-#                   Total time of these two delays (3+5=8) must be greater than lock timeout in the script which
-#                   is running by 1st ISQL (7 seconds).
-#
-#                   Initial version of this test did use force interruption of both ISQL processes but this was unneeded,
-#                   though it helped to discover some other bug in engine which produced bugcheck - see CORE-5275.
-#
-#                   Checked on:
-#                       4.0.0.2164 SS: 37.707s.
-#                       4.0.0.2119 SS: 37.982s.
-#                       4.0.0.2164 CS: 39.116s.
-#                       3.0.7.33356 SS: 36.675s.
-#                       3.0.7.33356 CS: 37.839s.
-#                       2.5.9.27150 SC: 35.755s.
-#
-# tracker_id:   CORE-1746
-# min_versions: ['2.5.6']
-# versions:     2.5.6
-# qmid:         None
+
+"""
+ID:          issue-2170
+ISSUE:       2170
+TITLE:       Expression index can be created while doing inserts into table
+DESCRIPTION:
+  We check three cases of Tx setting: WAIT, NO WAIT and LOCK TIMEOUT n.
+
+  First ISQL session always inserts some number of rows and falls in delay (it is created
+  artificially by attempting to insert duplicate key in index in Tx with lock timeout = 7).
+
+  Second ISQL is launched in SYNC mode after small delay (3 seconds) and starts transaction
+  with corresponding WAIT/NO WAIT/LOCK TIMEOUT clause.
+
+  If Tx starts with NO wait or lock timeout then this (2nd) ISQL always MUST FAIL.
+
+  After 2nd ISQL will finish, we have to wait yet 5 seconds for 1st ISQL will gone.
+  Total time of these two delays (3+5=8) must be greater than lock timeout in the script which
+  is running by 1st ISQL (7 seconds).
+
+  Initial version of this test did use force interruption of both ISQL processes but this was unneeded,
+  though it helped to discover some other bug in engine which produced bugcheck - see CORE-5275.
+NOTES:
+[15.1.2022] pcisar
+  This test may FAIL when run on slow machine (like VM)!
+JIRA:        CORE-1746
+"""
 
 import pytest
 import time
 import subprocess
 from pathlib import Path
-from firebird.qa import db_factory, python_act, Action, temp_file
+from firebird.qa import *
 
-# version: 2.5.6
-# resources: None
+substitutions = [('0: CREATE INDEX LOG: RDB_EXPR_BLOB.*', '0: CREATE INDEX LOG: RDB_EXPR_BLOB'),
+                 ('BULK_INSERT_START.*', 'BULK_INSERT_START'),
+                 ('BULK_INSERT_FINISH.*', 'BULK_INSERT_FINISH'),
+                 ('CREATE_INDX_START.*', 'CREATE_INDX_START'),
+                 ('AFTER LINE.*', 'AFTER LINE')]
 
-substitutions_1 = [('0: CREATE INDEX LOG: RDB_EXPR_BLOB.*', '0: CREATE INDEX LOG: RDB_EXPR_BLOB'),
-                   ('BULK_INSERT_START.*', 'BULK_INSERT_START'),
-                   ('BULK_INSERT_FINISH.*', 'BULK_INSERT_FINISH'),
-                   ('CREATE_INDX_START.*', 'CREATE_INDX_START'),
-                   ('AFTER LINE.*', 'AFTER LINE')]
-
-init_script_1 = """
+init_script = """
     create or alter procedure sp_ins(n int) as begin end;
 
     recreate table test(x int unique using index test_x, s varchar(10) default 'qwerty' );
@@ -79,207 +70,14 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# import os
-#  import time
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#
-#
-#  #########################################################
-#
-#  # NB-1: value of 'rows_to_add' must have value that will require at least
-#  #       4...5 seconds for inserting such number of rows
-#  # NB-2: FB 2.5 makes DML *faster* than 3.0 in single-connection mode!
-#
-#  rows_to_add=1000
-#
-#  sql_bulk_insert='''    set bail on;
-#      set list on;
-#
-#      -- do NOT use it !! >>> alter sequence g restart with 0; -- gen_id(g,1) will return 0 rather than 1 since 06-aug-2020 on FB 4.x !!
-#
-#      delete from test;
-#      set term ^;
-#      execute block as
-#          declare c bigint;
-#      begin
-#          c = gen_id(g, -gen_id(g, 0)); -- restart sequence
-#      end
-#      ^
-#      set term ;^
-#      commit;
-#
-#      set transaction lock timeout 7; -- THIS LOCK TIMEOUT SERVES ONLY FOR DELAY, see below auton Tx start.
-#
-#      select current_timestamp as bulk_insert_start from rdb$database;
-#      set term ^;
-#      execute block as
-#          declare i int;
-#      begin
-#          execute procedure sp_ins( %(rows_to_add)s );
-#          begin
-#              -- #########################################################
-#              -- #######################  D E L A Y  #####################
-#              -- #########################################################
-#              in autonomous transaction do
-#              insert into test( x ) values( %(rows_to_add)s ); -- this will cause delay because of duplicate in index
-#          when any do
-#              begin
-#                  i  =  gen_id(g,1);
-#              end
-#          end
-#      end
-#      ^
-#      set term ;^
-#      commit;
-#      select current_timestamp as bulk_insert_finish from rdb$database;
-#  '''
-#
-#  sql_create_indx='''    set bail on;
-#      set list on;
-#      set blob all;
-#      select
-#          iif( gen_id(g,0) > 0 and gen_id(g,0) < 1 + %(rows_to_add)s,
-#               'OK, IS RUNNING',
-#               iif( gen_id(g,0) <=0,
-#                    'WRONG: not yet started, current gen_id='||gen_id(g,0),
-#                    'WRONG: already finished, rows_to_add='||%(rows_to_add)s ||', current gen_id='||gen_id(g,0)
-#                  )
-#             ) as inserts_state,
-#          current_timestamp as create_indx_start
-#      from rdb$database;
-#      set autoddl off;
-#      commit;
-#
-#      set echo on;
-#      set transaction %(tx_decl)s;
-#
-#      create index test_%(idx_name)s on test computed by( %(idx_expr)s );
-#      commit;
-#      set echo off;
-#
-#      select
-#          iif(  gen_id(g,0) >= 1 + %(rows_to_add)s,
-#                'OK, FINISHED',
-#                'SOMETHING WRONG: current gen_id=' || gen_id(g,0)||', rows_to_add='||%(rows_to_add)s
-#             ) as inserts_state
-#      from rdb$database;
-#
-#      set count on;
-#      select
-#          rdb$index_name
-#          ,coalesce(rdb$unique_flag,0) as rdb$unique_flag
-#          ,coalesce(rdb$index_inactive,0) as rdb$index_inactive
-#          ,rdb$expression_source as rdb_expr_blob
-#      from rdb$indices ri
-#      where ri.rdb$index_name = upper( 'test_%(idx_name)s' )
-#      ;
-#      set count off;
-#      set echo on;
-#      set plan on;
-#      select 1 from test where %(idx_expr)s > '' rows 0;
-#      set plan off;
-#      set echo off;
-#      commit;
-#      drop index test_%(idx_name)s;
-#      commit;
-#  '''
-#
-#  tx_param=['WAIT','NO WAIT','LOCK TIMEOUT 1']
-#
-#  for i in range(len(tx_param)):
-#
-#      #if i >= 2:
-#      #    continue # temply!
-#
-#      f_bulk_insert_sql = open( os.path.join(context['temp_directory'],'tmp_1746_ins.sql'), 'w')
-#      f_bulk_insert_sql.write(sql_bulk_insert % locals() )
-#      f_bulk_insert_sql.close()
-#
-#      tx_decl=tx_param[i]
-#      idx_name=tx_decl.replace(' ','_')
-#      idx_expr="'"+idx_name+"'|| s"
-#
-#      f_create_indx_sql = open( os.path.join(context['temp_directory'],'tmp_1746_idx_%s.sql' % str(i) ), 'w')
-#      f_create_indx_sql.write( sql_create_indx % locals() )
-#      f_create_indx_sql.close()
-#
-#      f_bulk_insert_log = open( os.path.join(context['temp_directory'],'tmp_1746_ins_%s.log' % str(i) ), 'w')
-#
-#      # This will insert rows and then stay in pause 10 seconds:
-#      p_bulk_insert=subprocess.Popen( [ context['isql_path'], dsn, "-q", "-i", f_bulk_insert_sql.name ],
-#                                        stdout = f_bulk_insert_log,
-#                                        stderr = subprocess.STDOUT
-#                                   )
-#
-#      # 3.0 Classic: seems that it requires at least 2 seconds for ISQL be loaded into memory.
-#      time.sleep(3)
-#
-#      f_create_indx_log = open( os.path.join(context['temp_directory'],'tmp_1746_idx_%s.log' % str(i) ), 'w')
-#
-#      # This will wait until first ISQL finished:
-#      subprocess.call( [ context['isql_path'], dsn, "-n", "-q", "-i", f_create_indx_sql.name ],
-#                         stdout = f_create_indx_log,
-#                         stderr = subprocess.STDOUT
-#                      )
-#
-#      time.sleep(7) # NB: this delay plus previous (3+5=8) must be GREATER than lock timeout in <sql_bulk_insert>
-#
-#      p_bulk_insert.terminate()
-#      flush_and_close( f_bulk_insert_log )
-#      flush_and_close( f_create_indx_log )
-#
-#
-#      with open( f_bulk_insert_log.name,'r') as f:
-#          for line in f:
-#              if line.split():
-#                  print( str(i)+': BULK INSERTS LOG: '+line.strip().upper() )
-#
-#      with open( f_create_indx_log.name,'r') as f:
-#          for line in f:
-#              if line.split():
-#                  print( str(i)+': CREATE INDEX LOG: '+line.strip().upper() )
-#
-#      cleanup( [i.name for i in (f_bulk_insert_sql, f_create_indx_sql, f_bulk_insert_log, f_create_indx_log)] )
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act = python_act('db', substitutions=substitutions)
 
 tmp_file_bi_in = temp_file('bulk_insert.sql')
 tmp_file_bi_out = temp_file('bulk_insert.out')
 
-expected_stdout_1 = """
+expected_stdout = """
     0: BULK INSERTS LOG: BULK_INSERT_START
     0: BULK INSERTS LOG: BULK_INSERT_FINISH
     0: CREATE INDEX LOG: INSERTS_STATE                   OK, IS RUNNING
@@ -326,11 +124,8 @@ expected_stdout_1 = """
     2: CREATE INDEX LOG: -OBJECT TABLE "TEST" IS IN USE
 """
 
-@pytest.mark.version('>=2.5.6')
-def test_1(act_1: Action, tmp_file_bi_in: Path, tmp_file_bi_out: Path, capsys):
-    # NB-1: value of 'rows_to_add' must have value that will require at least
-    #       4...5 seconds for inserting such number of rows
-    # NB-2: FB 2.5 makes DML *faster* than 3.0 in single-connection mode!
+@pytest.mark.version('>=3')
+def test_1(act: Action, tmp_file_bi_in: Path, tmp_file_bi_out: Path, capsys):
     rows_to_add = 1000
     tmp_file_bi_in.write_text (f'''
     set bail on;
@@ -435,41 +230,39 @@ def test_1(act_1: Action, tmp_file_bi_in: Path, tmp_file_bi_out: Path, capsys):
 '''
         with open(tmp_file_bi_out, mode='w') as f_bulk_insert_log:
             # This will insert rows and then stay in pause 10 seconds:
-            p_bulk_insert = subprocess.Popen([act_1.vars['isql'], act_1.db.dsn,
-                                              '-user', act_1.db.user,
-                                              '-password', act_1.db.password,
+            p_bulk_insert = subprocess.Popen([act.vars['isql'], act.db.dsn,
+                                              '-user', act.db.user,
+                                              '-password', act.db.password,
                                               '-q', '-i', str(tmp_file_bi_in)],
                                               stdout = f_bulk_insert_log,
                                               stderr = subprocess.STDOUT
                                               )
-            #act_1.isql(switches=['-q'], input=sql_bulk_insert)
-            #bulk_insert_log = act_1.stdout
+            #act.isql(switches=['-q'], input=sql_bulk_insert)
+            #bulk_insert_log = act.stdout
             # 3.0 Classic: seems that it requires at least 2 seconds for ISQL be loaded into memory.
             time.sleep(3)
             # This will wait until first ISQL finished
-            act_1.expected_stderr = 'DISABLED'
-            act_1.isql(switches=['-q', '-n'], input=sql_create_indx)
+            act.expected_stderr = 'DISABLED'
+            act.isql(switches=['-q', '-n'], input=sql_create_indx)
             time.sleep(7) # NB: this delay plus previous (3+5=8) must be GREATER than lock timeout in <sql_bulk_insert>
 
             p_bulk_insert.terminate()
         bulk_insert_log = tmp_file_bi_out.read_text()
-        create_indx_log = act_1.stdout + act_1.stderr
+        create_indx_log = act.stdout + act.stderr
 
-        log = act_1.string_strip(bulk_insert_log, act_1.substitutions)
+        log = act.string_strip(bulk_insert_log, act.substitutions)
         for line in log.splitlines():
             if line.strip():
                 print( str(i)+': BULK INSERTS LOG: '+line.strip().upper() )
 
-        log = act_1.string_strip(create_indx_log, act_1.substitutions)
+        log = act.string_strip(create_indx_log, act.substitutions)
         for line in log.splitlines():
             if line.strip():
                 print( str(i)+': CREATE INDEX LOG: '+line.strip().upper() )
         #
         i += 1
     # Checks
-    act_1.reset()
-    act_1.stdout = capsys.readouterr().out
-    act_1.expected_stdout = expected_stdout_1
-    # pcisar [15.1.2022]
-    # This test may FAIL when run on slow machine (like VM)!
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.reset()
+    act.stdout = capsys.readouterr().out
+    act.expected_stdout = expected_stdout
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1935
-# title:        SIMILAR TO character classes are incorrectly recognized
-# decription:   
-#                   Checked on:
-#                       2.5.9.27107: OK, 0.406s.
-#                       3.0.4.32924: OK, 2.250s.
-#                       4.0.0.916: OK, 1.562s.
-#                
-# tracker_id:   CORE-1935
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2372
+ISSUE:       2372
+TITLE:       SIMILAR TO character classes are incorrectly recognized
+DESCRIPTION:
+JIRA:        CORE-1935
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     -- two subsequent classes in double braces, concatenated together:
@@ -55,9 +43,9 @@ test_script_1 = """
     select 52 as r from rdb$database where '5a' similar to '[%[:DIGIT:][:ALPHA:]][[:ALNUM:]%]'; -- 52
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     R                               11
     R                               21
     R                               31
@@ -67,9 +55,9 @@ expected_stdout_1 = """
     R                               52
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

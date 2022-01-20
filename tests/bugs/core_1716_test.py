@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1716
-# title:        Wrong variable initialization in recursive procedures
-# decription:
-# tracker_id:   CORE-1716
-# min_versions: ['2.1.7']
-# versions:     2.1.7
-# qmid:         None
+
+"""
+ID:          issue-2141
+ISSUE:       2141
+TITLE:       Wrong variable initialization in recursive procedures
+DESCRIPTION:
+JIRA:        CORE-1716
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create domain dm_int as integer default 0 not null;
     commit;
 
@@ -74,9 +67,9 @@ test_script_1 = """
     select * from sp_test2(3);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
            O_CNT        O_RET
     ============ ============
                3            0
@@ -101,9 +94,9 @@ expected_stdout_1 = """
                1            0
 """
 
-@pytest.mark.version('>=2.1.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

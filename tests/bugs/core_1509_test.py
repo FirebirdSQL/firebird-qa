@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1509
-# title:        Conversion from double to varchar insert trailing spaces
-# decription:   
-#                  Confirmed bug on WI-V2.0.0.12724: output of cast(cast(0e0 as double precision) as varchar(32))||'z'
-#                  is: |0.0000000000000000    z| (four spaces inside)
-#                
-# tracker_id:   CORE-1509
-# min_versions: []
-# versions:     2.5.0
-# qmid:         
+
+"""
+ID:          issue-1924
+ISSUE:       1924
+TITLE:       Conversion from double to varchar insert trailing spaces
+DESCRIPTION:
+JIRA:        CORE-1509
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
      set list on;
      select
           iif( position(' z' in t1)>0, 'BAD: >' || t1 || '<', 'OK.') as chk1
@@ -38,17 +28,17 @@ test_script_1 = """
      );
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CHK1                            OK.
     CHK2                            OK.
     CHK3                            OK.
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

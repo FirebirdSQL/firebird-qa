@@ -1,32 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_1522
-# title:        Inconsistent DATEDIFF behaviour
-# decription:   
-# tracker_id:   CORE-1522
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1522
+
+"""
+ID:          issue-1937
+ISSUE:       1937
+TITLE:       Inconsistent DATEDIFF behaviour
+DESCRIPTION:
+JIRA:        CORE-1522
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SELECT DATEDIFF(HOUR, CAST('01:59:59' AS TIME), CAST('02:59:58' AS TIME)) FROM RDB$DATABASE;
+test_script = """SELECT DATEDIFF(HOUR, CAST('01:59:59' AS TIME), CAST('02:59:58' AS TIME)) FROM RDB$DATABASE;
 SELECT DATEDIFF(HOUR, CAST('01:59:59' AS TIME), CAST('02:59:59' AS TIME)) FROM RDB$DATABASE;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
              DATEDIFF
 =====================
                     1
@@ -38,9 +31,9 @@ expected_stdout_1 = """
 
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

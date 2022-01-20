@@ -1,35 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1384
-# title:        LIKE doesn't work correctly with collations using SPECIALS-FIRST=1
-# decription:
-#                   02-mar-2021. Re-implemented in ordeer to have ability to run this test on Linux.
-#                   We run 'init_script' using charset = utf8 but then run separate ISQL-process
-#                   with request to establish connection using charset = ISO8859_1.
-#
-#                   *** NOTE ***
-#                   Script that must be executed by ISQL does NOT contain any non-ascii characters.
-#                   Query with diacritical symbols was moved into view V_TEST which is created in init_script
-#                   using charset ***UTF-8*** (otherwise is seems to be unable to run this test on Linux).
-#
-#                   Checked on:
-#                   * Windows: 4.0.0.2377, 3.0.8.33420, 2.5.9.27152
-#                   * Linux:   4.0.0.2377, 3.0.8.33415
-#
-# tracker_id:   CORE-1384
-# min_versions: ['2.1.7']
-# versions:     2.1.7
-# qmid:         None
+
+"""
+ID:          issue-1802
+ISSUE:       1802
+TITLE:       LIKE doesn't work correctly with collations using SPECIALS-FIRST=1
+DESCRIPTION:
+JIRA:        CORE-1384
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.7
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
 	create collation coll_es for iso8859_1 from external ('ES_ES_CI_AI') 'SPECIALS-FIRST=1';
 	create collation coll_fr for iso8859_1 from external ('FR_FR') CASE INSENSITIVE accent insensitive 'SPECIALS-FIRST=1';
 	commit;
@@ -47,33 +29,17 @@ init_script_1 = """
 	;
 """
 
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-# test_script_1
-#---
-#
-#  sql_cmd='''
-#      set names ISO8859_1;
-#      connect '%(dsn)s' user '%(user_name)s' password '%(user_password)s';
-#      set list on;
-#      show collation;
-#      select * from v_test;
-#  ''' % dict(globals(), **locals())
-#
-#  runProgram( 'isql', [ '-q' ], sql_cmd)
-#
-#
-#---
-
-test_script_1 = """
+test_script = """
 set list on;
 show collation;
 select * from v_test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	COLL_ES, CHARACTER SET ISO8859_1, FROM EXTERNAL ('ES_ES_CI_AI'), 'SPECIALS-FIRST=1'
 	COLL_FR, CHARACTER SET ISO8859_1, FROM EXTERNAL ('FR_FR'), CASE INSENSITIVE, ACCENT INSENSITIVE, 'SPECIALS-FIRST=1'
 	RESULT_FOR_ES_CI_AI             0
@@ -82,10 +48,10 @@ expected_stdout_1 = """
 	RESULT_FOR_FR_CI_AI             0
 """
 
-@pytest.mark.version('>=2.1.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute(charset='ISO8859_1')
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute(charset='ISO8859_1')
+    assert act.clean_stdout == act.clean_expected_stdout
 
 

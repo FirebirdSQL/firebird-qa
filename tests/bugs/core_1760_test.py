@@ -1,38 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1760
-# title:        Support hex numeric and string literals
-# decription:
-#                   See doc\\sql.extensions\\README.hex_literals.txt
-#
-#                   REFACTORED 27.02.2020:
-#                   1) all SQL code was moved into separate file: $files_location/core_1760.sql because it is common for all major FB versions;
-#                   2) added examples from https://firebirdsql.org/refdocs/langrefupd25-bigint.html (see core_1760.sql);
-#                   3) added check for output datatypes (sqlda_display).
-#
-#                   Checked on:
-#                       4.0.0.1789 SS: 1.458s.
-#                       3.0.6.33259 SS: 0.805s.
-#                       2.5.9.27149 SC: 0.397s.
-#
-# tracker_id:   CORE-1760
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2185
+ISSUE:       2185
+TITLE:       Support hex numeric and string literals
+DESCRIPTION: See doc\\sql.extensions\\README.hex_literals.txt
+JIRA:        CORE-1760
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('.*At line.*', ''), ('-Token unknown.*', '-Token unknown')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     -- binary literal ::=  { x | X } <quote> [ { <hexit> <hexit> }... ] <quote>
@@ -87,65 +68,10 @@ test_script_1 = """
     set sqlda_display off;
 """
 
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#  #--------------------------------------------
-#
-#  db_conn.close()
-#
-#  sql_chk = os.path.join(context['files_location'],'core_1760.sql')
-#
-#  f_sql_log = open( os.path.join(context['temp_directory'],'tmp_core_1760.log'), 'w', buffering = 0)
-#  f_sql_err = open( os.path.join(context['temp_directory'],'tmp_core_1760.err'), 'w', buffering = 0)
-#
-#  subprocess.call( [ context['isql_path'], dsn, '-q', '-i', sql_chk ], stdout = f_sql_log, stderr = f_sql_err)
-#
-#  flush_and_close( f_sql_log )
-#  flush_and_close( f_sql_err )
-#
-#  for f in (f_sql_log, f_sql_err):
-#      with open( f.name,'r') as g:
-#          for line in g:
-#              if line.strip():
-#                  print( ('STDOUT: ' if f == f_sql_log else 'STDERR: ') + line )
-#
-#  cleanup( (f_sql_log.name, f_sql_err.name) )
-#
-#---
+act = isql_act('db', test_script,
+               substitutions=[('.*At line.*', ''), ('-Token unknown.*', '-Token unknown')])
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
 CONSTANT                        11
 CONSTANT                        0123456789
 CONSTANT                        01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -230,7 +156,7 @@ OUTPUT message field count: 19
   : table: V_TEST  owner: SYSDBA
 """
 
-expected_stderr_1 = """
+expected_stderr = """
 Statement failed, SQLSTATE = 42000
 Dynamic SQL Error
 -SQL error code = -104
@@ -245,11 +171,11 @@ Dynamic SQL Error
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)
 
 

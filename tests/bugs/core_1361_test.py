@@ -1,28 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1361
-# title:        Index operations for global temporary tables are not visible for the active connection
-# decription:   
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.863s.
-#                       4.0.0.1633 CS: 2.386s.
-#                       3.0.5.33180 SS: 1.302s.
-#                       3.0.5.33178 CS: 1.778s.
-#                
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         bugs.core_1361
+
+"""
+ID:          issue-1779
+ISSUE:       1779
+TITLE:       Index operations for global temporary tables are not visible for the active connection
+DESCRIPTION:
+JIRA:        CORE-1361
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     set term ^;
     create or alter procedure sp_check_plan returns(sql_plan blob) as
     begin
@@ -37,19 +26,19 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     recreate global temporary table gtt_session(x int, y int) on commit preserve rows;
     commit;
     create role poor_dba;
     create role cool_dba;
     create role super_dba;
     commit;
-    
+
     grant poor_dba to sysdba;  -- for connect #1
     grant cool_dba to sysdba;  -- for connect #2
     grant super_dba to sysdba; -- for connect #3 (index also WILL be seen for it)
     commit;
-    
+
     set term ^;
     create or alter procedure sp_check_plan returns(sql_plan blob) as
         declare n int;
@@ -60,7 +49,7 @@ init_script_1 = """
         union all
         select -2, -3
         from rdb$database;
-    
+
         execute statement
             'select '
             || '    (select count(*) from gtt_session g where g.x + g.y = -5) '
@@ -76,9 +65,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     set blob all;
     set term ^;
@@ -91,42 +80,42 @@ test_script_1 = """
        declare role_3 varchar(31) = 'SUPER_DBA';
        declare sql_plan blob;
     begin
-    
+
        v_dbname = 'localhost:' || rdb$get_context('SYSTEM', 'DB_NAME');
-    
+
        execute statement 'select sql_plan from sp_check_plan'
        on external v_dbname
        as user v_usr password v_pwd role upper( role_1 )
        into sql_plan;
        using_index = iif(sql_plan containing 'GTT_SESSION_X_Y', 1, 0);
        suspend;
-    
+
        --------------------------------------------------------
-    
+
        execute statement 'create index gtt_session_x_y on gtt_session computed by ( x+y )'
        with autonomous transaction
        on external v_dbname
-       as user v_usr password v_pwd role upper( role_2 ); 
-       -- nb: changing this to 'role_1' will produce in firebird.log: 
-       -- internal Firebird consistency check (invalid SEND request (167), 
+       as user v_usr password v_pwd role upper( role_2 );
+       -- nb: changing this to 'role_1' will produce in firebird.log:
+       -- internal Firebird consistency check (invalid SEND request (167),
        -- file: JrdStatement.cpp line: 325)
-    
+
        execute statement 'select sql_plan from sp_check_plan'
        on external v_dbname
        as user v_usr password v_pwd role upper( role_2 )
        into sql_plan;
        using_index = iif(sql_plan containing 'GTT_SESSION_X_Y', 1, 0);
        suspend;
-    
+
        --------------------------------------------------------
-    
+
        execute statement 'select sql_plan from sp_check_plan'
        on external v_dbname
        as user v_usr password v_pwd role upper( role_3 )
        into sql_plan;
        using_index = iif(sql_plan containing 'GTT_SESSION_X_Y', 1, 0);
        suspend;
-    
+
     end
     ^
     set term ;^
@@ -144,21 +133,21 @@ test_script_1 = """
     -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
-    commit;    
+    commit;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     USING_INDEX                     0
     USING_INDEX                     1
     USING_INDEX                     1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

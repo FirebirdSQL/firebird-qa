@@ -1,37 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1550_postfix
-# title:        Unnecessary index scan happens when the same index is mapped to both WHERE and ORDER BY clauses
-# decription:   
-#                   http://sourceforge.net/p/firebird/code/60368
-#                   Date: 2014-12-16 11:40:42 +0000 (Tue, 16 Dec 2014)
-#                   
-#                   First letter to dimitr: 30.09.2014 20:01.
-#                   Reproduced on 3.0.0.31472 Beta 2 (10.dec.2014).
-#                   Checked on:
-#                       3.0.3.32837: OK, 1.516s.
-#                       3.0.3.32838: OK, 0.953s.
-#                       4.0.0.800: OK, 1.625s.
-#                       4.0.0.801: OK, 1.125s.
-#                
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          issue-1967-postfix
+ISSUE:       1967
+TITLE:       Unnecessary index scan happens when the same index is mapped to both WHERE and ORDER BY clauses
+DESCRIPTION:
+JIRA:        CORE-1550
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- sent to dimitr 30.09.14 at 22:09
     set term ^;
     execute block as
@@ -61,7 +43,7 @@ test_script_1 = """
     select *
     from tm m
     where exists(
-        select * from td d where m.id = d.id 
+        select * from td d where m.id = d.id
         order by d.id --------------------------- ### this "useless" order by should prevent from bitmap creation in 3.0+
     );
     -- Ineffective plan was here:
@@ -69,13 +51,13 @@ test_script_1 = """
     -- ...                  ^
     --                      |
     --                      +-----> BITMAP created!
-     
+
     -- 2. Check for usage when fields from UNIQUE index are involved:
     select *
     from tm m
     where exists(
-        select * from td d 
-        where m.id = d.f01 and d.f02 = 10 
+        select * from td d
+        where m.id = d.f01 and d.f02 = 10
         order by d.f01, d.f02 ------------------- ### this "useless" order by should prevent from bitmap creation in 3.0+
     );
 
@@ -86,9 +68,9 @@ test_script_1 = """
     --                               +-----> BITMAP created!
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (D ORDER TD_PK)
     PLAN (M NATURAL)
 
@@ -97,8 +79,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,30 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_1318
-# title:        Error "Identifier ... is too long using multiple (nested) derived tables
-# decription:   
-# tracker_id:   CORE-1318
-# min_versions: ['2.0.7']
-# versions:     2.0.7
-# qmid:         bugs.core_1318
+
+"""
+ID:          issue-1737
+ISSUE:       1737
+TITLE:       Error "Identifier ... is too long using multiple (nested) derived tables
+DESCRIPTION:
+JIRA:        CORE-1318
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select 0*count(*) cnt
     from (
-    select A1.ID 
+    select A1.ID
     from(
             select A2.ID from(
                 select A3.ID from(
@@ -36,10 +29,10 @@ test_script_1 = """
                                         select A9.ID from(
                                             select A10.ID from(
                                                 select rdb$relations.rdb$relation_id as id from rdb$relations where  rdb$relations.rdb$relation_id = 1
-                                                ) as A10 
-                                                union 
+                                                ) as A10
+                                                union
                                                 select rdb$relations.rdb$relation_id as id from rdb$relations where  rdb$relations.rdb$relation_id = 2
-                                            ) as A9 
+                                            ) as A9
                                             union
                                             select rdb$relations.rdb$relation_id as id from rdb$relations where rdb$relations.rdb$relation_id = 3
                                     ) as A8
@@ -70,15 +63,15 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CNT                             0
 """
 
-@pytest.mark.version('>=2.0.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1331
-# title:        Charset transliterations don't work with EXECUTE STATEMENT
-# decription:
-# tracker_id:   CORE-1331
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_1331
+
+"""
+ID:          issue-1750
+ISSUE:       1750
+TITLE:       Charset transliterations don't work with EXECUTE STATEMENT
+DESCRIPTION:
+JIRA:        CORE-1331
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='core1331-25.fbk', charset='utf8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core1331-25.fbk', init=init_script_1, charset='utf8')
-
-test_script_1 = """
+test_script = """
 	set list on;
     select opis as direct_select from T1;
 	set term ^ ;
@@ -43,9 +36,9 @@ test_script_1 = """
 	set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	DIRECT_SELECT                   ASCII
 	DIRECT_SELECT                   милан
 	EXECUTE_BLOCK_SELECT            ASCII
@@ -55,8 +48,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

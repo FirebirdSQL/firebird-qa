@@ -1,40 +1,33 @@
 #coding:utf-8
-#
-# id:           bugs.core_1560
-# title:        NULLIF crashes when first parameter is constant empty string
-# decription:   
-# tracker_id:   
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1560
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """select nullif('','') from rdb$database;
+"""
+ID:          issue-1979
+ISSUE:       1979
+TITLE:       NULLIF crashes when first parameter is constant empty string
+DESCRIPTION:
+JIRA:        CORE-1560
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+import pytest
+from firebird.qa import *
 
-expected_stdout_1 = """
+db = db_factory()
+
+test_script = """select nullif('','') from rdb$database;
+"""
+
+act = isql_act('db', test_script)
+
+expected_stdout = """
 CASE
 ======
 <null>
 
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

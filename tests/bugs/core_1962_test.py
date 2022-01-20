@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1962
-# title:        Incorrect extraction of MILLISECONDs
-# decription:   
-# tracker_id:   CORE-1962
-# min_versions: ['2.1.2']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2400
+ISSUE:       2400
+TITLE:       Incorrect extraction of MILLISECONDs
+DESCRIPTION:
+JIRA:        CORE-1962
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select extract(millisecond from time '01:00:10.5555') EXTRACTED_MS from rdb$database
     union all
@@ -30,17 +23,17 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     EXTRACTED_MS                    555.5
     EXTRACTED_MS                    0.4
     EXTRACTED_MS                    999.5
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

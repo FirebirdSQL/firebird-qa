@@ -1,24 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1362
-# title:        Too large numbers cause positive infinity to be inserted into database
-# decription:   
-# tracker_id:   CORE-1362
-# min_versions: []
-# versions:     2.5.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-1780
+ISSUE:       1780
+TITLE:       Too large numbers cause positive infinity to be inserted into database
+DESCRIPTION:
+JIRA:        CORE-1362
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+# version: 3.0
 
 test_script_1 = """
     recreate table test (col1 double precision);
@@ -30,7 +25,7 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22003
@@ -38,20 +33,13 @@ expected_stderr_1 = """
     -numeric value is out of range
 """
 
-@pytest.mark.version('>=2.5.0,<4.0')
+@pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     recreate table test (col1 double precision);
@@ -63,7 +51,7 @@ test_script_2 = """
     commit;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2)
 
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 22003

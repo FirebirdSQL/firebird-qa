@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1409
-# title:        Support for autonomous transactions
-# decription:
-# tracker_id:   CORE-1409
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-1827
+ISSUE:       1827
+TITLE:       Support for autonomous transactions
+DESCRIPTION:
+JIRA:        CORE-1409
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table log (
+init_script = """create table log (
   msg varchar(60)
 );
 commit;
@@ -39,24 +34,23 @@ set term ;!
 commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select msg from log;
+test_script = """select msg from log;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_1409.fdb, User: SYSDBA
-SQL>
+expected_stdout = """
 MSG
 ============================================================
 SYSDBA connected
 
-SQL>"""
+"""
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

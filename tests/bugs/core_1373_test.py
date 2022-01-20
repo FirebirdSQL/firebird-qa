@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1373
-# title:        Incorrect result of recursive CTE query when recursive member's SELECT list contains expression using self-referenced fields
-# decription:   
-# tracker_id:   CORE-1373
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1373
+
+"""
+ID:          issue-1791
+ISSUE:       1791
+TITLE:       Incorrect result of recursive CTE query when recursive member's SELECT list contains expression using self-referenced fields
+DESCRIPTION:
+JIRA:        CORE-1373
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """RECREATE TABLE Phases
+init_script = """RECREATE TABLE Phases
 (Id INT NOT NULL PRIMARY KEY, ParentPhaseId INT);
 
 CREATE GENERATOR GenPhases;
@@ -33,9 +28,9 @@ SET GENERATOR GenPhases to 0;
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """WITH RECURSIVE
+test_script = """WITH RECURSIVE
   Tree (OldPhaseId, OldParentPhaseId, NewPhaseId, NewParentPhaseId) AS
   (
     SELECT P.Id, P.ParentPhaseId, GEN_ID(GenPhases, 1), CAST(NULL AS INTEGER)
@@ -52,9 +47,9 @@ SELECT * FROM Tree;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
   OLDPHASEID OLDPARENTPHASEID            NEWPHASEID NEWPARENTPHASEID
 ============ ================ ===================== ================
          491           <null>                     1           <null>
@@ -65,9 +60,9 @@ expected_stdout_1 = """
 
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

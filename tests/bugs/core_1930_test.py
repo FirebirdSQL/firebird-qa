@@ -1,37 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_1930
-# title:        Possible AV in engine if procedure was altered to have no outputs and dependent procedures was not recompiled
-# decription:   
-#                    26.01.2019: added separate code for 4.0 because more detailed exception text appeared there:
-#                    ======
-#                       unsuccessful metadata update
-#                       -cannot delete
-#                       -PARAMETER SP1.X
-#                       -there are 1 dependencies
-#                    =====
-#                    Checked on:
-#                       3.0.5.33084: OK, 1.156s.
-#                       3.0.5.33097: OK, 1.016s.
-#                       4.0.0.1340: OK, 12.890s.
-#                       4.0.0.1410: OK, 16.156s.
-#                
-# tracker_id:   CORE-1930
-# min_versions: ['2.5.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-2365
+ISSUE:       2365
+TITLE:       Possible AV in engine if procedure was altered to have no outputs and dependent procedures was not recompiled
+DESCRIPTION:
+JIRA:        CORE-1930
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+substitutions = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost:'),
+                 ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
+
+db = db_factory()
 
 # version: 3.0
-# resources: None
-
-substitutions_1 = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost:'), ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     set term ^;
@@ -41,14 +26,14 @@ test_script_1 = """
         suspend;
     end
     ^
-    
+
     create or alter procedure sp2 returns (x int) as
     begin
         select x from sp1 into :x;
         suspend;
     end
     ^
-    
+
     create or alter procedure sp3 returns (x int)  as
     begin
         select x from sp2 into :x;
@@ -57,17 +42,17 @@ test_script_1 = """
     ^
     commit
     ^
-    
+
     -- this is wrong but engine still didn't track procedure's fields dependencies
     create or alter procedure sp1 as
     begin
         exit;
     end
     ^
-    
+
     set term ;^
     commit;
-    
+
     -- Here we create new attachment using specification of some non-null data in ROLE clause:
     set term ^;
     execute block as
@@ -114,7 +99,7 @@ test_script_1 = """
     ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1, substitutions=substitutions)
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
@@ -135,13 +120,6 @@ def test_1(act_1: Action):
     assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost:'), ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     set term ^;
@@ -151,25 +129,25 @@ test_script_2 = """
       suspend;
     end
     ^
-    
+
     create or alter procedure sp2 returns (x int) as
     begin
       select x from sp1 into :x;
       suspend;
     end
     ^
-    
+
     create or alter procedure sp3 returns (x int)  as
     begin
       select x from sp2 into :x;
       suspend;
     end
     ^
-    
+
     commit
     ^
-    
-    
+
+
     -- this is wrong but engine still didn't track procedure's fields dependencies
     create or alter procedure sp1
     as
@@ -177,10 +155,10 @@ test_script_2 = """
       exit;
     end
     ^
-    
+
     set term ;^
     commit;
-    
+
     -- Here we create new attachment using specification of some non-null data in ROLE clause:
     set term ^;
     execute block as
@@ -210,7 +188,7 @@ test_script_2 = """
     commit;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2, substitutions=substitutions)
 
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 42000

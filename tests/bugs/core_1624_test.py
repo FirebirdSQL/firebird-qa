@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1624
-# title:        MERGE not correctly worked with parameters in MATCHING clause
-# decription:   
-# tracker_id:   CORE-1624
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2045
+ISSUE:       2045
+TITLE:       MERGE not correctly worked with parameters in MATCHING clause
+DESCRIPTION:
+JIRA:        CORE-1624
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table src(id int, x int);
     recreate table tgt(id int, x int);
     commit;
@@ -31,7 +24,7 @@ test_script_1 = """
     commit;
     insert into tgt values(2, 10);
     insert into tgt values(3, 20);
-    commit;  
+    commit;
     set term ^;
     execute block as
       declare v_stt varchar(255);
@@ -40,7 +33,7 @@ test_script_1 = """
           'merge into tgt t using src s on s.id = t.id '
           || 'when matched then update set t.x = s.x + ?'
           || 'when NOT matched then insert values(s.id, s.id + ?)';
-    
+
       execute statement (v_stt) ( 1000, 20000 );
     end
     ^
@@ -48,9 +41,9 @@ test_script_1 = """
     select * from tgt;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
               ID            X
     ============ ============
                2         1200
@@ -59,9 +52,9 @@ expected_stdout_1 = """
                4        20004
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

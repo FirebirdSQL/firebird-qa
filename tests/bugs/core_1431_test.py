@@ -1,40 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1431
-# title:        Greek characters in cp1251 vs uppercasing
-# decription:
-#                   02-mar-2021. Re-implemented in ordeer to have ability to run this test on Linux.
-#                   We run 'init_script' using charset = utf8 but then run separate ISQL-process
-#                   with request to establish connection using charset = WIN1251.
-#
-#                   NOTE-1.
-#                   Script that must be executed by ISQL does NOT contain any non-ascii characters.
-#                   We run query that produces ASCII-ONLY output with *description* of characters
-#                   which have no 'partners' when appying upper() function (e.g., ellipsis, euro sign etc).
-#
-#                   NOTE-2.
-#                   Character 'SOFT HYPHEN' WAS EXCLUDED from check list: it can not be properly interpreted
-#                   on Linux when trying to insert this character:
-#                   "UnicodeDecodeError: 'utf8' codec can't decode byte 0xc2 in position ... invalid continuation byte"
-#
-#                   Checked on:
-#                   * Windows: 4.0.0.2377, 3.0.8.33420, 2.5.9.27152
-#                   * Linux:   4.0.0.2377, 3.0.8.33415
-#
-# tracker_id:   CORE-1431
-# min_versions: ['2.1.7']
-# versions:     2.1.7
-# qmid:
+
+"""
+ID:          issue-1849
+ISSUE:       1849
+TITLE:       Greek characters in cp1251 vs uppercasing
+DESCRIPTION:
+JIRA:        CORE-1431
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.7
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
 	recreate table c1251(c char(1) character set win1251, id int, descr varchar(80) );
 	commit;
 
@@ -172,45 +149,20 @@ init_script_1 = """
 	commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1, charset='UTF8')
+db = db_factory(init=init_script, charset='UTF8')
 
-# test_script_1
-#---
-#
-#
-#  db_conn.close()
-#
-#  sql_cmd='''
-#      set names WIN1251;
-#      connect '%(dsn)s' user '%(user_name)s' password '%(user_password)s';
-#  	set list on;
-#  	-- Test: following statement should pass OK, w/o exceptions:
-#  	select min(t.descr) as has_no_upper_case_equiv
-#  	-- PREVIOUSLY we use here: "upper(c) has_no_upper_case_equiv" // can be run on Windows only
-#  	from c1251 t
-#  	group by upper(t.c)
-#  	having count(*) <> 2
-#  	;
-#  ''' % dict(globals(), **locals())
-#
-#  runProgram( 'isql', [ '-q' ], sql_cmd)
-#
-#
-#---
-
-test_script_1 = """
+test_script = """
 set list on;
 -- Test: following statement should pass OK, w/o exceptions:
 select min(t.descr) as has_no_upper_case_equiv
--- PREVIOUSLY we use here: "upper(c) has_no_upper_case_equiv" // can be run on Windows only
 from c1251 t
 group by upper(t.c)
 having count(*) <> 2 ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     HAS_NO_UPPER_CASE_EQUIV         LOW 9 SINGLE QUOTE
     HAS_NO_UPPER_CASE_EQUIV         LOW 9 DOUBLE QUOTE
     HAS_NO_UPPER_CASE_EQUIV         ELLIPSIS
@@ -244,10 +196,10 @@ expected_stdout_1 = """
     HAS_NO_UPPER_CASE_EQUIV         RIGHT ANGLE QUOTATION MARK
 """
 
-@pytest.mark.version('>=2.1.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute(charset='WIN1251')
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute(charset='WIN1251')
+    assert act.clean_stdout == act.clean_expected_stdout
 
 

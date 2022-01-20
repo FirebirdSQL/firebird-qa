@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1550
-# title:        Unnecessary index scan happens when the same index is mapped to both WHERE and ORDER BY clauses
-# decription:   
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         bugs.core_1550
+
+"""
+ID:          issue-1967
+ISSUE:       1967
+TITLE:       Unnecessary index scan happens when the same index is mapped to both WHERE and ORDER BY clauses
+DESCRIPTION:
+JIRA:        CORE-1550
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(id int);
     commit;
     insert into test(id) select r.rdb$relation_id from rdb$relations r;
@@ -35,15 +28,15 @@ test_script_1 = """
     order by id;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (TEST ORDER TEST_ID)
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

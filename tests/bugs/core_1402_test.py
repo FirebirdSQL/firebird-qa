@@ -1,47 +1,40 @@
 #coding:utf-8
-#
-# id:           bugs.core_1402
-# title:        CREATE VIEW without column list when UNION is used
-# decription:   
-# tracker_id:   CORE-1402
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-1820
+ISSUE:       1820
+TITLE:       CREATE VIEW without column list when UNION is used
+DESCRIPTION:
+JIRA:        CORE-1402
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('V_SOURCE.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate view V1 as
     select d.rdb$relation_id from rdb$database d
     union all
     select d.rdb$relation_id from rdb$database d;
-    
+
     recreate view V2 as
     select d.rdb$relation_id as q from rdb$database d
     union all
     select d.rdb$relation_id as w from rdb$database d;
-    
+
     recreate view V3 as
     select a from (select 1 a from rdb$database)
     union all
     select b from (select 1 b from rdb$database);
-    
+
     recreate view V4 as
     select a as a1 from (select 1 a from rdb$database)
     union all
     select b as b1 from (select 1 b from rdb$database);
     commit;
-    
+
     set blob all;
     set list on;
 
@@ -61,9 +54,9 @@ test_script_1 = """
     order by v_name, f_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('V_SOURCE.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     V_NAME                          V1
     V_SOURCE                        6:1e8
     select d.rdb$relation_id from rdb$database d
@@ -71,7 +64,7 @@ expected_stdout_1 = """
     select d.rdb$relation_id from rdb$database d
     F_NAME                          RDB$RELATION_ID
     F_TYPE                          7
-    
+
     V_NAME                          V2
     V_SOURCE                        6:1eb
     select d.rdb$relation_id as q from rdb$database d
@@ -79,7 +72,7 @@ expected_stdout_1 = """
     select d.rdb$relation_id as w from rdb$database d
     F_NAME                          Q
     F_TYPE                          7
-    
+
     V_NAME                          V3
     V_SOURCE                        6:2ce
     select a from (select 1 a from rdb$database)
@@ -87,7 +80,7 @@ expected_stdout_1 = """
     select b from (select 1 b from rdb$database)
     F_NAME                          A
     F_TYPE                          8
-    
+
     V_NAME                          V4
     V_SOURCE                        6:2d1
     select a as a1 from (select 1 a from rdb$database)
@@ -97,9 +90,9 @@ expected_stdout_1 = """
     F_TYPE                          8
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

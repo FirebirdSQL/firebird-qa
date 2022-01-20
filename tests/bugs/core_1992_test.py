@@ -1,51 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_1992
-# title:        bad BLR -- invalid stream for union select
-# decription:   
-#                   06.02.2019. Test was refactored.
-#                   CONFIRMED bug on WI-V2.5.1.26351, got:
-#                       Statement failed, SQLSTATE = HY000
-#                       bad BLR -- invalid stream
-#                   No error since WI-V2.5.2.26540.
-#                   
-#                   Old version of test for this ticket used dialects 1 and 3, separately, in order to check all datatypes.
-#                   This was excessive because bug was not related to dialect, thus I decided to remove old .fbt files and
-#                   use new version. Beside, query for this test was adjusted for readability - added CTE instead of nested
-#                   sub-queries.
-#               
-#                   ::: NB :::
-#                   We have no care about correctness of query results here. 
-#                   For this reason all rows are count'ed and we only verify that sign(count(*)) = 1, and no more checks.
-#               
-#                   Checked on:
-#                       2.5.9.27127: OK, 0.546s.
-#                       3.0.5.33097: OK, 4.172s.
-#                       4.0.0.1421: OK, 3.328s.
-#                 
-# tracker_id:   CORE-1992
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         None
+
+"""
+ID:          issue-2429
+ISSUE:       2429
+TITLE:       bad BLR -- invalid stream for union select
+DESCRIPTION:
+JIRA:        CORE-1992
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.2
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     set term ^;
     create or alter procedure sp01(
-        a_01 smallint, 
+        a_01 smallint,
         a_02 int,
         a_03 bigint,
         a_04 numeric(9,0),
@@ -59,7 +32,7 @@ test_script_1 = """
         a_12 char(2),
         a_13 blob
     ) returns (
-        o_01 smallint, 
+        o_01 smallint,
         o_02 int,
         o_03 bigint,
         o_04 numeric(9,0),
@@ -406,15 +379,15 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RESULT                          1
 """
 
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

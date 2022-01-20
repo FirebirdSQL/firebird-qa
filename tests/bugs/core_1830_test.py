@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1830
-# title:        Possible index corruption with multiply updates of the same record in the same transaction and using of savepoints
-# decription:   
-# tracker_id:   CORE-1830
-# min_versions: []
-# versions:     2.5
-# qmid:         
+
+"""
+ID:          issue-2259
+ISSUE:       2259
+TITLE:       Possible index corruption with multiply updates of the same record in the same transaction and using of savepoints
+DESCRIPTION:
+JIRA:        CORE-1830
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = [('column.*', 'column x'), ('[ \t]+', ' '), ('-At block line: [\\d]+, col: [\\d]+', '')]
-
-init_script_1 = """
+init_script = """
 	create table a(id char(1), name varchar(255));
 
 	create index idx_a on a (id);
@@ -27,9 +22,9 @@ init_script_1 = """
 	commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
 	select * from a where id = '1';
 	set term ^;
@@ -47,33 +42,36 @@ test_script_1 = """
 	select * from a ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+                 substitutions=[('column.*', 'column x'), ('[ \t]+', ' '),
+                                ('-At block line: [\\d]+, col: [\\d]+', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	ID                              1
 	NAME                            <null>
-	
+
 	ID                              1
 	NAME                            <null>
-	
+
 	ID                              1
 	NAME                            <null>
-	
+
 	ID                              1
-	NAME                            <null>  
+	NAME                            <null>
 """
-expected_stderr_1 = """
+
+expected_stderr = """
 	Statement failed, SQLSTATE = HY000
 	exception 1
 	-EX_PERM
-	-Something wrong occurs...  
+	-Something wrong occurs...
 """
 
 @pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

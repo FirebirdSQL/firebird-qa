@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1784
-# title:        Error with EXECUTE PROCEDURE inside EXECUTE STATEMENT
-# decription:   
-# tracker_id:   CORE-1784
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2211
+ISSUE:       2211
+TITLE:       Error with EXECUTE PROCEDURE inside EXECUTE STATEMENT
+DESCRIPTION:
+JIRA:        CORE-1784
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """set term ^ ;
+init_script = """set term ^ ;
 create procedure p1 returns (n1 integer, n2 integer)
 as
 begin
@@ -28,9 +23,9 @@ set term ; ^
 
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """set term ^ ;
+test_script = """set term ^ ;
 
 execute block returns (n1 integer, n2 integer)
 as
@@ -43,18 +38,18 @@ end^
 set term ; ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
           N1           N2
 ============ ============
          111          222
 
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

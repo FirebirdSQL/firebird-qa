@@ -1,29 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_1609
-# title:        PSQL output parameter size limited
-# decription:   
-# tracker_id:   CORE-1609
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-2030
+ISSUE:       2030
+TITLE:       PSQL output parameter size limited
+DESCRIPTION:
+JIRA:        CORE-1609
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set term ^;
-    
+
     create or alter procedure spro$parse_tag1 as begin end
     ^
     create or alter procedure spro$parse_tag2 as begin end
@@ -32,7 +25,7 @@ test_script_1 = """
     ^
     commit
     ^
-    
+
     execute block as
     begin
         execute statement 'drop domain spro$long_string';
@@ -41,12 +34,12 @@ test_script_1 = """
     ^
     commit
     ^
-    
+
     create domain spro$long_string as varchar(32765) character set none collate none
     ^
     commit
     ^
-    
+
     create or alter procedure spro$parse_tag1(
         str_in type of spro$long_string,
         delimeter varchar(10))
@@ -57,7 +50,7 @@ test_script_1 = """
         suspend;
     end
     ^
-    
+
     create or alter procedure spro$parse_tag2(
         str_in type of spro$long_string,
         delimeter varchar(10))
@@ -123,7 +116,7 @@ test_script_1 = """
         ,str_out48 varchar(32765)
         ,str_out49 varchar(32765)
         ,str_out50 varchar(32765)
-    ) as 
+    ) as
     begin
         suspend;
     end
@@ -132,10 +125,11 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

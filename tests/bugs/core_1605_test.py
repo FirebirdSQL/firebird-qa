@@ -1,28 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_1605
-# title:        Bugcheck 232 (invalid operation) for an aggregated query
-# decription:   
-# tracker_id:   CORE-1605
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2026
+ISSUE:       2026
+TITLE:       Bugcheck 232 (invalid operation) for an aggregated query
+DESCRIPTION:
+JIRA:        CORE-1605
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test (id int);
-    
+
     set term ^;
     create or alter procedure sp_test (id int) returns (result int) as
     begin
@@ -30,15 +23,15 @@ test_script_1 = """
       suspend;
     end
     ^
-    
+
     set term ;^
     commit;
-    
+
     insert into test values(1);
     insert into test values(2);
     insert into test values(3);
     commit;
-    
+
     select
         sum( id ),
         sum( (select result from sp_test(id)) )
@@ -46,9 +39,9 @@ test_script_1 = """
     group by 2;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -56,8 +49,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

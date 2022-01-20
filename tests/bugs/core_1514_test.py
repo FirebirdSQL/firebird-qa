@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1514
-# title:        Many new 2.1 built in functions have incorrect NULL semantics
-# decription:   
-# tracker_id:   CORE-1514
-# min_versions: []
-# versions:     2.5
-# qmid:         bugs.core_1514
+
+"""
+ID:          issue-1930
+ISSUE:       1930
+TITLE:       Many new 2.1 built in functions have incorrect NULL semantics
+DESCRIPTION:
+JIRA:        CORE-1514
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SELECT ABS(null) from rdb$database;
+test_script = """SELECT ABS(null) from rdb$database;
 SELECT ACOS(null) from rdb$database;
 SELECT ASCII_VAL(null) from rdb$database;
 SELECT ASIN(null) from rdb$database;
@@ -46,9 +39,9 @@ SELECT TAN(null) from rdb$database;
 SELECT TANH(null) from rdb$database;
 select trunc(1, cast(null as integer)) from rdb$database;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
          ABS
 ============
       <null>
@@ -175,9 +168,9 @@ ASCII_VAL
 
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

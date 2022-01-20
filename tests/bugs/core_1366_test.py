@@ -1,65 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1366
-# title:        French insensitive collation FR_FR_CI_AI
-# decription:   
-#                   ::: NOTE :::
-#               	In order to check correctness of following statements under ISQL itself (NOT under fbt_run), do following:
-#               	1) open some text editor that supports charset = ISO8859_1 and set encoding for new document = ISO 8859-1
-#               	  (e.g. in Notepad++ pull-down menu: "Encoding / Character sets / Western european / ISO 8859_1")
-#               	2) type commands statements that contains diacritical marks (accents) and save to .sql
-#               	3) open this .sql in FAR editor and ensure that letters with diacritical marks are displayed as SINGLE characters
-#               	4) run isql -i <script_encoded_in_iso8859_1.sql>
-#               	In order to run this script under fbt_run:
-#               	1) open Notepad++ new .fbt document and set Encoding = "UTF8 without BOM"
-#               	2) copy-paste text from <script_encoded_in_iso8859_1.sql>, ensure that letters with diacritical marks are readable
-#               	   (it should be pasted here in UTF8 encoding)
-#               	3) add in `expected_stdout` section required output by copy-paste from result of isql -i <script_encoded_in_iso8859_1.sql>
-#               	   (it should be pasted here in UTF8 encoding)
-#               	4) save .fbt and ensure that it was saved in UTF8 encoding, otherwise exeption like
-#               	   "UnicodeDecodeError: 'utf8' codec can't decode byte 0xc3 in position 621: invalid continuation byte" will raise.
-#                
-#               	14.08.2020:
-#               	removed usage of generator because gen_id() result differs in FB 4.x vs previous versions since fixed core-6084.
-#               	Use hard-coded values for IDs.
-#               	Checked on:
-#               		4.0.0.2151 SS: 1.672s.
-#               		3.0.7.33348 SS: 0.984s.
-#               		2.5.9.27150 SC: 0.277s. 
-#               
-#               	28.02.2021
-#               	Changed connection charset to UTF8 otherwise on Linux this test leads to 'ERROR' with issuing:
-#               	====
-#                       Statement failed, SQLSTATE = 42000
-#                       Dynamic SQL Error
-#                       -SQL error code = -104
-#                       -Token unknown - line 4, column 1
-#                       -e
-#                       Statement failed, SQLSTATE = 42000
-#                       Dynamic SQL Error
-#                       -SQL error code = -104
-#                       -Token unknown - line 3, column 1
-#                       -o
-#                       . . .
-#                   ====
-#                   Checked again on:
-#                   1) Windows: 4.0.0.2372; 3.0.8.33416
-#                   2) Linux:   4.0.0.2377
-#                
-# tracker_id:   CORE-1366
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-1784
+ISSUE:       1784
+TITLE:       French insensitive collation FR_FR_CI_AI
+DESCRIPTION:
+JIRA:        CORE-1366
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = [('=.*', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """
+init_script = """
 	recreate table test(id int);
 	commit;
 
@@ -81,27 +33,27 @@ init_script_1 = """
 	commit;
 
 	-- http://french.about.com/od/pronunciation/a/accents.htm
-	
+
 	-- ### ONCE AGAIN ###
 	-- 1) for checking this under ISQL following must be encoded in ISO8859_1
 	-- 2) for running under fbt_run utility following must be encoded in UTF8.
-	
+
 	-- (cedilla) is found only on the letter "C":
 	insert into test(id, cf) values( 1010, 'ç');
-	
-	-- (acute accent) can only be on an "E" 
+
+	-- (acute accent) can only be on an "E"
 	insert into test(id, cf) values( 1020, 'é');
-	
+
 	-- (grave accent) can be found on an "A", "E", "U"
 	insert into test(id, cf) values( 1030, 'à');
 	insert into test(id, cf) values( 1040, 'è');
 	insert into test(id, cf) values( 1050, 'ù');
-	
+
 	-- (dieresis or umlaut) can be on an E, I and U
 	insert into test(id, cf) values( 1060, 'ë');
 	insert into test(id, cf) values( 1070, 'ï');
 	insert into test(id, cf) values( 1080, 'ü');
-	
+
 	-- (circumflex) can be on an A, E, I, O and U
 	insert into test(id, cf) values( 1090, 'â');
 	insert into test(id, cf) values( 1110, 'ê');
@@ -122,18 +74,18 @@ init_script_1 = """
 
 """
 
-db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='ISO8859_1', init=init_script)
 
-test_script_1 = """
+test_script = """
 	select n.id n_id, n.nf, t.cf, t.id t_id
 	from noac n
-	left join test t on n.nf is not distinct from t.cf 
+	left join test t on n.nf is not distinct from t.cf
 	order by n_id, t_id;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	N_ID NF         CF                 T_ID
 	============ ========== ========== ============
 	1150 A          à                  1030
@@ -148,12 +100,12 @@ expected_stdout_1 = """
 	1190 O          ô                  1140
 	1200 U          ù                  1050
 	1200 U          ü                  1080
-	1200 U          û                  1130  
+	1200 U          û                  1130
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

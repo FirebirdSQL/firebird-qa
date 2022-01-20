@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1343
-# title:        Bug with a simple case and a subquery
-# decription:   
-# tracker_id:   CORE-1343
-# min_versions: []
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-1762
+ISSUE:       1762
+TITLE:       Bug with a simple case and a subquery
+DESCRIPTION:
+JIRA:        CORE-1343
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """--works fine (searched case with a subquery)
+test_script = """--works fine (searched case with a subquery)
 
 SELECT
   CASE
@@ -64,9 +57,9 @@ context already in use (BLR error).
 */
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 CASE
 ======
 Y
@@ -83,9 +76,9 @@ Y
 
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

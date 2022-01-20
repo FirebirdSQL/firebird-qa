@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1750
-# title:        Include information about context variables into the monitoring tables
-# decription:   
-# tracker_id:   CORE-1750
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2175
+ISSUE:       2175
+TITLE:       Include information about context variables into the monitoring tables
+DESCRIPTION:
+JIRA:        CORE-1750
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 	set count on;
 	select mon$variable_name, mon$variable_value from mon$context_variables;
@@ -44,22 +37,22 @@ test_script_1 = """
 	^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	Records affected: 0
 
 	MON$VARIABLE_NAME               SESSION_LEVEL_VARIABLE
 	MON$VARIABLE_VALUE              1
 	MON$VARIABLE_NAME               TRANSACTION_LEVEL_VARIABLE
 	MON$VARIABLE_VALUE              1
-	
-	Records affected: 2  
+
+	Records affected: 2
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

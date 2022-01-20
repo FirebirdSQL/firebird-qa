@@ -1,26 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_1749
-# title:        DDL statement with AUTODDL ON won't show statistics
-# decription:   
-# tracker_id:   CORE-1749
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2174
+ISSUE:       2174
+TITLE:       DDL statement with AUTODDL ON won't show statistics
+DESCRIPTION:
+JIRA:        CORE-1749
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+substitutions = [('^Current memory.*', ''), ('^Delta memory.*', ''),
+                 ('^Max memory.*', ''), ('^Elapsed time.*', ''), ('^Buffers.*', ''),
+                 ('^Reads.*', ''), ('^Writes.*', ''), ('^Elapsed time.*', ''),
+                 ('^Cpu.*', ''), ('^Fetches.*', 'STATS')]
 
-substitutions_1 = [('^Current memory.*', ''), ('^Delta memory.*', ''), ('^Max memory.*', ''), ('^Elapsed time.*', ''), ('^Buffers.*', ''), ('^Reads.*', ''), ('^Writes.*', ''), ('^Elapsed time.*', ''), ('^Cpu.*', ''), ('^Fetches.*', 'STATS')]
+init_script = """"""
 
-init_script_1 = """"""
+db = db_factory(init=init_script)
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """set stat on;
+test_script = """set stat on;
 
 create generator A;
 
@@ -31,16 +31,16 @@ commit;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """STATS
+expected_stdout = """STATS
 STATS
 STATS
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

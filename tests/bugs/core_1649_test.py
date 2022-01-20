@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1649
-# title:        AV when recursive query used MERGE JOIN in execution plan
-# decription:   
-# tracker_id:   CORE-1649
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1649
+
+"""
+ID:          issue-2073
+ISSUE:       2073
+TITLE:       AV when recursive query used MERGE JOIN in execution plan
+DESCRIPTION:
+JIRA:        CORE-1649
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE XXX (
+init_script = """CREATE TABLE XXX (
     ID INTEGER,
     L INTEGER,
     R INTEGER,
@@ -78,9 +73,9 @@ INSERT INTO CON (TYP, XID) VALUES (1, 200053);
 
 COMMIT;"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """with recursive
+test_script = """with recursive
 downtree (lvl, id, l, r)
 as
 (-- base
@@ -100,9 +95,9 @@ as
 select * from downtree;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
          LVL           ID            L            R
 ============ ============ ============ ============
           -1            1            1           68
@@ -111,9 +106,9 @@ expected_stdout_1 = """
 
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

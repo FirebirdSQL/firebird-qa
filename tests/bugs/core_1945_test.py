@@ -1,49 +1,42 @@
 #coding:utf-8
-#
-# id:           bugs.core_1945
-# title:        Custom attribute for collation to sort numbers in numeric order
-# decription:   
-# tracker_id:   CORE-1945
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2384
+ISSUE:       2384
+TITLE:       Custom attribute for collation to sort numbers in numeric order
+DESCRIPTION:
+JIRA:        CORE-1945
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db_1 = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	-- Result were checked on LI-T3.0.0.31827 (64x) and WI-T3.0.0.31836 (32x).
 	-- ::: NOTE ::: FB 2.5 (at least build 2.5.5.26870 what has been checked)
 	-- produces WRONG output for such rows when using collation CI_AI:
-	-- d111                                                                             
-	-- ð1                                                                              
-	-- Ð11                                                                             
-	-- Ð1111  
-	-- o7                                                                               
-	-- Õ7777                                                                           
-	-- Ø77                                                                             
+	-- d111
+	-- ð1
+	-- Ð11
+	-- Ð1111
+	-- o7
+	-- Õ7777
+	-- Ø77
 	-- ø777
 	-- (it seems that trouble somehow related to letters with diagonal strokes as diacritical addition: Ð and Ø)
 
 	-- Proper order:
-	-- ð1                                                                              
-	-- Ð11                                                                             
-	-- d111                                                                             
-	-- Ð1111 
-	-- o7                                                                               
-	-- Ø77                                                                             
-	-- ø777                                                                            
-	-- Õ7777 
-	
+	-- ð1
+	-- Ð11
+	-- d111
+	-- Ð1111
+	-- o7
+	-- Ø77
+	-- ø777
+	-- Õ7777
+
 	recreate table test(s varchar(50));
 	commit;
 	set term ^;
@@ -105,9 +98,9 @@ test_script_1 = """
 	select s_ciai from test order by s_ciai;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db_1', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	S_NORM                          a9
 	S_NORM                          A99
 	S_NORM                          a999
@@ -182,8 +175,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

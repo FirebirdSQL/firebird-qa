@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1592
-# title:        Altering procedure parameters can lead to unrestorable database
-# decription:   
-#                  Checked on 4.0.0.1193 - works OK (DOES raise error during compilation).
-#                
-# tracker_id:   CORE-1592
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-2013
+ISSUE:       2013
+TITLE:       Altering procedure parameters can lead to unrestorable database
+DESCRIPTION:
+JIRA:        CORE-1592
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set list on;
     set term ^;
@@ -32,7 +23,7 @@ test_script_1 = """
     ^
     create or alter procedure p1 returns ( x1 integer ) as begin
     x1 = 10; suspend;
-    end 
+    end
     ^
     create or alter procedure p2 returns ( x1 integer ) as begin
     for select x1 from p1 into :x1 do suspend;
@@ -49,9 +40,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
@@ -60,8 +51,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

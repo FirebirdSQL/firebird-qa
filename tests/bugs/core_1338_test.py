@@ -1,26 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_1338
-# title:        Problem with view , computed field and functions
-# decription:   
-# tracker_id:   CORE-1338
-# min_versions: []
-# versions:     2.1
-# qmid:         bugs.core_1338
+
+"""
+ID:          issue-1757
+ISSUE:       1757
+TITLE:       Problem with view, computed field and functions
+DESCRIPTION:
+  Original ticket name: 335544721 when selecting view with round
+JIRA:        CORE-1338
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """create table a (a numeric(15,15));
+test_script = """create table a (a numeric(15,15));
 
 insert into a values(2);
 
@@ -29,18 +23,18 @@ create view b(a) as select round(a,2) from a;
 select * from b;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
                     A
 =====================
     2.000000000000000
 
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

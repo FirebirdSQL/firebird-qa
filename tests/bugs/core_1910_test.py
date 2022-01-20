@@ -1,28 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_1910
-# title:        Not valid fields in MERGE's insert clause are allowed
-# decription:   
-# tracker_id:   CORE-1910
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2341
+ISSUE:       2341
+TITLE:       Not valid fields in MERGE's insert clause are allowed
+DESCRIPTION:
+JIRA:        CORE-1910
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = [('column.*', '')]
-
-init_script_1 = """create table t1 (n integer, x integer);
+init_script = """create table t1 (n integer, x integer);
 create table t2 (a integer, b integer);
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """merge into t1 t1
+test_script = """merge into t1 t1
   using (select * from t2) t2
     on t1.n = t2.a
     when matched then
@@ -31,9 +26,9 @@ test_script_1 = """merge into t1 t1
       insert (a, x) values (1, 2); -- "a" is not a field of t1
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('column.*', '')])
 
-expected_stderr_1 = """Statement failed, SQLSTATE = 42S22
+expected_stderr = """Statement failed, SQLSTATE = 42S22
 Dynamic SQL Error
 -SQL error code = -206
 -Column unknown
@@ -41,9 +36,9 @@ Dynamic SQL Error
 -At line 7, column 15
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

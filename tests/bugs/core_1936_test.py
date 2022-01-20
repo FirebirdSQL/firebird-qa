@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1936
-# title:        The log(base, number) built-in function doesn't check parameters and delivers NAN values instead.
-# decription:   
-# tracker_id:   CORE-1936
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2373
+ISSUE:       2373
+TITLE:       The log(base, number) built-in function doesn't check parameters and delivers NAN values instead
+DESCRIPTION:
+JIRA:        CORE-1936
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """select log(2, 00) from rdb$database;
+test_script = """select log(2, 00) from rdb$database;
 select log(2, -2) from rdb$database;
 select log(0, 1) from rdb$database;
 select log(0, 2) from rdb$database;
@@ -29,9 +22,9 @@ select log(-1, 0) from rdb$database;
 select log(-1, -1) from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
                     LOG
 =======================
 
@@ -53,7 +46,8 @@ expected_stdout_1 = """
                     LOG
 =======================
 """
-expected_stderr_1 = """Statement failed, SQLSTATE = 42000
+
+expected_stderr = """Statement failed, SQLSTATE = 42000
 
 expression evaluation not supported
 
@@ -98,10 +92,10 @@ expression evaluation not supported
 """
 
 @pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

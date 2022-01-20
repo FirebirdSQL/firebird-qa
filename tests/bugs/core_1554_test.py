@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1554
-# title:        select ... where ... <> ALL (select ... join ...) bug
-# decription:   
-# tracker_id:   
-# min_versions: ['2.1.7']
-# versions:     2.1.7
-# qmid:         bugs.core_1554
+
+"""
+ID:          issue-1971
+ISSUE:       1971
+TITLE:       select ... where ... <> ALL (select ... join ...) bug
+DESCRIPTION:
+JIRA:        CORE-1554
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select
     (
@@ -43,15 +36,15 @@ test_script_1 = """
     from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CNT                             0
 """
 
-@pytest.mark.version('>=2.1.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,28 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_1811
-# title:        Incorrect parser's reaction to the unquoted usage of the keyword "VALUE"
-# decription:   
-# tracker_id:   CORE-1811
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2241
+ISSUE:       2241
+TITLE:       Incorrect parser's reaction to the unquoted usage of the keyword "VALUE"
+DESCRIPTION:
+JIRA:        CORE-1811
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """recreate table T ( "VALUE" int ) ;
+init_script = """recreate table T ( "VALUE" int ) ;
 commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """delete from T where "VALUE" = 1;
+test_script = """delete from T where "VALUE" = 1;
 -- OK
 
 delete from T where value = 1 ;
@@ -34,9 +29,9 @@ delete from T where value = ? ;
 -- There should be the same error as previously (Illegal use of keyword VALUE)
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """Statement failed, SQLSTATE = 42000
+expected_stderr = """Statement failed, SQLSTATE = 42000
 Dynamic SQL Error
 -SQL error code = -901
 -Illegal use of keyword VALUE
@@ -46,9 +41,9 @@ Dynamic SQL Error
 -Illegal use of keyword VALUE
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

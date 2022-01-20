@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_1989
-# title:        UTF8 UNICODE_CI collate can´t be used in foreing key constraint
-# decription:   
-# tracker_id:   CORE-1989
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2426
+ISSUE:       2426
+TITLE:       UTF8 UNICODE_CI collate can´t be used in foreing key constraint
+DESCRIPTION:
+JIRA:        CORE-1989
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """-- Domains
+init_script = """-- Domains
 
 CREATE DOMAIN INT64 AS
 BIGINT;
@@ -93,9 +88,9 @@ ALTER TABLE USERS_IN_ROLES_CS ADD CONSTRAINT FK_USERS_IN_ROLES_USERS_CS FOREIGN 
 
 """
 
-db_1 = db_factory(page_size=16384, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """insert into USERS(USER_NAME, APPLICATION_NAME) values('User', 'App');
+test_script = """insert into USERS(USER_NAME, APPLICATION_NAME) values('User', 'App');
 insert into USERS_CS(USER_NAME, APPLICATION_NAME) values('User', 'App');
 insert into ROLES(ROLE_NAME, APPLICATION_NAME) values('Role', 'App');
 insert into ROLES_CS(ROLE_NAME, APPLICATION_NAME) values('Role', 'App');
@@ -107,10 +102,11 @@ insert into USERS_IN_ROLES(USER_NAME, ROLE_NAME, APPLICATION_NAME) values('User'
 commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

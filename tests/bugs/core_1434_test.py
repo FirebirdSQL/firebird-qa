@@ -1,27 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_1434
-# title:        Incorrect result with EXECUTE STATEMENT and VARCHAR columns
-# decription:   Last two bytes of VARCHAR columns are lost.
-# tracker_id:   CORE-1434
-# min_versions: []
-# versions:     2.0.2
-# qmid:         bugs.core_1434
+
+"""
+ID:          issue-1852
+ISSUE:       1852
+TITLE:       Incorrect result with EXECUTE STATEMENT and VARCHAR columns
+DESCRIPTION: Last two bytes of VARCHAR columns are lost.
+JIRA:        CORE-1434
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.2
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    set list on; 
+test_script = """
+    set list on;
     set term ^;
     execute block returns (res varchar(31))
      as
@@ -38,44 +31,44 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-    RES                             RDB$PAGES               
-    RES                             RDB$DATABASE            
-    RES                             RDB$FIELDS              
-    RES                             RDB$INDEX_SEGMENTS      
-    RES                             RDB$INDICES             
-    RES                             RDB$RELATION_FIELDS     
-    RES                             RDB$RELATIONS           
-    RES                             RDB$VIEW_RELATIONS      
-    RES                             RDB$FORMATS             
-    RES                             RDB$SECURITY_CLASSES    
-    RES                             RDB$FILES               
-    RES                             RDB$TYPES               
-    RES                             RDB$TRIGGERS            
-    RES                             RDB$DEPENDENCIES        
-    RES                             RDB$FUNCTIONS           
-    RES                             RDB$FUNCTION_ARGUMENTS  
-    RES                             RDB$FILTERS             
-    RES                             RDB$TRIGGER_MESSAGES    
-    RES                             RDB$USER_PRIVILEGES     
-    RES                             RDB$TRANSACTIONS        
-    RES                             RDB$GENERATORS          
-    RES                             RDB$FIELD_DIMENSIONS    
+expected_stdout = """
+    RES                             RDB$PAGES
+    RES                             RDB$DATABASE
+    RES                             RDB$FIELDS
+    RES                             RDB$INDEX_SEGMENTS
+    RES                             RDB$INDICES
+    RES                             RDB$RELATION_FIELDS
+    RES                             RDB$RELATIONS
+    RES                             RDB$VIEW_RELATIONS
+    RES                             RDB$FORMATS
+    RES                             RDB$SECURITY_CLASSES
+    RES                             RDB$FILES
+    RES                             RDB$TYPES
+    RES                             RDB$TRIGGERS
+    RES                             RDB$DEPENDENCIES
+    RES                             RDB$FUNCTIONS
+    RES                             RDB$FUNCTION_ARGUMENTS
+    RES                             RDB$FILTERS
+    RES                             RDB$TRIGGER_MESSAGES
+    RES                             RDB$USER_PRIVILEGES
+    RES                             RDB$TRANSACTIONS
+    RES                             RDB$GENERATORS
+    RES                             RDB$FIELD_DIMENSIONS
     RES                             RDB$RELATION_CONSTRAINTS
-    RES                             RDB$REF_CONSTRAINTS     
-    RES                             RDB$CHECK_CONSTRAINTS   
-    RES                             RDB$LOG_FILES           
-    RES                             RDB$PROCEDURES          
+    RES                             RDB$REF_CONSTRAINTS
+    RES                             RDB$CHECK_CONSTRAINTS
+    RES                             RDB$LOG_FILES
+    RES                             RDB$PROCEDURES
     RES                             RDB$PROCEDURE_PARAMETERS
-    RES                             RDB$CHARACTER_SETS      
-    RES                             RDB$COLLATIONS          
+    RES                             RDB$CHARACTER_SETS
+    RES                             RDB$COLLATIONS
 """
 
-@pytest.mark.version('>=2.0.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

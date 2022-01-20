@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_1356
-# title:        TYPE OF COLUMN in PSQL
-# decription:   
-# tracker_id:   CORE-1356
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-1774
+ISSUE:       1774
+TITLE:       TYPE OF COLUMN in PSQL
+DESCRIPTION:
+JIRA:        CORE-1356
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_ins_person as begin end;
     commit;
     recreate table person (
@@ -43,10 +36,11 @@ test_script_1 = """
     --show procedure sp_ins_person;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

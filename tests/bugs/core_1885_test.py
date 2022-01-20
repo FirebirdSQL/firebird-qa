@@ -1,25 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_1885
-# title:        CREATE COLLATION connection lost under Posix
-# decription:   CREATE COLLATION connection lost under Posix when using LOCALE option
-# tracker_id:   CORE-1885
-# min_versions: []
-# versions:     3.0, 4.0
-# qmid:         bugs.core_1885-250
+
+"""
+ID:          issue-897
+ISSUE:       897
+TITLE:       CREATE COLLATION connection lost under Posix
+DESCRIPTION: CREATE COLLATION connection lost under Posix when using LOCALE option
+NOTES:
+[15.1.2022] pcisar
+  For 3.0.7 on Linux this PASS (uses system ICU) but on Windows (includes ICU 52)
+  it FAIL unless newer ICU (63) is installed. Hence as this issue was POSIX-only,
+  we'll not run it on Windows.
+JIRA:        CORE-1885
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+db = db_factory()
+
+substitutions = [('SPECIFIC_ATTR_BLOB_ID.*', ''),
+                 ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
+                 ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
 
 # version: 3.0
-# resources: None
-
-substitutions_1 = [('SPECIFIC_ATTR_BLOB_ID.*', ''),
-                   ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     set list on;
@@ -43,7 +46,7 @@ test_script_1 = """
         and rc.rdb$collation_name = upper('unicode_enus_ci_4x');
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1, substitutions=substitutions)
 
 expected_stdout_1 = """
     RDB$COLLATION_NAME              UNICODE_ENUS_CI_4X
@@ -60,10 +63,6 @@ expected_stdout_1 = """
     Records affected: 1
 """
 
-# [pcisar] 20.10.2021
-# For 3.0.7 on Linux this PASS (uses system ICU) but on Windows (includes ICU 52)
-# it FAIL unless newer ICU (63) is installed.
-# 15.1.2022 As this issue was POSIX-only, we'll not run it on Windows.
 
 @pytest.mark.version('>=3.0,<4.0')
 @pytest.mark.platform('Linux', 'Darwin')
@@ -73,15 +72,6 @@ def test_1(act_1: Action):
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('SPECIFIC_ATTR_BLOB_ID.*', ''),
-                   ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
-                   ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     -- ::: NB ::: 31.01.2019
@@ -109,7 +99,7 @@ test_script_2 = """
         and rc.rdb$collation_name = upper('unicode_enus_ci_4x');
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2, substitutions=substitutions)
 
 expected_stdout_2 = """
     RDB$COLLATION_NAME              UNICODE_ENUS_CI_4X

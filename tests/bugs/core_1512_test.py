@@ -1,74 +1,67 @@
 #coding:utf-8
-#
-# id:           bugs.core_1512
-# title:        Connection lost running script
-# decription:   
-# tracker_id:   CORE-1512
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-1928
+ISSUE:       1928
+TITLE:       Connection lost running script
+DESCRIPTION:
+JIRA:        CORE-1512
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(charset='ISO8859_1')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='ISO8859_1', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Confirmed crash on WI-V2.1.7.18553 for: CREATE TABLE FHO_OS(...)
 
     CREATE DOMAIN DM_COD AS
     NUMERIC(4,0);
-    
+
     CREATE DOMAIN DM_COD2 AS
     NUMERIC(8,0);
-    
+
     CREATE DOMAIN DM_DES AS
     VARCHAR(80)
     COLLATE PT_PT;
-    
+
     CREATE DOMAIN DM_FONE AS
     VARCHAR(20)
     COLLATE PT_PT;
-    
+
     CREATE DOMAIN DM_ID AS
     NUMERIC(4,0);
-    
+
     CREATE DOMAIN DM_ID2 AS
     NUMERIC(8,0);
-    
+
     CREATE DOMAIN DM_IMG AS
     BLOB SUB_TYPE 0 SEGMENT SIZE 4096;
-    
+
     CREATE DOMAIN DM_IND AS
     CHAR(1)
     COLLATE PT_PT;
-    
+
     CREATE DOMAIN DM_IND2 AS
     CHAR(2)
     COLLATE PT_PT;
-    
+
     CREATE DOMAIN DM_NM AS
     VARCHAR(80)
     COLLATE PT_PT;
-    
+
     CREATE DOMAIN DM_PWS AS
     VARCHAR(10)
     COLLATE PT_PT;
-    
+
     CREATE DOMAIN DM_TP AS
     CHAR(1)
     COLLATE PT_PT;
-    
+
     CREATE DOMAIN DM_TXT AS
     BLOB SUB_TYPE 1 SEGMENT SIZE 4096;
-    
+
     CREATE TABLE FHO_ATIV_TEC (
         COD_USUARIO    DM_COD NOT NULL,
         DT_INICIO      TIMESTAMP NOT NULL,
@@ -76,7 +69,7 @@ test_script_1 = """
         COD_ATIVIDADE  DM_COD2 NOT NULL,
         ID_OS          DM_ID2
     );
-    
+
     CREATE TABLE FHO_OS (
         ID_OS                  DM_ID2 NOT NULL,
         DT_INICIO              TIMESTAMP NOT NULL,
@@ -117,10 +110,11 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)
