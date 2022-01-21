@@ -1,38 +1,33 @@
 #coding:utf-8
-#
-# id:           bugs.core_2930
-# title:        DROP VIEW drops output parameters of used stored procedures
-# decription:   
-# tracker_id:   CORE-2930
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-3313
+ISSUE:       3313
+TITLE:       DROP VIEW drops output parameters of used stored procedures
+DESCRIPTION:
+JIRA:        CORE-2930
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """set term !;
+init_script = """set term !;
 create procedure p1 returns (n integer) as begin suspend; end!
 create view v1 as select * from p1!
 commit!
 set term ;!
 """
 
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """show procedure p1;
+test_script = """show procedure p1;
 drop view v1;
 show procedure p1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Procedure text:
+expected_stdout = """Procedure text:
 =============================================================================
  begin suspend; end
 =============================================================================
@@ -46,9 +41,9 @@ Parameters:
 N                                 OUTPUT INTEGER
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

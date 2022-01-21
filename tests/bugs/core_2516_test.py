@@ -1,28 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_2516
-# title:        Wrong processing a SP parameters with arrays
-# decription:   
-# tracker_id:   CORE-2516
-# min_versions: []
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2926
+ISSUE:       2926
+TITLE:       Wrong processing a SP parameters with arrays
+DESCRIPTION:
+JIRA:        CORE-2516
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create domain t_smallint_array as smallint [0:2];
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set term ^;
     create procedure sp_smallint_array(x t_smallint_array)
      returns (y t_smallint_array)
@@ -34,18 +29,19 @@ test_script_1 = """
     ^ set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 0A000
     CREATE PROCEDURE SP_SMALLINT_ARRAY failed
     -Dynamic SQL Error
     -feature is not supported
-    -Usage of domain or TYPE OF COLUMN of array type in PSQL  """
+    -Usage of domain or TYPE OF COLUMN of array type in PSQL
+"""
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

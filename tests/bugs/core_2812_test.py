@@ -1,40 +1,35 @@
 #coding:utf-8
-#
-# id:           bugs.core_2812
-# title:        Prohibit any improper mixture of explicit and implicit joins
-# decription:   
-# tracker_id:   CORE-2812
-# min_versions: ['2.5.3']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3199
+ISSUE:       3199
+TITLE:       Prohibit any improper mixture of explicit and implicit joins
+DESCRIPTION:
+JIRA:        CORE-2812
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('=.*', ''), ('-At line.*', '')]
-
-init_script_1 = """
+init_script = """
     recreate table t_left(id int);
     insert into t_left values(111);
     insert into t_left values(999);
     commit;
-    
+
     recreate table t_right(id int, val int);
     insert into t_right values(111,0);
     insert into t_right values(999,123456789);
     commit;
-    
+
     recreate table t_middle(id int);
     insert into t_middle values(1);
     commit;
 
     -- one more sample (after discussion with Dmitry by e-mail, 02-apr-2015 19:34)
-    recreate table t1(id int); 
+    recreate table t1(id int);
     commit;
-    insert into t1 values( 1 ); 
+    insert into t1 values( 1 );
     commit;
 
     recreate table test(x int);
@@ -44,9 +39,9 @@ init_script_1 = """
 
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
 
     select
@@ -55,13 +50,13 @@ test_script_1 = """
         ,m.id mid_id
         ,R.id b_id, R.val
     from t_left L
-    
+
          ,  -- ::: nb ::: this is >>> COMMA <<< instead of `cross join`
-         
+
          t_middle m
          left join t_right R on L.id=R.id
     ;
-    
+
     select
         'case-2' as msg
         ,l.id a_id, m.id mid_id, r.id b_id, r.val
@@ -70,16 +65,16 @@ test_script_1 = """
         left join t_right r on l.id=r.id;
 
     -- Added 02-apr-2015:
-    select 'case-3' msg, a.id 
+    select 'case-3' msg, a.id
     from t1 a
-        , t1 b 
-          join t1 c on a.id=c.id 
+        , t1 b
+          join t1 c on a.id=c.id
     where a.id=b.id; -- this FAILS on 3.0
 
-    select 'case-4' msg, a.id 
+    select 'case-4' msg, a.id
     from t1 b
-       , t1 a 
-         join t1 c on a.id=c.id 
+       , t1 a
+         join t1 c on a.id=c.id
     where a.id=b.id; -- this WORKS on 3.0
 
     ---------------------------------------------------------
@@ -88,15 +83,15 @@ test_script_1 = """
 
     -- This should PASS:
     select 1 as z1
-    from 
+    from
         test a
-        join 
+        join
               test s
-              inner join 
+              inner join
               (
-                    test d 
-                    join test e on e.x = d.x 
-                    join ( test f join test g on f.x = g.x ) on e.x = g.x 
+                    test d
+                    join test e on e.x = d.x
+                    join ( test f join test g on f.x = g.x ) on e.x = g.x
                     --- and f.x=s.x
 
               )
@@ -106,15 +101,15 @@ test_script_1 = """
 
     -- This should FAIL on 3.0+ (but is passes on 2.5):
     select 2 as z2
-    from 
+    from
         test a
-        join 
+        join
               test s
-              inner join 
+              inner join
               (
-                    test d 
-                    join test e on e.x = d.x 
-                    join ( test f join test g on f.x = g.x ) on e.x = g.x 
+                    test d
+                    join test e on e.x = d.x
+                    join ( test f join test g on f.x = g.x ) on e.x = g.x
                     and f.x=s.x -- <<< !! <<<
 
               )
@@ -125,9 +120,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', ''), ('-At line.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             case-2
     A_ID                            111
     MID_ID                          1
@@ -146,7 +141,8 @@ expected_stdout_1 = """
     Z1                              1
 
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
@@ -167,10 +163,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

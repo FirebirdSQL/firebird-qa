@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2117
-# title:        Incorrect ROW_COUNT value with indexed retrieval and subquery
-# decription:   
-# tracker_id:   CORE-2117
-# min_versions: []
-# versions:     2.1.2
-# qmid:         bugs.core_2117
+
+"""
+ID:          issue-2549
+ISSUE:       2549
+TITLE:       Incorrect ROW_COUNT value with indexed retrieval and subquery
+DESCRIPTION:
+JIRA:        CORE-2117
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table t (n integer);
+init_script = """create table t (n integer);
 
 insert into t values (1);
 insert into t values (2);
@@ -28,9 +23,9 @@ create index t_n on t (n);
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """set term !!;
+test_script = """set term !!;
 
 execute block returns (n integer)
 as
@@ -67,9 +62,9 @@ end!!
 
 set term ;!!"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
            N
 ============
            0
@@ -81,9 +76,9 @@ expected_stdout_1 = """
 
 """
 
-@pytest.mark.version('>=2.1.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

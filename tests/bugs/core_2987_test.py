@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2987
-# title:        Don't send full length of field over the wire when field is null
-# decription:
-#                   Checked on: WI-V3.0.0.32484 (SS/SC/CS), LI-T4.0.0.138 (SS)
-#
-# tracker_id:   CORE-2987
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:
+
+"""
+ID:          issue-3281
+ISSUE:       3281
+TITLE:       Don't send full length of field over the wire when field is null
+DESCRIPTION:
+JIRA:        CORE-2897
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Measurement showed than on 3.0 (SS/SC/CS) transfer of NULLs is more than 5 (five) times
     -- faster than text data with length = 32K. As of 2.5 (SC) than ration is about 1.7 ... 1.8.
     -- Test fills up two tables: one with text data and another with only nulls.
@@ -152,17 +143,17 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
    MEASURE_RESULT                  WINS >= 3.8x
    MEASURE_RESULT                  WINS >= 3.8x
    MEASURE_RESULT                  WINS >= 3.8x
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

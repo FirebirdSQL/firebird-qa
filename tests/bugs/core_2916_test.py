@@ -1,39 +1,37 @@
 #coding:utf-8
-#
-# id:           bugs.core_2916
-# title:        Broken error handling in the case of a conversion error happened during index creation
-# decription:
-# tracker_id:   CORE-2916
-# min_versions: ['2.1.4']
-# versions:     2.5.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-3300
+ISSUE:       3300
+TITLE:       Broken error handling in the case of a conversion error happened during index creation
+DESCRIPTION:
+JIRA:        CORE-2916
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = [('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]', '2011-05-03')]
+# version: 3.0
 
 init_script_1 = """create table tab (col date);
 insert into tab (col) values (current_date);
 commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db_1 = db_factory(init=init_script_1)
 
 test_script_1 = """create index itab on tab computed (cast(col as int));
 commit;
 select * from tab where cast(col as int) is null;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db_1', test_script_1,
+                 substitutions=[('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]', '2011-05-03')])
 
-expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_2916.fdb, User: SYSDBA
-SQL> SQL> SQL>
+expected_stdout_1 = """
         COL
 ===========
-SQL>"""
+"""
+
 expected_stderr_1 = """Statement failed, SQLSTATE = 22018
 
 conversion error from string "2011-05-03"
@@ -43,23 +41,17 @@ Statement failed, SQLSTATE = 22018
 conversion error from string "2011-05-03"
 """
 
-@pytest.mark.version('>=2.5.0,<4.0')
+@pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert (act_1.clean_stderr == act_1.clean_expected_stderr and
+            act_1.clean_stdout == act_1.clean_expected_stdout)
 
 # version: 4.0
-# resources: None
 
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
+db_2 = db_factory()
 
 test_script_2 = """
     recreate table tab (col date);
@@ -72,7 +64,7 @@ test_script_2 = """
     select * from tab where cast(col as int) is null;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db_2', test_script_2)
 
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 22018

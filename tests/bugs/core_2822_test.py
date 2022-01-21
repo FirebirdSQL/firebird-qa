@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2822
-# title:        Error "no current row for fetch operation" when subquery includes a non-trivial derived table
-# decription:   
-# tracker_id:   CORE-2822
-# min_versions: []
-# versions:     2.1.4
-# qmid:         None
+
+"""
+ID:          issue-3209
+ISSUE:       3209
+TITLE:       Error "no current row for fetch operation" when subquery includes a non-trivial derived table
+DESCRIPTION:
+JIRA:        CORE-2822
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """select *
+test_script = """select *
 from rdb$relations r natural join rdb$relation_fields rf
 where 1 = (
   select 1
@@ -33,10 +26,11 @@ where 1 = (
   ) as f (id) ) ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.1.4')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

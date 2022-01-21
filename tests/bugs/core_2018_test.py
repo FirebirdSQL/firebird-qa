@@ -1,36 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_2018
-# title:        Only one client can access a readonly database
-# decription:
-#                   Restored database contains GTT. According to CORE-3399 we can write in it even in read-only database.
-#                   This GTT serves as temp buffer for output row (we can not use windowed function in 2.5)
-#                   Checked on:
-#                       4.0.0.1635 SS: 2.094s.
-#                       4.0.0.1633 CS: 3.591s.
-#                       3.0.5.33180 SS: 2.061s.
-#                       3.0.5.33178 CS: 2.383s.
-#                       2.5.9.27119 SS: 0.872s.
-#                       2.5.9.27146 SC: 0.435s.
-#
-# tracker_id:   CORE-2018
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-2455
+ISSUE:       2455
+TITLE:       Only one client can access a readonly database
+DESCRIPTION:
+  Restored database contains GTT. According to issue #3765 we can write in it even in
+  read-only database. This GTT serves as temp buffer for output row (we can not use
+  windowed function in 2.5)
+JIRA:        CORE-2018
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
+db = db_factory(from_backup='core2018-read_only.fbk', async_write=False)
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core2018-read_only.fbk', init=init_script_1, async_write=False)
-
-test_script_1 = """
+test_script = """
     set list on;
     select MON$READ_ONLY from mon$database;
     commit;
@@ -96,9 +82,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MON$READ_ONLY                   1
 
     SEQUENTIAL_ATTACH_NO            1
@@ -132,9 +118,9 @@ expected_stdout_1 = """
     ATTACHES_I_CAN_SEE              11
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

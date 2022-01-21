@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2910
-# title:        PK index is not used for derived tables
-# decription:   
-# tracker_id:   CORE-2910
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-3294
+ISSUE:       3294
+TITLE:       PK index is not used for derived tables
+DESCRIPTION:
+JIRA:        CORE-2910
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE R$TMP (
+init_script = """CREATE TABLE R$TMP (
     POSTING_ID INTEGER
 );
 
@@ -28,9 +23,9 @@ ALTER TABLE TMP ADD CONSTRAINT PK_TMP PRIMARY KEY (POSTING_ID);
 commit;
 """
 
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 select r.POSTING_ID as r$POSTING_ID, t.POSTING_ID from (
       SELECT POSTING_ID
       FROM r$tmp
@@ -42,15 +37,15 @@ select r.POSTING_ID as r$POSTING_ID, t.POSTING_ID from (
     ) t on r.POSTING_ID = t.POSTING_ID;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 PLAN JOIN (R R$TMP NATURAL, T TMP INDEX (PK_TMP))
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

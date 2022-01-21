@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2678
-# title:        Full outer join cannot use available indices (very slow execution)
-# decription:   
-# tracker_id:   CORE-2678
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3081
+ISSUE:       3081
+TITLE:       Full outer join cannot use available indices (very slow execution)
+DESCRIPTION:
+JIRA:        CORE-2678
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create table td_data1 (
       c1 varchar(20) character set win1251 not null collate win1251,
       c2 integer not null,
@@ -29,7 +22,7 @@ test_script_1 = """
     );
     create index idx_td_data1 on td_data1(c1,c2,c3);
     commit;
-    
+
     create table td_data2 (
       c1 varchar(20) character set win1251 not null collate win1251,
       c2 integer not null,
@@ -38,7 +31,7 @@ test_script_1 = """
     );
     create index idx_td_data2 on td_data2(c1,c2,c3);
     commit;
-    
+
     set planonly;
     select
         d1.c1, d2.c1,
@@ -58,15 +51,15 @@ test_script_1 = """
         d1.c3, d2.c3;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN SORT (JOIN (JOIN (D2 NATURAL, D1 INDEX (IDX_TD_DATA1)), JOIN (D1 NATURAL, D2 INDEX (IDX_TD_DATA2))))
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

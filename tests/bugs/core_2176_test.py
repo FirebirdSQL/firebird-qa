@@ -1,68 +1,61 @@
 #coding:utf-8
-#
-# id:           bugs.core_2176
-# title:        Unexpected (wrong) results with COALESCE and GROUP BY
-# decription:   
-# tracker_id:   CORE-2176
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2607
+ISSUE:       2607
+TITLE:       Unexpected (wrong) results with COALESCE and GROUP BY
+DESCRIPTION:
+JIRA:        CORE-2176
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter view v_rel (rid, rnm, rty) as
     select r.rdb$relation_id, r.rdb$relation_name, r.rdb$relation_type
     from rdb$relations r
     where r.rdb$relation_id <= 30 -- ::: NB ::: added this cond because number of rows in 2.5 and 3.0 differ!
     ;
     commit;
-    
+
     set count on ;
     set list on;
 
     select rid as c from v_rel
     group by 1 ;
     -- correct result
-    
+
     select * from (
     select rid as c from v_rel
     ) group by 1 ;
     -- also correct
-    
+
     select coalesce(rid, 0) as c from v_rel
     group by 1 ;
     -- ERROR: no zero ID is reported, the last ID is reported twice
-    
+
     select * from (
     select coalesce(rid, 0) as c from v_rel
     ) group by 1 ;
     -- ERROR: single NULL is returned
-    
+
     select * from (
       select coalesce(rid, 0) as a, coalesce(rty, 0) as b from v_rel
     ) group by 1, 2 ;
     -- ERROR: infinite result set with all zero values
-    
+
     select * from (
       select coalesce(rid, 0) as a, coalesce(rnm, '') as b from v_rel
     ) group by 1, 2 ;
     -- ERROR: conversion error
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     C                               0
     C                               1
     C                               2
@@ -255,73 +248,73 @@ expected_stdout_1 = """
     B                               0
     Records affected: 31
     A                               0
-    B                               RDB$PAGES                                                                                    
+    B                               RDB$PAGES
     A                               1
-    B                               RDB$DATABASE                                                                                 
+    B                               RDB$DATABASE
     A                               2
-    B                               RDB$FIELDS                                                                                   
+    B                               RDB$FIELDS
     A                               3
-    B                               RDB$INDEX_SEGMENTS                                                                           
+    B                               RDB$INDEX_SEGMENTS
     A                               4
-    B                               RDB$INDICES                                                                                  
+    B                               RDB$INDICES
     A                               5
-    B                               RDB$RELATION_FIELDS                                                                          
+    B                               RDB$RELATION_FIELDS
     A                               6
-    B                               RDB$RELATIONS                                                                                
+    B                               RDB$RELATIONS
     A                               7
-    B                               RDB$VIEW_RELATIONS                                                                           
+    B                               RDB$VIEW_RELATIONS
     A                               8
-    B                               RDB$FORMATS                                                                                  
+    B                               RDB$FORMATS
     A                               9
-    B                               RDB$SECURITY_CLASSES                                                                         
+    B                               RDB$SECURITY_CLASSES
     A                               10
-    B                               RDB$FILES                                                                                    
+    B                               RDB$FILES
     A                               11
-    B                               RDB$TYPES                                                                                    
+    B                               RDB$TYPES
     A                               12
-    B                               RDB$TRIGGERS                                                                                 
+    B                               RDB$TRIGGERS
     A                               13
-    B                               RDB$DEPENDENCIES                                                                             
+    B                               RDB$DEPENDENCIES
     A                               14
-    B                               RDB$FUNCTIONS                                                                                
+    B                               RDB$FUNCTIONS
     A                               15
-    B                               RDB$FUNCTION_ARGUMENTS                                                                       
+    B                               RDB$FUNCTION_ARGUMENTS
     A                               16
-    B                               RDB$FILTERS                                                                                  
+    B                               RDB$FILTERS
     A                               17
-    B                               RDB$TRIGGER_MESSAGES                                                                         
+    B                               RDB$TRIGGER_MESSAGES
     A                               18
-    B                               RDB$USER_PRIVILEGES                                                                          
+    B                               RDB$USER_PRIVILEGES
     A                               19
-    B                               RDB$TRANSACTIONS                                                                             
+    B                               RDB$TRANSACTIONS
     A                               20
-    B                               RDB$GENERATORS                                                                               
+    B                               RDB$GENERATORS
     A                               21
-    B                               RDB$FIELD_DIMENSIONS                                                                         
+    B                               RDB$FIELD_DIMENSIONS
     A                               22
-    B                               RDB$RELATION_CONSTRAINTS                                                                     
+    B                               RDB$RELATION_CONSTRAINTS
     A                               23
-    B                               RDB$REF_CONSTRAINTS                                                                          
+    B                               RDB$REF_CONSTRAINTS
     A                               24
-    B                               RDB$CHECK_CONSTRAINTS                                                                        
+    B                               RDB$CHECK_CONSTRAINTS
     A                               25
-    B                               RDB$LOG_FILES                                                                                
+    B                               RDB$LOG_FILES
     A                               26
-    B                               RDB$PROCEDURES                                                                               
+    B                               RDB$PROCEDURES
     A                               27
-    B                               RDB$PROCEDURE_PARAMETERS                                                                     
+    B                               RDB$PROCEDURE_PARAMETERS
     A                               28
-    B                               RDB$CHARACTER_SETS                                                                           
+    B                               RDB$CHARACTER_SETS
     A                               29
-    B                               RDB$COLLATIONS                                                                               
+    B                               RDB$COLLATIONS
     A                               30
-    B                               RDB$EXCEPTIONS                                                                               
+    B                               RDB$EXCEPTIONS
     Records affected: 31
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

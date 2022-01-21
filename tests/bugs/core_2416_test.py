@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2416
-# title:        AV preparing a query with aggregate over derived table
-# decription:   
-# tracker_id:   CORE-2416
-# min_versions: []
-# versions:     2.1.3
-# qmid:         None
+
+"""
+ID:          issue-2834
+ISSUE:       2834
+TITLE:       AV preparing a query with aggregate over derived table
+DESCRIPTION:
+JIRA:        CORE-2416
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """WITH
+test_script = """WITH
   t0 AS (
     SELECT 1 AS f0, date '01.03.09' AS f1, 'Event1' AS f2
       FROM rdb$database
@@ -53,10 +46,11 @@ SELECT t4.f2, t4.f1_p
 GROUP BY t4.f2, t4.f1_p ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.1.3')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

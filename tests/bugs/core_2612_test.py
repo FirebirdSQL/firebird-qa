@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2612
-# title:        Connection lost immediatelly after compiling procedure with RPAD system function
-# decription:   
-# tracker_id:   CORE-2612
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-3022
+ISSUE:       3022
+TITLE:       Connection lost immediatelly after compiling procedure with RPAD system function
+DESCRIPTION:
+JIRA:        CORE-2612
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	set term ^;
 	create procedure TEST2 (name varchar(50),spaces integer)
 	returns (rname varchar(200))
@@ -36,16 +29,16 @@ test_script_1 = """
 	select rname || 'end' as rname_padded from TEST2 ('test',5);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	RNAME_PADDED                    test     end
-	Records affected: 1  
+	Records affected: 1
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

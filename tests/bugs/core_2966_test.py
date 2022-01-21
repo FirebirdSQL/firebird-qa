@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2966
-# title:        Wrong results or unexpected errors while sorting a large data set
-# decription:
-# tracker_id:   CORE-2966
-# min_versions: ['2.1.6', '2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-3348
+ISSUE:       3348
+TITLE:       Wrong results or unexpected errors while sorting a large data set
+DESCRIPTION:
+JIRA:        CORE-2966
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = [('=.*', '=')]
-
-init_script_1 = """create table t (col varchar(32000));
+init_script = """create table t (col varchar(32000));
 commit;
 set term !!;
 execute block
@@ -32,15 +27,15 @@ end!!
 set term ;!!
 commit;"""
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select col from t group by 1;
+test_script = """select col from t group by 1;
 select cast(col as integer) from t group by 1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '=')])
 
-expected_stdout_1 = """
+expected_stdout = """
 COL
 ===============================================================================
 0
@@ -70,9 +65,9 @@ COL
 
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,29 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_2032
-# title:        Stored procedure recursively called by calculated field fails after reconnect
-# decription:   
-#                  Confirmed bug on 4.0.0.2353; 3.0.8.33401.
-#                  Checked on 4.0.0.2365, 3.0.8.33415 -- all fine.
-#                
-# tracker_id:   CORE-2032
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-2469
+ISSUE:       2469
+TITLE:       Stored procedure recursively called by calculated field fails after reconnect
+DESCRIPTION:
+NOTES:
+  Confirmed bug on 4.0.0.2353; 3.0.8.33401.
+  Checked on 4.0.0.2365, 3.0.8.33415 -- all fine.
+JIRA:        CORE-2032
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create or alter procedure strange_procedure (
         result_to_return float,
@@ -96,16 +89,16 @@ test_script_1 = """
     select calc_fld as value_after_reconnect from test where ID = 0;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     VALUE_BEFORE_RECONNECT          20
     VALUE_AFTER_RECONNECT           20
 """
 
 @pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

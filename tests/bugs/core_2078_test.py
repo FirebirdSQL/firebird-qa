@@ -1,84 +1,67 @@
 #coding:utf-8
-#
-# id:           bugs.core_2078
-# title:        Suboptimal join plan if there are selective non-indexed predicates involved
-# decription:
-#                   This test operates with three tables: "small", "medium" and "big" - which are INNER-join'ed.
-#                   It was found that there is some threshold ratio between number of rows in "small"  vs "medium"
-#                   tables which affects on generated PLAN after reaching this ratio.
-#                   In particular, when tables  have following values of rows: 26, 300 and 3000 - than optimizer
-#                   still DOES take in account "WHERE" condition with non-indexed field in SMALL table ("where s.sf = 0"),
-#                   and this lead to GOOD (fast) performance because SMALL table will be FIRST in the join order.
-#                   However, if number of rows in SMALL table will change from 26 to 27 (yes, just one row) than
-#                   optimizer do NOT consider additional condition (WHERE-filter) on that table and begin choose
-#                   SLOW (ineffective) plan where MEDIUM table is first in join order.
-#                   After discussion with dimitr, it was decided to:
-#                   1) put here TWO cases of query: with "fast" and "slow" plan;
-#                   2) replace too narrow threshold-pair (26 vs 27) with more wider (now: 15 and 45) because otherwise
-#                      even minor changes in optimizer can breake this test expected output.
-#                   Test make TWO PAIRS (i.e. total FOUR) runs:
-#                   1. When number of rows in SMALL table is less than threshold:
-#                   1.1. Without 'where'-filter on small table - to ensure that plan will contain MEDIUM table as first in join;
-#                   1.2. WITH 'where'-filter on small table - to ensure that plan will be CHANGED and SMALL table will be first;
-#                   2. When number of rows in SMALL table is beyond the threshold:
-#                   2.1. Without 'where'-filter on small table - plan will contain MEDIUM table as first in join;
-#                   2.2. WITH 'where'-filter on small table - plan will NOT changed, MEDIUM table will remain first in join.
-#                   Beside output of PLAN itself, test also:
-#                   1) displays index statistics
-#                   2) compares fetches with some 'upper-limit' constants in order to alert us in case when fetches become too high.
-#                   These constants have been obtained after sereval experiments with page_size = 4k, and their values are base on
-#                   following typical results (which are the same on 2.5 and 3.0):
-#                   FETCHES_1_1                     19636
-#                   FETCHES_1_2                     9094
-#                   FETCHES_2_1                     19548
-#                   FETCHES_2_2                     19548
-#
-#                   18.08.2020.
-#                   Test uses pre-created database which has several procedures for analyzing performance by with the help of MON$ tables.
-#                   Performance results are gathered in the table STAT_LOG, each odd run will save mon$ counters with "-" sign and next
-#                   (even) run will save them with "+" -- see SP_GATHER_STAT.
-#                   Aggegation of results is done in the view V_AGG_STAT (negative values relate to start, positive to the end of measure,
-#                   difference between them means performance expenses which we want to evaluate).
-#                   NOTE. Before each new measure we have to set generator G_GATHER_STAT to zero in order to make it produce proper values
-#                   starting with 1 (odd --> NEGATIVE sign for counters). This is done in SP_TRUNCATE_STAT.
-#
-#                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
-#                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-#                   statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
-#                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-#                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-#                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#
-#                   Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
-#                   reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
-#
-#                   Checked on:
-#                       4.0.0.2164 SS: 2.183s.
-#                       4.0.0.2119 SS: 2.280s.
-#                       4.0.0.2164 CS: 2.705s.
-#                       3.0.7.33356 SS: 1.500s.
-#                       3.0.7.33356 CS: 2.445s.
-#                       2.5.9.27150 SC: 0.653s.
-#
-# tracker_id:   CORE-2078
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2513
+ISSUE:       2513
+TITLE:       Suboptimal join plan if there are selective non-indexed predicates involved
+DESCRIPTION:
+  This test operates with three tables: "small", "medium" and "big" - which are INNER-join'ed.
+  It was found that there is some threshold ratio between number of rows in "small"  vs "medium"
+  tables which affects on generated PLAN after reaching this ratio.
+  In particular, when tables  have following values of rows: 26, 300 and 3000 - than optimizer
+  still DOES take in account "WHERE" condition with non-indexed field in SMALL table ("where s.sf = 0"),
+  and this lead to GOOD (fast) performance because SMALL table will be FIRST in the join order.
+  However, if number of rows in SMALL table will change from 26 to 27 (yes, just one row) than
+  optimizer do NOT consider additional condition (WHERE-filter) on that table and begin choose
+  SLOW (ineffective) plan where MEDIUM table is first in join order.
+  After discussion with dimitr, it was decided to:
+    1) put here TWO cases of query: with "fast" and "slow" plan;
+    2) replace too narrow threshold-pair (26 vs 27) with more wider (now: 15 and 45) because otherwise
+       even minor changes in optimizer can breake this test expected output.
+  Test make TWO PAIRS (i.e. total FOUR) runs:
+    1. When number of rows in SMALL table is less than threshold:
+    1.1. Without 'where'-filter on small table - to ensure that plan will contain MEDIUM table as first in join;
+    1.2. WITH 'where'-filter on small table - to ensure that plan will be CHANGED and SMALL table will be first;
+    2. When number of rows in SMALL table is beyond the threshold:
+    2.1. Without 'where'-filter on small table - plan will contain MEDIUM table as first in join;
+    2.2. WITH 'where'-filter on small table - plan will NOT changed, MEDIUM table will remain first in join.
+  Beside output of PLAN itself, test also:
+    1) displays index statistics
+    2) compares fetches with some 'upper-limit' constants in order to alert us in case when fetches become too high.
+  These constants have been obtained after sereval experiments with page_size = 4k, and their values are base on
+  following typical results (which are the same on 2.5 and 3.0):
+  FETCHES_1_1                     19636
+  FETCHES_1_2                     9094
+  FETCHES_2_1                     19548
+  FETCHES_2_2                     19548
+NOTES:
+[18.08.2020]
+  Test uses pre-created database which has several procedures for analyzing performance by with the help of MON$ tables.
+  Performance results are gathered in the table STAT_LOG, each odd run will save mon$ counters with "-" sign and next
+  (even) run will save them with "+" -- see SP_GATHER_STAT.
+  Aggegation of results is done in the view V_AGG_STAT (negative values relate to start, positive to the end of measure,
+  difference between them means performance expenses which we want to evaluate).
+  NOTE. Before each new measure we have to set generator G_GATHER_STAT to zero in order to make it produce proper values
+  starting with 1 (odd --> NEGATIVE sign for counters). This is done in SP_TRUNCATE_STAT.
+[18.08.2020]
+  FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
+  statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
+  gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
+  See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
+
+  This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
+
+  Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
+  reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
+JIRA:        CORE-2078
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='mon-stat-gathering-3_0.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='mon-stat-gathering-3_0.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_fill_data(a_sml_rows int, a_med_rows int, a_big_rows int) as begin end;
     recreate table tbig(id int, sid int, mid int);
     commit;
@@ -306,9 +289,9 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RUN1_TAB_NAME                   TBIG
     RUN1_IDX_NAME                   TBIG_IDX1_FK_SML
     RUN1_IDX_STAT                   0.5000000000
@@ -360,8 +343,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

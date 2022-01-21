@@ -1,27 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_2765
-# title:        Use of RDB$ADMIN role does not provide SYSDBA rights in GRANT/REVOKE
-# decription:
-#                   06.08.2018: removed old code for 3.0 and 4.0, replaced it with simplified one that does *exactly* what ticket says.
-#                   Checked on 3.0.4.33021, 4.0.0.1143.
-#
-# tracker_id:   CORE-2765
-# min_versions: ['2.5.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-3157
+ISSUE:       3157
+TITLE:       Use of RDB$ADMIN role does not provide SYSDBA rights in GRANT/REVOKE
+DESCRIPTION:
+JIRA:        CORE-2765
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
+
+db = db_factory()
+user_admin = user_factory('db', name='tmp$c2765_admin', password='123')
+user_work1 = user_factory('db', name='tmp$c2765_worker1', password='456')
+user_work2 = user_factory('db', name='tmp$c2765_worker2', password='789')
+
+substitutions = [('no (S|SELECT) privilege with grant option on table/view TEST',
+                  'no SELECT privilege with grant option on table/view TEST')]
 
 # version: 3.0
-# resources: None
-
-substitutions_1 = [('no (S|SELECT) privilege with grant option on table/view TEST', 'no SELECT privilege with grant option on table/view TEST')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     --set bail on;
@@ -70,7 +68,7 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1, substitutions=substitutions)
 
 expected_stdout_1 = """
     WHO_AM_I                        TMP$C2765_ADMIN
@@ -103,26 +101,16 @@ expected_stderr_1 = """
     no permission for SELECT access to TABLE TEST
 """
 
-user_1_admin = user_factory('db_1', name='tmp$c2765_admin', password='123')
-user_1_work1 = user_factory('db_1', name='tmp$c2765_worker1', password='456')
-user_1_work2 = user_factory('db_1', name='tmp$c2765_worker2', password='789')
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_1(act_1: Action, user_1_admin: User, user_1_work1: User, user_1_work2: User):
+def test_1(act_1: Action, user_admin: User, user_work1: User, user_work2: User):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert (act_1.clean_stderr == act_1.clean_expected_stderr and
+            act_1.clean_stdout == act_1.clean_expected_stdout)
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('no (S|SELECT) privilege with grant option on table/view TEST', 'no SELECT privilege with grant option on table/view TEST')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     --set bail on;
@@ -171,7 +159,7 @@ test_script_2 = """
     commit;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2, substitutions=substitutions)
 
 expected_stdout_2 = """
     WHO_AM_I                        TMP$C2765_ADMIN
@@ -205,15 +193,12 @@ expected_stderr_2 = """
     -Effective user is TMP$C2765_WORKER2
 """
 
-user_2_admin = user_factory('db_2', name='tmp$c2765_admin', password='123')
-user_2_work1 = user_factory('db_2', name='tmp$c2765_worker1', password='456')
-user_2_work2 = user_factory('db_2', name='tmp$c2765_worker2', password='789')
 
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action, user_2_admin: User, user_2_work1: User, user_2_work2: User):
+def test_2(act_2: Action, user_admin: User, user_work1: User, user_work2: User):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_stderr == act_2.clean_expected_stderr
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+    assert (act_2.clean_stderr == act_2.clean_expected_stderr and
+            act_2.clean_stdout == act_2.clean_expected_stdout)
 

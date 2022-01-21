@@ -1,43 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_2923
-# title:        Problem with dependencies between a procedure and a view using that procedure
-# decription:   
-# tracker_id:   CORE-2923
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3306
+ISSUE:       3306
+TITLE:       Problem with dependencies between a procedure and a view using that procedure
+DESCRIPTION:
+JIRA:        CORE-2923
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
-    create procedure sp_test returns (i smallint) as 
-    begin 
+    create procedure sp_test returns (i smallint) as
+    begin
         i = 32767;
-        suspend; 
+        suspend;
     end
     ^
 
-    create view v0 as 
-    select i 
+    create view v0 as
+    select i
     from sp_test
     ^
 
-    alter procedure sp_test returns (i int) as 
-    begin 
+    alter procedure sp_test returns (i int) as
+    begin
         i = 32768;
-        suspend; 
+        suspend;
     end
     ^
     set term ;^
@@ -50,11 +43,11 @@ test_script_1 = """
     insert into t1(n1) values(32767);
     commit;
 
-    create view v1 as 
-    select * 
+    create view v1 as
+    select *
     from t1;
 
-    alter table t1 alter n1 type integer; 
+    alter table t1 alter n1 type integer;
     commit;
 
     insert into t1(n1) values(32768);
@@ -69,10 +62,10 @@ test_script_1 = """
 
     create domain d2 integer;
 
-    create view v2 as 
+    create view v2 as
     select * from t2;
 
-    alter table t2 alter n2 type d2; 
+    alter table t2 alter n2 type d2;
 
     insert into t2(n2) values(32768);
     commit;
@@ -88,9 +81,9 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TEST_NO                         0
     I                               32768
     TEST_NO                         1
@@ -104,8 +97,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

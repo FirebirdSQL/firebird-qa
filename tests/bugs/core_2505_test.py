@@ -1,32 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_2505
-# title:        Built-in trigonometric functions can produce NaN and Infinity
-# decription:   
-# tracker_id:   CORE-2505
-# min_versions: ['2.5']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2917
+ISSUE:       2917
+TITLE:       Built-in trigonometric functions can produce NaN and Infinity
+DESCRIPTION:
+JIRA:        CORE-1000
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """select asin(2), cot(0) from rdb$database;
+test_script = """select asin(2), cot(0) from rdb$database;
 select acos(2) - acos(2) from rdb$database;
 select LOG10(-1) from rdb$database;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
                    ASIN                     COT
 ======================= =======================
 
@@ -36,7 +29,8 @@ expected_stdout_1 = """
                   LOG10
 =======================
 """
-expected_stderr_1 = """Statement failed, SQLSTATE = 42000
+
+expected_stderr = """Statement failed, SQLSTATE = 42000
 
 expression evaluation not supported
 
@@ -56,11 +50,11 @@ expression evaluation not supported
 
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

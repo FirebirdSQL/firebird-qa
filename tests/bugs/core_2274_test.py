@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2274
-# title:        MERGE non-standard behaviour, accepts multiple matches
-# decription:   
-#                  Confirmed bug on 4.0.0.2011
-#                  Checked on 4.0.0.2022 - works fine.
-#                
-# tracker_id:   CORE-2274
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-2700
+ISSUE:       2700
+TITLE:       MERGE non-standard behaviour, accepts multiple matches
+DESCRIPTION:
+JIRA:        CORE-2274
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table t_payment_details(operation_id int primary key, person_id int, payment_sum int);
     recreate table t_payment_totals(person_id int primary key, payment_sum int);
     commit;
@@ -40,7 +30,7 @@ test_script_1 = """
     set list on;
     select 'before merge' as msg, e.* from t_payment_totals e order by person_id;
 
-    merge into t_payment_totals t 
+    merge into t_payment_totals t
     using t_payment_details s on s.person_id = t.person_id
     when NOT matched then
         insert(person_id, payment_sum) values( s.person_id, s.payment_sum )
@@ -52,9 +42,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             before merge
     PERSON_ID                       10
     PAYMENT_SUM                     100
@@ -81,16 +71,17 @@ expected_stdout_1 = """
     PERSON_ID                       22
     PAYMENT_SUM                     222
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 21000
     Multiple source records cannot match the same target during MERGE
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2455
-# title:        Server fails when doing DROP DATABASE right after error in statistical fnction
-# decription:   
-# tracker_id:   CORE-2455
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         
+
+"""
+ID:          issue-2869
+ISSUE:       2869
+TITLE:       Server fails when doing DROP DATABASE right after error in statistical fnction
+DESCRIPTION:
+JIRA:        CORE-2455
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(charset='ISO8859_1')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     commit;
     create database 'localhost:$(DATABASE_LOCATION)trucks';
 
@@ -29,15 +22,15 @@ test_script_1 = """
         max_rows integer,
         mode integer )
     returns (
-        row_num integer, 
-        result integer 
+        row_num integer,
+        result integer
     ) as
         declare variable temp integer;
         declare variable counter integer;
     begin
       counter=0;
       temp=1;
-      while (counter <= max_rows) do 
+      while (counter <= max_rows) do
       begin
         row_num = counter;
 
@@ -45,15 +38,15 @@ test_script_1 = """
             temp = 1;
         else
             temp = temp * row_num;
-        
+
         result = temp;
         counter = counter + 1;
 
-        if (mode=1) then 
+        if (mode=1) then
             suspend;
       end
 
-      if (mode = 2) then 
+      if (mode = 2) then
           suspend;
     end
     ^
@@ -68,14 +61,14 @@ test_script_1 = """
     insert into onerow values (5);
 
     -- note the derived table query
-    select 
+    select
         1 as run_no
-       ,(select ROW_NUM from factorial(i,2)) as RN 
+       ,(select ROW_NUM from factorial(i,2)) as RN
     from onerow ;
 
-    select 
+    select
         2 as run_no
-       ,(select RESULT from factorial(i,2)) as RS 
+       ,(select RESULT from factorial(i,2)) as RS
     from onerow ;
 
     -- note the derived table query
@@ -85,9 +78,9 @@ test_script_1 = """
     drop database ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RUN_NO                          0
     ROW_NUM                         5
     RESULT                          120
@@ -96,18 +89,19 @@ expected_stdout_1 = """
     RUN_NO                          2
     RS                              120
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 21000
     multiple rows in singleton select
     Statement failed, SQLSTATE = 21000
     multiple rows in singleton select
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

@@ -1,30 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2036
-# title:        Parameters order of EXECUTE BLOCK statement is reversed if called from EXECUTE STATEMENT
-# decription:   
-#                   2.5.9.27107: OK, 0.328s.
-#                   3.0.4.32924: OK, 0.906s.
-#                   4.0.0.918: OK, 1.110s.
-#                 
-# tracker_id:   CORE-2036
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2473
+ISSUE:       2473
+TITLE:       Parameters order of EXECUTE BLOCK statement is reversed if called from EXECUTE STATEMENT
+DESCRIPTION:
+JIRA:        CORE-2036
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set term ^;
     execute block returns(p1 int, p2 int, p3 int) as
@@ -45,17 +34,17 @@ test_script_1 = """
     set term ^;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     P1                              1308
     P2                              2172
     P3                              3456
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

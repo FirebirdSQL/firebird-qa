@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2069
-# title:        Incorrect VIEW expansion when RDB$DB_KEY is used in view body
-# decription:   
-# tracker_id:   CORE-2069
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2505
+ISSUE:       2505
+TITLE:       Incorrect VIEW expansion when RDB$DB_KEY is used in view body
+DESCRIPTION:
+JIRA:        CORE-2069
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table t1 (n integer);
+init_script = """create table t1 (n integer);
 
 insert into t1 values (1);
 insert into t1 values (2);
@@ -24,9 +19,9 @@ insert into t1 values (3);
 commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """-- ok
+test_script = """-- ok
 select a.*
  from t1 a
  where a.rdb$db_key = (
@@ -52,9 +47,9 @@ select * from v1;
 select * from v1 union all select * from v1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
            N
 ============
            1
@@ -72,9 +67,9 @@ expected_stdout_1 = """
 
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

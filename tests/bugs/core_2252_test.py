@@ -1,47 +1,43 @@
 #coding:utf-8
-#
-# id:           bugs.core_2252
-# title:        EXECUTE STATEMENT on EXTERNAL SOURCE does not check the status of the transaction
-# decription:   
-# tracker_id:   CORE-2252
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2678
+ISSUE:       2678
+TITLE:       EXECUTE STATEMENT on EXTERNAL SOURCE does not check the status of the transaction
+DESCRIPTION:
+JIRA:        CORE-2252
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+substitutions = [('Data source : Firebird.*', 'Data source : Firebird'),
+                 ('[-]{0,1}At block line: [\\d]+, col: [\\d]+', 'At block line')]
 
-substitutions_1 = [('Data source : Firebird.*', 'Data source : Firebird'), ('[-]{0,1}At block line: [\\d]+, col: [\\d]+', 'At block line')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set term ^;
     execute block returns (tran_id integer) as
     begin
-        
+
         execute statement 'select sign(current_transaction) from rdb$database'
         on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
         as user 'sysdba' password 'masterkey'
         into :tran_id;
-        
+
         suspend;
-        
+
         execute statement 'commit'
         on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
         as user 'sysdba' password 'masterkey';
-        
+
         execute statement 'select sign(current_transaction) from rdb$database'
         on external 'localhost:'  || rdb$get_context('SYSTEM','DB_NAME')
         as user 'sysdba' password 'masterkey'
         into :tran_id;
-        
+
         suspend;
     end
     ^
@@ -65,12 +61,13 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     TRAN_ID                         1
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Execute statement error at isc_dsql_prepare :
     335544986 : Explicit transaction control is not allowed
@@ -79,11 +76,11 @@ expected_stderr_1 = """
     -At block line: 11, col: 9
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

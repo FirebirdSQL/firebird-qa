@@ -1,30 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2731
-# title:        Recursive EXECUTE STATEMENT works wrong
-# decription:   
-#                   Checked on:
-#                       4.0.0.1635 SS: 2.030s.
-#                       4.0.0.1633 CS: 5.765s.
-#                       3.0.5.33180 SS: 3.016s.
-#                       3.0.5.33178 CS: 4.001s.
-#                       2.5.9.27119 SS: 0.519s.
-#                       2.5.9.27146 SC: 0.965s.
-#                
-# tracker_id:   CORE-2731
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3126
+ISSUE:       3126
+TITLE:       Recursive EXECUTE STATEMENT works wrong
+DESCRIPTION:
+JIRA:        CORE-2731
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = [('[-]{0,1}At block line: [\\d]+, col: [\\d]+', '')]
-
-init_script_1 = """
+init_script = """
     recreate table SQL_SOURCE(
         SQL_SOURCE varchar(32000)
     );
@@ -44,9 +31,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set term ^ ;
     execute block as
         declare v_sql type of column SQL_SOURCE.SQL_SOURCE;
@@ -69,12 +56,12 @@ test_script_1 = """
     -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
-    commit;    
+    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[-]{0,1}At block line: [\\d]+, col: [\\d]+', '')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Execute statement error at isc_dsql_execute2 :
     335544926 : Execute statement error at isc_dsql_execute2 :
@@ -97,9 +84,9 @@ expected_stderr_1 = """
     -At block line: 5, col: 5
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

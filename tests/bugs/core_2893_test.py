@@ -1,25 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2893
-# title:        Expression in a subquery may be treated as invariant and produce incorrect results
-# decription:   
-#                  Confirmed wrong resultset on 2.1.2.18118.
-#                  Added sample from core-3031.
-#                
-# tracker_id:   CORE-2893
-# min_versions: ['2.5.7']
-# versions:     2.5.7
-# qmid:         None
+
+"""
+ID:          issue-3277
+ISSUE:       3277
+TITLE:       Expression in a subquery may be treated as invariant and produce incorrect results
+DESCRIPTION:
+JIRA:        CORE-2893
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.7
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table test_z (c varchar(10));
     commit;
 
@@ -39,9 +31,9 @@ init_script_1 = """
     ;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set count on;
     set list on;
 
@@ -52,9 +44,9 @@ test_script_1 = """
       where R.RDB$Relation_ID < 2
     ) t;
 
-    select 'Test-2' as msg, z.c 
-    from test_z z 
-    where 
+    select 'Test-2' as msg, z.c
+    from test_z z
+    where
         (
           select z.c || '' from rdb$database
         ) = '1'
@@ -73,12 +65,11 @@ test_script_1 = """
           ) as f3_concat
       from v_test t
     ) t;
-
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             Test-1
     TYPEID                          0
     MSG                             Test-1
@@ -101,9 +92,9 @@ expected_stdout_1 = """
     Records affected: 3
 """
 
-@pytest.mark.version('>=2.5.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

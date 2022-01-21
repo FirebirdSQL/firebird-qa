@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2780
-# title:        Include client library version and protocol version in mon$attachments
-# decription:   
-# tracker_id:   CORE-2780
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          issue-3171
+ISSUE:       3171
+TITLE:       Include client library version and protocol version in mon$attachments
+DESCRIPTION:
+JIRA:        CORE-2780
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     -- See letter from dimitr, 10-apr-2015 09:19
     select
@@ -41,16 +34,16 @@ test_script_1 = """
     where mon$attachment_id = current_connection;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     IS_PROTOCOL_VALID               1
     IS_CLIENT_VERSION_VALID         1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

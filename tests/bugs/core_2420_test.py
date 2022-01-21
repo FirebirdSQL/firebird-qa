@@ -1,23 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_2420
-# title:        Parsing error in EXECUTE STATEMENT with named parameters
-# decription:
-# tracker_id:   CORE-2420
-# min_versions: []
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2836
+ISSUE:       2836
+TITLE:       Parsing error in EXECUTE STATEMENT with named parameters
+DESCRIPTION:
+JIRA:        CORE-2420
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 from firebird.driver import DatabaseError
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """recreate table sch (cod int, num int, name int, prevcod int, udl char(1), root int);
+init_script = """recreate table sch (cod int, num int, name int, prevcod int, udl char(1), root int);
 set term ^;
 create or alter procedure getschdet(cod int, datedoc date, datedoc2 date,
        p1 int, p2 int, p3 int, p4 int, p5 int, p6 int,
@@ -29,36 +24,13 @@ begin
 end ^
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# c = db_conn.cursor()
-#  c.execute("""execute block as
-#  declare datedoc date;
-#  declare cod int;
-#  declare num int;
-#  declare name int;
-#  declare summa int;
-#  begin
-#   for execute statement (
-#       ' select s.cod,s.num, s.name,sum(g.summa) from sch s
-#                left join getschdet(s.cod,:datedoc ,:datedoc,0,0,0,0,0,0,0,0,0,0,0,1,3) g on 1=1
-#          where s.num in (''50'',''51'') and s.udl<>''У'' and s.root=1
-#           and not exists (select s2.cod from sch s2 where s2.prevcod=s.cod)
-#         group by 1,2,3') (datedoc := :datedoc)
-#    into :cod, :num, :name, :summa
-#    do exit;
-#  end""")
-#  print ('Execution OK')
-#
-#---
+act = python_act('db')
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    with act_1.db.connect() as con:
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    with act.db.connect() as con:
         c = con.cursor()
         # Test fails if next raises an exception
         try:

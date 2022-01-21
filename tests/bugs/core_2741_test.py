@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2741
-# title:        Naive metadata extraction code in isql is defeated by "check" keyword typed in mixed case
-# decription:   
-# tracker_id:   CORE-2741
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3136
+ISSUE:       3136
+TITLE:       Naive metadata extraction code in isql is defeated by "check" keyword typed in mixed case
+DESCRIPTION:
+JIRA:        CORE-2741
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create domain dm_int int cHeCk(vAlUE<>0);
     create domain dm_dts timestamp cHeCk(valUe<>cUrrent_timEstamp);
     commit;
@@ -28,18 +21,18 @@ test_script_1 = """
     show domain dm_dts;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     DM_INT                          INTEGER Nullable
                                     cHeCk(vAlUE<>0)
     DM_DTS                          TIMESTAMP Nullable
                                     cHeCk(valUe<>cUrrent_timEstamp)
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

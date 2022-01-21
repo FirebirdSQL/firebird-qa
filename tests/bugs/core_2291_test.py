@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2291
-# title:        BUGCHECK 284 (cannot restore singleton select data (284), file: rse.cpp ...)
-# decription:   
-# tracker_id:   CORE-2291
-# min_versions: ['2.0.6']
-# versions:     2.0.6
-# qmid:         None
+
+"""
+ID:          issue-2716
+ISSUE:       2716
+TITLE:       BUGCHECK 284
+DESCRIPTION:
+JIRA:        CORE-2291
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.6
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """recreate table t (id int, f2 char(16));
+init_script = """recreate table t (id int, f2 char(16));
 commit;
 
 insert into t values (1, '0123456798012345');
@@ -30,9 +25,9 @@ update t set id = 3 where id = 2;
 commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET TERM !!;
+test_script = """SET TERM !!;
 execute block returns (id int)
 as
 begin
@@ -43,18 +38,18 @@ begin
 end !!
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
           ID
 ============
            1
 
 """
 
-@pytest.mark.version('>=2.0.6')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

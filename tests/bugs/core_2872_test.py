@@ -1,53 +1,38 @@
 #coding:utf-8
-#
-# id:           bugs.core_2872
-# title:        EVL_expr: invalid operation (232)
-# decription:   
-#                   Confirmed on WI-V2.5.0.26074 and 2.5.7.27027, got:
-#                   ===
-#                     Statement failed, SQLSTATE = XX000
-#                     internal Firebird consistency check (EVL_expr: invalid operation (232), file: evl.cpp line: 1207)
-#                     After line 2 in file c2872.sql
-#                     Statement failed, SQLSTATE = XX000
-#                     internal Firebird consistency check (can't continue after bugcheck)
-#                   ===
-#                
-# tracker_id:   CORE-2872
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3256
+ISSUE:       3256
+TITLE:       EVL_expr: invalid operation (232)
+DESCRIPTION:
+JIRA:        CORE-2872
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db_1 = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set count on;
-    select 1 as i 
+    select 1 as i
     from rdb$database
     where count(*) >= all (select count(*) from rdb$database)
     ;
-    select 1 as k 
+    select 1 as k
     from rdb$database
     where count(*) = (select count(*) from rdb$database)
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db_1', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Records affected: 0
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -55,10 +40,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

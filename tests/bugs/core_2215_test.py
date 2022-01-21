@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2215
-# title:        GROUP BY concatenation with empty string
-# decription:   
-# tracker_id:   CORE-2215
-# min_versions: []
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2643
+ISSUE:       2643
+TITLE:       GROUP BY concatenation with empty string
+DESCRIPTION:
+JIRA:        CORE-2215
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE ATTRIBUTES_DICTIONARY (
+init_script = """CREATE TABLE ATTRIBUTES_DICTIONARY (
     ID INTEGER NOT NULL,
     NAME VARCHAR(25)
 );
@@ -31,9 +26,9 @@ insert into ATTRIBUTES_DICTIONARY (ID, NAME)
 commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select ATR.name, count(*)
+test_script = """select ATR.name, count(*)
   from ATTRIBUTES_DICTIONARY ATR
   group by 1 order by 2 desc ;
 
@@ -50,9 +45,9 @@ select ATR.name||'', count(*)
   group by ATR.name||'' order by count(*) desc ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 NAME                                      COUNT
 ========================= =====================
 ATTR1                                         2
@@ -79,8 +74,8 @@ ATTR2                                         1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

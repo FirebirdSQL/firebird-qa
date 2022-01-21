@@ -1,39 +1,29 @@
 #coding:utf-8
-#
-# id:           bugs.core_2650
-# title:        Improve sorting performance when long VARCHARs are involved
-# decription:
-#                  Test verifies trivial queries with persistent and computed columns, predicates, views,
-#                  expressions without reference to any column and datatypes which have no symmetrical
-#                  transformation from value to a key (decfloat, time-with-timezone and varchar with non-default collation).
-#
-#                  It is supposed that default value of InlineSortThreshold parameter is 1000.
-#                  No changes in the firebird.conf reuired.
-#
-#                  This test most probably will be added by some new examples later.
-#
-#                  Thanks to dimitr for lot of explanations (e-mail discussion was 28.12.2020).
-#
-#                  Checked on 4.0.0.2303 SS/CS.
-#
-# tracker_id:   CORE-2650
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-3057
+ISSUE:       3057
+TITLE:       Improve sorting performance when long VARCHARs are involved
+DESCRIPTION:
+  Test verifies trivial queries with persistent and computed columns, predicates, views,
+  expressions without reference to any column and datatypes which have no symmetrical
+  transformation from value to a key (decfloat, time-with-timezone and varchar with non-default collation).
+
+  It is supposed that default value of InlineSortThreshold parameter is 1000.
+  No changes in the firebird.conf reuired.
+
+  This test most probably will be added by some new examples later.
+
+  Thanks to dimitr for lot of explanations (e-mail discussion was 28.12.2020).
+JIRA:        CORE-2650
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     recreate view v_unioned as select 1 id from rdb$database;
     commit;
@@ -228,9 +218,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Select Expression
         -> Sort (record length: 1036, key length: 8)
             -> Table "TEST" as "A01" Full Scan
@@ -461,8 +451,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

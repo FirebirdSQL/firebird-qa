@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2826
-# title:        Join condition fails for UTF-8 databases.
-# decription:   
-# tracker_id:   CORE-2826
-# min_versions: ['2.1.4']
-# versions:     2.1.4
-# qmid:         None
+
+"""
+ID:          issue-3213
+ISSUE:       3213
+TITLE:       Join condition fails for UTF-8 databases
+DESCRIPTION:
+JIRA:        CORE-2826
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set autoddl off;
     commit;
 
@@ -38,7 +31,7 @@ test_script_1 = """
     insert into tst1_nopad values ('ap', 123, ' ');
     insert into tst1_nopad values ('hel', 666, 'v');
     commit;
-    
+
     set list on;
     set plan on;
     select t1.*
@@ -47,33 +40,33 @@ test_script_1 = """
        and t1.k2 = 123
        and t1.k3 = ' '
     plan (t1 natural);
-    
+
     select t1.*
       from tst1_nopad t1
      where t1.k1 = 'ap'
        and t1.k2 = 123
        and t1.k3 = ' ';
-  
+
      -- 'show table' was removed, see CORE-4782 ("Command `SHOW TABLE` fails..." - reproduced on Windows builds 2.5 and 3.0 only)
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (T1 NATURAL)
     K1                              ap
     K2                              123
-    K3                                  
+    K3
 
     PLAN (T1 INDEX (TXT1_NOPAD_PK))
     K1                              ap
     K2                              123
-    K3                                  
+    K3
 """
 
-@pytest.mark.version('>=2.1.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

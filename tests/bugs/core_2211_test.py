@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2211
-# title:        Offset value for SUBSTRING from BLOB more than 32767 makes exception
-# decription:
-# tracker_id:   CORE-2211
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2639
+ISSUE:       2639
+TITLE:       Offset value for SUBSTRING from BLOB more than 32767 makes exception
+DESCRIPTION:
+JIRA:        CORE-2211
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('SUBSTRING.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- [pcisar] 20.10.2021
     -- This script reports error:
     -- Statement failed, SQLSTATE = 54000
@@ -58,17 +51,17 @@ test_script_1 = """
     rollback;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('SUBSTRING.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     CHAR_LENGTH                     1048320
     SUBSTRING                       0:43
     #
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

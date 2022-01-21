@@ -1,42 +1,29 @@
 #coding:utf-8
-#
-# id:           bugs.core_2268
-# title:        GFIX causes BUGCHECK errors with non valid transaction numbers
-# decription:
-# tracker_id:   CORE-2268
-# min_versions: []
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2694
+ISSUE:       2694
+TITLE:       GFIX causes BUGCHECK errors with non valid transaction numbers
+DESCRIPTION:
+JIRA:        CORE-2268
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^failed to reconnect to a transaction in database.*', '')]
+act = python_act('db', substitutions=[('^failed to reconnect to a transaction in database.*', '')])
 
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-# runProgram('gfix',['-user',user_name,'-pas',user_password,'-commit','1000000',dsn])
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stderr_1 = """transaction is not in limbo
+expected_stderr = """transaction is not in limbo
 -transaction 1000000 is in an ill-defined state
 
 """
 
 @pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.gfix(switches=['-commit', '1000000', act_1.db.dsn])
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.gfix(switches=['-commit', '1000000', act.db.dsn])
+    assert act.clean_stderr == act.clean_expected_stderr
 
 

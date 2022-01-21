@@ -1,48 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_2890
-# title:        SQLSTATE should also be available as a PSQL context variable like GDSCODE/SQLCODE
-# decription:   
-#                  ::: NOTE :::
-#                  Despite of ticket's issue that it was fixed to 2.5.1, test script from here will output
-#                  NOT ALL rows in WI-V2.5.1.26351 (official 2.5.1 release):
-#               
-#                   RES_SQLCODE                     -901
-#                   RES_GDSCODE                     335544345
-#                   RES_SQLSTATE                    40001
-#               
-#                   RES_SQLCODE                     -802
-#                   RES_GDSCODE                     335544321
-#                   RES_SQLSTATE                    22012
-#               
-#                   These data:
-#                     RES_SQLCODE                     -803
-#                     RES_GDSCODE                     335544665
-#                     RES_SQLSTATE                    23000
-#                   -- will not be displayed.
-#                  For this reason it was decided to specify min_version = 2.5.2 rather than 2.5.1
-#                
-# tracker_id:   CORE-2890
-# min_versions: ['2.5.2']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3274
+ISSUE:       3274
+TITLE:       SQLSTATE should also be available as a PSQL context variable like GDSCODE/SQLCODE
+DESCRIPTION:
+JIRA:        CORE-2890
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='core2890.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core2890.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     commit;
     set transaction no wait;
-    
+
     update test set id = -id where id = 2;
 
     set list on;
@@ -75,9 +49,9 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RES_SQLCODE                     -803
     RES_GDSCODE                     335544665
     RES_SQLSTATE                    23000
@@ -92,8 +66,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

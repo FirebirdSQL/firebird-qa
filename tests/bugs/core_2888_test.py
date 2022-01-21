@@ -1,42 +1,33 @@
 #coding:utf-8
-#
-# id:           bugs.core_2888
-# title:        A memory corruption cause incorrect query evaluation and may crash the server
-# decription:
-# tracker_id:   CORE-2888
-# min_versions: ['2.1.4']
-# versions:     2.1.4
-# qmid:         None
+
+"""
+ID:          issue-3272
+ISSUE:       3272
+TITLE:       A memory corruption cause incorrect query evaluation and may crash the server
+DESCRIPTION:
+JIRA:        CORE-2888
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """select 1 from rdb$database where 1 in (select (select current_connection from rdb$database) from rdb$database);
+test_script = """select 1 from rdb$database where 1 in (select (select current_connection from rdb$database) from rdb$database);
 select 1 from rdb$database where 1 in (select (select 1 from rdb$database) from rdb$database);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_2888.fdb, User: SYSDBA
-SQL> SQL>
+expected_stdout = """
     CONSTANT
 ============
            1
+"""
 
-SQL>"""
-
-@pytest.mark.version('>=2.1.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

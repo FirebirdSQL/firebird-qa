@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2006
-# title:        SUBSTRING with regular expression (SIMILAR TO) capability
-# decription:
-# tracker_id:   CORE-2006
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2443
+ISSUE:       2443
+TITLE:       SUBSTRING with regular expression (SIMILAR TO) capability
+DESCRIPTION:
+JIRA:        CORE-2006
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     ------------------------------------------------------------------------------
 
@@ -175,9 +168,9 @@ test_script_1 = """
     );
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     STR                             WDWDWDWD
     PTN                             ((DW)|(WD)){4}
     str similar to %ptn%            1
@@ -487,8 +480,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

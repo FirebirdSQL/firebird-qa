@@ -1,41 +1,34 @@
 #coding:utf-8
-#
-# id:           bugs.core_2835
-# title:        Natural is used to select instead of primary key index
-# decription:   
-# tracker_id:   CORE-2835
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3221
+ISSUE:       3221
+TITLE:       Natural is used to select instead of primary key index
+DESCRIPTION:
+JIRA:        CORE-2835
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db_1 = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create table net_net_device(
       id integer not null,
      constraint pk_net_net_device primary key (id)
     );
-    
+
     create table net_dev_interconnection(
       prim_devid integer not null,
       secondary_devid integer not null,
       interconnect_level integer,
       constraint pk_net_dev_interconnection primary key (prim_devid, secondary_devid)
     );
-    
+
     alter table net_dev_interconnection add constraint fk_net_dev_interconnection_001
       foreign key (prim_devid) references net_net_device(id);
-    
+
     alter table net_dev_interconnection add constraint fk_net_dev_interconnection_002
       foreign key (secondary_devid) references net_net_device(id);
 
@@ -49,19 +42,19 @@ test_script_1 = """
     begin
       delete from NET_DEV_INTERCONNECTION;
       delete from NET_NET_DEVICE;
-    
+
       while (cnt1 > 0) do
       begin
           insert into NET_NET_DEVICE values (:cnt1);
           cnt1 = cnt1 - 1;
       end
-    
+
       while (cnt2 > 0) do
       begin
           insert into NET_DEV_INTERCONNECTION values (1, :cnt2, null);
           cnt2 = cnt2 - 1;
       end
-    
+
       execute statement 'set statistics index PK_NET_NET_DEVICE';
       execute statement 'set statistics index PK_NET_DEV_INTERCONNECTION';
       execute statement 'set statistics index FK_NET_DEV_INTERCONNECTION_001';
@@ -70,7 +63,7 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     set planonly;
     select distinct t0_dep.id
     from net_net_device t1_nd,
@@ -81,15 +74,15 @@ test_script_1 = """
       and t0_dep.id=t3_nd_dependantdevices_relation.secondary_devid;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db_1', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN SORT (JOIN (T1_ND INDEX (PK_NET_NET_DEVICE), T3_ND_DEPENDANTDEVICES_RELATION INDEX (FK_NET_DEV_INTERCONNECTION_001), T0_DEP INDEX (PK_NET_NET_DEVICE)))
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

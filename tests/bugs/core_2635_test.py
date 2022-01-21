@@ -1,23 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2635
-# title:        Unique index with a lot of NULL keys can be corrupted at level 1
-# decription:
-# tracker_id:   CORE-2635
-# min_versions: ['2.1.4', '2.0.6', '2.5']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3043
+ISSUE:       3043
+TITLE:       Unique index with a lot of NULL keys can be corrupted at level 1
+DESCRIPTION:
+JIRA:        CORE-2635
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = [('[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9]', ''),
-                   ('Relation [0-9]{3,4}', 'Relation')]
-
-init_script_1 = """set term ^;
+init_script = """set term ^;
 recreate table t (id int, sss varchar(255)) ^
 create unique descending index t_id_desc on t (id) ^
 create unique ascending  index t_id_asc  on t (id) ^
@@ -55,17 +49,12 @@ end ^
 commit ^
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# db_conn.close()
-#  runProgram('gfix',['-validate','-full','-no_update','-user',user_name,'-password',user_password,dsn])
-#---
+act = python_act('db', substitutions=[('[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9]', ''),
+                                        ('Relation [0-9]{3,4}', 'Relation')])
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
 Validation started
 Relation (T)
 process pointer page    0 of    1
@@ -78,9 +67,9 @@ Validation finished
 """
 
 @pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    with act_1.connect_server() as srv:
-        srv.database.validate(database=act_1.db.db_path)
-        act_1.stdout = '\n'.join(srv.readlines())
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    with act.connect_server() as srv:
+        srv.database.validate(database=act.db.db_path)
+        act.stdout = '\n'.join(srv.readlines())
+    assert act.clean_stdout == act.clean_expected_stdout

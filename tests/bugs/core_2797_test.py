@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2797
-# title:        Problem with default value of SP parameter
-# decription:   
-# tracker_id:   CORE-2797
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3187
+ISSUE:       3187
+TITLE:       Problem with default value of SP parameter
+DESCRIPTION:
+JIRA:        CORE-2797
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('==.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_test as begin end;
     commit;
 
@@ -44,10 +37,10 @@ test_script_1 = """
 
     set term ^;
     create or alter procedure sp_test (
-         in01 timestamp not null       =    'now' 
+         in01 timestamp not null       =    'now'
         ,in02 dm_dts_cts               =    current_timestamp
         ,in03 type of dm_dts_now       =    current_date
-        ,in04 timestamp not null       =    'now' 
+        ,in04 timestamp not null       =    'now'
         ,in05 dm_dts_cts               =    current_timestamp
         ,in06 type of dm_dts_now       =    current_date
         ,in07 int not null             =    current_connection
@@ -64,10 +57,10 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
-    
+
+
     --set list on;
-    
+
     set width ppar_name 15;
     set width ppar_fld_src 35;
     set width ppar_def_src 35;
@@ -86,9 +79,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('==.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     PPAR_NAME       PPAR_FLD_SRC                        PPAR_DEF_SRC                        RDBF_FLD_NAME   RDBF_DEF_SRC
     IN01            RDB$1                               =    'now'                          RDB$1           <null>
     IN02            DM_DTS_CTS                          =    current_timestamp              DM_DTS_CTS      default current_timestamp
@@ -105,8 +98,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

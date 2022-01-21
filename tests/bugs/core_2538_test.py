@@ -1,23 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2538
-# title:        PSQL doesnt allow to use singleton query result as input parameter of stored procedure when procedure accessed using 'execute procedure'
-# decription:   
-# tracker_id:   CORE-2538
-# min_versions: []
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2948
+ISSUE:       2948
+TITLE:       PSQL doesnt allow to use singleton query result as input parameter of stored procedure when procedure accessed using 'execute procedure'
+DESCRIPTION:
+JIRA:        CORE-2538
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """set term ^ ;
-
+init_script = """set term ^ ;
 create procedure P (I integer)
 returns (O integer)
 AS
@@ -26,9 +20,9 @@ BEGIN
 END ^
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """set term ^ ;
+test_script = """set term ^ ;
 
 execute block
 as
@@ -45,10 +39,11 @@ begin
 end ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

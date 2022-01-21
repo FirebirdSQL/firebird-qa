@@ -1,29 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_2098
-# title:        View over global temporary table
-# decription:   
-# tracker_id:   CORE-2098
-# min_versions: []
-# versions:     2.1.2
-# qmid:         bugs.core_2098
+
+"""
+ID:          issue-2532
+ISSUE:       2532
+TITLE:       View over global temporary table
+DESCRIPTION:
+JIRA:        CORE-2098
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create global temporary table temptable (
+init_script = """create global temporary table temptable (
  id integer);
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """recreate view tempview1
+test_script = """recreate view tempview1
 as
 select
  a.id as id
@@ -39,10 +34,11 @@ from
 commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.1.2')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2073
-# title:        Expression indexes bug: incorrect result for the inverted boolean
-# decription:   
-# tracker_id:   CORE-2073
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_2073
+
+"""
+ID:          issue-2508
+ISSUE:       2508
+TITLE:       Expression indexes bug: incorrect result for the inverted boolean
+DESCRIPTION:
+JIRA:        CORE-1000
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE TMP_DATE1
+init_script = """CREATE TABLE TMP_DATE1
 (
   DATE1 DATE,
   DATE2 DATE
@@ -41,16 +36,16 @@ CREATE INDEX TMP_DATE1_IDX2 ON TMP_DATE1 (DATE1);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT count(*) FROM TMP_DATE1 T WHERE '01.03.2008' BETWEEN T.DATE1+0 AND T.DATE2;
 SELECT count(*) FROM TMP_DATE1 T  WHERE '01.03.2008' >= T.DATE1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 PLAN (T INDEX (TMP_DATE1_IDX1))
 
                 COUNT
@@ -67,8 +62,8 @@ PLAN (T INDEX (TMP_DATE1_IDX2))
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

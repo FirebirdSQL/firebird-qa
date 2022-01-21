@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2053
-# title:        Computed expressions may be optimized badly if used inside the RETURNING clause of the INSERT statement
-# decription:   
-# tracker_id:   CORE-2053
-# min_versions: []
-# versions:     2.1.2
-# qmid:         bugs.core_2053
+
+"""
+ID:          issue-2489
+ISSUE:       2489
+TITLE:       Computed expressions may be optimized badly if used inside the RETURNING clause of the INSERT statement
+DESCRIPTION:
+JIRA:        CORE-2053
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table t1 (col1 int);
+init_script = """create table t1 (col1 int);
 create index i1 on t1 (col1);
 commit;
 insert into t1 (col1) values (1);
@@ -25,15 +20,15 @@ create table t2 (col2 int);
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 insert into t2 (col2) values (1) returning case when exists (select 1 from t1 where col1 = col2) then 1 else 0 end;
 commit;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 PLAN (T1 INDEX (I1))
 
         CASE
@@ -42,9 +37,9 @@ PLAN (T1 INDEX (I1))
 
 """
 
-@pytest.mark.version('>=2.1.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

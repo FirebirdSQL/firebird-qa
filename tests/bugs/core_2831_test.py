@@ -1,36 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_2831
-# title:        isql shouldn't display db and user name when extracting a script
-# decription:
-# tracker_id:   CORE-2831
-# min_versions: ['2.0.6', '2.1.4', '2.5']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3217
+ISSUE:       3217
+TITLE:       isql shouldn't display db and user name when extracting a script
+DESCRIPTION:
+JIRA:        CORE-2831
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!Database:|User:).)*$', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-# #
-#  runProgram('isql',['-x',dsn,'-user',user_name,'-pass',user_password])
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
+act = python_act('db', substitutions=[('^((?!Database:|User:).)*$', '')])
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.isql(switches=['-x'])
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.isql(switches=['-x'])
+    assert act.clean_stdout == act.clean_expected_stdout
 

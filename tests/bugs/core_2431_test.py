@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2431
-# title:        String values in error messages are not converted to connection charset
-# decription:
-# tracker_id:   CORE-2431
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2847
+ISSUE:       2847
+TITLE:       String values in error messages are not converted to connection charset
+DESCRIPTION:
+JIRA:        CORE-2431
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='core2431.fbk')
 
-substitutions_1 = [('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core2431.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select c.rdb$character_set_name as connection_cset
     from mon$attachments a
@@ -37,12 +30,14 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+                 substitutions=[('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
 
-expected_stdout_1 = """
+expected_stdout = """
     CONNECTION_CSET                 WIN1251
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_BAD_REMAINDER
@@ -51,10 +46,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute(charset='win1251')
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute(charset='win1251')
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

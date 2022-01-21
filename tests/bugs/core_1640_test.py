@@ -1,5 +1,13 @@
 #coding:utf-8
 
+"""
+ID:          issue-2066
+ISSUE:       2066
+TITLE:       CREATE OR ALTER VIEW statement
+DESCRIPTION:
+JIRA:        CORE-1640
+"""
+
 import pytest
 from firebird.qa import db_factory, isql_act, Action
 

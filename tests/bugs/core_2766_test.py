@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2766
-# title:        Error "page 0 is of wrong type (expected 6, found 1)" is thrown while accessing a non-corrupted table
-# decription:   
-# tracker_id:   CORE-2766
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3158
+ISSUE:       3158
+TITLE:       Error "page 0 is of wrong type (expected 6, found 1)" is thrown while accessing a non-corrupted table
+DESCRIPTION:
+JIRA:        CORE-2766
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table t_master (id int not null, name varchar(64));
+init_script = """create table t_master (id int not null, name varchar(64));
 alter table t_master add constraint PK_master primary key (id);
 
 create table t_detail (id_master int not null, name varchar(64));
@@ -29,9 +24,9 @@ insert into t_detail values (1, 'a');
 commit;
 """
 
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """insert into t_master values (3, '2');
+test_script = """insert into t_master values (3, '2');
 delete from t_master where id = 3;
 commit;
 
@@ -42,18 +37,17 @@ delete from t_master;
 select count(*) from t_master;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
                 COUNT
 =====================
                     0
-
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

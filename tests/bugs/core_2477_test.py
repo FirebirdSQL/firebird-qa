@@ -1,58 +1,44 @@
 #coding:utf-8
-#
-# id:           bugs.core_2477
-# title:        mon$memory_usage: Sorting memory should be reported as owned by the statement
-# decription:
-#                  We create view that gathers monitoring info related to all needed levels of statistics (DB, attachment, transaction, call).
-#                  Then this view is "customized" in order to leave only interested info about activity that will be started by separate isql process.
-#                  Then we start ascynchronously ISQL and make it stay in some (small) pause. At this moment we make first "photo" of mon$ info and store
-#                  it in dict object 'map_beg'.
-#                  NB: we should NOT wait too long because when SORT starts it can very fast to fill whole space of TempCacheLimit and mon$memory* counters
-#                  will not change  since this poitn at all (===> one mey to get zero difference between mon$ countyers in this case).
-#
-#                  After small pause (in ISQL connect) will gone, ISQL starts to do "huge sort" by invoking query with 'SELECT DISTINCT FROM <huge data source>'.
-#                  We wait about 1..2 second after this sort start and then make 2nd "photo" of monitoring counters and also store their values in another
-#                  dict object ('map_end').
-#
-#                  Finally, we force ISQL to finish (by moving DB in full shutdown state) and compare differences between corresp. values of map_end and map_beg.
-#                  Values for DATABASE level (mon$stat_group = 0) change only in SuperServer but never change in CS/SC and remain zero. We do not compare them.
-#                  Values for TRANSACTION level never increase; moreover, mon$memory_allocated counter at the "end-point" (when sorting is running) even is reduced
-#                  (and the reason still remain unknown for me; see letter to dimitr 04-may-2018 20:07).
-#                  So, we compare only difference of mon$memory* counters for ATTACHMENT and STATEMENT level (mon$stat_group = 1 and 3).
-#
-#                  This difference must be not less than some threshold that depends on FB arch, for __BOTH__ levels (and this is main idea of this test)
-#                                                                                                ###################
-#
-#                  Runs this test on firebird.conf with default TempCacheLimit show following values of differences:
-#                  1) for SuperServer: ~68.1 Mb;
-#                  2) for Classic: ~9.4 Mb
-#                  For this reason minimal threshold for consider difference Ok is about 1 Mb (see MIN_DIFF_THRESHOLD).
-#
-#                  Checked on (Windows 32 bit):
-#                      25SC, build 2.5.9.27107: OK, 10.328s.
-#                      25sS, build 2.5.8.27056: OK, 14.656s.
-#                      30Cs, build 3.0.4.32947: OK, 14.234s.
-#                      30SS, build 3.0.4.32963: OK, 17.234s.
-#                      40CS, build 4.0.0.955: OK, 11.219s.
-#                      40SS, build 4.0.0.967: OK, 12.718s.
-#
-#               [pcisar] 16.11.2021
-#               This test is too complicated and fragile, and it's IMHO not worth to be implemented
-#
-# tracker_id:   CORE-2477
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2890
+ISSUE:       2890
+TITLE:       mon$memory_usage: Sorting memory should be reported as owned by the statement
+DESCRIPTION:
+  We create view that gathers monitoring info related to all needed levels of statistics (DB, attachment, transaction, call).
+  Then this view is "customized" in order to leave only interested info about activity that will be started by separate isql process.
+  Then we start ascynchronously ISQL and make it stay in some (small) pause. At this moment we make first "photo" of mon$ info and store
+  it in dict object 'map_beg'.
+  NB: we should NOT wait too long because when SORT starts it can very fast to fill whole space of TempCacheLimit and mon$memory* counters
+  will not change  since this poitn at all (===> one mey to get zero difference between mon$ countyers in this case).
+
+  After small pause (in ISQL connect) will gone, ISQL starts to do "huge sort" by invoking query with 'SELECT DISTINCT FROM <huge data source>'.
+  We wait about 1..2 second after this sort start and then make 2nd "photo" of monitoring counters and also store their values in another
+  dict object ('map_end').
+
+  Finally, we force ISQL to finish (by moving DB in full shutdown state) and compare differences between corresp. values of map_end and map_beg.
+  Values for DATABASE level (mon$stat_group = 0) change only in SuperServer but never change in CS/SC and remain zero. We do not compare them.
+  Values for TRANSACTION level never increase; moreover, mon$memory_allocated counter at the "end-point" (when sorting is running) even is reduced
+  (and the reason still remain unknown for me; see letter to dimitr 04-may-2018 20:07).
+  So, we compare only difference of mon$memory* counters for ATTACHMENT and STATEMENT level (mon$stat_group = 1 and 3).
+
+  This difference must be not less than some threshold that depends on FB arch, for __BOTH__ levels (and this is main idea of this test)
+                                                                                ###################
+
+  Runs this test on firebird.conf with default TempCacheLimit show following values of differences:
+  1) for SuperServer: ~68.1 Mb;
+  2) for Classic: ~9.4 Mb
+  For this reason minimal threshold for consider difference Ok is about 1 Mb (see MIN_DIFF_THRESHOLD).
+NOTES:
+[16.11.2021] pcisar
+  This test is too complicated and fragile, and it's IMHO not worth to be implemented
+JIRA:        CORE-2477
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create or alter view v_mon as
     select *
     from (
@@ -97,7 +83,7 @@ init_script_1 = """
 
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
 # test_script_1
 #---
@@ -373,9 +359,9 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #---
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act = python_act('db')
 
-expected_stdout_1 = """
+expected_stdout = """
     1 attachment
     * DELTA of mon$memory_used: OK, expected: increased significantly.
     * DELTA of mon$memory_allo: OK, expected: increased significantly.
@@ -385,8 +371,9 @@ expected_stdout_1 = """
     * DELTA of mon$memory_allo: OK, expected: increased significantly.
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    pytest.skip("New implementation postponed")
+@pytest.mark.version('>=3.0')
+@pytest.mark.skip("Test fate to be determined")
+def test_1():
+    pytest.fail("Test not IMPLEMENTED")
 
 

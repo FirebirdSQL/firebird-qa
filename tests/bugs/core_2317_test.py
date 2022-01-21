@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2317
-# title:        select * from (select cast(.... returns null
-# decription:   
-# tracker_id:   CORE-2317
-# min_versions: []
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2741
+ISSUE:       2741
+TITLE:       select * from (select cast(.... returns null
+DESCRIPTION:
+JIRA:        CORE-2317
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """
+init_script = """
 	CREATE TABLE PROC(
 	  PROC Char(10) NOT NULL,
 	  TPRO Char(10) NOT NULL,
@@ -37,9 +32,9 @@ init_script_1 = """
 	commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
 	set list on;
 	-- returns NULL
 	select * from (select cast("ACTO" as character(100)) as "D_COL1" from "PROC1" where "PROC"='1R1oK3qxdM') AA;
@@ -48,17 +43,17 @@ test_script_1 = """
 	select * from (select "ACTO" as "D_COL1" from "PROC1" where "PROC"='1R1oK3qxdM') AA;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	D_COL1                          2
 	D_COL1                          2
-	D_COL1                          2  
+	D_COL1                          2
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

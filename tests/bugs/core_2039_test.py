@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2039
-# title:        Domain-level CHECK constraints wrongly process NULL values
-# decription:   
-# tracker_id:   CORE-2039
-# min_versions: []
-# versions:     2.1.2
-# qmid:         bugs.core_2039
+
+"""
+ID:          issue-2476
+ISSUE:       2476
+TITLE:       Domain-level CHECK constraints wrongly process NULL values
+DESCRIPTION:
+JIRA:        CORE-2039
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE DOMAIN D_DATE AS DATE
+init_script = """CREATE DOMAIN D_DATE AS DATE
 CHECK (VALUE BETWEEN DATE '01.01.1900' AND DATE '01.01.2050');
 
 CREATE PROCEDURE TMP (PDATE D_DATE)
@@ -25,15 +20,16 @@ AS BEGIN END;
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """EXECUTE PROCEDURE TMP (NULL);
+test_script = """EXECUTE PROCEDURE TMP (NULL);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.1.2')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

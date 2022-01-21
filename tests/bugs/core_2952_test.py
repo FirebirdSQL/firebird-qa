@@ -1,24 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2952
-# title:        Case-sensitive character class names in SIMILAR TO
-# decription:   
-# tracker_id:   CORE-2952
-# min_versions: ['3.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-3334
+ISSUE:       3334
+TITLE:       Case-sensitive character class names in SIMILAR TO
+DESCRIPTION:
+JIRA:        CORE-2952
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+db = db_factory(charset='UTF8')
 
 # version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     -- NOTE:
@@ -52,7 +47,7 @@ test_script_1 = """
     create collation co_utf8_cs_as for utf8 from unicode case sensitive accent sensitive;
     create collation co_utf8_ci_as for utf8 from unicode case insensitive accent sensitive;
     commit;
-    
+
     set list on;
 
     with recursive
@@ -90,7 +85,7 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
     C                               a
@@ -994,7 +989,7 @@ expected_stdout_1 = """
     S_UPPER_CI_AS                   0
     S_WHITE_SPACE                   0
 
-    
+
     C                               Ź
     S_ALPHA_CI_AI                   1
     S_ALPHA_CS_AS                   0
@@ -1055,7 +1050,7 @@ expected_stdout_1 = """
     S_UPPER_CI_AS                   0
     S_WHITE_SPACE                   0
 
-    C                               	
+    C
     S_ALPHA_CI_AI                   0
     S_ALPHA_CS_AS                   0
     S_ALPHA_CI_AS                   0
@@ -1067,7 +1062,7 @@ expected_stdout_1 = """
     S_UPPER_CI_AS                   0
     S_WHITE_SPACE                   1
 
-    C                               
+    C
     S_ALPHA_CI_AI                   0
     S_ALPHA_CS_AS                   0
     S_ALPHA_CI_AS                   0
@@ -1089,7 +1084,7 @@ expected_stdout_1 = """
     S_UPPER_CI_AI                   0
     S_UPPER_CS_AS                   0
     S_UPPER_CI_AS                   0
-    S_WHITE_SPACE                   1  
+    S_WHITE_SPACE                   1
 """
 
 @pytest.mark.version('>=3.0,<4.0')
@@ -1099,13 +1094,6 @@ def test_1(act_1: Action):
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     -- NOTE:
@@ -1140,13 +1128,13 @@ test_script_2 = """
     create collation co_utf8_cs_as for utf8 from unicode case sensitive accent sensitive;
     create collation co_utf8_ci_as for utf8 from unicode case insensitive accent sensitive;
     commit;
-    
+
     set list on;
 
     with recursive
     d as (
         select cast('aeiouyAEIOUYáéíóúýàèìòùâêîôûãñõäëïöüÿçšąęźżăşţÁÉÍÓÚÝÀÈÌÒÙÂÊÎÔÛÃÑÕÄËÏÖÜŸÇŠĄĘŹŻĂŞŢ'
-		                || ascii_char(9) || ascii_char(10) || ascii_char(32) 
+		                || ascii_char(9) || ascii_char(10) || ascii_char(32)
 						|| 'øðłŀØÐŁĿ' -- added 14.10.2019
 			        as varchar(100) character set utf8
 				    ) s
@@ -1182,7 +1170,7 @@ test_script_2 = """
     ;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2)
 
 expected_stdout_2 = """
 	C                               a
@@ -2145,7 +2133,7 @@ expected_stdout_2 = """
 	S_UPPER_CI_AS                   0
 	S_WHITE_SPACE                   0
 
-	C                               	
+	C
 	S_ALPHA_CI_AI                   0
 	S_ALPHA_CS_AS                   0
 	S_ALPHA_CI_AS                   0
@@ -2157,7 +2145,7 @@ expected_stdout_2 = """
 	S_UPPER_CI_AS                   0
 	S_WHITE_SPACE                   1
 
-	C                               
+	C
 	S_ALPHA_CI_AI                   0
 	S_ALPHA_CS_AS                   0
 	S_ALPHA_CI_AS                   0

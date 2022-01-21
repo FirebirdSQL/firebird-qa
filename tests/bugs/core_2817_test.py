@@ -1,23 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2817
-# title:        If stored procedure or trigger contains query with PLAN ORDER it could fail after disconnect of attachment where procedure	rigger executed first time
-# decription:
-#
-# tracker_id:   CORE-2817
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3204
+ISSUE:       3204
+TITLE:       If stored procedure or trigger contains query with PLAN ORDER it could fail after disconnect of attachment where procedure/trigger executed first time
+DESCRIPTION:
+JIRA:        CORE-2817
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create sequence g;
     create or alter procedure sp_test returns(cnt int) as begin end;
     recreate table test(
@@ -60,38 +54,14 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# import fdb
-#
-#  db_conn.close()
-#  att1 = kdb.connect(dsn=dsn.encode(),user='SYSDBA',password='masterkey')
-#  att2 = kdb.connect(dsn=dsn.encode(),user='SYSDBA',password='masterkey')
-#
-#  cur1 = att1.cursor()
-#  cur2 = att2.cursor()
-#
-#  sp_run='execute procedure sp_test'
-#
-#  cur1.execute('execute procedure sp_test(0)')
-#  cur2.execute('execute procedure sp_test(1)')
-#
-#  att1.commit()
-#  att1.close()
-#
-#  cur2.execute('execute procedure sp_test(1)')
-#  att2.close()
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act = python_act('db')
 
 @pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    with act_1.db.connect() as att2:
-        with act_1.db.connect() as att1:
+def test_1(act: Action):
+    with act.db.connect() as att2:
+        with act.db.connect() as att1:
             cur1 = att1.cursor()
             cur2 = att2.cursor()
             cur1.execute('execute procedure sp_test(0)')

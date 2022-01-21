@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2697
-# title:        Support the "? in (SELECT some_col FROM some_table)" subqueries
-# decription:   
-# tracker_id:   CORE-2697
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3097
+ISSUE:       3097
+TITLE:       Support the "? in (SELECT some_col FROM some_table)" subqueries
+DESCRIPTION:
+JIRA:        CORE-2697
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table t1(id int, x int);
     commit;
     recreate table t2(id int, t1_id int, y int);
@@ -24,7 +19,7 @@ init_script_1 = """
     insert into t1 values(1, 100);
     insert into t1 values(2, 200);
     insert into t1 values(3, 300);
-    
+
     insert into t2 values(11, 1, 111);
     insert into t2 values(12, 1, 112);
     insert into t2 values(13, 1, 113);
@@ -33,9 +28,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     set term ^;
     execute block returns(x_in_t2 int) as
@@ -60,16 +55,16 @@ test_script_1 = """
     --    -Data type unknown
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     X_IN_T2                         100
     X_IN_T2                         300
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

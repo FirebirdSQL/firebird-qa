@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2578
-# title:        select rdb$db_key from a view with a more than 1 table joined, results in conversion error
-# decription:   
-# tracker_id:   CORE-2578
-# min_versions: []
-# versions:     2.1.4
-# qmid:         None
+
+"""
+ID:          issue-2988
+ISSUE:       2988
+TITLE:       select rdb$db_key from a view with a more than 1 table joined, results in conversion error
+DESCRIPTION:
+JIRA:        CORE-2578
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.4
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE TABLE_A (
+init_script = """CREATE TABLE TABLE_A (
     F_A INTEGER,
     F_B INTEGER
 );
@@ -44,23 +39,23 @@ commit;
 
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select rdb$db_key from VIEW_A order by 1 ;
+test_script = """select rdb$db_key from VIEW_A order by 1 ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 DB_KEY
 ================================
 81000000010000008000000001000000
 
 """
 
-@pytest.mark.version('>=2.1.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,22 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_2907
-# title:        Unable to catch exceptions that are thrown inside a dynamic builded execute block.
-# decription:   
-# tracker_id:   CORE-2907
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-3291
+ISSUE:       3291
+TITLE:       Exception handling with EXECUTE STATEMENT
+DESCRIPTION:
+  Unable to catch exceptions that are thrown inside a dynamic builded execute block.
+JIRA:        CORE-2907
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE OR ALTER EXCEPTION EX_TEST 'test';
+init_script = """CREATE OR ALTER EXCEPTION EX_TEST 'test';
 
 SET TERM ^ ;
 CREATE OR ALTER procedure sp_1
@@ -70,16 +66,17 @@ commit;
 
 """
 
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """EXECUTE PROCEDURE SP_2;
+test_script = """EXECUTE PROCEDURE SP_2;
 EXECUTE PROCEDURE SP_3;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

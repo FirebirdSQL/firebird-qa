@@ -1,39 +1,32 @@
 #coding:utf-8
-#
-# id:           bugs.core_2929
-# title:        "Invalid ESCAPE sequence" when connecting to the database
-# decription:   
-# tracker_id:   CORE-2929
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3312
+ISSUE:       3312
+TITLE:       "Invalid ESCAPE sequence" when connecting to the database
+DESCRIPTION:
+JIRA:        CORE-2929
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set list on;
 
-    recreate table t(id int, who_am_i varchar(31) default current_user, whats_my_role varchar(31) default current_role); 
+    recreate table t(id int, who_am_i varchar(31) default current_user, whats_my_role varchar(31) default current_role);
     commit;
-    insert into t(id) values(0); 
-    commit;
-
-    create user "#" password '#'; 
-    create role "##"; 
+    insert into t(id) values(0);
     commit;
 
-    grant "##" to "#"; 
+    create user "#" password '#';
+    create role "##";
+    commit;
+
+    grant "##" to "#";
     commit;
 
     grant select, insert, update, delete on t to role "##";
@@ -54,9 +47,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              -1
     WHO_AM_I                        #
     WHATS_MY_ROLE                   ##
@@ -66,9 +59,9 @@ expected_stdout_1 = """
     WHATS_MY_ROLE                   ##
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

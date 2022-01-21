@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2075
-# title:        Parts of RDB$DB_KEY of views may be inverted when using outer joins
-# decription:   
-# tracker_id:   CORE-2075
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2510
+ISSUE:       2510
+TITLE:       Parts of RDB$DB_KEY of views may be inverted when using outer joins
+DESCRIPTION:
+JIRA:        CORE-2075
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table t1 (n integer);
+init_script = """create table t1 (n integer);
 create table t2 (n integer);
 
 insert into t1 values (1);
@@ -39,15 +34,15 @@ create view v (t1, t2) as
       on t2.n = t1.n;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select v.rdb$db_key, v.*
+test_script = """select v.rdb$db_key, v.*
   from v;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 DB_KEY                           T1               T2
 ================================ ================ ================
 81000000010000008000000002000000 8000000002000000 8100000001000000
@@ -60,9 +55,9 @@ DB_KEY                           T1               T2
 
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

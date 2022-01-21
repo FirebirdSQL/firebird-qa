@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2833
-# title:        Changing data that affects an expression index that contains references to null date fields fails
-# decription:   
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         bugs.core_2833
+
+"""
+ID:          issue-3219
+ISSUE:       3219
+TITLE:       Changing data that affects an expression index that contains references to null date fields fails
+DESCRIPTION:
+JIRA:        CORE-2833
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table policen_order (
         id integer not null,
         vstatus integer,
@@ -25,7 +20,7 @@ init_script_1 = """
         storno date
     );
     alter table policen_order add constraint pk_new_table primary key (id);
-    
+
     set term ^;
     execute block as
     begin
@@ -37,7 +32,7 @@ init_script_1 = """
     commit;
     create generator gen_policen_order_id;
     commit;
-    
+
     set term ^;
     create or alter trigger policen_order_bi for policen_order
     active before insert position 0 as
@@ -48,7 +43,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     -- insert some data with null dates
     insert into policen_order (id, vstatus, ablauf, vstorno, storno)
                        values (2, 1, null, null, null);
@@ -57,9 +52,9 @@ init_script_1 = """
     insert into policen_order (id, vstatus, ablauf, vstorno, storno)
                        values (4, 3, null, null, null);
     commit;
-    
+
     -- now let's create an obscure index
-    
+
     create index idx_policen_order_bit_vstatus on policen_order
     computed by
     (
@@ -89,9 +84,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     update policen_order set vstatus = 8 where id = 2;
     commit;
@@ -101,41 +96,41 @@ test_script_1 = """
     select * from policen_order;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              2
     VSTATUS                         8
     ABLAUF                          <null>
     VSTORNO                         <null>
     STORNO                          <null>
-    
+
     ID                              3
     VSTATUS                         2
     ABLAUF                          <null>
     VSTORNO                         <null>
     STORNO                          <null>
-    
+
     ID                              4
     VSTATUS                         3
     ABLAUF                          <null>
     VSTORNO                         <null>
     STORNO                          <null>
-    
-    
-    
+
+
+
     ID                              2
     VSTATUS                         2
     ABLAUF                          <null>
     VSTORNO                         <null>
     STORNO                          <null>
-    
+
     ID                              3
     VSTATUS                         2
     ABLAUF                          <null>
     VSTORNO                         <null>
     STORNO                          <null>
-    
+
     ID                              4
     VSTATUS                         3
     ABLAUF                          <null>
@@ -143,9 +138,9 @@ expected_stdout_1 = """
     STORNO                          <null>
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

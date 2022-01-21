@@ -1,38 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_2756
-# title:        substring from timestamp - unexpected result
-# decription:   
-#                   26.01.2019. Note for 4.0.
-#                   Made more careful parsing for each token of timestamp because of time-with-timezone introduction.
-#                   Checed on:
-#                       4.0.0.1340: OK, 2.313s.
-#                       4.0.0.1410: OK, 2.360s.
-#               
-#                   02.02.2019. Note for 4.0.
-#                   One need to EXPLICITLY add statement SET TIME ZONE <+HH:MM> at the beginning of test, otherwise
-#                   we will get eception because current_timestamp string will have length more than expected.
-#                   This is because DEFAULT time zone in FB 4.0 includes REGION NAME ('Moscow/Europe") instead of HH:MM shift.
-#                   Checked on:
-#                       4.0.0.1421: OK, 1.493s.
-#               
-#                
-# tracker_id:   CORE-2756
-# min_versions: ['2.5.1']
-# versions:     2.5.1, 4.0
-# qmid:         None
+
+"""
+ID:          issue-3150
+ISSUE:       3150
+TITLE:       substring from timestamp - unexpected result
+DESCRIPTION:
+NOTES:
+[26.01.2019] Note for 4.0.
+  Made more careful parsing for each token of timestamp because of time-with-timezone introduction.
+[02.02.2019] Note for 4.0.
+  One need to EXPLICITLY add statement SET TIME ZONE <+HH:MM> at the beginning of test, otherwise
+  we will get eception because current_timestamp string will have length more than expected.
+  This is because DEFAULT time zone in FB 4.0 includes REGION NAME ('Moscow/Europe") instead of HH:MM shift.
+JIRA:        CORE-2756
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+# version: 3.0
 
 test_script_1 = """
     set list on;
@@ -45,26 +33,19 @@ test_script_1 = """
     ) x;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
     MATCHING_RESULT                 1
 """
 
-@pytest.mark.version('>=2.5.1,<4.0')
+@pytest.mark.version('>=3,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.execute()
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     set list on;
@@ -97,7 +78,7 @@ test_script_2 = """
     ) x;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2)
 
 expected_stdout_2 = """
     YEAR_AS_NUMERIC                 Looks as expected

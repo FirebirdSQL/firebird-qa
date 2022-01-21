@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2374
-# title:        ALTER TRIGGER / PROCEDURE wrong error message
-# decription:   
-# tracker_id:   CORE-2374
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2796
+ISSUE:       2796
+TITLE:       ALTER TRIGGER / PROCEDURE wrong error message
+DESCRIPTION:
+JIRA:        CORE-2374
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     alter procedure test1 as
     begin
@@ -37,9 +30,9 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -ALTER PROCEDURE TEST1 failed
@@ -51,8 +44,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

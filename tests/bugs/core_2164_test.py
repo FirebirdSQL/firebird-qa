@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2164
-# title:        error in operator "and" in as clausule where
-# decription:   
-# tracker_id:   CORE-2164
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-2595
+ISSUE:       2595
+TITLE:       error in operator "and" in as clausule where
+DESCRIPTION:
+JIRA:        CORE-2164
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create domain dcodempresa as integer;
     create domain dcadena30 as varchar(30) default '';
     create domain dcod_anuncio as integer;
@@ -63,9 +58,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     --------------------- data script --------------------------------------
     delete from emisiones;
     delete from anuncios;
@@ -145,18 +140,18 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     NOMBRE                          puleva
     COD_ANUNCIO                     2
     Records affected: 1
     Records affected: 0
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

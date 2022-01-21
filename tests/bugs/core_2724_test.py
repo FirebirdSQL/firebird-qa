@@ -1,29 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_2724
-# title:        Validate or transform string of DML queries so that engine internals doesn't receive malformed strings
-# decription:
-#                  Code from doc/sql.extensions/README.ddl_triggers.txt was taken as basis for this test
-#                  (see ticket issue: "This situation happened with DDL triggers ...").
-#                  Several DB objects are created here and their DDL contain unicode (Greek) text.
-#                  Attachment these issues these DDL intentionally is run with charset = NONE.
-#                  This charset (NONE) should result in question marks after we finish DDL and want to query log table
-#                  that was filled by DDL trigger and contains issued DDL statements.
-#
-# tracker_id:   CORE-2724
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3120
+ISSUE:       3120
+TITLE:       Validate or transform string of DML queries so that engine internals doesn't receive malformed strings
+DESCRIPTION:
+  Code from doc/sql.extensions/README.ddl_triggers.txt was taken as basis for this test
+  (see ticket issue: "This situation happened with DDL triggers ...").
+  Several DB objects are created here and their DDL contain unicode (Greek) text.
+  Attachment these issues these DDL intentionally is run with charset = NONE.
+  This charset (NONE) should result in question marks after we finish DDL and want to query log table
+  that was filled by DDL trigger and contains issued DDL statements.
+JIRA:        CORE-2724
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('SQL_TEXT .*', 'SQL_TEXT'), ('RESULT_INFO .*', 'RESULT_INFO')]
-
-init_script_1 = """
+init_script = """
     create sequence ddl_seq;
 
     create table ddl_log (
@@ -102,120 +96,12 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-# test_script_1
-#---
-#
-#  import os
-#  import time
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  #---------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#              if os.path.isfile( f_names_list[i]):
-#                  print('ERROR: can not remove file ' + f_names_list[i])
-#
-#  #--------------------------------------------
-#
-#
-#  sql_check='''    delete from ddl_log;
-#      commit;
-#
-#      create domain dm_name varchar(50) check (value in ('αμορτισέρ', 'κόμβο', 'σωλήνα', 'φέροντα', 'βραχίονα'));
-#      recreate table t1 (
-#           saller_id integer  -- αναγνωριστικό εμπόρου // ID of saler
-#          ,customer_id integer  -- αναγνωριστικό πελάτη // ID of customer
-#          ,product_name dm_name
-#      );
-#      commit;
-#      set list on;
-#
-#      select id, current_connection_cset, sql_text, result_info, ddl_event, object_name
-#      from ddl_log order by id;
-#
-#      commit;
-#      drop table t1;
-#      drop domain dm_name;
-#      exit;
-#  '''
-#
-#  f_check_sql = open( os.path.join(context['temp_directory'],'tmp_check_2724.sql'), 'w')
-#  f_check_sql.write(sql_check)
-#  flush_and_close( f_check_sql )
-#
-#  ##########################################################################################
-#
-#  f_ch_none_log = open( os.path.join(context['temp_directory'],'tmp_ch_none_2724.log'), 'w')
-#  f_ch_none_err = open( os.path.join(context['temp_directory'],'tmp_ch_none_2724.err'), 'w')
-#
-#  subprocess.call( [context['isql_path'], dsn, "-i", f_check_sql.name,
-#                   "-ch", "none"],
-#                   stdout = f_ch_none_log,
-#                   stderr = f_ch_none_err
-#                 )
-#
-#  flush_and_close( f_ch_none_log )
-#  flush_and_close( f_ch_none_err )
-#
-#  ##########################################################################################
-#
-#  f_ch_utf8_log = open( os.path.join(context['temp_directory'],'tmp_ch_utf8_2724.log'), 'w')
-#  f_ch_utf8_err = open( os.path.join(context['temp_directory'],'tmp_ch_utf8_2724.err'), 'w')
-#
-#  subprocess.call( [context['isql_path'], dsn, "-user", user_name, "-password", user_password, "-i", f_check_sql.name,
-#                    "-ch", "utf8"],
-#                   stdout = f_ch_utf8_log,
-#                   stderr = f_ch_utf8_err
-#                 )
-#  flush_and_close( f_ch_utf8_log )
-#  flush_and_close( f_ch_utf8_err )
-#
-#
-#  f_list = [f_ch_none_log, f_ch_none_err, f_ch_utf8_log, f_ch_utf8_err]
-#  for f in f_list:
-#      with open( f.name,'r') as f:
-#         print(f.read())
-#
-#
-#  # Cleanup
-#  #########
-#  time.sleep(1)
-#
-#  f_list.append(f_check_sql)
-#  cleanup( [i.name for i in f_list] )
-#
-#
-#---
+act = python_act('db', substitutions=[('SQL_TEXT .*', 'SQL_TEXT'),
+                                      ('RESULT_INFO .*', 'RESULT_INFO')])
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1_a = """
+expected_stdout_a = """
     ID                              2
     CURRENT_CONNECTION_CSET         NONE
     SQL_TEXT
@@ -239,7 +125,7 @@ expected_stdout_1_a = """
     OBJECT_NAME                     T1
 """
 
-expected_stdout_1_b = """
+expected_stdout_b = """
     ID                              6
     CURRENT_CONNECTION_CSET         UTF8
     SQL_TEXT                        80:0
@@ -263,35 +149,36 @@ expected_stdout_1_b = """
     OBJECT_NAME                     T1
 """
 
+sql_check = """
+delete from ddl_log;
+commit;
+
+create domain dm_name varchar(50) check (value in ('αμορτισέρ', 'κόμβο', 'σωλήνα', 'φέροντα', 'βραχίονα'));
+recreate table t1 (
+     saller_id integer  -- αναγνωριστικό εμπόρου // ID of saler
+    ,customer_id integer  -- αναγνωριστικό πελάτη // ID of customer
+    ,product_name dm_name
+);
+commit;
+set list on;
+
+select id, current_connection_cset, sql_text, result_info, ddl_event, object_name
+from ddl_log order by id;
+
+commit;
+drop table t1;
+drop domain dm_name;
+exit;
+"""
+
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    sql_check = '''
-    delete from ddl_log;
-    commit;
-
-    create domain dm_name varchar(50) check (value in ('αμορτισέρ', 'κόμβο', 'σωλήνα', 'φέροντα', 'βραχίονα'));
-    recreate table t1 (
-         saller_id integer  -- αναγνωριστικό εμπόρου // ID of saler
-        ,customer_id integer  -- αναγνωριστικό πελάτη // ID of customer
-        ,product_name dm_name
-    );
-    commit;
-    set list on;
-
-    select id, current_connection_cset, sql_text, result_info, ddl_event, object_name
-    from ddl_log order by id;
-
-    commit;
-    drop table t1;
-    drop domain dm_name;
-    exit;
-    '''
+def test_1(act: Action):
     #
-    act_1.expected_stdout = expected_stdout_1_a
-    act_1.isql(switches=[], charset='NONE', input=sql_check)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.expected_stdout = expected_stdout_a
+    act.isql(switches=[], charset='NONE', input=sql_check)
+    assert act.clean_stdout == act.clean_expected_stdout
     #
-    act_1.reset()
-    act_1.expected_stdout = expected_stdout_1_b
-    act_1.isql(switches=[], charset='UTF8', input=sql_check)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.reset()
+    act.expected_stdout = expected_stdout_b
+    act.isql(switches=[], charset='UTF8', input=sql_check)
+    assert act.clean_stdout == act.clean_expected_stdout

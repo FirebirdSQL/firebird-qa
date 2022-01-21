@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2804
-# title:        Problems with COMMENT ON and strings using introducer (charset)
-# decription:   
-# tracker_id:   CORE-2804
-# min_versions: ['2.5.4']
-# versions:     2.5.4
-# qmid:         bugs.core_2804
+
+"""
+ID:          issue-3192
+ISSUE:       3192
+TITLE:       Problems with COMMENT ON and strings using introducer (charset)
+DESCRIPTION:
+JIRA:        CORE-2804
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.4
-# resources: None
+db = db_factory(from_backup='core2804-ods11.fbk')
 
-substitutions_1 = [('DESCR_BLOB_ID.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core2804-ods11.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Database was prepared with following statements:
     -- recreate table test1(id int);
     -- recreate table test2(id int);
@@ -36,19 +29,19 @@ test_script_1 = """
     order by r.rdb$relation_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('DESCR_BLOB_ID.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     DESCR_BLOB_ID                   0:3
     win1251: Протокол собрания об уплотнении квартир дома
 
     DESCR_BLOB_ID                   0:6
-    unicode_fss: Протокол собрания о помощи детям Германии  
+    unicode_fss: Протокол собрания о помощи детям Германии
 """
 
-@pytest.mark.version('>=2.5.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

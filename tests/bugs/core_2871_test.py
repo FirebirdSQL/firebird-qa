@@ -1,25 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2871
-# title:        Outer ORDER BY clause has no effect
-# decription:   If a derived table (or a view) contains both a left/right join and an ORDER BY clause and the outer query also contains an ORDER BY clause, the latter one gets ignored.
-# tracker_id:   CORE-2871
-# min_versions: ['2.0.6', '2.1.4', '2.5']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3255
+ISSUE:       3255
+TITLE:       Outer ORDER BY clause has no effect
+DESCRIPTION:
+  If a derived table (or a view) contains both a left/right join and an ORDER BY clause
+  and the outer query also contains an ORDER BY clause, the latter one gets ignored.
+JIRA:        CORE-2871
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """/******************************************************************************/
-/*                                  Domains                                   */
-/******************************************************************************/
-
+init_script = """
 CREATE DOMAIN COUNTRYNAME AS
 VARCHAR(15);
 
@@ -52,19 +46,10 @@ NUMERIC(10,2)
 DEFAULT 0
 CHECK (VALUE > 0);
 
-
-
-/******************************************************************************/
-/*                                   Tables                                   */
-/******************************************************************************/
-
-
-
 CREATE TABLE COUNTRY (
     COUNTRY   COUNTRYNAME NOT NULL,
     CURRENCY  VARCHAR(10) NOT NULL
 );
-
 
 CREATE TABLE EMPLOYEE (
     EMP_NO       EMPNO NOT NULL,
@@ -79,7 +64,6 @@ CREATE TABLE EMPLOYEE (
     SALARY       SALARY NOT NULL,
     FULL_NAME    COMPUTED BY (last_name || ', ' || first_name)
 );
-
 
 INSERT INTO EMPLOYEE (EMP_NO, FIRST_NAME, LAST_NAME, PHONE_EXT, HIRE_DATE, DEPT_NO, JOB_CODE, JOB_GRADE, JOB_COUNTRY, SALARY) VALUES (2, 'Robert', 'Nelson', '250', '1988-12-28 00:00:00', '600', 'VP', 2, 'USA', 105900);
 INSERT INTO EMPLOYEE (EMP_NO, FIRST_NAME, LAST_NAME, PHONE_EXT, HIRE_DATE, DEPT_NO, JOB_CODE, JOB_GRADE, JOB_COUNTRY, SALARY) VALUES (4, 'Bruce', 'Young', '233', '1988-12-28 00:00:00', '621', 'Eng', 2, 'USA', 97500);
@@ -143,29 +127,15 @@ INSERT INTO COUNTRY (COUNTRY, CURRENCY) VALUES ('Fiji', 'FDollar');
 
 COMMIT WORK;
 
-
-
-
-
-/******************************************************************************/
-/*                                Primary Keys                                */
-/******************************************************************************/
-
 ALTER TABLE COUNTRY ADD PRIMARY KEY (COUNTRY);
 ALTER TABLE EMPLOYEE ADD PRIMARY KEY (EMP_NO);
 
-
-/******************************************************************************/
-/*                                  Indices                                   */
-/******************************************************************************/
-
 CREATE INDEX NAMEX ON EMPLOYEE (LAST_NAME, FIRST_NAME);
-
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
 select *
 from (
     select
@@ -177,9 +147,9 @@ from (
 order by emp_no desc;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """ EMP_NO FIRST_NAME      LAST_NAME            COUNTRY         CURRENCY
+expected_stdout = """ EMP_NO FIRST_NAME      LAST_NAME            COUNTRY         CURRENCY
 ======= =============== ==================== =============== ==========
     145 Mark            Guckenheimer         USA             Dollar
     144 John            Montgomery           USA             Dollar
@@ -232,9 +202,9 @@ expected_stdout_1 = """ EMP_NO FIRST_NAME      LAST_NAME            COUNTRY     
 
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

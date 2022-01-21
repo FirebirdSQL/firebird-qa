@@ -1,43 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_2988
-# title:        Concurrent transaction number not reported if lock timeout occurs
-# decription:
-#                    08-aug-2018.
-#                    ::: ACHTUNG :::
-#                    Important change has been added in FB 4.0.
-#                    According to doc\\README.read_consistency.md, read committed isolation level
-#                    was modified and new transaction with RC effectively is launched like:
-#                    SET TRANSACTION READ COMMITTED READ CONSISTENCY
-#                    Moreover, it is unable to start transaction in NO_record_version until
-#                    config parameter ReadConsistency will be changed from 1(default) to 0.
-#                    This mean that now it is unable to use NO_record_version setting in RC mode
-#                    with default firebird.conf ==> we can not check behaviour of engine exactly
-#                    as ticket says in its case-1:
-#                    ===
-#                        set transaction read committed no record_version lock timeout 10;
-#                        select * from test;
-#                    ===
-#                    For this reason it was decided to create separate section for major version 4.0
-#                    and use UPDATE statement instead of 'select * from test' (UPDATE also must READ
-#                    data before changing).
-#
-#                    Checked on:
-#                        FB25SC, build 2.5.9.27115: OK, 3.750s.
-#                        FB30SS, build 3.0.4.33022: OK, 4.343s.
-#                        FB40SS, build 4.0.0.1154: OK, 4.875s.
-#
-# tracker_id:   CORE-2988
-# min_versions: ['2.5.4']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-3370
+ISSUE:       3370
+TITLE:       Concurrent transaction number not reported if lock timeout occurs
+DESCRIPTION:
+NOTES:
+[08-aug-2018] ::: ACHTUNG :::
+  Important change has been added in FB 4.0.
+  According to doc\\README.read_consistency.md, read committed isolation level
+  was modified and new transaction with RC effectively is launched like:
+  SET TRANSACTION READ COMMITTED READ CONSISTENCY
+  Moreover, it is unable to start transaction in NO_record_version until
+  config parameter ReadConsistency will be changed from 1(default) to 0.
+  This mean that now it is unable to use NO_record_version setting in RC mode
+  with default firebird.conf ==> we can not check behaviour of engine exactly
+  as ticket says in its case-1:
+  ===
+    set transaction read committed no record_version lock timeout 10;
+    select * from test;
+  ===
+  For this reason it was decided to create separate section for major version 4.0
+  and use UPDATE statement instead of 'select * from test' (UPDATE also must READ
+  data before changing).
+JIRA:        CORE-2988
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, python_act
+from firebird.qa import *
 from firebird.driver import TPB, TraAccessMode, Isolation
 
 # version: 3.0
-# resources: None
 
 substitutions_1 = [('record not found for user:.*', ''),
                    ('-concurrent transaction number is.*', '-concurrent transaction number is'),
@@ -188,11 +181,10 @@ def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert (act_1.clean_stderr == act_1.clean_expected_stderr and
+            act_1.clean_stdout == act_1.clean_expected_stdout)
 
 # version: 4.0
-# resources: None
 
 substitutions_2 = [('^((?!concurrent transaction number is).)*$', ''),
                    ('[\\-]{0,1}concurrent transaction number is [0-9]+', 'concurrent transaction number is')]
@@ -205,88 +197,6 @@ init_script_2 = """
 """
 
 db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-# test_script_2
-#---
-#
-#  import os
-#  db_conn.close()
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  con = fdb.connect(dsn = dsn)
-#
-#  tx1 = con.trans()
-#  tx1.begin()
-#  cur1=tx1.cursor()
-#  cur1.execute( 'update test set x = ? where id = ?', (222, 1) )
-#
-#
-#  # **INSTEAD** of ticket case-1:
-#  #     set transaction read committed no record_version lock timeout N;
-#  # -- we start Tx with lock_timeout using custom TPB and try just to **update** record which is locked now
-#  # (but NOT 'SELECT ...'! It is useless with default value of confign parameter ReadConsistency = 1).
-#  # Message about concurrent transaction (which holds lock) in any case must appear in exception text.
-#  # NB: NO_rec_version is USELESS in default FB 4.0 config!
-#
-#
-#  # Linsk to doc for creating instance of custom TPB and start transaction which using it:
-#  # https://pythonhosted.org/fdb/reference.html#fdb.TPB
-#  # https://pythonhosted.org/fdb/reference.html#fdb.Connection.trans
-#
-#  custom_tpb = fdb.TPB()
-#  custom_tpb.access_mode = fdb.isc_tpb_write
-#  custom_tpb.isolation_level = (fdb.isc_tpb_read_committed, fdb.isc_tpb_rec_version) # ::: NB ::: NO_rec_version is USELESS in default FB 4.0 config!
-#  custom_tpb.lock_timeout = 1
-#
-#  tx2 = con.trans( default_tpb = custom_tpb )
-#  tx2.begin()
-#  cur2=tx2.cursor()
-#
-#  try:
-#      cur2.execute( 'update test set x = ? where id = ?', (333, 1) )
-#  except Exception,e:
-#      print('Exception in cur2:')
-#      print( '-'*30 )
-#      for x in e:
-#          print(x)
-#      print( '-'*30 )
-#  finally:
-#      tx2.commit()
-#
-#  #----------------------------------------------------------
-#
-#  # This is for ticket case-2:
-#  #     set transaction read committed lock timeout N;
-#  #     select * from test with lock;
-#
-#  custom_tpb.access_mode = fdb.isc_tpb_write
-#  custom_tpb.isolation_level = fdb.isc_tpb_concurrency
-#  custom_tpb.lock_timeout = 1
-#
-#  tx3 = con.trans( default_tpb = custom_tpb )
-#  tx3.begin()
-#  cur3=tx3.cursor()
-#
-#  try:
-#      cur3.execute( 'select x from test where id = ? with lock', (1,) )
-#      for r in cur3:
-#          print( r[0] )
-#  except Exception,e:
-#      print('Exception in cur3:')
-#      print( '-'*30 )
-#      for x in e:
-#          print(x)
-#      print( '-'*30 )
-#  finally:
-#      tx3.commit()
-#
-#  tx1.commit()
-#  con.close()
-#
-#
-#---
 
 act_2 = python_act('db_2', substitutions=substitutions_2)
 

@@ -1,32 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2768
-# title:        ALTERING OR DROPPING PROCEDURE which has type of domain parameter leads to attempt to delete that domain
-# decription:   
-#                 Checked on:
-#                   4.0.0.1763 SS: 1.484s.
-#                   3.0.6.33240 SS: 0.674s.
-#                   2.5.9.27149 SC: 0.328s.
-#                   2.5.0.26074 CS: 0.706s.
-#                 
-# tracker_id:   CORE-2768
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-3160
+ISSUE:       3160
+TITLE:       ALTERING OR DROPPING PROCEDURE which has type of domain parameter leads to attempt to delete that domain
+DESCRIPTION:
+JIRA:        CORE-2768
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate view v_fields as
     select rf.rdb$field_name f_name, rf.rdb$field_length f_length, rf.rdb$field_type f_type
     from rdb$database r
@@ -66,16 +53,16 @@ test_script_1 = """
     commit;
 
     alter procedure sp_test as begin end;
-    commit; -- here was error in 2.5 Beta 2, 2.5 RC1 
+    commit; -- here was error in 2.5 Beta 2, 2.5 RC1
 
     select * from v_fields ;
     select * from v_dependencies ;
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     F_NAME                          DM_TEST
     F_LENGTH                        4
     F_TYPE                          8
@@ -103,9 +90,9 @@ expected_stdout_1 = """
     Records affected: 1
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

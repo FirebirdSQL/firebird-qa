@@ -53,4 +53,3 @@ def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
-

@@ -1,35 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_2699
-# title:        Common table expression context could be used with parameters
-# decription:   
-# tracker_id:   CORE-2699
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3099
+ISSUE:       3099
+TITLE:       Common table expression context could be used with parameters
+DESCRIPTION:
+JIRA:        CORE-2699
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db_1 = db_factory()
 
-substitutions_1 = [('-At line.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     with x as (
         select 1 n from rdb$database
     )
     select * from x(10);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db_1', test_script, substitutions=[('-At line.*', '')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -204
@@ -39,8 +32,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

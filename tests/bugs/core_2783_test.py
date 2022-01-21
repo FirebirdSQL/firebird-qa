@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2783
-# title:        AV using recursive query as subquery in SELECT list and ORDER'ing by them
-# decription:
-# tracker_id:   CORE-2783
-# min_versions: []
-# versions:     2.1.4
-# qmid:         None
+
+"""
+ID:          issue-3174
+ISSUE:       3174
+TITLE:       AV using recursive query as subquery in SELECT list and ORDER'ing by them
+DESCRIPTION:
+JIRA:        CORE-2783
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.4
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SELECT RDB$RELATION_ID,
+test_script = """SELECT RDB$RELATION_ID,
        (WITH RECURSIVE
          NUM (ID) AS
          (
@@ -52,24 +45,21 @@ SELECT RDB$RELATION_ID, (SELECT MAX(ID) FROM NUM) AS NNN
 ORDER BY NNN;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Database:  localhost:C:\\fbtest2\\tmp\\bugs.core_2783.fdb, User: SYSDBA
-SQL> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON>
+expected_stdout = """
 RDB$RELATION_ID          NNN
 =============== ============
             128           10
 
-SQL> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON> CON>
 RDB$RELATION_ID          NNN
 =============== ============
             128           10
+"""
 
-SQL>"""
-
-@pytest.mark.version('>=2.1.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

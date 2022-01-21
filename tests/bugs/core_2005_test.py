@@ -1,30 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_2005
-# title:        Support SQL 2008 syntax for MERGE statement with DELETE extension
-# decription:   
-# tracker_id:   CORE-2005
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2442
+ISSUE:       2442
+TITLE:       Support SQL 2008 syntax for MERGE statement with DELETE extension
+DESCRIPTION:
+JIRA:        CORE-2005
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table src(id int primary key, x int, y int, z computed by(x+y));
     recreate table tgt(id int primary key, x int, y int, z computed by(x+y));
     commit;
-    
+
     insert into src values(1, 5, 2);
     insert into src values(3, 4, 3);
     insert into src values(5, 3, 4);
@@ -33,16 +26,16 @@ test_script_1 = """
     insert into src values(8, 0, 0);
     insert into src values(9, 1, 2);
     commit;
-    
-    
+
+
     insert into tgt values(2, 2, 5);
     insert into tgt values(3, 3, 5);
     insert into tgt values(4, 1, 7);
     insert into tgt values(5, 6, 3);
     commit;
-    
+
     set transaction snapshot no wait;
-    
+
     set term ^;
     execute block as
     begin
@@ -57,7 +50,7 @@ test_script_1 = """
         when matched then
             update set x = s.x, y = s.y
         ;
-        
+
         merge into src t
         using tgt s
         on s.id = t.id
@@ -72,14 +65,14 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     select * from src;
     select * from tgt;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
           ID            X            Y                     Z
 ============ ============ ============ =====================
            1            5            2                     7
@@ -102,8 +95,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

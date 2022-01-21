@@ -1,27 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_2560
-# title:        Maximum and minimum identifier length should be enforced by DSQL
-# decription:   
-#                    Changed expected_stderr for 4.0 after discuss with dimitr (see letter 01-aug-2016 15:15).
-#                    Checked on WI-T4.0.0.356, 03-sep-2016.
-#                 
-# tracker_id:   CORE-2560
-# min_versions: ['3.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-2970
+ISSUE:       2970
+TITLE:       Maximum and minimum identifier length should be enforced by DSQL
+DESCRIPTION:
+JIRA:        CORE-2560
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+db = db_factory()
 
 # version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     --set echo on;
@@ -59,7 +51,7 @@ test_script_1 = """
     create table tx("" int);
     create procedure "" as begin end;
     create procedure p("" int) as begin end;
-    set term ^; 
+    set term ^;
     create function "" returns int as begin return 1; end
     ^
     recreate package "" as
@@ -97,7 +89,7 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
@@ -221,28 +213,21 @@ def test_1(act_1: Action):
     assert act_1.clean_stderr == act_1.clean_expected_stderr
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('After line.*', ''), ('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+', '')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     --set echo on;
     --set list on;
 
-    create role 
+    create role
 r2345678901234567890123456789012345678901234567890123456789012345;
 
-    create sequence 
+    create sequence
 g2345678901234567890123456789012345678901234567890123456789012345;
 
     create exception
 e2345678901234567890123456789012345678901234567890123456789012345 'foo!..';
 
-    create collation 
+    create collation
 c2345678901234567890123456789012345678901234567890123456789012345 for utf8 from unicode;
 
     create domain
@@ -261,13 +246,13 @@ p2345678901234567890123456789012345678901234567890123456789012345 as begin end;
     set term ^;
     create or alter procedure p1 returns(
 o2345678901234567890123456789012345678901234567890123456789012345 int
-) as 
-begin 
+) as
+begin
     suspend;
 end^
 
-create or alter procedure p2 returns(o2 double precision) as 
-    declare 
+create or alter procedure p2 returns(o2 double precision) as
+    declare
 v2345678901234567890123456789012345678901234567890123456789012345
     int;
 begin
@@ -284,19 +269,19 @@ end^
 
 
     create or alter function
-f2345678901234567890123456789012345678901234567890123456789012345 returns int as 
-begin 
-    return 1; 
+f2345678901234567890123456789012345678901234567890123456789012345 returns int as
+begin
+    return 1;
 end^
 
     create or alter function
-f( 
-a2345678901234567890123456789012345678901234567890123456789012345 int ) returns int as 
-begin 
-    return 1; 
+f(
+a2345678901234567890123456789012345678901234567890123456789012345 int ) returns int as
+begin
+    return 1;
 end^
 
-    recreate package 
+    recreate package
 p2345678901234567890123456789012345678901234567890123456789012345
     as begin
         function f(a int) returns bigint;
@@ -305,14 +290,14 @@ p2345678901234567890123456789012345678901234567890123456789012345
 
     recreate package p1 as
     begin
-        function 
+        function
 f2345678901234567890123456789012345678901234567890123456789012345( a int) returns bigint;
     end
     ^
 
     recreate package p2 as
     begin
-        function g( 
+        function g(
 a2345678901234567890123456789012345678901234567890123456789012345 int) returns bigint;
     end
     ^
@@ -321,7 +306,7 @@ a2345678901234567890123456789012345678901234567890123456789012345 int) returns b
 commit;
 
     -- deferred, see CORE-5277:
-    create or alter user 
+    create or alter user
 u2345678901234567890123456789012345678901234567890123456789012345 password 'q';
     commit;
 
@@ -345,7 +330,7 @@ u2345678901234567890123456789012345678901234567890123456789012345 password 'q';
 
     create procedure p("" int) as begin end;
 
-    set term ^; 
+    set term ^;
     create function "" returns int as begin return 1; end
     ^
     recreate package "" as
@@ -384,7 +369,9 @@ u2345678901234567890123456789012345678901234567890123456789012345 password 'q';
 
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2,
+                 substitutions=[('After line.*', ''),
+                                ('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+', '')])
 
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 42000

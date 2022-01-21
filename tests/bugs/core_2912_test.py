@@ -1,33 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_2912
-# title:        Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1 )
-# decription:
-#               	02-mar-2021. Re-implemented in order to have ability to run this test on Linux.
-#               	Test creates table and fills it with non-ascii characters in init_script, using charset = UTF8.
-#               	Then it generates .sql script for running it in separae ISQL process.
-#               	This script makes connection to test DB using charset = ISO8859_1 and perform several queries.
-#               	Result will be redirected to .log and .err files (they will be encoded,	of course, also in ISO8859_1).
-#               	Finally, we open .log file (using codecs package), convert its content to UTF8 and show in expected_stdout.
-#
-#               	Checked on:
-#               		* Windows: 4.0.0.2377, 3.0.8.33420, 2.5.9.27152
-#               		* Linux:   4.0.0.2377, 3.0.8.33415
-#
-# tracker_id:   CORE-2912
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         None
+
+"""
+ID:          issue-3296
+ISSUE:       3296
+TITLE:       Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1)
+DESCRIPTION:
+  Test creates table and fills it with non-ascii characters in init_script, using charset = UTF8.
+  Then it generates .sql script for running it in separae ISQL process.
+  This script makes connection to test DB using charset = ISO8859_1 and perform several queries.
+  Result will be redirected to .log and .err files (they will be encoded, of course, also in ISO8859_1).
+  Finally, we open .log file (using codecs package), convert its content to UTF8 and show in expected_stdout.
+NOTES:
+[16.11.2021]
+  This test fails as UPPER('ÿ') does not work properly
+JIRA:        CORE-2912
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create table test(c varchar(10));
     commit;
     insert into test(c) values('ÿ');
@@ -37,107 +29,27 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='ISO8859_1', init=init_script)
 
-# test_script_1
-#---
-#
-#  import os
-#  import codecs
-#  import subprocess
-#  import time
-#
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  sql_txt='''    set names ISO8859_1;
-#      connect '%(dsn)s' user '%(user_name)s' password '%(user_password)s';
-#      set list on;
-#      select upper('aÿb') au from rdb$database;
-#      select c, upper(c) cu from test where c starting with upper('ÿ');
-#      select c, upper(c) cu from test where c containing 'Faÿ';
-#      select c, upper(c) cu from test where c starting with 'Faÿ';
-#      select c, upper(c) cu from test where c like 'Faÿ%%';
-#      -- ### ACHTUNG ###
-#      -- As of WI-V2.5.4.26857, following will FAILS if character class "alpha"
-#      -- will be specified not in UPPER case (see note in CORE-4740  08/Apr/15 05:48 PM):
-#      select c, upper(c) cu from test where c similar to '[[:ALPHA:]]{1,}ÿ%%';
-#      set plan on;
-#      select c from test where upper (c collate iso8859_1) =  upper('ÿ');
-#      select c, upper(c) cu from test where upper (c collate iso8859_1) starting with upper('Faÿ');
-#  ''' % dict(globals(), **locals())
-#
-#  f_run_sql = open( os.path.join(context['temp_directory'], 'tmp_2912_iso8859_1.sql'), 'w' )
-#  f_run_sql.write( sql_txt.decode('utf8').encode('iso-8859-1') )
-#  flush_and_close( f_run_sql )
-#  # result: file tmp_2912_iso8859_1.sql is encoded in iso8859_1 (aka 'latin-1')
-#
-#  f_run_log = open( os.path.splitext(f_run_sql.name)[0]+'.log', 'w')
-#  f_run_err = open( os.path.splitext(f_run_sql.name)[0]+'.err', 'w')
-#  subprocess.call( [ context['isql_path'], '-q', '-i', f_run_sql.name ],
-#                   stdout = f_run_log,
-#                   stderr = f_run_err
-#                 )
-#  flush_and_close( f_run_log )
-#  flush_and_close( f_run_err )
-#
-#  # result: output will be encoded in iso9959_1, error log must be empty.
-#  with codecs.open(f_run_log.name, 'r', encoding='iso-8859-1' ) as f:
-#      stdout_encoded_in_latin_1 = f.readlines()
-#
-#  with codecs.open(f_run_err.name, 'r', encoding='iso-8859-1' ) as f:
-#      stderr_encoded_in_latin_1 = f.readlines()
-#
-#  for i in stdout_encoded_in_latin_1:
-#      print( i.encode('utf8') )
-#
-#  # NO error must occur:
-#  ######################
-#  for i in stderr_encoded_in_latin_1:
-#      print( 'UNEXPECTED STDERR: ', i.encode('utf8') )
-#
-#  # cleanup:
-#  ###########
-#  cleanup( (f_run_sql, f_run_log, f_run_err) )
-#
-#
-#---
+act = python_act('db')
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
+test_script = """set names ISO8859_1;
+    set list on;
+    select upper('aÿb') au from rdb$database;
+    select c, upper(c) cu from test where c starting with upper('ÿ');
+    select c, upper(c) cu from test where c containing 'Faÿ';
+    select c, upper(c) cu from test where c starting with 'Faÿ';
+    select c, upper(c) cu from test where c like 'Faÿ%';
+    -- ### ACHTUNG ###
+    -- As of WI-V2.5.4.26857, following will FAILS if character class "alpha"
+    -- will be specified not in UPPER case (see note in CORE-4740  08/Apr/15 05:48 PM):
+    select c, upper(c) cu from test where c similar to '[[:ALPHA:]]{1,}ÿ%';
+    set plan on;
+    select c from test where upper (c collate iso8859_1) =  upper('ÿ');
+    select c, upper(c) cu from test where upper (c collate iso8859_1) starting with upper('Faÿ');
+"""
 
-expected_stdout_1 = """
+expected_stdout = """
     AU                              AÿB
     C                               ÿ
     CU                              ÿ
@@ -156,26 +68,9 @@ expected_stdout_1 = """
     CU                              FAÿ
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    # [pcisar] 16.11.2021
-    # This test fails as UPPER('ÿ') does not work properly
-    pytest.skip("FIXME")
-    sql_txt = '''set names ISO8859_1;
-        set list on;
-        select upper('aÿb') au from rdb$database;
-        select c, upper(c) cu from test where c starting with upper('ÿ');
-        select c, upper(c) cu from test where c containing 'Faÿ';
-        select c, upper(c) cu from test where c starting with 'Faÿ';
-        select c, upper(c) cu from test where c like 'Faÿ%';
-        -- ### ACHTUNG ###
-        -- As of WI-V2.5.4.26857, following will FAILS if character class "alpha"
-        -- will be specified not in UPPER case (see note in CORE-4740  08/Apr/15 05:48 PM):
-        select c, upper(c) cu from test where c similar to '[[:ALPHA:]]{1,}ÿ%';
-        set plan on;
-        select c from test where upper (c collate iso8859_1) =  upper('ÿ');
-        select c, upper(c) cu from test where upper (c collate iso8859_1) starting with upper('Faÿ');
-    '''
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-q'], charset='ISO8859_1', input=sql_txt)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.skip("FIXME")
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-q'], charset='ISO8859_1', input=test_script)
+    assert act.clean_stdout == act.clean_expected_stdout

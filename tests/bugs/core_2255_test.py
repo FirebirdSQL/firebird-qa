@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_2255
-# title:        '...exception...string right truncation' when alter view with join
-# decription:   
-# tracker_id:   CORE-2255
-# min_versions: []
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-2681
+ISSUE:       2681
+TITLE:       '...exception...string right truncation' when alter view with join
+DESCRIPTION:
+JIRA:        CORE-2255
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE TEST_VARCHAR (
+init_script = """CREATE TABLE TEST_VARCHAR (
     ID INTEGER,
     CAPTION VARCHAR(1024)
 );
@@ -33,9 +28,9 @@ SELECT
 FROM TEST_VARCHAR T1;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """ALTER VIEW P_TEST_VARCHAR(
+test_script = """ALTER VIEW P_TEST_VARCHAR(
     ID)
 AS
 SELECT
@@ -46,18 +41,18 @@ FROM TEST_VARCHAR T1, TEST_VARCHAR T2
 SELECT * FROM P_TEST_VARCHAR;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
           ID
 ============
            1
 
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
