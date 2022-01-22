@@ -1,30 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3526
-# title:        Support for WHEN SQLSTATE
-# decription:   
-#                   Checked on:
-#                        3.0.4.32939: OK, 1.266s.
-#                        4.0.0.943: OK, 1.484s.
-#                
-# tracker_id:   CORE-3526
-# min_versions: ['3.0.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3883
+ISSUE:       3883
+TITLE:       Support for WHEN SQLSTATE
+DESCRIPTION:
+JIRA:        CORE-3526
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set term ^;
     execute block returns(msg varchar(1000)) as
@@ -43,15 +32,15 @@ test_script_1 = """
     ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             got exception with sqlstate = 22003;
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

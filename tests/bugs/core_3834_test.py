@@ -1,43 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_3834
-# title:        Usage of a NATURAL JOIN with a derived table crashes the server
-# decription:   
-# tracker_id:   CORE-3834
-# min_versions: ['2.5.2']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4176
+ISSUE:       4176
+TITLE:       Usage of a NATURAL JOIN with a derived table crashes the server
+DESCRIPTION:
+JIRA:        CORE-3834
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='core3834.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core3834.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set planonly;
-    select r.revision 
-    from ( select r.revision, r.stageid from tilemaps r ) r 
-    natural join logs g 
+    select r.revision
+    from ( select r.revision, r.stageid from tilemaps r ) r
+    natural join logs g
     where stageid = ?
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN HASH (G NATURAL, R R NATURAL)
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

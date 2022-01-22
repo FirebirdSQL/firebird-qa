@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3211
-# title:        String truncation occurs when selecting from a view containing NOT IN inside
-# decription:   
-# tracker_id:   CORE-3211
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3585
+ISSUE:       3585
+TITLE:       String truncation occurs when selecting from a view containing NOT IN inside
+DESCRIPTION:
+JIRA:        CORE-3211
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE T ( ID integer, FIELD1 varchar(30) );
+init_script = """CREATE TABLE T ( ID integer, FIELD1 varchar(30) );
 COMMIT;
 CREATE VIEW VT ( ID )
 AS
@@ -30,14 +25,11 @@ INSERT INTO T (ID, FIELD1) VALUES (4, 'system');
 INSERT INTO T (ID, FIELD1) VALUES (5, 'system');
 COMMIT;"""
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select * from VT;"""
+act = isql_act('db', "select * from VT;")
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-expected_stdout_1 = """Database:  localhost:C:\\Users\\win7\\Firebird_tests\\fbt-repository\\tmp\\bugs.core_3211.fdb, User: SYSDBA
-SQL>
+expected_stdout = """
           ID
 ============
            1
@@ -45,12 +37,11 @@ SQL>
            3
            4
            5
+"""
 
-SQL>"""
-
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

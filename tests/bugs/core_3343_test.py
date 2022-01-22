@@ -1,29 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_3343
-# title:        RETURNING clause is not supported in positioned (WHERE CURRENT OF) UPDATE and DELETE statements
-# decription:   
-# tracker_id:   CORE-3343
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3709
+ISSUE:       3709
+TITLE:       RETURNING clause is not supported in positioned (WHERE CURRENT OF) UPDATE and DELETE statements
+DESCRIPTION:
+JIRA:        CORE-3343
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('VB_.*', '')]
-
-init_script_1 = """
+init_script = """
     recreate table test_a(id integer, cnt integer);
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set term ^;
     execute block
     as
@@ -38,7 +33,7 @@ test_script_1 = """
               where current of c
               returning cnt into :cnt;
           end
-    end 
+    end
     ^
     set term ;^
     commit;
@@ -64,8 +59,8 @@ test_script_1 = """
        begin
          fetch c into :v_s;
          if (row_count = 0) then leave;
-         update test set b = reverse(b) 
-         where current of c 
+         update test set b = reverse(b)
+         where current of c
          returning upper(old.b), upper(new.b) into vb_old, vb_new
          ;
          suspend;
@@ -78,16 +73,16 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('VB_.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     QWE
     EWQ
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

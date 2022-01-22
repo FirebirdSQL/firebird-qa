@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3461
-# title:        DDL operations fail after backup/restore
-# decription:   
-# tracker_id:   CORE-3461
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3822
+ISSUE:       3822
+TITLE:       DDL operations fail after backup/restore
+DESCRIPTION:
+JIRA:        CORE-3461
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
+db = db_factory(from_backup='core3461.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core3461.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set autoddl off;
     set term ^ ;
     drop table test_tbl ^
@@ -35,10 +28,11 @@ test_script_1 = """
     commit^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

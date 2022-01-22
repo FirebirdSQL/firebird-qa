@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3672
-# title:        computed index by substring function for long columns
-# decription:   
-# tracker_id:   CORE-3672
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          issue-4022
+ISSUE:       4022
+TITLE:       computed index by substring function for long columns
+DESCRIPTION:
+JIRA:        CORE-3672
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(
          col1 varchar(8190) character set utf8 collate unicode_ci_ai
         ,col2 computed by ( substring(col1 from 1 for 169) )
@@ -29,7 +22,7 @@ test_script_1 = """
     commit;
 
     -- Index on UTF8-field which should be collate in CI_AI manner, will contain 6 bytes per one character (hereafter this is 'N').
-    -- This mean that maximum length of key for default page_size = 4096 is: 
+    -- This mean that maximum length of key for default page_size = 4096 is:
     -- max_key_length = floor( (page_size / 4 - 9) / N ) = 169 characters.
 
     -- Verify that we CAN do that w/o error:
@@ -50,9 +43,9 @@ test_script_1 = """
     show index test_col3_idx_b;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TEST_COL1_IDX_A INDEX ON TEST COMPUTED BY ( substring(col1 from 1 for 169) )
     TEST_COL1_IDX_B INDEX ON TEST COMPUTED BY ( substring(trim( col2 from col1 ) from 1 for 169) )
     TEST_COL2_IDX_A INDEX ON TEST COMPUTED BY ( col2 )
@@ -62,8 +55,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_3617
-# title:        Window Function: cume_dist()
-# decription:   Could not find any interesting sample with this function. Decided to use string comparison with unicode_ci_ai collation.
-# tracker_id:   CORE-3617
-# min_versions: []
-# versions:     4.0
-# qmid:         bugs.core_3617
+
+"""
+ID:          issue-3970
+ISSUE:       3970
+TITLE:       Window Function: cume_dist()
+DESCRIPTION:
+  Could not find any interesting sample with this function. Decided to use string
+  comparison with unicode_ci_ai collation.
+JIRA:        CORE-3617
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create domain dm_utf8 varchar(20) character set utf8 collate unicode_ci_ai;
     commit;
     recreate table test_ciai( id int, s dm_utf8 );
@@ -39,13 +34,13 @@ test_script_1 = """
     order by cume_dist()over(order by id desc);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     S                               cancíON
     ID                              4
     C_DIST                          0.5000000000000000
-    
+
     S                               peluQUEría
     ID                              3
     C_DIST                          1.000000000000000
@@ -60,8 +55,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

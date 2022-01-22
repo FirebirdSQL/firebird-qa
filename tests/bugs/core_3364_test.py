@@ -1,28 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_3364
-# title:        Blob filter to translate internal debug info into text representation
-# decription:   
-# tracker_id:   CORE-3364
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3730
+ISSUE:       3730
+TITLE:       Blob filter to translate internal debug info into text representation
+DESCRIPTION:
+JIRA:        CORE-3364
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('RDB\\$DEBUG_INFO', ''), ('-', ''), ('[0-9]+[ ]+[0-9]+[ ]+[0-9]+', '')]
-
-init_script_1 = """
+init_script = """
     set term ^;
     create or alter procedure sp_test(a_n smallint) returns(n_fact bigint) as
     begin
         n_fact = iif(a_n > 0, a_n, 0);
-    
-        while (a_n > 1) do 
+
+        while (a_n > 1) do
         begin
           n_fact = n_fact * (a_n - 1);
           a_n = a_n -1;
@@ -34,17 +29,18 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(page_size=4096, sql_dialect=3, init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     set blob all;
     select rdb$debug_info from rdb$procedures where upper(rdb$procedure_name) = upper('sp_test');
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('RDB\\$DEBUG_INFO', ''), ('-', ''),
+                                                   ('[0-9]+[ ]+[0-9]+[ ]+[0-9]+', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$DEBUG_INFO                  1a:f0
     Parameters:
     Number Name                             Type
@@ -68,8 +64,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

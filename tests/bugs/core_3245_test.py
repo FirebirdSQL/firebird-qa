@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3245
-# title:        SUBSTRING on long blobs truncates result to 32767 if third argument not present
-# decription:
-# tracker_id:   CORE-3245
-# min_versions: ['2.1.5']
-# versions:     2.1.5
-# qmid:         None
+
+"""
+ID:          issue-3615
+ISSUE:       3615
+TITLE:       SUBSTRING on long blobs truncates result to 32767 if third argument not present
+DESCRIPTION:
+JIRA:        CORE-3245
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('blob_.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     with q (s) as (
         select cast(cast('abc' as char(32767)) as blob sub_type text)
@@ -45,9 +38,9 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('blob_.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     char_length(s)                  98305
     ail
     char_length(sub_for)            90306
@@ -56,9 +49,9 @@ expected_stdout_1 = """
     ail
 """
 
-@pytest.mark.version('>=2.1.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

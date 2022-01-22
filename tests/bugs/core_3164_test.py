@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3164
-# title:        Parameterized requests involving blob fields fails when connected using charset UTF8
-# decription:   
-# tracker_id:   CORE-3164
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3539
+ISSUE:       3539
+TITLE:       Parameterized requests involving blob fields fails when connected using charset UTF8
+DESCRIPTION:
+JIRA:        CORE-3164
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create table test(fb blob);
     commit;
     insert into test values(rpad('', 7, 'foo') );
@@ -56,16 +49,16 @@ test_script_1 = """
     -- In 2.5.1: sqltype: 521 BLOB     Nullable sqlscale: 0 sqlsubtype: 0 sqllen: 8
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     N                               7
     N                               8
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

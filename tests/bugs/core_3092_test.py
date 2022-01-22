@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3092
-# title:        ROW_COUNT is not cleared before the singleton INSERT statement
-# decription:   
-# tracker_id:   CORE-3092
-# min_versions: ['2.1.5']
-# versions:     2.1.5
-# qmid:         None
+
+"""
+ID:          issue-3471
+ISSUE:       3471
+TITLE:       ROW_COUNT is not cleared before the singleton INSERT statement
+DESCRIPTION:
+JIRA:        CORE-3092
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.5
-# resources: None
-
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """
+init_script = """
 	CREATE TABLE DELME (
 		A INTEGER,
 		B INTEGER
@@ -56,22 +51,22 @@ init_script_1 = """
 	COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     execute procedure uui;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
-	RESULT                          update-1 1; update-2 1; insert-1 1;  
+expected_stdout = """
+	RESULT                          update-1 1; update-2 1; insert-1 1;
 """
 
 @pytest.mark.version('>=2.1.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

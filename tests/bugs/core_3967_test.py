@@ -2,25 +2,26 @@
 #
 # id:           bugs.core_3967
 # title:        subselect with reference to outer select fails
-# decription:   
+# decription:
 # tracker_id:   CORE-3967
 # min_versions: ['2.5.0']
 # versions:     3.0
 # qmid:         None
 
+"""
+ID:          issue-4300
+ISSUE:       4300
+TITLE:       subselect with reference to outer select fails
+DESCRIPTION:
+JIRA:        CORE-3967
+"""
+
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='employee-ods12.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='employee-ods12.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select r1.rdb$relation_name rel_name
     from rdb$relation_fields f1
@@ -36,16 +37,16 @@ test_script_1 = """
     order by 1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     REL_NAME                        EMPLOYEE_PROJECT
     REL_NAME                        SALARY_HISTORY
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

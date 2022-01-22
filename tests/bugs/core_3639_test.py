@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3639
-# title:        Allow the use of multiple WHEN MATCHED / NOT MATCHED clauses in MERGE, as per the SQL 2008 specification
-# decription:   
-# tracker_id:   CORE-3639
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          issue-3990
+ISSUE:       3990
+TITLE:       Allow the use of multiple WHEN MATCHED / NOT MATCHED clauses in MERGE, as per the SQL 2008 specification
+DESCRIPTION:
+JIRA:        CORE-3639
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """
+init_script = """
     recreate table ta(id int primary key, x int, y int);
     recreate table tb(id int primary key, x int, y int);
     commit;
@@ -25,23 +20,23 @@ init_script_1 = """
     insert into ta(id, x, y) values(3, 300, 333);
     insert into ta(id, x, y) values(4, 400, 444);
     insert into ta(id, x, y) values(5, 500, 555);
-   
+
     insert into tb(id, x, y) values(1, 10, 11);
     insert into tb(id, x, y) values(4, 40, 44);
     insert into tb(id, x, y) values(5, 50, 55);
     commit;
-    
-    recreate table s(id int, x int); 
+
+    recreate table s(id int, x int);
     commit;
-    insert into s(id, x) select row_number()over(), rand()*1000000 from rdb$types; 
+    insert into s(id, x) select row_number()over(), rand()*1000000 from rdb$types;
     commit;
-    recreate table t(id int primary key, x int); 
+    recreate table t(id int primary key, x int);
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     -- 1. Check ability to compile MERGE with 254 trivial `when` expressions:
     --  Batch for generating SQL with MERGE and arbitrary number of WHEN sections:
     --    @echo off
@@ -51,24 +46,24 @@ test_script_1 = """
     --    echo recreate table s(id int, x int); commit;>>%sql%
     --    echo insert into s(id, x) select row_number()over(), rand()*1000000 from rdb$types; commit;>>%sql%
     --    echo recreate table t(id int primary key, x int); commit;>>%sql%
-    --    
+    --
     --    echo merge into t using s on s.id = t.id>>%sql%
     --    for /l %%i in (1, 1, %n%) do (
     --       echo when NOT matched and s.id = %%i then insert values(s.id, s.x^)>>%sql%
     --    )
     --    echo ;>>%sql%
-    --    
-    --    
+    --
+    --
     --    echo merge into t using s on s.id = t.id>>%sql%
     --    for /l %%i in (1, 1, %n%) do (
     --       echo when matched and s.id = %%i then update set t.x = t.x + s.x>>%sql%
     --    )
     --    echo ;>>%sql%
-    --    
+    --
     --    echo rollback;>>%sql%
     --    echo set count on;>>%sql%
     --    echo select * from t;>>%sql%
-    --    
+    --
     --    isql localhost/3333:e30 -i %sql%
 
     merge into t using s on s.id = t.id
@@ -594,7 +589,7 @@ test_script_1 = """
     using ta s
     on s.id = t.id
     when matched and t.id < 2 then delete
-    when matched then update set t.x = t.x + s.x, t.y = t.y - s.y 
+    when matched then update set t.x = t.x + s.x, t.y = t.y - s.y
     when not matched and s.x < 250 then insert values(-s.id, s.x, s.y)
     when not matched then insert values(s.id, s.x, s.y)
     ;
@@ -602,9 +597,9 @@ test_script_1 = """
     rollback;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     Records affected: 0
 
               ID            X            Y
@@ -612,8 +607,8 @@ expected_stdout_1 = """
                1           10           11
                4           40           44
                5           50           55
-    
-    
+
+
               ID            X            Y
     ============ ============ ============
                4          440         -400
@@ -623,8 +618,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

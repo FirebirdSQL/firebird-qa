@@ -1,30 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_3502
-# title:        DROP VIEW ignores the existing non-column dependencies
-# decription:   
-# tracker_id:   CORE-3502
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3860
+ISSUE:       3860
+TITLE:       DROP VIEW ignores the existing non-column dependencies
+DESCRIPTION:
+JIRA:        CORE-3502
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     set autoddl on;
     commit;
     create or alter procedure p as begin end;
     commit;
-    
+
     create or alter view v (id) as select rdb$relation_id from rdb$database;
     commit;
-    
+
     set term ^;
     create or alter procedure p as
       declare id int;
@@ -35,17 +30,17 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     execute procedure p;
     commit;
     drop view v;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
@@ -53,9 +48,9 @@ expected_stderr_1 = """
     -there are 1 dependencies
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

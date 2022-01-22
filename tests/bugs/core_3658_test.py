@@ -1,42 +1,34 @@
 #coding:utf-8
-#
-# id:           bugs.core_3658
-# title:        FBSVCMGR connects to server as OS user name rather than value of ISC_USER environment variable
-# decription:
-#                   ###   W A R N I N G   ###
-#                   1) This test uses asynchronous call of external routine (fbsvcmgr) using subprocess.Popen unit,
-#                      see: subprocess.call(["fbsvcmgr", ... ], stdout=...)
-#                   2) It was encountered that FBSVCMGR do NOT wait for OS completes writing of its output on disk,
-#                      (see CORE-4896), thus forced to use delays (see calls `time.sleep()`).
-#                   3) Correct work was checked on:  WI-V2.5.6.26963; WI-V3.0.0.32281 (SS/SC/CS).
-#
-#                   01-mar-2021: re-implemented after start runs on Linux.
-#                   Replaced substitutions with simple pattern matching check using 're' package.
-#                   Checked on:
-#                       4.0.0.2377 SS: 5.808s.
-#                       4.0.0.2377 CS: 6.574s.
-#                       3.0.8.33420 SS: 5.121s.
-#                       3.0.8.33420 CS: 6.649s.
-#                       2.5.9.27152 SC: 4.410s.
-#
-#               [pcisar] 17.11.2021
-#               Implementation is complicated, and IMHO not worth of realization
-# tracker_id:   CORE-3658
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         None
+
+"""
+ID:          issue-4008
+ISSUE:       4008
+TITLE:       FBSVCMGR connects to server as OS user name rather than value of ISC_USER environment variable
+DESCRIPTION:
+NOTES:
+[17.11.2021] pcisar
+  Implementation is complicated, and IMHO not worth of realization
+JIRA:        CORE-3658
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5.2
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+Expected line found.
+Expected line found.
+Expected line found.
+Expected line found.
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip("Test fate to be determined")
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    pytest.skip("Test not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -191,16 +183,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-Expected line found.
-Expected line found.
-Expected line found.
-Expected line found.
-"""
-
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    pytest.skip("Reimplementation is complicated, and IMHO not worth of realization")

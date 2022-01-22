@@ -1,23 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3100
-# title:        Wait mode and lock timeout of external transaction of EXECUTE STATEMENT not matched to corresponding parameters of local transaction
-# decription:
-#                   Checked on: 4.0.0.1635 SS, 4.0.0.1633 CS: OK, 2.319s; 3.0.5.33180 SS, 3.0.5.33178 CS: OK, 2.215s.
-# tracker_id:   CORE-3100
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3478
+ISSUE:       3478
+TITLE:       Wait mode and lock timeout of external transaction of EXECUTE STATEMENT not matched to corresponding parameters of local transaction
+DESCRIPTION:
+JIRA:        CORE-3100
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('Statement failed, SQLSTATE.*', ''), ('record not found for user:.*', '')]
-
-init_script_1 = """
+init_script = """
     create or alter procedure sp_add_trn_data (a_run_no smallint) as begin end;
     commit;
 
@@ -147,9 +141,9 @@ init_script_1 = """
 
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     drop user tmp$c3100a;
     commit;
     create user tmp$c3100a password 'tmp$c3100a';
@@ -223,9 +217,11 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+                 substitutions=[('Statement failed, SQLSTATE.*', 'Statement failed'),
+                                ('record not found for user:.*', 'record not found for user')])
 
-expected_stdout_1 = """
+expected_stdout = """
     RUN_NO                          1
     TRN_DISTINCT_COUNT              3
     WAIT_DISTINCT_COUNT             1
@@ -247,7 +243,7 @@ expected_stdout_1 = """
     ISOL_DISTINCT_COUNT             1
 """
 
-expected_stderr_1 = """
+expected_stderr = """
 Statement failed, SQLSTATE = HY000
 record not found for user: TMP$C3100A
 Statement failed, SQLSTATE = HY000
@@ -255,9 +251,9 @@ record not found for user: TMP$C3100B
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)

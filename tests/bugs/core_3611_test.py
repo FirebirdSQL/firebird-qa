@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3611
-# title:        Wrong data while retrieving from CTEs (or derived tables) with same column names
-# decription:   
-# tracker_id:   CORE-3611
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         None
+
+"""
+ID:          issue-3965
+ISSUE:       3965
+TITLE:       Wrong data while retrieving from CTEs (or derived tables) with same column names
+DESCRIPTION:
+JIRA:        CORE-3611
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.2
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table t(
       tab_name char(31) character set unicode_fss,
       sum1_abc int,
@@ -29,7 +22,7 @@ test_script_1 = """
       sum2_oth int
     );
     commit;
-    
+
     insert into t(tab_name, sum1_abc, sum1_oth)
     with
     fields_abc as (
@@ -57,7 +50,7 @@ test_script_1 = """
     )
     select tab_name, sum_abc, sum_other from fields_all
     ;
-    
+
     insert into t(tab_name, sum2_abc, sum2_oth)
     with
     fields_abc as (
@@ -85,7 +78,7 @@ test_script_1 = """
     select tab_name, sum_abc, sum_other from fields_all
     ;
     commit;
-    
+
     select
         tab_name
         ,min(sum1_abc) as sum1_abc
@@ -101,10 +94,11 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

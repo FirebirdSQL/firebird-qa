@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3038
-# title:        Wrong resultset
-# decription:   The insert failed because a column definition includes validation constraints. validation error for variable
-# tracker_id:   CORE-3038
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3419
+ISSUE:       3419
+TITLE:       The insert failed because a column definition includes validation constraints. validation error for variable
+DESCRIPTION:
+JIRA:        CORE-3038
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create domain money as numeric(15,4);
     commit;
 
@@ -40,13 +33,14 @@ test_script_1 = """
     commit;
 
     execute procedure testp(1, 6);
-    commit; 
+    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

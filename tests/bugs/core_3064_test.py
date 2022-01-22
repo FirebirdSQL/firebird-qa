@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3064
-# title:        Using both the procedure name and alias inside an explicit plan crashes the server
-# decription:   
-# tracker_id:   CORE-3064
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3443
+ISSUE:       3443
+TITLE:       Using both the procedure name and alias inside an explicit plan crashes the server
+DESCRIPTION:
+JIRA:        CORE-3064
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
-
-substitutions_1 = [('offset .*', '')]
-
-init_script_1 = """
+init_script = """
     set term ^ ;
     create or alter procedure get_dates (
         adate_from date,
@@ -38,17 +33,17 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set planonly;
     select * from get_dates( 'yesterday', 'today' ) PLAN (GET_DATES NATURAL);
     select * from get_dates( 'yesterday', 'today' ) p PLAN (P NATURAL);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('offset .*', 'offset')])
 
-expected_stderr_1 = """
+expected_stderr = """
 Statement failed, SQLSTATE = 42S02
 Dynamic SQL Error
 -SQL error code = -104
@@ -59,9 +54,9 @@ invalid request BLR at offset 50
 -BLR syntax error: expected TABLE at offset 51, encountered 132
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

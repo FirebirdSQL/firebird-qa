@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3618
-# title:        Window Function: ntile(num_buckets integer)
-# decription:   
-#                  Cheched on 4.0.0.318.
-#                
-# tracker_id:   CORE-3618
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-3971
+ISSUE:       3971
+TITLE:       Window Function: ntile(num_buckets integer)
+DESCRIPTION:
+JIRA:        CORE-3618
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('line \\d+, column \\d+', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(x int, y int, unique(x,y) using index test_unq_x_y);
     commit;
 
@@ -38,8 +29,8 @@ test_script_1 = """
     commit;
     set list on;
     -- from doc: NTILE argument is restricted to
-    -- integral positive literal, 
-    -- variable (:var) 
+    -- integral positive literal,
+    -- variable (:var)
     -- and DSQL parameter (question mark).
 
     -- This should PASS (even when argument is specified with decimal dot, but without scale):
@@ -61,14 +52,14 @@ test_script_1 = """
     ^
 
     -- This should PASS:
-    execute block returns(x int, y int, n int) as 
-    begin 
-        for 
-            execute statement ( 'select x,y, ntile(?)over(order by x, y) from test' ) ( 2 ) 
-            into x,y,n 
-        do 
-            suspend; 
-    end^ 
+    execute block returns(x int, y int, n int) as
+    begin
+        for
+            execute statement ( 'select x,y, ntile(?)over(order by x, y) from test' ) ( 2 )
+            into x,y,n
+        do
+            suspend;
+    end^
     set term ;^
 
     -- These should FAIL:
@@ -78,9 +69,9 @@ test_script_1 = """
     select x,y,ntile(3.0)over(order by x) from test order by x,y;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line \\d+, column \\d+', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     X                               <null>
     Y                               <null>
     N                               1
@@ -137,7 +128,8 @@ expected_stdout_1 = """
     Y                               106
     N                               2
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -158,10 +150,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

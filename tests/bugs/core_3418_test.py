@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3418
-# title:        Database trigger created as INACTIVE is active
-# decription:   
-# tracker_id:   CORE-3418
-# min_versions: ['2.1.5']
-# versions:     2.1.5
-# qmid:         None
+
+"""
+ID:          issue-3781
+ISSUE:       3781
+TITLE:       Database trigger created as INACTIVE is active
+DESCRIPTION:
+JIRA:        CORE-3418
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.5
-# resources: None
-
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """
+init_script = """
 	set term ^ ;
 	create or alter trigger trg$start inactive on transaction start position 0 as
 	begin
@@ -27,22 +22,22 @@ init_script_1 = """
 	commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select rdb$get_context('USER_SESSION', 'TRANS_ID') as ctx_var from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
-    CTX_VAR                         <null>  
+expected_stdout = """
+    CTX_VAR                         <null>
 """
 
-@pytest.mark.version('>=2.1.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

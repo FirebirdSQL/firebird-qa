@@ -1,22 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3446
-# title:        Allow conversion from/to BLOBs and others types in the API functions (XSQLVAR or blr messages)
-# decription:   We try to write varchar value into blob field and vice-versa, using execute statement with parameters of corresp. types
-# tracker_id:   CORE-3446
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         None
+
+"""
+ID:          issue-3807
+ISSUE:       3807
+TITLE:       Allow conversion from/to BLOBs and others types in the API functions (XSQLVAR or blr messages)
+DESCRIPTION:
+  We try to write varchar value into blob field and vice-versa, using execute statement
+  with parameters of corresp. types
+JIRA:        CORE-3446
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
-
-substitutions_1 = [('B_NEW.*', '')]
-
-init_script_1 = """
+init_script = """
 recreate table test( s varchar(8187) character set utf8 collate unicode_ci_ai, b blob sub_type 1 character set utf8 collate unicode_ci_ai);
 commit;
 
@@ -290,12 +287,12 @@ rapporté à son maître par le porteur du présent.
 Togané, d''où on les expédierait à Yedo.
 '
 );
-commit;  
+commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
 	set list on;
 	set blob all;
 	set term ^;
@@ -313,7 +310,7 @@ test_script_1 = """
 		into s_new, b_new;
 		suspend;
 	end
-	^ set term ;^  
+	^ set term ;^
     -- 2.5.0:
     -- Statement failed, SQLSTATE = 0A000
     -- Dynamic SQL Error
@@ -330,17 +327,17 @@ test_script_1 = """
     -- -block size exceeds implementation restriction
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('B_NEW.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	S_NEW                           ||
 	B_NEW                           0:f
-	||  
+	||
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

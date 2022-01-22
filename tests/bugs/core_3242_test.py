@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3242
-# title:        Recursive stored procedure shouldnt require execute right to call itself
-# decription:   
-#                   Checked on: 4.0.0.1635: OK, 2.337s; 3.0.5.33180: OK, 2.497s.
-#                
-# tracker_id:   CORE-3242
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3612
+ISSUE:       3612
+TITLE:       Recursive stored procedure shouldnt require execute right to call itself
+DESCRIPTION:
+JIRA:        CORE-3242
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set bail on;
 
@@ -63,7 +54,7 @@ test_script_1 = """
             return i;
     end
     ^
-    
+
     create or alter procedure sp_factorial(i smallint) returns (o bigint) as
     begin
         for select o from sp_recur( :i ) into o do suspend;
@@ -109,11 +100,11 @@ test_script_1 = """
 
 
     ---------------------------------------------------------------------------
-   
+
     revoke all on all from tmp$c3242;
     commit;
 
-    grant execute on function fn_factorial to tmp$c3242; 
+    grant execute on function fn_factorial to tmp$c3242;
     grant execute on procedure sp_factorial to tmp$c3242;
     grant execute on package pg_factorial to tmp$c3242;
 
@@ -138,9 +129,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     STANDALONE_SP_RESULT            120
     STANDALONE_FN_RESULT            5040
     PACKAGED_SP_RESULT              362880
@@ -148,8 +139,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

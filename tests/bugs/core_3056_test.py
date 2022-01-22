@@ -1,31 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_3056
-# title:        Problems may happen when issuing DDL commands in the same transaction after CREATE COLLATION was issued
-# decription:   
-# tracker_id:   CORE-3056
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3436
+ISSUE:       3436
+TITLE:       Problems may happen when issuing DDL commands in the same transaction after CREATE COLLATION was issued
+DESCRIPTION:
+JIRA:        CORE-3056
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- NOTES.
     -- 1. Results are identical on: LI-T3.0.0.31827 (64 bit) and  WI-T3.0.0.31827 (32 bit).
     -- 2. Despite of ticket issue that it was fixed only in 3.0, following script works OK on also oon 2.5
     --    (tested on WI-V2.5.5.26861; differences are only in stderr).
-    -- 3. ## TODO ### 
+    -- 3. ## TODO ###
     --    Uncomment lines "--,constraint test_pk1 primary key" after CORE-4783 will be fixed, and add
     --    statement 'alter table drop constraint <PK>" before each DROP TABLE statements.
 
@@ -40,8 +33,8 @@ test_script_1 = """
     join rdb$character_sets cs on ff.rdb$character_set_id = cs.rdb$character_set_id
     where rf.rdb$relation_name = 'TEST'
     order by rf.rdb$field_position;
-    
-    /* 
+
+    /*
     -- This works only in 3.0 and does NOT in 2.5 (rdb$collation_id present there only in rdb$relation_fields and NOT in rdb$fields):
     create or alter view v_test_fields_ddl as
     select rf.rdb$field_name fld_name, cs.rdb$character_set_name cset_name, co.rdb$base_collation_name base_coll, co.rdb$collation_attributes
@@ -52,7 +45,7 @@ test_script_1 = """
     where rf.rdb$relation_name = 'TEST'
     order by rf.rdb$field_position;
     */
-    
+
     recreate table test(id int);
     commit;
     set term ^;
@@ -77,12 +70,12 @@ test_script_1 = """
     ^
     set term ;^
     drop table test;
-    
+
     set autoddl off; -- ######### NOTE: all statements below will be run in the same Tx #########
     commit;
-    
+
     set list on;
-    
+
     -- This is sample from ticket:
     create collation coll_01 for utf8 from unicode no pad;
     --commit; -- (1)
@@ -100,13 +93,13 @@ test_script_1 = """
 
     -- `select * from v_test_fields_ddl;`: must return 0 rows
     set echo on;
-    select * from v_test_fields_ddl; 
+    select * from v_test_fields_ddl;
     drop collation coll_01;
     set echo off;
     set count off;
-    
+
     -- All the following statements should NOT fail:
-    
+
     create collation coll_01 for win1251 from pxw_cyrl pad space case insensitive accent insensitive;
     create collation coll_02 for win1251 from pxw_cyrl pad space case insensitive accent insensitive;
     create collation coll_03 for win1251 from pxw_cyrl pad space case insensitive accent insensitive;
@@ -119,7 +112,7 @@ test_script_1 = """
     create collation coll_10 for win1251 from pxw_cyrl pad space case insensitive accent insensitive;
     create collation coll_11 for win1251 from pxw_cyrl pad space case insensitive accent insensitive;
     create collation coll_12 for win1251 from pxw_cyrl pad space case insensitive accent insensitive;
-    
+
     create table test(
       f01 varchar(2) character set win1251 collate coll_01
      ,f02 varchar(2) character set win1251 collate coll_02
@@ -135,11 +128,11 @@ test_script_1 = """
      ,f12 varchar(2) character set win1251 collate coll_12
      --,constraint test_pk1 primary key (f01, f02, f03, f04, f05, f06, f07, f08, f09, f10, f11, f12)
     );
-    
+
     select * from v_test_fields_ddl;
-    
+
     drop table test;
-    
+
     drop collation coll_01;
     drop collation coll_02;
     drop collation coll_03;
@@ -152,7 +145,7 @@ test_script_1 = """
     drop collation coll_10;
     drop collation coll_11;
     drop collation coll_12;
-    
+
     create collation coll_01 for utf8 from unicode no pad;
     create collation coll_02 for utf8 from unicode no pad;
     create collation coll_03 for utf8 from unicode no pad;
@@ -165,7 +158,7 @@ test_script_1 = """
     create collation coll_10 for utf8 from unicode no pad;
     create collation coll_11 for utf8 from unicode no pad;
     create collation coll_12 for utf8 from unicode no pad;
-    
+
     create table test(
       f01 varchar(2) character set utf8 collate coll_01
      ,f02 varchar(2) character set utf8 collate coll_02
@@ -181,10 +174,10 @@ test_script_1 = """
      ,f12 varchar(2) character set utf8 collate coll_12
      --,constraint test_pk2 primary key (f01, f02, f03, f04, f05, f06, f07, f08, f09, f10, f11, f12)
     );
-    
+
     select * from v_test_fields_ddl;
     drop table test;
-    
+
     drop collation coll_01;
     drop collation coll_02;
     drop collation coll_03;
@@ -197,7 +190,7 @@ test_script_1 = """
     drop collation coll_10;
     drop collation coll_11;
     drop collation coll_12;
-    
+
     -- this was tested both on windows ans linux, should be created OK
     -- (all these collations are declared in the file 'fbintl.conf'):
     create collation coll_01 for iso8859_1 from external ('DA_DA');
@@ -212,7 +205,7 @@ test_script_1 = """
     create collation coll_10 for iso8859_1 from external ('FR_FR');
     create collation coll_11 for iso8859_1 from external ('IS_IS');
     create collation coll_12 for iso8859_1 from external ('IT_IT');
-    
+
     create table test(
       f01 varchar(2) character set iso8859_1 collate coll_01
      ,f02 varchar(2) character set iso8859_1 collate coll_02
@@ -228,10 +221,10 @@ test_script_1 = """
      ,f12 varchar(2) character set iso8859_1 collate coll_12
      --,constraint test_pk2 primary key (f01, f02, f03, f04, f05, f06, f07, f08, f09, f10, f11, f12)
     );
-    
+
     select * from v_test_fields_ddl;
     --select current_transaction from rdb$database;
-    
+
     rollback;
     set count on;
     -- Both selects below must return 0 rows:
@@ -240,169 +233,170 @@ test_script_1 = """
     select * from rdb$collations co where co.rdb$collation_name starting with 'COLL_';
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     select * from v_test_fields_ddl;
     Records affected: 0
     drop collation coll_01;
     set echo off;
-    
+
     FLD_NAME                        F01
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F02
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F03
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F04
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F05
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F06
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F07
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F08
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F09
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F10
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F11
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
+
     FLD_NAME                        F12
     CSET_NAME                       WIN1251
     BASE_COLL                       PXW_CYRL
-    
-    
-    
+
+
+
     FLD_NAME                        F01
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F02
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F03
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F04
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F05
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F06
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F07
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F08
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F09
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F10
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F11
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
+
     FLD_NAME                        F12
     CSET_NAME                       UTF8
     BASE_COLL                       UNICODE
-    
-    
-    
+
+
+
     FLD_NAME                        F01
     CSET_NAME                       ISO8859_1
     BASE_COLL                       DA_DA
-    
+
     FLD_NAME                        F02
     CSET_NAME                       ISO8859_1
     BASE_COLL                       DE_DE
-    
+
     FLD_NAME                        F03
     CSET_NAME                       ISO8859_1
     BASE_COLL                       DU_NL
-    
+
     FLD_NAME                        F04
     CSET_NAME                       ISO8859_1
     BASE_COLL                       EN_UK
-    
+
     FLD_NAME                        F05
     CSET_NAME                       ISO8859_1
     BASE_COLL                       EN_US
-    
+
     FLD_NAME                        F06
     CSET_NAME                       ISO8859_1
     BASE_COLL                       ES_ES
-    
+
     FLD_NAME                        F07
     CSET_NAME                       ISO8859_1
     BASE_COLL                       ES_ES_CI_AI
-    
+
     FLD_NAME                        F08
     CSET_NAME                       ISO8859_1
     BASE_COLL                       FI_FI
-    
+
     FLD_NAME                        F09
     CSET_NAME                       ISO8859_1
     BASE_COLL                       FR_CA
-    
+
     FLD_NAME                        F10
     CSET_NAME                       ISO8859_1
     BASE_COLL                       FR_FR
-    
+
     FLD_NAME                        F11
     CSET_NAME                       ISO8859_1
     BASE_COLL                       IS_IS
-    
+
     FLD_NAME                        F12
     CSET_NAME                       ISO8859_1
     BASE_COLL                       IT_IT
-    
-    
+
+
     select * from v_test_fields_ddl;
     Records affected: 0
     select * from rdb$collations co where co.rdb$collation_name starting with 'COLL_';
     Records affected: 0
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22021
     unsuccessful metadata update
     -CREATE TABLE TEST failed
@@ -412,10 +406,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

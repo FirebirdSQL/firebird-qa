@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3174
-# title:        Expression index with TRIM may lead to incorrect indexed lookup
-# decription:   
-# tracker_id:   CORE-3174
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3548
+ISSUE:       3548
+TITLE:       Expression index with TRIM may lead to incorrect indexed lookup
+DESCRIPTION:
+JIRA:        CORE-3174
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """
+init_script = """
     create collation ps_yes for utf8 from unicode pad space;
     create collation ps_no  for utf8 from unicode no pad;
 
@@ -35,9 +30,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set plan on;
     --set echo on;
 
@@ -58,106 +53,106 @@ test_script_1 = """
     select '2.g' as test_no, id,'.' || c_nopad || '.' as c_nopad from t where trim(leading from c_nopad) starting with '123';
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (T NATURAL)
-    
+
     TEST_NO           ID C_PAD
     ======= ============ ============
     1.a                1 .123.
     1.a                2 . 123.
     1.a                3 .123  .
     1.a                4 . 123  .
-    
-    
+
+
     PLAN (T NATURAL)
-    
+
     TEST_NO           ID C_PAD
     ======= ============ ============
     1.b                1 .123.
     1.b                3 .123  .
-    
-    
+
+
     PLAN (T INDEX (T_C_PAD_TRIM_RIGHT))
-    
+
     TEST_NO           ID C_PAD
     ======= ============ ============
     1.c                1 .123.
     1.c                3 .123  .
-    
-    
+
+
     PLAN (T INDEX (T_C_PAD_TRIM_LEFT))
-    
+
     TEST_NO           ID C_PAD
     ======= ============ ============
     1.d                1 .123.
     1.d                2 . 123.
     1.d                3 .123  .
     1.d                4 . 123  .
-    
-    
+
+
     PLAN (T INDEX (T_C_PAD_TRIM_RIGHT))
-    
+
     TEST_NO           ID C_PAD
     ======= ============ ============
     1.e                1 .123.
     1.e                3 .123  .
-    
-    
+
+
     PLAN (T INDEX (T_C_PAD_TRIM_LEFT))
-    
+
     TEST_NO           ID C_PAD
     ======= ============ ============
     1.f                1 .123.
     1.f                2 . 123.
     1.f                3 .123  .
     1.f                4 . 123  .
-    
-    
+
+
     PLAN (T NATURAL)
-    
+
     TEST_NO           ID C_NOPAD
     ======= ============ ================================================
     2.a                1 .123.
     2.a                2 . 123.
     2.a                3 .123  .
     2.a                4 . 123  .
-    
-    
+
+
     PLAN (T NATURAL)
-    
+
     TEST_NO           ID C_NOPAD
     ======= ============ ================================================
     2.b                1 .123.
-    
-    
+
+
     PLAN (T INDEX (T_C_NOPAD_TRIM_RIGHT))
-    
+
     TEST_NO           ID C_NOPAD
     ======= ============ ================================================
     2.c                1 .123.
     2.c                3 .123  .
-    
-    
+
+
     PLAN (T INDEX (T_C_NOPAD_TRIM_LEFT))
-    
+
     TEST_NO           ID C_NOPAD
     ======= ============ ================================================
     2.d                1 .123.
     2.d                2 . 123.
-    
-    
+
+
     PLAN (T INDEX (T_C_NOPAD_TRIM_RIGHT))
-    
+
     TEST_NO           ID C_NOPAD
     ======= ============ ================================================
     2.f                1 .123.
     2.f                3 .123  .
-    
-    
+
+
     PLAN (T INDEX (T_C_NOPAD_TRIM_LEFT))
-    
+
     TEST_NO           ID C_NOPAD
     ======= ============ ================================================
     2.g                1 .123.
@@ -167,8 +162,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

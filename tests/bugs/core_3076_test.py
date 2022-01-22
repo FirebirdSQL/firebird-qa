@@ -1,94 +1,81 @@
 #coding:utf-8
-#
-# id:           bugs.core_3076
-# title:        Better performance for (table.field = :param or :param = -1) in where clause
-# decription:   
-#                   Test adds 20'000 rows into a table with single field and two indices on it (asc & desc).
-#                   Indexed field will have values which will produce very poor selectivity (~1/3).
-#                   Then we check number of indexed and natural reads using mon$ tables and prepared view
-#                   from .fbk. 
-#                   We check cases when SP count rows using equality (=), IN and BETWEEN expr.
-#                   When we pass NULLs then procedure should produce zero or low value (<100) of indexed reads.
-#                   When we pass not null value then SP should produce IR with number ~ 1/3 of total rows in the table.
-#               
-#                   FB30SS, build 3.0.4.32972: OK, 2.734s.
-#                   FB40SS, build 4.0.0.977: OK, 3.234s.
-#               
-#                   15.05.2018. TODO LATER, using Python:
-#               
-#                   Alternate code for possible checking (use trace with and ensure that only IR will occur when input arg is not null):
-#               
-#                       set term ^;
-#                       execute block as
-#                       begin
-#                         begin execute statement 'drop sequence g'; when any do begin end end
-#                       end
-#                       ^
-#                       set term ;^
-#                       commit;
-#                       create sequence g;
-#                       commit;
-#               
-#                       create or alter procedure sp_test as begin end;
-#                       commit;
-#                       recreate table test(x int, y int);
-#                       commit;
-#               
-#                       insert into test select mod( gen_id(g,1), 123), mod( gen_id(g,1), 321)  from rdb$types,rdb$types rows 10000;
-#                       commit;
-#               
-#                       create index test_x on test(x);
-#                       create index test_x_plus_y_asc on test computed by ( x - y );
-#                       create descending index test_x_plus_y_dec on test computed by ( x+y );
-#                       commit;
-#               
-#                       set term ^;
-#                       create or alter procedure sp_test( i1 int default null, i2 int default null ) as 
-#                           declare n int;
-#                           declare s_x varchar(1000);
-#                           declare s_y varchar(1000);
-#                       begin 
-#                           s_x = 'select count(*) from test where x = :input_arg or :input_arg is null';
-#                           s_y = 'select count(*) from test where x + y <= :input_sum  and   x - y >= :input_arg or :input_sum is null';
-#                           execute statement (s_x) ( input_arg := :i1 ) into n;
-#                           execute statement (s_y) ( input_arg := :i1, input_sum := :i2 ) into n;
-#                       end
-#                       ^
-#                       set term ;^
-#                       commit;
-#               
-#                       execute procedure sp_test( 65, 99 );
-#               
-#                   Trace log should contain following statistics for two ES:
-#               
-#                       Table                              Natural     Index
-#                       *****************************************************
-#                       TEST                                              82
-#               
-#                       Table                              Natural     Index
-#                       *****************************************************
-#                       TEST                                              90
-#               
-#               
-#                 
-# tracker_id:   CORE-3076
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3455
+ISSUE:       3455
+TITLE:       Better performance for (table.field = :param or :param = -1) in where clause
+DESCRIPTION:
+  Test adds 20'000 rows into a table with single field and two indices on it (asc & desc).
+  Indexed field will have values which will produce very poor selectivity (~1/3).
+  Then we check number of indexed and natural reads using mon$ tables and prepared view
+  from .fbk.
+  We check cases when SP count rows using equality (=), IN and BETWEEN expr.
+  When we pass NULLs then procedure should produce zero or low value (<100) of indexed reads.
+  When we pass not null value then SP should produce IR with number ~ 1/3 of total rows in the table.
+NOTES:
+[15.05.2018]
+  TODO LATER, using Python:
+  Alternate code for possible checking (use trace with and ensure that only IR will occur when input arg is not null):
+
+    set term ^;
+    execute block as
+    begin
+      begin execute statement 'drop sequence g'; when any do begin end end
+    end
+    ^
+    set term ;^
+    commit;
+    create sequence g;
+    commit;
+
+    create or alter procedure sp_test as begin end;
+    commit;
+    recreate table test(x int, y int);
+    commit;
+
+    insert into test select mod( gen_id(g,1), 123), mod( gen_id(g,1), 321)  from rdb$types,rdb$types rows 10000;
+    commit;
+
+    create index test_x on test(x);
+    create index test_x_plus_y_asc on test computed by ( x - y );
+    create descending index test_x_plus_y_dec on test computed by ( x+y );
+    commit;
+
+    set term ^;
+    create or alter procedure sp_test( i1 int default null, i2 int default null ) as
+        declare n int;
+        declare s_x varchar(1000);
+        declare s_y varchar(1000);
+    begin
+        s_x = 'select count(*) from test where x = :input_arg or :input_arg is null';
+        s_y = 'select count(*) from test where x + y <= :input_sum  and   x - y >= :input_arg or :input_sum is null';
+        execute statement (s_x) ( input_arg := :i1 ) into n;
+        execute statement (s_y) ( input_arg := :i1, input_sum := :i2 ) into n;
+    end
+    ^
+    set term ;^
+    commit;
+
+    execute procedure sp_test( 65, 99 );
+
+  Trace log should contain following statistics for two ES:
+
+    Table                              Natural     Index
+    *****************************************************
+    TEST                                              82
+
+    Table                              Natural     Index
+    *****************************************************
+    TEST                                              90
+JIRA:        CORE-3076
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='mon-stat-gathering-3_0.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='mon-stat-gathering-3_0.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set term ^;
     execute block as
@@ -150,7 +137,7 @@ test_script_1 = """
     commit;
 
     connect '$(DSN)' user 'SYSDBA' password 'masterkey'; -- mandatory!
-    
+
     execute procedure sp_truncate_stat;
     commit;
 
@@ -238,9 +225,9 @@ test_script_1 = """
     commit;
 
     SET LIST ON;
-    select * 
+    select *
     from (
-        select 
+        select
             'When input arg is NOT null' as what_we_check,
             rowset,
             iif( natural_reads <= nr_threshold
@@ -252,7 +239,7 @@ test_script_1 = """
                  ', ir-cnt/3='|| coalesce(indexed_reads - total_rows/3.00, '<null>')
                ) as result
         from (
-            select 
+            select
                 v.rowset
                 ,v.natural_reads
                 ,v.indexed_reads
@@ -264,8 +251,8 @@ test_script_1 = """
         )
 
         UNION ALL
-        
-        select 
+
+        select
             'When input arg is NULL' as what_we_check,
             rowset,
             iif( natural_reads = total_rows
@@ -276,7 +263,7 @@ test_script_1 = """
                  ', IR='|| coalesce(indexed_reads, '<null>')
                ) as result
         from (
-            select v.rowset, v.natural_reads, v.indexed_reads, c.q as total_rows 
+            select v.rowset, v.natural_reads, v.indexed_reads, c.q as total_rows
             from v_agg_stat v cross join tcnt c
             where rowset > 6
         )
@@ -284,9 +271,9 @@ test_script_1 = """
     order by rowset;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHAT_WE_CHECK                   When input arg is NOT null
     ROWSET                          1
     RESULT                          OK
@@ -321,8 +308,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

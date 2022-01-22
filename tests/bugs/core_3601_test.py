@@ -1,22 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_3601
-# title:        Incorrect TEXT BLOB charset transliteration on VIEW with trigger
-# decription:   Test for 2.5 verifies that all OK when connection charset = win1250, test for 3.0 - for connection charset = UTF8
-# tracker_id:   CORE-3601
-# min_versions: ['2.5.2']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3955
+ISSUE:       3955
+TITLE:       Incorrect TEXT BLOB charset transliteration on VIEW with trigger
+DESCRIPTION:
+  Test verifies that all OK when connection charset = UTF8
+JIRA:        CORE-3601
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('MEMO_UTF8.*', ''), ('MEMO_WIN1250.*', '')]
-
-init_script_1 = """
+init_script = """
     -- This part of test (for 3.0) should be encoded in UTF8 as for running under ISQL and under fbt-run.
 	recreate view v_t_test as select 1 id from rdb$database;
 	commit;
@@ -92,9 +88,9 @@ init_script_1 = """
 	commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
 	set term ^;
 	execute block as
 	    declare v_text blob sub_type 1 segment size 100 character set utf8; -- ######    B L O B    C H A R S E T   =    U T F 8    #####
@@ -284,9 +280,9 @@ test_script_1 = """
 	from v_t_test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('MEMO_UTF8.*', 'MEMO_UTF8')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	ID                              1
 	ACTION                          insert directly in the table, connect charset = utf8, blob charset = utf8
 	MEMO_UTF8                       82:0
@@ -322,8 +318,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute(charset='utf8')
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute(charset='utf8')
+    assert act.clean_stdout == act.clean_expected_stdout
 

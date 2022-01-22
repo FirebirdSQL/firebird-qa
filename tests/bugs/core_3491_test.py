@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3491
-# title:        Altering of a TYPE OF COLUMN parameter affects the original column
-# decription:   
-# tracker_id:   CORE-3491
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3850
+ISSUE:       3850
+TITLE:       Altering of a TYPE OF COLUMN parameter affects the original column
+DESCRIPTION:
+JIRA:        CORE-3491
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create table aaa (a integer);
+init_script = """create table aaa (a integer);
 commit;
 set term !!;
 create or alter procedure bbb
@@ -29,9 +24,9 @@ set term ;!!
 commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """show table aaa;
+test_script = """show table aaa;
 set term !!;
 create or alter procedure bbb
 returns (b varchar(10))
@@ -44,15 +39,15 @@ commit;
 show table aaa;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """SQL> A                               INTEGER Nullable
-SQL> A                               INTEGER Nullable
+expected_stdout = """A                               INTEGER Nullable
+A                               INTEGER Nullable
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

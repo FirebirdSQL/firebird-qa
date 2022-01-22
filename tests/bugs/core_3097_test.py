@@ -1,33 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_3097
-# title:        Updating blob field cause server crash with ACCESS_VIOLATION exception
-# decription:
-#                  Checked on: WI-V2.5.6.27001, WI-V3.0.0.32487, WI-T4.0.0.141
-#
-# tracker_id:   CORE-3097
-# min_versions: ['2.5']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3476
+ISSUE:       3476
+TITLE:       Updating blob field cause server crash with ACCESS_VIOLATION exception
+DESCRIPTION:
+JIRA:        CORE-3097
+"""
 
 import pytest
 from zipfile import Path
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = isql_act('db', '')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """"""
-
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     ID                              32765
     CHAR_LENGTH                     32765
     OCTET_LENGTH                    32765
@@ -65,7 +54,7 @@ expected_stdout_1 = """
     OCTET_LENGTH                    65535
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -73,13 +62,13 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    script_file = Path(act_1.files_dir / 'core_3097.zip',
+def test_1(act: Action):
+    script_file = Path(act.files_dir / 'core_3097.zip',
                     at='core_3097_script.sql')
-    act_1.script = script_file.read_text()
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.script = script_file.read_text()
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

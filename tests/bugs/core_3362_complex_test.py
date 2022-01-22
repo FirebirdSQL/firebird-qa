@@ -1,34 +1,29 @@
 #coding:utf-8
-#
-# id:           bugs.core_3362_complex
-# title:        Cursors should ignore changes made by the same statement
-# decription:   
-#                  This test verifies PSQL issues that were accumulated in miscenaleous tickets.
-#               
-#                  02.05.2021: created separate code for FB 4.x because of fixed GH-6778
-#                  (see https://github.com/FirebirdSQL/firebird/issues/6778 for details).
-#                  NB: final UPDATE statement (which is after DELETE one) must NOT issue exception
-#                  in FB 4.x, so the record deletion will not undone and we can not see table data
-#                  in expected_stdout for FB 4.x!
-#                  
-#                  Checked on 4.0.0.2451
-#                
-# tracker_id:   CORE-3362
-# min_versions: ['3.0.1']
-# versions:     3.0.1, 4.0
-# qmid:         None
+
+"""
+ID:          issue-3728-complex
+ISSUE:       3728
+TITLE:       Incorrect results when left join on subquery with constant column
+DESCRIPTION:
+  This test verifies PSQL issues that were accumulated in miscenaleous tickets.
+NOTES:
+[02.05.2021]
+  created separate code for FB 4.x because of fixed #6778
+  (see https://github.com/FirebirdSQL/firebird/issues/6778 for details).
+  NB: final UPDATE statement (which is after DELETE one) must NOT issue exception
+  in FB 4.x, so the record deletion will not undone and we can not see table data
+  in expected_stdout for FB 4.x!
+JIRA:        CORE-3362
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+substitutions = [('[ \t]+', ' '), ('line: [\\d]+[,]{0,1} col: [\\d]+', '')]
+
+db = db_factory()
 
 # version: 3.0.1
-# resources: None
-
-substitutions_1 = [('[ \t]+', ' '), ('line: [\\d]+[,]{0,1} col: [\\d]+', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     -- see also:
@@ -45,13 +40,13 @@ test_script_1 = """
     create or alter procedure sp_set_ctx(a_point varchar(20), a_data1 int, a_data2 int, a_data3 int, a_data4 int) as
     begin
         -- Store values of cursor fields in the context variable which name is passed here as 'a_point'.
-        rdb$set_context( 
-            'USER_SESSION', 
+        rdb$set_context(
+            'USER_SESSION',
             a_point,
-                      coalesce(cast( a_data1 as char(6)),'#null#') 
+                      coalesce(cast( a_data1 as char(6)),'#null#')
             || ' ' || coalesce(cast( a_data2 as char(6)),'#null#')
             || ' ' || coalesce(cast( a_data3 as char(6)),'#null#')
-            || ' ' || coalesce(cast( a_data4 as char(6)),'#null#') 
+            || ' ' || coalesce(cast( a_data4 as char(6)),'#null#')
         );
     end
     ^
@@ -64,10 +59,10 @@ test_script_1 = """
         -- Do _NOT_ try to check following statements using explicit cursor
         -- (i.e. OPEN <C>; FETCH ...; CLOSE <C>)
         for
-            select t.id, t.data1, t.data2, t.data3, t.data4 from test t where t.id = 1 
+            select t.id, t.data1, t.data2, t.data3, t.data4 from test t where t.id = 1
             as cursor c
         do begin
-          
+
             execute procedure sp_set_ctx('point_0', c.data1, c.data2, c.data3, c.data4 );
 
             update test t set t.data1 = 100001 where current of c;
@@ -111,7 +106,7 @@ test_script_1 = """
     select mon$variable_name as ctx_name, mon$variable_value ctx_value from mon$context_variables where mon$attachment_id = current_connection;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1, substitutions=substitutions)
 
 expected_stdout_1 = """
     ID                              1
@@ -131,6 +126,7 @@ expected_stdout_1 = """
     CTX_NAME                        point_4
     CTX_VALUE                       #null# #null# #null# #null#
 """
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 22000
     no current record for fetch operation
@@ -141,19 +137,11 @@ expected_stderr_1 = """
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
-    act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert (act_1.clean_stderr == act_1.clean_expected_stderr and
+            act_1.clean_stdout == act_1.clean_expected_stdout)
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('[ \t]+', ' '), ('line: [\\d]+[,]{0,1} col: [\\d]+', '')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     -- see also:
@@ -169,13 +157,13 @@ test_script_2 = """
     create or alter procedure sp_set_ctx(a_point varchar(20), a_data1 int, a_data2 int, a_data3 int, a_data4 int) as
     begin
         -- Store values of cursor fields in the context variable which name is passed here as 'a_point'.
-        rdb$set_context( 
-            'USER_SESSION', 
+        rdb$set_context(
+            'USER_SESSION',
             a_point,
-                      coalesce(cast( a_data1 as char(6)),'#null#') 
+                      coalesce(cast( a_data1 as char(6)),'#null#')
             || ' ' || coalesce(cast( a_data2 as char(6)),'#null#')
             || ' ' || coalesce(cast( a_data3 as char(6)),'#null#')
-            || ' ' || coalesce(cast( a_data4 as char(6)),'#null#') 
+            || ' ' || coalesce(cast( a_data4 as char(6)),'#null#')
         );
     end
     ^
@@ -188,10 +176,10 @@ test_script_2 = """
         -- Do _NOT_ try to check following statements using explicit cursor
         -- (i.e. OPEN <C>; FETCH ...; CLOSE <C>)
         for
-            select t.id, t.data1, t.data2, t.data3, t.data4 from test t where t.id = 1 
+            select t.id, t.data1, t.data2, t.data3, t.data4 from test t where t.id = 1
             as cursor c
         do begin
-          
+
             execute procedure sp_set_ctx('point_0', c.data1, c.data2, c.data3, c.data4 );
 
             update test t set t.data1 = 100001 where current of c;
@@ -241,7 +229,7 @@ test_script_2 = """
     select mon$variable_name as ctx_name, mon$variable_value ctx_value from mon$context_variables where mon$attachment_id = current_connection;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2, substitutions=substitutions)
 
 expected_stdout_2 = """
     CTX_NAME point_0

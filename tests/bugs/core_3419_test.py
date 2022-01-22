@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3419
-# title:        Recurse leads to hangs/crash server
-# decription:
-# tracker_id:   CORE-3419
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3782
+ISSUE:       3782
+TITLE:       Recurse leads to hangs/crash server
+DESCRIPTION:
+JIRA:        CORE-3419
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('line: [0-9]+, col: [0-9]+', 'line: , col: ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set autoddl off;
     commit;
     recreate table test(id int);
@@ -40,9 +33,9 @@ test_script_1 = """
     set transaction;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line: [0-9]+, col: [0-9]+', 'line: , col: ')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 54001
     Too many concurrent executions of the same request
     -At trigger 'TRG_TRANS_START' line: 5, col: 9
@@ -70,9 +63,9 @@ expected_stderr_1 = """
     At trigger 'TRG_TRANS_START' ...
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute(charset='utf8')
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute(charset='utf8')
+    assert act.clean_stderr == act.clean_expected_stderr
 

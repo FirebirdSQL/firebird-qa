@@ -1,27 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_3239
-# title:        UTF8 UNICODE_CI collate can not be used in compound index
-# decription:   
-# tracker_id:   CORE-3239
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3610
+ISSUE:       3610
+TITLE:       UTF8 UNICODE_CI collate can not be used in compound index
+DESCRIPTION:
+JIRA:        CORE-3239
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    create collation co_utf8_ci_ai for utf8 from unicode case insensitive accent insensitive; 
+test_script = """
+    create collation co_utf8_ci_ai for utf8 from unicode case insensitive accent insensitive;
     commit;
 
     create table test (
@@ -35,7 +28,7 @@ test_script_1 = """
     );
     commit;
 
-    -- áéíóúý àèìòù âêîôû ãñõ äëïöüÿ çš δθλξσψω ąęłźż 
+    -- áéíóúý àèìòù âêîôû ãñõ äëïöüÿ çš δθλξσψω ąęłźż
     insert into test (rule_id, ci, ciai, bfield, pattern) values (1, 'âêîôû' , 'âÊîôû' , true , '_e_O%');
     insert into test (rule_id, ci, ciai, bfield, pattern) values (2, 'äëïöüÿ', 'Äëïöüÿ', false, '_e%ioU_');
     insert into test (rule_id, ci, ciai, bfield, pattern) values (3, 'áéíóúý', 'ÁéÍÓÚý', false, 'A__O_Y');
@@ -45,20 +38,20 @@ test_script_1 = """
     set list on;
     set plan on;
     --set echo on;
-    
+
     select rule_id
     from test
     where bfield = false and ciai similar to pattern;
-    
-    select rule_id 
-    from test 
-    where 
-        rule_id = 1 
+
+    select rule_id
+    from test
+    where
+        rule_id = 1
         and ci starting with 'ÂÊ'
         and ciai similar to '%EIOU%';
 
-    select rule_id from test 
-    where 
+    select rule_id from test
+    where
         bfield = false
         and ciai similar to 'AEIOUY'
         and ci similar to '%ÄË%ÜŸ';
@@ -69,9 +62,9 @@ test_script_1 = """
     where a.bfield  = true;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (TEST INDEX (TEST_BOOL_CIAI_CI))
     RULE_ID                         2
     RULE_ID                         3
@@ -88,8 +81,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

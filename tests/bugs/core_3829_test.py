@@ -1,36 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3829
-# title:        Bad alias table choice joining CTE
-# decription:   
-#                   Confirmed wrong result on 2.5.1; no problem on 2.5.7 and above
-#               
-#                   30.10.2019. NB: new datatype in FB 4.0 was introduces: numeric(38,0).
-#                   It can lead to additional ident of values when we show them in form "SET LIST ON",
-#                   so we have to ignore all internal spaces - see added 'substitution' section below.
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.848s.
-#                       3.0.5.33182 SS: 1.531s.
-#                       2.5.9.27146 SC: 0.572s.
-#                
-# tracker_id:   CORE-3829
-# min_versions: ['2.5.7']
-# versions:     2.5.7
-# qmid:         None
+
+"""
+ID:          issue-4171
+ISSUE:       4171
+TITLE:       Bad alias table choice joining CTE
+DESCRIPTION:
+JIRA:        CORE-3829
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.7
-# resources: None
+db = db_factory(from_backup='core3829.fbk')
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core3829.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     with totalk (kk1, variant, tt, qq, mm, ff, f1, f2, f3, f4, f5) as
     (
@@ -79,9 +62,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
 
     KK1                             A1
     DESCRKK                         A A A A A
@@ -462,9 +445,9 @@ expected_stdout_1 = """
     G5 2                            <null>
 """
 
-@pytest.mark.version('>=2.5.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,33 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_3919
-# title:        Improve SIMILAR TO performance
-# decription:
-#                    Confirmed normal work on WI-T4.0.0.1598. Moreover, SIMILAR TO is about 5x faster than LIKE comparison in this test.
-#
-#                    CAUTION.
-#                    This test must be run only on 4.0+, despite that its 'Fix version' = 3.0 Alpha 1.
-#                    Performance of SIMILAR TO statement is extremely poor in comparison with LIKE operator:
-#                    COUNT through the table of 102 records requires 27 seconds vs 16 ms (checked on WI-V6.3.6.33246).
-#
-# tracker_id:   CORE-3919
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-4254
+ISSUE:       4254
+TITLE:       Improve SIMILAR TO performance
+DESCRIPTION:
+  Confirmed normal work on WI-T4.0.0.1598. Moreover, SIMILAR TO is about 5x faster than LIKE comparison in this test.
+
+  CAUTION.
+  This test must be run only on 4.0+, despite that its 'Fix version' = 3.0 Alpha 1.
+  Performance of SIMILAR TO statement is extremely poor in comparison with LIKE operator:
+  COUNT through the table of 102 records requires 27 seconds vs 16 ms (checked on WI-V6.3.6.33246).
+JIRA:        CORE-3919
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory(from_backup='core3919.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core3919.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
     set list on;
     set term ^;
@@ -106,15 +98,15 @@ test_script_1 = """
     ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RATIO_OF_TIME                   acceptable
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

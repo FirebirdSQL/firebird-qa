@@ -2,21 +2,24 @@
 #
 # id:           bugs.core_3296
 # title:        Error "context already in use" for the simple case function with a sub-select operand
-# decription:   
+# decription:
 # tracker_id:   CORE-3296
 # min_versions: ['2.1.5']
 # versions:     2.1.5
 # qmid:         None
 
+"""
+ID:          issue-1298
+ISSUE:       1298
+TITLE:       Error "context already in use" for the simple case function with a sub-select operand
+DESCRIPTION:
+JIRA:        CORE-3296
+"""
+
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE VAT_ZAK
+init_script = """CREATE TABLE VAT_ZAK
 (
   ID Integer NOT NULL,
   SYS_NR Integer,
@@ -31,9 +34,9 @@ CONSTRAINT PK_ELEMENTY__ID PRIMARY KEY (ID)
 );
 COMMIT;"""
 
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """UPDATE
+test_script = """UPDATE
 ELEMENTY E
 SET
 E.ID_VAT_SPRZ=
@@ -56,10 +59,11 @@ ELSE E.ID_VAT_SPRZ END;
 COMMIT;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.1.5')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

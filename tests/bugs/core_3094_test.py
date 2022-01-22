@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3094
-# title:        Parameters doesn't work with NOT IN from a selectable procedure
-# decription:   
-# tracker_id:   CORE-3094
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3473
+ISSUE:       3473
+TITLE:       Parameters doesn't work with NOT IN from a selectable procedure
+DESCRIPTION:
+JIRA:        CORE-3094
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_test as begin end;
     recreate table con_miem (
         fgrupo   int,
@@ -39,7 +32,7 @@ test_script_1 = """
     end
     ^ set term ;^
     commit;
-    
+
     insert into con_cuen (fcuenta, fnombre) values (5000, 'cuenta 5000');
     insert into con_cuen (fcuenta, fnombre) values (6000, 'cuenta 6000');
     insert into con_cuen (fcuenta, fnombre) values (7101, 'cuenta 7101');
@@ -60,8 +53,8 @@ test_script_1 = """
     insert into con_cuen (fcuenta, fnombre) values (7117, 'cuenta 7117');
     insert into con_cuen (fcuenta, fnombre) values (7118, 'cuenta 7118');
     insert into con_cuen (fcuenta, fnombre) values (7119, 'cuenta 7119');
-    
-    
+
+
     insert into con_miem (fgrupo, fmiembr) values (100, 5000);
     insert into con_miem (fgrupo, fmiembr) values (100, 6000);
     insert into con_miem (fgrupo, fmiembr) values (100, 7101);
@@ -83,7 +76,7 @@ test_script_1 = """
     insert into con_miem (fgrupo, fmiembr) values (100, 7118);
     insert into con_miem (fgrupo, fmiembr) values (100, 7119);
     commit;
-    
+
     set list on;
     set term ^;
     execute block returns (fcuenta type of column con_miem.fmiembr, fnombre type of column con_cuen.fnombre)
@@ -104,10 +97,11 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

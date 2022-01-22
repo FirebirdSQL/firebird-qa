@@ -1,35 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_3435
-# title:        Lateral derived tables
-# decription:   
-#                   Test is based on public database from sql-ex.ru and several example queries from sql-tutorial.ru:
-#                   http://www.sql-tutorial.ru/ru/book_cross_apply/page2.html
-#               
-#                   Example queries are published here with kind permission of Sergey Moiseenko, 07.04.2020 11:46.
-#                   ::: NB :::
-#                   This is INITIAL test of LATERAL-JOIN functional. Additional examples will be implemented later.
-#               
-#                   Checked on 4.0.0.1865 SS: 1.360s.
-#                
-# tracker_id:   CORE-3435
-# min_versions: []
-# versions:     4.0.0
-# qmid:         None
+
+"""
+ID:          issue-3797
+ISSUE:       3797
+TITLE:       Lateral derived tables
+DESCRIPTION:
+  Test is based on public database from sql-ex.ru and several example queries from sql-tutorial.ru:
+  http://www.sql-tutorial.ru/ru/book_cross_apply/page2.html
+
+  Example queries are published here with kind permission of Sergey Moiseenko, 07.04.2020 11:46.
+  This is INITIAL test of LATERAL-JOIN functional. Additional examples will be implemented later.
+JIRA:        CORE-3435
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.0
-# resources: None
+db = db_factory(from_backup='sql-ex-open-data.fbk')
 
-substitutions_1 = [('[ \t]+', ' '), ('===.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='sql-ex-open-data.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create or alter function fn_get_next_laptop_model(a_code type of column laptop.code ) returns varchar(50) deterministic  as
     begin
@@ -112,7 +101,7 @@ test_script_1 = """
             ,fn_get_next_laptop_price(p.code) as price_for_next_code
         from rdb$database
     ) x on 1=1;
-    
+
     ----------------------------
 
     -- Check ability to use recursive datasource as LATERAL:
@@ -1468,35 +1457,35 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('===.*', '')])
 
-expected_stdout_1 = """
-    MSG            CODE MODEL        SPEED          RAM                      HD                 PRICE       SCREEN             MAX_PRICE             MIN_PRICE 
-    test-1            1 1298           350           32       4.000000000000000                700.00           11               1150.00                700.00 
-    test-1            2 1321           500           64       8.000000000000000                970.00           12                970.00                970.00 
-    test-1            3 1750           750          128       12.00000000000000               1200.00           14               1200.00               1200.00 
-    test-1            4 1298           600           64       10.00000000000000               1050.00           15               1150.00                700.00 
-    test-1            5 1752           750          128       10.00000000000000               1150.00           14               1150.00                700.00 
-    test-1            6 1298           450           64       10.00000000000000                950.00           12               1150.00                700.00 
+expected_stdout = """
+    MSG            CODE MODEL        SPEED          RAM                      HD                 PRICE       SCREEN             MAX_PRICE             MIN_PRICE
+    test-1            1 1298           350           32       4.000000000000000                700.00           11               1150.00                700.00
+    test-1            2 1321           500           64       8.000000000000000                970.00           12                970.00                970.00
+    test-1            3 1750           750          128       12.00000000000000               1200.00           14               1200.00               1200.00
+    test-1            4 1298           600           64       10.00000000000000               1050.00           15               1150.00                700.00
+    test-1            5 1752           750          128       10.00000000000000               1150.00           14               1150.00                700.00
+    test-1            6 1298           450           64       10.00000000000000                950.00           12               1150.00                700.00
 
-    MSG       CURR_CORE    LEAD_CODE 
-    test-2            1            4 
-    test-2            4            6 
-    test-2            6            2 
-    test-2            2            3 
-    test-2            3            5 
-    test-2            5       <null> 
+    MSG       CURR_CORE    LEAD_CODE
+    test-2            1            4
+    test-2            4            6
+    test-2            6            2
+    test-2            2            3
+    test-2            3            5
+    test-2            5       <null>
 
-    MSG    MAKER      MODEL TYPE 
-    test-3 A          1298  Laptop 
-    test-3 C          1321  Laptop 
-    test-3 B          1750  Laptop 
-    test-3 B          1121  PC 
-    test-3 A          1232  PC 
-    test-3 A          1233  PC 
-    test-3 A          1276  Printer 
-    test-3 D          1288  Printer 
-    test-3 A          1401  Printer 
+    MSG    MAKER      MODEL TYPE
+    test-3 A          1298  Laptop
+    test-3 C          1321  Laptop
+    test-3 B          1750  Laptop
+    test-3 B          1121  PC
+    test-3 A          1232  PC
+    test-3 A          1233  PC
+    test-3 A          1276  Printer
+    test-3 D          1288  Printer
+    test-3 A          1401  Printer
 
     MSG            CODE MODEL        SPEED                 PRICE MODEL_FOR_NEXT_CODE SPEED_FOR_NEXT_CODE   PRICE_FOR_NEXT_CODE
     test-4            1 1298           350                700.00 1321                                500                970.00
@@ -1519,266 +1508,266 @@ expected_stdout_1 = """
     test-5            2                                          3
     test-5            1                                          1
 
-    I0 1 
-    I1 2 
-    I2 3 
-    I3 4 
-    I4 5 
-    I5 6 
-    I6 7 
-    I7 8 
-    I8 9 
-    I9 10 
-    I10 11 
-    I11 12 
-    I12 13 
-    I13 14 
-    I14 15 
-    I15 16 
-    I16 17 
-    I17 18 
-    I18 19 
-    I19 20 
-    I20 21 
-    I21 22 
-    I22 23 
-    I23 24 
-    I24 25 
-    I25 26 
-    I26 27 
-    I27 28 
-    I28 29 
-    I29 30 
-    I30 31 
-    I31 32 
-    I32 33 
-    I33 34 
-    I34 35 
-    I35 36 
-    I36 37 
-    I37 38 
-    I38 39 
-    I39 40 
-    I40 41 
-    I41 42 
-    I42 43 
-    I43 44 
-    I44 45 
-    I45 46 
-    I46 47 
-    I47 48 
-    I48 49 
-    I49 50 
-    I50 51 
-    I51 52 
-    I52 53 
-    I53 54 
-    I54 55 
-    I55 56 
-    I56 57 
-    I57 58 
-    I58 59 
-    I59 60 
-    I60 61 
-    I61 62 
-    I62 63 
-    I63 64 
-    I64 65 
-    I65 66 
-    I66 67 
-    I67 68 
-    I68 69 
-    I69 70 
-    I70 71 
-    I71 72 
-    I72 73 
-    I73 74 
-    I74 75 
-    I75 76 
-    I76 77 
-    I77 78 
-    I78 79 
-    I79 80 
-    I80 81 
-    I81 82 
-    I82 83 
-    I83 84 
-    I84 85 
-    I85 86 
-    I86 87 
-    I87 88 
-    I88 89 
-    I89 90 
-    I90 91 
-    I91 92 
-    I92 93 
-    I93 94 
-    I94 95 
-    I95 96 
-    I96 97 
-    I97 98 
-    I98 99 
-    I99 100 
-    I100 101 
-    I101 102 
-    I102 103 
-    I103 104 
-    I104 105 
-    I105 106 
-    I106 107 
-    I107 108 
-    I108 109 
-    I109 110 
-    I110 111 
-    I111 112 
-    I112 113 
-    I113 114 
-    I114 115 
-    I115 116 
-    I116 117 
-    I117 118 
-    I118 119 
-    I119 120 
-    I120 121 
-    I121 122 
-    I122 123 
-    I123 124 
-    I124 125 
-    I125 126 
-    I126 127 
-    I127 128 
-    I128 129 
-    I129 130 
-    I130 131 
-    I131 132 
-    I132 133 
-    I133 134 
-    I134 135 
-    I135 136 
-    I136 137 
-    I137 138 
-    I138 139 
-    I139 140 
-    I140 141 
-    I141 142 
-    I142 143 
-    I143 144 
-    I144 145 
-    I145 146 
-    I146 147 
-    I147 148 
-    I148 149 
-    I149 150 
-    I150 151 
-    I151 152 
-    I152 153 
-    I153 154 
-    I154 155 
-    I155 156 
-    I156 157 
-    I157 158 
-    I158 159 
-    I159 160 
-    I160 161 
-    I161 162 
-    I162 163 
-    I163 164 
-    I164 165 
-    I165 166 
-    I166 167 
-    I167 168 
-    I168 169 
-    I169 170 
-    I170 171 
-    I171 172 
-    I172 173 
-    I173 174 
-    I174 175 
-    I175 176 
-    I176 177 
-    I177 178 
-    I178 179 
-    I179 180 
-    I180 181 
-    I181 182 
-    I182 183 
-    I183 184 
-    I184 185 
-    I185 186 
-    I186 187 
-    I187 188 
-    I188 189 
-    I189 190 
-    I190 191 
-    I191 192 
-    I192 193 
-    I193 194 
-    I194 195 
-    I195 196 
-    I196 197 
-    I197 198 
-    I198 199 
-    I199 200 
-    I200 201 
-    I201 202 
-    I202 203 
-    I203 204 
-    I204 205 
-    I205 206 
-    I206 207 
-    I207 208 
-    I208 209 
-    I209 210 
-    I210 211 
-    I211 212 
-    I212 213 
-    I213 214 
-    I214 215 
-    I215 216 
-    I216 217 
-    I217 218 
-    I218 219 
-    I219 220 
-    I220 221 
-    I221 222 
-    I222 223 
-    I223 224 
-    I224 225 
-    I225 226 
-    I226 227 
-    I227 228 
-    I228 229 
-    I229 230 
-    I230 231 
-    I231 232 
-    I232 233 
-    I233 234 
-    I234 235 
-    I235 236 
-    I236 237 
-    I237 238 
-    I238 239 
-    I239 240 
-    I240 241 
-    I241 242 
-    I242 243 
-    I243 244 
-    I244 245 
-    I245 246 
-    I246 247 
-    I247 248 
-    I248 249 
-    I249 250 
-    I250 251 
-    I251 252 
-    I252 253 
-    I253 254 
-    I254 255 
+    I0 1
+    I1 2
+    I2 3
+    I3 4
+    I4 5
+    I5 6
+    I6 7
+    I7 8
+    I8 9
+    I9 10
+    I10 11
+    I11 12
+    I12 13
+    I13 14
+    I14 15
+    I15 16
+    I16 17
+    I17 18
+    I18 19
+    I19 20
+    I20 21
+    I21 22
+    I22 23
+    I23 24
+    I24 25
+    I25 26
+    I26 27
+    I27 28
+    I28 29
+    I29 30
+    I30 31
+    I31 32
+    I32 33
+    I33 34
+    I34 35
+    I35 36
+    I36 37
+    I37 38
+    I38 39
+    I39 40
+    I40 41
+    I41 42
+    I42 43
+    I43 44
+    I44 45
+    I45 46
+    I46 47
+    I47 48
+    I48 49
+    I49 50
+    I50 51
+    I51 52
+    I52 53
+    I53 54
+    I54 55
+    I55 56
+    I56 57
+    I57 58
+    I58 59
+    I59 60
+    I60 61
+    I61 62
+    I62 63
+    I63 64
+    I64 65
+    I65 66
+    I66 67
+    I67 68
+    I68 69
+    I69 70
+    I70 71
+    I71 72
+    I72 73
+    I73 74
+    I74 75
+    I75 76
+    I76 77
+    I77 78
+    I78 79
+    I79 80
+    I80 81
+    I81 82
+    I82 83
+    I83 84
+    I84 85
+    I85 86
+    I86 87
+    I87 88
+    I88 89
+    I89 90
+    I90 91
+    I91 92
+    I92 93
+    I93 94
+    I94 95
+    I95 96
+    I96 97
+    I97 98
+    I98 99
+    I99 100
+    I100 101
+    I101 102
+    I102 103
+    I103 104
+    I104 105
+    I105 106
+    I106 107
+    I107 108
+    I108 109
+    I109 110
+    I110 111
+    I111 112
+    I112 113
+    I113 114
+    I114 115
+    I115 116
+    I116 117
+    I117 118
+    I118 119
+    I119 120
+    I120 121
+    I121 122
+    I122 123
+    I123 124
+    I124 125
+    I125 126
+    I126 127
+    I127 128
+    I128 129
+    I129 130
+    I130 131
+    I131 132
+    I132 133
+    I133 134
+    I134 135
+    I135 136
+    I136 137
+    I137 138
+    I138 139
+    I139 140
+    I140 141
+    I141 142
+    I142 143
+    I143 144
+    I144 145
+    I145 146
+    I146 147
+    I147 148
+    I148 149
+    I149 150
+    I150 151
+    I151 152
+    I152 153
+    I153 154
+    I154 155
+    I155 156
+    I156 157
+    I157 158
+    I158 159
+    I159 160
+    I160 161
+    I161 162
+    I162 163
+    I163 164
+    I164 165
+    I165 166
+    I166 167
+    I167 168
+    I168 169
+    I169 170
+    I170 171
+    I171 172
+    I172 173
+    I173 174
+    I174 175
+    I175 176
+    I176 177
+    I177 178
+    I178 179
+    I179 180
+    I180 181
+    I181 182
+    I182 183
+    I183 184
+    I184 185
+    I185 186
+    I186 187
+    I187 188
+    I188 189
+    I189 190
+    I190 191
+    I191 192
+    I192 193
+    I193 194
+    I194 195
+    I195 196
+    I196 197
+    I197 198
+    I198 199
+    I199 200
+    I200 201
+    I201 202
+    I202 203
+    I203 204
+    I204 205
+    I205 206
+    I206 207
+    I207 208
+    I208 209
+    I209 210
+    I210 211
+    I211 212
+    I212 213
+    I213 214
+    I214 215
+    I215 216
+    I216 217
+    I217 218
+    I218 219
+    I219 220
+    I220 221
+    I221 222
+    I222 223
+    I223 224
+    I224 225
+    I225 226
+    I226 227
+    I227 228
+    I228 229
+    I229 230
+    I230 231
+    I231 232
+    I232 233
+    I233 234
+    I234 235
+    I235 236
+    I236 237
+    I237 238
+    I238 239
+    I239 240
+    I240 241
+    I241 242
+    I242 243
+    I243 244
+    I244 245
+    I245 246
+    I246 247
+    I247 248
+    I248 249
+    I249 250
+    I250 251
+    I251 252
+    I252 253
+    I253 254
+    I254 255
 """
 
-@pytest.mark.version('>=4.0.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

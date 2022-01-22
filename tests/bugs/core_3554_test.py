@@ -1,32 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3554
-# title:        Server crashes during prepare or throws incorrect parsing error if the remotely passed SQL query is empty
-# decription:
-#                   Checked on:
-#                      4.0.0.1635 SS: 1.364s.
-#                      4.0.0.1633 CS: 1.674s.
-#                      3.0.5.33180 SS: 0.822s.
-#                      3.0.5.33178 CS: 1.233s.
-#
-# tracker_id:   CORE-3554
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3910
+ISSUE:       3910
+TITLE:       Server crashes during prepare or throws incorrect parsing error if the remotely passed SQL query is empty
+DESCRIPTION:
+JIRA:        CORE-3554
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost:'), ('.*Unexpected end of command.*', '.*Unexpected end of command'), ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- See issues in ticket:
     -- "application either passes the empty SQL text to prepare, or passes a "too long" SQL text (64KB or 128KB etc)
     -- so its length becomes zero as a result of conversion into USHORT (unsigned 16-bit integer) which represents
@@ -91,12 +78,16 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+                 substitutions=[('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost:'),
+                                ('.*Unexpected end of command.*', 'Unexpected end of command'),
+                                ('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
 
-expected_stdout_1 = """
+expected_stdout = """
     N                               32739
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Execute statement error at isc_dsql_prepare :
     335544569 : Dynamic SQL Error
@@ -108,10 +99,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

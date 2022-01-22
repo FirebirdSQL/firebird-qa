@@ -1,36 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_3000
-# title:        Error on delete user "ADMIN"
-# decription:   
-#                  Also added sample from core-3110
-#                
-# tracker_id:   CORE-3000
-# min_versions: ['2.5.7']
-# versions:     2.5.7
-# qmid:         None
+
+"""
+ID:          issue-3382
+ISSUE:       3382
+TITLE:       Error on delete user "ADMIN"
+DESCRIPTION:
+  Also added sample from #3488
+JIRA:        CORE-3000
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.7
-# resources: None
+db_ = db_factory()
 
-substitutions_1 = [('-Token unknown - line.*', '-Token unknown')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Following users should NOT be created:
     create user 'ADMIN' password '123';
     create user 'CHECK' password '123';
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db_', test_script, substitutions=[('-Token unknown - line.*', '-Token unknown')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -44,9 +36,9 @@ expected_stderr_1 = """
     -'CHECK'
 """
 
-@pytest.mark.version('>=2.5.7')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

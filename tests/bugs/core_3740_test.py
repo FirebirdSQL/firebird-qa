@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3740
-# title:        SELECT using IN list with 153 or more elements causes crash
-# decription:   
-# tracker_id:   CORE-3740
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
-    -- Note-1. Firebird 2.5.0 and 2.5.1 -- also WORK fine on the following script
-    -- (despite ticket's issue "affected version(s) 2.5.1"), so these versions also can be tested here.
-    -- Note-2. As of march-2015 (build 3.0.0.31756), there is some kind of regression in performance 
-    -- of parsing huge literal lists in comparison with all 2.5.x versions, see CORE-4728.
+"""
+ID:          issue-4084
+ISSUE:       4084
+TITLE:       SELECT using IN list with 153 or more elements causes crash
+DESCRIPTION:
+JIRA:        CORE-3740
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+import pytest
+from firebird.qa import *
 
-test_script_1 = """
+db = db_factory()
+
+test_script = """
     set list on;
     select 1 x from
     rdb$database where 1500 in(
@@ -1532,15 +1520,15 @@ test_script_1 = """
     );
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     X                               1
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

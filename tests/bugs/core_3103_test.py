@@ -1,26 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_3103
-# title:        BAD PLAN with using LEFT OUTER JOIN in SUBSELECT. See also: CORE-3283
-# decription:   Ticket subj: Select statement with more non indexed reads in version 2.5RC3 as in version 2.1.3
-# tracker_id:   CORE-3103
-# min_versions: ['2.1.7']
-# versions:     2.1.7
-# qmid:         None
+
+"""
+ID:          issue-3481-3651
+ISSUE:       3481, 3651
+TITLE:       BAD PLAN with using LEFT OUTER JOIN in SUBSELECT
+DESCRIPTION:
+  Ticket subj: Select statement with more non indexed reads in version 2.5RC3 as in version 2.1.3
+JIRA:        CORE-3103
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     execute block as
     begin
@@ -31,7 +25,7 @@ test_script_1 = """
     commit;
     create sequence g;
     commit;
-    
+
     recreate table bauf(id int);
     commit;
     recreate table bstammdaten(
@@ -48,7 +42,7 @@ test_script_1 = """
          using index fk_bauf_bstammdaten_id
     );
     commit;
-    
+
     set term ^;
     execute block as
         declare n_main int = 5000; --  42000;
@@ -65,14 +59,14 @@ test_script_1 = """
     end
     ^set term ;^
     commit;
-    
+
     create index bstammdaten_maskenkey on bstammdaten(maskenkey);
     commit;
     set statistics index fk_bauf_bstammdaten_id;
     set statistics index bstammdaten_id_pk;
     commit;
-    
-    
+
+
     set planonly;
     select count(*) from bauf
     where id =
@@ -84,16 +78,16 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN JOIN (A INDEX (BSTAMMDATEN_MASKENKEY), B INDEX (FK_BAUF_BSTAMMDATEN_ID))
     PLAN (BAUF INDEX (BAUF_PK))
 """
 
-@pytest.mark.version('>=2.1.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

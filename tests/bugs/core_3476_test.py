@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3476
-# title:        LIST function wrongly concatenates binary blobs
-# decription:   
-# tracker_id:   CORE-3476
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3837
+ISSUE:       3837
+TITLE:       LIST function wrongly concatenates binary blobs
+DESCRIPTION:
+JIRA:        CORE-3476
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select ascii_val( left(list(f,''),1) ) v1, ascii_val( right(list(f,''),1) ) v2
     from (
@@ -35,16 +28,16 @@ test_script_1 = """
     -- V2                              46
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     V1                              255
     V2                              222
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3753
-# title:        The trigger together with the operator MERGE if in a condition of connection ON contains new is not compiled
-# decription:   
-# tracker_id:   CORE-3753
-# min_versions: ['2.1.7']
-# versions:     2.1.7
-# qmid:         None
+
+"""
+ID:          issue-4097
+ISSUE:       4097
+TITLE:       The trigger together with the operator MERGE if in a condition of connection ON contains new is not compiled
+DESCRIPTION:
+JIRA:        CORE-3753
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     execute block as
     begin
@@ -28,17 +21,17 @@ test_script_1 = """
     end
     ^
     set term ;^
-    
+
     recreate table cover(id int);
     commit;
-    
+
     recreate table horse (
         code_horse integer constraint pk_horse primary key,
         code_father integer default -2 not null,
         code_mother integer default -3 not null,
         name varchar(50)
     );
-    
+
     recreate table cover (
         code_cover integer constraint pk_cover primary key
         ,code_father integer not null
@@ -49,7 +42,7 @@ test_script_1 = """
         ,constraint fk_cover_ref_mother foreign key (code_mother) references horse (code_horse)
     );
     commit;
-    
+
     set term ^;
     create or alter trigger horse_ai for horse active after insert position 0 as
     begin
@@ -73,10 +66,11 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.1.7')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

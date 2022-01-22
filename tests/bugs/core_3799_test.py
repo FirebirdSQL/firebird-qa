@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3799
-# title:        with caller privileges option do not work with autonomous transaction option
-# decription:   
-#                   Checked on: 4.0.0.1635: OK, 1.505s; 3.0.5.33180: OK, 1.555s; 2.5.9.27119: OK, 0.308s.
-#                
-# tracker_id:   CORE-3799
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         None
+
+"""
+ID:          issue-4142
+ISSUE:       4142
+TITLE:       with caller privileges option do not work with autonomous transaction option
+DESCRIPTION:
+JIRA:        CORE-3799
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.2
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     -- Drop old account if it remains from prevoius run:
     set term ^;
@@ -36,17 +27,17 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     create user tmp$c3799 password '123';
     commit;
 
     revoke all on all from tmp$c3799;
     commit;
-    
+
     create or alter procedure sp_test as begin end;
     recreate table test(whoami rdb$user, my_trn int default current_transaction, outer_trn int);
     commit;
-    
+
     set term ^ ;
     create or alter procedure sp_test as
     begin
@@ -58,13 +49,13 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     grant insert,select on table test to procedure sp_test;
     grant execute on procedure sp_test to user tmp$c3799;
     commit;
-    
+
     -------------------------------------------------------------------------------------------------
-    
+
     set term ^;
     execute block as
         declare v_usr rdb$user = 'tmp$c3799';
@@ -75,14 +66,14 @@ test_script_1 = """
     ^
     set term ^;
     commit;
-    
+
 
     -------------------------------------------------------------------------------------------------
     --connect '$(DSN)' user 'tmp$c3799' password '123';
     --execute procedure sp_test;
     --commit;
     -------------------------------------------------------------------------------------------------
-    
+
     set list on;
     select whoami as "Who am I ?", sign( my_trn - outer_trn ) "Did I work in AUTONOMOUS Tx ?"
     from test;
@@ -102,21 +93,21 @@ test_script_1 = """
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
-    
+
     drop user tmp$c3799;
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Who am I ?                      TMP$C3799
     Did I work in AUTONOMOUS Tx ?   1
 """
 
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

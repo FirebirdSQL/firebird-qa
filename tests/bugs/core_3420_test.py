@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3420
-# title:        BOOLEAN not present in system table RDB$TYPES
-# decription:   
-# tracker_id:   CORE-3420
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3783
+ISSUE:       3783
+TITLE:       BOOLEAN not present in system table RDB$TYPES
+DESCRIPTION:
+JIRA:        CORE-3420
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select
         rdb$field_name,
@@ -32,9 +25,9 @@ test_script_1 = """
     order by t.rdb$field_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$FIELD_NAME                  RDB$FIELD_TYPE
     RDB$TYPE                        23
     RDB$TYPE_NAME                   BOOLEAN
@@ -46,8 +39,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

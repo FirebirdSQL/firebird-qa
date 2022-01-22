@@ -1,43 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_3101
-# title:        Cannot alter the domain after migrating from older versions
-# decription:   
-# tracker_id:   CORE-3101
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-3479
+ISSUE:       3479
+TITLE:       Cannot alter the domain after migrating from older versions
+DESCRIPTION:
+JIRA:        CORE-3101
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(from_backup='core3101-ods11.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core3101-ods11.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     show domain state;
     alter domain state set default 0;
     commit;
     show domain state;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     STATE                           SMALLINT Nullable
     STATE                           SMALLINT Nullable
                                     default 0
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

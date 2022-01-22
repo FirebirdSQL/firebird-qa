@@ -1,29 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_3137
-# title:        Partial rollback is possible for a selectable procedure modifying data
-# decription:   
-# tracker_id:   CORE-3137
-# min_versions: ['2.1.4']
-# versions:     2.1.4
-# qmid:         None
+
+"""
+ID:          issue-3514
+ISSUE:       3514
+TITLE:       Partial rollback is possible for a selectable procedure modifying data
+DESCRIPTION:
+JIRA:        CORE-3137
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.4
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create or alter procedure sp_01 returns (ret int) as begin end;
     commit;
     recreate table tab (col int);
     commit;
     insert into tab (col) values (1);
     commit;
-    
+
     set term ^;
     create or alter procedure sp_01 returns (ret int) as
     begin
@@ -43,9 +38,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select col from tab; -- returns 1
     commit;
@@ -54,20 +49,20 @@ test_script_1 = """
     rollback;
 
     select col from tab; -- returns 2!!!
-    commit; 
+    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     COL                             1
     RET                             1
     COL                             1
 """
 
-@pytest.mark.version('>=2.1.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

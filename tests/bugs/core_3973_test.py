@@ -1,36 +1,29 @@
 #coding:utf-8
-#
-# id:           bugs.core_3973
-# title:        Original table name and column name and owner missing from SQLDA for aliased column in grouped query
-# decription:   
-# tracker_id:   CORE-3973
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4306
+ISSUE:       4306
+TITLE:       Original table name and column name and owner missing from SQLDA for aliased column in grouped query
+DESCRIPTION:
+JIRA:        CORE-3973
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!name|table).)*$', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set planonly;
     set sqlda_display on;
     select rdb$relation_id as r_id, rdb$character_set_name
     from rdb$database
-    group by rdb$relation_id, rdb$character_set_name; 
+    group by rdb$relation_id, rdb$character_set_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!name|table).)*$', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     :  name: RDB$RELATION_ID  alias: R_ID
     : table: RDB$DATABASE  owner: SYSDBA
     :  name: RDB$CHARACTER_SET_NAME  alias: RDB$CHARACTER_SET_NAME
@@ -38,8 +31,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

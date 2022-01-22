@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3691
-# title:        Missing constraint name in foreign key error message in FB 2.1.4
-# decription:   
-# tracker_id:   CORE-3691
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         None
+
+"""
+ID:          issue-4039
+ISSUE:       4039
+TITLE:       Missing constraint name in foreign key error message in FB 2.1.4
+DESCRIPTION:
+JIRA:        CORE-3691
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     --  Note. Info about problematic key exists since 2.5.3
     recreate table tmain(id int primary key using index tmain_pk);
     commit;
@@ -33,18 +26,18 @@ test_script_1 = """
     alter table tdetl add constraint tdetl_fk foreign key(pid) references tmain(id);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 23000
     violation of FOREIGN KEY constraint "TDETL_FK" on table "TDETL"
     -Foreign key reference target does not exist
     -Problematic key value is ("PID" = 2)
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

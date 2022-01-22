@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3255
-# title:        The server could crash using views with GROUP BY
-# decription:   
-# tracker_id:   CORE-3255
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3623
+ISSUE:       3623
+TITLE:       The server could crash using views with GROUP BY
+DESCRIPTION:
+JIRA:        CORE-3255
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """SET TERM !;
+init_script = """SET TERM !;
 create table t1 (
   n1 integer
 )!
@@ -56,34 +51,31 @@ commit!
 SET TERM ;!
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select * from p2;
+test_script = """select * from p2;
 select * from p1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Database:  localhost:C:\\Users\\win7\\Firebird_tests\\fbt-repository\\tmp\\bugs.core_3255.fdb, User: SYSDBA
-SQL>
+expected_stdout = """
 X                N1
 ====== ============
 a                 1
 a                 2
 a                 3
 
-SQL>
 X                N1
 ====== ============
 a                 1
 a                 2
 a                 3
+"""
 
-SQL>"""
-
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

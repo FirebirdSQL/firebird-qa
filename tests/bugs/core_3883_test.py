@@ -2,31 +2,32 @@
 #
 # id:           bugs.core_3883
 # title:        Ambiguous field name in the trigger when it does a select from the table
-# decription:   
+# decription:
 # tracker_id:   CORE-3883
 # min_versions: ['2.0.7']
 # versions:     2.0.7
 # qmid:         None
 
+"""
+ID:          issue-4220
+ISSUE:       4220
+TITLE:       Ambiguous field name in the trigger when it does a select from the table
+DESCRIPTION:
+JIRA:        CORE-3883
+"""
+
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table regtype (
         code_regtype int constraint pk_regtype primary key,
         name varchar(20),
         multirecord smallint
     );
-    
+
     recreate table reg (
         code_reg int constraint pk_reg primary key,
         code_regtype int,
@@ -34,7 +35,7 @@ test_script_1 = """
     );
 
     create exception e_duplicate_reg 'duplicate registration info';
-    
+
     set term ^ ;
     create or alter trigger reg_bi0 for reg
     active before insert position 0 as
@@ -52,10 +53,11 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.0.7')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

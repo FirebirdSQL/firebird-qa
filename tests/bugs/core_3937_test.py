@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3937
-# title:        DeActivate/Activate INDEX or RESTORE not possible with NULL in unique index.
-# decription:   
-# tracker_id:   CORE-3937
-# min_versions: ['2.5.7']
-# versions:     2.5.7
-# qmid:         None
+
+"""
+ID:          issue-4270
+ISSUE:       4270
+TITLE:       eActivate/Activate INDEX or RESTORE not possible with NULL in unique index.
+DESCRIPTION:
+JIRA:        CORE-3937
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create generator gen_new_table_id;
     recreate table testtable (
         id integer not null,
@@ -53,10 +46,11 @@ test_script_1 = """
     alter index testtable_idx1 active; -- NOTE: could NOT reproduce error on WI-V2.5.1.26351
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5.7')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

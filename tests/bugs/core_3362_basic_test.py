@@ -1,44 +1,31 @@
 #coding:utf-8
-#
-# id:           bugs.core_3362_basic
-# title:        Cursors should ignore changes made by the same statement
-# decription:   
-#                   This test verifies BASIC issues that were accumulated in miscenaleous tickets.
-#                   More complex cases (which involve not only SQL but also PSQL features) will 
-#                   follow in separate .fbt(s) in order to keep size of each test in reasonable limits.
-#                   Checked on WI-T4.0.0.371, WI-V3.0.1.32597.
-#                   Checked on 4.0.0.2028 (after fix core-2274) -- see below, view v_t1_updatable.
-#               
-#                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
-#                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-#                   statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1. 
-#                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-#                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-#                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#               
-#                   Because of this, it was decided to replace 'alter sequence restart...' with subtraction of two gen values:
-#                   c = gen_id(<g>, -gen_id(<g>, 0)) -- see procedure sp_restart_sequences.
-#               
-#                
-# tracker_id:   CORE-3362
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-3728-basic
+ISSUE:       3728
+TITLE:       Cursors should ignore changes made by the same statement
+DESCRIPTION:
+  This test verifies BASIC issues that were accumulated in miscenaleous tickets.
+  More complex cases (which involve not only SQL but also PSQL features) will
+  follow in separate .fbt(s) in order to keep size of each test in reasonable limits.
+NOTES:
+[18.08.2020]
+  FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
+  statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
+  gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
+  See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
+  This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
+  Because of this, it was decided to replace 'alter sequence restart...' with subtraction of two gen values:
+    c = gen_id(<g>, -gen_id(<g>, 0)) -- see procedure sp_restart_sequences.
+JIRA:        CORE-3362
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_restart_sequences as begin end;
     set  term ^;
     execute block as
@@ -140,7 +127,7 @@ test_script_1 = """
     insert into test values(2, 'green');
     insert into test values(3, 'blue');
     insert into test values(2, 'green');
-    
+
     delete from test
     where test.ID in (select id from test GROUP BY id HAVING count(id)>1);
 
@@ -258,7 +245,7 @@ test_script_1 = """
       constraint cls_ui1_c unique(id_parent, depth, id_child),
       constraint cls_ui2_c unique(id_child, id_parent),
       constraint cls_pk_c primary key (id)
-    ); 
+    );
     commit;
 
     insert into cls values(1, 2, 2, 0);
@@ -267,7 +254,7 @@ test_script_1 = """
     insert into cls values(4, 2, 7, 1);
     insert into cls values(5, 2, 10, 2);
     insert into cls values(6, 7, 10, 1);
-    commit; 
+    commit;
 
     delete
     from cls
@@ -330,9 +317,9 @@ test_script_1 = """
     insert into t values(1, 100);
     insert into t values(2, 200);
     insert into t values(3, 300);
-    commit; 
+    commit;
 
-    update t set f01=(select sum(f01) from t); 
+    update t set f01=(select sum(f01) from t);
 
     set count on;
     select 'core-3362, case-1' as test_case, t.* from t order by id;
@@ -371,9 +358,9 @@ test_script_1 = """
     insert into t values(1, 300);
     insert into t values(2, 200);
     insert into t values(3, 100);
-    commit; 
+    commit;
 
-    update t set f01=(select sum(f01) from t); 
+    update t set f01=(select sum(f01) from t);
 
     set count on;
     select 'core-3362, case-2' as test_case, t.* from t;
@@ -402,7 +389,7 @@ test_script_1 = """
     --###########################################################################
 
 
-    -- Issue of 03.01.2014 05:07. 
+    -- Issue of 03.01.2014 05:07.
     recreate table t(
         i int,
         x int, y int,
@@ -421,7 +408,7 @@ test_script_1 = """
     commit;
     -- select * from t;
 
-    update t set x=y+1; 
+    update t set x=y+1;
 
     set count on;
     select 'core-3362, case-3' as test_case, t.* from t order by i;
@@ -470,7 +457,7 @@ test_script_1 = """
     insert into t values(3, 3);
     insert into t values(4, 4);
     insert into t values(5, 5);
-    commit; 
+    commit;
 
     update t set x=null, y=(select c from (select count(x)over() c from t) rows 1);
 
@@ -483,7 +470,7 @@ test_script_1 = """
     commit;
 
     /********************************
-    Expected output 
+    Expected output
     X                               <null>
     Y                               5
 
@@ -569,7 +556,7 @@ test_script_1 = """
     insert into t values(1,0);
     commit;
 
-    delete from t m where (select count(*)over() from t x where x.y=m.y rows 1) > 1; 
+    delete from t m where (select count(*)over() from t x where x.y=m.y rows 1) > 1;
 
     set count on;
     select 'core-3362, case-6' as test_case, t.* from t;
@@ -637,10 +624,10 @@ test_script_1 = """
     insert into t values(2, 200);
     insert into t values(3, 300);
     commit;
-    create view v as select y,count(*) cnt from t group by y; 
+    create view v as select y,count(*) cnt from t group by y;
     commit;
 
-    update t set y=null where 2 not in( select cnt from v ); 
+    update t set y=null where 2 not in( select cnt from v );
 
     set count on;
     select 'core-3362, case-8.1' as test_case, t.* from t;
@@ -720,7 +707,7 @@ test_script_1 = """
     insert into t values(4, 2);
     insert into t values(5, 1);
 
-    recreate table t2(x int, y int); 
+    recreate table t2(x int, y int);
 
     insert into t2 values(2, 4);
     insert into t2 values(5, 1);
@@ -728,7 +715,7 @@ test_script_1 = """
     insert into t2 values(4, 2);
     insert into t2 values(3, 3);
 
-    -- This is only for illustrate required result: all rows should contain 
+    -- This is only for illustrate required result: all rows should contain
     -- new value y = 4
     -- update t set t.y = (select count(*) from t where x<>y)
     -- where exists( select * from t2 s where t.x=s.y)
@@ -737,7 +724,7 @@ test_script_1 = """
 
     merge into t using(select x,y from t2) s on t.x=s.y
     when matched
-      then update set t.y=(select count(*) from t where x<>y); 
+      then update set t.y=(select count(*) from t where x<>y);
 
     --set list off;
     set count on;
@@ -764,7 +751,7 @@ test_script_1 = """
     Records affected: 5
     *********************************/
 
-    -- Result: 
+    -- Result:
     -- OK on WI-T4.0.0.371, WI-V3.0.1.32597; 2.5.x: wrong data in t.y: {4,4,4,5,5}
     -- 3.0.0.32030 = FAIL <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  F A I L <<<<<<<<<<<<<<
     -- 3.0.0.32362 = OK. // confirmed on: WI-V3.0.0.32362, 26.02.2016
@@ -795,7 +782,7 @@ test_script_1 = """
     update test set pid=1 where id=5;
     commit;
 
-    /* 
+    /*
     content of table test now is:
     ID	PID
     5	1
@@ -848,46 +835,46 @@ test_script_1 = """
     commit;
 
     merge into t2 using t1 on t1.id=t2.id when not matched then insert (id, x) values(t1.id, (select sum(id) from t2) );
-    select 'core-3362, case-11a' as test_case, a.* from t2 a; 
+    select 'core-3362, case-11a' as test_case, a.* from t2 a;
     rollback;
 
     merge into t2 using t1 on t1.id=t2.id when not matched then insert (id, x) values(t1.id, (select min(id) from t2) );
-    select 'core-3362, case-11b' as test_case, a.* from t2 a; 
+    select 'core-3362, case-11b' as test_case, a.* from t2 a;
     rollback;
 
     merge into t2 using t1 on t1.id=t2.id when not matched then insert (id, x) values(t1.id, (select max(id) from t2) );
-    select 'core-3362, case-11c' as test_case, a.* from t2 a; 
+    select 'core-3362, case-11c' as test_case, a.* from t2 a;
     rollback;
 
     merge into t2 using t1 on t1.id=t2.id when not matched then insert (id, x) values(t1.id, (select count(*) from t2) );
-    select 'core-3362, case-11d' as test_case, a.* from t2 a; 
+    select 'core-3362, case-11d' as test_case, a.* from t2 a;
     rollback;
 
     /*
     Expected result:
-              ID            X 
-    ============ ============ 
-               1       <null> 
-               2       <null> 
-               3       <null> 
+              ID            X
+    ============ ============
+               1       <null>
+               2       <null>
+               3       <null>
 
-              ID            X 
-    ============ ============ 
-               1       <null> 
-               2       <null> 
-               3       <null> 
+              ID            X
+    ============ ============
+               1       <null>
+               2       <null>
+               3       <null>
 
-              ID            X 
-    ============ ============ 
-               1       <null> 
-               2       <null> 
-               3       <null> 
+              ID            X
+    ============ ============
+               1       <null>
+               2       <null>
+               3       <null>
 
-              ID            X 
-    ============ ============ 
-               1            0 
-               2            0 
-               3            0 
+              ID            X
+    ============ ============
+               1            0
+               2            0
+               3            0
     */
     -- OK on WI-T4.0.0.371, WI-V3.0.1.32597; totally wrong on 2.5.x
 
@@ -901,7 +888,7 @@ test_script_1 = """
     --recreate view v_t1_checked as select * from t1 where true with check option; -- temply (?) added 07.06.2020 because of fixed core-2274
 
     -- 08.06.2020: 'WITH CHECK OPTION' no more helps.
-    -- We have to create 'truly-updatable' view in order to avoid 
+    -- We have to create 'truly-updatable' view in order to avoid
     -- Statement failed, SQLSTATE = 21000
     -- Multiple source records cannot match the same target during MERGE
     recreate view v_t1_updatable as select * from t1;
@@ -936,12 +923,12 @@ test_script_1 = """
 
 
     merge into v_t1_updatable t
-    using t1 s on 
+    using t1 s on
     t.x not in ( select x from t1 z where z.x is null or z.x > all(select x from t1 y where y.id<>z.id ) )
     when matched then update set x = null
     ;
 
-    select 'core-3362, case-12a' as test_case, a.* from t1 a; 
+    select 'core-3362, case-12a' as test_case, a.* from t1 a;
 
     /* Expected result:
         ID                              1
@@ -962,12 +949,12 @@ test_script_1 = """
 
 
     merge into v_t1_updatable t
-    using t1 s on 
+    using t1 s on
     t.x not in ( select x from t1 z where z.x is null or z.x > all(select x from t1 y where y.id<>z.id ) )
     when matched then update set x = null
     ;
 
-    select 'core-3362, case-12b' as test_case, a.* from t1 a; 
+    select 'core-3362, case-12b' as test_case, a.* from t1 a;
     /* Expected result:
         ID                              1
         X                               <null>
@@ -987,7 +974,7 @@ test_script_1 = """
 
 
     --###########################################################################
- 
+
     -- 24.10.2016 from CORE-3862:
 
     recreate table icesling (
@@ -1020,9 +1007,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TEST_CASE                       core-92
     X                               0
 
@@ -1052,11 +1039,11 @@ expected_stdout_1 = """
 
     TEST_CASE                       core-634, case-2
     ID                              1
-    VAL                             red  
+    VAL                             red
 
     TEST_CASE                       core-634, case-2
     ID                              3
-    VAL                             blue 
+    VAL                             blue
 
 
     Records affected: 2
@@ -1427,8 +1414,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

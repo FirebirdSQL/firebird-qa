@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3569
-# title:        CHAR(32767) present in XSQLVAR with length 32765
-# decription:
-# tracker_id:   CORE-3569
-# min_versions: ['2.5.2']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3923
+ISSUE:       3923
+TITLE:       CHAR(32767) present in XSQLVAR with length 32765
+DESCRIPTION:
+JIRA:        CORE-3569
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!sqltype|literal).)*$', ''), ('[ ]+', ' '), ('[\t]*', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set sqlda_display on;
     set planonly;
 
@@ -37,17 +30,18 @@ test_script_1 = """
     from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype|literal).)*$', ''),
+                                                   ('[ ]+', ' '), ('[\t]*', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32765 charset: 0 NONE
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32766 charset: 0 NONE
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32767 charset: 0 NONE
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

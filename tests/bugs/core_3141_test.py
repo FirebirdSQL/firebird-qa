@@ -1,35 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_3141
-# title:        The last column in a view is returning as a null value even when it's not
-# decription:   
-#                   Confirmed wrong resultset on 2.5.0.26074.
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.701s.
-#                       3.0.5.33182 SS: 1.394s.
-#                       2.5.9.27146 SC: 0.524s.
-#                   NB: new datatype in FB 4.0 was introduces: numeric(38,0).
-#                   It leads to additional ident of values when we show them in form "SET LIST ON",
-#                   so we have to ignore all internal spaces - see added 'substitution' section below.
-#                
-# tracker_id:   CORE-3141
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3518
+ISSUE:       3518
+TITLE:       The last column in a view is returning as a null value even when it's not
+DESCRIPTION:
+  NB: new datatype in FB 4.0 was introduces: numeric(38,0).
+  It leads to additional ident of values when we show them in form "SET LIST ON",
+  so we have to ignore all internal spaces - see added 'substitution' section below.
+JIRA:        CORE-3141
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     create table test(
@@ -123,9 +110,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             test_1a
     DATUM                           2013-06-04
     A                               30.00
@@ -148,9 +135,9 @@ expected_stdout_1 = """
     PLACER                          10
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

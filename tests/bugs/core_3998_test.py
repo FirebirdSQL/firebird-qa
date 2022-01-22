@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3998
-# title:        Parametrized execute statement fails
-# decription:   
-# tracker_id:   CORE-3998
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         None
+
+"""
+ID:          issue-4330
+ISSUE:       4330
+TITLE:       Parametrized execute statement fails
+DESCRIPTION:
+JIRA:        CORE-3998
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
-
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """
+init_script = """
 	create table t (
 		id integer not null,
 		dir varchar(100) default '' not null,
@@ -27,9 +22,9 @@ init_script_1 = """
 	commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
 	set term ^;
 	execute block
 	as
@@ -59,17 +54,17 @@ test_script_1 = """
 	select * from t;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	ID                              1
 	DIR                             a
-	NOTE                            bbbb  
+	NOTE                            bbbb
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

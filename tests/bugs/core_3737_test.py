@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3737
-# title:        EXECUTE BLOCK parameters definitions are not respected and may cause wrong behavior related to character sets
-# decription:   
-# tracker_id:   CORE-3737
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4082
+ISSUE:       4082
+TITLE:       EXECUTE BLOCK parameters definitions are not respected and may cause wrong behavior related to character sets
+DESCRIPTION:
+JIRA:        CORE-3737
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	set list on;
 	set term ^;
 	execute block returns(len_1252 int, len_utf8 int) as
@@ -42,23 +35,23 @@ test_script_1 = """
 			|| 'end') (s)
 		into len_utf8;
 		suspend;
-		
+
 	end
 	^
 	set term ;^
-	commit;  
+	commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	LEN_1252                        16
-	LEN_UTF8                        32  
+	LEN_UTF8                        32
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

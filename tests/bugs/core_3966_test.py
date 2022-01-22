@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3966
-# title:        Creating a stored procedure with an "update or insert" statement with MATCHING fails
-# decription:   
-# tracker_id:   CORE-3966
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4299
+ISSUE:       4299
+TITLE:       Creating a stored procedure with an "update or insert" statement with MATCHING fails
+DESCRIPTION:
+JIRA:        CORE-3966
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='employee-ods12.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='employee-ods12.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Table 'sales' for this SP is taken from standard samples database 'employee.fdb' which comes with every FB build.
     set term ^;
     create or alter procedure p_beteiligung_iu (
@@ -75,7 +68,7 @@ test_script_1 = """
       matching (po_number)
       returning (po_number)
       into :po_number;
-    
+
     end
     ^
     -- from core-3968:
@@ -105,7 +98,7 @@ test_script_1 = """
       matching (emp_no);
     end
     ^
-    set term ;^ 
+    set term ;^
     commit;
 
     drop procedure p_beteiligung_iu;
@@ -113,10 +106,11 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

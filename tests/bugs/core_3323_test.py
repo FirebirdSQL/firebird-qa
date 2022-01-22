@@ -1,64 +1,85 @@
 #coding:utf-8
-#
-# id:           bugs.core_3323
-# title:        Ability to cancel waiting in lock manager
-# decription:
-#                   Fully reimplemented 10.01.2020. Reason: ISQL-"killer" could not find record in mon$attachments that should be deleted.
-#
-#                   Test asynchronously launches ISQL with script that will hang because of two concurrent attachments trying to update
-#                   the same record (second attachment is created using ES/EDS).
-#                   After this we have to launch second instance of ISQL which will attempt to kill both connections created in the 1st ISQL.
-#
-#                   The *most* problem here is properly determine time that we have to wait until 1st ISQL will really establish its connect!
-#                   If this time is too short then second ISQL ("killer") will NOT able to see 1st ISQL in mon$attachments and will not be able
-#                   to delete (because there will be NOT YET attachment to delete!). This mean that 2nd ISQL will finish without really check
-#                   that it could kill hanged attachments. Test in this case will not finish if 1st ISQL uses tx with infinite WAIT!
-#
-#                   To be sure that 2nd ISQL ("killer") will be able to see 1st one ("hanged") we have to make pretty long PSQL-loop which tries
-#                   to find any record in mon$attachment that is from concurrent connection (which user name we know for advance: 'tmp$c3323').
-#                   This PSQL loop must finish as fast as we find record that will be then deleted.
-#
-#                   Lot of runs show that there is a problem in 4.0.0 Classic: it requires too long time in PSQL loop to find such attachment.
-#                   Time in 4.0 CS can be about 1-2 seconds and number of iterations will be greater than 100.
-#                   No such problem in all 3.0 and in 4.0 for other modes.
-#
-#                   24.12.2020
-#                   Waiting for completion of child ISQL async process is done by call <isql_PID>.wait() instead of old (and "fragile")
-#                   assumption about maximal time that it could last before forcedly terminate it.
-#                   Checked on:
-#                       4.0.0.2307 SS: 4.348s.
-#                       4.0.0.2324 SS: 4.301s.
-#                       4.0.0.2324 CS: 4.959s.
-#                       3.0.8.33401 SS: 3.225s.
-#                       3.0.8.33401 SC: 2.236s.
-#                       3.0.8.33401 CS: 4.543s.
-#                       2.5.9.27152 SC: 1.006s.
-#                       2.5.9.27152 CS: 1.333s.
-#
-#
-#               [pcisar] 17.11.2021
-#               This test is too complicated and fragile (can screw the test environment)
-#               It should be reimplemnted in more robust way, or removed from suite
-#
-# tracker_id:   CORE-3323
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3690
+ISSUE:       3690
+TITLE:       Ability to cancel waiting in lock manager
+DESCRIPTION:
+  Fully reimplemented 10.01.2020. Reason: ISQL-"killer" could not find record in
+  mon$attachments that should be deleted.
+
+  Test asynchronously launches ISQL with script that will hang because of two concurrent
+  attachments trying to update the same record (second attachment is created using ES/EDS).
+  After this we have to launch second instance of ISQL which will attempt to kill both
+  connections created in the 1st ISQL.
+
+  The *most* problem here is properly determine time that we have to wait until 1st ISQL
+  will really establish its connect! If this time is too short then second ISQL ("killer")
+  will NOT able to see 1st ISQL in mon$attachments and will not be able to delete (because
+  there will be NOT YET attachment to delete!). This mean that 2nd ISQL will finish without
+  really check that it could kill hanged attachments. Test in this case will not finish if
+  1st ISQL uses tx with infinite WAIT!
+
+  To be sure that 2nd ISQL ("killer") will be able to see 1st one ("hanged") we have to
+  make pretty long PSQL-loop which tries to find any record in mon$attachment that is from
+  concurrent connection (which user name we know for advance: 'tmp$c3323').
+  This PSQL loop must finish as fast as we find record that will be then deleted.
+
+  Lot of runs show that there is a problem in 4.0.0 Classic: it requires too long time in
+  PSQL loop to find such attachment. Time in 4.0 CS can be about 1-2 seconds and number of
+  iterations will be greater than 100. No such problem in all 3.0 and in 4.0 for other modes.
+notes:
+[24.12.2020]
+  Waiting for completion of child ISQL async process is done by call <isql_PID>.wait()
+  instead of old (and "fragile") assumption about maximal time that it could last before
+  forcedly terminate it.
+[17.11.2021]
+  This test is too complicated and fragile (can screw the test environment)
+  It should be reimplemnted in more robust way, or removed from suite
+JIRA:        CORE-3323
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
-
-substitutions_1 = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost'),
+substitutions = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost'),
                    ('After line.*', ''), ('.*Killed by database administrator.*', ''),
                    ('-At block line:.*', '-At block line'),
                    ('Execute statement error at isc_dsql_(execute2|prepare)', 'Execute statement error at isc_dsql')]
 
-init_script_1 = """"""
+db = db_factory()
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+
+act = python_act('db', substitutions=substitutions)
+
+expected_stdout = """
+    Point_A:                        starting EB with lock-conflict
+    id_at_point_A:                  -1
+    Statement failed, SQLSTATE = 42000
+    Execute statement error at isc_dsql_execute2 :
+    335544856 : connection shutdown
+    Statement : update test set id = - (1000 + id)
+    Data source : Firebird::localhost
+    -At block line
+    Point_B                         finished EB with lock-conflict
+    id_at_point_B:                  -1
+    point_C:                        Intro script that must kill other attachment
+    point_D:                        starting kill hanged connection
+    id_at_point_D:                  1
+    ATTACHMENT_TO_BE_KILLED         <EXPECTED: NOT NULL>
+    point_E:                        Running delete from mon$attachments statement
+    Records affected: 1
+    point_F:                        Reconnect and look for attachment of other user
+    id_at_point_F:                  1
+    STILL_ALIVE_ATTACHMENT_ID       <EXPECTED: NULL>
+    pointG:                         finished kill hanged connection
+"""
+
+@pytest.mark.skip("Test fate to be determined")
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    pytest.skip("Test not IMPLEMENTED")
+
 
 # test_script_1
 #---
@@ -328,34 +349,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Point_A:                        starting EB with lock-conflict
-    id_at_point_A:                  -1
-    Statement failed, SQLSTATE = 42000
-    Execute statement error at isc_dsql_execute2 :
-    335544856 : connection shutdown
-    Statement : update test set id = - (1000 + id)
-    Data source : Firebird::localhost
-    -At block line
-    Point_B                         finished EB with lock-conflict
-    id_at_point_B:                  -1
-    point_C:                        Intro script that must kill other attachment
-    point_D:                        starting kill hanged connection
-    id_at_point_D:                  1
-    ATTACHMENT_TO_BE_KILLED         <EXPECTED: NOT NULL>
-    point_E:                        Running delete from mon$attachments statement
-    Records affected: 1
-    point_F:                        Reconnect and look for attachment of other user
-    id_at_point_F:                  1
-    STILL_ALIVE_ATTACHMENT_ID       <EXPECTED: NULL>
-    pointG:                         finished kill hanged connection
-"""
-
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    pytest.skip("New implementation postponed")
-
-

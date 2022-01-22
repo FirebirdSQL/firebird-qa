@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_3340
-# title:        Error in autonomous transaction with empty exception handler: can insert duplicate values into PK/UK column (leads to unrestorable backup)
-# decription:   
-# tracker_id:   CORE-3340
-# min_versions: ['2.5.1']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3706
+ISSUE:       3706
+TITLE:       Error in autonomous transaction with empty exception handler: can insert duplicate values into PK/UK column (leads to unrestorable backup)
+DESCRIPTION:
+JIRA:        CORE-3340
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """recreate table tmp(id int not null primary key using index tmp_id_pk);
+init_script = """recreate table tmp(id int not null primary key using index tmp_id_pk);
 commit;
 set transaction no wait isolation level read committed;
 set term ^;
@@ -35,15 +30,15 @@ set term ;^
 commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """select id from tmp;
+test_script = """select id from tmp;
 select count(*) from tmp;
 commit;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
           ID
 ============
            1
@@ -57,8 +52,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

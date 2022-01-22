@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3431
-# title:        ISQL pads UTF-8 data incorrectly
-# decription:   
-# tracker_id:   CORE-3431
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          issue-3793
+ISSUE:       3793
+TITLE:       ISQL pads UTF-8 data incorrectly
+DESCRIPTION:
+JIRA:        CORE-3431
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	set term ^;
 	create or alter procedure p1 returns (
 	  c1 char(5) character set utf8,
@@ -74,9 +67,9 @@ test_script_1 = """
 	select * from p1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	C1     C2         VC1    VC2
 	====== ========== ====== ==========
 	12345  12345      12345  12345
@@ -88,8 +81,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

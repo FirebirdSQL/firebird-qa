@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3683
-# title:        Wrong results if the recursive query contains an embedded GROUP BY clause
-# decription:
-#                   Confirmed bug on: 2.5.1.26351
-#                   Works OK on: 2.5.2.26540; 2.5.9.27103; 3.0.3.32861; 3.0.4.32912; 4.0.0.890.
-#
-# tracker_id:   CORE-3683
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         None
+
+"""
+ID:          issue-4032
+ISSUE:       4032
+TITLE:       Wrong results if the recursive query contains an embedded GROUP BY clause
+DESCRIPTION:
+JIRA:        CORE-3683
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.2
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     recreate view v_test as select 1 x from rdb$database;
     commit;
@@ -229,9 +219,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Records affected: 7
     Records affected: 7
     Records affected: 0
@@ -240,9 +230,9 @@ expected_stdout_1 = """
     Records affected: 0
 """
 
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

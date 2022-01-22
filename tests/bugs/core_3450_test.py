@@ -1,33 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_3450
-# title:        Inefficient optimization (regression)
-# decription:   
-#                  ::: NB :::
-#                  It seems that we have regression in current 4.0 snapshots (elapsed time more than 10x comparing with 2.5).
-#                  Also, 4.0 has different plan comparing with 3.0.
-#                  After discuss with dimitr it was decided to commit this test into fbt-repo in order to have constant
-#                  reminder about this issue. 
-#                  Currently this test should FAIL on 4.0!
-#                
-# tracker_id:   CORE-3450
-# min_versions: ['2.5.7']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3811
+ISSUE:       3811
+TITLE:       Inefficient optimization (regression)
+DESCRIPTION:
+NOTES:
+  It seems that we have regression in current 4.0 snapshots (elapsed time more than 10x comparing with 2.5).
+  Also, 4.0 has different plan comparing with 3.0.
+  After discuss with dimitr it was decided to commit this test into fbt-repo in order to have constant
+  reminder about this issue.
+  Currently this test should FAIL on 4.0!
+JIRA:        CORE-3450
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_2 as begin end;
 
     recreate table test_1 (f1 int, f2 int, f3 int);
@@ -101,15 +93,17 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN JOIN (JOIN (P1 NATURAL, T1 INDEX (TEST_1_F2)), T2 INDEX (TEST_2_F1), T3 INDEX (TEST_3_F1))
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    if act.is_version('>=4'):
+        pytest.xfail("See test NOTES")
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

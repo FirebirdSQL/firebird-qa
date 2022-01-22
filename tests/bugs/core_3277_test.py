@@ -1,33 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_3277
-# title:        Wrong result for RIGHT(UTF8 varchar)
-# decription:   Text was taken from Gutenberg project, several European languages are used
-# tracker_id:   CORE-3277
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3645
+ISSUE:       3645
+TITLE:       Wrong result for RIGHT(UTF8 varchar)
+DESCRIPTION: Text was taken from Gutenberg project, several European languages are used
+JIRA:        CORE-3277
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
+db = db_factory(from_backup='core3277.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core3277.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
      set list on;
      select s,left(s,10) ls10, right(s,10) rs10 from t;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 S                               moří; že zplodí bezpočtu hrdin, kteří ponesou svou hořící duši
 LS10                            moří; že z
 RS10                            ořící duši
@@ -77,9 +70,9 @@ LS10                            Men danske
 RS10                             sa han, ä
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute(charset='utf8')
+    assert act.clean_stdout == act.clean_expected_stdout
 

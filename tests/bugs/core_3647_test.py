@@ -1,42 +1,35 @@
 #coding:utf-8
-#
-# id:           bugs.core_3647
-# title:        Window Function: frame (rows / range) clause
-# decription:   
-#                  I decided to compare results with some trivial tests that can be found in WWW for old Oracle SCOTT scheme.
-#                  DDL and data for this can be found in several places, e.g.:
-#                  * https://code.google.com/archive/p/adf-samples-demos/downloads
-#                  * http://www.orafaq.com/wiki/SCOTT
-#                  * http://www.sql.ru/forum/26520/shema-scott-a
-#                  
-#                  Note that sources contain different values for EMP.HIRE_DATE for two records 
-#                  with empno = 7788 and 7876 ('Scott' and 'Adams'). 
-#                  Also, some sources can contain for record with empno = 7839 ('king') field emp.comm = 0 or null.
-#                  This script uses following values:
-#                  scott: hiredate = 09-dec-1982;  adams: hireate = 12-jan-1983;  king: comm = null.
-#               
-#                  If some other tests of window (analytical) functions will require the same script 
-#                  this DDL will be moved to separate .fbk for sharing between them.
-#               
-#                  Checked on WI-T4.0.0.356
-#                  21.12.2020: added 'EMPNO' (primary key column) to ORDER BY list inside OVER() clauses.
-#                  Otherwise records in 'sample2-a' can appear in unpredictable order.
-#                  Checked on: 4.0.0.2300, 4.0.0.2296
-#                
-# tracker_id:   CORE-3647
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-3998
+ISSUE:       3998
+TITLE:       Window Function: frame (rows / range) clause
+DESCRIPTION:
+  I decided to compare results with some trivial tests that can be found in WWW for old Oracle SCOTT scheme.
+  DDL and data for this can be found in several places, e.g.:
+  * https://code.google.com/archive/p/adf-samples-demos/downloads
+  * http://www.orafaq.com/wiki/SCOTT
+  * http://www.sql.ru/forum/26520/shema-scott-a
+
+  Note that sources contain different values for EMP.HIRE_DATE for two records
+  with empno = 7788 and 7876 ('Scott' and 'Adams').
+  Also, some sources can contain for record with empno = 7839 ('king') field emp.comm = 0 or null.
+  This script uses following values:
+  scott: hiredate = 09-dec-1982;  adams: hireate = 12-jan-1983;  king: comm = null.
+
+  If some other tests of window (analytical) functions will require the same script
+  this DDL will be moved to separate .fbk for sharing between them.
+NOTES:
+[21.12.2020]
+  added 'EMPNO' (primary key column) to ORDER BY list inside OVER() clauses.
+  Otherwise records in 'sample2-a' can appear in unpredictable order.
+JIRA:        CORE-3647
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
-
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """
+init_script = """
     recreate table emp (id int);
     recreate table dept (id int);
     commit;
@@ -165,9 +158,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     -- set list on;
 
     -- https://community.oracle.com/thread/1020352
@@ -209,8 +202,8 @@ test_script_1 = """
     ;
 
 
-    -- For each employee give the count of employees getting half more that their 
-    -- salary and also the count of employees in the departments 20 and 30 getting half 
+    -- For each employee give the count of employees getting half more that their
+    -- salary and also the count of employees in the departments 20 and 30 getting half
     -- less than their salary.
     select
         'sample2-b' as info
@@ -230,9 +223,9 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     INFO      EMPNO ENAME               SAL     LAST_SAL
     ======= ======= ========== ============ ============
     sample1    7369 smith            800.00       <null>
@@ -286,8 +279,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,41 +1,34 @@
 #coding:utf-8
-#
-# id:           bugs.core_3808
-# title:        Provide ability to return all columns using RETURNING (eg RETURNING *)
-# decription:   
-#                   Ability to use 'returning *' is verified both in DSL and PSQL.
-#                   Checked on: 4.0.0.1455: OK, 1.337s.
-#               
-#                   30.10.2019. NB: new datatype in FB 4.0 was introduces: numeric(38,0).
-#                   It can lead to additional ident of values when we show them in form "SET LIST ON",
-#                   so we have to ignore all internal spaces - see added 'substitution' section below.
-#                
-# tracker_id:   CORE-3808
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-4151
+ISSUE:       4151
+TITLE:       Provide ability to return all columns using RETURNING (eg RETURNING *)
+DESCRIPTION:
+  Ability to use 'returning *' is verified both in DSL and PSQL.
+  Checked on: 4.0.0.1455: OK, 1.337s.
+NOTES:
+[30.10.2019]
+  NB: new datatype in FB 4.0 was introduces: numeric(38,0).
+  It can lead to additional ident of values when we show them in form "SET LIST ON",
+  so we have to ignore all internal spaces - see added 'substitution' section below.
+JIRA:        CORE-3808
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     recreate table test(id int default 2, x computed by ( id*2 ), y computed by ( x*x ), z computed by ( y*y ) );
     commit;
-    
+
     insert into test default values returning *;
 
     update test set id=3 where id=2 returning *;
-    
+
     set term ^;
     execute block returns( deleted_id int, deleted_x bigint, deleted_y bigint, deleted_z bigint ) as
     begin
@@ -46,9 +39,9 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              2
     X                               4
     Y                               16
@@ -66,8 +59,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

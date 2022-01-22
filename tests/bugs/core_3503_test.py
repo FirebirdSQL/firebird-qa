@@ -1,51 +1,39 @@
 #coding:utf-8
-#
-# id:           bugs.core_3503
-# title:        ALTER VIEW crashes the server if the new version has an artificial (aggregate or union) stream at the position of a regular context in the older version
-# decription:   
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.890s.
-#                       3.0.5.33182 SS: 1.207s.
-#                       2.5.9.27146 SC: 0.360s.
-#                
-# tracker_id:   CORE-3503
-# min_versions: ['2.5.1']
-# versions:     2.5.1
-# qmid:         None
+
+"""
+ID:          issue-3861
+ISSUE:       3861
+TITLE:        ALTER VIEW crashes the server if the new version has an artificial (aggregate or union) stream at the position of a regular context in the older version
+DESCRIPTION:
+JIRA:        CORE-3503
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.1
-# resources: None
+db = db_factory(from_backup='core3503.fbk')
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core3503.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter view v_test (id)
     as
     select rdb$relation_id from rdb$relations
     union all
     select rdb$relation_id from rdb$relations;
-    commit; -- here the crash happens 
+    commit; -- here the crash happens
     set list on;
     select (select count(id) from v_test) / count(*) c
     from rdb$relations;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     C                               2
 """
 
-@pytest.mark.version('>=2.5.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

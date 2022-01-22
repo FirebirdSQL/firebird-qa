@@ -1,32 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_3733
-# title:        GBAK fails to fix system generators while restoring
-# decription:   
-# tracker_id:   CORE-3733
-# min_versions: []
-# versions:     2.5.2
-# qmid:         
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 2.5.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core3733.fbk', init=init_script_1)
-
-test_script_1 = """
+"""
+ID:          issue-4079
+ISSUE:       4079
+TITLE:       GBAK fails to fix system generators while restoring
+DESCRIPTION:
+JIRA:        CORE-3733
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+import pytest
+from firebird.qa import *
 
+db = db_factory(from_backup='core3733.fbk')
 
-@pytest.mark.version('>=2.5.2')
+act_1 = isql_act('db', '')
+
+@pytest.mark.version('>=3')
 def test_1(act_1: Action):
-    act_1.execute()
+    # Passes if test database is restored just fine
+    pass
 

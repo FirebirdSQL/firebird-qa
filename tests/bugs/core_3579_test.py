@@ -1,39 +1,32 @@
 #coding:utf-8
-#
-# id:           bugs.core_3579
-# title:        Can not drop table when computed field depends on later created another field
-# decription:   
-# tracker_id:   CORE-3579
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         None
+
+"""
+ID:          issue-3933
+ISSUE:       3933
+TITLE:       Can't drop table when computed field depends on later created another field
+DESCRIPTION:
+JIRA:        CORE-3579
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.2
-# resources: None
+db = db_factory(from_backup='core3579.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core3579.fbk', init=init_script_1)
-
-test_script_1 = """
-    drop table Test; 
+test_script = """
+    drop table Test;
     show table;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
    There are no tables in this database
 """
 
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

@@ -1,42 +1,31 @@
 #coding:utf-8
-#
-# id:           bugs.core_3610
-# title:        Can insert DUPLICATE keys in UNIQUE index
-# decription:   
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.368s.
-#                       4.0.0.1633 CS: 2.094s.
-#                       3.0.5.33180 SS: 0.907s.
-#                       3.0.5.33178 CS: 1.345s.
-#                       2.5.9.27119 SS: 0.299s.
-#                       2.5.9.27146 SC: 0.294s.
-#                
-# tracker_id:   CORE-3610
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         None
+
+"""
+ID:          issue-3964
+ISSUE:       3964
+TITLE:       Can insert DUPLICATE keys in UNIQUE index
+DESCRIPTION:
+JIRA:        CORE-3610
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.2
-# resources: None
+substitutions = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost:'),
+                 ('335544382 : Problematic key', '335545072 : Problematic key'),
+                 ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
 
-substitutions_1 = [('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost:'), ('335544382 : Problematic key', '335545072 : Problematic key'), ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(id int not null, f01 int, constraint test_unq unique(f01) using index test_unq);
     commit;
     insert into test values(1, 1 );
     insert into test values(2,null);
     insert into test values(3,null);
-    commit; 
-    set transaction read committed record_version no wait; 
-    update test set f01=null where id=1; 
+    commit;
+    set transaction read committed record_version no wait;
+    update test set f01=null where id=1;
     set term ^;
     execute block as
     begin
@@ -44,7 +33,7 @@ test_script_1 = """
         with autonomous transaction
         on external ( 'localhost:'||rdb$get_context('SYSTEM','DB_NAME') )
         as user 'sysdba' password 'masterkey' role 'role_02'
-        ; 
+        ;
     end
     ^
     set term ;^
@@ -63,15 +52,15 @@ test_script_1 = """
     -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
-    commit;    
+    commit;
 
     set list on;
     select * from test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     F01                             1
     ID                              2
@@ -79,7 +68,8 @@ expected_stdout_1 = """
     ID                              3
     F01                             <null>
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Execute statement error at isc_dsql_execute2 :
     335544665 : violation of PRIMARY or UNIQUE KEY constraint "TEST_UNQ" on table "TEST"
@@ -89,11 +79,11 @@ expected_stderr_1 = """
     -At block line: 3, col: 9
 """
 
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

@@ -1,38 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_3047
-# title:        Wrong logic is used to resolve EXECUTE BLOCK parameters collations
-# decription:
-# tracker_id:   CORE-3047
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3428
+ISSUE:       3428
+TITLE:       Wrong logic is used to resolve EXECUTE BLOCK parameters collations
+DESCRIPTION:
+JIRA:        CORE-3047
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    -- In 2.5 (checked on WI-V2.5.5.26861):
-    -- Statement failed, SQLSTATE = HY004
-    -- Dynamic SQL Error
-    -- -SQL error code = -204
-    -- -Data type unknown
-    -- -COLLATION WIN_PTBR for CHARACTER SET UTF8 is not defined
-    -- (See ticket issue: "WIN_PTBR is tried to be resolved agains database charset instead of client charset: incorrect")
-    -- In 3.0.0.31827 (WI- and LI-) works fine:
-    -- [pcisar] 20.10.2021
-    -- It fails as well in 3.0.7 and 4.0 on Linux (opensuse tumbleweed) and Windows (8.1)
-    -- It appears that this test is bogus from the beginning
+test_script = """
     set term ^;
+    -- win_ptbr should be resolved against connection charset (win1252), not database (utf8)
     execute block returns (c varchar(10) collate win_ptbr) as
     begin
     end
@@ -40,11 +23,11 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    pytest.xfail("Either not fixed or wrong test")
-    act_1.execute()
-
+def test_1(act: Action):
+    try:
+        act.execute(charset='win1252')
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

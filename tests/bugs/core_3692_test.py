@@ -1,33 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_3692
-# title:        Cannot drop a NOT NULL constraint on a field participating in the UNIQUE constraint
-# decription:   
-# tracker_id:   CORE-3692
-# min_versions: ['2.5.2']
-# versions:     2.5.2
-# qmid:         None
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 2.5.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
-    recreate table cset (cname varchar(250) character set none not null); 
-    commit; 
-    alter table cset add constraint uq_cset unique (cname); 
-    commit; 
+"""
+ID:          issue-4040
+ISSUE:       4040
+TITLE:       Cannot drop a NOT NULL constraint on a field participating in the UNIQUE constraint
+DESCRIPTION:
+JIRA:        CORE-3692
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+import pytest
+from firebird.qa import *
 
-test_script_1 = """
+init_script = """
+    recreate table cset (cname varchar(250) character set none not null);
+    commit;
+    alter table cset add constraint uq_cset unique (cname);
+    commit;
+"""
+
+db = db_factory(init=init_script)
+
+test_script = """
 show table cset;
-    
+
     set term ^;
     execute block as
       declare v_stt varchar(70);
@@ -74,26 +69,26 @@ show table cset;
         do begin
             execute statement (v_stt);
         end
-      
+
     end
     ^ set term ;^
     commit;
-    
+
     show table cset;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-CNAME                           VARCHAR(250) Not Null 
+expected_stdout = """
+CNAME                           VARCHAR(250) Not Null
 CONSTRAINT UQ_CSET:
   Unique key (CNAME)
-CNAME                           VARCHAR(250) Nullable 
+CNAME                           VARCHAR(250) Nullable
 """
 
-@pytest.mark.version('>=2.5.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

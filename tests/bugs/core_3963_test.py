@@ -1,49 +1,38 @@
 #coding:utf-8
-#
-# id:           bugs.core_3963
-# title:        isql doesn't know the difference between UDF's and psql-functions 
-# decription:   
-#                    *** FOR FB 3.X ONLY ***
-#                       Test uses UDF 'strlen' declared in ib_udf.sql script which for sure present in every FB snapshot.
-#                       After this, we try to create PSQL function with the same signature but evaluate its returning value
-#                       as double size of input argument (in order to distinguish these functions by their results).
-#               
-#                   *** FOR FB 4.X AND ABOVE  ***
-#                       Added separate code for running on FB 4.0.x.
-#                       UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
-#                       Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement 
-#                       in UDR library "udf_compat", see it in folder: ../plugins/udr/
-#                   Checked on:
-#                       3.0.5.33086: OK, 1.454s.
-#                       4.0.0.1172: OK, 7.781s.
-#                       4.0.0.1340: OK, 3.844s.
-#                       4.0.0.1378: OK, 3.485s.   
-#                
-# tracker_id:   CORE-3963
-# min_versions: ['3.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-4296
+ISSUE:       4296
+TITLE:       isql doesn't know the difference between UDF's and psql-functions
+DESCRIPTION:
+  * FOR FB 3.X ONLY *
+  Test uses UDF 'strlen' declared in ib_udf.sql script which for sure present in every FB snapshot.
+  After this, we try to create PSQL function with the same signature but evaluate its returning value
+  as double size of input argument (in order to distinguish these functions by their results).
+
+  * FOR FB 4.X AND ABOVE *
+  Added separate code for running on FB 4.0.x.
+  UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
+  Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
+  in UDR library "udf_compat", see it in folder: ../plugins/udr/
+JIRA:        CORE-3963
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+db = db_factory()
 
 # version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     set list on;
     --set echo on;
 
     -- Should PASS:
-    set term ^; 
+    set term ^;
     create function strlen(s varchar(32765)) returns int as begin return 2 * char_length(s); end
-    ^ 
+    ^
     set term ;^
     select strlen('tratata') from rdb$database;
     commit;
@@ -51,7 +40,7 @@ test_script_1 = """
     -- Should FAIL:
     DECLARE EXTERNAL FUNCTION strlen CSTRING(32767) RETURNS INTEGER BY VALUE ENTRY_POINT 'IB_UDF_strlen' MODULE_NAME 'ib_udf';
 
-    drop function strlen; -- kill PSQL function 
+    drop function strlen; -- kill PSQL function
     commit;
 
 
@@ -62,9 +51,9 @@ test_script_1 = """
     commit;
 
     -- Should FAIL:
-    set term ^; 
+    set term ^;
     create function strlen(s varchar(32765)) returns int as begin return 2 * char_length(s); end
-    ^ 
+    ^
     set term ;^
 
     select strlen('tratata') from rdb$database;
@@ -75,9 +64,9 @@ test_script_1 = """
 
 
     -- Should PASS:
-    set term ^; 
+    set term ^;
     create function strlen(s varchar(32765)) returns int as begin return 2 * char_length(s); end
-    ^ 
+    ^
     set term ;^
     select strlen('tratata') from rdb$database;
     commit;
@@ -87,7 +76,7 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
     STRLEN                          14
@@ -95,6 +84,7 @@ expected_stdout_1 = """
     STRLEN                          7
     STRLEN                          14
 """
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
@@ -112,17 +102,10 @@ def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert (act_1.clean_stderr == act_1.clean_expected_stderr and
+            act_1.clean_stdout == act_1.clean_expected_stdout)
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     set list on;
@@ -142,12 +125,12 @@ test_script_2 = """
     commit;
 
     -- should FAIL:
-    set term ^; 
-    create function the_frac( val double precision ) returns double precision as 
-    begin 
-        return val - cast(val as int); 
+    set term ^;
+    create function the_frac( val double precision ) returns double precision as
+    begin
+        return val - cast(val as int);
     end
-    ^ 
+    ^
     set term ;^
     commit;
 
@@ -161,12 +144,12 @@ test_script_2 = """
 
 
     -- should PASS:
-    set term ^; 
-    create function the_frac( val double precision ) returns double precision as 
-    begin 
-        return val - cast(val as int); 
+    set term ^;
+    create function the_frac( val double precision ) returns double precision as
+    begin
+        return val - cast(val as int);
     end
-    ^ 
+    ^
     set term ;^
     commit;
 
@@ -184,7 +167,7 @@ test_script_2 = """
 
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2)
 
 expected_stdout_2 = """
 
@@ -193,7 +176,7 @@ expected_stdout_2 = """
     OUTPUT message field count: 1
     01: sqltype: 480 DOUBLE Nullable scale: 0 subtype: 0 len: 8
       :  name: THE_FRAC  alias: THE_FRAC
-      : table:   owner: 
+      : table:   owner:
 
     THE_FRAC                        -0.1415926535897931
 
@@ -204,11 +187,12 @@ expected_stdout_2 = """
     OUTPUT message field count: 1
     01: sqltype: 480 DOUBLE Nullable scale: 0 subtype: 0 len: 8
       :  name: THE_FRAC  alias: THE_FRAC
-      : table:   owner: 
+      : table:   owner:
 
     THE_FRAC                        -0.1415926535897931
 
 """
+
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
@@ -232,6 +216,6 @@ def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_stderr == act_2.clean_expected_stderr
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+    assert (act_2.clean_stderr == act_2.clean_expected_stderr and
+            act_2.clean_stdout == act_2.clean_expected_stdout)
 

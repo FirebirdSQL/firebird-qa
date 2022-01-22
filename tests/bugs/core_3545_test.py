@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_3545
-# title:        Inconsistent domain's constraint validation in PSQL
-# decription:   
-# tracker_id:   CORE-3545
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-3901
+ISSUE:       3901
+TITLE:       Inconsistent domain's constraint validation in PSQL
+DESCRIPTION:
+JIRA:        CORE-3545
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     execute block as
     begin
@@ -39,7 +32,7 @@ test_script_1 = """
     commit;
 
     -- This should NOT produce error: domain 'dm_text' check text values without
-    -- taking in account their numeric-sort aspect, so '40' will be LESS than '5' 
+    -- taking in account their numeric-sort aspect, so '40' will be LESS than '5'
     -- because of *alphabetical* comparison of these strings:
     set term ^;
     execute block as
@@ -47,7 +40,7 @@ test_script_1 = """
     begin
     end
     ^
-    
+
     -- This also should NOT produce error: variable 'v1' will be implicitly casted
     -- to varchar(2), i.e. '40' and then alphabetical comparison will be in action:
     execute block as
@@ -118,19 +111,20 @@ test_script_1 = """
       suspend;
     end
     ^
-    set term ;^ 
+    set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     N                               4
 
     ID                              3
     N                               4
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST"."N", value "399"
 
@@ -161,10 +155,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 
