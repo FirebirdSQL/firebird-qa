@@ -152,7 +152,7 @@ def pytest_report_header(config):
     .. seealso:: `pytest documentation <_pytest.hookspec.pytest_report_header>` for details.
     """
     return ["System:",
-            f"  encodings: sys: {sys.getdefaultencoding()} locale: {locale.getpreferredencoding()} filesystem: {sys.getfilesystemencoding()}",
+            f"  encodings: sys:{sys.getdefaultencoding()} locale:{locale.getpreferredencoding()} filesystem:{sys.getfilesystemencoding()}",
             "Firebird:",
             f"  server: {_vars_['server']} [v{_vars_['version']}, {_vars_['server-arch']}, {_vars_['arch']}]",
             f"  home: {_vars_['home-dir']}",
@@ -937,7 +937,7 @@ class User:
         "User tags [R/O]"
         return dict(self.__tags)
 
-def user_factory(db_fixture_name: str, *, name: str, password: str, plugin: str=None,
+def user_factory(db_fixture_name: str, *, name: str, password: str='', plugin: str=None,
                  charset: str='utf8', active: bool=True, tags: Dict[str]=None,
                  first_name: str=None, middle_name: str=None, last_name: str=None,
                  admin: bool=False, do_not_create: bool=False):
