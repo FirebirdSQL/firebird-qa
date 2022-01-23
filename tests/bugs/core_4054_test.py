@@ -1,34 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4054
-# title:        role not passed on external execute stmt
-# decription:   
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.359s.
-#                       4.0.0.1633 CS: 1.832s.
-#                       3.0.5.33180 SS: 0.879s.
-#                       3.0.5.33178 CS: 1.221s.
-#                       2.5.9.27119 SS: 0.272s.
-#                       2.5.9.27146 SC: 0.290s.
-#                
-# tracker_id:   CORE-4054
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         None
+
+"""
+ID:          issue-4382
+ISSUE:       4382
+TITLE:       role not passed on external execute stmt
+DESCRIPTION:
+JIRA:        CORE-4054
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     -- Drop old account if it remains from prevoius run:
     set term ^;
@@ -66,14 +51,14 @@ test_script_1 = """
     commit;
     create role r4054;
     commit;
-    
-    
+
+
     grant select on test to role r4054;
     commit;
-    
+
     grant r4054 to tmp$c4054;
     commit;
-    
+
     set list on;
     set term ^;
     execute block returns (who_am_i varchar(30), whats_my_role varchar(30), what_i_see int) as
@@ -92,8 +77,8 @@ test_script_1 = """
         for
             execute statement 'select current_user, current_role, t.id from test t'
             on external v_dbname
-            as user v_usr 
-               password v_pwd 
+            as user v_usr
+               password v_pwd
                role v_role -- ####### ONCE AGAIN: ALWAYS PASS ROLE NAME IN *UPPER* CASE! ##########
             into who_am_i, whats_my_role, what_i_see
         do
@@ -116,24 +101,24 @@ test_script_1 = """
     -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
-    commit;    
+    commit;
 
     -- Do not forget about cleanup - remember that other tests can query sec$users or run `show users`!
     drop user tmp$c4054;
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AM_I                        TMP$C4054
     WHATS_MY_ROLE                   R4054
     WHAT_I_SEE                      789654123
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,31 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_4469
-# title:        Add field in SEC$USERS reflecting whether a user has RDB$ADMIN role in security database
-# decription:
-# tracker_id:   CORE-4469
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4789
+ISSUE:       4789
+TITLE:       Add field in SEC$USERS reflecting whether a user has RDB$ADMIN role in security database
+DESCRIPTION:
+JIRA:        CORE-4469
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('Statement failed, SQLSTATE = HY000', ''), ('record not found for user:.*', '')]
+user_boss1 = user_factory('db', name='boss1', do_not_create=True)
+user_boss2 = user_factory('db', name='boss2', do_not_create=True)
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
-
-    drop user boss1;
-    drop user boss2;
-    commit;
 
     create user boss1 password '123' grant admin role;
     commit;
@@ -43,22 +35,19 @@ test_script_1 = """
     alter user boss2 revoke admin role;
     commit;
     select SEC$ADMIN is_admin_boss2c from sec$users where sec$user_name = upper('boss2');
-
-    drop user boss1;
-    drop user boss2;
-    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('Statement failed, SQLSTATE = HY000', ''),
+                                                   ('record not found for user:.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     IS_ADMIN_BOSS1                  <true>
     IS_ADMIN_BOSS2A                 <false>
     IS_ADMIN_BOSS2B                 <true>
     IS_ADMIN_BOSS2C                 <false>
 """
 
-expected_stderr_1 = """
+expected_stderr = """
 Statement failed, SQLSTATE = HY000
 record not found for user: BOSS1
 Statement failed, SQLSTATE = HY000
@@ -66,9 +55,10 @@ record not found for user: BOSS2
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, user_boss1: User, user_boss2: User):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

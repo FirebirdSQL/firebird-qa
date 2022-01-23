@@ -1,38 +1,33 @@
 #coding:utf-8
-#
-# id:           bugs.core_4466
-# title:        Add DROP NOT NULL to ALTER COLUMN
-# decription:   This test does NOT verifies work when table has some data. It only checks ability to issue DDL statement
-# tracker_id:   CORE-4466
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4786
+ISSUE:       4786
+TITLE:       Add DROP NOT NULL to ALTER COLUMN
+DESCRIPTION:
+  This test does NOT verifies work when table has some data. It only checks ability to
+  issue DDL statement.
+JIRA:        CORE-4466
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set autoddl off;
     commit;
-    
+
     create or alter view v_test_fields as
     select rf.rdb$field_name fld_name, coalesce(rf.rdb$null_flag, 0) is_NOT_null
     from rdb$relation_fields rf
     where rf.rdb$relation_name = upper('TEST')
     order by rf.rdb$field_position;
     commit;
-    
+
     set width fld_name 10;
-    
+
     recreate table test(
       si smallint not null
      ,ni int not null
@@ -46,9 +41,9 @@ test_script_1 = """
      ,bs blob not null
     );
     commit;
-    
+
     select 'init metadata' msg, v.* from v_test_fields v;
-    
+
     alter table test
       alter si drop not null
      ,alter ni drop not null
@@ -61,9 +56,9 @@ test_script_1 = """
      ,alter ss drop not null
      ,alter bs drop not null
     ;
-    
+
     select 'drop not null' msg,v.* from v_test_fields v;
-    
+
     alter table test
       alter si set not null
      ,alter ni set not null
@@ -76,13 +71,13 @@ test_script_1 = """
      ,alter ss set not null
      ,alter bs set not null
     ;
-    
+
     select 'reset not null' msg, v.* from v_test_fields v;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG           FLD_NAME    IS_NOT_NULL
     ============= ========== ============
     init metadata SI                    1
@@ -95,8 +90,8 @@ expected_stdout_1 = """
     init metadata TS                    1
     init metadata SS                    1
     init metadata BS                    1
-    
-    
+
+
     MSG           FLD_NAME    IS_NOT_NULL
     ============= ========== ============
     drop not null SI                    0
@@ -109,8 +104,8 @@ expected_stdout_1 = """
     drop not null TS                    0
     drop not null SS                    0
     drop not null BS                    0
-    
-    
+
+
     MSG            FLD_NAME    IS_NOT_NULL
     ============== ========== ============
     reset not null SI                    1
@@ -123,12 +118,11 @@ expected_stdout_1 = """
     reset not null TS                    1
     reset not null SS                    1
     reset not null BS                    1
-    
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

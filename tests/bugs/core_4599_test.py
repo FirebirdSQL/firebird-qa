@@ -1,37 +1,32 @@
 #coding:utf-8
-#
-# id:           bugs.core_4599
-# title:        REPLACE function works incorrectly with multibyte charsets
-# decription:   Integral test for comparison latin-1 characters with diacritical marks and their ascii-equivalents, all kinds of string matching
-# tracker_id:   CORE-4599
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         
+
+"""
+ID:          issue-4914
+ISSUE:       4914
+TITLE:       REPLACE function works incorrectly with multibyte charsets
+DESCRIPTION:
+  Integral test for comparison latin-1 characters with diacritical marks and their
+  ascii-equivalents, all kinds of string matching.
+JIRA:        CORE-4599
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	set list on;
 	with recursive
 	d as (
 		select
 		 -- The following is full list of latin-1 letters with diacritical marks
-		 -- ***EXCEPT*** those which are enumerated in CORE-4739 and currently 
+		 -- ***EXCEPT*** those which are enumerated in CORE-4739 and currently
 		 -- do NOT pass comparison using accent insensitive collation:
 		 -- Ø = U+00D8 // LATIN CAPITAL LETTER O WITH STROKE' (U+00D8), used in danish & iceland alphabets;
 		 -- Ð = U+00D0 // LATIN CAPITAL LETTER ETH' (U+00D0), iceland
 		 -- Ŀ = U+013F // LATIN CAPITAL LETTER L WITH MIDDLE DOT' (U+013F), catalone (valencian)
-		 -- Ł = U+0141 // LATIN CAPITAL LETTER L WITH STROKE' (U+0141), polish 
+		 -- Ł = U+0141 // LATIN CAPITAL LETTER L WITH STROKE' (U+0141), polish
 		 cast( 'ĄÁÃÀÅĂÂÄÇĘÊĖÈËÉĢÏÍÎÌĽÑÒŐÕÔÖÓŞŠŢÚÙÛŰÜŸÝŹŻ' as varchar(80) character set utf8) collate unicode_ci_ai utf8_chr
 		,cast( 'AAAAAAAACEEEEEEGIIIILNOOOOOOSSTUUUUUYYZZ' as varchar(80) character set utf8) collate unicode_ci_ai ascii_up
 		,cast( 'aaaaaaaaceeeeeegiiiilnoooooosstuuuuuyyzz' as varchar(80) character set utf8) collate unicode_ci_ai ascii_lo
@@ -72,12 +67,12 @@ test_script_1 = """
 	select *
 	from f
 	order by utf_char
-	;  
+	;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	UTF_CHAR                        Á
 	ASCII_CHAR                      A
 	EQUAL_TEST_UP                   1
@@ -836,12 +831,12 @@ expected_stdout_1 = """
 	SIMILAR_TO_ASCII_TEST_LO        1
 	SIMILAR_TO_ALPHA_TEST_LO        1
 	REPLACE_UTF8_TO_ASCII_LO        .*.
-	OVERLAY_UTF8_TO_ASCII_LO        1  
+	OVERLAY_UTF8_TO_ASCII_LO        1
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4114
-# title:        SIMILAR TO does not work with x-prefixed literals
-# decription:   
-#                   Checked on:
-#                   2.5.9.27115: OK, 1.390s.
-#                   3.0.4.32972: OK, 3.594s.
-#                   4.0.0.1201: OK, 2.875s.
-#                
-# tracker_id:   CORE-4114
-# min_versions: ['2.5']
-# versions:     2.5.0
-# qmid:         None
+
+"""
+ID:          issue-4442
+ISSUE:       4442
+TITLE:       SIMILAR TO does not work with x-prefixed literals
+DESCRIPTION:
+JIRA:        CORE-4114
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select
       iif(' ' similar to '[[:WHITESPACE:]]', 'T', 'F') as f1,
@@ -34,17 +22,17 @@ test_script_1 = """
     from RDB$DATABASE ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     F1                              T
     F2                              T
     F3                              T
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_4301
-# title:        Non-ASCII data in SEC$USERS is not read correctly
-# decription:
-# tracker_id:   CORE-4301
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4624
+ISSUE:       4624
+TITLE:       Non-ASCII data in SEC$USERS is not read correctly
+DESCRIPTION:
+JIRA:        CORE-4301
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
+# Note use of "do_not_create", as we want to create user in test script
+# but we want to clean it up via fixture teardown
+user_a = user_factory('db', name='u30a', password='u30a', do_not_create=True)
+user_b = user_factory('db', name='u30b', password='u30b', do_not_create=True)
 
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Note: this test differs from ticket: instead of add COMMENTS to users
     -- it only defines their `firstname` attribute, because sec$users.sec$description
     -- can be displayed only when plugin UserManager = Srp.
@@ -37,23 +35,18 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     SEC$USER_NAME                   U30A
     SEC$FIRST_NAME                  Полиграф Шариков
     SEC$USER_NAME                   U30B
     SEC$FIRST_NAME                  Léopold Frédéric
 """
 
-# Note use of "do_not_create", as we want to create user in test script
-# but we want to clean it up via fixture teardown
-user_1a = user_factory('db_1', name='u30a', password='u30a', do_not_create=True)
-user_1b = user_factory('db_1', name='u30b', password='u30b', do_not_create=True)
-
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1a: User, user_1b: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, user_a: User, user_b: User):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

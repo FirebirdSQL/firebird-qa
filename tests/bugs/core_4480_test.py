@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4480
-# title:        ISQL issues warning: "Bad debug info format" when connect to database with stored function after it`s restoring
-# decription:   
-# tracker_id:   CORE-4480
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4800
+ISSUE:       4800
+TITLE:       ISQL issues warning: "Bad debug info format" when connect to database with stored function after it`s restoring
+DESCRIPTION:
+JIRA:        CORE-4480
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     --    Note: core4480.fbk was created by WI-T3.0.0.30809 Firebird 3.0 Alpha 2.
     --    Retoring of this file in WI-T3.0.0.30809 finishes with:
     --    gbak: WARNING:function FN_A is not defined
@@ -31,16 +26,17 @@ init_script_1 = """
     --    -Error while parsing procedure SP_A's BLR
 """
 
-db_1 = db_factory(from_backup='core4480.fbk', init=init_script_1)
+db = db_factory(from_backup='core4480.fbk', init=init_script)
 
-test_script_1 = """
+test_script = """
     execute procedure sp_a;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

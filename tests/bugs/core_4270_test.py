@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4270
-# title:        Error in case of subquery with windowed function + where <field> IN(select ...)
-# decription:   
-# tracker_id:   CORE-4270
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4594
+ISSUE:       4594
+TITLE:       Error in case of subquery with windowed function + where <field> IN(select ...)
+DESCRIPTION:
+JIRA:        CORE-4270
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table t0(q int); commit;
     create index t0_q on t0(q);
     commit;
@@ -24,9 +19,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select a.qx
     from
@@ -43,15 +38,15 @@ test_script_1 = """
     join t0 b on a.qx = b.q;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
   QX                              1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,39 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_4205
-# title:        ISQL -x does not output the START WITH clause of generators/sequences
-# decription:
-# tracker_id:   CORE-4205
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4530
+ISSUE:       4530
+TITLE:       ISQL -x does not output the START WITH clause of generators/sequences
+DESCRIPTION:
+JIRA:        CORE-4205
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('^((?!CREATE GENERATOR).)*$', '')]
-
-init_script_1 = """
+init_script = """
     recreate sequence tmp_gen_42051 start with 9223372036854775807 increment by -2147483647;
     recreate sequence tmp_gen_42052 start with -9223372036854775808 increment by 2147483647;
     recreate sequence tmp_gen_42053 start with 9223372036854775807 increment by  2147483647;
     recreate sequence tmp_gen_42054 start with -9223372036854775808 increment by -2147483647;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(sql_dialect=3, init=init_script)
 
-# test_script_1
-#---
-# db_conn.close()
-#  runProgram('isql',[dsn,'-x','-user',user_name,'-password',user_password])
-#---
+act = python_act('db', substitutions=[('^((?!CREATE GENERATOR).)*$', '')])
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     CREATE GENERATOR TMP_GEN_42051 START WITH 9223372036854775807 INCREMENT -2147483647;
     CREATE GENERATOR TMP_GEN_42052 START WITH -9223372036854775808 INCREMENT 2147483647;
     CREATE GENERATOR TMP_GEN_42053 START WITH 9223372036854775807 INCREMENT 2147483647;
@@ -41,9 +30,9 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-x'])
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-x'])
+    assert act.clean_stdout == act.clean_expected_stdout
 
 

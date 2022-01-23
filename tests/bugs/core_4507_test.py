@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4507
-# title:        Unable delete procedure source on Firebird 3.0 Alpha 2.0
-# decription:   
-# tracker_id:   CORE-4507
-# min_versions: ['2.0.7']
-# versions:     2.0.7
-# qmid:         
+
+"""
+ID:          issue-4826
+ISSUE:       4826
+TITLE:       Unable delete procedure source on Firebird 3.0 Alpha 2.0
+DESCRIPTION:
+JIRA:        CORE-4507
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('RDB\\$PROCEDURE_SOURCE.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create or alter procedure sp_test(x int, y int) returns(z bigint) as
     begin
@@ -29,19 +22,19 @@ test_script_1 = """
     end
     ^set term ;^
     commit;
-    
+
     set blob all;
     set list on;
     select rdb$procedure_source from rdb$procedures where rdb$procedure_name = upper('sp_test');
-    
+
     update rdb$procedures set rdb$procedure_source = null where rdb$procedure_name = upper('sp_test');
     commit;
     select iif(rdb$procedure_source is null, 'NO_SOURCE', 'HAS_SOURCE') sp_src from rdb$procedures where rdb$procedure_name = upper('sp_test');
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('RDB\\$PROCEDURE_SOURCE.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     begin
        z = x + y;
        suspend;
@@ -49,9 +42,9 @@ expected_stdout_1 = """
     SP_SRC                          NO_SOURCE
 """
 
-@pytest.mark.version('>=2.0.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4149
-# title:        New permission types are not displayed by ISQL
-# decription:
-# tracker_id:   CORE-4149
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4476
+ISSUE:       4476
+TITLE:       New permission types are not displayed by ISQL
+DESCRIPTION:
+JIRA:        CORE-4149
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(id int);
     commit;
     grant select on test to public;
@@ -35,9 +28,9 @@ test_script_1 = """
     show grants;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 /* Grant permissions for this database */
 GRANT SELECT ON TEST TO PUBLIC
 
@@ -47,8 +40,8 @@ GRANT USAGE ON SEQUENCE G_TEST TO PUBLIC
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

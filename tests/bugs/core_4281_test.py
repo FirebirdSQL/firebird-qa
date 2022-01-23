@@ -1,49 +1,41 @@
 #coding:utf-8
-#
-# id:           bugs.core_4281
-# title:        FB 3: TYPE OF arguments of stored functions will hang firebird engine if depending domain or column is changed
-# decription:   
-# tracker_id:   CORE-4281
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4604
+ISSUE:       4604
+TITLE:       FB 3: TYPE OF arguments of stored functions will hang firebird engine if depending domain or column is changed
+DESCRIPTION:
+JIRA:        CORE-4281
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create domain testdomain as integer;
     commit;
-    
+
     create function testfunction (arg1 type of testdomain) returns integer as
     begin
     end;
-    
+
     commit;
     alter domain testdomain type bigint;
-    commit; 
-    
+    commit;
+
     show domain testdomain;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TESTDOMAIN                      BIGINT Nullable
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

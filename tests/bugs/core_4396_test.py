@@ -1,41 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_4396
-# title:        incorrect result query if it is execute through "execute statement"
-# decription:   
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.091s.
-#                       4.0.0.1633 CS: 1.367s.
-#                       3.0.5.33180 SS: 0.795s.
-#                       3.0.5.33178 CS: 1.015s.
-#                
-# tracker_id:   CORE-4396
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4718
+ISSUE:       4718
+TITLE:       incorrect result query if it is execute through "execute statement"
+DESCRIPTION:
+JIRA:        CORE-4396
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(run smallint, rn smallint, id int);
     commit;
-    
+
     insert into test(run, rn, id)
     select 1, row_number()over(), r.rdb$relation_id
     from rdb$relations r
     order by rdb$relation_id rows 3;
     commit;
-    
+
     set term ^;
     execute block returns ( id integer ) as
         declare r int;
@@ -52,7 +39,7 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     set list on;
     select count(*) cnt
     from (
@@ -76,18 +63,18 @@ test_script_1 = """
     -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
-    commit;    
+    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CNT                             0
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

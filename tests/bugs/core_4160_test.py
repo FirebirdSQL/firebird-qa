@@ -1,31 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_4160
-# title:        Parameterized exception does not accept not ASCII characters as parameter
-# decription:   
-# tracker_id:   CORE-4160
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4487
+ISSUE:       4487
+TITLE:       The parameterized exception does not accept not ASCII characters as parameter
+DESCRIPTION:
+JIRA:        CORE-4160
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('-At procedure.*', '')]
-
-init_script_1 = """
+init_script = """
     create or alter procedure sp_alert(a_lang char(2), a_new_amount int) as begin end;
     commit;
     recreate exception ex_negative_remainder ' @1 (@2)';
     commit;
 """
 
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """
+test_script = """
     set term ^;
     create or alter procedure sp_alert(a_lang char(2), a_new_amount int) as
     begin
@@ -53,9 +48,9 @@ test_script_1 = """
     execute procedure sp_alert('jp', -6);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-At procedure.*', '')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_NEGATIVE_REMAINDER
@@ -88,8 +83,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

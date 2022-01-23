@@ -1,39 +1,32 @@
 #coding:utf-8
-#
-# id:           bugs.core_4436
-# title:        Support for different hash algorithms in HASH system function
-# decription:   
-#                  Test verifies only:
-#                  1) ability to use syntax: hash(<string> using <algo>)
-#                  2) non-equality of hash results for sha1, sha256 and sha512 using _TRIVIAL_ sample from ticket.
-#                  build 4.0.0.713: OK, 1.094s.
-#               
-#                  Note that for strings:
-#                  '20177527e04e05d5e7b448c1ab2b872f86831d0b' and '20177527e04e05d5e7b448c1ab2b872f86831d0b'
-#                  - current imlpementation of SHA1, SHA256 and SHA512 gives the same hash value.
-#                  (See: https://stackoverflow.com/questions/3475648/sha1-collision-demo-example )
-#               
-#                  NOTE. Since build 4.0.0.2180 (27.08.2020) we have to use *new* function for cryptograpic hashes
-#                  when addition argument for algorithm is used: crypt_hash().
-#                
-# tracker_id:   CORE-4436
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         
+
+"""
+ID:          issue-4756
+ISSUE:       4756
+TITLE:       Support for different hash algorithms in HASH system function
+DESCRIPTION:
+  Test verifies only:
+  1) ability to use syntax: hash(<string> using <algo>)
+  2) non-equality of hash results for sha1, sha256 and sha512 using _TRIVIAL_ sample from ticket.
+  build 4.0.0.713: OK, 1.094s.
+
+  Note that for strings:
+  '20177527e04e05d5e7b448c1ab2b872f86831d0b' and '20177527e04e05d5e7b448c1ab2b872f86831d0b'
+  - current imlpementation of SHA1, SHA256 and SHA512 gives the same hash value.
+  (See: https://stackoverflow.com/questions/3475648/sha1-collision-demo-example )
+NOTES:
+[27.08.2020]
+  Since build 4.0.0.2180 we have to use *new* function for cryptograpic hashes
+  when addition argument for algorithm is used: crypt_hash().
+JIRA:        CORE-4436
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table test(s varchar(32765));
@@ -56,9 +49,9 @@ test_script_1 = """
     */
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     HASH_DEFAULT_RESULT             -1
     HASH_SHA1_RESULT                0
     HASH_SHA256_RESULT              0
@@ -66,8 +59,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

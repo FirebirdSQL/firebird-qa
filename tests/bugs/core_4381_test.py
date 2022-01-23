@@ -1,35 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_4381
-# title:        Incorrect line/column information in runtime errors
-# decription:   
-# tracker_id:   CORE-4381
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4703
+ISSUE:       4703
+TITLE:       Incorrect line/column information in runtime errors
+DESCRIPTION:
+JIRA:        CORE-4381
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 set term ^;
 
 
 
 create or alter procedure p1 returns (x integer) as
 begin
-                           select 
-                                                 'a' 
-                           from rdb$database 
+                           select
+                                                 'a'
+                           from rdb$database
                                              into x;
 end
 ^
@@ -38,17 +31,17 @@ execute procedure p1
 ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 22018
     conversion error from string "a"
     -At procedure 'P1' line: 3, col: 28
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

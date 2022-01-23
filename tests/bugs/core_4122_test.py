@@ -1,23 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4122
-# title:        Metadata export with isql (option -ex) does not export functions properly
-# decription:
-# tracker_id:   CORE-4122
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4450
+ISSUE:       4450
+TITLE:       Metadata export with isql (option -ex) does not export functions properly
+DESCRIPTION:
+JIRA:        CORE-4122
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [("CREATE DATABASE '.*' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE",
-                    "CREATE DATABASE '' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE")]
-
-init_script_1 = """
+init_script = """
     set term ^ ;
     create or alter package PKG_TEST
     as
@@ -52,21 +46,14 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# #
-#  runProgram('isql',['-x',dsn,'-user',user_name,'-pass',user_password])
-#
-#---
+act = python_act('db', substitutions=[('/* CREATE DATABASE .*', '')])
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     SET SQL DIALECT 3;
 
-    /* CREATE DATABASE 'localhost/3330:C:\\FBTESTING\\qa\\fbt-repo\\tmp\\core4122.fdb' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE; */
+    /* CREATE DATABASE 'localhost/3330:test.fdb' PAGE_SIZE 4096 DEFAULT CHARACTER SET NONE; */
 
 
     COMMIT WORK;
@@ -140,9 +127,9 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-x'])
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-x'])
+    assert act.clean_stdout == act.clean_expected_stdout
 
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4173
-# title:        Setting generator value twice in single transaction will set it to zero
-# decription:   
-# tracker_id:   CORE-4173
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-4499
+ISSUE:       4499
+TITLE:       Setting generator value twice in single transaction will set it to zero
+DESCRIPTION:
+JIRA:        CORE-4173
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set autoddl off;
     set list on;
     create generator g;
@@ -35,17 +28,16 @@ test_script_1 = """
     select gen_id(g,0) value_on_step_3 from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     VALUE_ON_STEP_1                 111
     VALUE_ON_STEP_2                 333
     VALUE_ON_STEP_3                 333
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

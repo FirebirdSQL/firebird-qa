@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4269
-# title:        Wrong output when field with result of windowed function is used in query with useless WHERE 0=0 and GROUP BY clause
-# decription:   
-# tracker_id:   CORE-4269
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4593
+ISSUE:       4593
+TITLE:       Wrong output when field with result of windowed function is used in query with useless WHERE 0=0 and GROUP BY clause
+DESCRIPTION:
+JIRA:        CORE-4269
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table tb_a(q int, v int); commit;
     insert into tb_a
     with
@@ -34,12 +29,12 @@ init_script_1 = """
       select 7 v, 'a7' n, 'b' c from rdb$database
     )
     select * from x;
-    commit; 
+    commit;
 """
 
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select c.rdb$character_set_name as connection_cset, r.rdb$character_set_name as db_default_cset
     from mon$attachments a
@@ -55,23 +50,23 @@ test_script_1 = """
         join tv_a on tv_a.v = tb_a.v
         where tb_a.q=1
     )
-    
+
     select q, rk , max(r) as max_r
     from tc
     where 0=0
     group by q, rk
-    
+
     UNION ALL
-    
+
     select q, rk , max(r)
     from tc
     group by q, rk;
     set list off;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 CONNECTION_CSET                 UTF8
 DB_DEFAULT_CSET                 UTF8
 Q                               1
@@ -83,8 +78,7 @@ MAX_R                           a1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

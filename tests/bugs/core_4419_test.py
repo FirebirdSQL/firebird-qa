@@ -1,46 +1,39 @@
 #coding:utf-8
-#
-# id:           bugs.core_4419
-# title:        Server crashes while sorting records longer than 128KB
-# decription:   
-# tracker_id:   CORE-4419
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4741
+ISSUE:       4741
+TITLE:       Server crashes while sorting records longer than 128KB
+DESCRIPTION:
+JIRA:        CORE-4419
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=1, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table lines1 (line varchar(2000));
-    
+
     insert into lines1 (line) values('2007' || ascii_char(9) || 'abcabcabc' || ascii_char(9) || 'xx');
     insert into lines1 (line) values('2007' || ascii_char(9) || 'defdefdef' || ascii_char(9) || 'xx');
     insert into lines1 (line) values('2007' || ascii_char(9) || 'ghighighi' || ascii_char(9) || 'xx');
     insert into lines1 (line) values('2008' || ascii_char(9) || 'defdefdef' || ascii_char(9) || 'xx');
-    
+
     -- note that spaces between line values should be tabs, 	, ascii_char(9)
     commit;
-    
+
     recreate table lines2 (line varchar(2000));
-    
+
     insert into lines2 (line) values('2007' || ascii_char(9) || 'abcabcabc' || ascii_char(9) || 'xx');
     insert into lines2 (line) values('2007' || ascii_char(9) || 'defgdefg'  || ascii_char(9) || 'xx');
     insert into lines2 (line) values('2007' || ascii_char(9) || 'ghighighi' || ascii_char(9) || 'xx');
     insert into lines2 (line) values('2008' || ascii_char(9) || 'abcabcabc' || ascii_char(9) || 'xx');
     insert into lines2 (line) values('2008' || ascii_char(9) || 'defdefdef' || ascii_char(9) || 'xx');
     commit;
-    
-    
+
+
     set term ^;
     create function split (
       s varchar(32000),
@@ -80,9 +73,9 @@ test_script_1 = """
     order by 1, 2;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     F1                              2007
     F2                              abcabcabc
 
@@ -94,8 +87,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

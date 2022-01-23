@@ -1,27 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_4483
-# title:        Changed data not visible in WHEN-section if exception occured inside SP that has been called from this code
-# decription:   
-# tracker_id:   CORE-4483
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-4803
+ISSUE:       4803
+TITLE:       Changed data not visible in WHEN-section if exception occured inside SP that has been called from this code
+DESCRIPTION:
+JIRA:        CORE-4483
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    -- ISSUE-1: if procedure_A calls procedure_B and the latter makes some DML changes but then fails 
+test_script = """
+    -- ISSUE-1: if procedure_A calls procedure_B and the latter makes some DML changes but then fails
     -- then proc_A does NOT see any changes that were made by proc_B.
     -- See letter to dimitr, 02-feb-2015 23:47, attachment: 'core-4483_test1.sql'.
 
@@ -113,7 +106,7 @@ test_script_1 = """
     -- #############################################################################################
 
     -- ISSUE-2: if some procedure performs several DML statements (s1, s2, s3, ..., sN) and N-th DML
-    -- fails and control falls into WHEN-block of this SP then we can not see any changes that we 
+    -- fails and control falls into WHEN-block of this SP then we can not see any changes that we
     -- have done inside THIS procedure.
     -- See letter to dimitr, 02-feb-2015 23:47, attachment: 'core-4483_test2.sql'.
 
@@ -252,12 +245,11 @@ test_script_1 = """
 
     from rdb$database;
     set list off;
-
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     main EB after P1,P2,P3,P4       1,2,3,4
     proc P5 before call P6          1,2,3,4,5
     proc P6 error source line       1,2,3,4,5,6
@@ -281,8 +273,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

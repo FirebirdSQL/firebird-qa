@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4570
-# title:        Wrong error at ALTER PACKAGE
-# decription:   
-# tracker_id:   CORE-4570
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4887
+ISSUE:       4887
+TITLE:       Wrong error at ALTER PACKAGE
+DESCRIPTION:
+JIRA:        CORE-4570
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create package p1
     as
@@ -32,13 +25,13 @@ test_script_1 = """
     as
     begin
       function f1(x int) returns int;
-    
+
       function f(x int) returns int
       as
       begin
         return f1(x) * x;
       end
-    
+
       function f1(x int) returns int
       as
       begin
@@ -48,7 +41,7 @@ test_script_1 = """
     ^
     commit
     ^
-    
+
     alter package p1
     as
     begin
@@ -56,14 +49,15 @@ test_script_1 = """
       function g(x int) returns int;
     end
     ^
-    commit 
+    commit
     ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

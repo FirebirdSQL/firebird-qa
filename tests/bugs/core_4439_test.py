@@ -1,54 +1,47 @@
 #coding:utf-8
-#
-# id:           bugs.core_4439
-# title:         Raise the 1024 connections limit (FD_SETSIZE) on Windows SS/SC
-# decription:
-#                  Test tries to establish MAX_CONN_CNT = 2047 connections and then close all of them.
-#                  Connections are established with specifying 'buffers' parameter and its value if set to minimal allowed: 50
-#                  (this reduces server memory consumption when check SuperClassic).
-#
-#                  Every result of establishing / closing connection is logged by writing messages:
-#                      * Connection # %d of %d was established
-#                      * Connection # %d of %d has been closed
-#
-#                  After processing all <MAX_CONN_CNT> iterations, test closes log and count lines from this log which match to
-#                  apropriate pattern. Total number of lines must be equal 2*MAX_CONN_CNT.
-#
-#                  If any other messages present in the log or number of lines differs from 2*MAX_CONN_CNT then error message
-#                  will be reported. Otherwise console output remains EMPTY.
-#
-#                  NOTE-1.
-#                  if number of established connections is more than 2047 then 1st of them will not be served by network server
-#                  (this is network server current implementation; it can be changed later, see letter from Vlad, 10.01.2021 15:40).
-#
-#                  NOTE-2.
-#                  If current FB server mode  is 'Classic' then test actually does nothing and console output also remains empty.
-#                  Test in such case looks as 'always successful' but actually it does not performed!
-#
-#                  Checked on:
-#                       4.0.0.2324 SS: 80.987s.   Peak memory: 2.4 Gb
-#                       4.0.0.2324 SC: 96.190s.   Peak memory: 4.2 Gb
-#                       3.0.8.33401 SS: 72.804s.  Peak memory: 1.6 Gb
-#                       3.0.8.33401 SC: 70.862s.  Peak memory: 2.4 Gb
-#                       2.5.9.27152 SS: 30.047s.
-#                       2.5.9.27152 SC: 30.501s.
-#
-# tracker_id:   CORE-4439
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         None
+
+"""
+ID:          issue-4759
+ISSUE:       4759
+TITLE:       Raise the 1024 connections limit (FD_SETSIZE) on Windows SS/SC
+DESCRIPTION:
+  Test tries to establish MAX_CONN_CNT = 2047 connections and then close all of them.
+  Connections are established with specifying 'buffers' parameter and its value if set to minimal allowed: 50
+  (this reduces server memory consumption when check SuperClassic).
+
+  Every result of establishing / closing connection is logged by writing messages:
+    * Connection # %d of %d was established
+    * Connection # %d of %d has been closed
+
+  After processing all <MAX_CONN_CNT> iterations, test closes log and count lines from this log which match to
+  apropriate pattern. Total number of lines must be equal 2*MAX_CONN_CNT.
+
+  If any other messages present in the log or number of lines differs from 2*MAX_CONN_CNT then error message
+  will be reported. Otherwise console output remains EMPTY.
+
+  NOTE-1.
+  if number of established connections is more than 2047 then 1st of them will not be served by network server
+  (this is network server current implementation; it can be changed later, see letter from Vlad, 10.01.2021 15:40).
+
+  NOTE-2.
+  If current FB server mode  is 'Classic' then test actually does nothing and console output also remains empty.
+  Test in such case looks as 'always successful' but actually it does not performed!
+JIRA:        CORE-4439
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.version('>=3')
+@pytest.mark.platform('Windows')
+@pytest.mark.xfail
+def test_1(act: Action):
+    pytest.fail("Test not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -197,14 +190,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-
-@pytest.mark.version('>=2.5.3')
-@pytest.mark.platform('Windows')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
-
-

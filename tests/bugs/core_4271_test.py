@@ -1,28 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_4271
-# title:        Engine crashs in case of re-creation of an erratic package body
-# decription:   
-# tracker_id:   CORE-4271
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4595
+ISSUE:       4595
+TITLE:       Engine crashs in case of re-creation of an erratic package body
+DESCRIPTION:
+JIRA:        CORE-4271
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
-    
+
     set term ^;
     create or alter package pkg_sequence
     as
@@ -33,7 +26,7 @@ test_script_1 = """
         function is_end returns boolean;
     end
     ^
-    
+
     recreate package body pkg_sequence
     as
     begin
@@ -41,59 +34,59 @@ test_script_1 = """
         begin
             return cast(rdb$get_context('USER_SESSION', 'MAX_VALUE') as int);
         end
-        
+
         function set_max(avalue int) returns int as
         begin
             rdb$set_context('USER_SESSION', 'MAX_VALUE', avalue);
             return avalue;
         end
-        
+
         function get_min returns int as
         begin
             return cast(rdb$get_context('USER_SESSION', 'MIN_VALUE') as int);
         end
-        
+
         function set_min(avalue int) returns int as
         begin
             rdb$set_context('USER_SESSION', 'MIN_VALUE', avalue);
             return avalue;
         end
-        
+
         function get_step returns int as
         begin
             return cast(rdb$get_context('USER_SESSION', 'STEP_VALUE') as int);
         end
-        
+
         function set_step(avalue int) returns int
      as
         begin
             rdb$set_context('USER_SESSION', 'STEP_VALUE', avalue);
             return avalue;
         end
-        
+
         function get_current_value returns int as
         begin
             return cast(rdb$get_context('USER_SESSION', 'CURRENT_VALUE') as int);
         end
-        
+
         function set_current_value(avalue int) returns int as
         begin
             rdb$set_context('USER_SESSION', 'CURRENT_VALUE', avalue);
             return avalue;
         end
-        
+
         function next_value returns int as
         begin
         if (not is_end()) then
             set_current_value(get_current_value() + get_step());
             return get_current_value();
         end
-        
+
         function is_end returns boolean as
         begin
             return get_current_value() > get_max();
         end
-        
+
         procedure initialize(min_value int, max_value int, step int)
      as
         begin
@@ -104,7 +97,7 @@ test_script_1 = """
         end
     end
     ^
-    
+
     execute block returns ( out int) as
     begin
         execute procedure pkg_sequence.initialize(10, 140, 5);
@@ -117,69 +110,69 @@ test_script_1 = """
         end
     end
     ^
-    
-    
+
+
     recreate package body pkg_sequence
     as
     begin
-        
+
         function get_max returns int as
         begin
             return cast(rdb$get_context('USER_SESSION', 'MAX_VALUE') as int);
         end
-        
+
         function set_max(avalue int) returns int as
         begin
             rdb$set_context('USER_SESSION', 'MAX_VALUE', avalue);
             return avalue;
         end
-        
+
         function get_min returns int as
         begin
             return cast(rdb$get_context('USER_SESSION', 'MIN_VALUE') as int);
         end
-        
+
         function set_min(avalue int) returns int as
         begin
             rdb$set_context('USER_SESSION', 'MIN_VALUE', avalue);
             return avalue;
         end
-        
+
         function get_step returns int as
         begin
             return cast(rdb$get_context('USER_SESSION', 'STEP_VALUE') as int);
         end
-        
+
         function set_step(avalue int) returns int as
         begin
             rdb$set_context('USER_SESSION', 'STEP_VALUE', avalue);
             return avalue;
         end
-        
+
         function get_current_value returns int as
         begin
             return cast(rdb$get_context('USER_SESSION', 'CURRENT_VALUE') as int);
         end
-        
+
         function set_current_value(avalue int) returns int
      as
         begin
         rdb$set_context('USER_SESSION', 'CURRENT_VALUE', avalue);
         return avalue;
         end
-        
+
         function next_value returns int as
         begin
         if (not is_end()) then
             set_current_value(get_current_value() + get_step());
             return get_current_value();
         end
-        
+
         function is_end returns boolean as
         begin
             return get_current_value() > get_max();
         end
-        
+
         procedure initialize(min_value int, max_value int, step int) as
         begin
             set_min(min_value);
@@ -189,25 +182,25 @@ test_script_1 = """
         end
     end
     ^
-    
+
     execute block returns (out int) as
     begin
         execute procedure pkg_sequence.initialize(10, 140, 5);
         out = pkg_sequence.get_current_value();
         suspend;
-    
+
         while (not pkg_sequence.is_end()) do
         begin
             out = pkg_sequence.next_value();
             suspend;
         end
     end
-    ^ 
+    ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     OUT                             10
     OUT                             15
     OUT                             20
@@ -267,8 +260,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

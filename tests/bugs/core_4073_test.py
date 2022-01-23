@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4073
-# title:        Constant columns getting empty value with subselect from procedure
-# decription:   
-# tracker_id:   CORE-4073
-# min_versions: ['2.1.7']
-# versions:     2.1.7
-# qmid:         None
+
+"""
+ID:          issue-4401
+ISSUE:       4401
+TITLE:       Constant columns getting empty value with subselect from procedure
+DESCRIPTION:
+JIRA:        CORE-4073
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1.7
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create domain d_vc10 varchar(10);
     commit;
     set term ^;
@@ -28,23 +23,23 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select A, TEXT from (select '2' as A, TEXT from P_TEST);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     A                               2
     TEXT                            12345
 """
 
-@pytest.mark.version('>=2.1.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

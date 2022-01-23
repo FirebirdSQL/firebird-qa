@@ -1,26 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_4117
-# title:        COMPUTED BY field is evaluated as NULL if used as an exception parameter directly
-# decription:   Exception with computed by field as parameter produces error message without this field value if this field is not a part of excpression
-# tracker_id:   CORE-4117
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         None
+
+"""
+ID:          issue-4445
+ISSUE:       4445
+TITLE:       COMPUTED BY field is evaluated as NULL if used as an exception parameter directly
+DESCRIPTION:
+  Exception with computed by field as parameter produces error message without this field
+  value if this field is not a part of excpression
+JIRA:        CORE-4117
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
-
-substitutions_1 = [('line: [0-9]+, col: [0-9]+', '')]
-
-init_script_1 = """
+init_script = """
     recreate table test1 (id int not null, c computed by (id * 10));
     recreate table test2 (id int not null, c computed by (id * 10));
     commit;
-    
+
     set term ^;
     execute block as
     begin
@@ -32,13 +29,13 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     create exception ex_bad_computed_field_value '';
     commit;
     insert into test1 (id) values (1);
     insert into test2 (id) values (1);
     commit;
-    
+
     -- 1. exception with computed by field as parameter
     set term ^;
     create or alter trigger test1_bu for test1 active before update position 0 as
@@ -48,7 +45,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     -- 2. exception with computed by field as a part of expression
     set term ^;
     create or alter trigger test2_bu for test2 active before update position 0 as
@@ -74,16 +71,16 @@ init_script_1 = """
 
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     update test1 set id = 2;
     update test2 set id = 2;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line: [0-9]+, col: [0-9]+', '')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_BAD_COMPUTED_FIELD_VALUE
@@ -96,9 +93,9 @@ expected_stderr_1 = """
     -At trigger 'TEST2_BU' line: 3, col: 7
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

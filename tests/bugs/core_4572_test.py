@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4572
-# title:        Regression: Incorrect result in subquery with aggregate
-# decription:   
-# tracker_id:   CORE-4572
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4889
+ISSUE:       4889
+TITLE:       Incorrect error for PSQL function when the number of actual arguments does not match the number of formal arguments
+DESCRIPTION:
+JIRA:        CORE-4572
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create or alter function fn_multiplier ( a_val int, a_times int ) returns bigint
     as
@@ -28,7 +21,7 @@ test_script_1 = """
         return a_val * a_times;
     end
     ^
-     
+
     create or alter procedure sp_multiplier (a_val int, a_times int )
     returns (result bigint)
     as
@@ -38,7 +31,7 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     -- Confirmed on WI-T3.0.0.31374 Firebird 3.0 Beta 1:
     -- Statement failed, SQLSTATE = 39000
     -- invalid request BLR at offset 50
@@ -48,9 +41,9 @@ test_script_1 = """
     execute procedure sp_multiplier(191);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 07001
     Dynamic SQL Error
     -Input parameter mismatch for function FN_MULTIPLIER
@@ -61,8 +54,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

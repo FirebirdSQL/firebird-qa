@@ -1,31 +1,30 @@
 #coding:utf-8
-#
-# id:           bugs.core_4578
-# title:        INPUT file not properly closed
-# decription:
-#                  Confirmed bug in ISQL 3.0.0.31374 (Beta1 release): script that has been performed by "IN" command
-#                  is NOT deleted by "shell del ..." and can be used again, so the output will be:
-#                  ID                              1
-#                  <path>	mp_4578_in.sql
-#                  ID                              1
-#
-#
-# tracker_id:   CORE-4578
-# min_versions: ['2.5.4']
-# versions:     2.5.4
-# qmid:         None
+
+"""
+ID:          issue-4894
+ISSUE:       4894
+TITLE:       INPUT file not properly closed
+DESCRIPTION:
+JIRA:        CORE-4578
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
+db = db_factory()
 
-# version: 2.5.4
-# resources: None
+act = python_act('db', substitutions=[('Unable to open.*', 'Unable to open')])
 
-substitutions_1 = [('Unable to open.*', 'Unable to open')]
+expected_stdout = """
+    ID                              1
+    Unable to open
+"""
 
-init_script_1 = """"""
+@pytest.mark.version('>=3')
+@pytest.mark.platform('Windows')
+@pytest.mark.xfail
+def test_1(act: Action):
+    pytest.fail("Test not IMPLEMENTED")
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
@@ -75,18 +74,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    ID                              1
-    Unable to open
-"""
-
-@pytest.mark.version('>=2.5.4')
-@pytest.mark.platform('Windows')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
-
-

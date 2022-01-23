@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4555
-# title:        DDL trigger remains active after dropped
-# decription:   
-# tracker_id:   CORE-4555
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4873
+ISSUE:       4873
+TITLE:       DDL trigger remains active after dropped
+DESCRIPTION:
+JIRA:        CORE-4555
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=.*', ''), ('line:\\s[0-9]+,', 'line: x'), ('col:\\s[0-9]+', 'col: y')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create exception ddl_exception 'You have no right to create exceptions. Learn DDL triggers first!';
     commit;
     set term ^;
@@ -37,7 +30,7 @@ test_script_1 = """
 
     create exception user_exception 'Invalid remainder found for case-1.';
     commit;
-    
+
     drop trigger t_ddl;
     commit;
 
@@ -47,23 +40,25 @@ test_script_1 = """
 
     set list on;
     set count on;
-    select rdb$exception_name, rdb$message 
+    select rdb$exception_name, rdb$message
     from rdb$exceptions
     order by rdb$exception_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', ''), ('line:\\s[0-9]+,', 'line: x'),
+                                                 ('col:\\s[0-9]+', 'col: y')])
 
-expected_stdout_1 = """
-    RDB$EXCEPTION_NAME              DDL_EXCEPTION                                                                                                                                                                                                                                                              
+expected_stdout = """
+    RDB$EXCEPTION_NAME              DDL_EXCEPTION
     RDB$MESSAGE                     You have no right to create exceptions. Learn DDL triggers first!
 
-    RDB$EXCEPTION_NAME              USER_EXCEPTION                                                                                                                                                                                                                                                              
+    RDB$EXCEPTION_NAME              USER_EXCEPTION
     RDB$MESSAGE                     Invalid remainder found for case-2.
 
     Records affected: 2
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     unsuccessful metadata update
     -CREATE EXCEPTION USER_EXCEPTION failed
@@ -74,10 +69,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

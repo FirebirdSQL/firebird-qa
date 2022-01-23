@@ -1,36 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_4409
-# title:        Enhancement in precision of calculations with NUMERIC/DECIMAL
-# decription:   
-#                  Checked on 4.0.0.767: OK, 0.828s.
-#                  Reproduced wrong result on 4.0.0.748.
-#                  See also letter to Alex, 12-jul-2017 09:49 (prototype for this test).
-#                  --------------------
-#                  ::: NB :::
-#                  After fix CORE-5700 ("DECFLOAT underflow should yield zero instead of an error"), 02-feb-2018, expected result was 
-#                  changed: all expressions with "almost zero" result should NOT raise any error.
-#                  See also:
-#                  https://github.com/FirebirdSQL/firebird/commit/a372f319f61d88151f5a34c4ee4ecdab6fe052f3
-#                
-# tracker_id:   CORE-4409
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-4731
+ISSUE:       4731
+TITLE:       Enhancement in precision of calculations with NUMERIC/DECIMAL
+DESCRIPTION:
+NOTES:
+  After fix CORE-5700 ("DECFLOAT underflow should yield zero instead of an error"), 02-feb-2018, expected result was
+  changed: all expressions with "almost zero" result should NOT raise any error.
+  See also:
+  https://github.com/FirebirdSQL/firebird/commit/a372f319f61d88151f5a34c4ee4ecdab6fe052f3
+JIRA:        CORE-4409
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
 # version: 4.0
-# resources: None
 
-substitutions_1 = [('0.0000000000000000', '0.000000000000000')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate sequence g;
     commit;
 
@@ -71,9 +61,9 @@ test_script_1 = """
     select gen_id(g,1) as "Test #", cast( 1.79769313486232e+308 as double precision ) positive_inf_e308b from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('0.0000000000000000', '0.000000000000000')])
 
-expected_stdout_1 = """
+expected_stdout = """
 
     Test #                          1
     POSITIVE_ZERO_E_308             9.999999999999999e-309
@@ -148,16 +138,17 @@ expected_stdout_1 = """
     Test #                          15
     POSITIVE_INF_E308A              1.797693134862310e+308
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22003
     Floating-point overflow.  The exponent of a floating-point operation is greater than the magnitude allowed.
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

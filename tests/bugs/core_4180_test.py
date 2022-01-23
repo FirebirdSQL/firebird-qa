@@ -1,25 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_4180
-# title:        CREATE COLLATION does not verify base collation charset
-# decription:   
-# tracker_id:   CORE-4180
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4506
+ISSUE:       4506
+TITLE:       CREATE COLLATION does not verify base collation charset
+DESCRIPTION:
+JIRA:        CORE-4180
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table tci(id int);
     commit;
-    
+
     set term ^;
     execute block as
     begin
@@ -27,7 +22,7 @@ init_script_1 = """
         execute statement 'drop collation ci_coll';
       when any do begin end
       end
-    
+
       begin
         execute statement 'drop collation win1252_unicode';
       when any do begin end
@@ -35,11 +30,11 @@ init_script_1 = """
     end
     ^ set term ;^
     commit;
-    
+
     create collation win1252_unicode for win1252; -- this is special collation named (charset_unicode)
     create collation ci_coll for win1252 from win1252_unicode case insensitive;
     commit;
-    
+
     recreate table tci(id int, name varchar(30) character set win1252 collate ci_coll);
     commit;
     insert into tci(id, name) values(9, 'one Row');
@@ -55,9 +50,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select n1, n2, min(n1) n3, max(n2) n4
     from (
@@ -74,9 +69,9 @@ test_script_1 = """
     group by n1, n2;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 N1                              one row
 N2                              one row
 N3                              ONE ROW
@@ -84,8 +79,7 @@ N4                              ONE ROW
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,47 +1,40 @@
 #coding:utf-8
-#
-# id:           bugs.core_4477
-# title:        Field RDB$MAP_TO_TYPE is not present in RDB$TYPES
-# decription:   
-# tracker_id:   CORE-4477
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4797
+ISSUE:       4797
+TITLE:       Field RDB$MAP_TO_TYPE is not present in RDB$TYPES
+DESCRIPTION:
+JIRA:        CORE-4477
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select rdb$field_name,rdb$type,rdb$type_name,rdb$system_flag from rdb$types where upper(rdb$field_name) = upper('rdb$map_to_type') order by rdb$type;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-   RDB$FIELD_NAME                  RDB$MAP_TO_TYPE                                                                              
+expected_stdout = """
+   RDB$FIELD_NAME                  RDB$MAP_TO_TYPE
    RDB$TYPE                        0
-   RDB$TYPE_NAME                   USER                                                                                         
+   RDB$TYPE_NAME                   USER
    RDB$SYSTEM_FLAG                 1
 
-   RDB$FIELD_NAME                  RDB$MAP_TO_TYPE                                                                              
+   RDB$FIELD_NAME                  RDB$MAP_TO_TYPE
    RDB$TYPE                        1
-   RDB$TYPE_NAME                   ROLE                                                                                         
+   RDB$TYPE_NAME                   ROLE
    RDB$SYSTEM_FLAG                 1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

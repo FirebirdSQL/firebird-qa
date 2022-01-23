@@ -1,37 +1,30 @@
 #coding:utf-8
-#
-# id:           bugs.core_4487
-# title:        Maintain package body after ALTER/RECREATE PACKAGE
-# decription:   
-# tracker_id:   CORE-4487
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          issue-4807
+ISSUE:       4807
+TITLE:       Maintain package body after ALTER/RECREATE PACKAGE
+DESCRIPTION:
+JIRA:        CORE-4487
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('HDR_SOURCE.*', ''), ('BODY_SOURCE.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter view v_pg_meta as
-    select 
+    select
         rp.rdb$package_header_source hdr_source
         ,rp.rdb$package_body_source body_source
         ,rp.rdb$valid_body_flag body_valid
-    from rdb$packages rp 
+    from rdb$packages rp
     where rp.rdb$package_name = upper('pg_test');
-    
+
     set list on;
     set blob all;
-    
+
     set term ^;
     create or alter package pg_test
     as
@@ -40,7 +33,7 @@ test_script_1 = """
         function fn_test_02 returns smallint;
     end
     ^
-    
+
     recreate package body pg_test
     as
     begin
@@ -48,7 +41,7 @@ test_script_1 = """
         begin
             return 1;
         end
-    
+
         function fn_test_02 returns smallint as
         begin
             return 2;
@@ -60,7 +53,7 @@ test_script_1 = """
     -----------------------------------------
     select 1 as step, v.* from v_pg_meta v;
     ------------------------------------------
-    
+
     set term ^;
     create or alter package pg_test
     as
@@ -86,7 +79,7 @@ test_script_1 = """
     -----------------------------------------
     select 2 as step, v.* from v_pg_meta v;
     ------------------------------------------
-    
+
     set term ^;
     create or alter package pg_test
     as
@@ -99,7 +92,7 @@ test_script_1 = """
     -----------------------------------------
     select 3 as step, v.* from v_pg_meta v;
     ------------------------------------------
-    
+
     set term ^;
     create or alter package pg_test
     as
@@ -117,9 +110,9 @@ test_script_1 = """
     ------------------------------------------
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('HDR_SOURCE.*', ''), ('BODY_SOURCE.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     STEP                            1
     HDR_SOURCE                      2a:1
     begin
@@ -138,9 +131,9 @@ expected_stdout_1 = """
       end
     end
     BODY_VALID                      1
-    
-    
-    
+
+
+
     STEP                            2
     HDR_SOURCE                      2a:1
     begin
@@ -160,9 +153,9 @@ expected_stdout_1 = """
       end
     end
     BODY_VALID                      0
-    
-    
-    
+
+
+
     STEP                            3
     HDR_SOURCE                      2a:2
     begin
@@ -180,9 +173,9 @@ expected_stdout_1 = """
       end
     end
     BODY_VALID                      0
-    
-    
-    
+
+
+
     STEP                            4
     HDR_SOURCE                      2a:1
     begin
@@ -206,8 +199,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

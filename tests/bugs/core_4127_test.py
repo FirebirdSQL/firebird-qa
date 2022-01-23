@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4127
-# title:        Server crashes instead of reporting the error "key size exceeds implementation restriction"
-# decription:
-# tracker_id:   CORE-4127
-# min_versions: ['2.5.3']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-1493
+ISSUE:       1493
+TITLE:       Server crashes instead of reporting the error "key size exceeds implementation restriction"
+DESCRIPTION:
+JIRA:        CORE-4127
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table tab1 (col1 int, col2 char(10));
     create index itab1 on tab1 (col1, col2);
     commit;
@@ -24,9 +19,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select * from tab1
     where col1 = 1 and col2 = rpad('a', 32765)
@@ -40,9 +35,9 @@ test_script_1 = """
     where col1 = 1 and col2 = rpad('a', 32766);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     COL1                            1
     COL2                            a
     COL1                            1
@@ -50,8 +45,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

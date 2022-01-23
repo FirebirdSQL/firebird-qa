@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4375
-# title:        Procedure executes infinitely if contains more than 32767 statements inside any BEGIN/END block
-# decription:   
-# tracker_id:   CORE-4375
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4697
+ISSUE:       4697
+TITLE:       Procedure executes infinitely if contains more than 32767 statements inside any BEGIN/END block
+DESCRIPTION:
+JIRA:        CORE-4375
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     -- On Alpha2 (WI-T3.0.0.30809):
     -- Statement failed, SQLSTATE = 42000
     -- Dynamic SQL Error
@@ -27,27 +22,27 @@ init_script_1 = """
     set term ^;
     execute block returns (SQL blob sub_type text) as
     begin
-      select 
-          'create or alter procedure test_proc returns(id integer) as 
+      select
+          'create or alter procedure test_proc returns(id integer) as
     begin '
           || list('
         suspend; -- '||id, '')
     ||'
-    end' 
-    
+    end'
+
       from (select row_number()over() id from rdb$types a, rdb$types b rows 50000) c
       into :SQL;
       execute statement :SQL;
       --suspend;
-    end 
+    end
     ^
     set term ;^
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select count(*) cnt from test_proc;
 
@@ -57,7 +52,7 @@ test_script_1 = """
     begin
         execute statement 'select count(*) cnt from test_proc' into cnt;
         suspend;
-  
+
         select rdb$procedure_source from rdb$procedures where rdb$procedure_name = upper('test_proc')
         into v_proc_src;
         select octet_length(:v_proc_src) - octet_length(replace(:v_proc_src, ascii_char(10), ''))
@@ -69,17 +64,17 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CNT                             50000
     CNT                             50000
     CNT                             50001
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

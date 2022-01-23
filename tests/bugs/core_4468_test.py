@@ -1,26 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_4468
-# title:        FB3: CREATE USER GRANT ADMIN ROLE does not work
-# decription:
-# tracker_id:   CORE-4468
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:
+
+"""
+ID:          issue-4788
+ISSUE:       4788
+TITLE:       FB3: CREATE USER GRANT ADMIN ROLE does not work
+DESCRIPTION:
+JIRA:        CORE-4468
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+substitutions = [('.*delete record.*', 'delete record'),
+                 ('TABLE PLG\\$VIEW_USERS', 'TABLE PLG'),
+                 ('TABLE PLG\\$SRP_VIEW', 'TABLE PLG'),
+                 ('-OZZY_OSBOURNE is not grantor of (role|Role|ROLE) on RDB\\$ADMIN to OZZY_OSBOURNE.',
+                  '-OZZY_OSBOURNE is not grantor of ROLE on RDB$ADMIN to OZZY_OSBOURNE.'),
+                 ('-Effective user is.*', '')]
 
-substitutions_1 = [('.*delete record.*', 'delete record'),
-                   ('TABLE PLG\\$VIEW_USERS', 'TABLE PLG'),
-                   ('TABLE PLG\\$SRP_VIEW', 'TABLE PLG'),
-                   ('-OZZY_OSBOURNE is not grantor of (role|Role|ROLE) on RDB\\$ADMIN to OZZY_OSBOURNE.', '-OZZY_OSBOURNE is not grantor of ROLE on RDB$ADMIN to OZZY_OSBOURNE.'),
-                   ('-Effective user is.*', '')]
-
-init_script_1 = """
+init_script = """
     -- ::: NB ::: Name of table in STDERR depends on value of UserManager = { Srp | Legacy_UserManager }.
     -- For 'Srp' it will be 'PLG$SRP_VIEW', for Legacy_UserManager -- PLG$VIEW_USERS.
     -- Because of this, section 'substitution' has been added in order to ignore rest part of line
@@ -35,9 +33,14 @@ init_script_1 = """
     left join sec$users u on u.sec$user_name in ( upper('ozzy_osbourne'), upper('bon_scott') );
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+# Well, we need to create/drop users in test script, but next user fioxtures are
+# defined to make sure that no user will be left behind in case the test fails
+user_ozzy = user_factory('db', name='ozzy_osbourne', password='123', admin=True, do_not_create=True)
+user_scott = user_factory('db', name='bon_scott', password='456', do_not_create=True)
+
+test_script = """
     set wng off;
     set list on;
     set count on;
@@ -144,9 +147,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             start
     WHO_AM_I                        SYSDBA
     WHATS_MY_ROLE                   NONE
@@ -270,7 +273,7 @@ expected_stdout_1 = """
     Records affected: 1
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -REVOKE failed
@@ -281,16 +284,11 @@ expected_stderr_1 = """
     -no permission for DELETE access to TABLE PLG$VIEW_USERS
 """
 
-# Well, we need to create/drop users in test script, but next user fioxtures are
-# defined to make sure that no user will be left behind in case the test fails
-user_ozzy = user_factory('db_1', name='ozzy_osbourne', password='123', admin=True, do_not_create=True)
-user_scott = user_factory('db_1', name='bon_scott', password='456', do_not_create=True)
-
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_ozzy: User, user_scott: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, user_ozzy: User, user_scott: User):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

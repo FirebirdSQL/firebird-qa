@@ -1,37 +1,30 @@
 #coding:utf-8
-#
-# id:           bugs.core_4177
-# title:        Problem with some boolean expressions not being allowed
-# decription:   
-# tracker_id:   CORE-4177
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4503
+ISSUE:       4503
+TITLE:       Problem with some boolean expressions not being allowed
+DESCRIPTION:
+JIRA:        CORE-4177
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     --set echo on;
 
     select 1 x1
     from rdb$database
     where (1=1) is true;
-    
+
     select 1 x2
     from rdb$database
     where true = true = true is not false is not distinct from not false is not false is not distinct from not false is not distinct from not false = not false is not distinct from not false ;
-    
+
     select 1 x3
     from rdb$database
     where not false and not false = not not not not true and not not not false = not not true and not not not not not not not false;
@@ -56,17 +49,17 @@ test_script_1 = """
     from rdb$database
     where not false and not false is not distinct from not false;
 
-    
+
     -- Following lines were commented before, now (3.0.0.31906, 30.06.2015) they work fine:
 
     select 1 y1
     from rdb$database
     where (1=1) is true;
-    
+
     select 1 y2
     from rdb$database
     where true = true = true is not false is not distinct from not false is not false is not distinct from not false is not distinct from not false = not false is not distinct from not false ;
-    
+
     select 1 y3
     from rdb$database
     where not false and not false = not not not not true and not not not false = not not true and not not not not not not not false;
@@ -98,9 +91,9 @@ test_script_1 = """
     select * from test1 where x between (not false) and (not false);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     X1                              1
     X2                              1
     X3                              1
@@ -139,8 +132,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

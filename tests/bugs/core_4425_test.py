@@ -1,34 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_4425
-# title:        User-collations based on UNICODE are not upgrade to newer ICU version on restore
-# decription:   
-#                  Test uses .fbk which was created on linux host and has collation with following DDL:
-#                  create collation nums_coll for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
-#               
-#                  SHOW COLLATION on linux host did show: COLL-VERSION=49.192.5.41.
-#               
-#                  We restore this database and try to use existing collation again.
-#                  Checked on WI-V3.0.1.32573, WI-T4.0.0.331.
-#                
-# tracker_id:   CORE-4425
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-1551
+ISSUE:       1551
+TITLE:       User-collations based on UNICODE are not upgrade to newer ICU version on restore
+DESCRIPTION:
+  Test uses .fbk which was created on linux host and has collation with following DDL:
+  create collation nums_coll for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
+
+  SHOW COLLATION on linux host did show: COLL-VERSION=49.192.5.41.
+
+  We restore this database and try to use existing collation again.
+JIRA:        CORE-4425
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='core4425.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core4425.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create domain dm_nums2 as varchar(20) character set utf8 collate nums_coll;
     commit;
     create table test2(s1 dm_nums2, s2 dm_nums2);
@@ -39,15 +30,15 @@ test_script_1 = """
     insert into test2 values('12XcvU', '12xCVu');
 
     commit;
-    set list on; 
+    set list on;
     select 'old table:' as msg, s1,s2,s1=s2 from test order by s1;
     select 'new table:' as msg, s1,s2,s1=s2 from test2 order by s2;
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             old table:
     S1                              1zXcvU
     S2                              1ZXcvu
@@ -76,8 +67,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

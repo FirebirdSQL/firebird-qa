@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4184
-# title:        Executing empty EXECUTE BLOCK with NotNull output parameter raised error
-# decription:   
-# tracker_id:   CORE-4184
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4510
+ISSUE:       4510
+TITLE:       Executing empty EXECUTE BLOCK with NotNull output parameter raised error
+DESCRIPTION:
+JIRA:        CORE-4184
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     execute block
     returns (id integer not null)
     as
@@ -33,10 +26,11 @@ test_script_1 = """
     --validation error for variable ID, value "*** null ***"
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

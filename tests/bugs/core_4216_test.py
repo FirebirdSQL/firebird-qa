@@ -1,39 +1,27 @@
 #coding:utf-8
-#
-# id:           bugs.core_4216
-# title:        Memory leak with TRIGGER ON TRANSACTION COMMIT
-# decription:   
-#                   We create database-level trigger on COMMIT and run loop of 3000 iterations with invoking autonomous transaction.
-#                   Before and after this loop we register memory_used & memory_allocated in order to compare these values after.
-#                   Ratio must be close to 1.05...1.1.
-#               
-#                   Confirmed valuable memory leak on WI-V2.5.2.26540: memmory_used was increased for ~2.75 times after 3000 iterations.
-#                       MEM_USED_RATIO       MEM_ALLOC_RATIO
-#                       ============== =====================
-#                               2.7671                2.0729
-#               
-#                   FB25SC, build 2.5.8.27090: OK, 2.078s.
-#                   FB30SS, build 3.0.3.32901: OK, 3.063s.
-#                   FB40SS, build 4.0.0.875: OK, 3.704s.
-#                
-# tracker_id:   CORE-4216
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         
+
+"""
+ID:          issue-4541
+ISSUE:       4541
+TITLE:       Memory leak with TRIGGER ON TRANSACTION COMMIT
+DESCRIPTION:
+  We create database-level trigger on COMMIT and run loop of 3000 iterations with invoking autonomous transaction.
+  Before and after this loop we register memory_used & memory_allocated in order to compare these values after.
+  Ratio must be close to 1.05...1.1.
+
+  Confirmed valuable memory leak on WI-V2.5.2.26540: memmory_used was increased for ~2.75 times after 3000 iterations.
+    MEM_USED_RATIO       MEM_ALLOC_RATIO
+    ============== =====================
+            2.7671                2.0729
+JIRA:        CORE-4216
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
 
     recreate view v_memo as select 1 i from rdb$database;
@@ -96,14 +84,14 @@ test_script_1 = """
 
     -- select * from tlog;
     set list on;
-    select 
+    select
          iif( mem_used_ratio < max_allowed_ratio, 'OK, acceptable.', 'BAD ratio of mem_used: ' || mem_used_ratio || ' - exceeds threshold = ' || max_allowed_ratio) as mem_used_ratio
         ,iif( mem_alloc_ratio < max_allowed_ratio, 'OK, acceptable.', 'BAD ratio of mem_alloc: ' || mem_alloc_ratio || ' - exceeds threshold = ' || max_allowed_ratio ) as mem_alloc_ratio
     from (
-        select 
-            --max(iif(sn=1, mem_used,0)) mu_1 
+        select
+            --max(iif(sn=1, mem_used,0)) mu_1
             --,max(iif(sn=2, mem_used,0)) mu_2
-            --,max(iif(sn=1, mem_alloc,0)) ma_1 
+            --,max(iif(sn=1, mem_alloc,0)) ma_1
             --,max(iif(sn=2, mem_alloc,0)) ma_2
              cast( 1.0000 * max(iif(sn=2, mem_used,0)) / max(iif(sn=1, mem_used,0)) as numeric(12,4) ) mem_used_ratio
             ,cast( 1.0000 * max(iif(sn=2, mem_alloc,0)) / max(iif(sn=1, mem_alloc,0)) as numeric(12,4) ) mem_alloc_ratio
@@ -118,16 +106,15 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MEM_USED_RATIO                  OK, acceptable.
     MEM_ALLOC_RATIO                 OK, acceptable.
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

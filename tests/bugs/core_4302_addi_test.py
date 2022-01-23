@@ -1,57 +1,41 @@
 #coding:utf-8
-#
-# id:           bugs.core_4302_addi
-# title:        ### ADDITIONAL TEST ### Lookup (or scan) in descending index could be very inefficient for some keys
-# decription:   
-#                   This is ADDITIONAL test for issue in ticket: "Pavel Zotov added a comment - 23/Dec/13 04:02 PM".
-#                   Separate fix was required for this issue, see comments in
-#                   https://sourceforge.net/p/firebird/mailman/message/31785278/
-#                   ===
-#                      + 2013-12-25 10:57  hvlad 
-#                      +   M src/jrd/btr.cpp
-#                      +Additional fix for bug CORE-4302 : Lookup (or scan) in descending index could be very inefficient...
-#                   ===
-#                   Excessive fetches count reproduced on WI-T3.0.0.30566 (Alpha1 release).
-#                   Current results were checked on Windows (2.5.6.26994, 3.0.0.32484, 4.0.0.138) and POSIX (4.0.0.138)
-#                   29.07.2016. On 4.0.0.316 number of fetches is ~99 thus new threshold was added for engine = 4.0.
-#               
-#                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
-#                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-#                   statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1. 
-#                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-#                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-#                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#               
-#                   Because of this, it was decided to replace 'alter sequence restart...' with subtraction of two gen values:
-#                   c = gen_id(<g>, -gen_id(<g>, 0)) -- see procedure sp_restart_sequences.
-#               
-#                   Checked on:
-#                       4.0.0.2164 SS: 3.232s.
-#                       4.0.0.2119 SS: 3.128s.
-#                       4.0.0.2164 CS: 3.286s.
-#                       3.0.7.33356 SS: 2.550s.
-#                       3.0.7.33356 CS: 3.325s.
-#                       2.5.9.27150 SC: 2.597s.
-#                
-# tracker_id:   CORE-4302
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         None
+
+"""
+ID:          issue-4625-B
+ISSUE:       4625
+TITLE:       Lookup (or scan) in descending index could be very inefficient for some keys
+DESCRIPTION:
+  This is ADDITIONAL test for issue in ticket: "Pavel Zotov added a comment - 23/Dec/13 04:02 PM".
+  Separate fix was required for this issue, see comments in
+  https://sourceforge.net/p/firebird/mailman/message/31785278/
+  ===
+   + 2013-12-25 10:57  hvlad
+   +   M src/jrd/btr.cpp
+   +Additional fix for bug CORE-4302 : Lookup (or scan) in descending index could be very inefficient...
+  ===
+  Excessive fetches count reproduced on WI-T3.0.0.30566 (Alpha1 release).
+  Current results were checked on Windows (2.5.6.26994, 3.0.0.32484, 4.0.0.138) and POSIX (4.0.0.138)
+NOTES:
+[29.07.2016]
+  On 4.0.0.316 number of fetches is ~99 thus new threshold was added for engine = 4.0.
+[18.08.2020]
+  FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
+  statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
+  gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
+  See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
+  This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
+
+  Because of this, it was decided to replace 'alter sequence restart...' with subtraction of two gen values:
+  c = gen_id(<g>, -gen_id(<g>, 0)) -- see procedure sp_restart_sequences.
+JIRA:        CORE-4302
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_restart_sequences as begin end;
     recreate table td(id int, s varchar(50));
     commit;
@@ -80,10 +64,10 @@ test_script_1 = """
 
     recreate table t_mon(rn smallint, pg_fetches bigint);
 
-    recreate view v_mon as 
+    recreate view v_mon as
     select i.mon$page_fetches as pg_fetches
     from mon$attachments a
-    left join mon$io_stats i on a.mon$stat_id=i.mon$stat_id     
+    left join mon$io_stats i on a.mon$stat_id=i.mon$stat_id
     where a.mon$attachment_id = current_connection;
 
     set term ^;
@@ -101,7 +85,7 @@ test_script_1 = """
         m=n; while(m>0) do insert into td(id, s) values( gen_id(g,1), 'qwertyui' ) returning :m-1 into m;
         m=n; while(m>0) do insert into td(id, s) values( gen_id(g,1), 'qwertyuio' ) returning :m-1 into m;
         m=n; while(m>0) do insert into td(id, s) values( gen_id(g,1), 'qwertyuiop' ) returning :m-1 into m;
-    end^ set term ;^ 
+    end^ set term ;^
     commit;
 
     create descending index td_s_des on td(s); commit;
@@ -129,7 +113,7 @@ test_script_1 = """
     execute block as
         declare c int;
     begin
-        select count(*) from rdb$database where exists(select * from td where s='qwertyuioo') into c; -- note: `o` duplicated at the end of key 
+        select count(*) from rdb$database where exists(select * from td where s='qwertyuioo') into c; -- note: `o` duplicated at the end of key
     end
     ^
     set term ;^
@@ -139,29 +123,29 @@ test_script_1 = """
     commit;
 
     set list on;
-    select 
+    select
          rn as measure
         ,iif( fetches_diff < max_allowed,
-              'OK, less then max_allowed', 
+              'OK, less then max_allowed',
               'BAD: '|| fetches_diff ||' - greater then ' || max_allowed || ' for engine = ' || rdb$get_context('SYSTEM','ENGINE_VERSION')
             ) as fetches_count
     from (
-        select 
+        select
             rn
            ,fetches_at_end - fetches_at_beg as fetches_diff
            ,max_for_25
            ,max_for_30
-           ,cast( iif( rdb$get_context('SYSTEM','ENGINE_VERSION') >= '4.0', 
+           ,cast( iif( rdb$get_context('SYSTEM','ENGINE_VERSION') >= '4.0',
                        max_for_40,
-                       iif( rdb$get_context('SYSTEM','ENGINE_VERSION') >= '3.0', 
-                            max_for_30, 
+                       iif( rdb$get_context('SYSTEM','ENGINE_VERSION') >= '3.0',
+                            max_for_30,
                             max_for_25
                           )
-                     ) 
+                     )
                   as int
                 ) as max_allowed
         from (
-          select 
+          select
                rn
               ,max(iif(bg=1, pg_fetches, null)) as fetches_at_beg
               ,max(iif(bg=1, null, pg_fetches)) as fetches_at_end
@@ -174,7 +158,7 @@ test_script_1 = """
            --           #                                                  #
            --           ####################################################
           from (
-              select 1+(rn-1)/2 as rn, mod(rn,2) as bg, pg_fetches 
+              select 1+(rn-1)/2 as rn, mod(rn,2) as bg, pg_fetches
               from t_mon
           )
           group by rn
@@ -183,9 +167,9 @@ test_script_1 = """
     order by measure;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MEASURE                         1
     FETCHES_COUNT                   OK, less then max_allowed
 
@@ -193,9 +177,9 @@ expected_stdout_1 = """
     FETCHES_COUNT                   OK, less then max_allowed
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

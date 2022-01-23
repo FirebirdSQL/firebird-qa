@@ -1,43 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_4027
-# title:        Creating table with computed fields containing "SELECT FIRST" produces corrupted result
-# decription:   Broken output in ISQL command SHOW TABLE <T> for computed-by field(s).
-# tracker_id:   CORE-4027
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4357
+ISSUE:       4357
+TITLE:       Creating table with computed fields containing "SELECT FIRST" produces corrupted result
+DESCRIPTION: Broken output in ISQL command SHOW TABLE <T> for computed-by field(s).
+JIRA:        CORE-4027
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- NB: fixed only in 3.0 (checked 30.03.2015)
     recreate table test (id int);
     commit;
-    
+
     recreate table contragents (
         agent_id   int not null
         ,agent_name varchar(25) not null
     );
     commit;
-    
+
     recreate table turnovers(
         po_number  char(8) not null
         ,agent_id   int not null
         ,order_date timestamp default 'now' not null
     );
     commit;
-    
+
     recreate table test (
         agent_id integer not null,
         first_po_number computed by (
@@ -60,9 +53,9 @@ test_script_1 = """
     show table test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     AGENT_ID                        INTEGER Not Null
     FIRST_PO_NUMBER                 Computed by: (
                 (
@@ -82,8 +75,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

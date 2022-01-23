@@ -1,57 +1,75 @@
 #coding:utf-8
-#
-# id:           bugs.core_4524
-# title:        New gbak option to enable encryption during restore
-# decription:
-#                   Part of this test was copied from core_6071.fbt.
-#                   We create new database and try to encrypt it using IBSurgeon Demo Encryption package
-#                   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
-#                   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
-#                   This file was preliminary stored in FF Test machine.
-#                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
-#
-#                   We create several generators in the test DB and get number of generators page using query to RDB$PAGES (page_type=9).
-#                   Also we get page_size and using these data we can obtain binary content of generatord page. This content futher is parsed
-#                   in order to verify that generators names are readable (while DB is not yet encrypted).
-#
-#                   Then we encrypt DB and make delay after this for ~1..2 seconds BEFORE detach from database.
-#
-#                   After this we:
-#                   1. Change temp DB state to full shutdown and bring it online - in order to be sure that we will able to drop this file later;
-#                   2. Make backup of this temp DB, using gbak utility and '-KEYHOLDER <name_of_key_holder>' command switch.
-#                   3. Make restore from just created backup.
-#                   4. Make validation of just restored database by issuing command "gfix -v -full ..."
-#                      ( i.e. validate both data and metadata rather than online val which can check user data only).
-#                   5. Open restored DB as binary file and attempt to read again generators names - this must fail, their names must be encrypted.
-#                   6. Check that NO errors occured on any above mentioned steps. Also check that backup and restore STDOUT logs contain expected
-#                      text about successful completition
-#
-#                   13.04.2021. Adapted for run both on Windows and Linux. Checked on:
-#                     Windows: 4.0.0.2416
-#                     Linux:   4.0.0.2416
-#                   Note: different names for encryption plugin and keyholde rare used for Windows vs Linux:
-#                      PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else '"fbSampleDbCrypt"'
-#                      KHOLDER_NAME = 'KeyHolder' if os.name == 'nt' else "fbSampleKeyHolder"
-#
-#
-#               [pcisar] 23.11.2021
-#               Test not implemented because it depends on 3rd party encryption plugin.
-# tracker_id:   CORE-4524
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-4842
+ISSUE:       4842
+TITLE:       New gbak option to enable encryption during restore
+DESCRIPTION:
+    Part of this test was copied from core_6071.fbt.
+    We create new database and try to encrypt it using IBSurgeon Demo Encryption package
+    ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
+    License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
+    This file was preliminary stored in FF Test machine.
+    Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
+
+    We create several generators in the test DB and get number of generators page using query to RDB$PAGES (page_type=9).
+    Also we get page_size and using these data we can obtain binary content of generatord page. This content futher is parsed
+    in order to verify that generators names are readable (while DB is not yet encrypted).
+
+    Then we encrypt DB and make delay after this for ~1..2 seconds BEFORE detach from database.
+
+    After this we:
+    1. Change temp DB state to full shutdown and bring it online - in order to be sure that we will able to drop this file later;
+    2. Make backup of this temp DB, using gbak utility and '-KEYHOLDER <name_of_key_holder>' command switch.
+    3. Make restore from just created backup.
+    4. Make validation of just restored database by issuing command "gfix -v -full ..."
+       ( i.e. validate both data and metadata rather than online val which can check user data only).
+    5. Open restored DB as binary file and attempt to read again generators names - this must fail, their names must be encrypted.
+    6. Check that NO errors occured on any above mentioned steps. Also check that backup and restore STDOUT logs contain expected
+       text about successful completition
+NOTES:
+[13.04.2021] Adapted for run both on Windows and Linux. Checked on:
+      Windows: 4.0.0.2416
+      Linux:   4.0.0.2416
+    Note: different names for encryption plugin and keyholde rare used for Windows vs Linux:
+       PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else '"fbSampleDbCrypt"'
+       KHOLDER_NAME = 'KeyHolder' if os.name == 'nt' else "fbSampleKeyHolder"
+JIRA:        CORE-4524
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('\\d+ BYTES WRITTEN', '')]
+act = python_act('db', substitutions=[('\\d+ BYTES WRITTEN', '')])
 
-init_script_1 = """"""
+expected_stdout = """
+    12192682 aa0bba FOUND.
+    195948556 0cf0ad0b FOUND.
+    830623 9fac0c FOUND.
+    12648429 edffc0 FOUND.
+    14598365 ddc0de FOUND.
+    14600925 ddcade FOUND.
+    2147483646 feffff7f FOUND.
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+    Database ENCRYPTED.
+
+    12192682 aa0bba NOT FOUND.
+    195948556 0cf0ad0b NOT FOUND.
+    830623 9fac0c NOT FOUND.
+    12648429 edffc0 NOT FOUND.
+    14598365 ddc0de NOT FOUND.
+    14600925 ddcade NOT FOUND.
+    2147483646 feffff7f NOT FOUND.
+    EXPECTED BACKUP FINISH FOUND: GBAK:CLOSING FILE, COMMITTING, AND FINISHING.
+    EXPECTED RESTORE FINISH FOUND: GBAK:ADJUSTING THE ONLINE AND FORCED WRITES FLAGS
+"""
+
+@pytest.mark.skip("Encryption plugin required")
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
 
 # test_script_1
 #---
@@ -348,30 +366,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #---
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    12192682 aa0bba FOUND.
-    195948556 0cf0ad0b FOUND.
-    830623 9fac0c FOUND.
-    12648429 edffc0 FOUND.
-    14598365 ddc0de FOUND.
-    14600925 ddcade FOUND.
-    2147483646 feffff7f FOUND.
-
-    Database ENCRYPTED.
-
-    12192682 aa0bba NOT FOUND.
-    195948556 0cf0ad0b NOT FOUND.
-    830623 9fac0c NOT FOUND.
-    12648429 edffc0 NOT FOUND.
-    14598365 ddc0de NOT FOUND.
-    14600925 ddcade NOT FOUND.
-    2147483646 feffff7f NOT FOUND.
-    EXPECTED BACKUP FINISH FOUND: GBAK:CLOSING FILE, COMMITTING, AND FINISHING.
-    EXPECTED RESTORE FINISH FOUND: GBAK:ADJUSTING THE ONLINE AND FORCED WRITES FLAGS
-"""
-
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.skip("Requires encryption plugin")

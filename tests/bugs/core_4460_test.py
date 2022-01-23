@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4460
-# title:        Expressions containing some built-in functions may be badly optimized
-# decription:   
-# tracker_id:   CORE-4460
-# min_versions: ['2.5.3']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4780
+ISSUE:       4780
+TITLE:       Expressions containing some built-in functions may be badly optimized
+DESCRIPTION:
+JIRA:        CORE-4460
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('RDB\\$INDEX_[0-9]+', 'RDB\\$INDEX_')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set planonly;
     select * from (
        select rdb$relation_name from rdb$relations
@@ -34,14 +27,14 @@ test_script_1 = """
       select rdb$field_name from rdb$fields
     ) as dt (name) where dt.name = left('', 0)
     ;
-    
+
     select * from (
       select rdb$relation_name from rdb$relations
       union
       select rdb$field_name from rdb$fields
     ) as dt (name) where dt.name = minvalue('', '')
     ;
-    
+
     select * from (
       select rdb$relation_name from rdb$relations
       union
@@ -50,9 +43,9 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('RDB\\$INDEX_[0-9]+', 'RDB\\$INDEX_')])
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN SORT (DT RDB$RELATIONS INDEX (RDB$INDEX_0), DT RDB$FIELDS INDEX (RDB$INDEX_2))
     PLAN SORT (DT RDB$RELATIONS INDEX (RDB$INDEX_0), DT RDB$FIELDS INDEX (RDB$INDEX_2))
     PLAN SORT (DT RDB$RELATIONS INDEX (RDB$INDEX_0), DT RDB$FIELDS INDEX (RDB$INDEX_2))
@@ -60,8 +53,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4566
-# title:        Incorrect size of the output parameter/argument when execute block, procedure or function use system field in metadata charset
-# decription:   
-# tracker_id:   CORE-4566
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4883
+ISSUE:       4883
+TITLE:       Incorrect size of the output parameter/argument when execute block, procedure or function use system field in metadata charset
+DESCRIPTION:
+JIRA:        CORE-4566
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(charset='WIN1251')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='WIN1251', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create or alter function get_mnemonic (
         afield_name type of column rdb$types.rdb$field_name,
@@ -30,21 +23,21 @@ test_script_1 = """
     begin
       return (select rdb$type_name
               from rdb$types
-              where 
+              where
                   rdb$field_name = :afield_name
                   and rdb$type = :atype
               order by rdb$type_name
              );
-    end 
+    end
     ^
     set term ;^
     commit;
-    
+
     set list on;
 
     select get_mnemonic('MON$SHUTDOWN_MODE', 1) as mnemonic from rdb$database;
     --select cast(get_mnemonic('MON$SHUTDOWN_MODE', 1) as varchar(100)) as mnemonic from rdb$database;
-    
+
     set term ^;
     execute block returns (FIELD_NAME RDB$FIELD_NAME) as
     begin
@@ -61,16 +54,16 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-    MNEMONIC                        MULTI_USER_SHUTDOWN            
-    FIELD_NAME                      BLOB_FILTER                    
+expected_stdout = """
+    MNEMONIC                        MULTI_USER_SHUTDOWN
+    FIELD_NAME                      BLOB_FILTER
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

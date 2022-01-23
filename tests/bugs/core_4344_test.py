@@ -1,28 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_4344
-# title:        Error "no current record for fetch operation" when table inner join procedure inner join table
-# decription:   
-# tracker_id:   CORE-4344
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4666
+ISSUE:       4666
+TITLE:       Error "no current record for fetch operation" when table inner join procedure inner join table
+DESCRIPTION:
+JIRA:        CORE-4344
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create or alter procedure sp_get_f01(a_id int) returns(f01 int) as begin end;
     create or alter procedure sp_get_f02(a_id int) returns(f01 int) as begin end;
     create or alter procedure sp_get_f03(a_id int) returns(f01 int) as begin end;
     create or alter procedure sp_get_f04(a_id int) returns(f01 int) as begin end;
     create or alter procedure sp_get_f05(a_id int) returns(f01 int) as begin end;
-    
+
     recreate table test(
         id int primary key using index test_pk
         ,f01 int
@@ -36,7 +31,7 @@ init_script_1 = """
     insert into test(id, f01, f02, f03, f04, f05) values( 2, 111, 222, 333, 444, 555);
     insert into test(id, f01, f02, f03, f04, f05) values( 3,1111,2222,3333,4444,5555);
     commit;
-    
+
     set term ^;
     create or alter procedure sp_get_f01(a_id int) returns(f01 int) as
     begin
@@ -67,9 +62,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select t1.id
     from test t1
@@ -103,17 +98,17 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     ID                              2
     ID                              3
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

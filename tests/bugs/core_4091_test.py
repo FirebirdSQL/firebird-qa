@@ -1,37 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_4091
-# title:        Incorrect full join result with ROW_NUMBER() Function in CTE
-# decription:   
-#                   NOTE! We have to avoid usage of current RDB$DB_KEY values because they can change.
-#                   Instead, we have to create tables XTYPES and XFORMATS with data from RDB$-tables
-#                   that were in any empty adtabase created on WI-T3.0.0.30566 Firebird 3.0 Alpha 1.
-#               
-#                   Confirmed bug on WI-T3.0.0.30566: FULL JOIN expression ("on a.rn = b.rn")
-#                   was ignored and query produced 251 rows instead of expected 2.
-#                   Fixed at least since WI-T3.0.0.30809 Firebird 3.0 Alpha 2.
-#               
-#                   Checked on:
-#                       3.0.0.32136; 3.0.0.31374; 3.0.0.32483; 3.0.7.33358; 4.0.0.2180
-#                
-# tracker_id:   CORE-4091
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4419
+ISSUE:       4419
+TITLE:       Incorrect full join result with ROW_NUMBER() Function in CTE
+DESCRIPTION:
+  We have to avoid usage of current RDB$DB_KEY values because they can change.
+  Instead, we have to create tables XTYPES and XFORMATS with data from RDB$-tables
+  that were in any empty adtabase created on WI-T3.0.0.30566 Firebird 3.0 Alpha 1.
+JIRA:        CORE-4091
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table rtypes( dbkey char(16) character set octets, xtype smallint );
     recreate table rformats( dbkey char(16) character set octets, xformat smallint );
     commit;
@@ -308,9 +293,9 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     rtypes.type             rtypes.rn           rformats.rn rformats.format
     =========== ===================== ===================== ===============
     0                     2                     2               1
@@ -319,8 +304,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

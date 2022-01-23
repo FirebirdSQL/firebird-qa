@@ -1,26 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_4484
-# title:        Description (COMMENT ON) for package procedures and functions, and its parameters
-# decription:   Test verifies ability to store comments and also to encode them in UTF8
-# tracker_id:   CORE-4484
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          issue-4804
+ISSUE:       4804
+TITLE:       Description (COMMENT ON) for package procedures and functions, and its parameters
+DESCRIPTION:
+  Test verifies ability to store comments and also to encode them in UTF8
+JIRA:        CORE-4484
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = [('TEXT_BLOB.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	set term ^;
 	create or alter package pg_test
 	as
@@ -101,46 +95,46 @@ test_script_1 = """
 		where f2.rdb$package_name = upper('pg_test') and f2.rdb$argument_name is not null
 		order by f2.rdb$argument_name
 	)
-	;  
+	;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('TEXT_BLOB.*', '')])
 
-expected_stdout_1 = """
-	DESCR_FOR_WHAT                  package itself                                                      
-	OBJ_NAME                        PG_TEST                                                                                                                     
+expected_stdout = """
+	DESCR_FOR_WHAT                  package itself
+	OBJ_NAME                        PG_TEST
 	TEXT_BLOB                       0:3
 	MITÄ TÄMÄN
 
-	DESCR_FOR_WHAT                  package proc                                                        
-	OBJ_NAME                        SP_TEST                                                                                                                     
+	DESCR_FOR_WHAT                  package proc
+	OBJ_NAME                        SP_TEST
 	TEXT_BLOB                       0:6
 	ÁÉÍÓÚÝ
 
-	DESCR_FOR_WHAT                  package func                                                        
-	OBJ_NAME                        FN_TEST                                                                                                                     
+	DESCR_FOR_WHAT                  package func
+	OBJ_NAME                        FN_TEST
 	TEXT_BLOB                       0:9
 	ÂÊÎÔÛ
 
-	DESCR_FOR_WHAT                  package proc pars                                                   
-	OBJ_NAME                        I_X                                                                                                                         
+	DESCR_FOR_WHAT                  package proc pars
+	OBJ_NAME                        I_X
 	TEXT_BLOB                       0:c
 	ÃÑÕ ÄËÏÖÜŸ
 
-	DESCR_FOR_WHAT                  package proc pars                                                   
-	OBJ_NAME                        O_Z                                                                                                                         
+	DESCR_FOR_WHAT                  package proc pars
+	OBJ_NAME                        O_Z
 	TEXT_BLOB                       0:f
 	ÇŠ ΔΘΛΞΣΨΩ
 
-	DESCR_FOR_WHAT                  package func args                                                   
-	OBJ_NAME                        I_X                                                                                                                         
+	DESCR_FOR_WHAT                  package func args
+	OBJ_NAME                        I_X
 	TEXT_BLOB                       0:12
 	ĄĘŁŹŻ ЙЁ ЊЋЏ ĂŞŢ
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

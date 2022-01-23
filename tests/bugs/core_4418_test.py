@@ -1,23 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_4418
-# title:        Regression: Can not run ALTER TABLE DROP CONSTRAINT <FK_name> after recent changes in svn
-# decription:   Added some extra DDL statements to be run within single Tx and then to be rollbacked.
-# tracker_id:   CORE-4418
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4740
+ISSUE:       4740
+TITLE:       Regression: Can not run ALTER TABLE DROP CONSTRAINT <FK_name> after recent changes in svn
+DESCRIPTION: Added some extra DDL statements to be run within single Tx and then to be rollbacked.
+JIRA:        CORE-4418
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+substitutions = [('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
+                 ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
 
-substitutions_1 = [('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
-                   ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
-
-init_script_1 = """
+init_script = """
 recreate table td(id int);
 recreate table tm(id int);
 commit;
@@ -77,9 +74,9 @@ drop collation nums_coll;
 rollback;
 """
 
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """
+test_script = """
 show table tm;
 show table td;
 show domain dm_ids;
@@ -89,9 +86,9 @@ show collation nums_coll;
 -- winxp: coll-version=58.0.6.50
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
 ID                              (DM_IDS) BIGINT Not Null
 NM                              (DM_NUMS) VARCHAR(20) CHARACTER SET UTF8 Nullable
                                  COLLATE NUMS_COLL
@@ -112,8 +109,8 @@ NUMS_COLL, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENS
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,32 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_4326
-# title:        Keyword SET should not be required in ALTER USER statement
-# decription:
-#                   Checked on:
-#                       4.0.0.1635 SS: OK, 1.555s.
-#                       4.0.0.1633 CS: OK, 1.966s.
-#                       3.0.5.33180 SS: OK, 0.970s.
-#                       3.0.5.33178 CS: OK, 1.435s.
-#
-# tracker_id:   CORE-4326
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4649
+ISSUE:       4649
+TITLE:       Keyword SET should not be required in ALTER USER statement
+DESCRIPTION:
+JIRA:        CORE-4326
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
+tmp_user = user_factory('db', name='tmp$c4326', password='123')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     alter user tmp$c4326 password '456' firstname 'Deep' lastname 'Purple';
     commit;
 
@@ -86,9 +74,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     UNAME                           TMP$C4326
     FNAME                           Deep
     LNAME                           Purple
@@ -102,11 +90,9 @@ expected_stdout_1 = """
     LNAME                           Zeppelin
 """
 
-user_1 = user_factory('db_1', name='tmp$c4326', password='123')
-
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, tmp_user: User):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

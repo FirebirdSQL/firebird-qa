@@ -1,57 +1,58 @@
 #coding:utf-8
-#
-# id:           bugs.core_4462
-# title:        Make it possible to restore compressed .nbk files without explicitly decompressing them
-# decription:
-#                   Test uses three preliminarily created .zip files:
-#                   1. 7zip-standalone-binary.zip -- contains standalone console utility 7za.exe
-#                   2. zstd-standalone-binary.zip -- contains standalone console utility zstd.exe
-#                   3. standard_sample_databases.zip  -- contains SQL statements for Firebird EMPLOYEE and Oracle "HR" schema.
-#
-#                   We extract files from all of these .zip archives and do following:
-#                   * apply Firebird SQL script which creates the same DB as standard EMPLOYEE;
-#                   * invoke "nbackup -b 0 ..." and use Python PIPE mechanism for redirecting STDOUT to 7za.exe utility which,
-#                     in turn, will accept data from this stream and compress them to .7z file.
-#                     This eventually creates .7z file with compressed .nbk0 file.
-#
-#                   * apply SQL script from Oracle "HR" schema which adds several other tables and data;
-#                   * invoke "nbackup -b 1 ..." and use again Python PIPE mechanism for redirecting STDOUT to 7za.exe utility.
-#                     This will create one more .7z file with compressed .nbk1 file.
-#                   * invoke "nbackup -decompress ..." with specifying command for running 7za.exe which will extract every file
-#                     from those which are specified in the command, i.e:
-#
-#                     nbackup -decompress "c:\\path	oz.exe x -y" <fdb_for_restoring> <compressed_7z_with_nbk0> <compressed_7z_with_nbk1>
-#
-#                   * validate just restored database and check content of firebird.log: it should NOT contain any errors or warnings.
-#
-#                   ::: NB :::
-#
-#                   This is *initial* implementation! We use trivial database with ascii-only metadata and data.
-#                   Also, we use only 7za.exe compressor and zstd.exe is not yet used.
-#
-#                   Later this test may be expanded for check non-ascii metadata and/or data.
-#                   Checked on:
-#                       4.0.0.1713 SS: 7.094s.
-#                       4.0.0.1691 CS: 9.969s.
-#                       3.0.5.33218 SS: 4.750s.
-#                       3.0.5.33212 CS: 6.976s.
-#
-# tracker_id:   CORE-4462
-# min_versions: ['3.0.5']
-# versions:     3.0.5
-# qmid:         None
+
+"""
+ID:          issue-4782
+ISSUE:       4782
+TITLE:       Make it possible to restore compressed .nbk files without explicitly decompressing them
+DESCRIPTION:
+    Test uses three preliminarily created .zip files:
+    1. 7zip-standalone-binary.zip -- contains standalone console utility 7za.exe
+    2. zstd-standalone-binary.zip -- contains standalone console utility zstd.exe
+    3. standard_sample_databases.zip  -- contains SQL statements for Firebird EMPLOYEE and Oracle "HR" schema.
+
+    We extract files from all of these .zip archives and do following:
+    * apply Firebird SQL script which creates the same DB as standard EMPLOYEE;
+    * invoke "nbackup -b 0 ..." and use Python PIPE mechanism for redirecting STDOUT to 7za.exe utility which,
+      in turn, will accept data from this stream and compress them to .7z file.
+      This eventually creates .7z file with compressed .nbk0 file.
+
+    * apply SQL script from Oracle "HR" schema which adds several other tables and data;
+    * invoke "nbackup -b 1 ..." and use again Python PIPE mechanism for redirecting STDOUT to 7za.exe utility.
+      This will create one more .7z file with compressed .nbk1 file.
+    * invoke "nbackup -decompress ..." with specifying command for running 7za.exe which will extract every file
+      from those which are specified in the command, i.e:
+
+      nbackup -decompress "c:\\path\\7za.exe x -y" <fdb_for_restoring> <compressed_7z_with_nbk0> <compressed_7z_with_nbk1>
+
+    * validate just restored database and check content of firebird.log: it should NOT contain any errors or warnings.
+
+    ::: NB :::
+
+    This is *initial* implementation! We use trivial database with ascii-only metadata and data.
+    Also, we use only 7za.exe compressor and zstd.exe is not yet used.
+
+    Later this test may be expanded for check non-ascii metadata and/or data.
+JIRA:        CORE-4462
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.5
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout_1 = """
+    + VALIDATION STARTED
+    + VALIDATION FINISHED: 0 ERRORS, 0 WARNINGS, 0 FIXED
+"""
 
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
+@pytest.mark.version('>=3.0.5')
+@pytest.mark.platform('Windows')
+@pytest.mark.xfail
+def test_1(act: Action):
+    # This test should be reimplemnted in platform independent way!
+    pytest.fail("Test not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -128,7 +129,7 @@ db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 #  #   p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
 #  #   output = p2.communicate()[0]
 #
-#  # nbackup.exe -b 0 employee stdout | 7za u -siemployee.nbk0 C:\\FBSS\\employee.nbk0.7z
+#  # nbackup.exe -b 0 employee stdout | 7za u -siemployee.nbk0 C:\\FB\\SS\\employee.nbk0.7z
 #
 #  p_sender = subprocess.Popen( [ fb_home+'nbackup', '-b', '0', this_db, 'stdout' ], stdout=PIPE)
 #  p_getter = subprocess.Popen( [ os.path.join(context['temp_directory'],'7za.exe'), 'u', '-bb3', '-bt', '-bse2', '-si' + os.path.split(nbk0_name)[1], zip0_name ], stdin = p_sender.stdout, stdout = PIPE )
@@ -254,17 +255,3 @@ db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
 #  cleanup( f_list )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    + VALIDATION STARTED
-    + VALIDATION FINISHED: 0 ERRORS, 0 WARNINGS, 0 FIXED
-"""
-
-@pytest.mark.version('>=3.0.5')
-@pytest.mark.platform('Windows')
-@pytest.mark.xfail
-def test_1(db_1):
-    # This test should be reimplemnted in platform independent way!
-    pytest.fail("Test not IMPLEMENTED")

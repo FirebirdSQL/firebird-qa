@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4018
-# title:        Using system domain in procedures arguments/returns cause the proc to be unchangeable
-# decription:   
-# tracker_id:   CORE-4018
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4349
+ISSUE:       4349
+TITLE:       Using system domain in procedures arguments/returns cause the proc to be unchangeable
+DESCRIPTION:
+JIRA:        CORE-4018
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('PROCEDURE_SOURCE .*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set blob all;
     set count on;
@@ -34,14 +27,14 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-       
+
     select 'point-1' as msg, rdb$parameter_name, rdb$parameter_type, rdb$field_source
-    from rdb$procedure_parameters 
+    from rdb$procedure_parameters
     where rdb$procedure_name = upper('sp_test')
     order by rdb$parameter_name, rdb$parameter_type;
 
-    select 'point-2' as msg, rdb$procedure_source 
-    from rdb$procedures 
+    select 'point-2' as msg, rdb$procedure_source
+    from rdb$procedures
     where rdb$procedure_name = upper('sp_test');
     commit;
 
@@ -55,13 +48,13 @@ test_script_1 = """
     set term ;^
     commit;
 
-    select 'point-3' as msg, rdb$parameter_name, rdb$parameter_type, rdb$field_source 
-    from rdb$procedure_parameters 
+    select 'point-3' as msg, rdb$parameter_name, rdb$parameter_type, rdb$field_source
+    from rdb$procedure_parameters
     where rdb$procedure_name = upper('sp_test')
     order by rdb$parameter_name, rdb$parameter_type;
 
-    select 'point-4' as msg, rdb$procedure_source 
-    from rdb$procedures 
+    select 'point-4' as msg, rdb$procedure_source
+    from rdb$procedures
     where rdb$procedure_name = upper('sp_test');
     commit;
 
@@ -69,21 +62,21 @@ test_script_1 = """
     commit;
 
     -- no rows must be issued:
-    select 'point-5' as msg, rdb$parameter_name, rdb$parameter_type, rdb$field_source 
-    from rdb$procedure_parameters 
+    select 'point-5' as msg, rdb$parameter_name, rdb$parameter_type, rdb$field_source
+    from rdb$procedure_parameters
     where rdb$procedure_name = upper('sp_test');
 
     -- no rows must be issued:
-    select 'point-6' as msg, rdb$procedure_source 
-    from rdb$procedures 
+    select 'point-6' as msg, rdb$procedure_source
+    from rdb$procedures
     where rdb$procedure_name = upper('sp_test');
     commit;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('PROCEDURE_SOURCE .*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             point-1
     RDB$PARAMETER_NAME              INFO
     RDB$PARAMETER_TYPE              1
@@ -110,7 +103,7 @@ expected_stdout_1 = """
     RDB$PARAMETER_TYPE              0
     RDB$FIELD_SOURCE                RDB$USER
     Records affected: 2
-    
+
 
     MSG                             point-4
     RDB$PROCEDURE_SOURCE            1a:1e3
@@ -126,8 +119,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

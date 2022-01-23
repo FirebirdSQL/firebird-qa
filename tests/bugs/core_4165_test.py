@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4165
-# title:        Replace the hierarchical union execution with the plain one
-# decription:   
-# tracker_id:   CORE-4165
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4492
+ISSUE:       4492
+TITLE:       Replace the hierarchical union execution with the plain one
+DESCRIPTION:
+JIRA:        CORE-4165
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('record length.*', ''), ('key length.*', '')]
-
-init_script_1 = """
+init_script = """
     recreate table t1(id int);
     recreate table t2(id int);
     recreate table t3(id int);
@@ -28,28 +23,28 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set planonly;
     set explain on;
-    
+
     select 0 i from t1
     union all
     select 1 from t1
     union all
     select 2 from t1
     ;
-    
-    
+
+
     select 0 i from t2
     union
     select 1 from t2
     union
     select 2 from t2
     ;
-    
-    
+
+
     select 0 i from t3
     union distinct
     select 1 from t3
@@ -60,22 +55,22 @@ test_script_1 = """
     -- because they contain not only size of field(s) but also db_key.
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('record length.*', ''), ('key length.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     Select Expression
         -> Union
             -> Table "T1" Full Scan
             -> Table "T1" Full Scan
             -> Table "T1" Full Scan
-    
+
     Select Expression
         -> Unique Sort (record length: 52, key length: 8)
             -> Union
                 -> Table "T2" Full Scan
                 -> Table "T2" Full Scan
                 -> Table "T2" Full Scan
-    
+
     Select Expression
         -> Union
             -> Unique Sort (record length: 44, key length: 8)
@@ -86,8 +81,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

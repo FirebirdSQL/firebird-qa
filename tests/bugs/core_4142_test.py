@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4142
-# title:        Regression: Server crashes while preparing a query with DISTINCT and ORDER BY
-# decription:   
-# tracker_id:   CORE-4142
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4469
+ISSUE:       4469
+TITLE:       Regression: Server crashes while preparing a query with DISTINCT and ORDER BY
+DESCRIPTION:
+JIRA:        CORE-4142
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """
+init_script = """
     recreate table trel(id smallint, name char(31) character set unicode_fss collate unicode_fss);
     commit;
     insert into trel(id, name) select row_number()over(), 'RDB$NAME_' || row_number()over()
@@ -28,17 +23,17 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     select distinct id + 0 id, name
     from trel
     order by name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ID NAME
     == ==========
      1 RDB$NAME_1
@@ -53,8 +48,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

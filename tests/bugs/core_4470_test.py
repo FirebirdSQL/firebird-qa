@@ -1,37 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_4470
-# title:        gbak fails to restore database containing dependency between views and packaged functions
-# decription:
-#                   Confirmed on WI-T3.0.0.30809 Firebird 3.0 Alpha 2:
-#                   gbak: ERROR:action cancelled by trigger (0) to preserve data integrity
-#                   gbak: ERROR:    could not find object for GRANT
-#                   gbak:Exiting before completion due to errors
-#                   ============================================
-#                   28.10.2019:
-#                   1. Replaced PSQL function name 'localtime()' with 'fn_local_time()': first of them became keyword in FB 4.0
-#                   2.Checked on:
-#                       4.0.0.1635 SS: 3.384s.
-#                       4.0.0.1633 CS: 3.438s.
-#                       3.0.5.33180 SS: 2.137s.
-#                       3.0.5.33178 CS: 2.490s.
-#
-# tracker_id:   CORE-4470
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4790
+ISSUE:       4790
+TITLE:       gbak fails to restore database containing dependency between views and packaged functions
+DESCRIPTION:
+NOTES:
+[28.10.2019]
+  Replaced PSQL function name 'localtime()' with 'fn_local_time()': first of them became keyword in FB 4.0
+JIRA:        CORE-4470
+"""
 
 import pytest
 from pathlib import Path
-from firebird.qa import db_factory, python_act, Action, temp_file
+from firebird.qa import *
 from firebird.driver import SrvRestoreFlag
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     set bail on;
     set autoddl on;
 
@@ -264,44 +249,25 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# import os
-#
-#  fbk = os.path.join(context['temp_directory'],'core_4470-backup.fbk')
-#  fbn = os.path.join(context['temp_directory'],'core_4470-restored.fdb')
-#  print('Creating backup...')
-#  runProgram('gbak',['-b','-user',user_name,'-password',user_password,dsn,fbk])
-#  print('Creating restore...')
-#  runProgram('gbak',['-rep','-user',user_name,'-password',user_password,fbk,fbn])
-#  script = '''show view; show package;'''
-#  runProgram('isql',[fbn,'-q','-user',user_name,'-password',user_password],script)
-#  if os.path.isfile(fbk):
-#      os.remove(fbk)
-#  if os.path.isfile(fbn):
-#      os.remove(fbn)
-#
-#---
+act = python_act('db')
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     METEO
     WF
 """
 
-fbk_file_1 = temp_file('test.fbk')
+fbk_file = temp_file('test.fbk')
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, fbk_file_1: Path):
-    with act_1.connect_server() as srv:
-        srv.database.backup(database=act_1.db.db_path, backup=fbk_file_1)
+def test_1(act: Action, fbk_file: Path):
+    with act.connect_server() as srv:
+        srv.database.backup(database=act.db.db_path, backup=fbk_file)
         srv.wait()
-        srv.database.restore(backup=fbk_file_1, database=act_1.db.db_path,
+        srv.database.restore(backup=fbk_file, database=act.db.db_path,
                              flags=SrvRestoreFlag.REPLACE)
         srv.wait()
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-q'], input='show view; show package;')
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-q'], input='show view; show package;')
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4453
-# title:        Regression: NOT NULL constraint, declared in domain, does not work
-# decription:   
-# tracker_id:   CORE-4453
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4773
+ISSUE:       4773
+TITLE:       Regression: NOT NULL constraint, declared in domain, does not work
+DESCRIPTION:
+JIRA:        CORE-4453
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     -- Tests that manipulates with NULL fields/domains and check results:
     -- CORE-1518 Adding a non-null restricted column to a populated table renders the table inconsistent
     -- CORE-4453 (Regression: NOT NULL constraint, declared in domain, does not work)
@@ -28,23 +23,23 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     insert into t_01(x) values(100);
     select * from t_01 where s is null;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 23000
     validation error for column "T_01"."S", value "*** null ***"
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

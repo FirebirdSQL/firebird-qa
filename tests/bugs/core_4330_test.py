@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4330
-# title:        not correct result function LAG, if OFFSET value are assigned from a table
-# decription:   
-# tracker_id:   CORE-4330
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4653
+ISSUE:       4653
+TITLE:       not correct result function LAG, if OFFSET value are assigned from a table
+DESCRIPTION:
+JIRA:        CORE-4330
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     with t(a, b) as
     (
@@ -41,9 +34,9 @@ test_script_1 = """
     from t ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     A                               1
     B                               <null>
     LA                              <null>
@@ -66,8 +59,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

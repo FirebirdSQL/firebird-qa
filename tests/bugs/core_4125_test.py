@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4125
-# title:        Using COLLATE UNICODE_CI_AI in WHERE clause (not indexed) is extremely slow
-# decription:   
-# tracker_id:   CORE-4125
-# min_versions: ['2.5.3']
-# versions:     2.5.3
-# qmid:         None
+
+"""
+ID:          issue-4453
+ISSUE:       4453
+TITLE:       Using COLLATE UNICODE_CI_AI in WHERE clause (not indexed) is extremely slow
+DESCRIPTION:
+JIRA:        CORE-4125
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.3
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create or alter view test as
     with recursive
     r as (select 0 i from rdb$database union all select r.i+1 from r where r.i<98)
@@ -25,9 +20,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-test_script_1 = """
+test_script = """
     -- Checked on 2.5.1: ratio = ~105, on 2.5.2: ~132, since 2.5.3: ~1.
     set list on;
     set term ^;
@@ -47,21 +42,21 @@ test_script_1 = """
       r = 1.000 * n / nullif(datediff(millisecond from t0 to t1), 0);
       if (r is null and n < 100 or r <= 5) then result = 'TIME RATIO IS OK.';
       else result = 'BAD RATIO: '||coalesce(r,' > 100 vs 0.');
-    
+
       suspend;
     end
     ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RESULT                          TIME RATIO IS OK.
 """
 
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

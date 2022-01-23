@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4081
-# title:        Regression: Built-in functions and subselect no longer supported in "update or insert" value list
-# decription:   
-# tracker_id:   CORE-4081
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4409
+ISSUE:       4409
+TITLE:       Regression: Built-in functions and subselect no longer supported in "update or insert" value list
+DESCRIPTION:
+JIRA:        CORE-4081
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create table test (uid varchar(64));
     commit;
 
@@ -32,10 +25,11 @@ test_script_1 = """
     matching (uid);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

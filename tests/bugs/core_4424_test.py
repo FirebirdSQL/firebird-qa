@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4424
-# title:        Rollback to wrong savepoint if several exception handlers on the same level are executed
-# decription:   
-#                  Checked on WI-T4.0.0.331.
-#                
-# tracker_id:   CORE-4424
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-4745
+ISSUE:       4745
+TITLE:       Rollback to wrong savepoint if several exception handlers on the same level are executed
+DESCRIPTION:
+JIRA:        CORE-4424
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test (f_value int);
     recreate table err_log(f_value int, code_point varchar(100));
     commit;
@@ -72,35 +63,35 @@ test_script_1 = """
                 begin
                     s = 'Fall in point_A: "WHEN GDS ARITH"';
                     rdb$set_context('USER_SESSION', s, 'gds='||gdscode );
-                    insert into err_log (f_value, code_point) 
-                    select f_value, :s || ', gdscode='||gdscode 
+                    insert into err_log (f_value, code_point)
+                    select f_value, :s || ', gdscode='||gdscode
                     from test;
                 end
             when sqlcode -802 do
                 begin
                     s = 'Fall in point_B: "WHEN SQLCODE ' ||sqlcode  || '"';
                     rdb$set_context('USER_SESSION', s, 'gds='||gdscode );
-                    insert into err_log (f_value, code_point) 
-                    select f_value, :s || ', gdscode='||gdscode 
+                    insert into err_log (f_value, code_point)
+                    select f_value, :s || ', gdscode='||gdscode
                     from test;
                 end
             when any do
                 begin
                     s = 'Fall in point_C: "WHEN ANY", 1st (inner)';
                     rdb$set_context('USER_SESSION', s, 'gds='||gdscode );
-                    insert into err_log (f_value, code_point) 
-                    select f_value, :s || ', gdscode='||gdscode 
+                    insert into err_log (f_value, code_point)
+                    select f_value, :s || ', gdscode='||gdscode
                     from test;
                 end
             when any do
                 begin
-                    
+
                     rdb$set_context('USER_SESSION','Fall in point_D: "WHEN ANY", 2nd (inner)', 'gds='||gdscode );
-                   
+
                     a = 1/0; -- ###  :::  !!!  NB !!!  :::   ###  EXCEPTION WILL BE HERE!
-                    
+
                     -- NB:
-                    -- Previous statement should raise anothernew exception 
+                    -- Previous statement should raise anothernew exception
                     -- which will force engine to UNDO test.f_value from 4 to 3.
                     -- FB 3.0 will NOT do this (checked on WI-V3.0.1.32575), FB 4.0 works fine.
                 end
@@ -109,8 +100,8 @@ test_script_1 = """
             begin
                 s = 'Fall in point_E: "WHEN ANY", final (outer)';
                 rdb$set_context('USER_SESSION', s, 'gds='||gdscode  );
-                insert into err_log (f_value, code_point) 
-                select f_value, :s || ', gds='||gdscode 
+                insert into err_log (f_value, code_point)
+                select f_value, :s || ', gds='||gdscode
                 from test;
             end
         end
@@ -128,14 +119,14 @@ test_script_1 = """
 
     select f_value, code_point from err_log;
 
-    select mon$variable_name as ctx_name, mon$variable_value as ctx_val 
-    from mon$context_variables c 
+    select mon$variable_name as ctx_name, mon$variable_value as ctx_val
+    from mon$context_variables c
     where c.mon$attachment_id = current_connection;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     F_VALUE                         3
 
 
@@ -159,8 +150,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
