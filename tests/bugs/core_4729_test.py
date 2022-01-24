@@ -1,26 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_4729
-# title:        Add a flag to mon$database helping to decide what type of security database is used - default, self or other
-# decription:
-# tracker_id:   CORE-4729
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5035
+ISSUE:       5035
+TITLE:       Add a flag to mon$database helping to decide what type of security database is used - default, self or other
+DESCRIPTION:
+JIRA:        CORE-4729
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+tmp_user = user_factory('db', name='ozzy', password='osb')
 
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set list on;
 
@@ -34,20 +29,18 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     USER                            SYSDBA
     MON$SEC_DATABASE                Default
     USER                            OZZY
     MON$SEC_DATABASE                Default
 """
 
-user_1 = user_factory('db_1', name='ozzy', password='osb')
-
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, tmp_user: User):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

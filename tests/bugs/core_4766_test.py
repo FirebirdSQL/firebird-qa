@@ -1,123 +1,30 @@
 #coding:utf-8
-#
-# id:           bugs.core_4766
-# title:        AV when trying to manage users list using EXECUTE STATEMENT on behalf of non-sysdba user which has RDB$ADMIN role
-# decription:
-#                   05.01.2020. Refactored in order to make its code more flexible because 3.0 and 4.0 have significant differences in stdout/stderr.
-#                   Common SQL code was stored in fbt-repo
-#               iles\\core_4766.sql with embedding variable names there from here:
-#                       %(current_auth_plugin)s, %(dsn)s et al.
-#
-#                   Content of this file is stored in variable 'sql_text' and this variable is changed using common Python rule for substitutions:
-#                       sql_text % dict(globals(), **locals()
-#
-#                   Then we save this variable to temporarily .sql script and run it.
-#                   This action is done for two possible values of auth plugin (see var. current_auth_plugin): Srp and Legacy_UserManager.
-#
-#                   As result, we have to compare only expected* data for different FB major versions.
-#
-#                   ::: NB :::
-#                   Only Legacy_UserManager is checked for FB 4.0. Srp has totally different behaviour, at  least for 4.0.0.1714.
-#                   Sent letter to dimitr and alex, 05.01.2020 22:00.
-#
-#                   Crash is reproduced on WI-T3.0.0.31374 Firebird 3.0 Beta 1 (build 24-nov-2014).
-#
-#                   Checked on:
-#                       4.0.0.1743 SS: 1.452s.
-#                       4.0.0.1740 SC: 1.870s.
-#                       4.0.0.1714 CS: 10.240s.
-#                       3.0.6.33236 SS: 1.220s.
-#                       3.0.5.33221 SC: 5.416s.
-#                       3.0.5.33084 CS: 2.891s.
-#
-#               [pcisar] 24.11.2021
-#               On FB v4.0.0.2496 this test fails as provided script file raises error in
-#               execute block->execute statement->create/drop user:
-#                 Statement failed, SQLSTATE = 28000
-#                 Your user name and password are not defined. Ask your database administrator to set up a Firebird login.
-#                 -At block line: 3, col: 9
-#               Variant for FB 3 not yet implemented.
-#
-# tracker_id:   CORE-4766
-# min_versions: ['3.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-5066
+ISSUE:       5066
+TITLE:       AV when trying to manage users list using EXECUTE STATEMENT on behalf of non-sysdba user which has RDB$ADMIN role
+DESCRIPTION:
+NOTES:
+[24.11.2021] pcisar
+  On FB v4.0.0.2496 this test fails as provided script file 'core_4766.sql' raises error in
+  execute block->execute statement->create/drop user:
+    Statement failed, SQLSTATE = 28000
+    Your user name and password are not defined. Ask your database administrator to set up a Firebird login.
+    -At block line: 3, col: 9
+  Variant for FB 3 works fine.
+JIRA:        CORE-4766
+"""
 
 import pytest
 from firebird.qa import db_factory, python_act, Action
 
+db = db_factory()
+
+act = python_act('db', substitutions=[('TCPv.*', 'TCP'), ('.*After line \\d+.*', ''),
+                                      ('find/delete', 'delete'), ('TABLE PLG\\$.*', 'TABLE PLG')])
+
 # version: 3.0
-# resources: None
-
-substitutions_1 = [('TCPv.*', 'TCP'), ('.*After line \\d+.*', ''),
-                   ('find/delete', 'delete'), ('TABLE PLG\\$.*', 'TABLE PLG')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  this_db = db_conn.database_name
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#  #--------------------------------------------
-#
-#  f_sql=open(os.path.join(context['files_location'],'core_4766.sql'),'r')
-#  sql_text = f_sql.read()
-#  f_sql.close()
-#
-#  for current_auth_plugin in ('Srp', 'Legacy_UserManager'):
-#      f_sql_chk = open( os.path.join(context['temp_directory'],'tmp_core_4766.' + current_auth_plugin[:3] + '.sql'), 'w')
-#      f_sql_chk.write( sql_text % dict(globals(), **locals()) )
-#      flush_and_close( f_sql_chk )
-#
-#      f_sql_log = open( '.'.join( (os.path.splitext( f_sql_chk.name )[0], 'log') ), 'w')
-#      subprocess.call( [ context['isql_path'], '-q', '-i', f_sql_chk.name ], stdout = f_sql_log, stderr = subprocess.STDOUT)
-#      flush_and_close( f_sql_log )
-#
-#      with open( f_sql_log.name,'r') as f:
-#          for line in f:
-#              if line.strip():
-#                  print( current_auth_plugin[:3] + ': ' + line )
-#
-#      cleanup( (f_sql_log.name, f_sql_chk.name) )
-#
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
 
 expected_stdout_1 = """
     Srp: BOSS_SEC_NAME                   TMP_4766_BOSS
@@ -153,97 +60,25 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0,<4')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
-
+#@pytest.mark.xfail
+def test_1(act: Action, capsys):
+    #pytest.fail("Test not IMPLEMENTED")
+    sql_text = (act.files_dir / 'core_4766.sql').read_text()
+    subs = {'dsn': act.db.dsn, 'user_name': act.db.user, 'user_password': act.db.password,
+            'current_auth_plugin': None,}
+    for current_auth_plugin in ['Srp', 'Legacy_UserManager']:
+        subs['current_auth_plugin'] = current_auth_plugin
+        act.isql(switches=['-q'], input=sql_text % subs, combine_output=True)
+        for line in act.stdout.splitlines():
+            if line.strip():
+                print(current_auth_plugin[:3] + ': ' + line)
+    #
+    act.reset()
+    act.expected_stdout = expected_stdout_1
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('TCPv.*', 'TCP'), ('.*After line \\d+.*', ''),
-                   ('find/delete', 'delete'), ('TABLE PLG\\$.*', 'TABLE PLG')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-# test_script_2
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  this_db = db_conn.database_name
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#
-#  #--------------------------------------------
-#
-#  f_sql=open(os.path.join(context['files_location'],'core_4766.sql'),'r')
-#  sql_text = f_sql.read()
-#  f_sql.close()
-#
-#  # ::: NB :::
-#  # Only Legacy_UserManager is checked for FB 4.0. Srp has totally different behaviour, at  least for 4.0.0.1714.
-#  # Sent letter to dimitr and alex, 05.01.2020 22:00.
-#
-#  for current_auth_plugin in ('Legacy_UserManager',):
-#      f_sql_chk = open( os.path.join(context['temp_directory'],'tmp_core_4766.' + current_auth_plugin[:3] + '.sql'), 'w')
-#      f_sql_chk.write( sql_text % dict(globals(), **locals()) )
-#      flush_and_close( f_sql_chk )
-#
-#      f_sql_log = open( '.'.join( (os.path.splitext( f_sql_chk.name )[0], 'log') ), 'w')
-#      subprocess.call( [ context['isql_path'], '-q', '-i', f_sql_chk.name ], stdout = f_sql_log, stderr = subprocess.STDOUT)
-#      flush_and_close( f_sql_log )
-#
-#      with open( f_sql_log.name,'r') as f:
-#          for line in f:
-#              if line.strip():
-#                  print( current_auth_plugin[:3] + ': ' + line )
-#
-#      cleanup( (f_sql_log.name, f_sql_chk.name) )
-#
-#  '''
-#   'substitutions':[
-#      ('TCPv.*', 'TCP'),
-#      ('.*After line \\d+.*', ''),
-#      ('find/delete', 'delete'),
-#      ('TABLE PLG\\$.*', 'TABLE PLG')
-#    ]
-#  '''
-#
-#
-#---
-
-act_2 = python_act('db_2', substitutions=substitutions_2)
 
 expected_stdout_2 = """
     Leg: BOSS_SEC_NAME                   TMP_4766_BOSS
@@ -266,21 +101,22 @@ expected_stdout_2 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action, capsys):
-    sql_text = (act_2.files_dir / 'core_4766.sql').read_text()
+def test_2(act: Action, capsys):
+    sql_text = (act.files_dir / 'core_4766.sql').read_text()
     # ::: NB :::
-    # Only Legacy_UserManager is checked for FB 4.0. Srp has totally different behaviour, at  least for 4.0.0.1714.
+    # Only Legacy_UserManager is checked for FB 4.0. Srp has totally different behaviour,
+    # at  least for 4.0.0.1714.
     # Sent letter to dimitr and alex, 05.01.2020 22:00.
-    subs = {'dsn': act_2.db.dsn, 'user_name': act_2.db.user, 'user_password': act_2.db.password,
+    subs = {'dsn': act.db.dsn, 'user_name': act.db.user, 'user_password': act.db.password,
             'current_auth_plugin': None,}
     for current_auth_plugin in ['Legacy_UserManager']:
         subs['current_auth_plugin'] = current_auth_plugin
-        act_2.isql(switches=['-q'], input=sql_text % subs, combine_output=True)
-        for line in act_2.stdout.splitlines():
+        act.isql(switches=['-q'], input=sql_text % subs, combine_output=True)
+        for line in act.stdout.splitlines():
             if line.strip():
                 print(current_auth_plugin[:3] + ': ' + line)
     #
-    act_2.reset()
-    act_2.expected_stdout = expected_stdout_2
-    act_2.stdout = capsys.readouterr().out
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+    act.reset()
+    act.expected_stdout = expected_stdout_2
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout

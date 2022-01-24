@@ -1,28 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_4690
-# title:         DISTINCT vs non-DISTINCT affects the result of IN subquery
-# decription:   
-# tracker_id:   CORE-4690
-# min_versions: ['2.5.4']
-# versions:     2.5.4
-# qmid:         None
+
+"""
+ID:          issue-4998
+ISSUE:       4998
+TITLE:       DISTINCT vs non-DISTINCT affects the result of IN subquery
+DESCRIPTION:
+JIRA:        CORE-4690
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.4
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table comi_ingr (id int);
     recreate table comidas(id int);
     recreate table ingredientes(id int);
     recreate table paises(id int);
     commit;
-    
+
     set term ^;
     execute block as
     begin
@@ -41,7 +36,7 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     create domain dcad30 as varchar(30) default '';
     create domain dcodingrediente as  integer;
     create domain dreal as decimal(7, 2) default 0;
@@ -54,7 +49,7 @@ init_script_1 = """
     create domain dcodcoming as integer;
     create domain dcodreceta as   integer;
     commit;
-    
+
     recreate table ingredientes (
       cod_ingrediente dcodingrediente not null,
       nombre dcad30 not null,
@@ -62,14 +57,14 @@ init_script_1 = """
       imp_unidad dreal not null,
       constraint pk_ingredientes primary key (cod_ingrediente)
     );
-    
+
     recreate table paises (
       cod_pais dcodpais not null,
       nombre dcad30 not null,
       n_habitantes dentero not null,
       constraint pk_paises primary key (cod_pais)
     );
-    
+
     recreate table comidas (
       cod_comida dcodcomida not null,
       cod_pais dcodpais not null,
@@ -80,8 +75,8 @@ init_script_1 = """
       constraint pk_comidas primary key (cod_comida),
       constraint fk_comidas1 foreign key (cod_pais) references paises(cod_pais) on update cascade
     );
-    
-    
+
+
     recreate table comi_ingr (
       cod_comi_ingr dcodcoming not null,
       cod_ingrediente dcodingrediente not null,
@@ -92,30 +87,30 @@ init_script_1 = """
       constraint fk_comi_ingr2 foreign key (cod_comida) references comidas(cod_comida) on update cascade
     );
     commit;
-    
+
     insert into ingredientes values (1, 'tomate', 'v', 1);
     insert into ingredientes values (2, 'sal', 'm', 0.5);
     insert into ingredientes values (3, 'magro', 'a', 5);
     insert into ingredientes values (4, 'pimiento verde', 'v', 0.8);
     insert into ingredientes values (5, 'lomo', 'a', 6.5);
     commit;
-    
-    
+
+
     insert into paises values (1, 'espana', 48000000);
     insert into paises values (2, 'marruecos', 33000000);
     insert into paises values (3, 'eeuu', 300000000);
     insert into paises values (4, 'francia', 66000000);
     commit;
-    
-    
+
+
     insert into comidas values (4, 1, 'migas', '2014-12-13', 3, null);
     insert into comidas values (5, 3, 'chuletones a la brasa', '2015-02-01', 10, '2015-02-11');
     insert into comidas values (1, 1, 'estofado de cerdo', '2006-09-24', 7, '2014-11-06');
     insert into comidas values (2, 1, 'pisto', '2014-09-12', 4, '2014-12-09');
     insert into comidas values (3, 2, 'cuscus', '2014-09-12', 4.5, '2014-12-02');
     commit;
-    
-    
+
+
     insert into comi_ingr values (8, 3, 5, 0.01);
     insert into comi_ingr values (7, 2, 5, 1);
     insert into comi_ingr values (1, 1, 1, 0.25);
@@ -127,9 +122,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select a.cod_ingrediente as ca, b.cod_ingrediente as cb
     from (
@@ -182,16 +177,16 @@ test_script_1 = """
     set list off;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CA                              1
     CB                              1
 """
 
-@pytest.mark.version('>=2.5.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

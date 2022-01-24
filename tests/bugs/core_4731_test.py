@@ -1,264 +1,63 @@
 #coding:utf-8
-#
-# id:           bugs.core_4731
-# title:        Prohibit an ability to issue DML or DDL statements on RDB$ tables
-# decription:
-#                  Integral test for verifying ability to change system tables by non-privileged user and by those
-#                  who have been granted with RDB$ADMIN role.
-#                  Main idea: read system tables (hereafter - 'ST') metadata and generate all possible DML and DDL
-#                  statements that are intended to:
-#                  a) restrict ST by creating new table with foreign key to selected ST (if it has PK or UK);
-#                  b) change data by issuing INSERT /  UPDATE / DELETE statements; also try SELECT ... WITH LOCK;
-#                  c) change metadata: add column, alter column (drop NULL constraint, add new contraint, add DEFAULT value),
-#                                      drop column;
-#                  d) aux. actions: attempt to drop ST.
-#                     *** 11-apr-2018: EXCLUDED attempt to create  index on ST: now it is allowed, see CORE-5746 ***
-#                  e) make indirect changes: apply ALTER SEQUENCE statement for system generators
-#
-#                  Test contains following statements and procedures:
-#                  1) creating two users, one of them is granted with role RDB$ADMIN.
-#                     Both these users are granted to create/alter/drop any kinds of database objects.
-#                  2) creating several user objects (domain, exception, collation, sequence, master/detail tables, trigger,
-#                     view, stanalone procedure and standalone function and package). These objects are created in order
-#                     to add some data in system tables that can be later actually affected by vulnerable expressions;
-#                  3) proc sp_gen_expr_for_creating_fkeys:
-#                     reads definition of every system table and if it has PK/UK than generate expressions for item "a":
-#                     they will create completely new table with set of fields which id appropriate to build FOREIGN KEY
-#                     to selected ST. Generated expressions are added to special table `vulnerable_on_sys_tables`;
-#                  4) proc sp_gen_expr_for_direct_change:
-#                     reads definition of every system table and generates DML and DDL expressions for items "b" ... "e" described
-#                     in the previous section. These expressions are also added to table `vulnerable_on_sys_tables`;
-#                  5) proc sp_run_vulnerable_expressions:
-#                     reads expressions from table `vulnerable_on_sys_tables` and tries to run each of them via ES/EDS with user
-#                     and role that are passed as input arguments. If expression raises exception than this SP will log its gdscode
-#                     in WHEN ANY block and expression then is suppressed.
-#                     If expression PASSES successfully than this SP *also* will log this event.
-#                  6) two calls of sp_run_vulnerable_expressions: one for non-privileged user and second for user with role RDB$ADMIN.
-#                  7) select values of raised gdscodes (distinct) in order to check that only ONE gdscode occured (335544926).
-#                  8) select expressions that were PASSED without exceptions.
-#
-#                  Checked on:
-#                       3.0.4.32947: OK, SS: 22s, CS: 37s
-#                       4.0.0.955: OK,   SS: 35s, CS: 33s
-#
-#                  REFACTORED 18.02.2020: most of initial code was moved into $files_location/core_4731.sql; changed test_type to 'Python'.
-#                  Checked 18.02.2020 afte refactoring:
-#                       4.0.0.1773 SS: 11.759s.
-#                       4.0.0.1773 SC: 15.374s.
-#                       4.0.0.1773 CS: 13.561s.
-#                       3.0.6.33247 SS: 8.431s.
-#                       3.0.6.33247 SC: 11.419s.
-#                       3.0.6.33247 CS: 10.846s.
-#
-# tracker_id:   CORE-4731
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5037
+ISSUE:       5037
+TITLE:       Prohibit an ability to issue DML or DDL statements on RDB$ tables
+DESCRIPTION:
+  Integral test for verifying ability to change system tables by non-privileged user and by those
+  who have been granted with RDB$ADMIN role.
+  Main idea: read system tables (hereafter - 'ST') metadata and generate all possible DML and DDL
+  statements that are intended to:
+  a) restrict ST by creating new table with foreign key to selected ST (if it has PK or UK);
+  b) change data by issuing INSERT /  UPDATE / DELETE statements; also try SELECT ... WITH LOCK;
+  c) change metadata: add column, alter column (drop NULL constraint, add new contraint, add DEFAULT value),
+                      drop column;
+  d) aux. actions: attempt to drop ST.
+     *** 11-apr-2018: EXCLUDED attempt to create  index on ST: now it is allowed, see CORE-5746 ***
+  e) make indirect changes: apply ALTER SEQUENCE statement for system generators
+
+  Test contains following statements and procedures:
+  1) creating two users, one of them is granted with role RDB$ADMIN.
+     Both these users are granted to create/alter/drop any kinds of database objects.
+  2) creating several user objects (domain, exception, collation, sequence, master/detail tables, trigger,
+     view, stanalone procedure and standalone function and package). These objects are created in order
+     to add some data in system tables that can be later actually affected by vulnerable expressions;
+  3) proc sp_gen_expr_for_creating_fkeys:
+     reads definition of every system table and if it has PK/UK than generate expressions for item "a":
+     they will create completely new table with set of fields which id appropriate to build FOREIGN KEY
+     to selected ST. Generated expressions are added to special table `vulnerable_on_sys_tables`;
+  4) proc sp_gen_expr_for_direct_change:
+     reads definition of every system table and generates DML and DDL expressions for items "b" ... "e" described
+     in the previous section. These expressions are also added to table `vulnerable_on_sys_tables`;
+  5) proc sp_run_vulnerable_expressions:
+     reads expressions from table `vulnerable_on_sys_tables` and tries to run each of them via ES/EDS with user
+     and role that are passed as input arguments. If expression raises exception than this SP will log its gdscode
+     in WHEN ANY block and expression then is suppressed.
+     If expression PASSES successfully than this SP *also* will log this event.
+  6) two calls of sp_run_vulnerable_expressions: one for non-privileged user and second for user with role RDB$ADMIN.
+  7) select values of raised gdscodes (distinct) in order to check that only ONE gdscode occured (335544926).
+  8) select expressions that were PASSED without exceptions.
+NOTES:
+[18.02.2020]
+  REFACTORED: most of initial code was moved into $files_location/core_4731.sql; changed test_type to 'Python'.
+JIRA:        CORE-4731
+"""
 
 import pytest
 import time
 from pathlib import Path
-from firebird.qa import db_factory, python_act, Action, user_factory, User
+from firebird.qa import *
 from firebird.driver import ShutdownMode, ShutdownMethod
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+dba_privileged_user = user_factory('db', name='tmp_c4731_cooldba', password='123')
+non_privileged_user = user_factory('db', name='tmp_c4731_manager', password='123')
 
-init_script_1 = """"""
+act = python_act('db')
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#  import time
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  this_db = db_conn.database_name
-#  db_conn.close()
-#
-#  dba_privileged_name = 'tmp_c4731_cooldba'
-#  non_privileged_name = 'tmp_c4731_manager'
-#
-#  #-----------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      os.fsync(file_handle.fileno())
-#
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#              if os.path.isfile( f_names_list[i]):
-#                  print('ERROR: can not remove file ' + f_names_list[i])
-#
-#  #--------------------------------------------
-#
-#
-#  f_sql=open(os.path.join(context['files_location'],'core_4731.sql'),'r')
-#  sql_for_prepare = f_sql.read()
-#  f_sql.close()
-#
-#  f_pre_sql = open( os.path.join(context['temp_directory'],'tmp_core_4731_pre.sql'), 'w')
-#  f_pre_sql.write( sql_for_prepare % dict(globals(), **locals()) )
-#  flush_and_close( f_pre_sql )
-#
-#  f_pre_log = open( '.'.join( (os.path.splitext( f_pre_sql.name )[0], 'log') ), 'w')
-#  f_pre_err = open( '.'.join( (os.path.splitext( f_pre_sql.name )[0], 'err') ), 'w')
-#  subprocess.call( [ context['isql_path'], dsn, '-q', '-i', f_pre_sql.name ], stdout = f_pre_log, stderr = f_pre_err)
-#  flush_and_close( f_pre_log )
-#  flush_and_close( f_pre_err )
-#
-#  runProgram( context['gfix_path'],[dsn, '-shut','full','-force','0'] )
-#  runProgram( context['gfix_path'],[dsn, '-online'] )
-#
-#  sql_run='''
-#  	-- ###################################################################################
-#          --                 R U N    A S   N O N - P R I V I L E G E D    U S E R
-#  	-- ###################################################################################
-#  	execute procedure sp_run_vulnerable_expressions('%(non_privileged_name)s', '123', 'NONE');
-#
-#  	-- Note: as of build 3.0.31810, we can SKIP restoring of 'pure-state' of RDB$ tables
-#          -- after this SP because non-privileged user can NOT change enything.
-#          -- All his attempts should FAIL, system tables should be in unchanged state.
-#
-#  	set list off;
-#  	set heading off;
-#
-#  	select '-- Executed with role: '||trim(( select actual_role from vulnerable_on_sys_tables rows 1 ))
-#  		   ||'. Expressions that passes WITHOUT errors:' as msg
-#  	from rdb$database
-#  	;
-#
-#  	commit; -- 11-04-2018, do not remove!
-#  	set transaction no wait;
-#
-#  	set list on;
-#  	select count(*) as "-- count_of_passed: "
-#  	from v_passed;
-#
-#  	set list on;
-#  	select * from v_passed;
-#
-#  	set list on;
-#  	select distinct vulnerable_gdscode as "-- gdscode list for blocked:"
-#  	from vulnerable_on_sys_tables
-#  	where vulnerable_gdscode is distinct from -1;
-#
-#  	-- #########################################################################################
-#          -- R U N    A S   U S E R    W H O    I S    G R A N T E D     W I T H     R B D $ A D M I N
-#  	-- #########################################################################################
-#  	execute procedure sp_run_vulnerable_expressions('%(dba_privileged_name)s', '123', 'RDB$ADMIN');
-#
-#  	set list off;
-#  	set heading off;
-#
-#  	select '-- Executed with role: '||trim(( select actual_role from vulnerable_on_sys_tables rows 1 ))
-#  		   ||'. Expressions that passes WITHOUT errors:' as msg
-#  	from rdb$database
-#  	;
-#  	commit; -- 11-04-2018, do not remove!
-#
-#  	set list on;
-#  	select count(*) as "-- count_of_passed: "
-#  	from v_passed;
-#
-#  	set list on;
-#  	select * from v_passed;
-#
-#  	set list on;
-#  	select distinct vulnerable_gdscode as "-- gdscode list for blocked:"
-#  	from vulnerable_on_sys_tables
-#  	where vulnerable_gdscode is distinct from -1;
-#
-#  	----------------
-#  	commit;
-#
-#      connect '%(dsn)s' user '%(user_name)s' password '%(user_password)s';
-#
-#      --                                    ||||||||||||||||||||||||||||
-#      -- ###################################|||  FB 4.0+, SS and SC  |||##############################
-#      --                                    ||||||||||||||||||||||||||||
-#      -- If we check SS or SC and ExtConnPoolLifeTime > 0 (config parameter FB 4.0+) then current
-#      -- DB (bugs.core_NNNN.fdb) will be 'captured' by firebird.exe process and fbt_run utility
-#      -- will not able to drop this database at the final point of test.
-#      -- Moreover, DB file will be hold until all activity in firebird.exe completed and AFTER this
-#      -- we have to wait for <ExtConnPoolLifeTime> seconds after it (discussion and small test see
-#      -- in the letter to hvlad and dimitr 13.10.2019 11:10).
-#      -- This means that one need to kill all connections to prevent from exception on cleanup phase:
-#      -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
-#      -- #############################################################################################
-#      delete from mon$attachments where mon$attachment_id != current_connection;
-#      commit;
-#
-#  	drop user %(dba_privileged_name)s;
-#  	drop user %(non_privileged_name)s;
-#  	commit;
-#  ''' % dict(globals(), **locals())
-#
-#  f_sql_run = open( os.path.join(context['temp_directory'],'tmp_core_4731_run.sql'), 'w')
-#  f_sql_run.write( sql_run % dict(globals(), **locals()) )
-#  flush_and_close( f_sql_run )
-#
-#  f_run_log = open( '.'.join( (os.path.splitext( f_sql_run.name )[0], 'log') ), 'w')
-#  f_run_err = open( '.'.join( (os.path.splitext( f_sql_run.name )[0], 'err') ), 'w')
-#  subprocess.call( [ context['isql_path'], dsn, '-q', '-i', f_sql_run.name ], stdout = f_run_log, stderr = f_run_err)
-#  flush_and_close( f_run_log )
-#  flush_and_close( f_run_err )
-#
-#  # Check results:
-#  # ==============
-#
-#  # 1. Print UNEXPECTED output:
-#  #############################
-#  for f in (f_pre_log, f_pre_err):
-#      with open( f.name,'r') as f:
-#          for line in f:
-#              if line.strip():
-#                  print( 'UNEXPECTED '+('STDOUT' if f == f_pre_log else 'STDERR')+' WHEN PREPARE DB: ' + line )
-#
-#  with open( f_run_err.name,'r') as f:
-#      for line in f:
-#          if line.strip():
-#              print( 'UNEXPECTED STDERR WHEN RUN: ' + line )
-#
-#  # 2. Print EXPECTED output:
-#  ###########################
-#  with open( f_run_log.name,'r') as f:
-#      for line in f:
-#          if line.strip():
-#              print( line )
-#
-#  # Cleanup
-#  #########
-#  cleanup( [ i.name for i in (f_pre_sql,f_pre_log,f_pre_err,f_sql_run,f_run_log,f_run_err) ] )
-#
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     -- Executed with role: NONE. Expressions that passes WITHOUT errors:
     -- count_of_passed:             0
     -- gdscode list for blocked:    335544926
@@ -291,86 +90,83 @@ expected_stdout_1 = """
     -- gdscode list for blocked:    335544926
 """
 
-dba_privileged_user = user_factory('db_1', name='tmp_c4731_cooldba', password='123')
-non_privileged_user = user_factory('db_1', name='tmp_c4731_manager', password='123')
-
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, dba_privileged_user: User, non_privileged_user: User, capsys):
+def test_1(act: Action, dba_privileged_user: User, non_privileged_user: User, capsys):
     # Run prepare script
-    prep_script = (act_1.files_dir / 'core_4731.sql').read_text()
+    prep_script = (act.files_dir / 'core_4731.sql').read_text()
     prep_script = prep_script % {'dba_privileged_name': dba_privileged_user.name,
                                  'non_privileged_name': non_privileged_user.name}
-    act_1.isql(switches=['-q'], input=prep_script)
+    act.isql(switches=['-q'], input=prep_script)
     #
-    with act_1.connect_server() as srv:
-        srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
+    with act.connect_server() as srv:
+        srv.database.shutdown(database=act.db.db_path, mode=ShutdownMode.FULL,
                               method=ShutdownMethod.FORCED, timeout=0)
         time.sleep(2)
-        srv.database.bring_online(database=act_1.db.db_path)
+        srv.database.bring_online(database=act.db.db_path)
     #
     test_script = f"""
-        -- ###################################################################################
-        --                 R U N    A S   N O N - P R I V I L E G E D    U S E R
-        -- ###################################################################################
-        execute procedure sp_run_vulnerable_expressions('{non_privileged_user.name}', '123', 'NONE');
+    -- ###################################################################################
+    --                 R U N    A S   N O N - P R I V I L E G E D    U S E R
+    -- ###################################################################################
+    execute procedure sp_run_vulnerable_expressions('{non_privileged_user.name}', '123', 'NONE');
 
-        -- Note: as of build 3.0.31810, we can SKIP restoring of 'pure-state' of RDB$ tables
-        -- after this SP because non-privileged user can NOT change enything.
-        -- All his attempts should FAIL, system tables should be in unchanged state.
+    -- Note: as of build 3.0.31810, we can SKIP restoring of 'pure-state' of RDB$ tables
+    -- after this SP because non-privileged user can NOT change enything.
+    -- All his attempts should FAIL, system tables should be in unchanged state.
 
-        set list off;
-        set heading off;
+    set list off;
+    set heading off;
 
-        select '-- Executed with role: '||trim(( select actual_role from vulnerable_on_sys_tables rows 1 ))
-                   ||'. Expressions that passes WITHOUT errors:' as msg
-        from rdb$database
-        ;
+    select '-- Executed with role: '||trim(( select actual_role from vulnerable_on_sys_tables rows 1 ))
+               ||'. Expressions that passes WITHOUT errors:' as msg
+    from rdb$database
+    ;
 
-        commit; -- 11-04-2018, do not remove!
-        set transaction no wait;
+    commit; -- 11-04-2018, do not remove!
+    set transaction no wait;
 
-        set list on;
-        select count(*) as "-- count_of_passed: "
-        from v_passed;
+    set list on;
+    select count(*) as "-- count_of_passed: "
+    from v_passed;
 
-        set list on;
-        select * from v_passed;
+    set list on;
+    select * from v_passed;
 
-        set list on;
-        select distinct vulnerable_gdscode as "-- gdscode list for blocked:"
-        from vulnerable_on_sys_tables
-        where vulnerable_gdscode is distinct from -1;
+    set list on;
+    select distinct vulnerable_gdscode as "-- gdscode list for blocked:"
+    from vulnerable_on_sys_tables
+    where vulnerable_gdscode is distinct from -1;
 
-        -- #########################################################################################
-        -- R U N    A S   U S E R    W H O    I S    G R A N T E D     W I T H     R B D $ A D M I N
-        -- #########################################################################################
-        execute procedure sp_run_vulnerable_expressions('{dba_privileged_user.name}', '123', 'RDB$ADMIN');
+    -- #########################################################################################
+    -- R U N    A S   U S E R    W H O    I S    G R A N T E D     W I T H     R B D $ A D M I N
+    -- #########################################################################################
+    execute procedure sp_run_vulnerable_expressions('{dba_privileged_user.name}', '123', 'RDB$ADMIN');
 
-        set list off;
-        set heading off;
+    set list off;
+    set heading off;
 
-        select '-- Executed with role: '||trim(( select actual_role from vulnerable_on_sys_tables rows 1 ))
-                   ||'. Expressions that passes WITHOUT errors:' as msg
-        from rdb$database
-        ;
-        commit; -- 11-04-2018, do not remove!
+    select '-- Executed with role: '||trim(( select actual_role from vulnerable_on_sys_tables rows 1 ))
+               ||'. Expressions that passes WITHOUT errors:' as msg
+    from rdb$database
+    ;
+    commit; -- 11-04-2018, do not remove!
 
-        set list on;
-        select count(*) as "-- count_of_passed: "
-        from v_passed;
+    set list on;
+    select count(*) as "-- count_of_passed: "
+    from v_passed;
 
-        set list on;
-        select * from v_passed;
+    set list on;
+    select * from v_passed;
 
-        set list on;
-        select distinct vulnerable_gdscode as "-- gdscode list for blocked:"
-        from vulnerable_on_sys_tables
-        where vulnerable_gdscode is distinct from -1;
+    set list on;
+    select distinct vulnerable_gdscode as "-- gdscode list for blocked:"
+    from vulnerable_on_sys_tables
+    where vulnerable_gdscode is distinct from -1;
 
-        ----------------
-        commit;
+    ----------------
+    commit;
 
-    connect '{act_1.db.dsn}' user '{act_1.db.user}' password '{act_1.db.password}';
+    connect '{act.db.dsn}' user '{act.db.user}' password '{act.db.password}';
 
     --                                    ||||||||||||||||||||||||||||
     -- ###################################|||  FB 4.0+, SS and SC  |||##############################
@@ -386,8 +182,8 @@ def test_1(act_1: Action, dba_privileged_user: User, non_privileged_user: User, 
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
-"""
-    act_1.reset()
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-q'], input=test_script)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    """
+    act.reset()
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-q'], input=test_script)
+    assert act.clean_stdout == act.clean_expected_stdout

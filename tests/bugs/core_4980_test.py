@@ -1,30 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_4980
-# title:        Operator REVOKE can modify rights granted to system tables at DB creation time
-# decription:
-#                    We create here NON-privileged user and revoke any right from him. Also create trivial table TEST.
-#                    Then try to connect with as user and query non-system table TEST and system tables.
-#                    Query to table TEST should be denied, but queries to RDB-tables should run OK and display their data.
-#
-# tracker_id:   CORE-4980
-# min_versions: ['3.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-5271
+ISSUE:       5271
+TITLE:       Operator REVOKE can modify rights granted to system tables at DB creation time
+DESCRIPTION:
+  We create here NON-privileged user and revoke any right from him. Also create trivial table TEST.
+  Then try to connect with as user and query non-system table TEST and system tables.
+  Query to table TEST should be denied, but queries to RDB-tables should run OK and display their data.
+JIRA:        CORE-4980
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+tmp_user = user_factory('db', name='tmp_c4980', password='123')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
 
     recreate table test(id int);
@@ -44,67 +38,32 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AM_I                        TMP_C4980
     WHO_AM_I                        TMP_C4980
     RDB$CHARACTER_SET_NAME          NONE
     WHO_AM_I                        TMP_C4980
     RDB$RELATION_NAME               RDB$PAGES
 """
+
+# version: 3.0
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     no permission for SELECT access to TABLE TEST
 """
 
-user_1 = user_factory('db_1', name='tmp_c4980', password='123')
-
 @pytest.mark.version('>=3.0,<4.0')
-def test_1(act_1: Action, user_1: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, tmp_user: User):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr_1
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-test_script_2 = """
-    set wng off;
-
-    recreate table test(id int);
-    commit;
-    insert into test values(1);
-    commit;
-
-    connect '$(DSN)' user tmp_c4980 password '123';
-
-    set list on;
-    select current_user as who_am_i from rdb$database;
-    select current_user as who_am_i, r.rdb$character_set_name from rdb$database r;
-    select current_user as who_am_i, r.rdb$relation_name from rdb$relations r order by rdb$relation_id rows 1;
-    select current_user as who_am_i, t.id from test t; -- this should ALWAYS fail because this is non-system table.
-    commit;
-"""
-
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
-
-expected_stdout_2 = """
-    WHO_AM_I                        TMP_C4980
-    WHO_AM_I                        TMP_C4980
-    RDB$CHARACTER_SET_NAME          NONE
-    WHO_AM_I                        TMP_C4980
-    RDB$RELATION_NAME               RDB$PAGES
-"""
 
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 28000
@@ -112,13 +71,11 @@ expected_stderr_2 = """
     -Effective user is TMP_C4980
 """
 
-user_2 = user_factory('db_2', name='tmp_c4980', password='123')
-
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action, user_2: User):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.expected_stderr = expected_stderr_2
-    act_2.execute()
-    assert act_2.clean_stderr == act_2.clean_expected_stderr
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+def test_2(act: Action, tmp_user: User):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr_2
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

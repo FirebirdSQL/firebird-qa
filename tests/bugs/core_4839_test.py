@@ -1,26 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_4839
-# title:        SHOW GRANTS does not display info about exceptions which were granted to user
-# decription:
-# tracker_id:   CORE-4839
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5135
+ISSUE:       5135
+TITLE:       SHOW GRANTS does not display info about exceptions which were granted to user
+DESCRIPTION:
+JIRA:        CORE-4839
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+test_user = user_factory('db', name='tmp$c4839', password='123')
 
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate exception exc_foo 'Houston we have a problem: next sequence value is @1';
     recreate sequence gen_bar start with 9223372036854775807 increment by 2147483647;
     commit;
@@ -32,19 +27,17 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     /* Grant permissions for this database */
     GRANT USAGE ON SEQUENCE GEN_BAR TO USER TMP$C4839
     GRANT USAGE ON EXCEPTION EXC_FOO TO USER TMP$C4839
 """
 
-test_user = user_factory('db_1', name='tmp$c4839', password='123')
-
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, test_user: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, test_user: User):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

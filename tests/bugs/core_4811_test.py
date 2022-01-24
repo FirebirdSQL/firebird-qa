@@ -1,28 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_4811
-# title:        Make user names behave according to SQL identifiers rules
-# decription:
-# tracker_id:   CORE-4811
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5109
+ISSUE:       5109
+TITLE:       Make user names behave according to SQL identifiers rules
+DESCRIPTION:
+JIRA:        CORE-4811
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+substitutions = [('set echo.*', ''), ('Use CONNECT or CREATE DATABASE.*', ''),
+                 ('Your user name and password.*', ''), ('line: [0-9]+, col: [0-9]+', ''),
+                 ('exception [0-9]+', 'exception')]
 
-substitutions_1 = [('set echo.*', ''), ('Use CONNECT or CREATE DATABASE.*', ''),
-                   ('Your user name and password.*', ''), ('line: [0-9]+, col: [0-9]+', ''),
-                   ('exception [0-9]+', 'exception')]
+db = db_factory()
 
-init_script_1 = """"""
+tmp_user = user_factory('db', name='tmp$c4811', password='1')
+tmp_role = role_factory('db', name='Boss')
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set list on;
     create or alter procedure sp_check_actual_role as begin end;
@@ -132,9 +130,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     grant Boss to Tmp$c4811;
     grant usage on exception ex_have_no_role to Tmp$c4811;
     grant execute on procedure sp_check_actual_role to Tmp$c4811;
@@ -170,7 +168,7 @@ expected_stdout_1 = """
     RESULT                          BOSS
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     Statement failed, SQLSTATE = HY000
     exception 3
@@ -179,14 +177,11 @@ expected_stderr_1 = """
     -At procedure 'SP_CHECK_ACTUAL_ROLE'
 """
 
-user_1 = user_factory('db_1', name='tmp$c4811', password='1')
-role_1 = role_factory('db_1', name='Boss')
-
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1: User, role_1: Role):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, tmp_user: User, tmp_role: Role):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

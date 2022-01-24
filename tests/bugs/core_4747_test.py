@@ -1,40 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_4747
-# title:         Error "invalid BLOB ID" can occur when retrieving MON$STATEMENTS.MON$SQL_TEXT using ES/EDS and db_connect argument is not specified
-# decription:   
-#                   21.05.2017:
-#                       FB25Cs, build 2.5.8.27062: OK, 0.703ss.
-#                       FB25SC, build 2.5.8.27062: OK, 0.406ss.
-#                       fb25sS, build 2.5.8.27062: OK, 0.468ss.
-#                       fb30Cs, build 3.0.3.32725: OK, 2.516ss.
-#                       fb30SC, build 3.0.3.32725: OK, 1.438ss.
-#                       FB30SS, build 3.0.3.32725: OK, 1.016ss.
-#                       FB40CS, build 4.0.0.645: OK, 2.172ss.
-#                       FB40SC, build 4.0.0.645: OK, 1.250ss.
-#                       FB40SS, build 4.0.0.645: OK, 1.172ss.
-#                
-# tracker_id:   CORE-4747
-# min_versions: ['2.5.6']
-# versions:     2.5.6
-# qmid:         None
+
+"""
+ID:          issue-5052
+ISSUE:       5052
+TITLE:       Error "invalid BLOB ID" can occur when retrieving MON$STATEMENTS.MON$SQL_TEXT using ES/EDS and db_connect argument is not specified
+DESCRIPTION:
+JIRA:        CORE-4747
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('RUNNING_STT_ID[ ]+[0-9]+', 'RUNNING_STT_ID'), ('RUNNING_TRN_ID[ ]+[0-9]+', 'RUNNING_TRN_ID'), ('RUNNING_STT_TEXT.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set blob all;
-    
+
     recreate table test(sid int, tid int, txt blob);
     commit;
 
@@ -44,7 +26,7 @@ test_script_1 = """
 
     insert into test(sid, tid, txt) select s.mon$statement_id, s.mon$transaction_id, s.mon$sql_text from mon$statements s where s.mon$sql_text containing 'test' rows 1;
     commit;
-    
+
     set term ^;
     execute block returns( msg varchar(10), running_stt_id int, running_trn_id int, running_stt_text blob) as
         declare v_dbname varchar(255);
@@ -55,14 +37,14 @@ test_script_1 = """
         declare v_trn int;
     begin
         -- NOTE: v_dbname is NOT initialized with database connection string.
-    
+
         msg = 'point-1';
         execute statement (v_stt1)
         on external (v_dbname)
         as user :v_usr password :v_pwd
         into running_stt_id, running_trn_id, running_stt_text;
         suspend;
-    
+
         msg = 'point-2';
         execute statement (v_stt2)
         on external (v_dbname)
@@ -90,15 +72,18 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+               substitutions=[('RUNNING_STT_ID[ ]+[0-9]+', 'RUNNING_STT_ID'),
+                              ('RUNNING_TRN_ID[ ]+[0-9]+', 'RUNNING_TRN_ID'),
+                              ('RUNNING_STT_TEXT.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             point-1
     RUNNING_STT_ID                  111
     RUNNING_TRN_ID                  219
     RUNNING_STT_TEXT                91:0
     insert into test(sid, tid, txt) select s.mon$statement_id, s.mon$transaction_id, s.mon$sql_text from mon$statements s where s.mon$sql_text containing 'test' rows 1
-    
+
     MSG                             point-2
     RUNNING_STT_ID                  140
     RUNNING_TRN_ID                  224
@@ -106,9 +91,9 @@ expected_stdout_1 = """
     select s.mon$statement_id, s.mon$transaction_id, s.mon$sql_text from mon$statements s where s.mon$sql_text containing 'test' and s.mon$transaction_id = current_transaction rows 1
 """
 
-@pytest.mark.version('>=2.5.6')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

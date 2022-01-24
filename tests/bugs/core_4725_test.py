@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4725
-# title:        Inconsistencies with ALTER DOMAIN and ALTER TABLE with DROP NOT NULL and PRIMARY KEYs
-# decription:   
-# tracker_id:   CORE-4725
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5032
+ISSUE:       5032
+TITLE:       Inconsistencies with ALTER DOMAIN and ALTER TABLE with DROP NOT NULL and PRIMARY KEYs
+DESCRIPTION:
+JIRA:        CORE-4725
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Tests that manipulates with NULL fields/domains and check results:
     -- CORE-1518 Adding a non-null restricted column to a populated table renders the table inconsistent
     -- CORE-4453 (Regression: NOT NULL constraint, declared in domain, does not work)
@@ -50,7 +43,7 @@ test_script_1 = """
         begin execute statement 'drop domain dm_06'; when any do begin end end
     end
     ^
-    set term ;^ 
+    set term ;^
     commit;
 
     create domain dm_01 integer;
@@ -62,7 +55,7 @@ test_script_1 = """
     commit;
 
     ------------------------------------------------------------------------------------------------------------
-        
+
     recreate table test00(x integer);
     alter table test00 alter x set not null, add constraint t_pk primary key(x);
     commit;
@@ -77,7 +70,7 @@ test_script_1 = """
     show table test00;
 
     ------------------------------------------------------------------------------------------------------------
-    
+
     recreate table test01(x dm_01 not null);
     alter table test01 add constraint test01_pk primary key (x);
     commit;
@@ -90,10 +83,10 @@ test_script_1 = """
     from rdb$database;
 
     show table test01;
-   
+
 
     ------------------------------------------------------------------------------------------------------------
-    
+
     recreate table test02(x dm_02);
     alter table test02 add constraint test02_pk primary key (x);
     commit;
@@ -106,12 +99,12 @@ test_script_1 = """
 
     select 'After try to drop NN on FIELD, NN was inherited from DOMAIN' info_02
     from rdb$database;
-   
+
     show table test02;
-    
+
 
     ------------------------------------------------------------------------------------------------------------
-    
+
     recreate table test03(x dm_03);
     alter table test03 add constraint test03_pk primary key (x);
     commit;
@@ -126,14 +119,14 @@ test_script_1 = """
 
     show domain dm_03;
     show table test03;
-    
+
     ------------------------------------------------------------------------------------------------------------
-    
+
     recreate table test04(x dm_04 not null);
     alter table test04 add constraint test04_pk primary key (x);
     commit;
 
-    -- ::: !!! :::                                                                                         
+    -- ::: !!! :::
     -- This statement will NOT produce any error or warning but field will remain NOT null.
     -- Confirmed by ASF in core-4725 22.04.2015
     alter table test04 alter x drop not null; -- ASF: "incorrect error !!!" // though it seems strange to me... :-/
@@ -143,9 +136,9 @@ test_script_1 = """
     from rdb$database;
 
     show table test04;
-    
+
     ------------------------------------------------------------------------------------------------------------
-    
+
     recreate table test05(x dm_05);
     commit;
     insert into test05 values(1);
@@ -161,9 +154,9 @@ test_script_1 = """
     from rdb$database;
     show domain dm_05;
 
-    
+
     ------------------------------------------------------------------------------------------------------------
-    
+
     recreate table test06(x dm_06);
     commit;
     insert into test06 values(1);
@@ -183,42 +176,43 @@ test_script_1 = """
     update test06 set x = null where x = 2;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     INFO_00                         After try to drop NN on FIELD, NN was added by ALTER <C> SET NOT NULL
     X                               INTEGER Not Null
     CONSTRAINT T_PK:
       Primary key (X)
-    
+
     INFO_01                         After try to drop NN on FIELD, NN was added directly in CREATE TABLE (<C> not null)
     X                               (DM_01) INTEGER Not Null
     CONSTRAINT TEST01_PK:
       Primary key (X)
-    
+
     INFO_02                         After try to drop NN on FIELD, NN was inherited from DOMAIN
     X                               (DM_02) INTEGER Not Null
     CONSTRAINT TEST02_PK:
       Primary key (X)
-    
+
     INFO_03                         After try to drop NN on DOMAIN but dependent table exists
     DM_03                           INTEGER Not Null
-    X                               (DM_03) INTEGER Not Null 
+    X                               (DM_03) INTEGER Not Null
     CONSTRAINT TEST03_PK:
       Primary key (X)
-    
+
     INFO_04                         After try to drop NN on FIELD based on not-null domain, but NN was also specified in the field DDL
     X                               (DM_04) INTEGER Not Null
     CONSTRAINT TEST04_PK:
       Primary key (X)
-    
+
     INFO_05                         After try to set NN on DOMAIN when at least one table exists with NULL in its data
     DM_05                           INTEGER Nullable
-    
+
     INFO_06                         After try to set NN on DOMAIN when NO table exists with NULL in its data
     DM_06                           INTEGER Not Null
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 27000
     unsuccessful metadata update
     -ALTER TABLE TEST00 failed
@@ -245,10 +239,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

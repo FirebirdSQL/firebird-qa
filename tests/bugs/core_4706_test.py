@@ -1,44 +1,37 @@
 #coding:utf-8
-#
-# id:           bugs.core_4706
-# title:        ISQL pads blob columns wrongly when the column alias has more than 17 characters
-# decription:   
-# tracker_id:   CORE-4706
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    set blob all;
-    select cast('a' as blob) a, 1, cast('a' as blob) x2345678901234567890, 2 from rdb$database; 
+"""
+ID:          issue-5014
+ISSUE:       5014
+TITLE:       ISQL pads blob columns wrongly when the column alias has more than 17 characters
+DESCRIPTION:
+JIRA:        CORE-4706
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+import pytest
+from firebird.qa import *
 
-expected_stdout_1 = """
-                A     CONSTANT X2345678901234567890     CONSTANT 
-              0:2            1                  0:1            2 
-A:  
+db = db_factory()
+
+test_script = """
+    set blob all;
+    select cast('a' as blob) a, 1, cast('a' as blob) x2345678901234567890, 2 from rdb$database;
+"""
+
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
+
+expected_stdout = """
+                A     CONSTANT X2345678901234567890     CONSTANT
+              0:2            1                  0:1            2
+A:
 a
-X2345678901234567890:  
+X2345678901234567890:
 a
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

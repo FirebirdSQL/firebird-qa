@@ -1,165 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_4933
-# title:        Add better transaction control to isql
-# decription:
-#                   Test creates two .sql script and run them using ISQL utility.
-#                   In the 1st script we create view for check current transaction parameters.
-#                   View output following values for transaction:
-#                       TIL, lock resolution (wait/no_wait/lock_timeout), read_only/read_write and [no]auto_undo
-#
-#                   Then we TURN ON keeping of Tx parameters (SET KEEP_TRAN ON) and do some manipulations in this
-#                   ('main') script, including invocation of auxiliary ('addi') script using IN <...> command.
-#
-#                   Second script creates another database and the same view in it, then does some actions there
-#                   and also check output of this view.
-#                   After this (second) script finish, we return to 1st one and resume there final actions.
-#
-#                   IN ALL STEPS WE HAVE TO SEE THE SAME PARAMS - NO MATTER HOW MUCH TIMES
-#                   WE DID COMMIT/ROLLBACK/RECONNECT AND EVEN WORK IN OTHER DB.
-#
-#                   Checked on: 3.0.6.33249; 4.0.0.1777
-#
-# tracker_id:   CORE-4933
-# min_versions: ['3.0.6']
-# versions:     3.0.6
-# qmid:         None
+
+"""
+ID:          issue-5224
+ISSUE:       5224
+TITLE:       Add better transaction control to isql
+DESCRIPTION:
+  Test creates two .sql script and run them using ISQL utility.
+  In the 1st script we create view for check current transaction parameters.
+  View output following values for transaction:
+    TIL, lock resolution (wait/no_wait/lock_timeout), read_only/read_write and [no]auto_undo
+
+  Then we TURN ON keeping of Tx parameters (SET KEEP_TRAN ON) and do some manipulations in this
+  ('main') script, including invocation of auxiliary ('addi') script using IN <...> command.
+
+  Second script creates another database and the same view in it, then does some actions there
+  and also check output of this view.
+  After this (second) script finish, we return to 1st one and resume there final actions.
+
+  IN ALL STEPS WE HAVE TO SEE THE SAME PARAMS - NO MATTER HOW MUCH TIMES
+  WE DID COMMIT/ROLLBACK/RECONNECT AND EVEN WORK IN OTHER DB.
+JIRA:        CORE-4933
+"""
 
 import pytest
 from pathlib import Path
-from firebird.qa import db_factory, python_act, Action, temp_file
+from firebird.qa import *
 
-# version: 3.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-# import sys
-#  import os
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  db_conn.close()
-#
-#  tmp_addi_fdb = os.path.join(context['temp_directory'],'tmp_addi_4933.fdb')
-#
-#  if os.path.isfile(tmp_addi_fdb):
-#       os.remove( tmp_addi_fdb )
-#
-#  #-------------------------------------------
-#
-#  sql_addi_script='''
-#      create database 'localhost:%(tmp_addi_fdb)s' user %(user_name)s password '%(user_password)s';
-#
-#      recreate view v_check as
-#      select
-#           decode(t.mon$isolation_mode, 0,'consistency', 1,'snapshot', 2,'rc rec_vers', 3,'rc no_recv', 4,'rc read_cons', 'UNKNOWN') as tx_til_mon_trans
-#          ,rdb$get_context('SYSTEM', 'ISOLATION_LEVEL') as tx_til_rdb_get_context
-#          ,decode(t.mon$lock_timeout, -1, 'wait', 0, 'no_wait', 'timeout ' || t.mon$lock_timeout) as tx_lock_timeout_mon_trans
-#          ,rdb$get_context('SYSTEM', 'LOCK_TIMEOUT') as tx_lock_timeout_rdb_get_context
-#          ,iif(t.mon$read_only=1,'read_only','read_write') as tx_read_only_mon_trans
-#          ,rdb$get_context('SYSTEM', 'READ_ONLY') as tx_read_only_rdb_get_context
-#          ,t.mon$auto_undo as tx_autoundo_mon_trans
-#          -- only in FB 4.x+: ,t.mon$auto_commit as tx_autocommit_mon_trans
-#      from mon$transactions t
-#      where t.mon$transaction_id = current_transaction;
-#      commit;
-#
-#      select 'addi_script: create_new_db' as msg, v.* from v_check v;
-#      rollback;
-#
-#      connect 'localhost:%(tmp_addi_fdb)s' user %(user_name)s password '%(user_password)s';
-#      select 'addi_script: reconnect' as msg, v.* from v_check v;
-#      rollback;
-#
-#      drop database;
-#  '''
-#
-#  f_addi_sql = open( os.path.join(context['temp_directory'],'tmp_core_4731_addi.sql'), 'w', buffering = 0)
-#  f_addi_sql.write( sql_addi_script % dict(globals(), **locals()) )
-#  f_addi_sql.close()
-#  f_addi_sql_name = f_addi_sql.name
-#  #-------------------------------------------
-#
-#  sql_main_script='''
-#      set list on;
-#      connect '%(dsn)s' user %(user_name)s password '%(user_password)s';
-#      recreate view v_check as
-#      select
-#           decode(t.mon$isolation_mode, 0,'consistency', 1,'snapshot', 2,'rc rec_vers', 3,'rc no_recv', 4,'rc read_cons', 'UNKNOWN') as tx_til_mon_trans
-#          ,rdb$get_context('SYSTEM', 'ISOLATION_LEVEL') as tx_til_rdb_get_context
-#          ,decode(t.mon$lock_timeout, -1, 'wait', 0, 'no_wait', 'timeout ' || t.mon$lock_timeout) as tx_lock_timeout_mon_trans
-#          ,rdb$get_context('SYSTEM', 'LOCK_TIMEOUT') as tx_lock_timeout_rdb_get_context
-#          ,iif(t.mon$read_only=1,'read_only','read_write') as tx_read_only_mon_trans
-#          ,rdb$get_context('SYSTEM', 'READ_ONLY') as tx_read_only_rdb_get_context
-#          ,t.mon$auto_undo as tx_autoundo_mon_trans
-#          -- only 4.x: ,t.mon$auto_commit as tx_autocommit_mon_trans
-#      from mon$transactions t
-#      where t.mon$transaction_id = current_transaction;
-#      commit;
-#
-#      select 'main_script: initial' as msg, v.* from v_check v;
-#      commit;
-#
-#      set keep_tran on;
-#      commit;
-#
-#      set transaction read only read committed record_version lock timeout 5 no auto undo; -- only in 4.x: auto commit;
-#
-#      select 'main_script: started Tx' as msg, v.* from v_check v;
-#
-#      commit; -------------------------------------------------------------------------------------- [ 1 ]
-#
-#      select 'main_script: after_commit' as msg, v.* from v_check v;
-#
-#      rollback; ------------------------------------------------------------------------------------ [ 2 ]
-#
-#      select 'main_script: after_rollback' as msg, v.* from v_check v;
-#
-#      rollback;
-#
-#      connect '%(dsn)s' user %(user_name)s password '%(user_password)s'; --------------------------- [ 3 ]
-#
-#      select 'main_script: after_reconnect' as msg, v.* from v_check v;
-#      rollback;
-#
-#      --###################
-#      in %(f_addi_sql_name)s;
-#      --###################
-#
-#      connect '%(dsn)s' user %(user_name)s password '%(user_password)s'; --------------------------- [ 5 ]
-#
-#      select 'main_script: resume' as msg, v.* from v_check v;
-#      rollback;
-#
-#      set keep_tran off;
-#      commit;
-#
-#      select 'keep_tran: turned_off' as msg, v.* from v_check v;
-#      commit;
-#  '''
-#
-#  f_main_sql = open( os.path.join(context['temp_directory'],'tmp_core_4731_main.sql'), 'w', buffering = 0)
-#  f_main_sql.write( sql_main_script % dict(globals(), **locals()) )
-#  f_main_sql.close()
-#
-#  runProgram( 'isql',['-q', '-i', f_main_sql.name] )
-#
-#  os.remove( f_main_sql.name )
-#  os.remove( f_addi_sql.name )
-#
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             main_script: initial
     TX_TIL_MON_TRANS                snapshot
     TX_TIL_RDB_GET_CONTEXT          SNAPSHOT
@@ -251,14 +122,14 @@ expected_stdout_1 = """
 """
 
 
-addi_script_1 = temp_file('addi_script.sql')
-main_script_1 = temp_file('main_script.sql')
-tmp_db_1 = temp_file('tmp_addi_4933.fdb')
+addi_script = temp_file('addi_script.sql')
+main_script = temp_file('main_script.sql')
+tmp_db = temp_file('tmp_addi_4933.fdb')
 
 @pytest.mark.version('>=3.0.6')
-def test_1(act_1: Action, addi_script_1: Path, main_script_1: Path, tmp_db_1: Path):
-    addi_script_1.write_text(f"""
-        create database 'localhost:{tmp_db_1}' user {act_1.db.user} password '{act_1.db.password}';
+def test_1(act: Action, addi_script: Path, main_script: Path, tmp_db: Path):
+    addi_script.write_text(f"""
+        create database 'localhost:{tmp_db}' user {act.db.user} password '{act.db.password}';
 
         recreate view v_check as
         select
@@ -277,15 +148,15 @@ def test_1(act_1: Action, addi_script_1: Path, main_script_1: Path, tmp_db_1: Pa
         select 'addi_script: create_new_db' as msg, v.* from v_check v;
         rollback;
 
-        connect 'localhost:{tmp_db_1}' user {act_1.db.user} password '{act_1.db.password}';
+        connect 'localhost:{tmp_db}' user {act.db.user} password '{act.db.password}';
         select 'addi_script: reconnect' as msg, v.* from v_check v;
         rollback;
 
         drop database;
         """)
-    main_script_1.write_text(f"""
+    main_script.write_text(f"""
         set list on;
-        connect '{act_1.db.dsn}' user {act_1.db.user} password '{act_1.db.password}';
+        connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
         recreate view v_check as
         select
              decode(t.mon$isolation_mode, 0,'consistency', 1,'snapshot', 2,'rc rec_vers', 3,'rc no_recv', 4,'rc read_cons', 'UNKNOWN') as tx_til_mon_trans,
@@ -320,16 +191,16 @@ def test_1(act_1: Action, addi_script_1: Path, main_script_1: Path, tmp_db_1: Pa
 
         rollback;
 
-        connect '{act_1.db.dsn}' user {act_1.db.user} password '{act_1.db.password}'; --------------------------- [ 3 ]
+        connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}'; --------------------------- [ 3 ]
 
         select 'main_script: after_reconnect' as msg, v.* from v_check v;
         rollback;
 
         --###################
-        in {addi_script_1};
+        in {addi_script};
         --###################
 
-        connect '{act_1.db.dsn}' user {act_1.db.user} password '{act_1.db.password}'; --------------------------- [ 5 ]
+        connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}'; --------------------------- [ 5 ]
 
         select 'main_script: resume' as msg, v.* from v_check v;
         rollback;
@@ -341,6 +212,6 @@ def test_1(act_1: Action, addi_script_1: Path, main_script_1: Path, tmp_db_1: Pa
         commit;
         """)
     # Check
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-q'], input_file=main_script_1)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-q'], input_file=main_script)
+    assert act.clean_stdout == act.clean_expected_stdout

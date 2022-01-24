@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_4684
-# title:        Error while preparing a complex query ("Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256")
-# decription:   
-# tracker_id:   CORE-4684
-# min_versions: ['2.5']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-4992
+ISSUE:       4992
+TITLE:       Error while preparing a complex query ("Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256")
+DESCRIPTION:
+JIRA:        CORE-4684
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table tdetl(id int primary key, pid int);
     recreate table tmain(id int primary key, x int, constraint tmain_x_gtz check(x>0));
     commit;
@@ -31,9 +26,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set heading off;
     with recursive
     c as (
@@ -59,9 +54,9 @@ test_script_1 = """
             ,parent_tab
         from c c0
         where not exists( select * from c cx where cx.parent_tab= c0.child_tab )
-        
+
         union all
-        
+
         select
             d.i+1
             ,c.child_tab
@@ -86,16 +81,16 @@ test_script_1 = """
             0 i
             ,child_tab
         from e where i=0
-    
+
         UNION DISTINCT
-    
+
         select
             1
             ,child_tab
         from (select child_tab from e where i>0 order by i)
-    
+
         UNION DISTINCT
-    
+
         select
             2
             ,parent_tab
@@ -119,9 +114,9 @@ test_script_1 = """
     from t;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 alter trigger TDETL_BI inactive
 alter trigger TDETL_AI inactive
 alter trigger TMAIN_AI inactive
@@ -132,9 +127,9 @@ alter trigger TDETL_AI active
 alter trigger TMAIN_AI active
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

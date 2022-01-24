@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4719
-# title:        Message "Statement failed, SQLSTATE = 00000 + unknown ISC error 0" appears when issuing REVOKE ALL ON ALL FROM <existing_user>
-# decription:   
-# tracker_id:   CORE-4719
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-5026
+ISSUE:       5026
+TITLE:       Message "Statement failed, SQLSTATE = 00000 + unknown ISC error 0" appears when issuing REVOKE ALL ON ALL FROM <existing_user>
+DESCRIPTION:
+JIRA:        CORE-4719
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('Statement failed, SQLSTATE.*', ''), ('record not found for user:.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     drop user tmp$c4719;
     commit;
     create user tmp$c4719 password '123';
@@ -31,15 +24,16 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('Statement failed, SQLSTATE.*', ''),
+                                                 ('record not found for user:.*', '')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Warning: ALL on ALL is not granted to TMP$C4719.
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

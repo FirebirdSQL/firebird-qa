@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4826
-# title:        Make ISQL display character set when sqlda_display is on
-# decription:
-# tracker_id:   CORE-4826
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5123
+ISSUE:       5123
+TITLE:       Make ISQL display character set when sqlda_display is on
+DESCRIPTION:
+JIRA:        CORE-4826
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!sqltype).)*$', ''), ('[ ]+', ' '), ('[\t]*', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Before WI-T3.0.0.31876 charsets were displeyd for field of ANY type, not only for text.
     recreate table test1(
       id1 smallint,
@@ -48,9 +41,10 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype).)*$', ''),
+                                                 ('[ ]+', ' '), ('[\t]*', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 500 SHORT Nullable scale: 0 subtype: 0 len: 2
     02: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
     03: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
@@ -70,8 +64,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

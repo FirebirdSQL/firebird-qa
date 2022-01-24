@@ -1,66 +1,73 @@
 #coding:utf-8
-#
-# id:           bugs.core_4964
-# title:        Real errors during connect to security database are hidden by Srp user manager. Errors should be logged no matter what AuthServer is used.
-# decription:
-#                   Test obtains full path to $fb_home via FBSVCMGR info_get_env.
-#                   Then it makes copy of file 'databases.conf' that is in $fb_home directory because
-#                   following lines will be added to that 'databases.conf':
-#                   ===
-#                   tmp_alias_4964 = ...
-#                   {
-#                       SecurityDatabase = $(dir_conf)/firebird.msg
-#                   }
-#                   ===
-#                   NB: we intentionally put reference to file that for sure does exist but is INVALID for usage as fdb: 'firebird.msg'
-#
-#                   Then we:
-#                   1) obtain content of server firebird.log
-#                   2) try to make connect to alias 'tmp_alias_4964' and (as expected) get error.
-#                   3) wait a little and obtain again content of server firebird.log
-#
-#                   Finally we restore original databases.conf and check that:
-#                   1) Client error message contains phrase about need to check server firebird.log for details.
-#                   2) Difference of firebird.log contains messages that engine could not attach to password database
-#                      because it is invalid (we specify 'firebird.msg' as security_db in databases.conf for test database,
-#                      and of course this is not valid database)
-#
-#                   Client always get message with gdscode = 335545106 and sqlcode=-902.
-#                   Error text in firebird.log depends on what plugin is used for authentification:
-#                   1) Legacy:
-#                       Authentication error
-#                       cannot attach to password database
-#                       Error in isc_attach_database() API call when working with legacy security database
-#                       file <...> is not a valid database
-#                   2) Srp:
-#                       Authentication error
-#                       file C:\\FB\\SS\\FIREBIRD.MSG is not a valid database
-#
-#                   Checked for:
-#                      FB30SS, build 3.0.4.32972: OK, 3.360s.
-#                      FB40SS, build 4.0.0.977: OK, 3.485s.
-#
-#                   Refactored 05.01.2020 (firebird.conf now contains Srp as first plugin in UserManager parameter):
-#                       4.0.0.1714 SS:  2.922s; 4.0.0.1714 SC:  5.563s; 4.0.0.1714  CS: 9.172s.
-#                       3.0.5.33221 SS: 2.015s; 3.0.5.33221 SC: 3.469s; 3.0.5.33221 CS: 6.173s.
-#
-# tracker_id:   CORE-4964
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5255
+ISSUE:       5255
+TITLE:       Real errors during connect to security database are hidden by Srp user manager. Errors should be logged no matter what AuthServer is used
+DESCRIPTION:
+    Test obtains full path to $fb_home via FBSVCMGR info_get_env.
+    Then it makes copy of file 'databases.conf' that is in $fb_home directory because
+    following lines will be added to that 'databases.conf':
+    ===
+    tmp_alias_4964 = ...
+    {
+        SecurityDatabase = $(dir_conf)/firebird.msg
+    }
+    ===
+    NB: we intentionally put reference to file that for sure does exist but is INVALID for usage as fdb: 'firebird.msg'
+
+    Then we:
+    1) obtain content of server firebird.log
+    2) try to make connect to alias 'tmp_alias_4964' and (as expected) get error.
+    3) wait a little and obtain again content of server firebird.log
+
+    Finally we restore original databases.conf and check that:
+    1) Client error message contains phrase about need to check server firebird.log for details.
+    2) Difference of firebird.log contains messages that engine could not attach to password database
+       because it is invalid (we specify 'firebird.msg' as security_db in databases.conf for test database,
+       and of course this is not valid database)
+
+    Client always get message with gdscode = 335545106 and sqlcode=-902.
+    Error text in firebird.log depends on what plugin is used for authentification:
+    1) Legacy:
+        Authentication error
+        cannot attach to password database
+        Error in isc_attach_database() API call when working with legacy security database
+        file <...> is not a valid database
+    2) Srp:
+        Authentication error
+        file C:\\FB\\SS\\FIREBIRD.MSG is not a valid database
+
+    Checked for:
+       FB30SS, build 3.0.4.32972: OK, 3.360s.
+       FB40SS, build 4.0.0.977: OK, 3.485s.
+
+    Refactored 05.01.2020 (firebird.conf now contains Srp as first plugin in UserManager parameter):
+JIRA:        CORE-4964
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+substitutions = [('FILE.*FIREBIRD.MSG', 'FILE FIREBIRD.MSG'),
+                 ('CLIENT_MSG: 335545106L', 'CLIENT_MSG: 335545106')]
 
-substitutions_1 = [('FILE.*FIREBIRD.MSG', 'FILE FIREBIRD.MSG'),
-                   ('CLIENT_MSG: 335545106L', 'CLIENT_MSG: 335545106')]
+db = db_factory()
 
-init_script_1 = """"""
+act = python_act('db', substitutions=substitutions)
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+expected_stdout = """
+    CLIENT_MSG: 'ERROR WHILE CONNECTING TO DATABASE:\\N- SQLCODE: -902\\N- ERROR OCCURRED DURING LOGIN, PLEASE CHECK SERVER FIREBIRD.LOG FOR DETAILS'
+    CLIENT_MSG: -902
+    CLIENT_MSG: 335545106L
+    FIREBIRD.LOG: + AUTHENTICATION ERROR
+    FIREBIRD.LOG: + FILE FIREBIRD.MSG IS NOT A VALID DATABASE
+"""
+
+@pytest.mark.skip('FIXME: databases.conf')
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    pytest.fail("Test not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -248,17 +255,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    CLIENT_MSG: 'ERROR WHILE CONNECTING TO DATABASE:\\N- SQLCODE: -902\\N- ERROR OCCURRED DURING LOGIN, PLEASE CHECK SERVER FIREBIRD.LOG FOR DETAILS'
-    CLIENT_MSG: -902
-    CLIENT_MSG: 335545106L
-    FIREBIRD.LOG: + AUTHENTICATION ERROR
-    FIREBIRD.LOG: + FILE FIREBIRD.MSG IS NOT A VALID DATABASE
-"""
-
-@pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    pytest.skip("Requires changes to databases.conf")

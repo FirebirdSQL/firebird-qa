@@ -68,7 +68,7 @@ expected_stdout = """
     CU                              FAÿ
 """
 
-@pytest.mark.skip("FIXME")
+@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

@@ -1,42 +1,35 @@
 #coding:utf-8
-#
-# id:           bugs.core_4694
-# title:        "Column unknown" error while preparing a recursive query if the recursive part contains ALIASED datasource in the join with anchor table
-# decription:   Fixed on 3.0 since rev 60747, 2015-02-20 16:56:04
-# tracker_id:   CORE-4694
-# min_versions: ['2.5.4']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5002
+ISSUE:       5002
+TITLE:       "Column unknown" error while preparing a recursive query if the recursive part contains ALIASED datasource in the join with anchor table
+DESCRIPTION:
+JIRA:        CORE-4694
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table xcall_stack (
         xcall_id int
         ,xcaller_id int
     );
     commit;
-    
+
     set planonly;
-    
+
     with recursive
     r as (
         select c.xcall_id
         from xcall_stack c
         where c.xcaller_id is null
-    
+
         UNION ALL
-    
+
         select
                c.xcall_id
         from xcall_stack c
@@ -48,15 +41,15 @@ test_script_1 = """
     from r;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (R C NATURAL, R C NATURAL)
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

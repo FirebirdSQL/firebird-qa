@@ -1,26 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_4985
-# title:        Non-privileged user can implicitly count records in a restricted table
-# decription:
-# tracker_id:   CORE-4985
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5276
+ISSUE:       5276
+TITLE:       Non-privileged user can implicitly count records in a restricted table
+DESCRIPTION:
+JIRA:        CORE-4985
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+tmp_user = user_factory('db', name='TMP$C4985', password='123')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Checked on build  of 24.03.2016 4.0 Unstable.
 
     set wng off;
@@ -42,15 +37,15 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Records affected: 7
     WHO_AM_I                        TMP$C4985
     Records affected: 1
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     no permission for SELECT access to TABLE TEST
     -Effective user is TMP$C4985
@@ -60,13 +55,11 @@ expected_stderr_1 = """
     -Effective user is TMP$C4985
 """
 
-user_1 = user_factory('db_1', name='TMP$C4985', password='123')
-
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action, user_1: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, tmp_user: User):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

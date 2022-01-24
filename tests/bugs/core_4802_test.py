@@ -1,26 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_4802
-# title:        Regression: GRANT UPDATE(<some_column>) on <T> acts like grant update on ALL columns of <T>
-# decription:
-# tracker_id:   CORE-4802
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:
+
+"""
+ID:          issue-5100
+ISSUE:       5100
+TITLE:       Regression: GRANT UPDATE(<some_column>) on <T> acts like grant update on ALL columns of <T>
+DESCRIPTION:
+JIRA:        CORE-4802
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('GRANT.*TMP.*', ''), ('-Effective user is.*', '')]
+user_a = user_factory('db', name='BIG_BROTHER', password='123')
+user_b = user_factory('db', name='SENIOR_MNGR', password='456')
+user_c = user_factory('db', name='JUNIOR_MNGR', password='789')
+role_a = role_factory('db', name='FLD_FOR_SENIORS_UPDATER')
+role_b = role_factory('db', name='FLD_FOR_JUNIORS_UPDATER')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
 
     recreate table test(fld_for_seniors varchar(70), fld_for_juniors varchar(70));
@@ -76,9 +75,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('GRANT.*TMP.*', ''), ('-Effective user is.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     /* Grant permissions for this database */
     GRANT UPDATE (FLD_FOR_SENIORS) ON TEST TO USER BIG_BROTHER
     GRANT UPDATE (FLD_FOR_JUNIORS) ON TEST TO ROLE FLD_FOR_JUNIORS_UPDATER
@@ -109,7 +108,7 @@ expected_stdout_1 = """
     FLD_FOR_JUNIORS                 updated by junior_mngr, role: fld_for_juniors_updater
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     no permission for UPDATE access to COLUMN TEST.FLD_FOR_JUNIORS
 
@@ -120,18 +119,11 @@ expected_stderr_1 = """
     no permission for UPDATE access to COLUMN TEST.FLD_FOR_SENIORS
 """
 
-user_1a = user_factory('db_1', name='BIG_BROTHER', password='123')
-user_1b = user_factory('db_1', name='SENIOR_MNGR', password='456')
-user_1c = user_factory('db_1', name='JUNIOR_MNGR', password='789')
-role_1a = role_factory('db_1', name='FLD_FOR_SENIORS_UPDATER')
-role_1b = role_factory('db_1', name='FLD_FOR_JUNIORS_UPDATER')
-
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1a: User, user_1b: User, user_1c: User, role_1a: Role,
-           role_1b: Role):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, user_a: User, user_b: User, user_c: User, role_a: Role, role_b: Role):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

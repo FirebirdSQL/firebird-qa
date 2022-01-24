@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4733
-# title:        Command "Alter table <T> alter TYPE <C> <DOMAIN_WITH_NOT_NULL" does not verifies data in column <C> and makes incorrect assignments in <C> to ZERO / JULIAN_DATE / ASCII(0) for types INT, TIMESTAMP and VARCHAR
-# decription:   
-# tracker_id:   CORE-4733
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5039
+ISSUE:       5039
+TITLE:       Command "Alter table <T> alter TYPE <C> <DOMAIN_WITH_NOT_NULL" does not verifies data in column <C> and makes incorrect assignments in <C> to ZERO / JULIAN_DATE / ASCII(0) for types INT, TIMESTAMP and VARCHAR
+DESCRIPTION:
+JIRA:        CORE-4733
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Tests that manipulates with NULL fields/domains and check results:
     -- CORE-1518 Adding a non-null restricted column to a populated table renders the table inconsistent
     -- CORE-4453 (Regression: NOT NULL constraint, declared in domain, does not work)
@@ -40,9 +33,9 @@ test_script_1 = """
     insert into test values(null, null, null, null);
     commit;
 
-    alter table test 
+    alter table test
         alter num type dm_nn_int
-        ,alter dts type dm_nn_dts 
+        ,alter dts type dm_nn_dts
         ,alter str type dm_nn_utf
         ,alter boo type dm_nn_boo
     ;
@@ -53,9 +46,9 @@ test_script_1 = """
     delete from test returning num, dts, str, boo;
     commit;
 
-    alter table test 
+    alter table test
         alter num type dm_nn_int
-        ,alter dts type dm_nn_dts 
+        ,alter dts type dm_nn_dts
         ,alter str type dm_nn_utf
         ,alter boo type dm_nn_boo
     ;
@@ -66,13 +59,13 @@ test_script_1 = """
     show table test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-    NUM                             INTEGER Nullable 
-    DTS                             TIMESTAMP Nullable 
-    STR                             VARCHAR(10) CHARACTER SET UTF8 Nullable 
-    BOO                             BOOLEAN Nullable 
+expected_stdout = """
+    NUM                             INTEGER Nullable
+    DTS                             TIMESTAMP Nullable
+    STR                             VARCHAR(10) CHARACTER SET UTF8 Nullable
+    BOO                             BOOLEAN Nullable
 
     NUM                             <null>
     DTS                             <null>
@@ -80,12 +73,13 @@ expected_stdout_1 = """
     BOO                             <null>
 
 
-    NUM                             (DM_NN_INT) INTEGER Not Null 
-    DTS                             (DM_NN_DTS) TIMESTAMP Not Null 
-    STR                             (DM_NN_UTF) VARCHAR(10) CHARACTER SET UTF8 Not Null 
-    BOO                             (DM_NN_BOO) BOOLEAN Not Null 
+    NUM                             (DM_NN_INT) INTEGER Not Null
+    DTS                             (DM_NN_DTS) TIMESTAMP Not Null
+    STR                             (DM_NN_UTF) VARCHAR(10) CHARACTER SET UTF8 Not Null
+    BOO                             (DM_NN_BOO) BOOLEAN Not Null
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22006
     unsuccessful metadata update
     -Cannot make field NUM of table TEST NOT NULL because there are NULLs present
@@ -97,10 +91,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

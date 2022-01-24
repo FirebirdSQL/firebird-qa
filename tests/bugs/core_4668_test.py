@@ -1,33 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_4668
-# title:        Select from mon$table_stats doesn`t work on SC and CS
-# decription:   
-# tracker_id:   CORE-4668
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-4979
+ISSUE:       4979
+TITLE:       Select from mon$table_stats doesn`t work on SC and CS
+DESCRIPTION:
+JIRA:        CORE-4668
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter view v_stat as select 1 id from rdb$database;
     recreate table t(id int, s varchar(36)); commit;
     insert into t select row_number()over(), uuid_to_char(gen_uuid()) from rdb$types,rdb$types rows 2000;
     commit;
     create index t_s on t(s);
     commit;
-    
+
     create or alter view v_stat as
     select
          r.mon$record_inserts     rec_ins
@@ -52,27 +45,27 @@ test_script_1 = """
         and t.mon$table_name = upper('t')
     ;
     commit;
-    
+
     set list on;
-    
+
     set count on;
     select read_nat, read_idx, rec_ins, rec_upd, rec_del from v_stat; -- , rec_pur, rec_exp from v_stat;
     set count off;
-    
+
     --delete from t rows 1000; commit; -- purge/expunge: can`t get exact values in SS because of background GC thread!
-    
+
     select count(*) from t
     union all
     select count(*) from t where s>=''
     ;
-    
+
     insert into t select row_number()over(), uuid_to_char(gen_uuid()) from rdb$types,rdb$types rows 500;
     update t set s = null rows 100;
     update t set s = null order by s rows 100;
     delete from t rows 200;
     delete from t order by s rows 200;
     commit;
-    
+
     set count on;
     select read_nat, read_idx, rec_ins, rec_upd, rec_del from v_stat; -- , rec_pur, rec_exp from v_stat;
 
@@ -83,9 +76,9 @@ test_script_1 = """
     -- Records affected: 0
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     READ_NAT                        0
     READ_IDX                        0
     REC_INS                         2000
@@ -105,8 +98,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

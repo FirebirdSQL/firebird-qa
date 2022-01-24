@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4622
-# title:        Regression: Trigger with UPDATE OR INSERT statement and IIF() not working as expected
-# decription:   
-# tracker_id:   CORE-4622
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         
+
+"""
+ID:          issue-4937
+ISSUE:       4937
+TITLE:       Regression: Trigger with UPDATE OR INSERT statement and IIF() not working as expected
+DESCRIPTION:
+JIRA:        CORE-4622
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     execute block as
     begin
@@ -30,7 +23,7 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     create or alter view v_test as select 1 id from rdb$database;
     commit;
     -------------------------------------------------------------
@@ -43,11 +36,11 @@ test_script_1 = """
     commit;
     insert into test values(1, 100, 200);
     commit;
-    
+
     create or alter view v_test as
     select id, a, b from test;
     commit;
-    
+
     set term ^;
     create or alter trigger v_test_bu for v_test
     active before update position 0
@@ -66,10 +59,11 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

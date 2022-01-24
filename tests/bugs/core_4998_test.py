@@ -1,53 +1,44 @@
 #coding:utf-8
-#
-# id:           bugs.core_4998
-# title:        Both client and server could not close connection after failed authentification
-# decription:
-#                   Reproduced on 3.0.0.32136 RC1 with firebird.conf:
-#                       AuthServer = Legacy_Auth,Srp
-#                       AuthClient = Srp,Legacy_Auth
-#                   ::: NB-1 :::
-#                   In order to get this environment for client test temp-ly CHANGES firebird.conf
-#                   Test will restore original firebird.conf in the end.
-#
-#                   ::: NB-2 :::
-#                   We have to prepare auxiliary Python script to be executed in SEPARATE (NEW!) execution context,
-#                   otherwise firebird.log is filled with messages "errno = 10054" only after this test completely finished.
-#                   See variable 'f_python_separate_exec_context' - it points to this temp .py file.
-#                   This aux Python script is called like this:
-#                       os.system( f_python_separate_exec_context )
-#
-#                   It contains three attempts to make connection with invalid passwords.
-#                   Exceptions ('Your user/password not defined...') are suppressed, we need only make these attempts to check
-#                   that no new records withh be added to firebird.log (as it is confirmed to be in 3.0.0.32136 RC1).
-#
-#                   File firebird.log is compared BEFORE and AFTER os.system( f_python_separate_exec_context ).
-#                   No new messages related to 10054 error should occur during this test in firebird.log.
-#
-#                   3.0.0.32366 RC2 - works OK.
-#
-#                   Also checked on:
-#                       30Cs, build 3.0.4.32972: OK, 6.172s.
-#                       30SS, build 3.0.4.32972: OK, 4.375s.
-#                       40CS, build 4.0.0.955: OK, 7.281s.
-#                       40SS, build 4.0.0.977: OK, 4.704s.
-#
-# tracker_id:   CORE-4998
-# min_versions: ['3.0.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5286
+ISSUE:       5286
+TITLE:       Both client and server could not close connection after failed authentification
+DESCRIPTION:
+    Reproduced on 3.0.0.32136 RC1 with firebird.conf:
+        AuthServer = Legacy_Auth,Srp
+        AuthClient = Srp,Legacy_Auth
+    ::: NB-1 :::
+    In order to get this environment for client test temp-ly CHANGES firebird.conf
+    Test will restore original firebird.conf in the end.
+
+    ::: NB-2 :::
+    We have to prepare auxiliary Python script to be executed in SEPARATE (NEW!) execution context,
+    otherwise firebird.log is filled with messages "errno = 10054" only after this test completely finished.
+    See variable 'f_python_separate_exec_context' - it points to this temp .py file.
+    This aux Python script is called like this:
+        os.system( f_python_separate_exec_context )
+
+    It contains three attempts to make connection with invalid passwords.
+    Exceptions ('Your user/password not defined...') are suppressed, we need only make these attempts to check
+    that no new records withh be added to firebird.log (as it is confirmed to be in 3.0.0.32136 RC1).
+
+    File firebird.log is compared BEFORE and AFTER os.system( f_python_separate_exec_context ).
+    No new messages related to 10054 error should occur during this test in firebird.log.
+JIRA:        CORE-4998
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: firebird.conf')
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    pytest.fail("Test not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -228,12 +219,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-
-@pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    pytest.skip("Requires changes to firebird.conf")
-
-

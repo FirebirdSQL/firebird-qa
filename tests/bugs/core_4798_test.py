@@ -1,29 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_4798
-# title:        Regression: MIN/MAX with a join ignores possible index navigation
-# decription:   
-# tracker_id:   CORE-4798
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5096
+ISSUE:       5096
+TITLE:       Regression: MIN/MAX with a join ignores possible index navigation
+DESCRIPTION:
+JIRA:        CORE-4798
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='mon-stat-gathering-3_0.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='mon-stat-gathering-3_0.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(x int);
     commit;
-    
+
     insert into test select rand()*100 from (select 1 i from rdb$types rows 50) a, (select 1 i from rdb$types rows 50) b;
     commit;
     create index test_x on test(x);
@@ -39,11 +32,11 @@ test_script_1 = """
     end
     ^
     set term ;^
-    
+
     alter sequence g_gather_stat restart with 0;
     execute procedure sp_truncate_stat;
     commit;
-    
+
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
 
@@ -81,16 +74,16 @@ test_script_1 = """
     );
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     NATURAL_READS                   acceptable, <= 0
     INDEXED_READS                   acceptable, <= 20
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

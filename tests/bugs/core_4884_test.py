@@ -1,26 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_4884
-# title:        Crash on pasring of script containing `execute block` with lot of nested begin..end statements
-# decription:   Batch file that generates .sql with arbitrary level of begin..end statements can be seen in the traker.
-# tracker_id:   CORE-4884
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          issue-5178
+ISSUE:       5178
+TITLE:       Crash on pasring of script containing `execute block` with lot of nested begin..end statements
+DESCRIPTION:
+NOTES:
+  Batch file that generates .sql with arbitrary level of begin..end statements can be seen in the traker.
+JIRA:        CORE-4884
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('exception [0-9]+', 'exception'), ('time=.*', ''), ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate exception ex_test 'Hi from Mariana Trench, depth=@1, time=@2';
     recreate sequence g;
     commit;
@@ -1568,9 +1563,11 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+               substitutions=[('exception [0-9]+', 'exception'), ('time=.*', ''),
+                              ('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     exception 4
     -EX_TEST
@@ -1579,8 +1576,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

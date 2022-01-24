@@ -1,52 +1,44 @@
 #coding:utf-8
-#
-# id:           bugs.core_4806
-# title:        Regression: generators can be seen/modified by unprivileged users
-# decription:
-#                   We create sequence ('g') and three users and one role.
-#                   First user ('big_brother') is granted to use generator directly.
-#                   Second user ('bill_junior') is gratned to use generator via ROLE ('stockmgr').
-#                   Third user ('maverick') has no grants to use neither on role nor on generator.
-#                   Then we try to change value of generator by call gen_id(g,1) by create apropriate
-#                   connections (for each of these users).
-#                   First and second users must have ability both to change generator and to see its
-#                   values using command 'SHOW SEQUENCE'.
-#                   Also, we do additional check for second user: try to connect WITHOUT specifying role
-#                   and see/change sequence. Error must be in this case (SQLSTATE = 28000).
-#                   Third user must NOT see neither value of generator nor to change it (SQLSTATE = 28000).
-#
-#                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
-#                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-#                   statement 'CREATE SEQUENCE <G>' will create generator with current value LESS FOR 1 then it was before.
-#                   Thus, 'create sequence g;' followed by 'show sequence;' will output "current value: -1" (!!) rather than 0.
-#                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-#                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-#                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#
-#                   Because of this, it was decided to filter out concrete values that are produced in 'SHOW SEQUENCE' command.
-#
-#                   Checked on:
-#                       4.0.0.2164
-#                       3.0.7.33356
-#
-# tracker_id:   CORE-4806
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5104
+ISSUE:       5104
+TITLE:       Regression: generators can be seen/modified by unprivileged users
+DESCRIPTION:
+  We create sequence ('g') and three users and one role.
+  First user ('big_brother') is granted to use generator directly.
+  Second user ('bill_junior') is gratned to use generator via ROLE ('stockmgr').
+  Third user ('maverick') has no grants to use neither on role nor on generator.
+  Then we try to change value of generator by call gen_id(g,1) by create apropriate
+  connections (for each of these users).
+  First and second users must have ability both to change generator and to see its
+  values using command 'SHOW SEQUENCE'.
+  Also, we do additional check for second user: try to connect WITHOUT specifying role
+  and see/change sequence. Error must be in this case (SQLSTATE = 28000).
+  Third user must NOT see neither value of generator nor to change it (SQLSTATE = 28000).
+NOTES:
+[18.08.2020]
+  FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
+  statement 'CREATE SEQUENCE <G>' will create generator with current value LESS FOR 1 then it was before.
+  Thus, 'create sequence g;' followed by 'show sequence;' will output "current value: -1" (!!) rather than 0.
+  See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
+
+  This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
+  Because of this, it was decided to filter out concrete values that are produced in 'SHOW SEQUENCE' command.
+JIRA:        CORE-4806
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('-Effective user is.*', ''), ('current value.*', 'current value')]
+user_a = user_factory('db', name='Maverick', password='123')
+user_b = user_factory('db', name='Big_Brother', password='456')
+user_c = user_factory('db', name='Bill_Junior', password='789')
+role_a = role_factory('db', name='stockmgr')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     recreate sequence g;
     commit;
@@ -108,9 +100,10 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-Effective user is.*', ''),
+                                                 ('current value.*', 'current value')])
 
-expected_stdout_1 = """
+expected_stdout = """
     /* Grant permissions for this database */
     GRANT STOCKMGR TO BILL_JUNIOR
     GRANT USAGE ON SEQUENCE G TO USER BIG_BROTHER
@@ -133,7 +126,7 @@ expected_stdout_1 = """
     ROLE                            NONE
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     no permission for USAGE access to GENERATOR G
     There is no generator G in this database
@@ -149,16 +142,11 @@ expected_stderr_1 = """
     no permission for USAGE access to GENERATOR G
 """
 
-user_1a = user_factory('db_1', name='Maverick', password='123')
-user_1b = user_factory('db_1', name='Big_Brother', password='456')
-user_1c = user_factory('db_1', name='Bill_Junior', password='789')
-role_1 = role_factory('db_1', name='stockmgr')
-
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1a: User, user_1b: User, user_1c: User, role_1: Role):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, user_a: User, user_b: User, user_c: User, role_a: Role):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

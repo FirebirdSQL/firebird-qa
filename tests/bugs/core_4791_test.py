@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4791
-# title:         	Make INSERTING/UPDATING/DELETING reserved words to fix ambiguity with boolean expresions
-# decription:   
-# tracker_id:   CORE-4791
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-1919
+ISSUE:       1919
+TITLE:       Make INSERTING/UPDATING/DELETING reserved words to fix ambiguity with boolean expresions
+DESCRIPTION:
+JIRA:        CORE-4791
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('line [0-9]+, column [0-9]+', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test1(id int, "inserting" boolean);
     recreate table test2(id int, "inserting" boolean, "updating" boolean);
     recreate table test3(id int, "inserting" boolean, "updating" boolean, "deleting" boolean);
@@ -82,55 +75,56 @@ test_script_1 = """
     recreate table testc(deleting int);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line [0-9]+, column [0-9]+', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     select * from test1;
-    
+
               ID inserting
     ============ =========
                1 <true>
-    
+
     Records affected: 1
-    
+
     select * from test2;
-    
+
               ID inserting updating
     ============ ========= ========
               -2 <false>   <true>
-    
+
     Records affected: 1
-    
+
     select * from test3;
     Records affected: 0
-    
+
     select * from test4;
-    
+
               ID inserting updating deleting
     ============ ========= ======== ========
                3 <true>    <false>  <true>
-    
+
     Records affected: 1
-    
+
     commit;
-    
+
     recreate table testa(inserting int);
     recreate table testb(updating int);
     recreate table testc(deleting int);
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
     -Token unknown - line 1, column 20
     -inserting
-    
+
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
     -Token unknown - line 1, column 20
     -updating
-    
+
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -139,10 +133,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

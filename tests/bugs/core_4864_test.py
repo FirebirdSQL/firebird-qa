@@ -1,45 +1,54 @@
 #coding:utf-8
-#
-# id:           bugs.core_4864
-# title:         CREATE DATABASE fail with ISQL
-# decription:
-#                  Test obtains full path to $fb_home via FBSVCMGR info_get_env.
-#                  Then it makes copy of file 'databases.conf' that is in $fb_home directory because
-#                  following lines will be added to that 'databases.conf':
-#                  ===
-#                  tmp_alias_4864 = ...
-#                  {
-#                    SecurityDatabase = tmp_alias_4864
-#                  }
-#                  ===
-#                  Then we run ISQL and give to it command to create database which definition
-#                  should be taken from 'databases.conf', as it was explained in the ticket by Alex:
-#                  ===
-#                  create database 'tmp_alias_4864' user 'SYSDBA';
-#                  ===
-#                  Finally, mon$attachment is queried and some info is extracted from it in order
-#                  to be sure that we really got proper result.
-#                  .............................................
-#                  ::: NB :::
-#                  It is impossible to check ability to create new user in new database that was made by such way:
-#                  plugin 'Srp' is required that currently is replaced before any test with 'Legacy' one.
-#
-# tracker_id:   CORE-4864
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5160
+ISSUE:       5160
+TITLE:       CREATE DATABASE fail with ISQL
+DESCRIPTION:
+    Test obtains full path to $fb_home via FBSVCMGR info_get_env.
+    Then it makes copy of file 'databases.conf' that is in $fb_home directory because
+    following lines will be added to that 'databases.conf':
+    ===
+    tmp_alias_4864 = ...
+    {
+      SecurityDatabase = tmp_alias_4864
+    }
+    ===
+    Then we run ISQL and give to it command to create database which definition
+    should be taken from 'databases.conf', as it was explained in the ticket by Alex:
+    ===
+    create database 'tmp_alias_4864' user 'SYSDBA';
+    ===
+    Finally, mon$attachment is queried and some info is extracted from it in order
+    to be sure that we really got proper result.
+    .............................................
+    ::: NB :::
+    It is impossible to check ability to create new user in new database that was made by such way:
+    plugin 'Srp' is required that currently is replaced before any test with 'Legacy' one.
+JIRA:        CORE-4864
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    MON$SEC_DATABASE                Self
+    MON$ATTACHMENT_NAME             tmp_alias_4864
+    MON$USER                        SYSDBA
+    MON$REMOTE_PROTOCOL             <null>
+    MON$REMOTE_ADDRESS              <null>
+    MON$REMOTE_PROCESS              <null>
+    MON$AUTH_METHOD                 User name in DPB
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: databases.conf')
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    pytest.fail("Test not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -149,19 +158,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    MON$SEC_DATABASE                Self
-    MON$ATTACHMENT_NAME             tmp_alias_4864
-    MON$USER                        SYSDBA
-    MON$REMOTE_PROTOCOL             <null>
-    MON$REMOTE_ADDRESS              <null>
-    MON$REMOTE_PROCESS              <null>
-    MON$AUTH_METHOD                 User name in DPB
-"""
-
-@pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    pytest.skip("Requires changes to databases.conf")

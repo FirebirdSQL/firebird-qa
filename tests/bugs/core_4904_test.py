@@ -1,162 +1,52 @@
 #coding:utf-8
-#
-# id:           bugs.core_4904
-# title:        Index corruption when add data in long-key-indexed field
-# decription:
-#                  In order to check ticket issues this test does following:
-#                  1. Change on test database FW to OFF - this will increase DML performance.
-#                  2. Create table with indexed field of length = maximum that is allowed by
-#                     current FB implementation (page_size / 4 - 9 bytes).
-#                  3. Try to insert enough number of records in this table - this should cause
-#                     runtime exception SQLSTATE = 54000, "Maximum index level reached"
-#                  4. Start validation of database: index should NOT be corrupted in its report.
-#
-#                  Checked on WI-V3.0.0.32140 (CS, SC); WI-V3.0.0.32157 - official RC1 (SS)
-#
-# tracker_id:   CORE-4904
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5196
+ISSUE:       5196
+TITLE:       Index corruption when add data in long-key-indexed field
+DESCRIPTION:
+    In order to check ticket issues this test does following:
+    1. Change on test database FW to OFF - this will increase DML performance.
+    2. Create table with indexed field of length = maximum that is allowed by
+       current FB implementation (page_size / 4 - 9 bytes).
+    3. Try to insert enough number of records in this table - this should cause
+       runtime exception SQLSTATE = 54000, "Maximum index level reached"
+    4. Start validation of database: index should NOT be corrupted in its report.
+JIRA:        CORE-4904
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 from firebird.driver import DbWriteMode
 
-# version: 3.0
-# resources: None
+substitutions = [('[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9]', ''),
+                 ('Maximum index .* reached', 'Maximum index reached'),
+                 ('Relation [0-9]{3,4}', 'Relation'), ('After line .*', ''),
+                 ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
 
-substitutions_1 = [('[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9]', ''),
-                   ('Maximum index .* reached', 'Maximum index reached'),
-                   ('Relation [0-9]{3,4}', 'Relation'), ('After line .*', ''),
-                   ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
+#  Test depends on 4K page_size !!!
+db = db_factory(page_size=4096)
 
-init_script_1 = """"""
+act = python_act('db', substitutions=substitutions)
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+long_keys_cmd = """
+recreate table test(s varchar(1015)); -- with THIS length of field following EB will get exception very fast.
+create index test_s on test(s);
+commit;
+set term ^;
+execute block as
+begin
+  insert into test(s)
+  select rpad('', 1015, uuid_to_char(gen_uuid()) )
+  from rdb$types, rdb$types
+  rows 50000; -- this is extra-huge reserve; exception should raise when about 120-130 rows will be inserted.
+end
+^
+set term ;^
+commit;
+"""
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import time
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_name = db_conn.database_name
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#
-#  # Move database to FW = OFF in order to increase speed of insertions and output its header info:
-#  #####################################################################
-#
-#  f_change_fw_log=open( os.path.join(context['temp_directory'],'tmp_fw_off_4904.log'), 'w')
-#  subprocess.call([ context['fbsvcmgr_path'], "localhost:service_mgr",
-#                    "action_properties",
-#                    "prp_write_mode", "prp_wm_async",
-#                    "dbname", db_name ],
-#                    stdout=f_change_fw_log, stderr=subprocess.STDOUT)
-#  flush_and_close( f_change_fw_log )
-#
-#  #####################################################################
-#  # Preparing script for ISQL that will do inserts with long keys:
-#
-#  sql_cmd='''    recreate table test(s varchar(1015)); -- with THIS length of field following EB will get exception very fast.
-#      create index test_s on test(s);
-#      commit;
-#      set term ^;
-#      execute block as
-#      begin
-#        insert into test(s)
-#        select rpad('', 1015, uuid_to_char(gen_uuid()) )
-#        from rdb$types, rdb$types
-#        rows 50000; -- this is extra-huge reserve; exception should raise when about 120-130 rows will be inserted.
-#      end
-#      ^
-#      set term ;^
-#      commit;
-#  '''
-#
-#  f_long_keys_cmd=open( os.path.join(context['temp_directory'],'tmp_isql_4904.sql'), 'w')
-#  f_long_keys_cmd.write(sql_cmd)
-#  flush_and_close( f_long_keys_cmd )
-#
-#  #####################################################################
-#  # Starting ISQL
-#
-#  f_long_keys_log=open( os.path.join(context['temp_directory'],'tmp_isql_4904.log'), 'w')
-#  subprocess.call([ context['isql_path'] , dsn, "-i", f_long_keys_cmd.name],
-#                  stdout=f_long_keys_log, stderr=subprocess.STDOUT)
-#  flush_and_close( f_long_keys_log )
-#
-#  #####################################################################
-#  # Run validation after ISQL will finish (with runtime exception due to implementation limit exceeding):
-#
-#  f_validation_log=open( os.path.join(context['temp_directory'],'tmp_onval_4904.log'), 'w')
-#
-#  subprocess.call([context['fbsvcmgr_path'], "localhost:service_mgr",
-#                   "action_validate","val_lock_timeout","1",
-#                   "dbname","$(DATABASE_LOCATION)bugs.core_4904.fdb"],
-#                   stdout=f_validation_log, stderr=subprocess.STDOUT)
-#
-#  flush_and_close( f_validation_log )
-#
-#  #####################################################################
-#  # Output result of ISQL and online validation:
-#  with open( f_long_keys_log.name,'r') as f:
-#      print(f.read())
-#
-#
-#  with open( f_validation_log.name,'r') as f:
-#      print(f.read())
-#
-#
-#
-#  # Cleanup:
-#  ##########
-#  time.sleep(1)
-#  cleanup( (f_change_fw_log, f_validation_log, f_long_keys_cmd, f_long_keys_log) )
-#
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     Statement failed, SQLSTATE = 54000
     Implementation limit exceeded
     -Maximum index level reached
@@ -171,34 +61,18 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, capsys):
+def test_1(act: Action, capsys):
     # Move database to FW = OFF in order to increase speed of insertions and output its header info:
-    with act_1.connect_server() as srv:
-        srv.database.set_write_mode(database=act_1.db.db_path, mode=DbWriteMode.ASYNC)
+    with act.connect_server() as srv:
+        srv.database.set_write_mode(database=act.db.db_path, mode=DbWriteMode.ASYNC)
         # Preparing script for ISQL that will do inserts with long keys:
-        long_keys_cmd = """
-        recreate table test(s varchar(1015)); -- with THIS length of field following EB will get exception very fast.
-        create index test_s on test(s);
-        commit;
-        set term ^;
-        execute block as
-        begin
-          insert into test(s)
-          select rpad('', 1015, uuid_to_char(gen_uuid()) )
-          from rdb$types, rdb$types
-          rows 50000; -- this is extra-huge reserve; exception should raise when about 120-130 rows will be inserted.
-        end
-        ^
-        set term ;^
-        commit;
-"""
-        act_1.expected_stderr = "We expect errors"
-        act_1.isql(switches=[], input=long_keys_cmd)
-        print(act_1.stdout)
-        print(act_1.stderr)
+        act.expected_stderr = "We expect errors"
+        act.isql(switches=[], input=long_keys_cmd)
+        print(act.stdout)
+        print(act.stderr)
         # Run validation after ISQL will finish (with runtime exception due to implementation limit exceeding):
-        srv.database.validate(database=act_1.db.db_path, lock_timeout=1, callback=print)
+        srv.database.validate(database=act.db.db_path, lock_timeout=1, callback=print)
         # Check
-        act_1.expected_stdout = expected_stdout_1
-        act_1.stdout = capsys.readouterr().out
-        assert act_1.clean_stdout == act_1.clean_expected_stdout
+        act.expected_stdout = expected_stdout
+        act.stdout = capsys.readouterr().out
+        assert act.clean_stdout == act.clean_expected_stdout

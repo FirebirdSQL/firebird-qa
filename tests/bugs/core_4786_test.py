@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4786
-# title:        Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters
-# decription:
-# tracker_id:   CORE-4786
-# min_versions: ['2.5.5']
-# versions:     2.5.5
-# qmid:
+
+"""
+ID:          issue-5085
+ISSUE:       5085
+TITLE:       Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters
+DESCRIPTION:
+JIRA:        CORE-4786
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test_none(s varchar(250) character set none constraint test_cset_none_unq unique using index test_cset_none_unq);
     commit;
     insert into test_none values( rpad('', 245, '0123456789') || 'ABCDE' );
@@ -71,9 +64,9 @@ test_script_1 = """
     -- Multi-byte values will be printed shorter.
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 23000
     violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_NONE_UNQ" on table "TEST_NONE"
     -Problematic key value is ("S" = '01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234ABCD...)
@@ -135,9 +128,9 @@ expected_stderr_1 = """
     -Problematic key value is ("S" = 'Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑...)
 """
 
-@pytest.mark.version('>=2.5.5')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute(charset='utf8')
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute(charset='utf8')
+    assert act.clean_stderr == act.clean_expected_stderr
 

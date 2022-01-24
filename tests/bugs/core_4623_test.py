@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4623
-# title:        Regression: SP "Domain" and "Type Of" based variables referring BLOB with sub_type < 0 no longer work
-# decription:   
-# tracker_id:   CORE-4623
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         
+
+"""
+ID:          issue-4938
+ISSUE:       4938
+TITLE:       Regression: SP "Domain" and "Type Of" based variables referring BLOB with sub_type < 0 no longer work
+DESCRIPTION:
+JIRA:        CORE-4623
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_test as begin end;
     recreate table test (id int);
     commit;
@@ -33,11 +26,11 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     create domain dm_01 as blob sub_type -32768 segment size 32000;
     recreate table test (b_field dm_01);
     commit;
-    
+
     set term ^;
     create or alter procedure sp_test (
         b01 blob sub_type -32768 segment size 32000,
@@ -58,10 +51,11 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    try:
+        act.execute()
+    except ExecutionError as e:
+        pytest.fail("Test script execution failed", pytrace=False)

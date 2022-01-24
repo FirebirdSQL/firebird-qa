@@ -1,30 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4767
-# title:        CREATE USER ... TAGS ( attr = 'prefix #suffix' ): suffix will be removed from storage because of character '#' in the value of attribute
-# decription:
-#                   Checked on:
-#                       FB30SS, build 3.0.4.32985: OK, 0.985s.
-#                       FB40SS, build 4.0.0.1000: OK, 1.281s.
-#
-# tracker_id:   CORE-4767
-# min_versions: ['3.0.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5067
+ISSUE:       5067
+TITLE:       CREATE USER ... TAGS ( attr = 'prefix #suffix' ): suffix will be removed from storage because of character '#' in the value of attribute
+DESCRIPTION:
+JIRA:        CORE-4767
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     create or alter view v_user_tags as
     select
@@ -49,9 +38,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TAG                             ATTR00001
     VAL                             attr #00001
 
@@ -69,12 +58,12 @@ expected_stdout_1 = """
 """
 
 # cleanup fixture
-user_1=user_factory('db_1', name='tmp$c4767', password='123', plugin='Srp',
-                    do_not_create=True)
+tmp_user=user_factory('db', name='tmp$c4767', password='123', plugin='Srp',
+                      do_not_create=True)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, tmp_user: User):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

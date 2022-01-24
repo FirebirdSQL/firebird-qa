@@ -117,7 +117,7 @@ expected_stdout = """
     335544345
 """
 
-@pytest.mark.skip("FIXME")
+@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=3.0.6')
 def test_1(act: Action, capsys):
     act.isql(switches=[], input=ddl_script)

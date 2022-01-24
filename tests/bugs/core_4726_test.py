@@ -1,33 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_4726
-# title:        Provide ability to do: REcreate user <user_name> password <user_pwd>
-# decription:
-#                   Checked on 4.0.0.1629, CS and SS: OK, 1.788s.
-#
-#                   ::: NOTE :::
-#                   Clause 'GRANT / REVOKE ADMIN ROLE' must be specified __BEFORE__ 'USING PLUGIN' clause!
-#                   Perhaps, documentation need to be corrected.
-#                   Sent letter to alex and dimitr, 16.10.2019 20:30.
-#
-# tracker_id:   CORE-4726
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5033
+ISSUE:       5033
+TITLE:       Provide ability to do: REcreate user <user_name> password <user_pwd>
+DESCRIPTION:
+JIRA:        CORE-4726
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' '), ('=', '')]
+# This fixture is there only to ensure user cleanup
+tmp_user = user_factory('db', name='tmp$c4726', password='123', plugin='Srp', do_not_create=True)
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set width usrname 10;
     set width firstname 10;
     set width sec_plugin 20;
@@ -103,9 +92,9 @@ test_script_1 = """
     select 4 as step, v.* from v_users v;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('=', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
             STEP USRNAME    FIRSTNAME  SEC_PLUGIN           SEC_IS_ADMIN SU_ACTIVE SEC_ATTR_KEY         SEC_ATTR_VAL
 
                1 TMP$C4726  <null>     Srp                  <true>       <false>   BIRTHDAY             03.12.1948
@@ -134,15 +123,11 @@ expected_stdout_1 = """
                4 TMP$C4726  <null>     Srp                  <false>      <true>    GROUPNAME            Pink Floyd
                4 TMP$C4726  <null>     Srp                  <false>      <true>    INITNAME             Roger
                4 TMP$C4726  <null>     Srp                  <false>      <true>    SURNAME              Waters
-
 """
 
-# This fixture is there only to ensure user cleanup
-user_1 = user_factory('db_1', name='tmp$c4726', password='123', plugin='Srp', do_not_create=True)
-
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action, user_1: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, tmp_user: User):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

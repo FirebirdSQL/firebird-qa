@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_4755
-# title:        Parameterized exception: wrong output when number of arguments greater than 7
-# decription:   
-# tracker_id:   CORE-4755
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5059
+ISSUE:       5059
+TITLE:       Parameterized exception: wrong output when number of arguments greater than 7
+DESCRIPTION:
+JIRA:        CORE-4755
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	recreate exception ex_something_wrong 'Arguments for raising exeption:  @1  @2  @3  @4  @5  @6  @7  @8  @9';
 	commit;
 	set term ^;
@@ -83,9 +76,10 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-At block line: [\\d]+, col: [\\d]+',
+                                                  '-At block line')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_SOMETHING_WRONG
@@ -96,8 +90,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

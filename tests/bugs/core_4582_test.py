@@ -67,19 +67,19 @@ expected_stdout = """
     :::MSG::: ISQL for extract old and new value of page finished.
 """
 
-@pytest.mark.skip("FIXME")
+@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
-    script_1 = """
+    script = """
     insert into log(buf_before) select mon_buffers from sp_get_buff;
     commit;
     alter database set linger to 15;
     commit;
     set list on;
     select rdb$linger as ":::MSG::: linger_time" from rdb$database;
-"""
+    """
     print (':::MSG::: Starting ISQL setting new value for linger...')
-    act.isql(switches=[], input=script_1)
+    act.isql(switches=[], input=script)
     print (':::MSG::: ISQL setting new value for linger finished.')
     print (':::MSG::: Starting GFIX setting new value for page buffers...')
     #with act.connect_server() as srv:
@@ -121,7 +121,7 @@ def test_1(act: Action, capsys):
                 'N/A'
               ) as "GFIX could change buffers ? =>"
     from log g;
-"""
+    """
     act.reset()
     act.isql(switches=[], input=script_2)
     print(act.stdout)
