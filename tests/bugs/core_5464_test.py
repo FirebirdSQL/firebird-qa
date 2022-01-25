@@ -1,26 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_5464
-# title:        AV in fbclient when reading blob stored in incompatible encoding
-# decription:
-#                  Reproduced crash of isql on WI-T4.0.0.463
-#                  (standard message appeared with text about program that is to be closed).
-#                  Checked on 3.0.2.32677, 4.0.0.519 - works fine.
-#
-# tracker_id:   CORE-5464
-# min_versions: ['3.0.2']
-# versions:     3.0.2
-# qmid:         None
+
+"""
+ID:          issue-5734
+ISSUE:       5734
+TITLE:       AV in fbclient when reading blob stored in incompatible encoding
+DESCRIPTION:
+JIRA:        CORE-5464
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create domain d_int int;
     comment on domain d_int is
     '*Лев Николаевич Толстой * *Анна Каренина * /Мне отмщение, и аз воздам/ *ЧАСТЬ ПЕРВАЯ* *I *
@@ -37,63 +28,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(charset='WIN1251', sql_dialect=3, init=init_script_1)
+db_1 = db_factory(charset='WIN1251', init=init_script)
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  db_conn.close()
-#
-#  so=sys.stdout
-#  se=sys.stderr
-#
-#  fn_log = os.path.join(context['temp_directory'],'tmp_c5464.log')
-#  fn_err = os.path.join(context['temp_directory'],'tmp_c5464.err')
-#  sys.stdout = open( fn_log, 'w')
-#  sys.stderr = open( fn_err, 'w')
-#  sql='''
-#      set names win1250;
-#      connect '%s' user '%s' password '%s';
-#      set blob all;
-#      set list on;
-#
-#      select c.rdb$character_set_name as connection_cset, r.rdb$character_set_name as db_default_cset
-#      from mon$attachments a
-#      join rdb$character_sets c on a.mon$character_set_id = c.rdb$character_set_id
-#      cross join rdb$database r where a.mon$attachment_id=current_connection;
-#
-#      select rdb$field_name, rdb$system_flag, rdb$description
-#      from rdb$fields where rdb$description is not null;
-#  ''' % ( dsn, user_name, user_password  )
-#
-#  runProgram('isql',['-q'],sql)
-#
-#  sys.stdout = so
-#  sys.stderr = se
-#
-#  with open( fn_log,'r') as f:
-#    for line in f:
-#      line=line.replace('SQL> ', '').replace('CON> ', '').rstrip()
-#      if line.split():
-#        print(line)
-#
-#  with open( fn_err,'r') as f:
-#    for line in f:
-#      if line.split():
-#        print(line)
-#
-#  os.remove(fn_log)
-#  os.remove(fn_err)
-#
-#
-#---
-
-test_script_1 = """
+test_script = """
     set blob all;
     set list on;
 
@@ -106,22 +43,22 @@ test_script_1 = """
     from rdb$fields where rdb$description is not null;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db_1', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CONNECTION_CSET                 WIN1250
     DB_DEFAULT_CSET                 WIN1251
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 22018
     Cannot transliterate character between character sets
 """
 
 @pytest.mark.version('>=3.0.2')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-q'], input=test_script_1, charset='WIN1250')
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-q'], input=test_script, charset='WIN1250')
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

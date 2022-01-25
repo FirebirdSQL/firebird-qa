@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5174
-# title:        Wrong sequence of savepoints may be produced by selectable procedure
-# decription:   
-# tracker_id:   CORE-5174
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5456
+ISSUE:       5456
+TITLE:       Wrong sequence of savepoints may be produced by selectable procedure
+DESCRIPTION:
+JIRA:        CORE-5174
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
     create or alter procedure ins_t1 as begin end;
     create or alter procedure ins_t2 as begin end;
@@ -78,43 +71,43 @@ test_script_1 = """
     -- ...
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-    0 
-    1 
-    3 
-    4 
+expected_stdout = """
+    0
+    1
+    3
+    4
 
-    100_point_a          
-    0                    
-    0_point_c            
-    0_point_d            
-    0_point_b            
-    0_point_a            
-    1                    
-    1_point_c            
-    1_point_d            
-    1_point_b            
-    1_point_a            
-    -1                   
-    1_point_a            
-    3                    
-    3_point_c            
-    3_point_d            
-    3_point_b            
-    3_point_a            
-    4                    
-    4_point_c            
-    4_point_d            
-    4_point_b            
-    4_point_a            
-    5                    
+    100_point_a
+    0
+    0_point_c
+    0_point_d
+    0_point_b
+    0_point_a
+    1
+    1_point_c
+    1_point_d
+    1_point_b
+    1_point_a
+    -1
+    1_point_a
+    3
+    3_point_c
+    3_point_d
+    3_point_b
+    3_point_a
+    4
+    4_point_c
+    4_point_d
+    4_point_b
+    4_point_a
+    5
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

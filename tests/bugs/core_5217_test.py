@@ -1,31 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_5217
-# title:        ISQL -x may crash while exporting an exception with message text length > 127 bytes
-# decription:   
-#                
-# tracker_id:   CORE-5217
-# min_versions: ['2.5.6']
-# versions:     2.5.6
-# qmid:         None
+
+"""
+ID:          issue-5497
+ISSUE:       5497
+TITLE:       ISQL -x may crash while exporting an exception with message text length > 127 bytes
+DESCRIPTION:
+JIRA:        CORE-5217
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    recreate exception exc_test_a 
+test_script = """
+    recreate exception exc_test_a
     '1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123';
 
-    recreate exception exc_test_b 
+    recreate exception exc_test_b
     '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234';
 
     recreate exception exc_test_c
@@ -35,14 +27,14 @@ test_script_1 = """
 
     set list on;
     set count on;
-    select rdb$exception_name, rdb$message 
+    select rdb$exception_name, rdb$message
     from rdb$exceptions
     order by rdb$exception_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$EXCEPTION_NAME              EXC_TEST_A
     RDB$MESSAGE                     1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123
 
@@ -55,9 +47,9 @@ expected_stdout_1 = """
     Records affected: 3
 """
 
-@pytest.mark.version('>=2.5.6')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

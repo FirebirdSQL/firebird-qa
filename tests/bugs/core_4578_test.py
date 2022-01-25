@@ -19,11 +19,11 @@ expected_stdout = """
     Unable to open
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
 def test_1(act: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 
 # test_script_1

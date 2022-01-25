@@ -38,7 +38,7 @@ act = python_act('db')
 @pytest.mark.skip('FIXME: firebird.conf')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---

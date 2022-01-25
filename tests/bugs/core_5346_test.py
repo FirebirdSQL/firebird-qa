@@ -1,38 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_5346
-# title:        Window Function: named window
-# decription:   
-#                  Simlified test for just check ability to compile and run a query with named window.
-#                  More complex tests (e.g. when result of window functions are involved in JOIN expr.)
-#                  will be implemented later.
-#               
-#                  NOTE: bug was found on 4.0.0.2298 when using named window.
-#                  Discussed with hvlad and dimitr, letters since 21.12.2020 08:59
-#                  See CORE-6460 and fix: https://github.com/FirebirdSQL/firebird/commit/964438507cacdfa192b8140ca3f1a2df340d511d
-#               
-#                  Checked on 4.0.0.2234.
-#                
-# tracker_id:   CORE-5346
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5620
+ISSUE:       5620
+TITLE:       Window Function: named window
+DESCRIPTION:
+  Simlified test for just check ability to compile and run a query with named window.
+  More complex tests (e.g. when result of window functions are involved in JOIN expr.)
+  will be implemented later.
+NOTES:
+  bug was found on 4.0.0.2298 when using named window.
+  Discussed with hvlad and dimitr, letters since 21.12.2020 08:59
+  See CORE-6460 and fix: https://github.com/FirebirdSQL/firebird/commit/964438507cacdfa192b8140ca3f1a2df340d511d
+JIRA:        CORE-5346
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create table emp_test (
-        emp_no       smallint, 
+        emp_no       smallint,
         dept_no      char(3),
         salary       numeric(10,2)
     );
@@ -98,9 +88,9 @@ test_script_1 = """
         e.salary;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     12 000                  53793.00                     2              53793.00              53793.00
     127 100                  44000.00                     2              44000.00              44000.00
     34 110                  61637.81                     2              61637.81              61637.81
@@ -146,8 +136,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

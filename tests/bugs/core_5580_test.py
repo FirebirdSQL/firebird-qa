@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5580
-# title:        Signature of packaged functions is not checked for mismatch with [NOT] DETERMINISTIC attribute
-# decription:   
-#                  Confirmed bug on builds: 3.0.3.32756, 4.0.0.690.
-#                  Works fine on:
-#                    3.0.3.32757: OK, 0.812s.
-#                    4.0.0.693: OK, 1.047s.
-#                
-# tracker_id:   CORE-5580
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5847
+ISSUE:       5847
+TITLE:       Signature of packaged functions is not checked for mismatch with [NOT] DETERMINISTIC attribute
+DESCRIPTION:
+JIRA:        CORE-5580
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     recreate package pk1 as
     begin
@@ -39,12 +27,12 @@ test_script_1 = """
         begin
             return 123;
         end
-        
+
         function f2() returns int not deterministic as
         begin
             return 123 * rand();
         end
-        
+
     end
     ^
     set term ;^
@@ -56,9 +44,9 @@ test_script_1 = """
     select pk1.f2() as f2_result  from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -RECREATE PACKAGE BODY PK1 failed
@@ -70,8 +58,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

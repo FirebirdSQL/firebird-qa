@@ -28,10 +28,10 @@ expected_stdout_1 = """
 
 TOTAL_SEQUENCES_COUNT = 33000
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3')
-@pytest.mark.xfail
 def test_1(act: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---

@@ -1,31 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_5305
-# title:        CASCADE UPDATE fails for self-referencing FK
-# decription:   
-#                  Checked on 4.0.0.326,  WI-V3.0.1.32573
-#                
-# tracker_id:   CORE-5305
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-5582
+ISSUE:       5582
+TITLE:       CASCADE UPDATE fails for self-referencing FK
+DESCRIPTION:
+JIRA:        CORE-5305
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     recreate table test1(
-        x int, 
+        x int,
         y int,
         constraint test1_pk primary key(x),
         constraint test1_fk foreign key(y) references test1(x) on update cascade
@@ -68,7 +59,7 @@ test_script_1 = """
     update test2 set y=5 where x=1; -- "closure" of chain
     commit;
 
-    update test2 set x = y + 1; 
+    update test2 set x = y + 1;
 
     select 'test2' as what,  a.* from test2 a order by x;
     commit;
@@ -97,9 +88,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHAT                            test1
     X                               -3
     Y                               -1
@@ -158,8 +149,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

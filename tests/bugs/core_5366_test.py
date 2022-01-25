@@ -1,34 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5366
-# title:        Regression: could not use CASE expression with more than 255 conditions.
-# decription:   
-#                 Confirmed on 4.0.0.397:
-#                     Statement failed, SQLSTATE = HY000
-#                     invalid request BLR at offset 1591
-#                     -BLR syntax error: expected valid BLR code at offset 1592, encountered 0
-#                 Works fine since commit:
-#                 https://github.com/FirebirdSQL/firebird/commit/3dcb2c091cfa6981924f5b92d3e42c8783498074
-#                 (07.10.2016 15:51; checked on LI-T4.0.0.399).
-#                
-# tracker_id:   CORE-5366
-# min_versions: ['3.0.2']
-# versions:     3.0.2
-# qmid:         None
+
+"""
+ID:          issue-5639
+ISSUE:       5639
+TITLE:       Regression: could not use CASE expression with more than 255 conditions
+DESCRIPTION:
+JIRA:        CORE-5366
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.2
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set TERM ^;
     create or alter procedure sp_test (
       "Class" bigint)
@@ -524,15 +509,15 @@ test_script_1 = """
     select * from sp_test(7535816);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Result                          test
 """
 
 @pytest.mark.version('>=3.0.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

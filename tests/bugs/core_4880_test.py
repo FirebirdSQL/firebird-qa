@@ -60,10 +60,10 @@ expected_stdout = """
     Time ratio between COMMIT and COMPILE for standalone PSQL objects: acceptable
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
 def test_1(act: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---

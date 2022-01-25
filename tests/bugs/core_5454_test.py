@@ -1,35 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5454
-# title:        INSERT into updatable view without explicit field list failed
-# decription:   
-#                   Confirmed bug on WI-T4.0.0.463, got:
-#                      Statement failed, SQLSTATE = 21S01
-#                      Dynamic SQL Error
-#                      -SQL error code = -804
-#                      -Count of read-write columns does not equal count of values
-#                   Checked on WI-T4.0.0.503 - works fine.
-#                   NB: this bug was NOT (yet ?) fixed for 3.0 ==> min_version = 4.0
-#                   (checked on WI-V3.0.2.32670, 17-jan-2017).
-#                
-# tracker_id:   CORE-5454
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5725
+ISSUE:       5725
+TITLE:       INSERT into updatable view without explicit field list failed
+DESCRIPTION:
+JIRA:        CORE-5454
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate view v_test as select 1 x from rdb$database;
     commit;
 
@@ -53,22 +37,22 @@ test_script_1 = """
     end
     ^
     set term ;^
-    commit; 
+    commit;
 
     set count on;
     insert into v_test values(123, 321);
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Records affected: 1
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5268
-# title:        Nested OR conditions may lead to incorrest results
-# decription:   
-# tracker_id:   CORE-5268
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-2038
+ISSUE:       2038
+TITLE:       Nested OR conditions may lead to incorrest results
+DESCRIPTION:
+JIRA:        CORE-5268
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Reproduced wrong result on WI-T4.0.0.238.
     -- (note on single difference between sp_test and sp_test2: parenthesis that enclose 'OR' expression.
     -- Checked on LI-T4.0.0.242 after fix was committed - all works fine.
@@ -38,7 +31,7 @@ test_script_1 = """
         feld_b varchar(10),
         feld_c char(10)
     );
-    
+
     create index testtab_idx1 on testtab (feld_b);
     create index testtab_idx2 on testtab (feld_a);
     commit;
@@ -48,7 +41,7 @@ test_script_1 = """
     insert into testtab (feld_a, feld_b, feld_c) values ('uuu', 'uuu', 'uuu ');
     insert into testtab (feld_a, feld_b, feld_c) values ('uuu', 'uu', 'uu ');
 
-    
+
     commit;
 
 
@@ -59,7 +52,7 @@ test_script_1 = """
     begin
         delete from result;
         insert into result
-        select * 
+        select *
         from testtab t
         where
           :a_inp='123456' -- a_inp = 'blub' for testcase
@@ -77,7 +70,7 @@ test_script_1 = """
     begin
         delete from result;
         insert into result
-        select * 
+        select *
         from testtab t
         where
           :a_inp='123456' -- a_inp = 'blub' for testcase
@@ -100,9 +93,9 @@ test_script_1 = """
     select '2' as result, r.* from result r;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RESULT                          1
     FELD_A                          aaaa
     FELD_B                          bb
@@ -146,8 +139,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -133,10 +133,10 @@ expected_stdout_1 = """
 	Records affected: 1
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
 def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 

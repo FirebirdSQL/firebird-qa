@@ -1,38 +1,30 @@
 #coding:utf-8
-#
-# id:           bugs.core_5092
-# title:        ISQL extract command looses COMPUTED BY field types
-# decription:
-#                  Test creates database with empty table T1 that has computed by fileds with DDL appopriate to the ticket issues.
-#                  Then we:
-#                  1) extract metadata from database and store it to <init_meta.sql>;
-#                  2) run query to the table T1 with setting sqlda_display = ON, and store output to <init_sqlda.log>;
-#                  3) DROP table T1;
-#                  4) try to apply script with extracted metadata (see step "1") -  it should pass without errors;
-#                  5) AGAIN extract metadata and store it to <last_meta.sql>;
-#                  6) AGAIN run query to T1 with set sqlda_display = on, and store output to <last_sqlda.log>;
-#                  7) compare text files:
-#                     <init_meta.sql> vs <last_meta.sql>
-#                     <init_sqlda.log> vs <last_sqlda.log>
-#                  8) Check that result of comparison is EMPTY (no rows).
-#
-#                  Confirmed bug on 3.0.0.32300, fixed on 3.0.0.32306.
-#
-# tracker_id:   CORE-5092
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5377
+ISSUE:       5377
+TITLE:       ISQL extract command looses COMPUTED BY field types
+DESCRIPTION:
+  Test creates database with empty table T1 that has computed by fileds with DDL appopriate to the ticket issues.
+  Then we:
+  1) extract metadata from database and store it to <init_meta.sql>;
+  2) run query to the table T1 with setting sqlda_display = ON, and store output to <init_sqlda.log>;
+  3) DROP table T1;
+  4) try to apply script with extracted metadata (see step "1") -  it should pass without errors;
+  5) AGAIN extract metadata and store it to <last_meta.sql>;
+  6) AGAIN run query to T1 with set sqlda_display = on, and store output to <last_sqlda.log>;
+  7) compare text files:
+     <init_meta.sql> vs <last_meta.sql>
+     <init_sqlda.log> vs <last_sqlda.log>
+  8) Check that result of comparison is EMPTY (no rows).
+JIRA:        CORE-5092
+"""
 
 import pytest
 from difflib import unified_diff
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table t1 (
          n0 int
 
@@ -71,154 +63,31 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='UTF8', init=init_script)
 
-# test_script_1
-#---
-# import os
-#  import time
-#  import subprocess
-#  import difflib
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  db_file = db_conn.database_name
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  f_meta_init_sql = open( os.path.join(context['temp_directory'],'tmp_meta_5092_init.sql'), 'w')
-#  subprocess.call( [context['isql_path'], dsn, "-x", "-ch", "utf8"],
-#                   stdout = f_meta_init_sql,
-#                   stderr = subprocess.STDOUT
-#                 )
-#  flush_and_close( f_meta_init_sql )
-#
-#  sqlda_check='set list on; set sqlda_display on; select * from t1; commit; drop table t1; exit;'
-#
-#  f_sqlda_init = open( os.path.join(context['temp_directory'],'tmp_sqlda_5092_init.log'), 'w')
-#  f_sqlda_init.close()
-#  runProgram( 'isql',[dsn, '-q', '-m', '-o', f_sqlda_init.name], sqlda_check)
-#
-#  f_apply_meta_log = open( os.path.join(context['temp_directory'],'tmp_meta_5092_apply.log'), 'w')
-#  subprocess.call( [context['isql_path'], dsn, "-i", f_meta_init_sql.name, "-ch", "utf8" ],
-#                   stdout = f_apply_meta_log,
-#                   stderr = subprocess.STDOUT
-#                 )
-#  flush_and_close( f_apply_meta_log )
-#
-#  f_meta_last_sql = open( os.path.join(context['temp_directory'],'tmp_meta_5092_last.sql'), 'w')
-#  subprocess.call( [context['isql_path'], dsn, "-x", "-ch", "utf8"],
-#                   stdout = f_meta_last_sql,
-#                   stderr = subprocess.STDOUT
-#                 )
-#  flush_and_close( f_meta_last_sql )
-#
-#  f_sqlda_last = open( os.path.join(context['temp_directory'],'tmp_sqlda_5092_last.log') , 'w')
-#  f_sqlda_last.close()
-#
-#  runProgram( 'isql',[dsn, '-q', '-m', '-o', f_sqlda_last.name], sqlda_check)
-#
-#  f_diff_txt=open( os.path.join(context['temp_directory'],'tmp_5092_meta_diff.txt'), 'w')
-#
-#  f_old=[]
-#  f_new=[]
-#
-#  f_old.append(f_meta_init_sql)
-#  f_old.append(f_sqlda_init)
-#
-#  f_new.append(f_meta_last_sql)
-#  f_new.append(f_sqlda_last)
-#
-#  for i in range(len(f_old)):
-#      old_file=open(f_old[i].name,'r')
-#      new_file=open(f_new[i].name,'r')
-#
-#      f_diff_txt.write( ''.join( difflib.unified_diff( old_file.readlines(), new_file.readlines() ) ) )
-#
-#      old_file.close()
-#      new_file.close()
-#
-#  flush_and_close( f_diff_txt )
-#
-#  # Should be EMPTY:
-#  ##################
-#  with open( f_apply_meta_log.name, 'r') as f:
-#      for line in f:
-#          print( 'Error log of applying extracted metadata: ' + f.line() )
-#
-#
-#  # Should be EMPTY:
-#  ##################
-#  with open( f_diff_txt.name,'r') as f:
-#      for line in f:
-#              print( ' '.join(line.split()).upper() )
-#
-#
-#
-#  # Cleanup.
-#  ##########
-#  time.sleep(1)
-#
-#  cleanup( (f_meta_init_sql,f_meta_last_sql,f_sqlda_init,f_sqlda_last,f_apply_meta_log,f_diff_txt) )
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
+act = python_act('db')
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
+def test_1(act: Action):
     # Initial metadata
-    act_1.isql(switches=['-x'])
-    initial_metadata = act_1.stdout.splitlines()
+    act.isql(switches=['-x'])
+    initial_metadata = act.stdout.splitlines()
     # SQLDA initial
     sqlda_check = 'set list on; set sqlda_display on; select * from t1; commit; drop table t1; exit;'
-    act_1.reset()
-    act_1.isql(switches=['-q', '-m'], input=sqlda_check)
-    initial_sqlda = act_1.stdout.splitlines()
+    act.reset()
+    act.isql(switches=['-q', '-m'], input=sqlda_check)
+    initial_sqlda = act.stdout.splitlines()
     # Apply extracted metadata
-    act_1.reset()
-    act_1.isql(switches=[], input='\n'.join(initial_metadata))
+    act.reset()
+    act.isql(switches=[], input='\n'.join(initial_metadata))
     # New metadata
-    act_1.reset()
-    act_1.isql(switches=['-x'])
-    new_metadata = act_1.stdout.splitlines()
+    act.reset()
+    act.isql(switches=['-x'])
+    new_metadata = act.stdout.splitlines()
     # SQLDA new
-    act_1.reset()
-    act_1.isql(switches=['-q', '-m'], input=sqlda_check)
-    new_sqlda = act_1.stdout.splitlines()
+    act.reset()
+    act.isql(switches=['-q', '-m'], input=sqlda_check)
+    new_sqlda = act.stdout.splitlines()
     # Check
     assert list(unified_diff(initial_sqlda, new_sqlda)) == []
     assert list(unified_diff(initial_metadata, new_metadata)) == []

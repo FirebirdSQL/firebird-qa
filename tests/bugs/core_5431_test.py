@@ -1,30 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5431
-# title:        Support for DROP IDENTITY clause
-# decription:   
-#                  Checked on 4.0.0.477
-#                  18.08.2020: replaced expected_stdout, checked on 4.0.0.2164.
-#                  31.08.2021: added substitution for ignore difference in BLR offset values.
-#                
-# tracker_id:   CORE-5431
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-57063
+ISSUE:       57063
+TITLE:       Support for DROP IDENTITY clause
+DESCRIPTION:
+JIRA:        CORE-5431
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('RDB\\$[\\d]+', 'RDB'), ('.*at offset [\\d]+', 'at offset')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     --set echo on;
 
@@ -58,25 +47,26 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('RDB\\$[\\d]+', 'RDB'),
+                                                 ('.*at offset [\\d]+', 'at offset')])
 
-expected_stdout_1 = """
+expected_stdout = """
     IDENTITY_SEQUENCES_COUNT_1      1
     TEST1_ID                        32767
     IDENTITY_SEQUENCES_COUNT_2      0
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     invalid request BLR at offset 47
     -generator RDB is not defined
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

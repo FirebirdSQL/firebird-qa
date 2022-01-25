@@ -1,33 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5555
-# title:        3.0 error handling for SELECT WITH LOCK breaks compatibility with 2.5
-# decription:   
-#                   Checked on:
-#                       4.0.0.1635 SS: OK, 1.053s.
-#                       4.0.0.1633 CS: OK, 1.309s.
-#                       3.0.5.33180 SS: OK, 0.823s.
-#                       3.0.5.33178 CS: OK, 1.181s.
-#                   See also http://tracker.firebirdsql.org/browse/CORE-4473
-#                
-# tracker_id:   CORE-5555
-# min_versions: ['3.0.3']
-# versions:     3.0.3
-# qmid:         None
+
+"""
+ID:          issue-5822
+ISSUE:       5822
+TITLE:       3.0 error handling for SELECT WITH LOCK breaks compatibility with 2.5
+DESCRIPTION:
+JIRA:        CORE-5555
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table test(x int, y int);
@@ -40,7 +26,7 @@ test_script_1 = """
     execute block as
       declare c int;
     begin
-      execute statement ('select current_transaction from test where x = ? and 1=1 with lock') (1) 
+      execute statement ('select current_transaction from test where x = ? and 1=1 with lock') (1)
           on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
           as user 'sysdba' password 'masterkey'
       into c;
@@ -93,16 +79,15 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     GDS_ON_UPDATE                   335544336
     GDS_ON_SELECT_WITH_LOCK         335544336
 """
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

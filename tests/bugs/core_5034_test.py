@@ -1,63 +1,55 @@
 #coding:utf-8
-#
-# id:           bugs.core_5034
-# title:        At least 5 seconds delay on disconnect could happen if disconnect happens close after Event Manager initialization
-# decription:
-#                  This test uses Python multiprocessing package in order to spawn multiple processes with trivial job: attach/detach from DB.
-#                  Number processes ('planned_attachments') and of iterations for each of them ('reconnect_count') depends on FB architecture
-#                  which is obtained by call of SP sys_get_fb_arch.
-#                  For ClassicServer weird effect was detected: when number of processes is more then ~34-35 some of Python processes may not
-#                  finish (but CS processes are gone and thus database has no attachments).
-#                  Database is created with DB_level trigger 'on disconnect' which issues post_event and writes 'now'-timestamp to the table.
-#                  Because we have dozen of different running processes, one need to distinguish records in the table for every of attachments.
-#                  But values of current_connection are not suitable: they are unknown outside of DB connection, i.e. at the moment when we
-#                  just return from DB attachment we still need to know some number that was 'linked' to just finished connection process.
-#                  For this purpose ROLES are used in this test: we generate them beforehand (see 'init_test' section) and when create new
-#                  attachment then specify ROLE in its arguments: 'R_000' for 1st spawned python process, 'R_001' for 2nd etc.
-#                  Value of current_role will be written by DB-trigger in the table LOG4DETACH.
-#                  When attachment finishes and control is returned to Python child process, we catch current timestamp again and save it
-#                  value inside Python data structure 'sqllst' - common list.
-#                  After some process will finish iterations, it will build SQL script for further applying to database and save it to the file
-#                  with name that reflects to this process: 'tmp_5034_after_detach_NNN.log' whene NNN = '000', '001' etc.
-#                  This file will contain INSERT command with values of timestamp that were on every iteration just after disconnect.
-#                  After all processes will finish, we'll have completed set of such files and they will be "concatenated" together for applying
-#                  at once by single call of ISQL.
-#                  Finally, we can analyze values of datediff() between moments of 'just before' and 'just after' disconnects.
-#                  In order to properly detect records that correspond to post-apply scripts (with INSERT statements) special integer field 'SEQ'
-#                  is used: it will have even values for event when we are 'just before detach' (i.e. "inside" database connection) and odd values
-#                  when we are 'just after' (i.e. when connection has been just closed). The view 'v_top10_slow' is used to display connects which
-#                  were closed too slow.
-#                  Normally, this view should return ONE record with text 'Detaches were fast'.
-#                  Otherwise it will return concrete values of time that was spent on detach process, in milliseconds.
-#                  #######################
-#                  ###  A C H T U N G  ###
-#                  #######################
-#                  Following parameters: 'planned_attachments' and 'reconnect_count' affects on test result **VERY** strong, especially on Classic.
-#                  You may need to change them if test results are unstable. Do NOT make value of 'planned_attachments' more than 33-34 on Classic!
-#
-#                  Successfully checked on build 32276, SS/SC/CS.
-#                  Confirmed error on WI-V3.0.0.32134, Cs: "MonitoringData: Cannot initialize the shared memory region / sh_mem_length_mapped is 0"
-#
-#                  23.11.2016
-#                  Increased threshold to 6000 ms instead of old 5000 ms -- see
-#                  http://web.firebirdsql.org/download/prerelease/results/archive/3.0.2.32630/bugs.core_5034.html
-#
-#                  [pcisar] 26.11.2021
-#                  New implementation postponed for later time due to complexity
-# tracker_id:   CORE-5034
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:
+
+"""
+ID:          issue-5321
+ISSUE:       5321
+TITLE:       At least 5 seconds delay on disconnect could happen if disconnect happens close after Event Manager initialization
+DESCRIPTION:
+    This test uses Python multiprocessing package in order to spawn multiple processes with trivial job: attach/detach from DB.
+    Number processes ('planned_attachments') and of iterations for each of them ('reconnect_count') depends on FB architecture
+    which is obtained by call of SP sys_get_fb_arch.
+    For ClassicServer weird effect was detected: when number of processes is more then ~34-35 some of Python processes may not
+    finish (but CS processes are gone and thus database has no attachments).
+    Database is created with DB_level trigger 'on disconnect' which issues post_event and writes 'now'-timestamp to the table.
+    Because we have dozen of different running processes, one need to distinguish records in the table for every of attachments.
+    But values of current_connection are not suitable: they are unknown outside of DB connection, i.e. at the moment when we
+    just return from DB attachment we still need to know some number that was 'linked' to just finished connection process.
+    For this purpose ROLES are used in this test: we generate them beforehand (see 'init_test' section) and when create new
+    attachment then specify ROLE in its arguments: 'R_000' for 1st spawned python process, 'R_001' for 2nd etc.
+    Value of current_role will be written by DB-trigger in the table LOG4DETACH.
+    When attachment finishes and control is returned to Python child process, we catch current timestamp again and save it
+    value inside Python data structure 'sqllst' - common list.
+    After some process will finish iterations, it will build SQL script for further applying to database and save it to the file
+    with name that reflects to this process: 'tmp_5034_after_detach_NNN.log' whene NNN = '000', '001' etc.
+    This file will contain INSERT command with values of timestamp that were on every iteration just after disconnect.
+    After all processes will finish, we'll have completed set of such files and they will be "concatenated" together for applying
+    at once by single call of ISQL.
+    Finally, we can analyze values of datediff() between moments of 'just before' and 'just after' disconnects.
+    In order to properly detect records that correspond to post-apply scripts (with INSERT statements) special integer field 'SEQ'
+    is used: it will have even values for event when we are 'just before detach' (i.e. "inside" database connection) and odd values
+    when we are 'just after' (i.e. when connection has been just closed). The view 'v_top10_slow' is used to display connects which
+    were closed too slow.
+    Normally, this view should return ONE record with text 'Detaches were fast'.
+    Otherwise it will return concrete values of time that was spent on detach process, in milliseconds.
+    #######################
+    ###  A C H T U N G  ###
+    #######################
+    Following parameters: 'planned_attachments' and 'reconnect_count' affects on test result **VERY** strong, especially on Classic.
+    You may need to change them if test results are unstable. Do NOT make value of 'planned_attachments' more than 33-34 on Classic!
+
+    Successfully checked on build 32276, SS/SC/CS.
+    Confirmed error on WI-V3.0.0.32134, Cs: "MonitoringData: Cannot initialize the shared memory region / sh_mem_length_mapped is 0"
+
+    23.11.2016
+    Increased threshold to 6000 ms instead of old 5000 ms -- see
+    http://web.firebirdsql.org/download/prerelease/results/archive/3.0.2.32630/bugs.core_5034.html
+JIRA:        CORE-5034
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     set bail on;
 
     create or alter view v_top10_slow as select 1 x from rdb$database;
@@ -242,7 +234,21 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3) # , init=init_script_1) commented out to speed up SKIP, uncomment when implemented
+db = db_factory(init=init_script)
+
+tmp_user = user_factory('db', name='tmp$c5034', password='123')
+
+act = python_act('db')
+
+expected_stdout = """
+    All detaches not exceeded threshold
+    Records affected: 1
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0')
+def test_1(act: Action, tmp_user: User):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -449,18 +455,3 @@ db_1 = db_factory(sql_dialect=3) # , init=init_script_1) commented out to speed 
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    All detaches not exceeded threshold
-    Records affected: 1
-"""
-
-user_1 = user_factory('db_1', name='tmp$c5034', password='123')
-
-@pytest.mark.version('>=3.0')
-def test_1(act_1: Action, user_1: User):
-    pytest.skip("New implementation postponed")
-
-

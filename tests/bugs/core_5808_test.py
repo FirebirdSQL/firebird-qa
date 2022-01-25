@@ -241,6 +241,7 @@ expected_stdout_1 = """
     + VALIDATION FINISHED: 0 ERRORS, 0 WARNINGS, 0 FIXED
 """
 
+@pytest.mark.skip('FIXME: encryption plugin')
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
-    pytest.skip("Requires encryption plugin")
+    pytest.fail("Not IMPLEMENTED")

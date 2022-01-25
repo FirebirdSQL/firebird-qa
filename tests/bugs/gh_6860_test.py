@@ -2,29 +2,29 @@
 #
 # id:           bugs.gh_6860
 # title:        Create user statement fails with SQLSTATE = HY000 when using DataTypeCompatibility
-# decription:   
+# decription:
 #                   Test makes back-copies of firebnird.conf + databases.conf and changes firebird.conf by adding DataTypeCompatibility = N.M;
 #                   also, databases.conf is changed by adding alias for new database which will be self-security and has alias = 'self_gh_6860'.
 #                   Such database (self-security) allows us to create new DBA (SYSDBA/masterkey) without any affect on common security.db data.
-#               
+#
 #                   Then we make file-level copy of security.db to database defined by alias 'self_gh_6860', do connect and apply SQL script that
 #                   creates and drops user. Repeat this for DataTypeCompatibility = 2.5 and 3.0.
 #                   No errors must raise during this work.
-#               
+#
 #                   Finally, test restored back-copies of .conf files.
-#               
+#
 #                   NOTE-1.
 #                   Perhaps, test can be significantly simplified (may be implemented without self-security database ?), but this will be done later.
-#               
+#
 #                   NOTE-2.
 #                   One need to change temporary DB state to 'full shutdown' before drop it otherwise we get 'Windows 32' error because DB file remains
 #                   opened by engine. In order to do this, we have to call fbsvcmgr and pass "expected_db" command switch to it with specifying name
 #                   of tempoprary DB which is self-security. Otherwise fbsvcmgr will try to connect to common security.db.
-#               
+#
 #                   Confirmed on 5.0.0.82, 4.0.1.2519: statement  'CREATE USER SYSDBA ...' fails with "SQLSTATE = HY000/.../-Incompatible data type"
 #                   Checked on 5.0.0.131 SS/CS, 4.0.1.2563 SS/CS -- all fine.
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['4.0.1']
 # versions:     4.0.1
 # qmid:         None
@@ -53,34 +53,34 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  from fdb import services
 #  from datetime import datetime as dt
 #  from datetime import timedelta
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #-----------------------------------
 #  def showtime():
 #       global dt
 #       return ''.join( (dt.now().strftime("%H:%M:%S.%f")[:11],'.') )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f,
 #      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#  
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -92,47 +92,47 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            print('type(f_names_list[i])=',type(f_names_list[i]))
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
-#  
+#
+#
 #  FB_HOME = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
 #  # Resut: FB_HOME is full path to FB instance home (with trailing slash).
-#  
+#
 #  if os.name == 'nt':
 #      # For Windows we assume that client library is always in FB_HOME dir:
 #      FB_CLNT=os.path.join(FB_HOME, 'fbclient.dll')
 #  else:
 #      # For Linux client library will be searched in 'lib' subdirectory of FB_HOME:
 #      FB_CLNT=os.path.join(FB_HOME, 'lib', 'libfbclient.so' )
-#  
-#  
+#
+#
 #  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#  
+#
 #  fbconf_cur = os.path.join( FB_HOME, 'firebird.conf')
 #  fbconf_bak = os.path.join( context['temp_directory'], 'firebird'+dts+'.bak')
-#  
+#
 #  dbconf_cur = os.path.join(FB_HOME, 'databases.conf')
 #  dbconf_bak = os.path.join(context['temp_directory'], 'databases_'+dts+'.bak')
-#  
+#
 #  shutil.copy2( fbconf_cur, fbconf_bak )
 #  shutil.copy2( dbconf_cur, dbconf_bak )
-#  
+#
 #  sec_db = context['isc4_path']
 #  tmp_alias = 'self_gh_6860'
-#  
+#
 #  ##############################################################
-#  
+#
 #  for iter in (1,2):
-#  
+#
 #      DCOMPAT_VAL = '2.5' if iter == 1 else '3.0'
 #      DCOMPAT_SUF = DCOMPAT_VAL.replace('.', '')
 #      DBA_PSWD = 'pw6860_' + DCOMPAT_SUF
 #      DBA_PSWD = 'masterkey'
-#  
+#
 #      tmp_fdb = os.path.join(context['temp_directory'],'tmp_gh_6860_'+DCOMPAT_SUF+'.fdb')
 #      alias_data=    '''
 #          # Temporary added for executing test gh_6860.fbt
@@ -142,16 +142,16 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              SecurityDatabase = %(tmp_alias)s
 #          }
 #      ''' % locals()
-#  
+#
 #      cleanup( (tmp_fdb,) )
 #      shutil.copy2( sec_db, tmp_fdb )
-#  
-#  
+#
+#
 #      # Restore original content of .conf files:
 #      ##################
 #      shutil.copy2( fbconf_bak, fbconf_cur )
 #      shutil.copy2( dbconf_bak, dbconf_cur )
-#  
+#
 #      f_fbconf=open( fbconf_cur, 'r')
 #      fbconf_content=f_fbconf.readlines()
 #      f_fbconf.close()
@@ -159,70 +159,70 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          line = s.lower().lstrip()
 #          if line.startswith( 'DataTypeCompatibility'.lower() ):
 #              fbconf_content[i] = '# [temply commented by fbtest for gh_6860.fbt] ' + s
-#  
+#
 #      text2app=    '''
 #      ### TEMPORARY CHANGED FOR gh-6860.fbt ###
 #      DataTypeCompatibility = %(DCOMPAT_VAL)s
 #      #########################################
 #      ''' % locals()
-#  
+#
 #      fbconf_content += [ os.linesep + x for x in text2app.split( os.linesep ) ]
-#  
+#
 #      f_fbconf=open( fbconf_cur, 'w')
 #      f_fbconf.writelines( fbconf_content )
 #      flush_and_close( f_fbconf )
-#  
-#  
+#
+#
 #      f_dbconf=open( dbconf_cur, 'a')
 #      f_dbconf.seek(0, 2)
 #      f_dbconf.write( alias_data )
 #      flush_and_close( f_dbconf )
-#  
-#  
+#
+#
 #      sql_txt = '''
 #          set bail on;
 #          set list on;
-#  
+#
 #          create or alter user %(user_name)s password '%(DBA_PSWD)s';
 #          create or alter user tmp$gh_6860_%(DCOMPAT_SUF)s password '123' grant admin role;
 #          commit;
-#  
+#
 #          connect 'localhost:%(tmp_alias)s' user tmp$gh_6860_%(DCOMPAT_SUF)s password '123';
-#  
+#
 #          create or alter user tmp$gh_6860_%(DCOMPAT_SUF)s_x password '456';
 #          commit;
-#  
+#
 #          connect 'localhost:%(tmp_alias)s' user %(user_name)s password '%(DBA_PSWD)s';
-#  
+#
 #          select sec$user_name from sec$users where sec$user_name starting with upper('tmp$gh_6860_') order by sec$user_name;
 #          commit;
-#  
+#
 #          drop user tmp$gh_6860_%(DCOMPAT_SUF)s;
 #          drop user tmp$gh_6860_%(DCOMPAT_SUF)s_x;
 #          commit;
 #      ''' % dict(globals(), **locals())
-#  
+#
 #      f_isql_cmd=open( os.path.join(context['temp_directory'],'tmp_6860.dtc_' + DCOMPAT_SUF + '.sql'), 'w')
 #      f_isql_cmd.write(sql_txt)
 #      flush_and_close( f_isql_cmd )
-#  
+#
 #      f_isql_log = open( os.path.splitext(f_isql_cmd.name)[0] + '.log', 'w' )
 #      f_isql_err = open( os.path.splitext(f_isql_cmd.name)[0] + '.err', 'w' )
 #      subprocess.call( [ context['isql_path'], 'localhost:' + tmp_alias,  '-q', '-user', user_name, '-i', f_isql_cmd.name], stdout=f_isql_log, stderr=f_isql_err )
 #      flush_and_close( f_isql_log )
 #      flush_and_close( f_isql_err )
-#  
+#
 #      with open( f_isql_err.name, 'r' ) as f:
 #          for line in f:
 #              if line:
 #                  print("Unexpected STDERR when create/drop users: "+line)
-#  
+#
 #      # Output list of users created on this iteration of test:
 #      with open( f_isql_log.name, 'r' ) as f:
 #          for line in f:
 #              if line:
 #                  print(line)
-#  
+#
 #      f_shutdown_log=open( os.path.join(context['temp_directory'],'tmp_6860_shutdown_'+DCOMPAT_SUF+'.log'), 'w')
 #      subprocess.call( [context['fbsvcmgr_path'],
 #                        "localhost:service_mgr",
@@ -234,22 +234,22 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                       stderr = subprocess.STDOUT
 #                     )
 #      flush_and_close( f_shutdown_log )
-#  
+#
 #      with open( f_shutdown_log.name, 'r' ) as f:
 #          for line in f:
 #              if line:
 #                  print("Unexpected STDERR when try to make full shutdown: "+line)
-#  
-#  
+#
+#
 #      cleanup( (tmp_fdb,) )
 #      cleanup( (f_isql_err,f_isql_log,f_isql_cmd, f_shutdown_log) )
-#  
-#  
+#
+#
 #  # Restore original content of firebird.conf:
 #  ##################
 #  shutil.move( fbconf_bak, fbconf_cur )
 #  shutil.move( dbconf_bak, dbconf_cur )
-#  
+#
 #---
 
 act_1 = python_act('db_1', substitutions=substitutions_1)
@@ -258,12 +258,12 @@ expected_stdout_1 = """
     SEC$USER_NAME                   TMP$GH_6860_25
     SEC$USER_NAME                   TMP$GH_6860_25_X
 
-    
+
     SEC$USER_NAME                   TMP$GH_6860_30
     SEC$USER_NAME                   TMP$GH_6860_30_X
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0.1')
-@pytest.mark.xfail
 def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")

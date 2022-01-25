@@ -1,52 +1,43 @@
 #coding:utf-8
-#
-# id:           bugs.core_5593
-# title:        System function RDB$ROLE_IN_USE cannot take long role names
-# decription:   
-#                  Test creates several roles and grants them to user.
-#                  Role #1 is common ascii string without spaces.
-#                  Role #2 is ascii string with spaces, all character are written in UPPERCASE.
-#                  Role #3 is ascii string with spaces, all character are written in lowercase.
-#               
-#                  After make connection to database using role #3 we have to check that this role
-#                  indeed was applied to connection and that rdb$role_in_use *does* return this role name also.
-#                  See also: github.com/FirebirdSQL/firebird/commit/61b4bf0d276884a0ba0f2edef3b41fa2c58c87ee
-#                  Comments there:
-#                       - roleStr.upper();
-#                       + //roleStr.upper();		// sorry - but this breaks role names containing lower case letters
-#               
-#               
-#                  ::: NB CAUTION ::: TEMPLY DEFERRED :::
-#                  We also have to check cases when role contains NON-ASCII characters but currently this is impossible.
-#                  Exception like:
-#                  ===
-#                     Statement failed, SQLSTATE = 22001
-#                     arithmetic exception, numeric overflow, or string truncation
-#                     -string right truncation
-#                     -expected length 63, actual 79
-#                  ===
-#                  - is raised when non-ascii role contains only ~40 *characters* and connection charset = UTF8.
-#                  Sent letter to Alex, 23.06.2018 09:21, waiting for reply.
-#               
-#                
-# tracker_id:   CORE-5593
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5859
+ISSUE:       5859
+TITLE:       System function RDB$ROLE_IN_USE cannot take long role names
+DESCRIPTION:
+  Test creates several roles and grants them to user.
+  Role #1 is common ascii string without spaces.
+  Role #2 is ascii string with spaces, all character are written in UPPERCASE.
+  Role #3 is ascii string with spaces, all character are written in lowercase.
+
+  After make connection to database using role #3 we have to check that this role
+  indeed was applied to connection and that rdb$role_in_use *does* return this role name also.
+  See also: github.com/FirebirdSQL/firebird/commit/61b4bf0d276884a0ba0f2edef3b41fa2c58c87ee
+  Comments there:
+     - roleStr.upper();
+     + //roleStr.upper();		// sorry - but this breaks role names containing lower case letters
+
+
+  ::: NB CAUTION ::: TEMPLY DEFERRED :::
+  We also have to check cases when role contains NON-ASCII characters but currently this is impossible.
+  Exception like:
+  ===
+   Statement failed, SQLSTATE = 22001
+   arithmetic exception, numeric overflow, or string truncation
+   -string right truncation
+   -expected length 63, actual 79
+  ===
+  - is raised when non-ascii role contains only ~40 *characters* and connection charset = UTF8.
+  Sent letter to Alex, 23.06.2018 09:21, waiting for reply.
+JIRA:        CORE-5593
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set names utf8;
     set wng off;
     set list on;
@@ -59,11 +50,11 @@ test_script_1 = """
     --commit;
 
     create or alter view v_role_info as
-    select 
+    select
         current_user as who_am_i,
         current_role as my_current_role,
-        rdb$role_name as r_name, 
-        rdb$owner_name r_owner, 
+        rdb$role_name as r_name,
+        rdb$owner_name r_owner,
         rdb$role_in_use(rdb$role_name) r_in_use
     from rdb$roles
     where coalesce(rdb$system_flag,0) = 0
@@ -82,11 +73,11 @@ test_script_1 = """
     --show grants;
     grant select on v_role_info to user tmp$c5593;
     commit;
-    
-    --set echo on; 
+
+    --set echo on;
 
     connect '$(DSN)'
-        user tmp$c5593 
+        user tmp$c5593
         password '123'
         role chief
     ;
@@ -94,21 +85,21 @@ test_script_1 = """
     commit;
 
     connect '$(DSN)'
-        user tmp$c5593 
+        user tmp$c5593
         password '123'
         role "CHIEF OF TRANSPORT AND LOGISTICS DEPARTMENT"
     ;
     select * from v_role_info where my_current_role = r_name;
     commit;
-    
+
     connect '$(DSN)'
-        user tmp$c5593 
+        user tmp$c5593
         password '123'
         role "chief of financial and accounting department"
     ;
 
     -- ###########################################
-    -- Before fix this statement returned FALSE as 
+    -- Before fix this statement returned FALSE as
     -- result of rdb$role_in_use(rdb$role_name)
     -- ###########################################
     select * from v_role_info where my_current_role = r_name;
@@ -118,12 +109,12 @@ test_script_1 = """
     connect '$(DSN)' user sysdba password 'masterkey';
     drop user tmp$c5593;
     commit;
-    
+
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AM_I                        TMP$C5593
     MY_CURRENT_ROLE                 CHIEF
     R_NAME                          CHIEF
@@ -144,8 +135,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -1,28 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_5049
-# title:        Regression: incorrect calculation of byte-length for view columns
-# decription:   
-# tracker_id:   CORE-5049
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5336
+ISSUE:       5336
+TITLE:       Regression: incorrect calculation of byte-length for view columns
+DESCRIPTION:
+JIRA:        CORE-5049
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = [('^((?!sqltype).)*$', ''), ('[ ]+', ' '), ('[\t]*', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Confirmed:
-    -- 1) FAULT on WI-V3.0.0.32208. 
+    -- 1) FAULT on WI-V3.0.0.32208.
     -- 2) SUCCESS on LI-V3.0.0.32233, Rev: 62699.
     create or alter view v_test as
     select
@@ -32,23 +25,24 @@ test_script_1 = """
     from
       rdb$database
     rows 1;
-    
+
     set sqlda_display on;
     set list on;
     select * from v_test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype).)*$', ''), ('[ ]+', ' '),
+                                                 ('[\t]*', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 UTF8
     02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 UTF8
     03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 UTF8
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

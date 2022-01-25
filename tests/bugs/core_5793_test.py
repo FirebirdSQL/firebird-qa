@@ -170,8 +170,9 @@ expected_stdout_1 = """
     335544351
 """
 
+@pytest.mark.skip('FIXME: encryption plugin')
 @pytest.mark.version('>=3.0.4')
 def test_1(act_1: Action):
-    pytest.skip("Requires encryption plugin")
+    pytest.fail("Not IMPLEMENTED")
 
 

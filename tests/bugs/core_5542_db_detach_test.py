@@ -1,35 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_5542_db_detach
-# title:        Database-level triggers related to TRANSACTION events (i.e. start, commit and rollback) do not take in account their POSITION index (when more than one trigger for the same event type is defined)
-# decription:   
-#                   Note. This test does check only for 'DATABASE DISCONNECT' case (though it worked Ok before this bug was found).
-#                   Resuls for 22.05.2017:
-#                       fb30Cs, build 3.0.3.32725: OK, 2.172ss.
-#                       fb30SC, build 3.0.3.32725: OK, 1.406ss.
-#                       FB30SS, build 3.0.3.32725: OK, 1.250ss.
-#                       FB40CS, build 4.0.0.645: OK, 2.313ss.
-#                       FB40SC, build 4.0.0.645: OK, 1.485ss.
-#                       FB40SS, build 4.0.0.645: OK, 1.500ss.
-#                
-# tracker_id:   CORE-5542
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5810-B
+ISSUE:       5810
+TITLE:       Database-level triggers related to TRANSACTION events (i.e. start, commit and rollback) do not take in account their POSITION index (when more than one trigger for the same event type is defined)
+DESCRIPTION:
+  This test does check only for 'DATABASE DISCONNECT' case (though it worked Ok before this bug was found).
+JIRA:        CORE-5542
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     set term ^;
@@ -72,7 +57,7 @@ test_script_1 = """
     create trigger trg_log_bi for trg_log active before insert position 0 as
     begin
         new.id = coalesce( new.id, gen_id(g,1) );
-    end 
+    end
     ^
     set term ;^
     commit;
@@ -84,23 +69,23 @@ test_script_1 = """
     begin
         if ( exists(select * from tsignal) ) then
             insert into trg_log(msg) values('trigger tx_ciao');
-    end 
+    end
     ^
 
     create or alter trigger trg_db_deattach_anna active on disconnect position 22 as
     begin
         if ( exists(select * from tsignal) ) then
             insert into trg_log(msg) values('trigger tx_anna');
-    end 
+    end
     ^
 
     create or alter trigger trg_db_deattach_beta active on disconnect position 3 as
     begin
         if ( exists(select * from tsignal) ) then
             insert into trg_log(msg) values('trigger tx_beta');
-    end 
+    end
     ^
-    
+
     set term ;^
     commit;
 
@@ -108,10 +93,10 @@ test_script_1 = """
     commit;
 
     connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    
+
 
     select
-         r.rdb$trigger_name             
+         r.rdb$trigger_name
         ,r.rdb$trigger_sequence
         ,r.rdb$trigger_type
     from rdb$triggers r
@@ -124,9 +109,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$TRIGGER_NAME                TRG_DB_DEATTACH_BETA
     RDB$TRIGGER_SEQUENCE            3
     RDB$TRIGGER_TYPE                8193
@@ -146,8 +131,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5658
-# title:        Execute statement with excess parameters
-# decription:   
-#                   Checked on 4.0.0.1479: OK, 1.608s.
-#                
-# tracker_id:   CORE-5658
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5924
+ISSUE:       5924
+TITLE:       Execute statement with excess parameters
+DESCRIPTION:
+JIRA:        CORE-1000
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_test as begin end;
     commit;
 
@@ -71,7 +62,7 @@ test_script_1 = """
             sttm = sttm || ' t.s = :param_s and';
 
 
-        sttm = sttm || ' 1=1'; 
+        sttm = sttm || ' 1=1';
         --suspend;
 
         for execute statement ( sttm ) ( excess param_n := :a_n, excess param_t := extract(month from :a_t), excess param_b := :a_b, excess param_s := :a_s ) into id
@@ -93,9 +84,9 @@ test_script_1 = """
     select 'case-5' as msg, p.* from sp_test(null, null, null, 'z') as p;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             case-1
     ID                              3
     MSG                             case-1
@@ -121,8 +112,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

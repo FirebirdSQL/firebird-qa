@@ -2,27 +2,27 @@
 #
 # id:           bugs.gh_5995
 # title:        Connection to server may hang when working with encrypted databases over non-TCP protocol [CORE5730]
-# decription:   
+# decription:
 #                   https://github.com/FirebirdSQL/firebird/issues/5995
-#               
+#
 #                   Test implemented only to be run on Windows.
 #                   It assumes that there are files keyholder.dll and keyholder.conf in the %FIREBIRD_HOME%\\plugins dir.
 #                   These files were provided by IBSurgeon and added during fbt_run prepare phase by batch scenario (qa_rundaily).
 #                   File keyholder.conf initially contains several keys.
-#               
+#
 #                   If we make this file EMPTY then usage of XNET and WNET protocols became improssible before this ticket was fixed.
 #                   Great thanks to Alex for suggestions.
-#               
+#
 #                   Confirmed bug on 3.0.1.32609: ISQL hangs on attempt to connect to database when file plugins\\keyholder.conf is empty.
 #                   In order to properly finish test, we have to kill hanging ISQL and change DB state to full shutdown (with subsequent
 #                   returning it to online) - fortunately, connection using TCP remains avaliable in this case.
-#               
+#
 #                   Checked on:
 #                       5.0.0.181 SS;    5.0.0.169 CS;
 #                       4.0.1.2578 SS;   4.0.1.2578 CS;
 #                       3.0.8.33489 SS;  3.0.8.33476 CS.
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['3.0.4']
 # versions:     3.0.4
 # qmid:         None
@@ -41,7 +41,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import subprocess
 #  from subprocess import Popen
@@ -50,34 +50,34 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import shutil
 #  import re
 #  import fdb
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  engine = db_conn.engine_version
 #  db_name = db_conn.database_name
 #  db_conn.close()
-#  
+#
 #  svc = fdb.services.connect(host='localhost', user=user_name, password=user_password)
 #  FB_HOME = svc.get_home_directory()
 #  svc.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f,
 #      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#  
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -89,26 +89,26 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            print('type(f_names_list[i])=',type(f_names_list[i]))
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
-#  
+#
+#
 #  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#  
+#
 #  kholder_cur = os.path.join( FB_HOME, 'plugins', 'keyholder.conf')
 #  kholder_bak = os.path.join( context['temp_directory'], 'keyholder'+dts+'.bak')
-#  
+#
 #  shutil.copy2( kholder_cur, kholder_bak)
-#  
+#
 #  # Make file %FB_HOME%\\plugins\\keyholder.conf empty:
 #  with open(kholder_cur,'w') as f:
 #    pass
-#  
+#
 #  MAX_SECONDS_TO_WAIT = 3
-#  
+#
 #  # Trying to establish connection to database using WNET and XNET protocols.
 #  # Async. launch of ISQL with check that it will finished within some reasonable time (and w/o errors).
 #  # If it will hang - kill (this is bug dexcribed in the ticket)
@@ -116,11 +116,11 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      f_isql_sql=open(os.path.join(context['temp_directory'],'tmp_gh_5995.'+p+'.sql'),'w')
 #      f_isql_sql.write('set list on; select mon$remote_protocol from mon$attachments where mon$attachment_id = current_connection;')
 #      flush_and_close( f_isql_sql )
-#  
+#
 #      protocol_conn_string = ''.join( (p, '://', db_name) )
 #      f_isql_log=open( os.path.join(context['temp_directory'],'tmp_gh_5995.'+p+'.log'), 'w')
 #      p_isql = Popen([ context['isql_path'], protocol_conn_string, "-i", f_isql_sql.name], stdout=f_isql_log, stderr=subprocess.STDOUT )
-#  
+#
 #      time.sleep(0.2)
 #      for i in range(0,MAX_SECONDS_TO_WAIT):
 #          # Check if child process has terminated. Set and return returncode attribute. Otherwise, returns None.
@@ -133,25 +133,25 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              else:
 #                  f_isql_log.write( '\\nISQL process %d hangs for %d seconds and is forcedly killed.' % (p_isql.pid, MAX_SECONDS_TO_WAIT) )
 #                  p_isql.terminate()
-#      
+#
 #      flush_and_close(f_isql_log)
-#  
+#
 #      with open(f_isql_log.name,'r') as f:
 #          for line in f:
 #              if line:
 #                  print(line)
-#  
+#
 #      cleanup((f_isql_sql,f_isql_log))
-#  
+#
 #  shutil.move( kholder_bak, kholder_cur)
-#  
+#
 #  # ::: NOTE ::: We have to change DB state to full shutdown and bring it back online
 #  # in order to prevent "Object in use" while fbtest will try to drop this DB
 #  #####################################
 #  runProgram('gfix',[dsn,'-shut','full','-force','0'])
 #  runProgram('gfix',[dsn,'-online'])
-#  
-#  
+#
+#
 #---
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
@@ -160,8 +160,8 @@ expected_stdout_1 = """
     MON$REMOTE_PROTOCOL             XNET
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0.4')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
 def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")

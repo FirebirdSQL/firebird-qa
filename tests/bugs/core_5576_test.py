@@ -1,45 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_5576
-# title:        Bugcheck on queries containing WITH LOCK clause
-# decription:
-#                  We create database as it was show in the ticket and do backup and restore of it.
-#                  Then we run checking query - launch isql two times and check that 2nd call of ISQL
-#                  does not raise bugcheck. Finally we run online validation against this DB.
-#
-#                  Neither test query nor validation should raise any output in the STDERR.
-#
-#                  Confirmed bug on 4.0.0.684 and 3.0.3.32743, got:
-#                  ===
-#                      Statement failed, SQLSTATE = XX000
-#                      internal Firebird consistency check (decompression overran buffer (179), file: sqz.cpp line: 282)
-#                      Statement failed, SQLSTATE = XX000
-#                      internal Firebird consistency check (can't continue after bugcheck)
-#                  ===
-#                  Results after fix:
-#                  fb30Cs, build 3.0.3.32746: OK, 6.328s.
-#                  fb30SC, build 3.0.3.32746: OK, 3.469s.
-#                  FB30SS, build 3.0.3.32746: OK, 3.172s.
-#                  FB40CS, build 4.0.0.685: OK, 5.954s.
-#                  FB40SC, build 4.0.0.685: OK, 3.781s.
-#                  FB40SS, build 4.0.0.685: OK, 2.828s.
-#
-# tracker_id:   CORE-5576
-# min_versions: ['3.0.3']
-# versions:     3.0.3
-# qmid:
+
+"""
+ID:          issue-5843
+ISSUE:       5843
+TITLE:       Bugcheck on queries containing WITH LOCK clause
+DESCRIPTION:
+  We create database as it was show in the ticket and do backup and restore of it.
+  Then we run checking query - launch isql two times and check that 2nd call of ISQL
+  does not raise bugcheck. Finally we run online validation against this DB.
+
+  Neither test query nor validation should raise any output in the STDERR.
+JIRA:        CORE-5576
+"""
 
 import pytest
 from pathlib import Path
-from firebird.qa import db_factory, python_act, Action, temp_file
+from firebird.qa import *
 
-# version: 3.0.3
-# resources: None
-
-substitutions_1 = [('[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9]', ''),
-                   ('Relation [0-9]{3,4}', 'Relation')]
-
-init_script_1 = """
+init_script = """
       recreate table test (
           i integer not null primary key,
           d char(1024) computed by ('qwert'),
@@ -49,124 +27,16 @@ init_script_1 = """
       commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-#
-#
-#  import os
-#  import subprocess
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  # Obtain engine version:
-#  engine = str(db_conn.engine_version) # convert to text because 'float' object has no attribute 'startswith'
-#
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  f_bkrs_err = open( os.path.join(context['temp_directory'],'tmp_backup_restore_5576.err'), 'w')
-#  f_bkup_tmp = os.path.join(context['temp_directory'],'tmp_5576.fbk')
-#  f_rest_tmp = os.path.join(context['temp_directory'],'tmp_5576.fdb')
-#
-#  cleanup( (f_bkup_tmp,f_rest_tmp) )
-#
-#  fn_nul = open(os.devnull, 'w')
-#  subprocess.call( [context['gbak_path'], "-b", dsn, f_bkup_tmp ],
-#                   stdout = fn_nul,
-#                   stderr = f_bkrs_err
-#                 )
-#
-#  subprocess.call( [context['gbak_path'], "-rep", f_bkup_tmp, 'localhost:'+f_rest_tmp ],
-#                   stdout = fn_nul,
-#                   stderr = f_bkrs_err
-#                 )
-#
-#  flush_and_close( f_bkrs_err )
-#  fn_nul.close()
-#
-#
-#  script='set list on;select 1 x1 from test where i=1 with lock;'
-#
-#  # Checking query (it did produce bugcheck before fix):
-#  ################
-#  runProgram('isql',['localhost:'+f_rest_tmp],script)
-#  runProgram('isql',['localhost:'+f_rest_tmp],script) # ---------- launch isql SECOND time!
-#
-#
-#  f_val_log=open( os.path.join(context['temp_directory'],'tmp_val_5576.log'), "w")
-#  f_val_err=open( os.path.join(context['temp_directory'],'tmp_val_5576.err'), "w")
-#
-#  subprocess.call([context['fbsvcmgr_path'],"localhost:service_mgr",
-#                   "action_validate",
-#                   "dbname", f_rest_tmp
-#                  ],
-#                  stdout=f_val_log,
-#                  stderr=f_val_err)
-#  flush_and_close( f_val_log )
-#  flush_and_close( f_val_err )
-#
-#  with open( f_val_log.name,'r') as f:
-#      print(f.read())
-#
-#  # Check that neither restore nor validation raised errors:
-#  ###################
-#  f_list=(f_bkrs_err, f_val_err)
-#  for i in range(len(f_list)):
-#      with open( f_list[i].name,'r') as f:
-#          for line in f:
-#              if line.split():
-#                  print( 'UNEXPECTED STDERR in file '+f_list[i].name+': '+line.upper() )
-#
-#
-#  # Cleanup
-#  #########
-#  cleanup( (f_bkrs_err, f_val_log, f_val_err, f_bkup_tmp, f_rest_tmp) )
-#
-#---
+act = python_act('db', substitutions=[('[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9]', ''),
+                                      ('Relation [0-9]{3,4}', 'Relation')])
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1_a = """
+expected_stdout_a = """
     X1                              1
 """
 
-expected_stdout_1_b = """
+expected_stdout_b = """
     Validation started
     Relation 128 (TEST)
       process pointer page    0 of    1
@@ -175,27 +45,27 @@ expected_stdout_1_b = """
     Validation finished
 """
 
-fbk_file_1 = temp_file('core_5576.fbk')
-fdb_file_1 = temp_file('core_5576.fdb')
+fbk_file = temp_file('core_5576.fbk')
+fdb_file = temp_file('core_5576.fdb')
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act_1: Action, fbk_file_1: Path, fdb_file_1: Path):
-    act_1.gbak(switches=['-b', act_1.db.dsn, str(fbk_file_1)])
-    act_1.reset()
-    act_1.gbak(switches=['-rep', str(fbk_file_1), act_1.get_dsn(fdb_file_1)])
+def test_1(act: Action, fbk_file: Path, fdb_file: Path):
+    act.gbak(switches=['-b', act.db.dsn, str(fbk_file)])
+    act.reset()
+    act.gbak(switches=['-rep', str(fbk_file), act.get_dsn(fdb_file)])
     #
     for i in range(2): # Run isql twice!
-        act_1.reset()
-        act_1.expected_stdout = expected_stdout_1_a
-        act_1.isql(switches=[act_1.get_dsn(fdb_file_1)], connect_db=False,
-                   input='set list on;select 1 x1 from test where i=1 with lock;')
-        assert act_1.clean_stdout == act_1.clean_expected_stdout
+        act.reset()
+        act.expected_stdout = expected_stdout_a
+        act.isql(switches=[act.get_dsn(fdb_file)], connect_db=False,
+                 input='set list on;select 1 x1 from test where i=1 with lock;')
+        assert act.clean_stdout == act.clean_expected_stdout
     # Validate the database
-    act_1.reset()
-    act_1.expected_stdout = expected_stdout_1_b
-    with act_1.connect_server() as srv:
-        srv.database.validate(database=fdb_file_1)
-        act_1.stdout = ''.join(srv.readlines())
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.reset()
+    act.expected_stdout = expected_stdout_b
+    with act.connect_server() as srv:
+        srv.database.validate(database=fdb_file)
+        act.stdout = ''.join(srv.readlines())
+    assert act.clean_stdout == act.clean_expected_stdout
 
 

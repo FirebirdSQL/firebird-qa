@@ -1,30 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5674
-# title:        Allow unused Common Table Expressions
-# decription:   
-#                   Checked on:
-#                       3.0.3.32852: OK, 0.875s.
-#                       4.0.0.830: OK, 1.062s.
-#                
-# tracker_id:   CORE-5674
-# min_versions: ['3.0.3']
-# versions:     3.0.3
-# qmid:         None
+
+"""
+ID:          issue-5940
+ISSUE:       5940
+TITLE:       Allow unused Common Table Expressions
+DESCRIPTION:
+JIRA:        CORE-5674
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+', '-At line: column:')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     -- Should PASS but two warnings will be issued:
@@ -42,7 +31,7 @@ test_script_1 = """
       select 2 z from rdb$database
     )
     select z y, z*2 x from z
-    ; 
+    ;
 
 
     -- Should PASS but one warning will be issued:
@@ -111,15 +100,18 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script,
+               substitutions=[('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+',
+                               '-At line: column:')])
 
-expected_stdout_1 = """
+expected_stdout = """
     Y                               2
     X                               4
 
     X                               0
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     SQL warning code = -104
     -CTE "X" is not used in query
     -CTE "Y" is not used in query
@@ -128,7 +120,7 @@ expected_stderr_1 = """
     -CTE "B" is not used in query
     -CTE "C" is not used in query
     -CTE "D" is not used in query
-    
+
     Statement failed, SQLSTATE = 42S02
     Dynamic SQL Error
     -SQL error code = -204
@@ -143,10 +135,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

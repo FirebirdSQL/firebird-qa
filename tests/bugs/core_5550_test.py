@@ -1,31 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_5550
-# title:        Computed decimal field in a view has wrong RDB$FIELD_PRECISION
-# decription:   
-#                   30SS, build 3.0.3.32738: OK, 0.828s.
-#                   40SS, build 4.0.0.680: OK, 1.062s.
-#                
-# tracker_id:   CORE-5550
-# min_versions: ['3.0.3']
-# versions:     3.0.3
-# qmid:         None
+
+"""
+ID:          issue-5818
+ISSUE:       5818
+TITLE:       Computed decimal field in a view has wrong RDB$FIELD_PRECISION
+DESCRIPTION:
+JIRA:        CORE-5550
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    recreate view v_test(f) as 
-    select cast(null as decimal(10,2)) 
+test_script = """
+    recreate view v_test(f) as
+    select cast(null as decimal(10,2))
     from rdb$database;
     commit;
 
@@ -42,9 +32,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RF_FIELD_NAME                   F
     FF_FIELD_PREC                   18
     FF_FIELD_SCALE                  -2
@@ -52,8 +42,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

@@ -286,9 +286,10 @@ Database encrypted
 2147483647 ffffff7f NOT FOUND.
 """
 
+@pytest.mark.skip('FIXME: encryption plugin')
 @pytest.mark.version('>=3.0.5,<4')
 def test_1(act_1: Action):
-   pytest.skip("Requires encryption plugin")
+   pytest.fail("Not IMPLEMENTED")
 
 
 # version: 4.0
@@ -503,8 +504,7 @@ Database encrypted
 2147483646  feffff7f  NOT FOUND.
 """
 
+@pytest.mark.skip('FIXME: encryption plugin')
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
-    pytest.skip("Requires encryption plugin")
-
-
+    pytest.fail("Not IMPLEMENTED")

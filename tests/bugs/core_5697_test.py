@@ -1,30 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_5697
-# title:        Conversion from zero numeric literals to DECFLOAT results in incorrect value
-# decription:   
-#                   Confirmed wrong output from table with decfloat16 field (in WI-T4.0.0.1047, date of build: 03-JUL-2018).
-#                   Confirmed overflow of decfloat34 when inserting values with exponent more than 385, i.e. >= 1e+385 or <= -1e385 (in WI-T4.0.0.1535, date of build: 24-JUN-2019)).
-#                   Checked on 4.0.0.1556: OK, 1.710s.
-#                
-# tracker_id:   CORE-5697
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5963
+ISSUE:       5963
+TITLE:       Conversion from zero numeric literals to DECFLOAT results in incorrect value
+DESCRIPTION:
+  Confirmed wrong output from table with decfloat16 field (in WI-T4.0.0.1047, date of build: 03-JUL-2018).
+  Confirmed overflow of decfloat34 when inserting values with exponent more than 385, i.e. >= 1e+385 or <= -1e385 (in WI-T4.0.0.1535, date of build: 24-JUN-2019)).
+  Checked on 4.0.0.1556: OK, 1.710s.
+JIRA:        CORE-5697
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ ]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     recreate table df16(id_df16 int, val_df16 decfloat(16));
     recreate table df34(id_df34 int, val_df34 decfloat(34));
@@ -67,13 +59,13 @@ test_script_1 = """
     insert into df34 values(  7, -1e385); -- DID raise overflow in WI-T4.0.0.1535, i.e. before this ticket was fixed; ticket sample: 1e+6144
     insert into df34 values(  8, 1e+6111);
     insert into df34 values(  9, 1.234567890123456789012345678901234E0);
-                              
+
     select t.* from df34 t;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ ]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ID_DF16                         1
     VAL_DF16                                             -0
 
@@ -143,7 +135,8 @@ expected_stdout_1 = """
     VAL_DF34                               1.234567890123456789012345678901234
 
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22003
     Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
 
@@ -152,10 +145,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

@@ -5,10 +5,16 @@ ID:          issue-2655
 ISSUE:       2655
 TITLE:       Problem with column names with Accents and triggers
 DESCRIPTION:
+NOTES:
+[25.1.2022] pcisar
+  For yet unknown reason, ISQL gets malformed stdin from act.execute() although it was passed
+  correctly encoded in iso8859_1. Test changed to use script file writen in iso8859_1
+  which works fine.
 JIRA:        CORE-2227
 """
 
 import pytest
+from pathlib import Path
 from firebird.qa import *
 
 init_script = """
@@ -26,14 +32,15 @@ test_script = """
     AS
     BEGIN
       NEW."CÓDIGO" = 1;
-    END ^
+    END
+    ^
 """
 
 act = isql_act('db', test_script)
 
+script_file = temp_file('test_script.sql')
+
 @pytest.mark.version('>=3')
-def test_1(act: Action):
-    try:
-        act.execute(charset='utf8')
-    except ExecutionError as e:
-        pytest.fail("Test script execution failed", pytrace=False)
+def test_1(act: Action, script_file: Path):
+    script_file.write_text(test_script, encoding='iso8859_1')
+    act.isql(switches=[], input_file=script_file)

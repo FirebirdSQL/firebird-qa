@@ -1,29 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_5480
-# title:        SUBSTRING startposition smaller than 1 should be allowed
-# decription:
-#                  Test is based on ticket samples, plus similar checks for non-ascii strings.
-#                  Checked on WI-T4.0.0.546 with UTF8 charset. Works fine.
-#
-# tracker_id:   CORE-5480
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5750
+ISSUE:       5750
+TITLE:       SUBSTRING startposition smaller than 1 should be allowed
+DESCRIPTION:
+  Test is based on ticket samples, plus similar checks for non-ascii strings.
+JIRA:        CORE-5480
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     -- ASCII string tests:
@@ -46,9 +37,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     A01                             |abcdef|
     A02                             |a|
     A03                             ||
@@ -65,8 +56,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute(charset='utf8')
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute(charset='utf8')
+    assert act.clean_stdout == act.clean_expected_stdout
 

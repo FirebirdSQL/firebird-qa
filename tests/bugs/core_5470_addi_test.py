@@ -1,47 +1,52 @@
 #coding:utf-8
-#
-# id:           bugs.core_5470_addi
-# title:        Additional check for trace log when user issues statement with character that can not be transliterated
-# decription:
-#                   It was detected that trace can stop any writing to its log if client issues query with character
-#                   that can NOT transliterated between character sets. Such statement and *any* other statements
-#                   that go after will NOT be reflected in the trace if its config contain include_filter with any
-#                   rule (even such trivial as: include_filter = "%").
-#
-#                   Initial discuss: july-2019, subj:  "... fbtrace returned error on call trace_dsql_execute" (mailbox: pz@ibase.ru).
-#                   Letter with example how to reproduce: 16.07.19 22:08.
-#                   Finally this bug was fixed 26.03.2020:
-#                       https://github.com/FirebirdSQL/firebird/commit/70ed61cba88ad70bd868079016cde3b338073db8
-#                   ::: NB :::
-#                   Problem was found  only in FB 3.0; 4.x works OK because of new regexp mechanism in it.
-#
-#                   Test uses SQL script with two correct statements ('point-1' and 'point-2') and invalid character literal between them.
-#                   This SQL can not be prepared in fbtest because of strict checks related to characters matching to unicode charsets.
-#                   Then we prepare tempopary BATCH file which does:
-#                       chcp 1251
-#                       run ISQL with applying this script.
-#                   After this, we launch trace with config that contains trivial include_filter and run this temp batch.
-#                   Expected result: trace must contain lines with ALL THREE executed statements.
-#
-#                   Confirmed bug on 3.0.6.33273: only 'point-1' appears in the trace. No further statements at all.
-#                   All fine on 3.0.6.33276: all three statements can be seen in the trace.
-#
-# tracker_id:   CORE-5470
-# min_versions: ['3.0.6']
-# versions:     3.0.6
-# qmid:         None
+
+"""
+ID:          issue-5740-B
+ISSUE:       5740
+TITLE:       Trace INCLUDE_FILTER with [[:WHITESPACE:]]+ does not work when statement contains newline is issued
+DESCRIPTION:
+    It was detected that trace can stop any writing to its log if client issues query with character
+    that can NOT transliterated between character sets. Such statement and *any* other statements
+    that go after will NOT be reflected in the trace if its config contain include_filter with any
+    rule (even such trivial as: include_filter = "%").
+
+    Initial discuss: july-2019, subj:  "... fbtrace returned error on call trace_dsql_execute" (mailbox: pz@ibase.ru).
+    Letter with example how to reproduce: 16.07.19 22:08.
+    Finally this bug was fixed 26.03.2020:
+        https://github.com/FirebirdSQL/firebird/commit/70ed61cba88ad70bd868079016cde3b338073db8
+    ::: NB :::
+    Problem was found  only in FB 3.0; 4.x works OK because of new regexp mechanism in it.
+
+    Test uses SQL script with two correct statements ('point-1' and 'point-2') and invalid character literal between them.
+    This SQL can not be prepared in fbtest because of strict checks related to characters matching to unicode charsets.
+    Then we prepare tempopary BATCH file which does:
+        chcp 1251
+        run ISQL with applying this script.
+    After this, we launch trace with config that contains trivial include_filter and run this temp batch.
+    Expected result: trace must contain lines with ALL THREE executed statements.
+
+    Confirmed bug on 3.0.6.33273: only 'point-1' appears in the trace. No further statements at all.
+    All fine on 3.0.6.33276: all three statements can be seen in the trace.
+JIRA:        CORE-5470
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    select 'point-1' from rdb$database
+    select 'point-2' from rdb$database
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.6')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -185,16 +190,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    select 'point-1' from rdb$database
-    select 'point-2' from rdb$database
-"""
-
-@pytest.mark.version('>=3.0.6')
-@pytest.mark.platform('Windows')
-@pytest.mark.xfail
-def test_1(db_1):
-    pytest.fail("Test not IMPLEMENTED")

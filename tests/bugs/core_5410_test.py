@@ -1,30 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5410
-# title:        Dependencies are not stored when using some type of contructions in subroutines
-# decription:   
-#                  Confirmed:
-#                  1) bug on WI-V3.0.2.32630, WI-T4.0.0.454
-#                  2) fixed on WI-V3.0.2.32642, WI-T4.0.0.460 (does not allow to drop tables).
-#                
-# tracker_id:   CORE-5410
-# min_versions: ['3.0.2']
-# versions:     3.0.2
-# qmid:         None
+
+"""
+ID:          issue-5683
+ISSUE:       5683
+TITLE:       Dependencies are not stored when using some type of contructions in subroutines
+DESCRIPTION:
+JIRA:        CORE-5410
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.2
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     create or alter procedure sp_outer_standalone as begin end;
     create or alter package pg_test as begin end;
@@ -73,7 +62,7 @@ test_script_1 = """
     end;
     ^
 
-    create or alter package pg_test as 
+    create or alter package pg_test as
     begin
         procedure sp_outer_packaged returns(max_f02 int);
         function fn_outer_packaged returns int;
@@ -119,9 +108,9 @@ test_script_1 = """
     select pg_test.fn_outer_packaged() as min_f02 from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MAX_F01                         100
     MIN_F01                         1
 
@@ -129,7 +118,8 @@ expected_stdout_1 = """
     MIN_F02                         2
 
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
@@ -144,10 +134,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

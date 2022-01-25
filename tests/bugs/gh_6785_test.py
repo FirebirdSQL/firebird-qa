@@ -2,29 +2,29 @@
 #
 # id:           bugs.gh_6785
 # title:        Problem when restoring the database on FB 4.0 RC1 (gbak regression)
-# decription:   
+# decription:
 #                   https://github.com/FirebirdSQL/firebird/issues/6785
-#               
+#
 #                   Test used database backup that was provided in the ticket.
-#               
+#
 #                   Maximal allowed time is set here for restoring process and gbak will be
 #                   forcedly killed if it can not complete during this time.
 #                   Currently this time is 300 seconds (see 'MAX_THRESHOLD' variable).
-#               
+#
 #                   Database is validated (using 'gfix -v -full') after successful restore finish.
 #                   Test checks that returned codes for both gbak and validation are zero.
-#               
+#
 #                   Restore issues warnings:
 #                       gbak: WARNING:function F_DATETOSTR is not defined
 #                       gbak: WARNING:    module name or entrypoint could not be found
 #                       gbak: WARNING:function F_DATETOSTR is not defined
 #                       gbak: WARNING:    module name or entrypoint could not be found
 #                   All of them are ignored by this test when gbak output is parsed.
-#               
+#
 #                   Confirmed bug on 4.0.0.2452 SS: gbak infinitely hanged.
 #                   Checked on 4.0.0.2453 SS/CS (Linux and Windows): all OK, restore lasts near 200s.
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['4.0']
 # versions:     4.0
 # qmid:         None
@@ -43,7 +43,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import re
 #  import time
@@ -52,29 +52,29 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import subprocess
 #  import datetime as py_dt
 #  from datetime import timedelta
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -85,36 +85,36 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  zf = zipfile.ZipFile( os.path.join(context['files_location'],'gh_6785.zip') )
 #  tmpfbk = 'gh_6785.fbk'
 #  zf.extract( tmpfbk, '$(DATABASE_LOCATION)')
 #  zf.close()
-#  
+#
 #  tmpfbk = os.path.join( '$(DATABASE_LOCATION)', tmpfbk)
 #  tmpfdb = os.path.join( '$(DATABASE_LOCATION)', 'tmp_gh_6785.fdb')
-#  
+#
 #  #------------------------------ restore database -------------------------------
-#  
+#
 #  f_restore_log=open( os.path.join(context['temp_directory'],'tmp_gh_6785_restoring.log'), 'w')
 #  p_restore = subprocess.Popen([context['gbak_path'],"-rep", tmpfbk, tmpfdb], stdout=f_restore_log, stderr=subprocess.STDOUT)
-#  
+#
 #  t1=py_dt.datetime.now()
 #  restore_retcode = None
 #  i=0
-#  
+#
 #  # Maximal allowed time for restoring process, in seconds:
 #  ######################
-#  
+#
 #  ###################
 #  MAX_THRESHOLD = 300
 #  ###################
-#  
+#
 #  while 1:
 #      restore_retcode = p_restore.poll()
 #      if i > MAX_THRESHOLD:
@@ -124,24 +124,24 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          break
 #      time.sleep(1)
 #      i += 1
-#  
+#
 #  t2=py_dt.datetime.now()
 #  d1=t2-t1
-#  
+#
 #  flush_and_close( f_restore_log )
-#  
+#
 #  #print('Restore retcode:', restore_retcode, ', total time, ms:', d1.seconds*1000 + d1.microseconds//1000)
 #  print('Restore retcode:', restore_retcode)
-#  
+#
 #  if restore_retcode == 0:
 #      #-------------------------- validate just restored database --------------------
-#  
+#
 #      f_valid_log = open( os.path.join(context['temp_directory'],'tmp_gh_6785_validation.log'), 'w')
 #      validation_retcode = subprocess.check_call( [ context['gfix_path'], 'localhost:'+tmpfdb, "-v", "-full" ],
 #                       stdout = f_valid_log,
 #                       stderr = subprocess.STDOUT
 #                     )
-#  
+#
 #      flush_and_close( f_valid_log )
 #      print('Validation retcode: %d' % validation_retcode)
 #      with open(f_valid_log.name,'r') as f:
@@ -150,21 +150,21 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      cleanup( (f_valid_log,) )
 #  else:
 #      print('Restore duration: %ds - exceeded maximal time limit: %ds' % (d1.seconds, MAX_THRESHOLD) )
-#  
+#
 #  # check results:
 #  ################
-#  
+#
 #  ptn_gbak_warning = re.compile('gbak:\\s*WARNING:', re.IGNORECASE) # must be supressed for this .fbk
 #  with open(f_restore_log.name,'r') as f:
 #      for line in f:
 #          if not ptn_gbak_warning.search(line):
 #              print('UNEXPECTED RESTORE OUTPUT: ' + line)
-#  
+#
 #  # cleanup
 #  ##########
 #  time.sleep(1)
 #  cleanup( ( f_restore_log, tmpfdb, tmpfbk ) )
-#  
+#
 #---
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
@@ -173,7 +173,7 @@ expected_stdout_1 = """
     Validation retcode: 0
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
 def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")

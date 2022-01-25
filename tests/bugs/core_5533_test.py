@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5533
-# title:        Crash on 3.0 and 4.0 when DB contains database-level trigger
-# decription:   
-#                  Confirmed bug on WI-T4.0.0.633.
-#                  Checked on WI-T4.0.0.638, WI-V3.0.3.32721 -- both on SS and CS.
-#                
-# tracker_id:   CORE-5533
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5801
+ISSUE:       5801
+TITLE:       Crash on 3.0 and 4.0 when DB contains database-level trigger
+DESCRIPTION:
+JIRA:        CORE-5533
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set list on;
     set term ^;
@@ -71,21 +61,21 @@ test_script_1 = """
     select count(distinct id) id_distinct_count_1 from tlog;
     commit;
     select count(distinct id) id_distinct_count_2 from tlog;
-    quit; 
+    quit;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID_DISTINCT_COUNT_0             0
     ID_DISTINCT_COUNT_1             1
     ID_DISTINCT_COUNT_2             1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

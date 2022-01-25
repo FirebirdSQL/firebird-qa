@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5020
-# title:        Regression: ORDER BY clause on compound index may disable usage of other indices
-# decription:   
-# tracker_id:   CORE-5020
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          issue-5308
+ISSUE:       5308
+TITLE:       Regression: ORDER BY clause on compound index may disable usage of other indices
+DESCRIPTION:
+JIRA:        CORE-5020
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table zf(
         id integer not null primary key,
         kont_id integer not null
@@ -73,11 +66,11 @@ test_script_1 = """
 
     commit;
 
-    alter table zf add constraint fk_zf__k 
-    	foreign key(kont_id) 
-    	references k(id) 
+    alter table zf add constraint fk_zf__k
+    	foreign key(kont_id)
+    	references k(id)
     	using index fk_zf__k
-    ; 
+    ;
     set statistics index fk_zf__k;
 
     create index ixa_fk__id__kont_id on zf(id, kont_id);
@@ -95,15 +88,15 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (ZF ORDER IXA_FK__ID__KONT_ID INDEX (FK_ZF__K))
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

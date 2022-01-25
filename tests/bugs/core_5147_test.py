@@ -1,27 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_5147
-# title:        create trigger fails with ambiguous field name between table B and table A error
-# decription:   
-# tracker_id:   CORE-5147
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5430
+ISSUE:       5430
+TITLE:       create trigger fails with ambiguous field name between table B and table A error
+DESCRIPTION:
+JIRA:        CORE-5147
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    -- Result: OK on build based on sources 18-03-2016 14:40 
+test_script = """
+    -- Result: OK on build based on sources 18-03-2016 14:40
     -- (take sources from github, build No. was wrong - 32400).
 
     recreate table test_b (
@@ -49,7 +42,7 @@ test_script_1 = """
 
        rdb$set_context('USER_SESSION' ,'TRG_OLD_QTY', oldQty);
        rdb$set_context('USER_SESSION' ,'TRG_NEW_QTY', newQty);
-    end 
+    end
     ^
     set term ;^
     commit;
@@ -65,16 +58,16 @@ test_script_1 = """
     from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TRG_OLD_QTY                     3.1415925
     TRG_NEW_QTY                     2.7182817
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

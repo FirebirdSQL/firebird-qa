@@ -1,52 +1,37 @@
 #coding:utf-8
-#
-# id:           bugs.core_5248
-# title:        Improve consistency in GRANT syntax between roles and privileges according to SQL standard
-# decription:
-#                  Checked on 4.0.0.249; 3.0.1.32585
-#
-# tracker_id:   CORE-5248
-# min_versions: ['3.0.1']
-# versions:     3.0.1, 4.0
-# qmid:         None
+
+"""
+ID:          issue-5527
+ISSUE:       5527
+TITLE:       Improve consistency in GRANT syntax between roles and privileges according to SQL standard
+DESCRIPTION:
+JIRA:        CORE-5248
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
+from firebird.qa import *
+
+db = db_factory()
+
+usr0 = user_factory('db', name='tmp$c5248_usr0', password='c5248$u0')
+usr1 = user_factory('db', name='tmp$c5248_usr1', password='c5248$u1')
+usr2 = user_factory('db', name='tmp$c5248_usr2', password='c5248$u2')
+usr3 = user_factory('db', name='tmp$c5248_usr3', password='c5248$u3')
+usrx = user_factory('db', name='tmp$c5248_usrx', password='c5248$ux')
+test_role = role_factory('db', name='test_role1', do_not_create=True)
 
 # version: 3.0.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     set list on;
     set autoddl off;
-    commit;
-    connect '$(DSN)' user sysdba password 'masterkey';
-    create or alter user tmp$c5248_usr0 password 'c5248$u0';
-    create or alter user tmp$c5248_usrx password 'c5248$ux';
-    commit;
     grant create role to user tmp$c5248_usr0;
-    commit;
-
-    set term ^;
-    execute block as
-    begin
-      execute statement 'drop role test_role1';
-      when any do begin end
-    end^
-    set term ;^
     commit;
 
     connect '$(DSN)' user tmp$c5248_usr0 password 'c5248$u0';
     create role test_role1; -- tmp$c5248_usr0 is owner of role test_role1
     commit;
 
-    --  drop role - should fail
     connect '$(DSN)' user tmp$c5248_usrx password 'c5248$ux';
 
     -- Statement failed, SQLSTATE = 28000
@@ -57,18 +42,14 @@ test_script_1 = """
     drop role test_role1; -- should fail: this user is not owner of this role and he was not granted to use it with admin option
     select count(*) from rdb$roles where rdb$role_name = 'TEST_ROLE1';
     rollback;
-
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user tmp$c5248_usr0;
-    drop user tmp$c5248_usrx;
-    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
     COUNT                           1
 """
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 28000
     unsuccessful metadata update
@@ -77,38 +58,33 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.1,<4.0')
-def test_1(act_1: Action):
+def test_1(act_1: Action, usr0: User, usrx: User, test_role: Role):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert (act_1.clean_stderr == act_1.clean_expected_stderr and
+            act_1.clean_stdout == act_1.clean_expected_stdout)
 
 # version: 4.0
-# resources: None
 
-substitutions_2 = [('-TMP\\$C5248_USR1 is not grantor of (role|ROLE|Role) on TEST_ROLE1 to TMP\\$C5248_USR1.', '-TMP$C5248_USR1 is not grantor of ROLE on TEST_ROLE1 to TMP$C5248_USR1.'), ('-Effective user is.*', '')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
+substitutions = [('-TMP\\$C5248_USR1 is not grantor of (role|ROLE|Role) on TEST_ROLE1 to TMP\\$C5248_USR1.',
+                  '-TMP$C5248_USR1 is not grantor of ROLE on TEST_ROLE1 to TMP$C5248_USR1.'),
+                 ('-Effective user is.*', '')]
 test_script_2 = """
     set list on;
     set count on;
     set autoddl off;
-    --set echo on;
-    commit;
+/*
     connect '$(DSN)' user sysdba password 'masterkey';
     create or alter user tmp$c5248_usr0 password 'c5248$u0';
     create or alter user tmp$c5248_usr1 password 'c5248$u1';
     create or alter user tmp$c5248_usr2 password 'c5248$u2';
     create or alter user tmp$c5248_usr3 password 'c5248$u3';
     create or alter user tmp$c5248_usrx password 'c5248$ux';
-    commit;
+    commit; */
     grant create role to user tmp$c5248_usr0;
     commit;
-
+/*
     set term ^;
     execute block as
     begin
@@ -117,7 +93,7 @@ test_script_2 = """
     end^
     set term ;^
     commit;
-
+*/
     recreate view v_grants as
     select
          current_user                    as who_am_i
@@ -163,8 +139,6 @@ test_script_2 = """
     --grant test_role1 to tmp$c5248_usr1 with admin option;
     --commit;
 
-
-
     -- 2. revoke: user who has 'admin option' can revoke role from anyone EXCEPT himself
     connect '$(DSN)' user tmp$c5248_usr1 password 'c5248$u1';
 
@@ -177,8 +151,6 @@ test_script_2 = """
 
     select * from v_grants where upper(who_was_granted) = upper('tmp$c5248_usr1'); -- record should remain
     rollback;
-
-
 
     -- 3. revoke - check role owner rights
     connect '$(DSN)' user tmp$c5248_usr0 password 'c5248$u0';
@@ -194,8 +166,6 @@ test_script_2 = """
     select * from v_grants where upper(who_was_granted) = upper('tmp$c5248_usr3'); -- record should NOT appear.
     rollback;
 
-
-
     -- 4. revoke - check admin option
     connect '$(DSN)' user tmp$c5248_usr1 password 'c5248$u1';
 
@@ -210,7 +180,6 @@ test_script_2 = """
 
     select * from v_grants where upper(who_was_granted) in (upper('tmp$c5248_usr1'), upper('tmp$c5248_usr3')); -- only one record should be here
     rollback;
-
 
     -- 5a. drop role - should fail
     connect '$(DSN)' user tmp$c5248_usrx password 'c5248$ux';
@@ -237,7 +206,6 @@ test_script_2 = """
     select * from v_grants where upper(role_name) = upper('TEST_ROLE1');        -- should output 0 records
     rollback;
 
-
     -- 6. drop role - check admin option
     connect '$(DSN)' user tmp$c5248_usr1 password 'c5248$u1';
 
@@ -251,7 +219,7 @@ test_script_2 = """
     select * from v_grants where upper(role_name) = upper('TEST_ROLE1');        -- should output 0 records
     rollback;
 
-
+/*
     connect '$(DSN)' user sysdba password 'masterkey';
     drop user tmp$c5248_usr0;
     drop user tmp$c5248_usr1;
@@ -259,10 +227,10 @@ test_script_2 = """
     drop user tmp$c5248_usr3;
     drop user tmp$c5248_usrx;
     commit;
-
+*/
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2, substitutions=substitutions)
 
 expected_stdout_2 = """
     WHO_AM_I                        SYSDBA
@@ -407,6 +375,7 @@ expected_stdout_2 = """
     Records affected: 0
     Records affected: 0
 """
+
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
@@ -420,19 +389,11 @@ expected_stderr_2 = """
 """
 
 
-usr0_2 = user_factory('db_2', name='tmp$c5248_usr0', password='c5248$u0')
-usr1_2 = user_factory('db_2', name='tmp$c5248_usr1', password='c5248$u1')
-usr2_2 = user_factory('db_2', name='tmp$c5248_usr2', password='c5248$u2')
-usr3_2 = user_factory('db_2', name='tmp$c5248_usr3', password='c5248$u3')
-usrx_2 = user_factory('db_2', name='tmp$c5248_usrx', password='c5248$ux')
-test_role_2 = role_factory('db_2', name='test_role1')
-
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action, usr0_2: User, usr1_2: User, usr2_2: User, usr3_2: User,
-           usrx_2: User, test_role_2: Role):
+def test_2(act_2: Action, usr0: User, usr1: User, usr2: User, usr3: User, usrx: User, test_role: Role):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_stderr == act_2.clean_expected_stderr
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+    assert (act_2.clean_stderr == act_2.clean_expected_stderr and
+            act_2.clean_stdout == act_2.clean_expected_stdout)
 

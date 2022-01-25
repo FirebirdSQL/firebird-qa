@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5322
-# title:        Error "no current record to fetch" if some record is to be deleted both by the statement itself and by some trigger fired during statement execution
-# decription:   
-#                  Reproduced bug on WI-V3.0.0.32483, WI-T4.0.0.258
-#                  All fine on WI-V3.0.1.32596, WI-T4.0.0.366.
-#                
-# tracker_id:   CORE-5322
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-5598
+ISSUE:       5598
+TITLE:       Cascade deletion in self-referencing table could raise "no current record for fetch operation" error
+DESCRIPTION:
+JIRA:        CORE-5322
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table tdetl(id int);
     commit;
 
@@ -56,10 +46,9 @@ test_script_1 = """
     delete from tmain where (id = 1);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
-    act_1.execute()
+def test_1(act: Action):
+    act.execute()
 

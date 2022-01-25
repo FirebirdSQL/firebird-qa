@@ -1,117 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_5229
-# title:        Allow to enforce IPv4 or IPv6 in URL-like connection strings
-# decription:
-#                   Checked on 4.0.0.256 (SS, SC), 3.0.1.32531 (SS,SC,CS) - all on Windows XP (inet4 only was avaliable).
-#                   Additional check:
-#                       4.0.0.1635: OK, 1.635s.
-#                       4.0.0.1633: OK, 2.541s.
-#                       3.0.5.33180: OK, 1.311s.
-#                       3.0.5.33178: OK, 1.836s.
-#                   - with both inet4 and inet6
-#
-# tracker_id:   CORE-5229
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-5508
+ISSUE:       5508
+TITLE:       Allow to enforce IPv4 or IPv6 in URL-like connection strings
+DESCRIPTION:
+JIRA:        CORE-5229
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-#
-#  import os
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  this_fdb=os.path.join(context['temp_directory'],'bugs.core_5229.fdb')
-#  who = user_name
-#  pwd = user_password
-#
-#  sql_chk='''
-#      set list on;
-#      select mon$remote_protocol as procotol_when_connect_from_os
-#      from mon$attachments where mon$attachment_id = current_connection;
-#
-#      commit;
-#      connect 'inet4://%(this_fdb)s';
-#
-#      select mon$remote_protocol as procotol_when_connect_from_isql
-#      from mon$attachments where mon$attachment_id = current_connection;
-#
-#      set term ^;
-#      execute block returns(protocol_when_connect_by_es_eds varchar(20) ) as
-#          declare stt varchar(255) = 'select mon$remote_protocol from mon$attachments where mon$attachment_id = current_connection';
-#      begin
-#          for
-#              execute statement (stt)
-#                  on external 'inet4://%(this_fdb)s'
-#                  as user '%(who)s' password '%(pwd)s'
-#              into protocol_when_connect_by_es_eds
-#          do
-#              suspend;
-#      end
-#      ^
-#      set term ;^
-#      commit;
-#
-#      -- since 27.10.2019:
-#      connect 'inet6://%(this_fdb)s';
-#
-#      select mon$remote_protocol as procotol_when_connect_from_isql
-#      from mon$attachments where mon$attachment_id = current_connection;
-#
-#      set term ^;
-#      execute block returns(protocol_when_connect_by_es_eds varchar(20) ) as
-#          declare stt varchar(255) = 'select mon$remote_protocol from mon$attachments where mon$attachment_id = current_connection';
-#      begin
-#          for
-#              execute statement (stt)
-#                  on external 'inet6://%(this_fdb)s'
-#                  as user '%(who)s' password '%(pwd)s'
-#              into protocol_when_connect_by_es_eds
-#          do
-#              suspend;
-#      end
-#      ^
-#      set term ;^
-#      commit;
-#
-#      --                                    ||||||||||||||||||||||||||||
-#      -- ###################################|||  FB 4.0+, SS and SC  |||##############################
-#      --                                    ||||||||||||||||||||||||||||
-#      -- If we check SS or SC and ExtConnPoolLifeTime > 0 (config parameter FB 4.0+) then current
-#      -- DB (bugs.core_NNNN.fdb) will be 'captured' by firebird.exe process and fbt_run utility
-#      -- will not able to drop this database at the final point of test.
-#      -- Moreover, DB file will be hold until all activity in firebird.exe completed and AFTER this
-#      -- we have to wait for <ExtConnPoolLifeTime> seconds after it (discussion and small test see
-#      -- in the letter to hvlad and dimitr 13.10.2019 11:10).
-#      -- This means that one need to kill all connections to prevent from exception on cleanup phase:
-#      -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
-#      -- #############################################################################################
-#      delete from mon$attachments where mon$attachment_id != current_connection;
-#      commit;
-#  '''
-#  runProgram('isql',[ 'inet4://'+this_fdb, '-q'], sql_chk % locals() )
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     PROCOTOL_WHEN_CONNECT_FROM_OS   TCPv4
     PROCOTOL_WHEN_CONNECT_FROM_ISQL TCPv4
     PROTOCOL_WHEN_CONNECT_BY_ES_EDS TCPv4
@@ -120,14 +24,14 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
+def test_1(act: Action):
     sql_chk = f"""
         set list on;
         select mon$remote_protocol as procotol_when_connect_from_os
         from mon$attachments where mon$attachment_id = current_connection;
 
         commit;
-        connect 'inet4://{act_1.db.db_path}';
+        connect 'inet4://{act.db.db_path}';
 
         select mon$remote_protocol as procotol_when_connect_from_isql
         from mon$attachments where mon$attachment_id = current_connection;
@@ -138,8 +42,8 @@ def test_1(act_1: Action):
         begin
             for
                 execute statement (stt)
-                    on external 'inet4://{act_1.db.db_path}'
-                    as user '{act_1.db.user}' password '{act_1.db.password}'
+                    on external 'inet4://{act.db.db_path}'
+                    as user '{act.db.user}' password '{act.db.password}'
                 into protocol_when_connect_by_es_eds
             do
                 suspend;
@@ -149,7 +53,7 @@ def test_1(act_1: Action):
         commit;
 
         -- since 27.10.2019:
-        connect 'inet6://{act_1.db.db_path}';
+        connect 'inet6://{act.db.db_path}';
 
         select mon$remote_protocol as procotol_when_connect_from_isql
         from mon$attachments where mon$attachment_id = current_connection;
@@ -160,8 +64,8 @@ def test_1(act_1: Action):
         begin
             for
                 execute statement (stt)
-                    on external 'inet6://{act_1.db.db_path}'
-                    as user '{act_1.db.user}' password '{act_1.db.password}'
+                    on external 'inet6://{act.db.db_path}'
+                    as user '{act.db.user}' password '{act.db.password}'
                 into protocol_when_connect_by_es_eds
             do
                 suspend;
@@ -184,8 +88,8 @@ def test_1(act_1: Action):
         -- #############################################################################################
         delete from mon$attachments where mon$attachment_id != current_connection;
         commit;
-"""
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-q', f'inet4://{act_1.db.db_path}'], input=sql_chk, connect_db=False)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+        """
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-q', f'inet4://{act.db.db_path}'], input=sql_chk, connect_db=False)
+    assert act.clean_stdout == act.clean_expected_stdout
 

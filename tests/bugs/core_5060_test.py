@@ -1,34 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5060
-# title:        Cannot CREATE VIEW that selects from a system table, despite having all grants
-# decription:   : 
-#                  Confirmed fail on WI-V3.0.0.32253: got
-#                   create or alter view v_tmp$5060_u1 as select 1 i from rdb$database;
-#                   Statement failed, SQLSTATE = 28000
-#                   unsuccessful metadata update
-#                   -CREATE OR ALTER VIEW V_JOHN1 failed
-#                   -no permission for SELECT access to TABLE/VIEW RDB$DATABASE
-#                 Checked on WI-V3.0.0.32272 (SS/SC/CS).
-#                
-# tracker_id:   CORE-5060
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5347
+ISSUE:       5347
+TITLE:       Cannot CREATE VIEW that selects from a system table, despite having all grants
+DESCRIPTION:
+JIRA:        CORE-5060
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set wng off;
     set count on;
@@ -90,9 +75,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     USER                            TMP$5060_U1
     ROLE                            NONE
     I                               1
@@ -110,12 +95,12 @@ expected_stdout_1 = """
     ROLE                            DBA_ASSISTANT
     R1                              1
     R2                              1
-    Records affected: 1    
+    Records affected: 1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

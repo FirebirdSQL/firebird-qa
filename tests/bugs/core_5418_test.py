@@ -1,33 +1,31 @@
 #coding:utf-8
-#
-# id:           bugs.core_5418
-# title:        Inconsistent output when retrieving the server log via Services API
-# decription:
-#                  Test gets FB home directory and copies firebird.log to *.tmp.
-#                  Then it makes firebird.log empty and retrieves it via services API. Output should be empty.
-#                  Finally, it opens firebird.log and adds to it several empty newlines.
-#                  Repeat retrieveing content - it also should not contain any characters except newline.
-#                  Checked on 2.5.7.27030, 4.0.0.465
-#
-#               [pcisar] 7.12.2021
-#               Test requires direct changes to firebird.log which could require elevated privileges
-#
-# tracker_id:   CORE-5418
-# min_versions: ['2.5.7']
-# versions:     2.5.7
-# qmid:         None
+
+"""
+ID:          issue-5691
+ISSUE:       5691
+TITLE:       Inconsistent output when retrieving the server log via Services API
+DESCRIPTION:
+  Test gets FB home directory and copies firebird.log to *.tmp.
+  Then it makes firebird.log empty and retrieves it via services API. Output should be empty.
+  Finally, it opens firebird.log and adds to it several empty newlines.
+  Repeat retrieveing content - it also should not contain any characters except newline.
+NOTES:
+[7.12.2021] pcisar
+  Test requires direct changes to firebird.log which could require elevated privileges!
+JIRA:        CORE-5418
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: direct write to firebird.log')
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -134,10 +132,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-
-@pytest.mark.version('>=2.5.7')
-def test_1(act_1: Action):
-    pytest.skip("Requires direct changes to firebird.log")

@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5695
-# title:        Position function does not consider the collation for blob
-# decription:
-#                   Confirmed bug on 3.0.3.32837, 4.0.0.800
-#                   Checked on:
-#                       FB30SS, build 3.0.3.32876: OK, 1.094s.
-#                       FB40SS, build 4.0.0.852: OK, 1.109s.
-#
-# tracker_id:   CORE-5695
-# min_versions: ['3.0.3']
-# versions:     3.0.3
-# qmid:         None
+
+"""
+ID:          issue-5961
+ISSUE:       5961
+TITLE:       Position function does not consider the collation for blob
+DESCRIPTION:
+JIRA:        CORE-5695
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set blob all;
     set term ^;
@@ -48,16 +36,15 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RES                             1
     RES                             1
 """
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute(charset='utf8')
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute(charset='utf8')
+    assert act.clean_stdout == act.clean_expected_stdout

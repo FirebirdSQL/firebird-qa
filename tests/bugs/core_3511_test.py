@@ -105,11 +105,11 @@ expected_stdout_2 = """
     Done.
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
 def test_2(act_2: Action, tmp_user: User):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 
 # test_script_2

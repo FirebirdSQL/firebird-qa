@@ -250,9 +250,8 @@ expected_stdout_1 = """
     EXPECTED RESTORE FINISH FOUND: GBAK:ADJUSTING THE ONLINE AND FORCED WRITES FLAGS
 """
 
+@pytest.mark.skip('FIXME: encryption plugin')
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
 def test_1(act_1: Action):
-    pytest.skip("Requires encryption plugin")
-
-
+    pytest.fail("Not IMPLEMENTED")

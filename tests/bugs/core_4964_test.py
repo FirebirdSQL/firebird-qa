@@ -67,7 +67,7 @@ expected_stdout = """
 @pytest.mark.skip('FIXME: databases.conf')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---

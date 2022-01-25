@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5193
-# title:        Precedence problem with operator IS
-# decription:   
-#                     Checked on WI-V3.0.1.32518,  WI-T4.0.0.184
-#                 
-# tracker_id:   CORE-5193
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-5474
+ISSUE:       5474
+TITLE:       Precedence problem with operator IS
+DESCRIPTION:
+JIRA:        CORE-5193
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select not false is true is unknown as boo1 from rdb$database;
     select not false = true is not unknown as boo2  from rdb$database;
@@ -30,9 +21,9 @@ test_script_1 = """
     select not not unknown is not unknown  as boo4 from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     BOO1                            <true>
     BOO2                            <true>
     BOO3                            <null>
@@ -40,8 +31,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

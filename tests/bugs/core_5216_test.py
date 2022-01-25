@@ -1,29 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_5216
-# title:        Provide location context (line/column numbers) for runtime errors raised inside EXECUTE BLOCK
-# decription:   
-#                  Checked on 4.0.0.372, 3.0.1.32598 - works fine.
-#                  NOTE: 2.5.x does not work as expected: some of 'line: ..., col: ...' messages are not displayed.
-#                
-# tracker_id:   CORE-5216
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5496
+ISSUE:       5496
+TITLE:       Provide location context (line/column numbers) for runtime errors raised inside EXECUTE BLOCK
+DESCRIPTION:
+JIRA:        CORE-5216
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+substitutions = [('exception [\\d]+', 'exception K'),
+                 ('At line [\\d]+, column [\\d]+', 'At line N, column M'),
+                 ('-At block line: [\\d]+, col: [\\d]+', 'At block line: N, col: M')]
 
-substitutions_1 = [('exception [\\d]+', 'exception K'), ('At line [\\d]+, column [\\d]+', 'At line N, column M'), ('-At block line: [\\d]+, col: [\\d]+', 'At block line: N, col: M')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate exception rio 'Exception w/o parameter test. Invalid value detected';
     recreate exception foo 'Exception with parameter test. Invalid value of BAR = @1';
     recreate table test(id int constraint test_pk primary key using index test_pk, x int not null, y int not null);
@@ -33,13 +27,13 @@ test_script_1 = """
 
     set term ^;
 
-    
+
     --  -Column unknown
     --  -NON_EXISTING_COLUMN
     execute block as
     begin
         execute statement 'select non_existing_column from rdb$database';
-    end 
+    end
     ^
 
 
@@ -61,38 +55,38 @@ test_script_1 = """
     begin
         execute statement
             '
-            execute block as 
+            execute block as
                 declare r smallint not null;
-            begin 
+            begin
                 execute statement ''select null from rdb$database'' into r;
             end
             '
         ;
-    end 
+    end
     ^
-    
+
     --  Statement failed, SQLSTATE = 23000
     --  validation error for column "TEST"."X", value "*** null ***"
     execute block as
     begin
         execute statement
             '
-            execute block as 
+            execute block as
                 declare x smallint;
-            begin 
-                execute statement 
+            begin
+                execute statement
                 ''
-                    execute block as 
-                    begin 
-                        update test set x=null; 
+                    execute block as
+                    begin
+                        update test set x=null;
                     end
                 '';
             end
             '
         ;
-    end 
+    end
     ^
-    
+
 
     --  Statement failed, SQLSTATE = 23000
     --  validation error for column "TEST"."Y", value "*** null ***"
@@ -100,23 +94,23 @@ test_script_1 = """
     begin
         execute statement
             '
-            execute block as 
+            execute block as
                 declare x smallint;
-            begin 
-                execute statement 
+            begin
+                execute statement
                 ''
                     execute block as
-                        declare x smallint; 
-                    begin 
-                        insert into test(id, x) values(2, 222); 
+                        declare x smallint;
+                    begin
+                        insert into test(id, x) values(2, 222);
                     end
                 '';
             end
             '
         ;
-    end 
+    end
     ^
-    
+
 
     --  Statement failed, SQLSTATE = 23000
     --  violation of PRIMARY or UNIQUE KEY constraint "TEST_PK" on table "TEST"
@@ -125,28 +119,28 @@ test_script_1 = """
     begin
         execute statement
             '
-            execute block as 
+            execute block as
                 declare x smallint;
-            begin 
-                execute statement 
+            begin
+                execute statement
                 ''
-                    execute block as 
-                        declare x smallint; 
-                    begin 
-                        execute statement 
+                    execute block as
+                        declare x smallint;
+                    begin
+                        execute statement
                         ''''
-                            execute block returns(x smallint) as 
-                            begin 
-                                insert into test(id, x, y) values(1, 200, 400) returning x into x; 
-                                suspend; 
+                            execute block returns(x smallint) as
+                            begin
+                                insert into test(id, x, y) values(1, 200, 400) returning x into x;
+                                suspend;
                             end
-                        '''' into x; 
+                        '''' into x;
                     end
                 '';
             end
             '
         ;
-    end 
+    end
     ^
 
     --  -RIO
@@ -155,22 +149,22 @@ test_script_1 = """
     begin
         execute statement
             '
-            execute block as 
+            execute block as
                 declare x smallint;
-            begin 
-                execute statement 
+            begin
+                execute statement
                 ''
-                    execute block as 
-                        declare x smallint; 
-                    begin execute statement 
+                    execute block as
+                        declare x smallint;
+                    begin execute statement
                     ''''
-                        execute block as 
-                            declare x smallint = 789; 
+                        execute block as
+                            declare x smallint = 789;
                         begin
                             x = x * 100;
                         when any do
                             begin
-                                exception rio; 
+                                exception rio;
                             end
                         end
                     '''' into x; end
@@ -178,7 +172,7 @@ test_script_1 = """
             end
             '
         ;
-    end 
+    end
     ^
 
     --  -FOO
@@ -187,40 +181,40 @@ test_script_1 = """
     begin
         execute statement
             '
-            execute block as 
+            execute block as
                 declare x smallint;
-            begin 
-                execute statement 
+            begin
+                execute statement
                 ''
-                    execute block as 
-                        declare x smallint; 
-                        begin 
-                            execute statement 
+                    execute block as
+                        declare x smallint;
+                        begin
+                            execute statement
                             ''''
-                                execute block as 
+                                execute block as
                                     declare x smallint;
                                 begin
                                     x = 99999;
                                 when any do
                                     begin
-                                        exception foo using(:x); 
+                                        exception foo using(:x);
                                     end
                                 end
-                            '''' 
-                            into x; 
+                            ''''
+                            into x;
                         end
                 '';
             end
             '
         ;
-    end 
+    end
     ^
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
@@ -280,8 +274,8 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 

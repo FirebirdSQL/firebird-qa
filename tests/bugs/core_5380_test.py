@@ -1,29 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_5380
-# title:        Allow subroutines to call others subroutines and themself recursively
-# decription:   
-#                    We check not only ability of recursive calls but also max depth of them. It should be equal to 1000.
-#                    FB40SS, build 4.0.0.688: OK, 0.890s.
-#                
-# tracker_id:   CORE-5380
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5653
+ISSUE:       5653
+TITLE:       Allow subroutines to call others subroutines and themself recursively
+DESCRIPTION:
+  We check not only ability of recursive calls but also max depth of them. It should be equal to 1000.
+JIRA:        CORE-5380
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('line:\\s[0-9]+,', 'line: x'), ('col:\\s[0-9]+', 'col: y')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create or alter function get_arithmetic_progression_total(n smallint) returns decfloat(34)  as
         declare function get_sub_total_recursively(n smallint) returns decfloat(34) as
@@ -49,12 +40,14 @@ test_script_1 = """
     -- (a1 + an) * n / 2
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line:\\s[0-9]+,', 'line: x'),
+                                                 ('col:\\s[0-9]+', 'col: y')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ARITHMETIC_PROGRESSION_TOTAL                                        501501
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 54001
     Too many concurrent executions of the same request
     -At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
@@ -77,10 +70,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

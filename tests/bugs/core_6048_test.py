@@ -194,8 +194,7 @@ expected_stdout_1 = """
     Is database encrypted ?         0
 """
 
+@pytest.mark.skip('FIXME: encryption plugin')
 @pytest.mark.version('>=4.0')
 def test_1(act_1: Action):
-    pytest.skip("Requires encryption plugin")
-
-
+    pytest.fail("Not IMPLEMENTED")

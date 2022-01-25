@@ -47,12 +47,12 @@ expected_stdout_1 = """
     + VALIDATION FINISHED: 0 ERRORS, 0 WARNINGS, 0 FIXED
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
 def test_1(act: Action):
     # This test should be reimplemnted in platform independent way!
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---

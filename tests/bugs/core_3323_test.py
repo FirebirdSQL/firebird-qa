@@ -75,10 +75,10 @@ expected_stdout = """
     pointG:                         finished kill hanged connection
 """
 
-@pytest.mark.skip("Test fate to be determined")
+@pytest.mark.skip("FIXME: Test fate to be determined")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    pytest.skip("Test not IMPLEMENTED")
+    pytest.skip("Not IMPLEMENTED")
 
 
 # test_script_1

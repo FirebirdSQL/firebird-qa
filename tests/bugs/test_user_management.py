@@ -2,28 +2,28 @@
 #
 # id:           bugs.user_management
 # title:        Check ability to create/alter/drop users by NON-dba user which is granted with necessary system privilege.
-# decription:   
+# decription:
 #                   NOTE: there is no difference between user who is granted with admin role when it was created and user who has no granted with this but
 #                   has system privilege 'USER_MANAGEMENT': both of them can *only* add/edit/drop another users and no other actions.
 #                   For example, they can give grants to just created users and can not select for any user-defined tables (until this was explicitly granted).
-#               
+#
 #                   But if we create user <U01> on SELF-SECURITY database and give to him adminn role ('CREATE USER ... GRANT ADMIN ROLE') then this <U01> will
 #                   be able to do such actions: he can grant rights to other users etc.
 #                   In contrary to this, if we create user <U02> in such self-security DB but instead grant to him sytem privilege USER_MANAGEMENT then he
 #                   will NOT be able to do these actions. Only create/alter/drop users will be avaliable to him.
-#               
+#
 #                   Test verifies exactly this case: abilities of user created inSELF-SECURITY database with granting to him privilege USER_MANAGEMENT.
-#               
+#
 #                   We make back-copy of databases.conf and change it by adding alias for new DB which will be self-security and has alias = 'syspriv_usermgr'.
-#               
+#
 #                   Then we make file-level copy of security.db to database defined by alias 'self_usermgr', do connect and apply SQL script that does all
 #                   necessary actions. NOTE that some actions must fail (see comments below, in generated .sql script).
-#                   
+#
 #                   Finally, test restores back copy of databases.conf file.
-#               
+#
 #                   Checked on 5.0.0.139 (SS/CS), 4.0.1.2568 (SS/CS).
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['4.0.1']
 # versions:     4.0.1
 # qmid:         None
@@ -52,34 +52,34 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  from fdb import services
 #  from datetime import datetime as dt
 #  from datetime import timedelta
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
-#  
+#
 #  db_conn.close()
-#  
+#
 #  #-----------------------------------
 #  def showtime():
 #       global dt
 #       return ''.join( (dt.now().strftime("%H:%M:%S.%f")[:11],'.') )
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f,
 #      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#  
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -91,36 +91,36 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            print('type(f_names_list[i])=',type(f_names_list[i]))
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
-#  
+#
+#
 #  FB_HOME = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
 #  # Resut: FB_HOME is full path to FB instance home (with trailing slash).
-#  
+#
 #  if os.name == 'nt':
 #      # For Windows we assume that client library is always in FB_HOME dir:
 #      FB_CLNT=os.path.join(FB_HOME, 'fbclient.dll')
 #  else:
 #      # For Linux client library will be searched in 'lib' subdirectory of FB_HOME:
 #      FB_CLNT=os.path.join(FB_HOME, 'lib', 'libfbclient.so' )
-#  
-#  
+#
+#
 #  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#  
+#
 #  dbconf_cur = os.path.join(FB_HOME, 'databases.conf')
 #  dbconf_bak = os.path.join(context['temp_directory'], 'databases_'+dts+'.bak')
-#  
+#
 #  shutil.copy2( dbconf_cur, dbconf_bak )
-#  
+#
 #  sec_db = context['isc4_path']
 #  tmp_alias = 'syspriv_usermgr'
-#  
+#
 #  ##############################################################
-#  
+#
 #  tmp_fdb = os.path.join(context['temp_directory'],'tmp_syspriv_usermgr.fdb')
 #  alias_data='''
 #      # Temporary added for performing test functional/syspriv/user_management.fbt
@@ -130,17 +130,17 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          SecurityDatabase = %(tmp_alias)s
 #      }
 #  ''' % locals()
-#  
+#
 #  cleanup( (tmp_fdb,) )
 #  shutil.copy2( sec_db, tmp_fdb )
-#  
-#  
+#
+#
 #  f_dbconf=open( dbconf_cur, 'a')
 #  f_dbconf.seek(0, 2)
 #  f_dbconf.write( alias_data )
 #  flush_and_close( f_dbconf )
-#  
-#  
+#
+#
 #  sql_txt = '''
 #      set list on;
 #      set wng off;
@@ -148,25 +148,25 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      set width mon$user 15;
 #      set width mon$role 15;
 #      set width sec$plugin 10;
-#       
+#
 #      -- Create record for SYSDBA in self-security database, table sec$users:
 #      connect 'localhost:%(tmp_alias)s' user %(user_name)s password '%(user_password)s';
-#  
+#
 #      -- not helps... ALTER DATABASE SET LINGER TO 0;
-#  
+#
 #      create or alter user john_smith_dba_helper password '123';
 #      commit;
-#      
+#
 #      recreate table test_ss(id int);
 #      commit;
-#  
+#
 #      create or alter view v_check as
 #      select sec$user_name, sec$first_name, sec$admin,sec$active
 #      from sec$users where sec$user_name in (upper('stock_boss'), upper('stock_mngr'))
 #      ;
 #      grant select on v_check to public;
 #      commit;
-#       
+#
 #      set term ^;
 #      execute block as
 #      begin
@@ -175,76 +175,76 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      end^
 #      set term ;^
 #      commit;
-#  
+#
 #      -- Add/change/delete non-system records in RDB$TYPES
 #      create role r_for_grant_revoke_any_ddl_right set system privileges to USER_MANAGEMENT;
 #      commit;
 #      grant default r_for_grant_revoke_any_ddl_right to user john_smith_dba_helper;
 #      commit;
-#  
+#
 #      connect 'localhost:%(tmp_alias)s' user john_smith_dba_helper password '123';
-#  
+#
 #      select current_user as who_am_i,r.rdb$role_name,rdb$role_in_use(r.rdb$role_name),r.rdb$system_privileges,m.mon$sec_database
 #      from mon$database m cross join rdb$roles r
 #      ;
 #      commit;
-#  
+#
 #      -- set echo on;
-#  
+#
 #      -- Must PASS:
 #      create or alter user stock_boss password '123';
 #      alter user stock_boss firstname 'foo-rio-bar' password '456';
 #      create or alter user stock_mngr password '123';
 #      alter user stock_mngr inactive;
 #      commit;
-#  
+#
 #      -- Must show 2 records (for users who have been just created):
 #      select * from v_check;
-#       
+#
 #      -- must FAIL!
 #      grant select on test_ss to stock_mngr;
 #      commit;
-#       
+#
 #      -- must FAIL!
 #      select * from test_ss;
 #      commit;
-#  
+#
 #      -- Must PASS:
 #      drop user stock_boss;
 #      drop user stock_mngr;
 #      commit;
-#  
+#
 #      -- Must show NO records (because users must be successfully dropped):
 #      select * from v_check;
-#  
+#
 #      -- set echo off;
-#      commit; 
+#      commit;
 #      connect 'localhost:%(tmp_alias)s';
 #      drop user john_smith_dba_helper;
 #      commit;
 #  ''' % dict(globals(), **locals())
-#  
+#
 #  f_isql_cmd=open( os.path.join(context['temp_directory'],'tmp_syspriv_usermgr.sql'), 'w')
 #  f_isql_cmd.write(sql_txt)
 #  flush_and_close( f_isql_cmd )
-#  
+#
 #  f_isql_log = open( os.path.splitext(f_isql_cmd.name)[0] + '.log', 'w' )
 #  f_isql_err = open( os.path.splitext(f_isql_cmd.name)[0] + '.err', 'w' )
 #  subprocess.call( [ context['isql_path'], '-q', '-i', f_isql_cmd.name], stdout=f_isql_log, stderr=f_isql_err )
 #  flush_and_close( f_isql_log )
 #  flush_and_close( f_isql_err )
-#  
+#
 #  with open( f_isql_log.name, 'r' ) as f:
 #      for line in f:
 #          if line.split():
 #              print('STDOUT: ' + line)
-#  
+#
 #  with open( f_isql_err.name, 'r' ) as f:
 #      for line in f:
 #          if line.split():
 #              print('STDERR: ' + line)
-#  
-#  
+#
+#
 #  f_shutdown_log=open( os.path.join(context['temp_directory'],'tmp_syspriv_usermgr_shutdown.log'), 'w')
 #  subprocess.call( [context['fbsvcmgr_path'],
 #                    "localhost:service_mgr",
@@ -256,19 +256,19 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                   stderr = subprocess.STDOUT
 #                 )
 #  flush_and_close( f_shutdown_log )
-#  
+#
 #  with open( f_shutdown_log.name, 'r' ) as f:
 #      for line in f:
 #          if line:
 #              print("Unexpected STDERR when try to make full shutdown: "+line)
-#  
+#
 #  cleanup( (tmp_fdb,) )
 #  cleanup( (f_isql_err,f_isql_log,f_isql_cmd,f_shutdown_log) )
-#  
+#
 #  # Restore original content of databases.conf:
 #  ##################
 #  shutil.move( dbconf_bak, dbconf_cur )
-#  
+#
 #---
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
@@ -305,7 +305,7 @@ expected_stdout_1 = """
     STDERR: -Effective user is JOHN_SMITH_DBA_HELPER
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0.1')
-@pytest.mark.xfail
 def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")

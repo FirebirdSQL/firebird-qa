@@ -1,95 +1,95 @@
 #coding:utf-8
-#
-# id:           bugs.core_5302
-# title:        Performance regression when bulk inserting into table with indices
-# decription:
-#                   Ticket URL: https://github.com/FirebirdSQL/firebird/issues/2047
-#
-#                   21.11.2021. Totally re-implemented, package 'psutil' must be installed.
-#
-#                   We make two calls of psutil.Process(fb_pid).cpu_times() (before and after SQL code) and obtain CPU User Time
-#                   values from each result.
-#                   Difference between them can be considered as much more accurate performance estimation.
-#
-#                   Test creates two tables: 'test_non_idx' and 'test_indexed' (second of them with several indices).
-#                   Then we create two stored procedures ('sp_non_idx' and 'sp_indexed') which perform INSERTs into these tables.
-#                   Number of INSERTs it set by variable N_COUNT_PER_MEASURE.
-#
-#                   Each of these procedures is called <N_MEASURES> times, with saving CPU 'user_time' that OS dedicated to FB process
-#                   to complete its job (we use psutil package to obtain this value).
-#
-#                   After each call we drop procedures, recreate tables again and create procedures in order to repeat DML.
-#
-#                   Each result (difference between cpu_times().user values when apropriate procedure finishes) is added to the list.
-#
-#                   Finally, we evaluate MEDIAN of ratios between cpu user time which was received for INDEXED and NON_INDEXED tables.
-#                   Obviously, time for indexed table must be greater than for non-indexed one.
-#
-#                   If ratios median is less then threshold (see var. INSERTS_TIME_MAX_RATIO) then result can be considered as ACCEPTABLE.
-#                   Otherwise we show ratios median and list of their values for each measurement.
-#
-#                   See also:
-#                   https://psutil.readthedocs.io/en/latest/#psutil.cpu_times
-#
-#                   Result for FB _before_ fix:
-#                   3.0.0.32483 (built 15-apr-2016):
-#                         38    27      49      26      27      30      26      27      46      28      50      26      46      26      27      26      26      26      48      48 // median = 26.875; max = 50
-#
-#                   Result for FB _after_ fix:
-#                   3.0.1.32609 (built 27-sep-2016):
-#                         10    11      10      10      11      10      9       10      11      9       14      11      10      10      13      10      10      11      10      10 // median = 10; max = 13
-#
-#                   All builds of nov-2021 (3.0, 4.0 and 5.0; checked SS/CS) have similar result to this:
-#                       build        mode   median   max
-#                       3.0.8.33446    CS     14      17
-#                       3.0.8.33527    SS     14      16
-#                       4.0.0.2422     CS     13      14
-#                       4.0.1.2660     SS     12      15
-#                       5.0.0.311      SS     14      17
-#                       5.0.0.309      CS     12      16
-#
-#                   Reasonable value of threshold can be equal to MAXIMAL of these values plus 2..3.
-#                   Checked on: 5.0.0.311, 5.0.0.309; 4.0.1.2660, 4.0.0.2422; 3.0.8.33527, 3.0.8.33446 (all: SS/CS)
-#
-#                   ############################################################################################
-#
-#                   Old comments (before 16.11.2021):
-#
-#                   _BEFORE_ this ticket was fixed ratio was following:
-#                       Ratio for 4.0.0.258: ~32...34 -- poor
-#                       Ratio for 3.0.1.32566: ~23...24 -- poor
-#
-#                   _AFTER_ ticket was fixed ratio is:
-#                       Ratio for 4.0.0.313:   ~11...13 -- OK
-#                       Ratio for 3.0.1.32568: ~10...11 -- OK
-#
-#                   21.11.2021. Checked on Linux (after installing pakage psutil):
-#                       5.0.0.313 SS:   94.000s
-#                       4.0.1.2668 SS:  87.167s
-#                       3.0.8.33540 SS: 86.931s
-#
-#                   Fix for 4.0 was 07-jul-2016, see here:
-#                   https://github.com/FirebirdSQL/firebird/commit/a75e0af175ea6e803101b5fd62ec91cdf039b951
-#                   Fix for 3.0 was 27-jul-2016, see here:
-#                   https://github.com/FirebirdSQL/firebird/commit/96a24228b61003e72c68596faf3c4c4ed0b95ea1
-#
-#
-# tracker_id:   CORE-5302
-# min_versions: ['3.0.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-2047
+ISSUE:       2047
+TITLE:       Performance regression when bulk inserting into table with indices
+DESCRIPTION:
+    21.11.2021. Totally re-implemented, package 'psutil' must be installed.
+
+    We make two calls of psutil.Process(fb_pid).cpu_times() (before and after SQL code) and obtain CPU User Time
+    values from each result.
+    Difference between them can be considered as much more accurate performance estimation.
+
+    Test creates two tables: 'test_non_idx' and 'test_indexed' (second of them with several indices).
+    Then we create two stored procedures ('sp_non_idx' and 'sp_indexed') which perform INSERTs into these tables.
+    Number of INSERTs it set by variable N_COUNT_PER_MEASURE.
+
+    Each of these procedures is called <N_MEASURES> times, with saving CPU 'user_time' that OS dedicated to FB process
+    to complete its job (we use psutil package to obtain this value).
+
+    After each call we drop procedures, recreate tables again and create procedures in order to repeat DML.
+
+    Each result (difference between cpu_times().user values when apropriate procedure finishes) is added to the list.
+
+    Finally, we evaluate MEDIAN of ratios between cpu user time which was received for INDEXED and NON_INDEXED tables.
+    Obviously, time for indexed table must be greater than for non-indexed one.
+
+    If ratios median is less then threshold (see var. INSERTS_TIME_MAX_RATIO) then result can be considered as ACCEPTABLE.
+    Otherwise we show ratios median and list of their values for each measurement.
+
+    See also:
+    https://psutil.readthedocs.io/en/latest/#psutil.cpu_times
+
+    Result for FB _before_ fix:
+    3.0.0.32483 (built 15-apr-2016):
+          38    27      49      26      27      30      26      27      46      28      50      26      46      26      27      26      26      26      48      48 // median = 26.875; max = 50
+
+    Result for FB _after_ fix:
+    3.0.1.32609 (built 27-sep-2016):
+          10    11      10      10      11      10      9       10      11      9       14      11      10      10      13      10      10      11      10      10 // median = 10; max = 13
+
+    All builds of nov-2021 (3.0, 4.0 and 5.0; checked SS/CS) have similar result to this:
+        build        mode   median   max
+        3.0.8.33446    CS     14      17
+        3.0.8.33527    SS     14      16
+        4.0.0.2422     CS     13      14
+        4.0.1.2660     SS     12      15
+        5.0.0.311      SS     14      17
+        5.0.0.309      CS     12      16
+
+    Reasonable value of threshold can be equal to MAXIMAL of these values plus 2..3.
+    Checked on: 5.0.0.311, 5.0.0.309; 4.0.1.2660, 4.0.0.2422; 3.0.8.33527, 3.0.8.33446 (all: SS/CS)
+
+    ############################################################################################
+
+    Old comments (before 16.11.2021):
+
+    _BEFORE_ this ticket was fixed ratio was following:
+        Ratio for 4.0.0.258: ~32...34 -- poor
+        Ratio for 3.0.1.32566: ~23...24 -- poor
+
+    _AFTER_ ticket was fixed ratio is:
+        Ratio for 4.0.0.313:   ~11...13 -- OK
+        Ratio for 3.0.1.32568: ~10...11 -- OK
+
+    21.11.2021. Checked on Linux (after installing pakage psutil):
+        5.0.0.313 SS:   94.000s
+        4.0.1.2668 SS:  87.167s
+        3.0.8.33540 SS: 86.931s
+
+    Fix for 4.0 was 07-jul-2016, see here:
+    https://github.com/FirebirdSQL/firebird/commit/a75e0af175ea6e803101b5fd62ec91cdf039b951
+    Fix for 3.0 was 27-jul-2016, see here:
+    https://github.com/FirebirdSQL/firebird/commit/96a24228b61003e72c68596faf3c4c4ed0b95ea1
+JIRA:        CORE-5302
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    CPU time ratio for Indexed vs NON-indexed inserts: acceptable
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -202,14 +202,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          print( '%12.2f' % p )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    CPU time ratio for Indexed vs NON-indexed inserts: acceptable
-"""
-
-@pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")

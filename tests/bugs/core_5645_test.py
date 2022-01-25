@@ -1,30 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_5645
-# title:        Wrong transaction can be passed to external engine
-# decription:
-#                   Implemented according to notes given by Adriano in the ticket 27-oct-2017 02:41.
-#                   Checked on:
-#                       4.0.0.1743 SS: 2.719s.
-#                       4.0.0.1740 SC: 2.531s.
-#                       4.0.0.1714 CS: 11.750s.
-#                       3.0.6.33236 SS: 1.141s.
-#                       3.0.6.33236 CS: 2.563s.
-#                       3.0.5.33221 SC: 3.812s.
-# tracker_id:   CORE-5645
-# min_versions: ['3.0.3']
-# versions:     3.0.3
-# qmid:         None
+
+"""
+ID:          issue-5911
+ISSUE:       5911
+TITLE:       Wrong transaction can be passed to external engine
+DESCRIPTION:
+  Implemented according to notes given by Adriano in the ticket 27-oct-2017 02:41.
+JIRA:        CORE-5645
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action, Database
+from firebird.qa import *
 
-# version: 3.0.3
-# resources: None
-
-substitutions_1 = [('INFO_BLOB_ID.*', '')]
-
-init_script_1 = """
+init_script = """
     create table persons (
         id integer not null,
         name varchar(60) not null,
@@ -33,127 +21,12 @@ init_script_1 = """
     );
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-db_1_repl = db_factory(sql_dialect=3, init=init_script_1, filename='tmp_5645_repl.fd')
+db = db_factory(sql_dialect=3, init=init_script)
+db_repl = db_factory(sql_dialect=3, init=init_script, filename='tmp_5645_repl.fd')
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  this_db = db_conn.database_name
-#  fb_major=db_conn.engine_version
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  table_ddl='''
-#      create table persons (
-#          id integer not null,
-#          name varchar(60) not null,
-#          address varchar(60),
-#          info blob sub_type text
-#      );
-#  '''
-#
-#
-#  fdb_repl = os.path.join(context['temp_directory'],'tmp_5645_repl.fdb')
-#  cleanup( (fdb_repl,) )
-#
-#  con_repl = fdb.create_database(  dsn = 'localhost:%(fdb_repl)s' % locals() )
-#  con_repl.execute_immediate( table_ddl )
-#  con_repl.commit()
-#  con_repl.close()
-#
-#  db_conn.execute_immediate( table_ddl )
-#  db_conn.commit()
-#
-#  ddl_for_replication='''
-#      create table replicate_config (
-#          name varchar(31) not null,
-#          data_source varchar(255) not null
-#      );
-#
-#      insert into replicate_config (name, data_source)
-#         values ('ds1', '%(fdb_repl)s');
-#
-#      create trigger persons_replicate
-#          after insert on persons
-#          external name 'udrcpp_example!replicate!ds1'
-#          engine udr;
-#
-#      create trigger persons_replicate2
-#          after insert on persons
-#          external name 'udrcpp_example!replicate_persons!ds1'
-#          engine udr;
-#      commit;
-#
-#  ''' % locals()
-#
-#  f_apply_ddl_sql = open( os.path.join(context['temp_directory'],'tmp_5645.sql'), 'w', buffering = 0)
-#  f_apply_ddl_sql.write( ddl_for_replication )
-#  flush_and_close( f_apply_ddl_sql )
-#
-#  f_apply_ddl_log = open( '.'.join( (os.path.splitext( f_apply_ddl_sql.name )[0], 'log') ), 'w', buffering = 0)
-#  subprocess.call( [ context['isql_path'], dsn, '-q', '-i', f_apply_ddl_sql.name ], stdout = f_apply_ddl_log, stderr = subprocess.STDOUT)
-#  flush_and_close( f_apply_ddl_log )
-#
-#  #--------------------------------
-#
-#  cur = db_conn.cursor()
-#  cur.execute( "insert into persons values (1, 'One', 'some_address', 'some_blob_info')" )
-#  db_conn.commit()
-#  db_conn.close()
-#
-#  if fb_major >= 4.0:
-#      runProgram( 'isql', ['-q', dsn], 'ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL;' )
-#
-#  runProgram( 'isql', ['-q', 'localhost:%(fdb_repl)s' % locals()], 'set list on; set count on; select id,name,address,info as info_blob_id from persons;rollback; drop database;' )
-#
-#  cleanup( (f_apply_ddl_sql,f_apply_ddl_log) )
-#
-#
-#---
+act = python_act('db', substitutions=[('INFO_BLOB_ID.*', '')])
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     NAME                            One
     ADDRESS                         some_address
@@ -169,7 +42,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act_1: Action, db_1_repl: Database):
+def test_1(act: Action, db_repl: Database):
     ddl_for_replication = f"""
         create table replicate_config (
             name varchar(31) not null,
@@ -177,7 +50,7 @@ def test_1(act_1: Action, db_1_repl: Database):
         );
 
         insert into replicate_config (name, data_source)
-           values ('ds1', '{db_1_repl.db_path}');
+           values ('ds1', '{db_repl.db_path}');
 
         create trigger persons_replicate
             after insert on persons
@@ -189,21 +62,21 @@ def test_1(act_1: Action, db_1_repl: Database):
             external name 'udrcpp_example!replicate_persons!ds1'
             engine udr;
         commit;
-"""
-    act_1.isql(switches=['-q'], input=ddl_for_replication)
+        """
+    act.isql(switches=['-q'], input=ddl_for_replication)
     #
-    with act_1.db.connect() as con:
+    with act.db.connect() as con:
         c = con.cursor()
         c.execute("insert into persons values (1, 'One', 'some_address', 'some_blob_info')")
         con.commit()
     #
-    if act_1.is_version('>4.0'):
-        act_1.reset()
-        act_1.isql(switches=['-q'], input='ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL;')
+    if act.is_version('>4.0'):
+        act.reset()
+        act.isql(switches=['-q'], input='ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL;')
     # Check
-    act_1.reset()
-    act_1.expected_stdout = expected_stdout_1
-    act_1.isql(switches=['-q', db_1_repl.dsn],
+    act.reset()
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-q', db_repl.dsn],
                input='set list on; set count on; select id,name,address,info as info_blob_id from persons; rollback;',
                connect_db=False)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert act.clean_stdout == act.clean_expected_stdout

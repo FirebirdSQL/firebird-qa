@@ -129,10 +129,10 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0.6')
 #@pytest.mark.platform('Windows')
-@pytest.mark.xfail
 def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 

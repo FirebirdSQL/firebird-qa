@@ -342,6 +342,6 @@ expected_stdout = """
 """
 
 @pytest.mark.version('>=3.0')
-@pytest.mark.skip("Test fate to be determined")
+@pytest.mark.skip("FIXME: Test fate to be determined")
 def test_1():
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")

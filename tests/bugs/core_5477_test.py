@@ -1,35 +1,37 @@
 #coding:utf-8
-#
-# id:           bugs.core_5477
-# title:        Trace duplicates asci_char(13) in its output (Windows only)
-# decription:
-#                  We launch trace and create connect to DB with statement line 'select 1 from rdb$database'.
-#                  Trace log should contain several lines related to connection, transaction and statement.
-#                  These lines should be separated by standard Windows PAIR of characters: CR + NL.
-#                  Count of these chars should be equal (ideally; actually 1st line in trace has EOL = single NL
-#                  rather than pair CR+NL).
-#                  We then open trace log as binary file and read all its content into dict of Counter type,
-#                  thus we can get number of occurences for each character, including CR and NL.
-#                  Finally, we compare number of occurences of CR and NL. Difference has to be no more than 1.
-#
-#                  Checked on 2.5.7.27048, 3.0.2.32685, 4.0.0.531 - all fine.
-#
-# tracker_id:   CORE-5477
-# min_versions: ['2.5.7']
-# versions:     2.5.7
-# qmid:         None
+
+"""
+ID:          issue-5747
+ISSUE:       5747
+TITLE:       Trace duplicates asci_char(13) in its output (Windows only)
+DESCRIPTION:
+  We launch trace and create connect to DB with statement line 'select 1 from rdb$database'.
+  Trace log should contain several lines related to connection, transaction and statement.
+  These lines should be separated by standard Windows PAIR of characters: CR + NL.
+  Count of these chars should be equal (ideally; actually 1st line in trace has EOL = single NL
+  rather than pair CR+NL).
+  We then open trace log as binary file and read all its content into dict of Counter type,
+  thus we can get number of occurences for each character, including CR and NL.
+  Finally, we compare number of occurences of CR and NL. Difference has to be no more than 1.
+JIRA:        CORE-5477
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.5.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    EXPECTED.
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -181,17 +183,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    EXPECTED.
-"""
-
-@pytest.mark.version('>=2.5.7')
-@pytest.mark.platform('Windows')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
-
-

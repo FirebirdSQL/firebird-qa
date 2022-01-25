@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5463
-# title:        Support GENERATED ALWAYS identity columns and OVERRIDE clause
-# decription:   
-#                  Checked on WI-T4.0.0.546. Works fine.
-#                  18.08.2020: replaced expected_stdout, checked on 4.0.0.2164.
-#                
-# tracker_id:   CORE-5463
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5733
+ISSUE:       5733
+TITLE:       Support GENERATED ALWAYS identity columns and OVERRIDE clause
+DESCRIPTION:
+JIRA:        CORE-5463
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('OVERRIDING SYSTEM VALUE should be used.*', 'OVERRIDING SYSTEM VALUE should be used')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     recreate table test_always(
        id_always int generated ALWAYS as identity (start with 11 increment 22) unique
@@ -38,7 +28,7 @@ test_script_1 = """
 
     insert into test_always default values returning id_always; -- expected: 33
 
-    -- Comments taken from doc\\sql.extensions\\README.identity_columns.txt 
+    -- Comments taken from doc\\sql.extensions\\README.identity_columns.txt
     -- ==================================================================
 
     -- ........................................
@@ -63,7 +53,7 @@ test_script_1 = """
 
     -- ........................................................................
     -- However, for ALWAYS identity columns that is not allowed.
-    -- To use the value passed in the INSERT statement for an ALWAYS column, you should pass 
+    -- To use the value passed in the INSERT statement for an ALWAYS column, you should pass
     -- OVERRIDING SYSTEM VALUE:
     -- ........................................................................
 
@@ -77,7 +67,7 @@ test_script_1 = """
     insert into test_always(id_always) overriding system value values (7654321) returning id_always;
 
     -- .........................................................................
-    -- OVERRIDING also supports a subclause to be used with BY DEFAULT columns, 
+    -- OVERRIDING also supports a subclause to be used with BY DEFAULT columns,
     -- to ignore the value passed in INSERT and use the defined sequence:
     -- .........................................................................
 
@@ -88,9 +78,10 @@ test_script_1 = """
     insert into test_default(id_default) overriding user value values(-7654322) returning id_default; -- expected: -121
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('OVERRIDING SYSTEM VALUE should be used.*',
+                                                  'OVERRIDING SYSTEM VALUE should be used')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ID_DEFAULT                      -11
     ID_ALWAYS                       11
     ID_DEFAULT                      -7654321
@@ -98,7 +89,8 @@ expected_stdout_1 = """
     ID_DEFAULT                      -33
     ID_DEFAULT                      -55
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     OVERRIDING SYSTEM VALUE should be used
 
@@ -110,10 +102,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

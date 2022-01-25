@@ -101,7 +101,4 @@ act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    try:
-        act.execute()
-    except ExecutionError as e:
-        pytest.fail("Test script execution failed", pytrace=False)
+    act.execute()

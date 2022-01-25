@@ -1,42 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_5225
-# title:        Authentication end with first plugin that has the user but auth fails; should continue with next plugin
-# decription:
-#                   We create two users with the same name, 1st using plugin Srp, 2nd - via Legacy.
-#                   Then we try to establish subsequent attachments via ES/EDS for each of them.
-#                   No error should occur.
-#
-#                   Confirmed exception on 3.0.0 for plugin that was specified as SECOND in firebird.conf, got:
-#                       Statement failed, SQLSTATE = 42000
-#                       Execute statement error at attach :
-#                       335544472 : Your user name and password are not defined <...>
-#                   [pcisar] 03.11.2021 The same error raised by 4.0 on Windows and Linux
-#
-#                   Works fine on:
-#                     fb30Cs, build 3.0.4.32947: OK, 2.907s.
-#                     FB30SS, build 3.0.4.32963: OK, 1.140s.
-#                     FB40CS, build 4.0.0.955: OK, 3.531s.
-#                     FB40SS, build 4.0.0.967: OK, 1.312s.
-#
-# tracker_id:   CORE-5225
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-5505
+ISSUE:       5505
+TITLE:       Authentication end with first plugin that has the user but auth fails; should continue with next plugin
+DESCRIPTION:
+  We create two users with the same name, 1st using plugin Srp, 2nd - via Legacy.
+  Then we try to establish subsequent attachments via ES/EDS for each of them.
+  No error should occur.
+JIRA:        CORE-5225
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, User, user_factory
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+user_srp = user_factory('db', name='tmp$c5225', password='srp', plugin='Srp')
+user_leg = user_factory('db', name='tmp$c5225', password='leg', plugin='Legacy_UserManager')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     set term ^;
@@ -82,19 +65,16 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHOAMI_LEG                      TMP$C5225
     WHOAMI_SRP                      TMP$C5225
 """
 
-user_srp = user_factory('db_1', name='tmp$c5225', password='srp', plugin='Srp')
-user_leg = user_factory('db_1', name='tmp$c5225', password='leg', plugin='Legacy_UserManager')
-
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action, user_srp: User, user_leg: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action, user_srp: User, user_leg: User):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

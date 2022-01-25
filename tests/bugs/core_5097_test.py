@@ -1,27 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5097
-# title:        COMPUTED-BY expressions are not converted to their field type inside the engine
-# decription:   
-#                
-# tracker_id:   CORE-5097
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5382
+ISSUE:       5382
+TITLE:       COMPUTED-BY expressions are not converted to their field type inside the engine
+DESCRIPTION:
+JIRA:        CORE-5097
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!sqltype|T2_CHECK|C1_CHECK).)*$', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test1(
         t0 timestamp default 'now'
         ,t1 timestamp computed by( 'now' )
@@ -42,13 +34,13 @@ test_script_1 = """
 
     set sqlda_display off;
 
-    select iif( t2 between 0 and 6, 1, 0 ) t2_check from test1; 
-    select c1 || '' as c1_check from test2; 
+    select iif( t2 between 0 and 6, 1, 0 ) t2_check from test1;
+    select c1 || '' as c1_check from test2;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype|T2_CHECK|C1_CHECK).)*$', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 510 TIMESTAMP Nullable scale: 0 subtype: 0 len: 8
     02: sqltype: 510 TIMESTAMP Nullable scale: 0 subtype: 0 len: 8
     03: sqltype: 500 SHORT Nullable scale: 0 subtype: 0 len: 2
@@ -59,8 +51,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

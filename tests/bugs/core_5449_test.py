@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5449
-# title:        Support DEFAULT context value in INSERT, UPDATE, MERGE and UPDATE OR INSERT statements
-# decription:   
-#                  Checked on WI-T4.0.0.531.
-#                
-# tracker_id:   CORE-5449
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5720
+ISSUE:       5720
+TITLE:       Support DEFAULT context value in INSERT, UPDATE, MERGE and UPDATE OR INSERT statements
+DESCRIPTION:
+JIRA:        CORE-5449
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table test1(
@@ -46,18 +37,18 @@ test_script_1 = """
     where y is null
     order by id
     rows 1
-    returning 
+    returning
       'AFFECTED BY "UPDATE"' msg,
-      id, 
-      old.y as y_before_update, 
-      old.z as z_before_update, 
-      new.y as y_after_update, 
+      id,
+      old.y as y_before_update,
+      old.z as z_before_update,
+      new.y as y_after_update,
       new.z as z_after_update
     ;
 
 
-    merge into test1 t using(select id,x,y from test1 union all select 2*id, 3*x,4*y from test1) s 
-    on s.id = t.id -- and 
+    merge into test1 t using(select id,x,y from test1 union all select 2*id, 3*x,4*y from test1) s
+    on s.id = t.id -- and
     when matched then update set t.y = s.x, t.x=s.y,  t.z = default
     when NOT matched then insert(x,y,z) values(default, default, default)
     ;
@@ -65,9 +56,9 @@ test_script_1 = """
     select 'AFFECTED BY "MERGE"' msg, t.* from test1 t order by id;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             AFFECTED BY "INSERT"
     ID                              1
     X                               123
@@ -113,8 +104,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

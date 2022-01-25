@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5430
-# title:        Support for INCREMENT option in identity columns
-# decription:   
-#                  Checked on 4.0.0.474
-#                  18.08.2020: replaced expected_stdout, checked on 4.0.0.2164.
-#                
-# tracker_id:   CORE-5430
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5702
+ISSUE:       5702
+TITLE:       Support for INCREMENT option in identity columns
+DESCRIPTION:
+JIRA:        CORE-5430
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     --set echo on;
     recreate table test1(
@@ -54,9 +44,9 @@ test_script_1 = """
     insert into test3 default values returning id as test3_chng_incr_id;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TEST1_ID                        12345
     TEST2_ID                        12345
     TEST3_ID                        1
@@ -66,8 +56,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

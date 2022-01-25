@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5341
-# title:        User collate doesn't work with blobs
-# decription:
-#                  Reproduced bug on 3.0.1.32594.
-#                  All fine on WI-V3.0.1.32596, WI-T4.0.0.366.
-#
-# tracker_id:   CORE-5341
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-5616
+ISSUE:       5616
+TITLE:       User collate doesn't work with blobs
+DESCRIPTION:
+JIRA:        CORE-5341
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('BLOB_ID.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     execute block as
     begin
@@ -49,17 +39,17 @@ test_script_1 = """
     where blob_id collate PXW_CYRL_CI_AI like '%update%';
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('BLOB_ID.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     update
     UPDATE
     Records affected: 2
 """
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute(charset='WIN1251')
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute(charset='WIN1251')
+    assert act.clean_stdout == act.clean_expected_stdout
 

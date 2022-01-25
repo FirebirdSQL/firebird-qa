@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5667
-# title:        Regression in 3.0+: message CTE 'X' has cyclic dependencies appear when 'X' is alias for resultset and there is previous CTE part with the same name 'X' in the query
-# decription:   
-#                   Checked on:
-#                       25SC, build 2.5.8.27088: OK, 0.344s.
-#                       30SS, build 3.0.3.32856: OK, 0.968s.
-#                       40SS, build 4.0.0.834: OK, 1.875s.
-#                
-# tracker_id:   CORE-5667
-# min_versions: ['2.5.8']
-# versions:     2.5.8
-# qmid:         None
+
+"""
+ID:          issue-5933
+ISSUE:       5933
+TITLE:       Regression in 3.0+: message CTE 'X' has cyclic dependencies appear when 'X' is alias for resultset and there is previous CTE part with the same name 'X' in the query
+DESCRIPTION:
+JIRA:        CORE-5667
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     with
     x as(
@@ -35,7 +23,7 @@ test_script_1 = """
       select i from x
     )
     select * from y as x ------------------ NOTE: "as X", i.e. alias for final CTE part ( "y" ) matches to 1st CTE ( "x" )
-    ; 
+    ;
 
     -- Additional sample:
     with recursive
@@ -51,7 +39,7 @@ test_script_1 = """
       select b c from b c
     )
     select c a from c a
-    ; 
+    ;
 
     -- Two samples from CORE-5655:
     with cte as (select sign(t.rdb$relation_id) ct from rdb$database t) select ct.ct from cte ct;
@@ -60,9 +48,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     I                               1
 
     A                               0
@@ -72,9 +60,8 @@ expected_stdout_1 = """
     CT                              1
 """
 
-@pytest.mark.version('>=2.5.8')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

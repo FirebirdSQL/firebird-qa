@@ -27,49 +27,9 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('[-]?Password', 'Password')])
 
-# version: 3.0.7
+# version: 3.0.8
 
-expected_stderr_1 = """
-Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--CREATE USER U01 failed
--Password must be specified when creating user
-
-Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--CREATE USER U01 failed
--Password must be specified when creating user
-
-Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--CREATE USER U01 failed
--Password must be specified when creating user
-
-Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--CREATE USER U01 failed
--Password must be specified when creating user
-
-Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--CREATE USER U01 failed
--Password must be specified when creating user
-
-Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--CREATE USER PASSWORD failed
--Password must be specified when creating user
-"""
-
-@pytest.mark.version('>=3.0.7,<4')
-def test_1(act: Action):
-    act.expected_stderr = expected_stderr_1
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
-
-# version: 4.0
-
-expected_stderr_2 = """
+expected_stderr = """
 Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -CREATE USER U01 failed
@@ -104,9 +64,8 @@ unsuccessful metadata update
 -Password must be specified when creating user
 """
 
-@pytest.mark.version('>=4.0')
-def test_2(act: Action):
-    act.expected_stderr = expected_stderr_2
+@pytest.mark.version('>=3.0.8')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
     act.execute()
     assert act.clean_stderr == act.clean_expected_stderr
-

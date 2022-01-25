@@ -1,73 +1,56 @@
 #coding:utf-8
-#
-# id:           bugs.core_5685
-# title:        Sometime it is impossible to cancel/kill connection executing external query
-# decription:
-#                   Problem did appear when host "A" established connection to host "B" but could not get completed reply from this "B".
-#                   This can be emulated by following steps:
-#                   1. We establich new remote connection to the same database using EDS mechanism and supply completely new ROLE to force new attachment be created;
-#                   2. Within this EDS we do query to selectable procedure (with name 'sp_unreachable') which surely will not produce any result.
-#                      Bogon IP '192.0.2.2' is used in order to make this SP hang for sufficient time (on Windows it is about 20, on POSIX - about 44 seconds).
-#                   Steps 1 and 2 are implemented by asynchronous call of ISQL: we must have ability to kill its process after.
-#                   When this 'hanging ISQL' is launched, we wait 1..2 seconds and run one more ISQL, which has mission to KILL all attachments except his own.
-#                   This ISQL session is named 'killer', and it writes result of actions to log.
-#                   This "killer-ISQL" does TWO iterations with the same code which looks like 'select ... from mon$attachments' and 'delete from mon$attachments'.
-#                   First iteration must return data of 'hanging ISQL' and also this session must be immediately killed.
-#                   Second iteration must NOT return any data - and this is main check in this test.
-#
-#                   For builds which had bug (before 25.12.2017) one may see that second iteration STILL RETURNS the same data as first one:
-#                   ====
-#                     ITERATION_NO                    1
-#                     HANGING_ATTACH_CONNECTION       1
-#                     HANGING_ATTACH_PROTOCOL         TCP
-#                     HANGING_STATEMENT_STATE         1
-#                     HANGING_STATEMENT_BLOB_ID       0:3
-#                     select * from sp_get_data
-#                     Records affected: 1
-#
-#                     ITERATION_NO                    2
-#                     HANGING_ATTACH_CONNECTION       1
-#                     HANGING_ATTACH_PROTOCOL         TCP
-#                     HANGING_STATEMENT_STATE         1
-#                     HANGING_STATEMENT_BLOB_ID       0:1
-#                     select * from sp_get_data
-#                     Records affected: 1
-#                   ====
-#                   (expected: all fields in ITER #2 must be NULL)
-#
-#                   Confirmed bug on 3.0.2.32703 (check file "tmp_kill_5685.log" in %FBT_REPO%	mp folder with result that will get "killer-ISQL")
-#
-#                   NOTE-1: console output in 4.0 slightly differs from in 3.0: a couple of messages ("-Killed by database administrator" and "-send_packet/send")
-#                           was added to STDERR. For this reason test code was splitted on two sections, 3.0 and 4.0.
-#                   NOTE-2: unstable results detected for 2.5.9 SuperClassic. Currently test contains min_version = 3.0.3 rather than 2.5.9
-#
-#                   06.03.2021.
-#                   Removed separate section for 3.x because code for 4.x was made unified.
-#                   Checked on:
-#                   * Windows: 4.0.0.2377 (SS/CS), 3.0.8.33423 (SS/CS)
-#                   * Linux:   4.0.0.2379, 3.0.8.33415
-#
-#
-# tracker_id:   CORE-5685
-# min_versions: ['3.0.3']
-# versions:     3.0.3
-# qmid:         None
+
+"""
+ID:          issue-5951
+ISSUE:       5951
+TITLE:       Sometime it is impossible to cancel/kill connection executing external query
+DESCRIPTION:
+  Problem did appear when host "A" established connection to host "B" but could not get completed reply from this "B".
+  This can be emulated by following steps:
+  1. We establich new remote connection to the same database using EDS mechanism and supply completely new ROLE to force new attachment be created;
+  2. Within this EDS we do query to selectable procedure (with name 'sp_unreachable') which surely will not produce any result.
+     Bogon IP '192.0.2.2' is used in order to make this SP hang for sufficient time (on Windows it is about 20, on POSIX - about 44 seconds).
+  Steps 1 and 2 are implemented by asynchronous call of ISQL: we must have ability to kill its process after.
+  When this 'hanging ISQL' is launched, we wait 1..2 seconds and run one more ISQL, which has mission to KILL all attachments except his own.
+  This ISQL session is named 'killer', and it writes result of actions to log.
+  This "killer-ISQL" does TWO iterations with the same code which looks like 'select ... from mon$attachments' and 'delete from mon$attachments'.
+  First iteration must return data of 'hanging ISQL' and also this session must be immediately killed.
+  Second iteration must NOT return any data - and this is main check in this test.
+
+  For builds which had bug (before 25.12.2017) one may see that second iteration STILL RETURNS the same data as first one:
+  ====
+    ITERATION_NO                    1
+    HANGING_ATTACH_CONNECTION       1
+    HANGING_ATTACH_PROTOCOL         TCP
+    HANGING_STATEMENT_STATE         1
+    HANGING_STATEMENT_BLOB_ID       0:3
+    select * from sp_get_data
+    Records affected: 1
+
+    ITERATION_NO                    2
+    HANGING_ATTACH_CONNECTION       1
+    HANGING_ATTACH_PROTOCOL         TCP
+    HANGING_STATEMENT_STATE         1
+    HANGING_STATEMENT_BLOB_ID       0:1
+    select * from sp_get_data
+    Records affected: 1
+  ====
+  (expected: all fields in ITER #2 must be NULL)
+JIRA:        CORE-5685
+"""
 
 import pytest
 import re
 import subprocess
 import time
 from pathlib import Path
-from firebird.qa import db_factory, python_act, Action, temp_file
+from firebird.qa import *
 from firebird.driver import ShutdownMode, ShutdownMethod
 
-# version: 3.0.3
-# resources: None
+substitutions = [('.*After line.*', ''), ('.*Data source.*', '.*Data source'),
+                 ('.*HANGING_STATEMENT_BLOB_ID.*', '')]
 
-substitutions_1 = [('.*After line.*', ''), ('.*Data source.*', '.*Data source'),
-                   ('.*HANGING_STATEMENT_BLOB_ID.*', '')]
-
-init_script_1 = """
+init_script = """
     create sequence g;
     commit;
     set term ^;
@@ -98,245 +81,11 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import re
-#  import time
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  db_conn.close()
-#
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  f_hang_sql = open( os.path.join(context['temp_directory'],'tmp_hang_5685.sql'), 'w')
-#  f_hang_sql.write( 'set list on; set count on; select * from sp_get_data;' )
-#  flush_and_close( f_hang_sql )
-#
-#  sql_kill='''
-#      set list on;
-#      set blob all;
-#      select gen_id(g,1) as ITERATION_NO from rdb$database;
-#      commit;
-#
-#      select
-#           sign(a.mon$attachment_id) as hanging_attach_connection
-#          ,left(a.mon$remote_protocol,3) as hanging_attach_protocol
-#          ,s.mon$state as hanging_statement_state
-#          ,s.mon$sql_text as hanging_statement_blob_id
-#      from rdb$database d
-#      left join mon$attachments a on a.mon$remote_process containing 'isql'
-#          -- do NOT use, field not existed in 2.5.x: and a.mon$system_flag is distinct from 1
-#          and a.mon$attachment_id is distinct from current_connection
-#      left join mon$statements s on
-#          a.mon$attachment_id = s.mon$attachment_id
-#          and s.mon$state = 1 -- 4.0 Classic: 'SELECT RDB$MAP_USING, RDB$MAP_PLUGIN, ... FROM RDB$AUTH_MAPPING', mon$state = 0
-#      ;
-#
-#      set count on;
-#      delete from mon$attachments a
-#      where
-#          a.mon$attachment_id <> current_connection
-#          and a.mon$remote_process containing 'isql'
-#      ;
-#      commit;
-#  '''
-#
-#  f_kill_sql = open( os.path.join(context['temp_directory'],'tmp_kill_5685.sql'), 'w')
-#  f_kill_sql.write( sql_kill )
-#  flush_and_close( f_kill_sql )
-#
-#  f_hang_log = open( os.path.join(context['temp_directory'],'tmp_hang_5685.log'), 'w')
-#  f_hang_err = open( os.path.join(context['temp_directory'],'tmp_hang_5685.err'), 'w')
-#
-#
-#  # WARNING: we launch ISQL here in async mode in order to have ability to kill its process if it will hang!
-#  ############################################
-#  p_hang_pid=subprocess.Popen( [ context['isql_path'], dsn, "-i", f_hang_sql.name ],
-#                   stdout = f_hang_log,
-#                   stderr = f_hang_err
-#                 )
-#
-#  time.sleep(1)
-#
-#
-#  f_kill_log = open( os.path.join(context['temp_directory'],'tmp_kill_5685.log'), 'w')
-#  f_kill_err = open( os.path.join(context['temp_directory'],'tmp_kill_5685.err'), 'w')
-#
-#  for i in (1,2):
-#      subprocess.call( [ context['isql_path'], dsn, "-i", f_kill_sql.name ],
-#                       stdout = f_kill_log,
-#                       stderr = f_kill_err
-#                     )
-#
-#  flush_and_close( f_kill_log )
-#  flush_and_close( f_kill_err )
-#
-#  ##############################################
-#  p_hang_pid.terminate()
-#  flush_and_close( f_hang_log )
-#  flush_and_close( f_hang_err )
-#
-#  time.sleep(2)
-#
-#  f_shut_log = open( os.path.join(context['temp_directory'],'tmp_shut_5685.log'), 'w')
-#  f_shut_err = open( os.path.join(context['temp_directory'],'tmp_shut_5685.err'), 'w')
-#
-#  subprocess.call( [ context['gfix_path'], dsn, "-shut", "full", "-force", "0" ],
-#                   stdout = f_shut_log,
-#                   stderr = f_shut_err
-#                 )
-#
-#  subprocess.call( [ context['gstat_path'], dsn, "-h"],
-#                   stdout = f_shut_log,
-#                   stderr = f_shut_err
-#                 )
-#
-#  subprocess.call( [ context['gfix_path'], dsn, "-online" ],
-#                   stdout = f_shut_log,
-#                   stderr = f_shut_err
-#                 )
-#
-#  subprocess.call( [ context['gstat_path'], dsn, "-h"],
-#                   stdout = f_shut_log,
-#                   stderr = f_shut_err
-#                 )
-#
-#  flush_and_close( f_shut_log )
-#  flush_and_close( f_shut_err )
-#
-#  # Check results:
-#  ################
-#
-#  with open( f_hang_log.name,'r') as f:
-#    for line in f:
-#        if line.split():
-#          print('HANGED ATTACH, STDOUT: ', ' '.join(line.split()) )
-#
-#
-#  # 01-mar-2021: hanged ISQL can issue *different* messages to STDERR starting from line #4:
-#  # case-1:
-#  # -------
-#  # 1  Statement failed, SQLSTATE = 08003
-#  # 2  connection shutdown
-#  # 3  -Killed by database administrator.
-#  # 4  Statement failed, SQLSTATE = 08006    <<<
-#  # 5  Error writing data to the connection. <<<
-#  # 6  -send_packet/send                     <<<
-#
-#  # case-2:
-#  # 1  Statement failed, SQLSTATE = 08003
-#  # 2  connection shutdown
-#  # 3  -Killed by database administrator.
-#  # 4  Statement failed, SQLSTATE = 08003  <<<
-#  # 5  connection shutdown                 <<<
-#  # 6  -Killed by database administrator.  <<<
-#
-#  # We can ignore messages like '-send_packet/send' and '-Killed by database administrator.',
-#  # but we have to take in account first two ('SQLSTATE = ...' and 'Error ... connection' / 'connection shutdown')
-#  # because they exactly say that session was terminated.
-#  #
-#  # This means that STDERR must contain following lines:
-#  # 1 <pattern about failed statement>   // SQLSTATE = 08006 or 08003
-#  # 2 <pattern about closed connection>  // Error writing data to... / Error reading data from... / connection shutdown
-#  # 3 <pattern about failed statement>   // SQLSTATE = 08006 or 08003
-#  # 4 <pattern about closed connection>  // Error writing data to... / Error reading data from... / connection shutdown
-#
-#  # Use pattern matching for this purpose:
-#  #
-#  pattern_for_failed_statement = re.compile('Statement failed, SQLSTATE = (08006|08003)')
-#  pattern_for_connection_close = re.compile('(Error (reading|writing) data (from|to) the connection)|(connection shutdown)')
-#  pattern_for_ignored_messages = re.compile('(-send_packet/send)|(-Killed by database administrator.)')
-#
-#  msg_prefix = 'HANGED ATTACH, STDERR: '
-#  with open( f_hang_err.name,'r') as f:
-#    for line in f:
-#        if line.split():
-#          if pattern_for_ignored_messages.search(line):
-#            pass
-#          elif pattern_for_failed_statement.search(line):
-#            print( msg_prefix, '<found pattern about failed statement>')
-#          elif pattern_for_connection_close.search(line):
-#            print( msg_prefix, '<found pattern about closed connection>')
-#          else:
-#            print( msg_prefix, ' '.join(line.split()) )
-#
-#
-#  with open( f_kill_log.name,'r') as f:
-#    for line in f:
-#        if line.split():
-#          print('KILLER ATTACH, STDOUT: ', ' '.join(line.split()) )
-#
-#  with open( f_kill_err.name,'r') as f:
-#    for line in f:
-#        if line.split():
-#          print('KILLER ATTACH, UNEXPECTED STDERR: ', ' '.join(line.split()) )
-#
-#  with open( f_shut_err.name,'r') as f:
-#    for line in f:
-#        if line.split():
-#          print('DB SHUTDOWN, UNEXPECTED STDERR: ', ' '.join(line.split()) )
-#
-#
-#  ###############################
-#  # Cleanup.
-#  time.sleep(1)
-#
-#  f_list=(
-#       f_hang_sql
-#      ,f_hang_log
-#      ,f_hang_err
-#      ,f_kill_sql
-#      ,f_kill_log
-#      ,f_kill_err
-#      ,f_shut_log
-#      ,f_shut_err
-#  )
-#  cleanup( f_list )
-#
-#
-#---
+act = python_act('db', substitutions=substitutions)
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     HANGED ATTACH, STDOUT: Records affected: 0
     HANGED ATTACH, STDERR: Statement failed, SQLSTATE = 42000
     HANGED ATTACH, STDERR: Execute statement error at isc_dsql_fetch :
@@ -391,44 +140,44 @@ kill_script = """
     commit;
 """
 
-hang_script_1 = temp_file('hang_script.sql')
-hang_stdout_1 = temp_file('hang_script.out')
-hang_stderr_1 = temp_file('hang_script.err')
+hang_script = temp_file('hang_script.sql')
+hang_stdout = temp_file('hang_script.out')
+hang_stderr = temp_file('hang_script.err')
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act_1: Action, hang_script_1: Path, hang_stdout_1: Path, hang_stderr_1: Path,
+def test_1(act: Action, hang_script: Path, hang_stdout: Path, hang_stderr: Path,
            capsys):
-    hang_script_1.write_text('set list on; set count on; select * from sp_get_data;')
+    hang_script.write_text('set list on; set count on; select * from sp_get_data;')
     pattern_for_failed_statement = re.compile('Statement failed, SQLSTATE = (08006|08003)')
     pattern_for_connection_close = re.compile('(Error (reading|writing) data (from|to) the connection)|(connection shutdown)')
     pattern_for_ignored_messages = re.compile('(-send_packet/send)|(-Killed by database administrator.)')
     killer_output = []
     #
-    with open(hang_stdout_1, mode='w') as hang_out, open(hang_stderr_1, mode='w') as hang_err:
-        p_hang_sql = subprocess.Popen([act_1.vars['isql'], '-i', str(hang_script_1),
-                                       '-user', act_1.db.user,
-                                       '-password', act_1.db.password, act_1.db.dsn],
+    with open(hang_stdout, mode='w') as hang_out, open(hang_stderr, mode='w') as hang_err:
+        p_hang_sql = subprocess.Popen([act.vars['isql'], '-i', str(hang_script),
+                                       '-user', act.db.user,
+                                       '-password', act.db.password, act.db.dsn],
                                        stdout=hang_out, stderr=hang_err)
         try:
             time.sleep(4)
             for i in range(2):
-                act_1.reset()
-                act_1.isql(switches=[], input=kill_script)
-                killer_output.append(act_1.stdout)
+                act.reset()
+                act.isql(switches=[], input=kill_script)
+                killer_output.append(act.stdout)
         finally:
             p_hang_sql.terminate()
     # Ensure that database is not busy
-    with act_1.connect_server() as srv:
-        srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
+    with act.connect_server() as srv:
+        srv.database.shutdown(database=act.db.db_path, mode=ShutdownMode.FULL,
                               method=ShutdownMethod.FORCED, timeout=0)
         time.sleep(2)
-        srv.database.bring_online(database=act_1.db.db_path)
+        srv.database.bring_online(database=act.db.db_path)
     #
     output = []
-    for line in hang_stdout_1.read_text().splitlines():
+    for line in hang_stdout.read_text().splitlines():
         if line.strip():
             output.append(f'HANGED ATTACH, STDOUT: {line}')
-    for line in hang_stderr_1.read_text().splitlines():
+    for line in hang_stderr.read_text().splitlines():
         if line.strip():
             if pattern_for_ignored_messages.search(line):
                 continue
@@ -440,11 +189,11 @@ def test_1(act_1: Action, hang_script_1: Path, hang_stdout_1: Path, hang_stderr_
                 msg = line
         output.append(f'HANGED ATTACH, STDERR: {msg}')
     for step in killer_output:
-        for line in act_1.string_strip(step).splitlines():
+        for line in act.string_strip(step).splitlines():
             if line.strip():
                 output.append(f"KILLER ATTACH, STDOUT: {' '.join(line.split())}")
     # Check
-    act_1.reset()
-    act_1.expected_stdout = expected_stdout_1
-    act_1.stdout = '\n'.join(output)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.reset()
+    act.expected_stdout = expected_stdout
+    act.stdout = '\n'.join(output)
+    assert act.clean_stdout == act.clean_expected_stdout

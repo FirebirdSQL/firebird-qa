@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5166
-# title:        Wrong error message with UNIQUE BOOLEAN field
-# decription:   
-# tracker_id:   CORE-5166
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5449
+ISSUE:       5449
+TITLE:       Wrong error message with UNIQUE BOOLEAN field
+DESCRIPTION:
+JIRA:        CORE-5166
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- Confirmed: result is OK, builds: 3.0.0.32418, WI-T4.0.0.98
     set list on;
     recreate table test1 (
@@ -57,9 +50,9 @@ test_script_1 = """
     update test2 set u=true, v=null, w=true where coalesce(u,v,w) is null rows 1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     X                               <true>
     Records affected: 0
     Records affected: 1
@@ -71,7 +64,8 @@ expected_stdout_1 = """
     Records affected: 0
     Records affected: 0
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 23000
     violation of PRIMARY or UNIQUE KEY constraint "TEST1_X_UNQ" on table "TEST1"
     -Problematic key value is ("X" = TRUE)
@@ -86,10 +80,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

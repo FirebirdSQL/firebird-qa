@@ -228,10 +228,10 @@ expected_stdout_1 = """
     finishing, closing, and going home
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0.7')
 @pytest.mark.platform('Windows')
-@pytest.mark.xfail
 def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")
 
 

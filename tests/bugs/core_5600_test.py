@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5600
-# title:        Invalid blob id when add a new blob column of type text and update another field
-# decription:   
-#                    Reproduced bug on WI-V3.0.3.32813, WI-T4.0.0.767.
-#                    All fine on WI-T4.0.0.778.
-#                
-# tracker_id:   CORE-5600
-# min_versions: ['3.0.3']
-# versions:     3.0.3
-# qmid:         None
+
+"""
+ID:          issue-5866
+ISSUE:       5866
+TITLE:       Invalid blob id when add a new blob column of type text and update another field
+DESCRIPTION:
+JIRA:        CORE-5600
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('BLOB_ID_.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     recreate table operation (
         id bigint not null,
@@ -35,7 +25,7 @@ test_script_1 = """
 
     insert into operation(id, name, d_value )
     select row_number()over() , 'foo', 1
-    from rdb$types 
+    from rdb$types
     rows 3
     ;
     commit;
@@ -55,9 +45,9 @@ test_script_1 = """
     from operation where abs(id) in (1,2,3);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('BLOB_ID_.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     foo
     bar
@@ -72,8 +62,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

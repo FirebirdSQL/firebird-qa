@@ -2,13 +2,13 @@
 #
 # id:           bugs.gh_6782
 # title:        Getting "records fetched" for functions/procedures in trace
-# decription:   
+# decription:
 #                   https://github.com/FirebirdSQL/firebird/issues/6782
-#               
+#
 #                   Confirmed bug on 4.0.0.2436: there was no lines with numner of:
 #                       * number of fetched rows;
 #                       * additional info about number of fetches/reads/writes/marks (after elapsed time).
-#               
+#
 #                   In other words, trace log:
 #                   * was before fix:
 #                       Procedure <some_name>
@@ -18,11 +18,11 @@
 #                       5 records fetched    <<< --- added
 #                             0 ms, 10 fetch(es)
 #                                   ^^^^^^^^^^^^ --- added
-#               
+#
 #                   Test parses trace log and search there lines with names of known procedures/functions and
 #                   then checks presence of lines with number of fetched records (for selectable procedures) and
 #                   additional statistics ('fetches/reads/writes/marks').
-#               
+#
 #                   Checked on:
 #                       5.0.0.87 SS: 7.231s.
 #                       5.0.0.85 CS: 6.425s.
@@ -30,13 +30,13 @@
 #                       4.0.1.2519 CS: 9.452s.
 #                       3.0.8.33476 SS: 12.199s.
 #                       3.0.8.33476 CS: 14.090s.
-#               
+#
 #                   29.06.2021: added delay for 1.1 second after ISQL finished its script and before we ask trace to stop.
 #                   This is the only way to make trace log be completed. DO NOT EVER remove this delay because fbsvcmgr
 #                   makes query to FB services only one time per SECOND.
-#               
+#
 #                   See also reply from Vlad related to test for core-6469, privately, letter: 04-mar-2021 13:02.
-#                
+#
 # tracker_id:   GH-6782
 # min_versions: ['3.0.8']
 # versions:     3.0.8
@@ -61,28 +61,28 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  import subprocess
 #  from subprocess import Popen
 #  import time
-#  
+#
 #  os.environ["ISC_USER"] = user_name
 #  os.environ["ISC_PASSWORD"] = user_password
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
 #      # If you're starting with a Python file object f,
 #      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#  
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for i in range(len( f_names_list )):
@@ -94,19 +94,19 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
 #            print('type(f_names_list[i])=',type(f_names_list[i]))
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#  
+#
 #  #--------------------------------------------
-#  
-#  
+#
+#
 #  # Prepare config for trace session that will be launched by call of FBSVCMGR:
 #  ################
 #  txt = '''database= %[\\\\\\\\/]bugs.gh_6782.fdb
 #  {
 #    enabled = true
-#    time_threshold = 0 
+#    time_threshold = 0
 #    log_initfini = false
 #    log_errors = true
 #    log_procedure_finish = true
@@ -116,22 +116,22 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  trc_cfg=open( os.path.join(context['temp_directory'],'tmp_trace_6782.cfg'), 'w')
 #  trc_cfg.write(txt)
 #  flush_and_close( trc_cfg )
-#  
+#
 #  #####################################################################
 #  # Async. launch of trace session using FBSVCMGR action_trace_start:
-#  
+#
 #  trc_log = open( os.path.join(context['temp_directory'],'tmp_trace_6782.log'), 'w')
-#  
+#
 #  # Execute a child program in a new process, redirecting STDERR to the same target as of STDOUT:
 #  p_trace = Popen( [context['fbsvcmgr_path'], "localhost:service_mgr",
 #                     "action_trace_start","trc_cfg", trc_cfg.name],
 #                    stdout=trc_log, stderr=subprocess.STDOUT)
-#  
+#
 #  # Wait! Trace session is initialized not instantly!
 #  time.sleep(1)
-#  
+#
 #  #####################################################################
-#  
+#
 #  # Determine active trace session ID (for further stop):
 #  trc_lst = open( os.path.join(context['temp_directory'],'tmp_trace_6782.lst'), 'w')
 #  subprocess.call([context['fbsvcmgr_path'], "localhost:service_mgr",
@@ -139,8 +139,8 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                   stdout=trc_lst, stderr=subprocess.STDOUT
 #                 )
 #  flush_and_close( trc_lst )
-#  
-#  # Session ID: 5 
+#
+#  # Session ID: 5
 #  # ...
 #  trcssn = None
 #  with open( trc_lst.name,'r') as f:
@@ -148,17 +148,17 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          if 'Session ID' in line and len(line.split())>=3:
 #             trcssn = line.split()[2]
 #             break
-#  
-#  # Result: `trcssn` is ID of active trace session. 
+#
+#  # Result: `trcssn` is ID of active trace session.
 #  if not trcssn:
 #      print("Error parsing trace session ID.")
 #      flush_and_close( trc_log )
-#  
+#
 #  else:
 #      #####################################################################
-#  
+#
 #      # Preparing script for ISQL:
-#  
+#
 #      sql_cmd='''
 #          create table test(id int);
 #          insert into test(id) select row_number()over() from rdb$types rows 5;
@@ -175,7 +175,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            end
 #          end
 #          ^
-#  
+#
 #          create procedure standalone_nonselected_sp as
 #          begin
 #            for select id from test as cursor c
@@ -185,14 +185,14 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            end
 #          end
 #          ^
-#  
+#
 #          create function standalone_func returns int as
 #          begin
 #            update test set id = rand()*10000000;
 #            return (select max(id) from test);
 #          end
 #          ^
-#  
+#
 #          create package pg_test as
 #          begin
 #            procedure packaged_selectable_sp returns(id int);
@@ -200,7 +200,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            procedure packaged_nonselected_sp;
 #          end
 #          ^
-#  
+#
 #          create package body pg_test as
 #          begin
 #            procedure packaged_selectable_sp returns(id int) as
@@ -212,7 +212,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                    suspend;
 #                end
 #            end
-#  
+#
 #            procedure packaged_nonselected_sp as
 #            begin
 #                for select id from test as cursor c
@@ -221,7 +221,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                    where current of c;
 #                end
 #            end
-#  
+#
 #            function packaged_func returns int as
 #            begin
 #                update test set id = rand()*10000000;
@@ -229,12 +229,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            end
 #          end
 #          ^
-#  
-#  
+#
+#
 #          create procedure sp_main as
 #            declare c int;
 #          begin
-#            for select id from standalone_selectable_sp into c do 
+#            for select id from standalone_selectable_sp into c do
 #            begin
 #              -- nop --
 #            end
@@ -243,35 +243,35 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #            ----------------------
 #            execute procedure standalone_nonselected_sp;
 #            ----------------------
-#  
-#            for select id from pg_test.packaged_selectable_sp into c do 
+#
+#            for select id from pg_test.packaged_selectable_sp into c do
 #            begin
 #              -- nop --
 #            end
 #            ----------------------
 #            c = pg_test.packaged_func();
 #            ----------------------
-#  
+#
 #            execute procedure pg_test.packaged_nonselected_sp;
 #          end
 #          ^
 #          set term ;^
 #          commit;
-#  
+#
 #          set list on;
 #          execute procedure sp_main;
 #          commit;
 #      '''
-#  
+#
 #      isql_cmd=open( os.path.join(context['temp_directory'],'tmp_isql_6782.sql'), 'w')
 #      isql_cmd.write(sql_cmd)
 #      flush_and_close( isql_cmd )
-#  
+#
 #      #######################################################################
 #      isql_log=open( os.path.join(context['temp_directory'],'tmp_isql_6782.log'), 'w')
 #      subprocess.call( [ context['isql_path'], dsn, "-i", isql_cmd.name ], stdout=isql_log,stderr=subprocess.STDOUT)
 #      flush_and_close( isql_log )
-#      
+#
 #      #########################
 #      ###   C R U C I A L   ###
 #      #########################
@@ -283,7 +283,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      ###############
 #      time.sleep(1.1)
 #      ###############
-#      
+#
 #      # Stop trace session. We have to do this BEFORE we termitane process with PID = p_trace.
 #      # NOTE ONCE AGAIN: we can do this only after delay for at least 1.1 second!
 #      trc_lst=open(trc_lst.name, "a")
@@ -293,12 +293,12 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                        stdout=trc_lst, stderr=subprocess.STDOUT
 #                     )
 #      flush_and_close( trc_lst )
-#      
+#
 #      ###########################
 #      p_trace.terminate()
 #      flush_and_close( trc_log )
 #      ###########################
-#  
+#
 #      # Check logs:
 #      #############
 #      allowed_patterns = (
@@ -307,7 +307,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          ,re.compile('\\d+\\s+record(s|\\(s\\))?\\s+fetched', re.IGNORECASE)
 #          ,re.compile('\\s+\\d+\\s+ms(,)?\\s+\\d+\\s+fetch(es|\\(es\\))((,)?\\s+\\d+\\s+read(s|\\(s\\)))?((,)?\\s+\\d+\\s+write(s|\\(s\\)))?(,)?\\s+\\d+\\s+mark(s|\\(s\\))', re.IGNORECASE)
 #      )
-#  
+#
 #      with open(trc_log.name) as f:
 #          for line in f:
 #              if line.split():
@@ -319,11 +319,11 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #                          print('FOUND line with number of fetched records')
 #                      else:
 #                          print(line)
-#  
+#
 #  # Cleanup:
 #  time.sleep(1)
 #  cleanup( (trc_lst, trc_cfg, trc_log, isql_cmd, isql_log) )
-#  
+#
 #---
 act_1 = python_act('db_1', substitutions=substitutions_1)
 
@@ -352,7 +352,7 @@ expected_stdout_1 = """
     FOUND line with execution statistics
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0.8')
-@pytest.mark.xfail
 def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+    pytest.fail("Not IMPLEMENTED")

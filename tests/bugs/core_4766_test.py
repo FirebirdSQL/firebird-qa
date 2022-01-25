@@ -62,7 +62,6 @@ expected_stdout_1 = """
 @pytest.mark.version('>=3.0,<4')
 #@pytest.mark.xfail
 def test_1(act: Action, capsys):
-    #pytest.fail("Test not IMPLEMENTED")
     sql_text = (act.files_dir / 'core_4766.sql').read_text()
     subs = {'dsn': act.db.dsn, 'user_name': act.db.user, 'user_password': act.db.password,
             'current_auth_plugin': None,}

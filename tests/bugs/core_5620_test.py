@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5620
-# title:        Add builtin functions FIRST_DAY and LAST_DAY
-# decription:   
-#                  Checked on:  4.0.0.783: OK, 0.781s.
-#                
-# tracker_id:   CORE-5620
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5886
+ISSUE:       5886
+TITLE:       Add builtin functions FIRST_DAY and LAST_DAY
+DESCRIPTION:
+JIRA:        CORE-5620
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select
          first_day(of month from date '2017-09-15') -- 2017-09-01
@@ -30,7 +21,7 @@ test_script_1 = """
         ,first_day(of week from timestamp '2017-11-01 12:13:14.5678') -- 2017-10-29 12:13:14.5678
         ,last_day(of month from date '2017-09-15') -- 2017-09-30
         ,last_day(of year from date '2017-09-15') -- 2017-12-31
-        ,last_day(of week from timestamp '2017-11-01 12:13:14.5678') -- 2017-11-04 12:13:14.5678 
+        ,last_day(of week from timestamp '2017-11-01 12:13:14.5678') -- 2017-11-04 12:13:14.5678
     from rdb$database;
 
     select
@@ -47,9 +38,9 @@ test_script_1 = """
     from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     FIRST_DAY                       2017-09-01
     FIRST_DAY                       2017-01-01
     FIRST_DAY                       2017-10-29 12:13:14.5678
@@ -65,8 +56,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

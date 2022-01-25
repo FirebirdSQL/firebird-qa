@@ -1,47 +1,32 @@
 #coding:utf-8
-#
-# id:           bugs.core_5367
-# title:        Regression: (boolean) parameters as search condition no longer allowed
-# decription:   
-#                 Confirmed on WI-T4.0.0.397 before commit 04-oct-2016 17:52
-#                 https://github.com/FirebirdSQL/firebird/commit/8a4b7e3b79a31dc7bf6e569e6cf673cf6899a475
-#                 - got:
-#                         Statement failed, SQLSTATE = 22000
-#                         Dynamic SQL Error
-#                         -SQL error code = -104
-#                         -Invalid usage of boolean expression
-#               
-#                 Works fine since that commit (checked on LI-T4.0.0.397).
-#                
-# tracker_id:   CORE-5367
-# min_versions: ['3.0.2']
-# versions:     3.0.2
-# qmid:         None
+
+"""
+ID:          issue-5640
+ISSUE:       5640
+TITLE:       Regression: (boolean) parameters as search condition no longer allowed
+DESCRIPTION:
+JIRA:        CORE-v
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.2
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table test(id int,boo boolean);
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set sqlda_display on;
     set planonly;
     select * from test where ?;
     set planonly;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     INPUT message field count: 1
     01: sqltype: 32764 BOOLEAN scale: 0 subtype: 0 len: 1
       :  name:   alias:
@@ -59,8 +44,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.2')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

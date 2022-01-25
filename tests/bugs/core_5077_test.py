@@ -1,47 +1,50 @@
 #coding:utf-8
-#
-# id:           bugs.core_5077
-# title:        ISQL 'SHOW DATABASE' command does not show encryption status of database
-# decription:
-#                   We create new database ('tmp_core_5077.fdb') and try to encrypt it usng IBSurgeon Demo Encryption package
-#                   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
-#                   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
-#                   This file was preliminary stored in FF Test machine.
-#                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
-#
-#                   After test database will be created, we try to encrypt it using 'alter database encrypt with <plugin_name> ...' command
-#                   (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\ folder that implements encryption).
-#                   Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
-#
-#                   After this we run ISQL with 'SHOW DATABASE' command. Its output has to contain string 'Database encrypted'.
-#
-#                   Finally, we change this temp DB state to full shutdown in order to have 100% ability to drop this file.
-#
-#                   Checked on: 4.0.0.1629: OK, 6.264s; 3.0.5.33179: OK, 4.586s.
-#
-#                   13.04.2021. Adapted for run both on Windows and Linux. Checked on:
-#                     Windows: 4.0.0.2416
-#                     Linux:   4.0.0.2416
-#                   Note: different names for encryption plugin and keyholde rare used for Windows vs Linux:
-#                      PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else '"fbSampleDbCrypt"'
-#                      KHOLDER_NAME = 'KeyHolder' if os.name == 'nt' else "fbSampleKeyHolder"
-#
-# tracker_id:   CORE-5077
-# min_versions: ['3.0.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-5364
+ISSUE:       5364
+TITLE:       ISQL does not show encryption status of database
+DESCRIPTION:
+    We create new database and try to encrypt it usng IBSurgeon Demo Encryption package
+    ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
+    License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
+    This file was preliminary stored in FF Test machine.
+    Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
+
+    After test database will be created, we try to encrypt it using 'alter database encrypt with <plugin_name> ...' command
+    (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\ folder that implements encryption).
+    Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
+
+    After this we run ISQL with 'SHOW DATABASE' command. Its output has to contain string 'Database encrypted'.
+
+    Finally, we change this temp DB state to full shutdown in order to have 100% ability to drop this file.
+
+    Checked on: 4.0.0.1629: OK, 6.264s; 3.0.5.33179: OK, 4.586s.
+
+    13.04.2021. Adapted for run both on Windows and Linux. Checked on:
+      Windows: 4.0.0.2416
+      Linux:   4.0.0.2416
+    Note: different names for encryption plugin and keyholde rare used for Windows vs Linux:
+       PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else '"fbSampleDbCrypt"'
+       KHOLDER_NAME = 'KeyHolder' if os.name == 'nt' else "fbSampleKeyHolder"
+JIRA:        CORE-5077
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    DATABASE ENCRYPTED
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: encryption plugin')
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -166,13 +169,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( ( f_isql_log, f_isql_err, f_isql_cmd, f_dbshut_log,tmpfdb )  )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    DATABASE ENCRYPTED
-"""
-
-@pytest.mark.version('>=3.0')
-def test_1(db_1):
-    pytest.skip("Requires encryption plugin")

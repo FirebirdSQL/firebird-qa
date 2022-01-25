@@ -1,26 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_5142
-# title:        Error "no current record to fetch" if some record is to be deleted both by the statement itself and by some trigger fired during statement execution
-# decription:   
-#                  Reproduced bug on WI-V3.0.0.32483.
-#                  All fine on WI-V3.0.1.32596, WI-T4.0.0.366.
-#                  After this test commit it is possible to remove test for CORE-5182 because the latter does the same.
-#                
-# tracker_id:   CORE-5142
-# min_versions: ['3.0.1']
-# versions:     3.0.1
-# qmid:         None
+
+"""
+ID:          issue-5425
+ISSUE:       5425
+TITLE:       Error "no current record to fetch" if some record is to be deleted both by the statement itself and by some trigger fired during statement execution
+DESCRIPTION:
+JIRA:        CORE-5142
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table test(id int);
     commit;
 
@@ -82,11 +73,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
+db = db_factory(charset='ISO8859_1', init=init_script)
 
-test_script_1 = """
-
-
+test_script = """
     insert into test (id, ltjahr, ltkw, auftragsjahr, auftragsnr, kwtag, stck_je_std, stck_je_tag, stck_je_lkw, palette_je_lkw, erg_std_tag, status, teilenr, erg_std_datensatz, ap, arbgang, prio, bemerkung, abgearbeitet, menge_ist, ps2, id_autoins, schistaerke)
     values(1, 2016, 11, 2016, 2953, 7, 15, 2, null, null, null, null, 'must-aip-revi/1', 0.133333333333333, 15, 4, null, null, 0, null, 0, null, null);
     insert into test (id, ltjahr, ltkw, auftragsjahr, auftragsnr, kwtag, stck_je_std, stck_je_tag, stck_je_lkw, palette_je_lkw, erg_std_tag, status, teilenr, erg_std_datensatz, ap, arbgang, prio, bemerkung, abgearbeitet, menge_ist, ps2, id_autoins, schistaerke)
@@ -134,10 +123,9 @@ test_script_1 = """
     delete from test where auftragsjahr = 2016 and auftragsnr = 2953;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act_1: Action):
-    act_1.execute()
+def test_1(act: Action):
+    act.execute()
 

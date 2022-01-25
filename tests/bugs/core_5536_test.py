@@ -1,33 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5536
-# title:        Connections compressed and encrypted in MON$ATTACHMENTS table
-# decription:   
-#                   26.01.2019. Replaced old field names (MON$CONNECTION_COMPRESSED, MON$CONNECTION_ENCRYPTED) with new ones. 
-#                   Removed trivial 'select 1', use SQLDA_DISPLAY to have explicit output columns type (boolean).
-#                   Checked on:
-#                       4.0.0.1340: OK, 1.828s.
-#                       4.0.0.1410: OK, 1.969s.
-#                   Previous check: 4.0.0.728: OK, 0.797s.
-#                
-# tracker_id:   CORE-5536
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5804
+ISSUE:       5804
+TITLE:       Connections compressed and encrypted in MON$ATTACHMENTS table
+DESCRIPTION:
+JIRA:        CORE-5536
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set planonly;
     set sqlda_display on;
     select mon$wire_compressed, mon$wire_encrypted
@@ -39,9 +25,9 @@ test_script_1 = """
     -- and MON$CONNECTION_ENCRYPTED in (false, true)
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     INPUT message field count: 0
 
     PLAN (MON$ATTACHMENTS NATURAL)
@@ -56,8 +42,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
