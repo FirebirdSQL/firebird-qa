@@ -1,32 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_5753
-# title:        Parser allows to use GRANT OPTION for FUNCTION and PACKAGE
-# decription:   
-#                   Confirmed bug on: 4.0.0.890; 3.0.4.32912
-#                   Works fine on:
-#                       3.0.4.32917: OK, 0.937s.
-#                       4.0.0.907: OK, 1.187s.
-#                
-# tracker_id:   CORE-5753
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6016
+ISSUE:       6016
+TITLE:       Parser should not allow to use GRANT OPTION for FUNCTION and PACKAGE
+DESCRIPTION:
+JIRA:        CORE-5753
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+test_script = """
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    
     set term ^;
     create or alter procedure sp_test as
     begin
@@ -58,9 +46,9 @@ test_script_1 = """
     grant execute on procedure sp_test to package pg_test with grant option;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
@@ -75,8 +63,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

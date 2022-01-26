@@ -1,59 +1,70 @@
 #coding:utf-8
-#
-# id:           bugs.core_6043
-# title:        GTTs do not release used space
-# decription:
-#                   === For FB 3.x ===
-#                       Test obtains full path to $fb_home via FBSVCMGR info_get_env.
-#                       Then it makes copy of file 'databases.conf' that is in $fb_home directory because
-#                       following lines will be added to that 'databases.conf':
-#                       ===
-#                       tmp_6043_keep = ...
-#                       {
-#                           ClearGTTAtRetaining = 0
-#                       }
-#                       After this, it does connect to this alias and run statements from ticket with commit/rollback retain.
-#                       We check that:
-#                         * COMMIT RETAIN preserves record that was inserted in the statement before this commit;
-#                         * ROLLBACK RETAIN does NOT delete record that was inserted before COMMIT RETAIN.
-#
-#                       Then we check the same for ClearGTTAtRetaining = 1 (i.e. for default value) - just to ensure that it works.
-#                       Finally, previous databases.conf file is restored in initial state.
-#
-#                   === For FB 4.x ===
-#                       It is enough just to run ISQL; databases.conf can be left unchanged.
-#
-#                   13.12.2019.
-#                   It seems that we have to DISABLE BUFFERING in any IO operation which relates to preparing scripts, configs or logs.
-#                   Otherwise sporadic runtime errors can occur: I/O error during "CreateFile (open)" operation for file "..."
-#
-#                   Explanation:
-#                   https://docs.python.org/2/library/functions.html#open
-#                   https://stackoverflow.com/questions/18984092/python-2-7-write-to-file-instantly/41506739
-#
-#                   Checked on:
-#                       4.0.0.1687 SS: 1.536s.
-#                       4.0.0.1685 CS: 2.026s.
-#                       3.0.5.33207 SS: 1.435s.
-#                       3.0.5.33152 SC: 1.243s.
-#                       3.0.5.33206 CS: 2.626s.
-#
-# tracker_id:   CORE-6043
-# min_versions: ['3.0']
-# versions:     3.0, 4.0
-# qmid:         None
+
+"""
+ID:          issue-6293
+ISSUE:       6293
+TITLE:       GTTs do not release used space
+DESCRIPTION:
+=== For FB 3.x ===
+    Test obtains full path to $fb_home via FBSVCMGR info_get_env.
+    Then it makes copy of file 'databases.conf' that is in $fb_home directory because
+    following lines will be added to that 'databases.conf':
+    ===
+    tmp_6043_keep = ...
+    {
+        ClearGTTAtRetaining = 0
+    }
+    After this, it does connect to this alias and run statements from ticket with commit/rollback retain.
+    We check that:
+      * COMMIT RETAIN preserves record that was inserted in the statement before this commit;
+      * ROLLBACK RETAIN does NOT delete record that was inserted before COMMIT RETAIN.
+
+    Then we check the same for ClearGTTAtRetaining = 1 (i.e. for default value) - just to ensure that it works.
+    Finally, previous databases.conf file is restored in initial state.
+
+=== For FB 4.x ===
+    It is enough just to run ISQL; databases.conf can be left unchanged.
+NOTES:
+[13.12.2019]
+  It seems that we have to DISABLE BUFFERING in any IO operation which relates to preparing scripts, configs or logs.
+  Otherwise sporadic runtime errors can occur: I/O error during "CreateFile (open)" operation for file "..."
+
+  Explanation:
+  https://docs.python.org/2/library/functions.html#open
+  https://stackoverflow.com/questions/18984092/python-2-7-write-to-file-instantly/41506739
+
+Checked on:
+    4.0.0.1687 SS: 1.536s.
+    4.0.0.1685 CS: 2.026s.
+    3.0.5.33207 SS: 1.435s.
+    3.0.5.33152 SC: 1.243s.
+    3.0.5.33206 CS: 2.626s.
+JIRA:        CORE-6043
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, python_act, Action
+from firebird.qa import *
 
 # version: 3.0
-# resources: None
 
-substitutions_1 = [('[ \t]+', ' ')]
+db = db_factory()
 
-init_script_1 = """"""
+act_1 = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+expected_stdout_1 = """
+    When ClearGTTAtRetaining = 0: ID 3
+    When ClearGTTAtRetaining = 0: Records affected: 1
+    When ClearGTTAtRetaining = 0: ID 3
+    When ClearGTTAtRetaining = 0: Records affected: 1
+
+    When ClearGTTAtRetaining = 1: Records affected: 0
+    When ClearGTTAtRetaining = 1: Records affected: 0
+"""
+
+@pytest.mark.skip('FIXME: databases.conf')
+@pytest.mark.version('>=3.0,<4')
+def test_1(act_1: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -222,31 +233,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #---
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    When ClearGTTAtRetaining = 0: ID 3
-    When ClearGTTAtRetaining = 0: Records affected: 1
-    When ClearGTTAtRetaining = 0: ID 3
-    When ClearGTTAtRetaining = 0: Records affected: 1
-
-    When ClearGTTAtRetaining = 1: Records affected: 0
-    When ClearGTTAtRetaining = 1: Records affected: 0
-"""
-
-@pytest.mark.version('>=3.0,<4')
-def test_1(act_1: Action):
-    pytest.skip("Requires changes to databases.conf")
-
-
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('[ \t]+', ' ')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     set list on;
@@ -269,7 +256,7 @@ test_script_2 = """
     select * from gtt; -- point 2
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2, substitutions=[('[ \t]+', ' ')])
 
 expected_stdout_2 = """
     ID 4
@@ -284,4 +271,3 @@ def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_stdout == act_2.clean_expected_stdout
-

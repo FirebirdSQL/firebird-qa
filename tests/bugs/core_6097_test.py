@@ -1,42 +1,49 @@
 #coding:utf-8
-#
-# id:           bugs.core_6097
-# title:        Connection does not see itself in the MON$ATTACHMENTS when Domain/Username (using SSPI) is 31 bytes long
-# decription:
-#                   Could not reproduce bug on WI-V3.0.4.33054, discussed this with dimitr and alex.
-#               	Problem can appear randomly when some byte in memory contains value not equal to 0x0.
-#               	It was decided to implement test that
-#               	* adds user with name of 31 octets (15 non-ascii, plus 1 ascii character: "Ковалевский_Олег");
-#               	* launches ISQL utility as separate process with trying to connect do test DB using this non-ascii login;
-#               	* count record in mon$attachments table that belongs to current attachment. Result must be: 1.
-#               	::: NB :::
-#               	As of fdb 2.0.1 and fbtest 1.0.7, there is NO ability to run macros runProgram() with specifying non-ascii user name
-#               	in its parameters list: errror 'invalid user/password' will raise in this case. The same error will be raised if we
-#               	try to launch isql directly in subprocess.call(). For this reason it was decided to create temporary BATCH file (.bat)
-#               	that contains necessary command to run isql.exe, i.e. we actually invoke new instance of cmd.exe.
-#               	The reason of why 'invalid user/password' raises (in other cases) remains unclear for me.
-#               	Checked on:
-#               		4.0.0.1564: OK, 3.910s.
-#               		4.0.0.1535: OK, 4.052s.
-#               		3.0.5.33160: OK, 1.971s.
-#               		3.0.5.33152: OK, 3.860s.
-#
-# tracker_id:   CORE-6097
-# min_versions: ['3.0.5']
-# versions:     3.0.5
-# qmid:         None
+
+"""
+ID:          issue-6346
+ISSUE:       6346
+TITLE:       Connection does not see itself in the MON$ATTACHMENTS when Domain/Username (using SSPI) is 31 bytes long
+DESCRIPTION:
+  Could not reproduce bug on WI-V3.0.4.33054, discussed this with dimitr and alex.
+  Problem can appear randomly when some byte in memory contains value not equal to 0x0.
+  It was decided to implement test that
+  * adds user with name of 31 octets (15 non-ascii, plus 1 ascii character: "Ковалевский_Олег");
+  * launches ISQL utility as separate process with trying to connect do test DB using this non-ascii login;
+  * count record in mon$attachments table that belongs to current attachment. Result must be: 1.
+
+  ::: NB :::
+  As of fdb 2.0.1 and fbtest 1.0.7, there is NO ability to run macros runProgram() with specifying non-ascii user name
+  in its parameters list: errror 'invalid user/password' will raise in this case. The same error will be raised if we
+  try to launch isql directly in subprocess.call(). For this reason it was decided to create temporary BATCH file (.bat)
+  that contains necessary command to run isql.exe, i.e. we actually invoke new instance of cmd.exe.
+  The reason of why 'invalid user/password' raises (in other cases) remains unclear for me.
+JIRA:        CORE-6097
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+	SEC$USER_NAME                   Ковалевский_Олег
+	OCTETS_IN_NAME                  31
+	Records affected: 1
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+	WHO_AM_I                        Ковалевский_Олег
+	MON_PROTOCOL                    TCP
+	MON_AUTH_METHOD                 Srp
+	Records affected: 1
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.5')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -119,24 +126,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-	SEC$USER_NAME                   Ковалевский_Олег
-	OCTETS_IN_NAME                  31
-	Records affected: 1
-
-	WHO_AM_I                        Ковалевский_Олег
-	MON_PROTOCOL                    TCP
-	MON_AUTH_METHOD                 Srp
-	Records affected: 1
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.5')
-@pytest.mark.platform('Windows')
-def test_1(db_1):
-    pytest.fail("Not IMPLEMENTED")
-
-

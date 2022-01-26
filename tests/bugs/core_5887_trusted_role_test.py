@@ -1,43 +1,54 @@
 #coding:utf-8
-#
-# id:           bugs.core_5887_trusted_role
-# title:        Allow the use of management statements in PSQL blocks: check only TRUSTED ROLE
-# decription:
-#                   Role can be set as TRUSTED when following conditions are true:
-#                   * BOTH AuthServer and AuthClient parameters from firebird.conf contain 'Win_Sspi' as plugin, in any place;
-#                   * current OS user has admin rights;
-#                   * OS environment has *no* variables ISC_USER and ISC_PASSWORD (i.e. they must be UNSET);
-#                   * Two mappings are created (both uses plugin win_sspi):
-#                   ** from any user to user;
-#                   ** from predefined_group domain_any_rid_admins to role <role_to_be_trusted>
-#
-#                   Connect to database should be done in form: CONNECT '<computername>:<our_database>' role <role_to_be_trusted>',
-#                   and after this we can user 'SET TRUSTED ROLE' statement.
-#
-#                   This test checks that statement 'SET TRUSTED ROLE' can be used within PSQL block rather than as DSQL.
-#
-#                   Checked on: 4.0.0.1457: OK, 2.602s.
-#                   25.04.2020: added command to obtain %FB_HOME% folder in order to make call of ISQL as fully qualified executable.
-#                   Checked on 4.0.0.1935 SS/CS (both on Windows 8.1 (IMAGE-PC1) and Windows-2008 R2 (IBSurgeon-2008) hosts).
-#
-#                   Thanks to Alex for suggestions.
-#
-# tracker_id:   CORE-5887
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6145-B
+ISSUE:       6145
+TITLE:       Allow the use of management statements in PSQL blocks
+DESCRIPTION:
+  Role can be set as TRUSTED when following conditions are true:
+  * BOTH AuthServer and AuthClient parameters from firebird.conf contain 'Win_Sspi' as plugin, in any place;
+  * current OS user has admin rights;
+  * OS environment has *no* variables ISC_USER and ISC_PASSWORD (i.e. they must be UNSET);
+  * Two mappings are created (both uses plugin win_sspi):
+  ** from any user to user;
+  ** from predefined_group domain_any_rid_admins to role <role_to_be_trusted>
+
+  Connect to database should be done in form: CONNECT '<computername>:<our_database>' role <role_to_be_trusted>',
+  and after this we can user 'SET TRUSTED ROLE' statement.
+
+  This test checks that statement 'SET TRUSTED ROLE' can be used within PSQL block rather than as DSQL.
+
+  Checked on: 4.0.0.1457: OK, 2.602s.
+NOTES:
+[25.04.2020]
+  added command to obtain %FB_HOME% folder in order to make call of ISQL as fully qualified executable.
+  Checked on 4.0.0.1935 SS/CS (both on Windows 8.1 (IMAGE-PC1) and Windows-2008 R2 (IBSurgeon-2008) hosts).
+JIRA:        CORE-5887
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout_1 = """
+    MSG                             point-1
+    MON$ROLE                        TMP$ROLE_5887
+    MON$AUTH_METHOD                 Mapped from Win_Sspi
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+    MSG                             point-2
+    MON$ROLE                        TMP$ROLE_5887
+    MON$AUTH_METHOD                 Mapped from Win_Sspi
+
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=4.0')
+#@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -166,24 +177,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    MSG                             point-1
-    MON$ROLE                        TMP$ROLE_5887
-    MON$AUTH_METHOD                 Mapped from Win_Sspi
-
-    MSG                             point-2
-    MON$ROLE                        TMP$ROLE_5887
-    MON$AUTH_METHOD                 Mapped from Win_Sspi
-
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-

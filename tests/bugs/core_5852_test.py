@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5852
-# title:        There is no check of existance generator and exception when privileges are granted
-# decription:   
-#                   Confirmed absenceof check on: 3.0.4.32995, 4.0.0.1028
-#                   Checked on: 3.0.4.32997: OK, 1.110s.
-#                
-# tracker_id:   CORE-5852
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6112
+ISSUE:       6112
+TITLE:       There is no check of existance generator and exception when privileges are granted
+DESCRIPTION:
+JIRA:        CORE-5852
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate view v_grants as
     select
         p.rdb$user_type       as usr_type
@@ -34,7 +24,7 @@ test_script_1 = """
        ,p.rdb$object_type     as obj_type
        ,p.rdb$relation_name   as rel_name
        ,p.rdb$field_name      as fld_name
-    from rdb$database r left join rdb$user_privileges p on 1=1 
+    from rdb$database r left join rdb$user_privileges p on 1=1
     where p.rdb$user in( upper('tmp$c5852') )
     order by 1,2,3,4,5,6,7,8
     ;
@@ -55,7 +45,7 @@ test_script_1 = """
     set list on;
     set count on;
 
-    select 
+    select
          usr_type
         ,usr_name
         ,what_can
@@ -69,12 +59,13 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Records affected: 0
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
@@ -92,10 +83,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

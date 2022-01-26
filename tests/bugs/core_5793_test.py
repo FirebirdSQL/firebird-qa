@@ -1,66 +1,80 @@
 #coding:utf-8
-#
-# id:           bugs.core_5793
-# title:        Error returned from DbCryptPlugin::setKey() is not shown
-# decription:
-#
-#                   Test database that is created by fbtest framework will be encrypted here using IBSurgeon Demo Encryption package
-#                   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
-#                   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
-#                   This file was preliminary stored in FF Test machine.
-#                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
-#
-#                   First, we try to encrypt DB with existing key and decrypt it aftee this - just to ensure that this mechanism works fine.
-#                   Then we use statement 'alter database encrypt ...' with NON existing key and check parts of exception that will raise.
-#                   From these three parts (multi-string, int and bigint numbers) we check that 1st contains phrase about missed crypt key.
-#                   ::: NOTE ::::
-#                   Text of messages differ in 3.0.5 vs 4.0.0:
-#                       3.0.5: - Missing correct crypt key
-#                       4.0.0: - Missing database encryption key for your attachment
-#                   - so we use regexp tool for check pattern matching.
-#                   Because of different text related to missing plugin, this part is replaced with phrase:
-#                   <FOUND PATTERN-1 ABOUT MISSED ENCRYPTION KEY> -- both for 3.0.x  and 4.0.x.
-#
-#                   Confirmed difference in error message (text decription, w/o sqlcode and gdscode):
-#                   1) 3.0.3.32900
-#                   =====
-#                       Error while executing SQL statement:
-#                       - SQLCODE: -607
-#                       - unsuccessful metadata update
-#                       - ALTER DATABASE failed
-#                       - Missing correct crypt key
-#                   =====
-#
-#                   2) 3.0.5.33139 - two lines were added:
-#                   ====
-#                       - Plugin KeyHolder:
-#                       - Unknown key name FOO - key can't be found in KeyHolder.conf
-#                   ====
-#
-#                   Checked on:
-#                       4.0.0.1524: OK, 4.674s.
-#                       3.0.5.33139: OK, 3.666s.
-#
-#                   15.04.2021. Adapted for run both on Windows and Linux. Checked on:
-#                     Windows: 4.0.0.2416
-#                     Linux:   4.0.0.2416
-#
-# tracker_id:   CORE-5793
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6056
+ISSUE:       6056
+TITLE:       Error returned from DbCryptPlugin::setKey() is not shown
+DESCRIPTION:
+    Test database that is created by fbtest framework will be encrypted here using IBSurgeon Demo Encryption package
+    ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
+    License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
+    This file was preliminary stored in FF Test machine.
+    Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
+
+    First, we try to encrypt DB with existing key and decrypt it aftee this - just to ensure that this mechanism works fine.
+    Then we use statement 'alter database encrypt ...' with NON existing key and check parts of exception that will raise.
+    From these three parts (multi-string, int and bigint numbers) we check that 1st contains phrase about missed crypt key.
+    ::: NOTE ::::
+    Text of messages differ in 3.0.5 vs 4.0.0:
+        3.0.5: - Missing correct crypt key
+        4.0.0: - Missing database encryption key for your attachment
+    - so we use regexp tool for check pattern matching.
+    Because of different text related to missing plugin, this part is replaced with phrase:
+    <FOUND PATTERN-1 ABOUT MISSED ENCRYPTION KEY> -- both for 3.0.x  and 4.0.x.
+
+    Confirmed difference in error message (text decription, w/o sqlcode and gdscode):
+    1) 3.0.3.32900
+    =====
+        Error while executing SQL statement:
+        - SQLCODE: -607
+        - unsuccessful metadata update
+        - ALTER DATABASE failed
+        - Missing correct crypt key
+    =====
+
+    2) 3.0.5.33139 - two lines were added:
+    ====
+        - Plugin KeyHolder:
+        - Unknown key name FOO - key can't be found in KeyHolder.conf
+    ====
+
+    Checked on:
+        4.0.0.1524: OK, 4.674s.
+        3.0.5.33139: OK, 3.666s.
+
+    15.04.2021. Adapted for run both on Windows and Linux. Checked on:
+      Windows: 4.0.0.2416
+      Linux:   4.0.0.2416
+JIRA:        CORE-5793
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    1.1. Trying to encrypt with existing key.
+    1.2. Delay completed, DB now must be encrypted.
+    2.1. Trying to decrypt.
+    2.2. Delay completed, DB now must be decrypted.
+    3.1. Trying to encrypt with non-existing key
+    Error while executing SQL statement:
+    - SQLCODE: -607
+    - unsuccessful metadata update
+    - ALTER DATABASE failed
+    <FOUND PATTERN-1 ABOUT MISSED ENCRYPTION KEY>
+    <FOUND PATTERN-2 ABOUT MISSED ENCRYPTION KEY>
+    -607
+    335544351
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: encryption plugin')
+@pytest.mark.version('>=3.0.4')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -151,28 +165,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      db_conn.close()
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    1.1. Trying to encrypt with existing key.
-    1.2. Delay completed, DB now must be encrypted.
-    2.1. Trying to decrypt.
-    2.2. Delay completed, DB now must be decrypted.
-    3.1. Trying to encrypt with non-existing key
-    Error while executing SQL statement:
-    - SQLCODE: -607
-    - unsuccessful metadata update
-    - ALTER DATABASE failed
-    <FOUND PATTERN-1 ABOUT MISSED ENCRYPTION KEY>
-    <FOUND PATTERN-2 ABOUT MISSED ENCRYPTION KEY>
-    -607
-    335544351
-"""
-
-@pytest.mark.skip('FIXME: encryption plugin')
-@pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-

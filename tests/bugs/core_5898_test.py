@@ -1,49 +1,34 @@
 #coding:utf-8
-#
-# id:           bugs.core_5898
-# title:        ROLE not passed in EXECUTE STATEMENT ... ON EXTERNAL
-# decription:   
-#                  Confirmed bug on: 4.0.0.1172, 3.0.4.33034.
-#                  Checked on:
-#                      3.0.4.33041: OK, 2.922s.
-#                      4.0.0.1190: OK, 2.750s.
-#                
-# tracker_id:   CORE-5898
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6156
+ISSUE:       6156
+TITLE:       ROLE not passed in EXECUTE STATEMENT ... ON EXTERNAL
+DESCRIPTION:
+JIRA:        CORE-5898
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
+tmp_user = user_factory('db', name='tmp$c5898', password='123')
+tmp_role = role_factory('db', name='boss')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set list on;
 
-    create or alter user tmp$c5898 password '123';
-    commit;
-
-    create role boss;
-    commit;
     grant boss to tmp$c5898;
     commit;
 
     connect '$(DSN)' user 'tmp$c5898' password '123' role 'BOSS';
-    select 
-        'BEFORE CHECKS:' as msg, 
-        mon$user as who_am_i, 
+    select
+        'BEFORE CHECKS:' as msg,
+        mon$user as who_am_i,
         mon$role as whats_my_role,
         left(mon$remote_protocol,3) what_protocol_im_using
-    from mon$attachments a 
+    from mon$attachments a
     where mon$attachment_id=current_connection;
 
     set echo off;
@@ -71,7 +56,7 @@ test_script_1 = """
 
     end
     ^
-    set term ;^ 
+    set term ;^
     rollback;
 
     -- cleanup:
@@ -92,14 +77,11 @@ test_script_1 = """
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
-
-    drop user tmp$c5898;
-    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             BEFORE CHECKS:
     WHO_AM_I                        TMP$C5898
     WHATS_MY_ROLE                   BOSS
@@ -117,8 +99,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, tmp_user, tmp_role):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

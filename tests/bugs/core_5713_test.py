@@ -1,30 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5713
-# title:        Field alias disapears in complex query
-# decription:   
-#                   Checked on:
-#                       3.0.3.32882: OK, 1.328s.
-#                       4.0.0.855: OK, 1.625s.
-#                
-# tracker_id:   CORE-5713
-# min_versions: ['3.0.3']
-# versions:     3.0.3
-# qmid:         None
+
+"""
+ID:          issue-5979
+ISSUE:       5979
+TITLE:       Field alias disapears in complex query
+DESCRIPTION:
+JIRA:        CORE-5713
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.3
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select a1, a2
     from (
@@ -40,9 +29,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     A1                              1
     A2                              2
 
@@ -51,8 +40,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

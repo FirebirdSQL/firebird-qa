@@ -1,42 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_5746
-# title:        Remove the restriction on create/delete, enable/disable the user indexes in system tables
-# decription:   
-#                  Test verifies that one may to:
-#                    * create two indices (common and calculated) and 
-#                    * gather statistics on them
-#                    * make some of them inactive and return then to active state
-#                    * drop them.
-#                  This is checked first under SYSDBA account, then under common non-privileged user (and these attempts should raise exception)
-#                  and finally we grant DDL privilege to this user (ALTER ANY TABLE) and check again, and this should pass OK.
-#               
-#                  ::: NB :::
-#                 
-#                  Restictions about create/alter/drop indexes on system tables that are checked by test for CORE-4731 should be removed.
-#               
-#                  Checked on:
-#                   3.0.4.32944: OK, 1.500s.
-#                   4.0.0.952: OK, 1.079s.
-#                
-# tracker_id:   CORE-5746
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-2171
+ISSUE:       2171
+TITLE:       Remove the restriction on create/delete, enable/disable the user indexes in system tables
+DESCRIPTION:
+  Test verifies that one may to:
+    * create two indices (common and calculated) and
+    * gather statistics on them
+    * make some of them inactive and return then to active state
+    * drop them.
+  This is checked first under SYSDBA account, then under common non-privileged user (and these attempts should raise exception)
+  and finally we grant DDL privilege to this user (ALTER ANY TABLE) and check again, and this should pass OK.
+
+  Restictions about create/alter/drop indexes on system tables that are checked by test for CORE-4731 should be removed.
+JIRA:        CORE-5746
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('-Effective user is.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
       set list on;
       set plan on;
       create descending index systable_comm_idx on rdb$relations(rdb$format);
@@ -92,9 +78,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-Effective user is.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (RDB$RELATIONS INDEX (SYSTABLE_COMM_IDX))
     SIGN_COUNT                      1
     PLAN (RDB$RELATIONS INDEX (SYSTABLE_CALC_IDX))
@@ -105,7 +91,8 @@ expected_stdout_1 = """
     PLAN (RDB$RELATIONS INDEX (SYSTABLE_CALC_IDX))
     SIGN_COUNT                      1
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     unsuccessful metadata update
     -CREATE INDEX SYSTABLE_COMM_IDX failed
@@ -113,10 +100,10 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
 

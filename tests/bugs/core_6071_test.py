@@ -1,62 +1,66 @@
 #coding:utf-8
-#
-# id:           bugs.core_6071
-# title:        Restore of encrypted backup of database with SQL dialect 1 fails
-# decription:
-#
-#                   We create new database ('tmp_core_6071.fdb') and try to encrypt it using IBSurgeon Demo Encryption package
-#                   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
-#                   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
-#                   This file was preliminary stored in FF Test machine.
-#                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
-#
-#                   After test database will be created, we try to encrypt it using 'alter database encrypt with <plugin_name> ...' command
-#                   (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\ folder that implements encryption).
-#                   Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
-#
-#                   After this we:
-#                   1. Change temp DB state to full shutdown and bring it online - in order to be sure that we will able to drop this file later;
-#                   2. Make backup of this temp DB, using gbak utility and '-KEYHOLDER <name_of_key_holder>' command switch.
-#                      NB! According to additional explanation by Alex, ticket issue occured *only* when "gbak -KEYHOLDER ..." used rather than fbsvcmgr.
-#                   3. Make restore from just created backup.
-#                   4. Make validation of just restored database by issuing command "gfix -v -full ..."
-#                      ( i.e. validate both data and metadata rather than online val which can check user data only).
-#                   5. Check that NO errors occured on any above mentioned steps. Also check that backup and restore STDOUT logs contain expected
-#                      text about successful completition
-#
-#                   Confirmed bug on 4.0.0.1485 (build date: 11-apr-2019), got error on restore:
-#                       SQL error code = -817
-#                       Metadata update statement is not allowed by the current database SQL dialect 1
-#
-#                   Works fine on 4.0.0.1524, time ~8s.
-#
-#                   16.04.2021.
-#                   Changed code: database is created in dialect 3, then encrypted and after this we apply 'gfix -sql_dialect 1' to it.
-#                   Unfortunately, I could not find the way how to make it work on Linux: attempt to backup (gbak -KEYHOLDER ... -crypt ... ) fails with:
-#                       gbak: ERROR:unsuccessful metadata update
-#                       gbak: ERROR:    ALTER DATABASE failed
-#                       gbak: ERROR:    Error loading plugin FBSAMPLEDBCRYPT
-#                       gbak: ERROR:    Module /var/tmp/fb40tmp/plugins/FBSAMPLEDBCRYPT does not contain plugin FBSAMPLEDBCRYPT type 9
-#                   (after file libfbSampleDbCrypt.so was copied to libFBSAMPLEDBCRYPT.so)
-#
-#                   Test remains WINDOWS only.
-#
-# tracker_id:   CORE-6071
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6321
+ISSUE:       6321
+TITLE:       Restore of encrypted backup of database with SQL dialect 1 fails
+DESCRIPTION:
+    We create new database ('tmp_core_6071.fdb') and try to encrypt it using IBSurgeon Demo Encryption package
+    ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
+    License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
+    This file was preliminary stored in FF Test machine.
+    Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
+
+    After test database will be created, we try to encrypt it using 'alter database encrypt with <plugin_name> ...' command
+    (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\ folder that implements encryption).
+    Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
+
+    After this we:
+    1. Change temp DB state to full shutdown and bring it online - in order to be sure that we will able to drop this file later;
+    2. Make backup of this temp DB, using gbak utility and '-KEYHOLDER <name_of_key_holder>' command switch.
+       NB! According to additional explanation by Alex, ticket issue occured *only* when "gbak -KEYHOLDER ..." used rather than fbsvcmgr.
+    3. Make restore from just created backup.
+    4. Make validation of just restored database by issuing command "gfix -v -full ..."
+       ( i.e. validate both data and metadata rather than online val which can check user data only).
+    5. Check that NO errors occured on any above mentioned steps. Also check that backup and restore STDOUT logs contain expected
+       text about successful completition
+
+    Confirmed bug on 4.0.0.1485 (build date: 11-apr-2019), got error on restore:
+        SQL error code = -817
+        Metadata update statement is not allowed by the current database SQL dialect 1
+
+    Works fine on 4.0.0.1524, time ~8s.
+
+    16.04.2021.
+    Changed code: database is created in dialect 3, then encrypted and after this we apply 'gfix -sql_dialect 1' to it.
+    Unfortunately, I could not find the way how to make it work on Linux: attempt to backup (gbak -KEYHOLDER ... -crypt ... ) fails with:
+        gbak: ERROR:unsuccessful metadata update
+        gbak: ERROR:    ALTER DATABASE failed
+        gbak: ERROR:    Error loading plugin FBSAMPLEDBCRYPT
+        gbak: ERROR:    Module /var/tmp/fb40tmp/plugins/FBSAMPLEDBCRYPT does not contain plugin FBSAMPLEDBCRYPT type 9
+    (after file libfbSampleDbCrypt.so was copied to libFBSAMPLEDBCRYPT.so)
+
+    Test remains WINDOWS only.
+JIRA:        CORE-6071
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('\\d+ BYTES WRITTEN', '')]
+act = python_act('db', substitutions=[('\\d+ BYTES WRITTEN', '')])
 
-init_script_1 = """"""
+expected_stdout = """
+    EXPECTED BACKUP FINISH FOUND: GBAK:CLOSING FILE, COMMITTING, AND FINISHING.
+    EXPECTED RESTORE FINISH FOUND: GBAK:ADJUSTING THE ONLINE AND FORCED WRITES FLAGS
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: encryption plugin')
+@pytest.mark.version('>=4.0')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -242,16 +246,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    EXPECTED BACKUP FINISH FOUND: GBAK:CLOSING FILE, COMMITTING, AND FINISHING.
-    EXPECTED RESTORE FINISH FOUND: GBAK:ADJUSTING THE ONLINE AND FORCED WRITES FLAGS
-"""
-
-@pytest.mark.skip('FIXME: encryption plugin')
-@pytest.mark.version('>=4.0')
-@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

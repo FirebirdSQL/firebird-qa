@@ -1,54 +1,45 @@
 #coding:utf-8
-#
-# id:           bugs.core_5705
-# title:        Store precision of DECFLOAT in RDB$FIELDS
-# decription:   
-#                     Checked on LI-T4.0.0.940.
-#                 
-# tracker_id:   CORE-5705
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5971
+ISSUE:       5971
+TITLE:       Store precision of DECFLOAT in RDB$FIELDS
+DESCRIPTION:
+JIRA:        CORE-5705
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set count on;
     create domain dm_df16 as decfloat(16);
     create domain dm_df34 as decfloat(34);
     commit;
-    select rdb$field_name, rdb$field_precision 
-    from rdb$fields 
-    where rdb$field_name in (upper('dm_df16'), upper('dm_df34')) 
+    select rdb$field_name, rdb$field_precision
+    from rdb$fields
+    where rdb$field_name in (upper('dm_df16'), upper('dm_df34'))
     order by 1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-    RDB$FIELD_NAME                  DM_DF16                                                                                                                                                            
+expected_stdout = """
+    RDB$FIELD_NAME                  DM_DF16
     RDB$FIELD_PRECISION             16
 
-    RDB$FIELD_NAME                  DM_DF34                                                                                                                                                            
+    RDB$FIELD_NAME                  DM_DF34
     RDB$FIELD_PRECISION             34
 
     Records affected: 2
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 

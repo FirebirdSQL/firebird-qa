@@ -1,36 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_5750
-# title:        Date-time parsing is very weak
-# decription:   
-#                   Checked on: 4.0.0.1479: OK, 1.263s.
-#               
-#                   27.10.2020.
-#                   Parser changed after following fixes:
-#                       - CORE-6427 - Whitespace as date separator causes conversion error.
-#                       - CORE-6429 - Timezone offset in timestamp/time literal and CAST should follow SQL standard syntax only.
-#                   See: https://github.com/FirebirdSQL/firebird/commit/ff37d445ce844f991242b1e2c1f96b80a5d1636d
-#                   Adjusted expected stdout/stderr after discuss with Adriano.
-#                   Checked on 4.0.0.2238
-#                
-# tracker_id:   CORE-5750
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6013
+ISSUE:       6013
+TITLE:       Date-time parsing is very weak
+DESCRIPTION:
+  Parser changed after following fixes:
+    - CORE-6427 - Whitespace as date separator causes conversion error.
+    - CORE-6429 - Timezone offset in timestamp/time literal and CAST should follow SQL standard syntax only.
+  See: https://github.com/FirebirdSQL/firebird/commit/ff37d445ce844f991242b1e2c1f96b80a5d1636d
+  Adjusted expected stdout/stderr after discuss with Adriano.
+JIRA:        CORE-5750
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
     --set echo on;
 
@@ -69,20 +57,21 @@ test_script_1 = """
     22:33:44.5577' from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-    2017-05-31 01:02:03.4567  
-    2018-01-31  
-    2018-01-31  
-    2018-01-31  
-    2018-01-31  
-    10:29:39.0000 
-    07:03:01.0000 
-    07:03:02.1238 
-    2017-05-31 11:22:33.4455  
+expected_stdout = """
+    2017-05-31 01:02:03.4567
+    2018-01-31
+    2018-01-31
+    2018-01-31
+    2018-01-31
+    10:29:39.0000
+    07:03:01.0000
+    07:03:02.1238
+    2017-05-31 11:22:33.4455
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22009
     Invalid time zone region: 20 30
 
@@ -120,15 +109,14 @@ expected_stderr_1 = """
     Invalid time zone region: T01:02:03.4567
 
     Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 
+    Invalid time zone region:
         22:33:44.5577
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

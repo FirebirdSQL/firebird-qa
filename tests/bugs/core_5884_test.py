@@ -1,34 +1,26 @@
 #coding:utf-8
-#
-# id:           bugs.core_5884
-# title:        Initial global mapping from srp plugin does not work
-# decription:   
-#                  Confirmed bug on: 3.0.4.33020, 4.0.0.1143 ('TEST2' was shown instead of 'GTOST').
-#                  Checked on:
-#                    FB30SS, build 3.0.4.33021: OK, 2.312s.
-#                
-# tracker_id:   CORE-5884
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6142
+ISSUE:       6142
+TITLE:       Initial global mapping from srp plugin does not work
+DESCRIPTION:
+JIRA:        CORE-5884
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+user_a = user_factory('db', name='tmp$c5884_1', password='123', plugin='Srp')
+user_b = user_factory('db', name='tmp$c5884_2', password='456', plugin='Srp')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     create or alter mapping lmap using plugin srp from user tmp$c5884_1 to user ltost;
-    create or alter global mapping gmap using plugin srp from user tmp$c5884_2 to user gtost; 
+    create or alter global mapping gmap using plugin srp from user tmp$c5884_2 to user gtost;
     commit;
 
     connect '$(DSN)' user tmp$c5884_1 password '123';
@@ -48,21 +40,15 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHOAMI                          LTOST
     WHOAMI                          GTOST
 """
 
-user_1a = user_factory('db_1', name='tmp$c5884_1', password='123', plugin='Srp')
-user_1b = user_factory('db_1', name='tmp$c5884_2', password='456', plugin='Srp')
-
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action, user_1a: User, user_1b: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    # [pcisar]
-    # 3.11.2021 This test fails for 3.0.8/4.0 (returns tmp$ user names instead mapped ones)
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, user_a: User, user_b: User):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

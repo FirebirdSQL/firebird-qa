@@ -1,137 +1,137 @@
 #coding:utf-8
-#
-# id:           bugs.core_5861
-# title:        GRANT OPTION is not checked for new object
-# decription:   
-#                  Checked on 4.0.0.1172: OK, 4.485s.
-#                
-# tracker_id:   CORE-5861
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6121
+ISSUE:       6121
+TITLE:       GRANT OPTION is not checked for new object
+DESCRIPTION:
+JIRA:        CORE-5861
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+user_1 = user_factory('db', name='tmp$c5861_u1', password='pass')
+user_2 = user_factory('db', name='tmp$c5861_u2', password='pass')
+user_3 = user_factory('db', name='tmp$c5861_u3', password='pass')
 
-init_script_1 = """"""
+role_1 = role_factory('db', name='role1')
+role_2 = role_factory('db', name='role2')
+role_3 = role_factory('db', name='role3')
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set list on;
+/*
+    create or alter user tmp$c5861_u1 password 'pass';
+    create or alter user tmp$c5861_u2 password 'pass';
+    create or alter user tmp$c5861_u3 password 'pass';
 
-    create or alter user tmp$c5861_u1 password 'pass'; 
-    create or alter user tmp$c5861_u2 password 'pass'; 
-    create or alter user tmp$c5861_u3 password 'pass'; 
+    create role role1; -- Has privileges with grant option
+    create role role2; -- Has privileges without errors and without grant option
+    create role role3; -- Must get errors in granting privileges from role2
+*/
+    grant role1 to tmp$c5861_u1;
+    grant role2 to tmp$c5861_u2;
+    grant role3 to tmp$c5861_u3;
 
-    create role role1; -- Has privileges with grant option 
-    create role role2; -- Has privileges without errors and without grant option 
-    create role role3; -- Must get errors in granting privileges from role2 
+    create procedure p as begin end;
+    create function f returns int as begin end;
+    create generator g;
+    create exception e 'ex';
+    create table tab(id int);
+    create package pak as begin end;
 
-    grant role1 to tmp$c5861_u1; 
-    grant role2 to tmp$c5861_u2; 
-    grant role3 to tmp$c5861_u3; 
+    grant create table to role1 with grant option;
+    grant create procedure to role1 with grant option;
+    grant execute on procedure p to role1 with grant option;
+    grant execute on function f to role1 with grant option;
+    grant usage on generator g to role1 with grant option;
+    grant usage on exception e to role1 with grant option;
+    grant select on tab to role1 with grant option;
+    grant update(id) on tab to role1 with grant option;
+    grant execute on package pak to role1 with grant option;
 
-    create procedure p as begin end; 
-    create function f returns int as begin end; 
-    create generator g; 
-    create exception e 'ex'; 
-    create table tab(id int); 
-    create package pak as begin end; 
-
-    grant create table to role1 with grant option; 
-    grant create procedure to role1 with grant option; 
-    grant execute on procedure p to role1 with grant option; 
-    grant execute on function f to role1 with grant option; 
-    grant usage on generator g to role1 with grant option; 
-    grant usage on exception e to role1 with grant option; 
-    grant select on tab to role1 with grant option; 
-    grant update(id) on tab to role1 with grant option; 
-    grant execute on package pak to role1 with grant option; 
-
-    commit; 
+    commit;
 
     connect '$(DSN)' user 'tmp$c5861_u1' password 'pass' role 'role1';
 
-    select rdb$role_name from rdb$roles where rdb$role_in_use(rdb$role_name); 
+    select rdb$role_name from rdb$roles where rdb$role_in_use(rdb$role_name);
 
-    grant create table to role2; 
-    grant execute on procedure p to role2; 
-    grant execute on function f to role2; 
-    grant usage on generator g to role2; 
-    grant usage on exception e to role2; 
-    grant select on tab to role2; 
-    grant update(id) on tab to role2; 
-    grant execute on package pak to role2; 
+    grant create table to role2;
+    grant execute on procedure p to role2;
+    grant execute on function f to role2;
+    grant usage on generator g to role2;
+    grant usage on exception e to role2;
+    grant select on tab to role2;
+    grant update(id) on tab to role2;
+    grant execute on package pak to role2;
 
-    commit; 
+    commit;
 
-    -- create own objects 
-    create table tab_of_tmp$c5861_u1(i int); 
-    create procedure proc_of_tmp$c5861_u1 as begin end; 
+    -- create own objects
+    create table tab_of_tmp$c5861_u1(i int);
+    create procedure proc_of_tmp$c5861_u1 as begin end;
 
-    commit; 
+    commit;
 
-    -- try to grant privileges for owned objects 
-    grant select on table tab_of_tmp$c5861_u1 to role2; 
-    grant execute on procedure proc_of_tmp$c5861_u1 to role2; 
+    -- try to grant privileges for owned objects
+    grant select on table tab_of_tmp$c5861_u1 to role2;
+    grant execute on procedure proc_of_tmp$c5861_u1 to role2;
 
-    commit; 
+    commit;
 
     connect '$(DSN)' user 'tmp$c5861_u2' password 'pass' role 'role2';
 
-    -- check every privilege 
-    create table t(i integer); 
-    execute procedure p; 
-    select f() from rdb$database; 
-    select gen_id(g, 1) from rdb$database; 
-    select * from tab; 
+    -- check every privilege
+    create table t(i integer);
+    execute procedure p;
+    select f() from rdb$database;
+    select gen_id(g, 1) from rdb$database;
+    select * from tab;
 
-    -- try to grant every privilege to role3 and sure this causes an error 
+    -- try to grant every privilege to role3 and sure this causes an error
     set bail off;
 
-    ------------------------------------------------ 
-    grant create table to role3; 
-    ------------------------------------------------ 
-    grant execute on procedure p to role3; 
-    ------------------------------------------------ 
-    grant execute on function f to role3; 
-    ------------------------------------------------ 
-    grant usage on generator g to role3; 
-    ------------------------------------------------ 
-    grant usage on exception e to role3; 
-    ------------------------------------------------ 
-    grant select on tab to role3; 
-    ------------------------------------------------ 
-    grant update(id) on tab to role3; 
-    ------------------------------------------------ 
-    grant execute on package pak to role3; 
+    ------------------------------------------------
+    grant create table to role3;
+    ------------------------------------------------
+    grant execute on procedure p to role3;
+    ------------------------------------------------
+    grant execute on function f to role3;
+    ------------------------------------------------
+    grant usage on generator g to role3;
+    ------------------------------------------------
+    grant usage on exception e to role3;
+    ------------------------------------------------
+    grant select on tab to role3;
+    ------------------------------------------------
+    grant update(id) on tab to role3;
+    ------------------------------------------------
+    grant execute on package pak to role3;
 
     --- cleanup:
     commit;
-    
+/*
     connect '$(DSN)' user 'SYSDBA' password 'masterkey';
 
     drop user tmp$c5861_u1;
     drop user tmp$c5861_u2;
     drop user tmp$c5861_u3;
-    commit;
+    commit;*/
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$ROLE_NAME                   ROLE1
     F                               <null>
     GEN_ID                          1
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
@@ -174,10 +174,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, user_1, user_2, user_3, role_1, role_2, role_3):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

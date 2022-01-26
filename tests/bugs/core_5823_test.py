@@ -1,42 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_5823
-# title:        No permission for SELECT access to blob field in stored procedure
-# decription:   
-#                   Confirmed bug on 3.0.4.33034
-#                   Checked on: 3.0.4.33053, 4.0.0.1249: OK
-#                
-# tracker_id:   CORE-5823
-# min_versions: ['3.0.5']
-# versions:     3.0.5
-# qmid:         None
+
+"""
+ID:          issue-6084
+ISSUE:       6084
+TITLE:       No permission for SELECT access to blob field in stored procedure
+DESCRIPTION:
+JIRA:        CORE-5823
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.5
-# resources: None
+db = db_factory()
+tmp_user = user_factory('db', name='tmp$c5823', password='123')
+tmp_role = role_factory('db', name='blob_viewer')
 
-substitutions_1 = [('BLOB_FIELD_ID.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    create or alter user tmp$c5823 password '123';
-    commit;
-    set term ^;
-    execute block as
-    begin
-        execute statement 'drop role blob_viewer';
-        when any do begin end
-    end
-    ^
-    set term ;^
-    commit;
-    create role blob_viewer;
-
+test_script = """
     create or alter procedure test_proc (id integer) as begin end;
     commit;
 
@@ -52,7 +31,7 @@ test_script_1 = """
     set term ^;
     create or alter procedure test_proc (id integer) returns (blb blob) as
     begin
-        for 
+        for
             select blb from test where id = :id
         into blb
             do suspend;
@@ -74,16 +53,11 @@ test_script_1 = """
 
     select blb as blob_field_id from test_proc(1);
     commit;
-
-    -- cleanup:
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    drop user tmp$c5823;
-    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('BLOB_FIELD_ID.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
 
     MON$USER                        TMP$C5823
     MON$ROLE                        BLOB_VIEWER
@@ -92,8 +66,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, tmp_user: User, tmp_role: Role):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

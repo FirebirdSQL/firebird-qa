@@ -1,33 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_5794
-# title:        Wrong behavour FOR <select_stmt> [AS CURSOR cursorname] with next update and delete
-# decription:   
-#                  Despite that this ticket was closed with solution "Won't fix" i see that it is useful for additional 
-#                  checking of cursor stability feature (new in 3.0).
-#                  See also:
-#                  1) test for CORE-3362;
-#                  2) comment in this ticket (CORE-5794) by hvlad: 
-#                  "Since Firebird3 <..> cursor doesn't see the changes made by "inner" statements."
-#                
-# tracker_id:   CORE-5794
-# min_versions: ['3.0.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-6057
+ISSUE:       6057
+TITLE:       Wrong behavour FOR <select_stmt> [AS CURSOR cursorname] with next update and delete
+DESCRIPTION:
+  Despite that this ticket was closed with solution "Won't fix" i see that it is useful for additional
+  checking of cursor stability feature (new in 3.0).
+  See also:
+  1) test for #3728 (CORE-3362)
+  2) comment in this ticket (CORE-5794) by hvlad:
+  "Since Firebird3 <..> cursor doesn't see the changes made by "inner" statements."
+JIRA:        CORE-5794
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('line:\\s[0-9]+,', 'line: x'), ('col:\\s[0-9]+', 'col: y')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test_table (
         id integer,
         val integer
@@ -43,7 +35,7 @@ test_script_1 = """
     begin
         rdb$set_context('USER_SESSION','TRIGGER_OLD_ID', coalesce(old.id,'null') );
         rdb$set_context('USER_SESSION','TRIGGER_OLD_VAL', coalesce(old.val,'null') );
-        if (old.val >0 ) then 
+        if (old.val >0 ) then
             exception test_exception 'it is forbidden to delete row with val>0 (id = '||coalesce(old.id, 'null')||', val='||coalesce(old.val,'null')||')';
     end
     ^
@@ -61,7 +53,7 @@ test_script_1 = """
             update test_table
             set val=0
             where current of tmpcursor;
-           
+
             -- NO error in 2.5:
             delete from test_table
             where current of tmpcursor;
@@ -74,16 +66,18 @@ test_script_1 = """
     select mon$variable_name as ctx_var, mon$variable_value as ctx_value from mon$context_variables;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line:\\s[0-9]+,', 'line: x'),
+                                                 ('col:\\s[0-9]+', 'col: y')])
 
-expected_stdout_1 = """
+expected_stdout = """
     CTX_VAR                         TRIGGER_OLD_ID
     CTX_VALUE                       1
 
     CTX_VAR                         TRIGGER_OLD_VAL
     CTX_VALUE                       10
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -TEST_EXCEPTION
@@ -93,10 +87,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

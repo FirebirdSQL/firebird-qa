@@ -1,28 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_5843
-# title:        Wrong handling of failures of TRANSACTION START trigger
-# decription:   
-#                    Confirmed wrong behaviour on 3.0.4.32972, 4.0.0.955.
-#                    Works fine on:
-#                        FB30SS, build 3.0.4.32988: OK, 1.328s.
-#                        FB40SS, build 4.0.0.1008: OK, 1.500s
-#                    (checked both on SS and CS).
-#                
-# tracker_id:   CORE-5843
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6104
+ISSUE:       6104
+TITLE:       Wrong handling of failures of TRANSACTION START trigger
+DESCRIPTION:
+JIRA:        CORE-5843
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+substitutions = [('line[:]{0,1}[\\s]+[\\d]+.*', 'line'),
+                 ('transaction[\\s]+[\\d]+[\\s]+aborted', 'transaction aborted'),
+                 ('tx=[\\d]+', 'tx='), ('TX_ID[\\s]+[\\d]+', 'TX_ID'),
+                 ('exception[\\s]+[\\d]+.*', 'exception')]
 
-substitutions_1 = [('line[:]{0,1}[\\s]+[\\d]+.*', 'line'), ('transaction[\\s]+[\\d]+[\\s]+aborted', 'transaction aborted'), ('tx=[\\d]+', 'tx='), ('TX_ID[\\s]+[\\d]+', 'TX_ID'), ('exception[\\s]+[\\d]+.*', 'exception')]
-
-init_script_1 = """
+init_script = """
     --set echo on;
     set bail on;
     create or alter trigger tx_rollback on transaction rollback as begin end;
@@ -30,7 +24,7 @@ init_script_1 = """
     create or alter trigger tx_commit on transaction commit as begin end;
 
     create or alter view v_mon as
-    select 
+    select
         t.mon$transaction_id as tx_id
         ,t.mon$state as tx_state
         --,a.mon$remote_process att_process
@@ -53,8 +47,8 @@ init_script_1 = """
     declare s varchar(255);
     begin
         s = rdb$get_context('USER_SESSION', 'tx_trig_log');
-        if (s <> '') then 
-        begin 
+        if (s <> '') then
+        begin
             s = s || ASCII_CHAR(10) || trim(msg) || ', current tx=' || current_transaction;
             rdb$set_context('USER_SESSION', 'tx_trig_log', :s);
         end
@@ -65,8 +59,8 @@ init_script_1 = """
     declare s varchar(255);
     begin
         execute procedure tx_trig_log('trigger on transaction start ');
-        
-        if (rdb$get_context('USER_SESSION', 'tx_abort') = 1) then 
+
+        if (rdb$get_context('USER_SESSION', 'tx_abort') = 1) then
         begin
             execute procedure tx_trig_log('exception on tx start ');
             rdb$set_context('USER_SESSION', 'tx_abort', 0);
@@ -92,7 +86,7 @@ init_script_1 = """
     create or alter procedure sp_use_atx as
     begin
         rdb$set_context('USER_SESSION', 'tx_abort', 1);
-        execute procedure tx_trig_log('sp_use_atx, point_a');  
+        execute procedure tx_trig_log('sp_use_atx, point_a');
         in autonomous transaction do
             execute procedure tx_trig_log('sp_use_atx, point_b');
     end
@@ -101,9 +95,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set autoddl off;
     set list on;
     commit;
@@ -159,9 +153,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             test_1, point-1
     TX_ID                           22
     TX_STATE                        1
@@ -183,7 +177,8 @@ expected_stdout_1 = """
     exception on tx start, current tx=29
 
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_TRA_START
@@ -199,10 +194,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

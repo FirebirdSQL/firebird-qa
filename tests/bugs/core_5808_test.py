@@ -1,49 +1,53 @@
 #coding:utf-8
-#
-# id:           bugs.core_5808
-# title:        Support backup of encrypted databases
-# decription:
-#                   THIS TEST USES IBSurgeon Demo Encryption package
-#                   ################################################
-#                   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
-#                   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
-#                   This file was preliminary stored in FF Test machine.
-#                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
-#
-#                   After test database will be created, we try to encrypt it using 'alter database encrypt with <plugin_name> ...' command
-#                   (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\ folder that implements encryption).
-#                   Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
-#                   After this we make  backup of encrypted database + restore.
-#
-#                   Then we make snapshot of firebird.log, run 'gfix -v -full' of restored database and once again take snapshot of firebird.log.
-#                   Comparison of these two logs is result of validation. It should contain line about start and line with finish info.
-#                   The latter must look like this: "Validation finished: 0 errors, 0 warnings, 0 fixed"
-#
-#                   Checked on:
-#                       40sS, build 4.0.0.1487: OK, 6.552s.
-#                       40sC, build 4.0.0.1421: OK, 11.812s.
-#                       40Cs, build 4.0.0.1485: OK, 8.097s.
-#
-#                   15.04.2021. Adapted for run both on Windows and Linux. Checked on:
-#                     Windows: 4.0.0.2416
-#                     Linux:   4.0.0.2416
-#
-# tracker_id:   CORE-5808
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6070
+ISSUE:       6070
+TITLE:       Support backup of encrypted databases
+DESCRIPTION:
+    THIS TEST USES IBSurgeon Demo Encryption package
+    ################################################
+    ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
+    License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
+    This file was preliminary stored in FF Test machine.
+    Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
+
+    After test database will be created, we try to encrypt it using 'alter database encrypt with <plugin_name> ...' command
+    (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\ folder that implements encryption).
+    Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
+    After this we make  backup of encrypted database + restore.
+
+    Then we make snapshot of firebird.log, run 'gfix -v -full' of restored database and once again take snapshot of firebird.log.
+    Comparison of these two logs is result of validation. It should contain line about start and line with finish info.
+    The latter must look like this: "Validation finished: 0 errors, 0 warnings, 0 fixed"
+
+    Checked on:
+        40sS, build 4.0.0.1487: OK, 6.552s.
+        40sC, build 4.0.0.1421: OK, 11.812s.
+        40Cs, build 4.0.0.1485: OK, 8.097s.
+
+    15.04.2021. Adapted for run both on Windows and Linux. Checked on:
+      Windows: 4.0.0.2416
+      Linux:   4.0.0.2416
+JIRA:        CORE-5808
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    + VALIDATION STARTED
+    + VALIDATION FINISHED: 0 ERRORS, 0 WARNINGS, 0 FIXED
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: encryption plugin')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -233,15 +237,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    + VALIDATION STARTED
-    + VALIDATION FINISHED: 0 ERRORS, 0 WARNINGS, 0 FIXED
-"""
-
-@pytest.mark.skip('FIXME: encryption plugin')
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

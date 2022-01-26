@@ -1,37 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_5857
-# title:        Varchar computed column length stores incorrect and invalid values for field
-# decription:   
-#                    Confirmed wrong output on WI-T4.0.0.1036:
-#                    RDB$FIELD_LENGTH was -2 (instead of 80), RDB$CHARACTER_SET_ID was 0 (instead of 4)
-#               
-#                    Checked on: WI-V3.0.4.33000, WI-T4.0.0.1040 - ONE of test parts works fine.
-#                    ::: NOTE :::
-#                    There is still problem with accommodation of resulting string in COMPUITED BY
-#                    column when its declared length ("varchar(20)") is equal to the total of lengths
-#                    of concatenated columns. 
-#                    Because of this one of check statements was temp-ly disabled.
-#                    See comment in the ticked 27/Jun/18 05:27 AM.
-#                
-# tracker_id:   CORE-5857
-# min_versions: ['3.0.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-6117
+ISSUE:       6117
+TITLE:       Varchar computed column length stores incorrect and invalid values for field
+DESCRIPTION:
+  ONE of test parts works fine.
+  There is still problem with accommodation of resulting string in COMPUITED BY
+  column when its declared length ("varchar(20)") is equal to the total of lengths
+  of concatenated columns.
+  Because of this one of check statements was temp-ly disabled.
+  See comment in the ticked 27/Jun/18 05:27 AM.
+JIRA:        CORE-5857
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test (
         id int,
         vc_default_user varchar(10) character set utf8 default user,
@@ -60,18 +48,18 @@ test_script_1 = """
     order by 1
     ;
 
-    select vc_generated from test where id = 1;  
+    select vc_generated from test where id = 1;
 
-    -- temply disabled: select vc_generated from test where id = 2;  
+    -- temply disabled: select vc_generated from test where id = 2;
     --    Statement failed, SQLSTATE = 22001
     --    arithmetic exception, numeric overflow, or string truncation
     --    -string right truncation
-    --    -expected length 20, actual 21    
+    --    -expected length 20, actual 21
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$FIELD_NAME                  ID
     RDB$FIELD_LENGTH                4
     RDB$CHARACTER_LENGTH            <null>
@@ -102,12 +90,11 @@ expected_stdout_1 = """
     RDB$FIELD_SUB_TYPE              0
     Records affected: 4
     VC_GENERATED                    Австралия Антарктида
-    Records affected: 1  
+    Records affected: 1
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,49 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_5982
-# title:        error read permission for BLOB field, when it is input/output procedure`s parametr
-# decription:   
-#                   Confirmed bug on WI-V3.0.4.33034 and WI-T4.0.0.1340.
-#                   Checked on:
-#                       4.0.0.1421: OK, 2.098s.
-#                       3.0.5.33097: OK, 1.294s.
-#               
-#                   24.06.2020: changed min_version to 2.5 because problem was fixed in 2.5.9.27151.
-#                
-# tracker_id:   CORE-5982
-# min_versions: ['2.5.9']
-# versions:     2.5.9
-# qmid:         None
+
+"""
+ID:          issue-6234
+ISSUE:       6234
+TITLE:       error read permission for BLOB field, when it is input/output procedure`s parametr
+DESCRIPTION:
+JIRA:        CORE-5982
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.9
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+tmp_user = user_factory('db', name='tmp$c5982', password='123')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
-    set term ^;
-    execute block as
-    begin
-        begin
-            execute statement 'drop user tmp$c5982' with autonomous transaction;
-            when any do begin end
-        end
-    end^
-    set term ;^
-    commit;
-
-
-    create user tmp$c5982 password '123';
-    commit;
-    recreate table my_table ( 
+    recreate table my_table (
        my_num integer
       ,my_data blob
     );
@@ -88,21 +62,16 @@ test_script_1 = """
     execute procedure sp_main;
     select rdb$get_context('USER_SESSION', 'SP_WORKER') as result from rdb$database;
     commit;
-
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    drop user tmp$c5982;
-    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RESULT                          DONE BY TMP$C5982
 """
 
-@pytest.mark.version('>=2.5.9')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action, tmp_user):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

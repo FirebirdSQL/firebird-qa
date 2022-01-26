@@ -1,33 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6068
-# title:        Server hangs when compiling big package with error
-# decription:   
-#               	Confirmed bug on 4.0.0.1485 - FB hangs.
-#               	Works fine on 4.0.0.1524 - compiler error is issued; 4.501s.
-#               	
-#               	05-sep-2019: reduced minimal version to 3.0.5 because of commit
-#               	https://github.com/FirebirdSQL/firebird/commit/04deca31dd5fa9b4aae3670d22fb7d97c4e5097d
-#               	(checked on  WI-V3.0.5.33166 )
-#                
-# tracker_id:   CORE-6068
-# min_versions: ['3.0.5']
-# versions:     3.0.5
-# qmid:         None
+
+"""
+ID:          issue-6318
+ISSUE:       6318
+TITLE:       Server hangs when compiling big package with error
+DESCRIPTION:
+JIRA:        CORE-6068
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.5
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = [('- line .*', ''), ('At line .*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 CREATE DOMAIN DOM$ABONENT AS
 NUMERIC(9,0)
 CHECK (CHAR_LENGTH(VALUE) IN (8, 9));
@@ -500,7 +486,7 @@ BEGIN
     PROCEDURE RECOGN_NONACCEPT(ID_BANK DOM$KEY NOT NULL, DATE_PAYMENT DOM$DATE NOT NULL, PURPOSE D_VARCHAR_500 NOT NULL, PAYER D_VARCHAR_200 NOT NULL) RETURNS (ID_LAWSUIT DOM$KEY, ID_WRIT_EXEC DOM$KEY, ID_EXEC_PROC DOM$KEY);
     FUNCTION RECOGN_INDIVID(PURPOSE D_VARCHAR_500 NOT NULL) RETURNS DOM$ABONENT;
     FUNCTION SEARCH_NUMBER_FILE(PURPOSE D_VARCHAR_500 NOT NULL, IS_NONACCEPT DOM$BOOLEAN_REAL NOT NULL) RETURNS DOM$NUMBER_FILE DETERMINISTIC;
-    
+
     -- Добавление корректировок
     PROCEDURE ADD_CORRECT_NONACCEPT(ID_PAYMENT DOM$KEY NOT NULL, NUMBER_FILE_OLD DOM$NUMBER_FILE NOT NULL, RESPONDENT_OLD D_VARCHAR_100 NOT NULL, NUMBER_FILE_NEW DOM$NUMBER_FILE NOT NULL, RESPONDENT_NEW D_VARCHAR_100 NOT NULL);
     PROCEDURE ADD_CORRECT_BAILIFF(ID_PAYMENT DOM$KEY NOT NULL, NUMBER_FILE DOM$NUMBER_FILE NOT NULL, RESPONDENT D_VARCHAR_100 NOT NULL);
@@ -1401,7 +1387,7 @@ BEGIN
             CURRENT_RESPONDENT = LEFT(:CURRENT_RESPONDENT, CHAR_LENGTH(:CURRENT_RESPONDENT) - 5);
         IF (RIGHT(:CURRENT_RESPONDENT, 5) = ' КЫЗЫ') THEN
             CURRENT_RESPONDENT = LEFT(:CURRENT_RESPONDENT, CHAR_LENGTH(:CURRENT_RESPONDENT) - 5);
-        
+
         IF (:CURRENT_RESPONDENT IS NOT DISTINCT FROM :RESPONDENT) THEN
         BEGIN
             RESULT = :ID_CURRENT_WRIT_EXEC;
@@ -1419,18 +1405,18 @@ BEGIN
             IF ((:NUMBER_FILE = '2-3197/2018') AND (:RESPONDENT = 'СЫРОВА ТАТЬЯНА ВЛАДИМИРОВНА')) THEN
                 EXIT;
         END
-        
+
         -- Ищем по девичьей фамилии
         IF (:WITH_MAIDEN_NAME IS NOT NULL) THEN
         BEGIN
             CURRENT_RESPONDENT = :WITH_MAIDEN_NAME;
-    
+
             CURRENT_RESPONDENT = REPLACE(:CURRENT_RESPONDENT, 'Ё', 'Е');
             IF (RIGHT(:CURRENT_RESPONDENT, 5) = ' ОГЛЫ') THEN
                 CURRENT_RESPONDENT = LEFT(:CURRENT_RESPONDENT, CHAR_LENGTH(:CURRENT_RESPONDENT) - 5);
             IF (RIGHT(:CURRENT_RESPONDENT, 5) = ' КЫЗЫ') THEN
                 CURRENT_RESPONDENT = LEFT(:CURRENT_RESPONDENT, CHAR_LENGTH(:CURRENT_RESPONDENT) - 5);
-            
+
             IF (:CURRENT_RESPONDENT IS NOT DISTINCT FROM :RESPONDENT) THEN
             BEGIN
                 RESULT = :ID_CURRENT_WRIT_EXEC;
@@ -1662,7 +1648,7 @@ BEGIN
         ORDER BY
             B.POS
         INTO
-            :ID,                        
+            :ID,
             :NAME
         DO
             SUSPEND;
@@ -1686,14 +1672,14 @@ BEGIN
         -- Проверяем наличие платежей
         IF (NOT EXISTS(SELECT 1 FROM TMP$PAYMENT$BANK_STTM)) THEN
             EXECUTE PROCEDURE OPER$EXCEPTION$CANCEL('Таблица выписки из банка пуста.');
-    
+
         --
         LAST_DATE_BANK_STATEMENT = (SELECT LAST_DATE_BANK_STATEMENT FROM INF$DATABASE$CONST);
         IF (:LAST_DATE_BANK_STATEMENT IS NULL) THEN
             EXECUTE PROCEDURE OPER$EXCEPTION$CANCEL('Не указана дата последней выписки из банка.');
-    
+
         MAX_DATE_ACCOUNT = :LAST_DATE_BANK_STATEMENT;
-    
+
         --
         FOR SELECT
             P.POS,
@@ -1709,46 +1695,46 @@ BEGIN
         BEGIN
             -- У документа может отсутствовать поле "ПолучательКорсчет="
             SHIFT_LINE = IIF(LEFT((SELECT LINE FROM TMP$PAYMENT$BANK_STTM WHERE POS = :POS - 13), 18) = 'ПолучательКорсчет=', 0, 1);
-    
+
             -- Определяем банк
             NAME_BANK = SUBSTRING((SELECT LINE FROM TMP$PAYMENT$BANK_STTM WHERE POS = :POS - 24 + :SHIFT_LINE) FROM 17);-- Пропускаем слово "ПлательщикБанк1="
             IF (:NAME_BANK IS NULL) THEN
                 EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('По п/п №' || :NUMBER_DOC || ' не указано название банка');
-            
+
             -- Определяем номер документа
             NUMBER_DOC = RIGHT(SUBSTRING((SELECT P.LINE FROM TMP$PAYMENT$BANK_STTM P WHERE P.POS = :POS - 33 + :SHIFT_LINE) FROM 7), 6);-- Пропускаем слово "Номер="
-    
+
             -- Определяем дату оплаты
             DATE_PAYMENT = SUBSTRING((SELECT P.LINE FROM TMP$PAYMENT$BANK_STTM P WHERE P.POS = :POS - 32 + :SHIFT_LINE) FROM 6);-- Пропускаем слово "Дата="
-    
+
             -- Определяем дату учета
             DATE_ACCOUNT = NULLIF(SUBSTRING((SELECT P.LINE FROM TMP$PAYMENT$BANK_STTM P WHERE P.POS = :POS - 20 + :SHIFT_LINE) FROM 15), '');-- Пропускаем слово "ДатаПоступило="
             IF (:DATE_ACCOUNT IS NULL) THEN
                 CONTINUE;
-                
+
             IF (:DATE_ACCOUNT <= :LAST_DATE_BANK_STATEMENT) THEN
                 EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Дата учета (' || FORMAT_DATE(:DATE_ACCOUNT)
                     || ') у документа №' || :NUMBER_DOC || ' меньше или равна дате последней загрузки выписки (' || FORMAT_DATE(:LAST_DATE_BANK_STATEMENT) || ')');
-    
+
             IF (:DATE_ACCOUNT > :MAX_DATE_ACCOUNT) THEN
                 MAX_DATE_ACCOUNT = :DATE_ACCOUNT;
-    
+
             -- Определяем сумму платежа
             AMOUNT = SUBSTRING((SELECT P.LINE FROM TMP$PAYMENT$BANK_STTM P WHERE P.POS = :POS - 31 + :SHIFT_LINE) FROM 7);-- Пропускаем слово "Сумма="
-            
+
             -- Определяем назначение
             PURPOSE = SUBSTRING(:LINE FROM 19);-- Пропускаем слово "НазначениеПлатежа="
-    
+
             -- Определяем плательщика
             PAYER = SUBSTRING((SELECT P.LINE FROM TMP$PAYMENT$BANK_STTM P WHERE P.POS = :POS - 28 + :SHIFT_LINE) FROM 12);-- Пропускаем слово "Плательщик="
-    
+
             -- Создаем платеж
             INSERT INTO INF$PAYMENT$BANK_STTM
                 (DATE_ACCOUNT, DATE_PAYMENT, NUMBER, AMOUNT, CONTRACTOR, PURPOSE, PAYER)
             VALUES
                 (:DATE_ACCOUNT, :DATE_PAYMENT, :NUMBER_DOC, :AMOUNT, :NAME_BANK, :PURPOSE, :PAYER);
-        END 
-    
+        END
+
         UPDATE INF$DATABASE$CONST
         SET
             LAST_DATE_BANK_STATEMENT = :MAX_DATE_ACCOUNT;
@@ -1824,7 +1810,7 @@ BEGIN
                     WHERE
                         (B.ID = :ID)
                         AND (B.ID_BANK IS DISTINCT FROM :ID_BANK);
-                    
+
                     CONTINUE;
                 END
 
@@ -1848,7 +1834,7 @@ BEGIN
             IF (((:PAYER NOT LIKE '%ИП %') AND (:PAYER NOT LIKE '%Индивидуальный %') AND (:PURPOSE NOT LIKE '%т.ч. НДС%') AND (:PURPOSE NOT LIKE '%МКД-20%') AND (:PURPOSE NOT LIKE '%МКД-10%') AND (:PURPOSE NOT LIKE '%998,%') AND (:PURPOSE NOT LIKE '%ФСГ%') AND (:PURPOSE NOT LIKE '%сч/ф%') AND (:PAYER NOT LIKE 'ООО "МУЛЬТИПРОДУКТ"')) OR (:PURPOSE LIKE '%ЖКУ%')) THEN
             BEGIN
                 ID_BRANCH = (SELECT IP.ID_BRANCH FROM DIR$ENTPR$IND_PAYMENT IP WHERE LOWER(:PURPOSE) LIKE '%' || LOWER(IP.NAME) || '%' GROUP BY IP.ID_BRANCH);
-    
+
                 IF (:ID_BRANCH IS NOT NULL) THEN
                 BEGIN
                     -- Указываем, что это инд. платеж
@@ -1858,7 +1844,7 @@ BEGIN
                     WHERE
                         (B.ID = :ID)
                         AND (B.IS_INDIVIDUAL_PAYMENT IS FALSE);
-                    
+
                     CONTINUE;
                 END
             END
@@ -1874,7 +1860,7 @@ BEGIN
                 AND ((B.ID_BRANCH IS NOT NULL) OR (B.ID_BANK IS NOT NULL) OR (B.ID_BAILIFF IS NOT NULL) OR (B.IS_INDIVIDUAL_PAYMENT IS TRUE));
         END
     END
-    
+
     PROCEDURE CREATE_RECEIPTS_FOR_DATE(DATE_ACCOUNT DOM$DATE)
     AS
     DECLARE VARIABLE ID DOM$KEY;
@@ -1903,7 +1889,7 @@ BEGIN
 
             QUANTITY = :QUANTITY + 1;
         END
-    
+
         IF (:QUANTITY > 0) THEN
         BEGIN
             NOT_RECOGN = (SELECT COUNT(*) FROM INF$PAYMENT$BANK_STTM I WHERE (I.DATE_ACCOUNT = :DATE_ACCOUNT) AND ((I.ID_BANK IS NOT NULL) OR (I.ID_BAILIFF IS NOT NULL) OR (I.IS_INDIVIDUAL_PAYMENT IS TRUE)) AND (I.RECEIPT_CREATED IS FALSE));
@@ -1913,7 +1899,7 @@ BEGIN
         ELSE
             EXECUTE PROCEDURE OPER$EXCEPTION$CANCEL('Не найдено платежей для создания квитанций.');
     END
-    
+
     PROCEDURE CREATE_INDIVID_RECEIPT(ID DOM$KEY NOT NULL, ID_ABONENT DOM$ABONENT NOT NULL)
     AS
     DECLARE VARIABLE ID_GROUP_DISTRICT DOM$KEY;
@@ -1985,7 +1971,7 @@ BEGIN
             :PAYER,
             :IS_INDIVIDUAL_PAYMENT,
             :RECEIPT_CREATED;
-        
+
         IF (:RECEIPT_CREATED IS TRUE) THEN
             EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Квитанция по платежу ' || :ID || ' уже создана.');
 
@@ -2014,7 +2000,7 @@ BEGIN
                     AS USER 'SYSDBA' PASSWORD 'masterkey'
                 INTO
                     :ID_RECEIPT;
-            
+
                 IF (:ID_RECEIPT IS NOT NULL) THEN
                 BEGIN
                     UPDATE INF$PAYMENT$BANK_STTM BS
@@ -2032,7 +2018,7 @@ BEGIN
             ID_BRANCH = (SELECT GD.ID_BRANCH FROM DIR$PAYMENT$SOURCE_GD SG INNER JOIN DIR$ENTERPRISE$GROUP_DISTRICT GD ON GD.ID = SG.ID_GROUP_DISTRICT WHERE SG.ID_SOURCE = :ID_BAILIFF);
             IF (:ID_BRANCH IS NULL) THEN
                 EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Неизвестный филиал у источника оплаты: ' || (SELECT NAME FROM DIR$PAYMENT$SOURCE WHERE ID = :ID_BAILIFF));
-            
+
             IF (:ID_BRANCH = 1) THEN
             BEGIN
                 ID_RECEIPT = (SELECT RESULT FROM TRY_CREATE_RECEIPT_BAILIFF(:ID_BAILIFF, :DATE_ACCOUNT, :DATE_PAYMENT, :NUMBER, :AMOUNT, :PURPOSE));
@@ -2055,7 +2041,7 @@ BEGIN
                     AS USER 'SYSDBA' PASSWORD 'masterkey'
                 INTO
                     :ID_RECEIPT;
-            
+
                 IF (:ID_RECEIPT IS NOT NULL) THEN
                 BEGIN
                     UPDATE INF$PAYMENT$BANK_STTM BS
@@ -2074,7 +2060,7 @@ BEGIN
                     AS USER 'SYSDBA' PASSWORD 'masterkey'
                 INTO
                     :ID_RECEIPT;
-            
+
                 IF (:ID_RECEIPT IS NOT NULL) THEN
                 BEGIN
                     UPDATE INF$PAYMENT$BANK_STTM BS
@@ -2097,7 +2083,7 @@ BEGIN
                 AS USER 'SYSDBA' PASSWORD 'masterkey'
             INTO
                 :ID_RECEIPT;
-        
+
             IF (:ID_RECEIPT IS NOT NULL) THEN
             BEGIN
                 UPDATE INF$PAYMENT$BANK_STTM BS
@@ -2130,11 +2116,11 @@ BEGIN
     DECLARE VARIABLE ID_GROUP_DISTRICT DOM$KEY;
     BEGIN
         PURPOSE_ORIGIN = :PURPOSE;
-        
+
         ID_TYPE_RECEIPT_VIA_BAILIFF = (SELECT ID_TYPE_RECEIPT_VIA_BAILIFF FROM SYS$LINK$PAYMENT);
         ID_TYPE_RECEIPT_NGPH = (SELECT TG.ID_TYPE_RECEIPT FROM DIR$GASSUPPLY$TYPE_GS TG WHERE TG.ID = (SELECT ID_TYPE_GS_NATURE_GAS_PRIVATE FROM SYS$LINK$GASSUPPLY));
         ID_TYPE_RECEIPT_MD = (SELECT TG.ID_TYPE_RECEIPT FROM DIR$GASSUPPLY$TYPE_GS TG WHERE TG.ID = (SELECT ID_TYPE_GS_TANK_GAS_MD FROM SYS$LINK$GASSUPPLY));
-    
+
         -- Ищем иск в базе
         SELECT
             ID_LAWSUIT,
@@ -2146,7 +2132,7 @@ BEGIN
             :ID_LAWSUIT,
             :ID_WRIT_EXEC,
             :ID_EXEC_PROC;
-    
+
         -- Если иск не найден, выходим
         IF (:ID_LAWSUIT IS NULL) THEN
         BEGIN
@@ -2154,7 +2140,7 @@ BEGIN
             SUSPEND;
             EXIT;
         END
-    
+
         -- Определяем код источника оплаты
         ID_SOURCE = (SELECT BANK.ID_SOURCE FROM DIR$EXEC_PROC$BANK BANK WHERE BANK.ID = :ID_BANK);
         IF (:ID_SOURCE IS NULL) THEN
@@ -2162,7 +2148,7 @@ BEGIN
 
         -- Запоминаем лицевой счет
         ID_ABONENT = (SELECT L.ID_ABONENT FROM DOC$ABONENT$LAWSUIT L WHERE L.ID = :ID_LAWSUIT);
-        
+
         -- Сразу проверяем, что тип газоснабжения у абонента корректный
         IF ((SELECT A.ID_TYPE_GASSUPPLY FROM DIR$ABONENT$ABONENT A WHERE A.ID = :ID_ABONENT) NOT IN (1, 2, 3, 4, 20, 25)) THEN
             EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA_ABONE(:ID_ABONENT, 'Неопознанный тип газоснабжения.');
@@ -2196,10 +2182,10 @@ BEGIN
             COMMENT_BATCH = 'Не распознано';
             ID_TYPE_RECEIPT = :ID_TYPE_RECEIPT_VIA_BAILIFF;
         END
-    
+
         IF ((SELECT COUNT(*) FROM BAT$RECEIPT$BATCH B WHERE (B.ID_GROUP_DISTRICT = :ID_GROUP_DISTRICT) AND (B.ID_SOURCE = :ID_SOURCE) AND (B.DATE_ACCOUNT = :DATE_ACCOUNT) AND (B.IS_CORRECT_RECEIPT = 0) AND (B.COMMENT IS NOT DISTINCT FROM :COMMENT_BATCH)) > 1) THEN
             EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Найдено более одной пачки за ' || FORMAT_DATE(:DATE_ACCOUNT) || ' по ' || (SELECT NAME FROM DIR$PAYMENT$SOURCE WHERE ID = :ID_SOURCE));
-        
+
         -- Получаем код пачки
         ID_BATCH = (SELECT B.ID FROM BAT$RECEIPT$BATCH B WHERE (B.ID_GROUP_DISTRICT = :ID_GROUP_DISTRICT) AND (B.ID_SOURCE = :ID_SOURCE) AND (B.DATE_ACCOUNT = :DATE_ACCOUNT) AND (B.IS_CORRECT_RECEIPT = 0) AND (B.COMMENT IS NOT DISTINCT FROM :COMMENT_BATCH));
         IF (:ID_BATCH IS NULL) THEN
@@ -2215,7 +2201,7 @@ BEGIN
         END
         ELSE IF ((SELECT B.LOADED FROM BAT$RECEIPT$BATCH B WHERE B.ID = :ID_BATCH) = 1) THEN
             EXECUTE PROCEDURE PKG$EXCEPTION.FOR_BATCH_RECEIPT(:ID_BATCH, 'Пачка квитанций уже загружена.');
-    
+
         -- Создаем квитанцию
         INSERT INTO BAT$RECEIPT$RECEIPT
             (ID, ID_BATCH, ID_ABONENT, ID_PERIOD_FOR_PAYMENT, ID_TYPE_RECEIPT, ID_LAWSUIT, ID_WRIT_EXEC, ID_EXEC_PROC, DATE_PAYMENT, NUMBER, AUTODISTRIBUTE_SERVICES, AMOUNT_SERVICE_5, PURPOSE, PAYER)
@@ -2225,7 +2211,7 @@ BEGIN
             ID
         INTO
             :RESULT;
-        
+
         SUSPEND;
     END
 
@@ -2250,7 +2236,7 @@ BEGIN
                     NYEAR = LEFT(:STR_YEAR, 4);
                     IF (:NYEAR NOT BETWEEN 2006 AND EXTRACT(YEAR FROM CURRENT_DATE)) THEN
                         EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Ошибка в годе в "' || :NUMBER_FILE || '".');
-    
+
                     RETURN :STR_NUMBER || '/' || :NYEAR;
                 END
                 -- Обработка правой части вида "2-3028/13-2018"
@@ -2259,7 +2245,7 @@ BEGIN
                     NYEAR = RIGHT(:STR_YEAR, 4);
                     IF (:NYEAR NOT BETWEEN 2006 AND EXTRACT(YEAR FROM CURRENT_DATE)) THEN
                         EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Ошибка в годе в "' || :NUMBER_FILE || '".');
-    
+
                     RETURN :STR_NUMBER || '/' || :NYEAR;
                 END
                 -- Обработка правой части вида "2-300/9-2017"
@@ -2268,7 +2254,7 @@ BEGIN
                     NYEAR = RIGHT(:STR_YEAR, 4);
                     IF (:NYEAR NOT BETWEEN 2006 AND EXTRACT(YEAR FROM CURRENT_DATE)) THEN
                         EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Ошибка в годе в "' || :NUMBER_FILE || '".');
-    
+
                     RETURN :STR_NUMBER || '/' || :NYEAR;
                 END
                 ELSE
@@ -2316,20 +2302,20 @@ BEGIN
             END
 
             --EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('В номере дела "' || :NUMBER_FILE || '" год не четыре и не два символа.');
-            
+
             IF (CHAR_LENGTH(:STR_YEAR) = 2) THEN
             BEGIN
                 IF (CAST(:STR_YEAR AS INTEGER) > CAST(RIGHT(EXTRACT(YEAR FROM CURRENT_DATE), 2) AS INTEGER)) THEN
                     RETURN NULL;
                 --EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('В номере дела "' || :NUMBER_FILE || '" неправильный год.');
-                
+
                 RETURN :STR_NUMBER || '/' || '20' || :STR_YEAR;
             END
             ELSE
             BEGIN
                 IF (CAST(:STR_YEAR AS INTEGER) > EXTRACT(YEAR FROM CURRENT_DATE)) THEN
                     EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('В номере дела "' || :NUMBER_FILE || '" неправильный год.');
-                
+
                 RETURN :STR_NUMBER || '/' || RIGHT(:STR_YEAR, 2);
             END
         END
@@ -2347,13 +2333,13 @@ BEGIN
     DECLARE VARIABLE RESULT DOM$NUMBER_FILE;
     BEGIN
         POS_NUMBER_FILE = POSITION('2-', :PURPOSE);
-        
+
         -- В ССП могут встречаться случаи, когда указан корпус/квартира и номер дела
         -- в виде "г. Комсомольск-на-Амуре, , Ленина пр-кт, д. 81, корп.2-112/ 2-1929/2016"
         IF (:IS_NONACCEPT IS FALSE) THEN
             IF (POSITION('2-', :PURPOSE, :POS_NUMBER_FILE + 1) > 0) THEN
                 POS_NUMBER_FILE = POSITION('2-', :PURPOSE, :POS_NUMBER_FILE + 1);
-        
+
         IF (:POS_NUMBER_FILE > 0) THEN
         BEGIN
             PURPOSE = SUBSTRING(:PURPOSE FROM :POS_NUMBER_FILE);
@@ -2362,13 +2348,13 @@ BEGIN
             PURPOSE = REPLACE(:PURPOSE, './', '/');-- Исправляем возможную опечатку в номере делу
             POS_NUMBER_FILE_END = 3;-- Пропускаем "2-"
             SLASH_ALREADY_FOUNDED = 0;
-    
+
             -- Перебираем текст, прекращая поиск, как только находим не цифру или слэш
             WHILE (:POS_NUMBER_FILE_END <= CHAR_LENGTH(:PURPOSE)) DO
             BEGIN
                 IF (NOT((SUBSTRING(:PURPOSE FROM :POS_NUMBER_FILE_END FOR 1) BETWEEN '0' AND '9') OR (SUBSTRING(:PURPOSE FROM :POS_NUMBER_FILE_END FOR 1) = '/') OR (SUBSTRING(:PURPOSE FROM :POS_NUMBER_FILE_END FOR 1) = '-'))) THEN
                     BREAK;
-                
+
                 -- Если был найден второй слэш, то останавливаем поиск (это номер вида 2-1077/2014/2)
                 IF (SUBSTRING(:PURPOSE FROM :POS_NUMBER_FILE_END FOR 1) = '/') THEN
                 BEGIN
@@ -2377,19 +2363,19 @@ BEGIN
                     ELSE
                         BREAK;
                 END
-    
+
                 POS_NUMBER_FILE_END = :POS_NUMBER_FILE_END + 1;
             END
-    
+
             RESULT = SUBSTRING(:PURPOSE FROM 1 FOR :POS_NUMBER_FILE_END - 1);
         END
-        
+
         IF (CHAR_LENGTH(:RESULT) = 2) THEN
             EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Не найден номер дела в строке: ' || :PURPOSE);
-    
+
         RETURN :RESULT;
     END
-    
+
     PROCEDURE RECOGN_NONACCEPT(ID_BANK DOM$KEY NOT NULL, DATE_PAYMENT DOM$DATE NOT NULL, PURPOSE D_VARCHAR_500 NOT NULL, PAYER D_VARCHAR_200 NOT NULL) RETURNS (ID_LAWSUIT DOM$KEY, ID_WRIT_EXEC DOM$KEY, ID_EXEC_PROC DOM$KEY)
     AS
     DECLARE VARIABLE POS_NAME D_NATURAL;
@@ -2409,7 +2395,7 @@ BEGIN
         FIO_BY_SB = UPPER(:PAYER);
         FIO_BY_SB = REPLACE(:FIO_BY_SB, ' ОГЛЫ', '');
         FIO_BY_SB = REPLACE(:FIO_BY_SB, ' КЫЗЫ', '');
-    
+
         -- Оставляем фамилию, имя, отчество
         POS_NAME = POSITION(' ', :FIO_BY_SB);
         POS_PATRONYMIC = POSITION(' ', :FIO_BY_SB, :POS_NAME + 1);
@@ -2431,20 +2417,20 @@ BEGIN
                 C.CORRECT_NUMBER_FILE,
                 C.CORRECT_FIO
             FROM
-                DIR$EXEC_PROC$CORRECTION C 
+                DIR$EXEC_PROC$CORRECTION C
             WHERE
                 C.ID = :ID_CORRECTION
             INTO
                 :NUMBER_FILE,
                 :FIO_BY_SB;
-    
+
         --
         FIO_BY_SB = REPLACE(:FIO_BY_SB, 'Ё', 'Е');
 
         -- Исправляем возможную опечатку
         IF (RIGHT(:NUMBER_FILE, 4) = '/218') THEN
             NUMBER_FILE = LEFT(:NUMBER_FILE, CHAR_LENGTH(:NUMBER_FILE) - 3) || '2018';
-    
+
         IF (:NUMBER_FILE IS NOT NULL) THEN
         BEGIN
             IF ((SELECT COUNT(*) FROM DOC$ABONENT$LAWSUIT L INNER JOIN DOC$ABONENT$LAWSUIT_CITIZEN LC ON LC.ID_LAWSUIT = L.ID INNER JOIN REG$ABONENT$CITIZEN C ON C.ID = LC.ID_CITIZEN WHERE L.FILE_NUMBER STARTING WITH :NUMBER_FILE AND UPPER(C.SURNAME_NAME_PATRONYMIC) = :FIO_BY_SB) > 1) THEN
@@ -2462,7 +2448,7 @@ BEGIN
             ELSE
             BEGIN
                 ID_LAWSUIT = (SELECT L.ID FROM DOC$ABONENT$LAWSUIT L INNER JOIN DOC$ABONENT$LAWSUIT_CITIZEN LC ON LC.ID_LAWSUIT = L.ID INNER JOIN REG$ABONENT$CITIZEN C ON C.ID = LC.ID_CITIZEN WHERE L.FILE_NUMBER STARTING WITH :NUMBER_FILE AND UPPER(C.SURNAME_NAME_PATRONYMIC) = :FIO_BY_SB);
-    
+
                 IF (:ID_LAWSUIT IS NULL) THEN
                 BEGIN
                     -- Если иск не найден, ищем его в истории заседаний
@@ -2472,22 +2458,22 @@ BEGIN
                     BEGIN
                         -- Если иск не найден, пробуем перевести номер дела в другой формат (год двумя знаками или четырьмя)
                         CONV_NUMBER_FILE = CONVERT_NUMBER_FILE(:NUMBER_FILE, :PURPOSE);
-        
+
                         IF (:CONV_NUMBER_FILE IS NOT NULL) THEN
                         BEGIN
                             ID_LAWSUIT = (SELECT L.ID FROM DOC$ABONENT$LAWSUIT L INNER JOIN DOC$ABONENT$LAWSUIT_CITIZEN LC ON LC.ID_LAWSUIT = L.ID INNER JOIN REG$ABONENT$CITIZEN C ON C.ID = LC.ID_CITIZEN WHERE L.FILE_NUMBER STARTING WITH :CONV_NUMBER_FILE AND UPPER(C.SURNAME_NAME_PATRONYMIC) = :FIO_BY_SB);
-                            
+
                             IF (:ID_LAWSUIT IS NULL) THEN
                             BEGIN
                                 ID_WRIT_EXEC = (SELECT RESULT FROM GET$WRIT_EXEC$SEARCH_BY_RESPOND(:NUMBER_FILE, :FIO_BY_SB));
                                 ID_LAWSUIT = (SELECT WE.ID_LAWSUIT FROM DOC$LAWSUIT$WRIT_OF_EXEC WE WHERE WE.ID = :ID_WRIT_EXEC);
-                
+
                                 ID_EXEC_PROC = (SELECT FIRST 1 EP.ID FROM DOC$LAWSUIT$EXEC_PROC EP WHERE (EP.ID_WRIT_OF_EXEC = :ID_WRIT_EXEC) AND (EP.ID_BANK IS NOT NULL) AND (EP.DATE_TRANSFERENCE <= :DATE_PAYMENT) ORDER BY EP.DATE_TRANSFERENCE DESC);
                             END
                             ELSE
                                 NUMBER_FILE = :CONV_NUMBER_FILE;
                         END
-                        
+
                         -- Если иск не найден, пробуем отрезать номер участка из дела
                         IF (:ID_LAWSUIT IS NULL) THEN
                         BEGIN
@@ -2498,15 +2484,15 @@ BEGIN
                     END
                 END
             END
-    
+
             -- Ищем иск по номеру дела и ответчику
             IF ((:ID_LAWSUIT IS NOT NULL) AND (:ID_EXEC_PROC IS NULL)) THEN
             BEGIN
     --                IF ((SELECT COUNT(*) FROM DOC$LAWSUIT$EXEC_PROC EP INNER JOIN DOC$LAWSUIT$WRIT_OF_EXEC WE ON WE.ID = EP.ID_WRIT_OF_EXEC INNER JOIN REG$ABONENT$CITIZEN C ON C.ID = WE.ID_RESPONDENT WHERE WE.ID_LAWSUIT = :ID_ISK AND UPPER(C.SURNAME_NAME_PATRONYMIC) = UPPER(:FIO_BY_SB) AND EP.ID_BANK IS NOT NULL) AND (EP.DATE_TRANSFERENCE < :DATE_PAYMENT) > 1) THEN
     --                    EXCEPTION CHECK_EXCEPTION 'Более 1 ИП: ' || COALESCE(:FIO_BY_SB, '');
-    
+
                 ID_EXEC_PROC = NULL;
-    
+
                 FOR SELECT
                     EP.ID,
                     EP.ID_WRIT_OF_EXEC,
@@ -2531,7 +2517,7 @@ BEGIN
                         FIO_RESPONDENT = LEFT(:FIO_RESPONDENT, CHAR_LENGTH(:FIO_RESPONDENT) - 5);
                     IF (RIGHT(:FIO_RESPONDENT, 5) = ' КЫЗЫ') THEN
                         FIO_RESPONDENT = LEFT(:FIO_RESPONDENT, CHAR_LENGTH(:FIO_RESPONDENT) - 5);
-    
+
                     IF (:FIO_RESPONDENT = :FIO_BY_SB) THEN
                     BEGIN
                         ID_EXEC_PROC = :TMP_ID_EXEC_PROC;
@@ -2539,21 +2525,21 @@ BEGIN
                         BREAK;
                     END
                 END
-                                    
+
                 IF (:ID_EXEC_PROC IS NULL) THEN
                     EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('По иску №' || :NUMBER_FILE || ', ИП по ответчику "' || :FIO_BY_SB || '" на ' || FORMAT_DATE(:DATE_PAYMENT) || ' не найдено.');
             END
             ELSE IF (:ID_WRIT_EXEC IS NULL) THEN
             BEGIN
                 ID_WRIT_EXEC = (SELECT RESULT FROM GET$WRIT_EXEC$SEARCH_BY_RESPOND(:NUMBER_FILE, :FIO_BY_SB));
-        
+
                 IF (:ID_WRIT_EXEC IS NOT NULL) THEN
                 BEGIN
                     ID_EXEC_PROC = (SELECT FIRST 1 EP.ID FROM DOC$LAWSUIT$EXEC_PROC EP WHERE EP.ID_WRIT_OF_EXEC = :ID_WRIT_EXEC AND EP.DATE_TRANSFERENCE < :DATE_PAYMENT ORDER BY EP.DATE_TRANSFERENCE DESC);
-                    
+
                     IF (:ID_EXEC_PROC IS NULL) THEN
                         EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Не найдено ИП (' || :NUMBER_WRIT_EXEC || ', оплачено ' || FORMAT_DATE(:DATE_PAYMENT) || ') по строке: ' || :PURPOSE);
-        
+
                     ID_LAWSUIT = (SELECT WE.ID_LAWSUIT FROM DOC$LAWSUIT$WRIT_OF_EXEC WE WHERE WE.ID = :ID_WRIT_EXEC);
                 END
             END
@@ -2562,7 +2548,7 @@ BEGIN
         BEGIN
             -- Проверка наличия номера после ВС
             PURPOSE = REPLACE(:PURPOSE, '№ ВС №', '№ ВС');
-    
+
             IF (SUBSTRING(:PURPOSE FROM POSITION('№ ВС ', :PURPOSE) + 2 FOR 12) CONTAINING '№ ') THEN
             BEGIN
                 NUMBER_WRIT_EXEC = REPLACE(SUBSTRING(:PURPOSE FROM POSITION('№ ВС ', :PURPOSE) + 2 FOR 14), ' ', '');
@@ -2573,19 +2559,19 @@ BEGIN
             END
             ELSE
                 NUMBER_WRIT_EXEC = REPLACE(SUBSTRING(:PURPOSE FROM POSITION('№ ВС ', :PURPOSE) + 2 FOR 12), ' ', '');
-    
+
     --            exception CHECK_EXCEPTION :NUMBER_WRIT_EXEC;
             -- Ищем исполнительное производство
             ID_EXEC_PROC = (SELECT FIRST 1 EP.ID FROM DOC$LAWSUIT$EXEC_PROC EP INNER JOIN DOC$LAWSUIT$WRIT_OF_EXEC WE ON WE.ID = EP.ID_WRIT_OF_EXEC WHERE ((WE.NUMBER = :NUMBER_WRIT_EXEC) OR (WE.NUMBER_WRIT_EXEC_FOR_DUTY = :NUMBER_WRIT_EXEC)) AND (EP.ID_BANK = :ID_BANK) AND (EP.DATE_TRANSFERENCE <= :DATE_PAYMENT) ORDER BY EP.DATE_TRANSFERENCE DESC);
             IF (:ID_EXEC_PROC IS NULL) THEN
                 EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Не найдено ИП (' || :NUMBER_WRIT_EXEC || ', оплачено ' || FORMAT_DATE(:DATE_PAYMENT) || ') по строке: ' || :PURPOSE);
-    
+
             ID_LAWSUIT = (SELECT WE.ID_LAWSUIT FROM DOC$LAWSUIT$EXEC_PROC EP INNER JOIN DOC$LAWSUIT$WRIT_OF_EXEC WE ON WE.ID = EP.ID_WRIT_OF_EXEC WHERE EP.ID = :ID_EXEC_PROC);
         END
-    
+
         IF ((:ID_EXEC_PROC IS NOT NULL) AND (:ID_WRIT_EXEC IS NULL)) THEN
             EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Указано ИП, но не указан ИЛ.');
-    
+
         SUSPEND;
     END
 
@@ -2616,7 +2602,7 @@ BEGIN
                 C.CORRECT_NUMBER_FILE,
                 UPPER(C.CORRECT_FIO)
             FROM
-                DIR$EXEC_PROC$CORRECTION C 
+                DIR$EXEC_PROC$CORRECTION C
             WHERE
                 C.ID = :ID_CORRECTION
             INTO
@@ -2629,98 +2615,98 @@ BEGIN
             POS_SNP_RESPONDENT = POSITION('Перечисление в АО "Газпром газораспределение дальний Восток":', :PURPOSE);
             IF (:POS_SNP_RESPONDENT > 0) THEN
                 POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('Перечисление в АО "Газпром газораспределение дальний Восток":');
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('Перечисление средств в счет погашения долга взыскателю :', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('Перечисление средств в счет погашения долга взыскателю :');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('КМС ГОСПОШЛИНА в пользу АО "ГАЗПРОМ газораспределение Дальний Восток"":', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('КМС ГОСПОШЛИНА в пользу АО "ГАЗПРОМ газораспределение Дальний Восток"":');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('КМС ДОЛГА в пользу АО "ГАЗПРОМ газораспределение Дальний Восток":', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('КМС ДОЛГА в пользу АО "ГАЗПРОМ газораспределение Дальний Восток":');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('КМС ДОЛГА в пользу ОАО "ХАБАРОВСККРАЙГАЗ":', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('КМС ДОЛГА в пользу ОАО "ХАБАРОВСККРАЙГАЗ":');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('Перечисление средств в счет погашения долга взыскателю :', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('Перечисление средств в счет погашения долга взыскателю :');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('(долг):', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('(долг):');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('(госпошлина):', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('(госпошлина):');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('Перечисление средств :', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('Перечисление средств :');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('Долг с:', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('Долг с:');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('Долг с :', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('Долг с :');
             END
-        
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('Долг с ', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('Долг с ');
             END
-    
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('Задолженность (АОГазпром газораспред.ДВ): ', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('Задолженность (АОГазпром газораспред.ДВ): ');
             END
-            
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION('КМС СУДЕБНЫЕ РАСХ в пользу АО "ГАЗПРОМ газораспределение Дальний Восток":', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH('КМС СУДЕБНЫЕ РАСХ в пользу АО "ГАЗПРОМ газораспределение Дальний Восток":');
             END
-            
+
             -- УФК по Хабаровскому краю (ОСП по Советско-Гаванскому району УФССП России по Хабаровскому краю и Еврейской автономной области)
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
@@ -2732,28 +2718,28 @@ BEGIN
                     POS_SNP_RESPONDENT = POSITION(' ', :PURPOSE, 42) + 1;-- Ищем пробел после окончания даты приказа
                 END
             END
-    
+
             IF (:POS_SNP_RESPONDENT = 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT = POSITION(':', :PURPOSE);
                 IF (:POS_SNP_RESPONDENT > 0) THEN
                     POS_SNP_RESPONDENT = :POS_SNP_RESPONDENT + CHAR_LENGTH(':');
             END
-        
+
             IF (:POS_SNP_RESPONDENT > 0) THEN
             BEGIN
                 POS_SNP_RESPONDENT_END = POSITION(' ', :PURPOSE, :POS_SNP_RESPONDENT);-- Фамилия
                 IF (:POS_SNP_RESPONDENT_END = 0) THEN
                     EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Нет окончания фамилии');
-                    
+
                 POS_SNP_RESPONDENT_END = POSITION(' ', :PURPOSE, :POS_SNP_RESPONDENT_END + 1);-- Имя
                 IF (:POS_SNP_RESPONDENT_END = 0) THEN
                     EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Нет окончания имени');
-        
+
                 POS_SNP_RESPONDENT_END = POSITION(' ', :PURPOSE, :POS_SNP_RESPONDENT_END + 1);-- Отчество
                 IF (:POS_SNP_RESPONDENT_END = 0) THEN
                     EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Нет окончания отчества');
-                
+
                 SNP_RESPONDENT = REPLACE(:SNP_RESPONDENT, 'Ё', 'Е');
                 SNP_RESPONDENT = UPPER(SUBSTRING(:PURPOSE FROM :POS_SNP_RESPONDENT FOR (:POS_SNP_RESPONDENT_END - :POS_SNP_RESPONDENT)));
 
@@ -2770,26 +2756,26 @@ BEGIN
         END
 
     --        EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Не найдено ФИО ответчика');
-    
+
         -- Ищем номер ИЛ
         POS_NUMBER_WRIT_EXEC = POSITION('ВС N ', :PURPOSE);
         IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
             POS_NUMBER_WRIT_EXEC = :POS_NUMBER_WRIT_EXEC + 5;
-    
+
         IF (:POS_NUMBER_WRIT_EXEC = 0) THEN
         BEGIN
             POS_NUMBER_WRIT_EXEC = POSITION('ВС ', UPPER(:PURPOSE));
             IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
                 POS_NUMBER_WRIT_EXEC = :POS_NUMBER_WRIT_EXEC + 3;
         END
-    
+
         IF (:POS_NUMBER_WRIT_EXEC = 0) THEN
         BEGIN
             POS_NUMBER_WRIT_EXEC = POSITION('ФС N ', :PURPOSE);
             IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
                 POS_NUMBER_WRIT_EXEC = :POS_NUMBER_WRIT_EXEC + 5;
         END
-    
+
         IF (:POS_NUMBER_WRIT_EXEC = 0) THEN
         BEGIN
             POS_NUMBER_WRIT_EXEC = POSITION('ФС ', UPPER(:PURPOSE));
@@ -2802,13 +2788,13 @@ BEGIN
             POS_NUMBER_WRIT_EXEC = POSITION('ВС', UPPER(:PURPOSE));
             IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
                 POS_NUMBER_WRIT_EXEC = :POS_NUMBER_WRIT_EXEC + 2;
-            
+
             -- Это может быть часть текста "Хабаровский"
             IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
                 IF (SUBSTRING(:PURPOSE FROM :POS_NUMBER_WRIT_EXEC FOR 1) NOT BETWEEN '0' AND '9') THEN
                     POS_NUMBER_WRIT_EXEC = 0;
         END
-    
+
         IF (:POS_NUMBER_WRIT_EXEC = 0) THEN
         BEGIN
             POS_NUMBER_WRIT_EXEC = POSITION('ИД ', :PURPOSE);
@@ -2822,21 +2808,21 @@ BEGIN
             IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
                 POS_NUMBER_WRIT_EXEC = :POS_NUMBER_WRIT_EXEC + CHAR_LENGTH('ИСПОЛНИТЕЛЬН ЛИСТ ');
         END
-    
+
         IF (:POS_NUMBER_WRIT_EXEC = 0) THEN
         BEGIN
             POS_NUMBER_WRIT_EXEC = POSITION('ИСПОЛНИТЕЛЬН ', UPPER(:PURPOSE));
             IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
                 POS_NUMBER_WRIT_EXEC = :POS_NUMBER_WRIT_EXEC + CHAR_LENGTH('ИСПОЛНИТЕЛЬН ');
         END
-    
+
         IF (:POS_NUMBER_WRIT_EXEC = 0) THEN
         BEGIN
             POS_NUMBER_WRIT_EXEC = POSITION('ИСПОЛНИТЕЛЬНЫЙ ', UPPER(:PURPOSE));
             IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
                 POS_NUMBER_WRIT_EXEC = :POS_NUMBER_WRIT_EXEC + CHAR_LENGTH('ИСПОЛНИТЕЛЬНЫЙ ');
         END
-    
+
         IF (:POS_NUMBER_WRIT_EXEC = 0) THEN
         BEGIN
             POS_NUMBER_WRIT_EXEC = POSITION('ИСПОЛНИТЕЛ ЛИСТ ', UPPER(:PURPOSE));
@@ -2850,72 +2836,72 @@ BEGIN
             IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
                 POS_NUMBER_WRIT_EXEC = :POS_NUMBER_WRIT_EXEC + CHAR_LENGTH('ИСП ЛИСТ ');
         END
-    
+
         IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
         BEGIN
             NUMBER_WRIT_EXEC = 'ВС' || SUBSTRING(:PURPOSE FROM :POS_NUMBER_WRIT_EXEC FOR 9);
 
             -- Ищем опечатку в номере ИЛ
             ID_CORRECTION = (SELECT C.ID FROM DIR$EXEC_PROC$CORRECTION C WHERE C.PAYMENT_SERIAL_WRIT_EXEC = :NUMBER_WRIT_EXEC AND C.TYPE_PAYMENT = 2);
-    
+
             IF (:ID_CORRECTION IS NOT NULL) THEN
                 SELECT
                     C.CORRECT_NUMBER_FILE,
                     UPPER(C.CORRECT_FIO)
                 FROM
-                    DIR$EXEC_PROC$CORRECTION C 
+                    DIR$EXEC_PROC$CORRECTION C
                 WHERE
                     C.ID = :ID_CORRECTION
                 INTO
                     :NUMBER_FILE,
                     :SNP_RESPONDENT;
         END
-        
+
         IF (:NUMBER_FILE IS NULL) THEN
             IF (:POS_NUMBER_WRIT_EXEC > 0) THEN
             BEGIN
                 NUMBER_WRIT_EXEC = 'ВС' || SUBSTRING(:PURPOSE FROM :POS_NUMBER_WRIT_EXEC FOR 9);
-    
+
                 IF (CHAR_LENGTH(:NUMBER_WRIT_EXEC) <> 11) THEN
                 BEGIN
                     -- Если номер ИЛ не полный, пытается найти его по совпадению известной части и ФИО
                     ID_WRIT_EXEC = (SELECT WE.ID FROM DOC$LAWSUIT$WRIT_OF_EXEC WE INNER JOIN REG$ABONENT$CITIZEN C ON C.ID = WE.ID_RESPONDENT WHERE (UPPER(C.SURNAME_NAME_PATRONYMIC) = :SNP_RESPONDENT) AND (WE.NUMBER STARTING WITH :NUMBER_WRIT_EXEC));
-    
+
                     IF (:ID_WRIT_EXEC IS NULL) THEN
                         EXIT;
                 END
                 ELSE
                 BEGIN
         --            EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Неправильный номер ИЛ: ' || COALESCE(:NUMBER_WRIT_EXEC, '<NULL>') || '.');
-        
+
                     IF ((SELECT COUNT(*) FROM DOC$LAWSUIT$WRIT_OF_EXEC WE WHERE WE.NUMBER = :NUMBER_WRIT_EXEC) > 1) THEN
                         EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Более 1 исп. листа с №' || :NUMBER_WRIT_EXEC || '.' || ASCII_CHAR(31) || 'Устраните дубликаты.');
-        
+
                     ID_WRIT_EXEC = (SELECT WE.ID FROM DOC$LAWSUIT$WRIT_OF_EXEC WE WHERE WE.NUMBER = :NUMBER_WRIT_EXEC);
                     IF (:ID_WRIT_EXEC IS NULL) THEN
                         ID_WRIT_EXEC = (SELECT WE.ID FROM DOC$LAWSUIT$WRIT_OF_EXEC WE WHERE WE.NUMBER_WRIT_EXEC_FOR_DUTY = :NUMBER_WRIT_EXEC);
                 END
-                
+
                 IF (:ID_WRIT_EXEC IS NULL) THEN
                 BEGIN
                     NUMBER_WRIT_EXEC = 'ФС' || SUBSTRING(:PURPOSE FROM :POS_NUMBER_WRIT_EXEC FOR 9);
-    
+
                     ID_WRIT_EXEC = (SELECT WE.ID FROM DOC$LAWSUIT$WRIT_OF_EXEC WE WHERE WE.NUMBER = :NUMBER_WRIT_EXEC);
                     IF (:ID_WRIT_EXEC IS NULL) THEN
                         ID_WRIT_EXEC = (SELECT WE.ID FROM DOC$LAWSUIT$WRIT_OF_EXEC WE WHERE WE.NUMBER_WRIT_EXEC_FOR_DUTY = :NUMBER_WRIT_EXEC);
                 END
-    
+
                 IF (:ID_WRIT_EXEC IS NOT NULL) THEN
                 BEGIN
         --            EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Исполнительный лист №' || :NUMBER_WRIT_EXEC || ' не найден.');
-        
+
                     ID_EXEC_PROC = (SELECT FIRST 1 EP.ID FROM DOC$LAWSUIT$EXEC_PROC EP WHERE EP.ID_WRIT_OF_EXEC = :ID_WRIT_EXEC AND EP.ID_BANK IS NULL AND EP.DATE_TRANSFERENCE < :DATE_PAYMENT ORDER BY EP.DATE_TRANSFERENCE DESC);
                     IF (:ID_EXEC_PROC IS NOT NULL) THEN
                     BEGIN
         --                EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Исполнительное производство по исп. листу №' || :NUMBER_WRIT_EXEC || ' не найдено.');
-            
+
                         ID_LAWSUIT = (SELECT WE.ID_LAWSUIT FROM DOC$LAWSUIT$WRIT_OF_EXEC WE WHERE WE.ID = :ID_WRIT_EXEC);
-                            
+
                         -- Проверяем соответствие ФИО
                         IF (:SNP_RESPONDENT IS NOT NULL) THEN
                             IF ((SELECT RESULT FROM GET$WRIT_EXEC$CHECK_RESPONDENT(:ID_WRIT_EXEC, :SNP_RESPONDENT)) = 0) THEN
@@ -2924,35 +2910,35 @@ BEGIN
                     END
                 END
             END
-    
+
         -- Ищем иск по номеру дела
         IF (:ID_LAWSUIT IS NULL) THEN
         BEGIN
             IF (:NUMBER_FILE IS NULL) THEN
                 NUMBER_FILE = SEARCH_NUMBER_FILE(:PURPOSE, FALSE);
-    
+
             -- Ищем необходимость исправления
             ID_CORRECTION = (SELECT C.ID FROM DIR$EXEC_PROC$CORRECTION C WHERE (C.PAYMENT_NUMBER_FILE IS NOT DISTINCT FROM :NUMBER_FILE) AND (UPPER(C.PAYMENT_FIO) = :SNP_RESPONDENT));
-            
+
             IF (:ID_CORRECTION IS NOT NULL) THEN
                 SELECT
                     C.CORRECT_NUMBER_FILE,
                     UPPER(C.CORRECT_FIO)
                 FROM
-                    DIR$EXEC_PROC$CORRECTION C 
+                    DIR$EXEC_PROC$CORRECTION C
                 WHERE
                     C.ID = :ID_CORRECTION
                 INTO
                     :NUMBER_FILE,
                     :SNP_RESPONDENT;
-        
+
 --            exception EXC$CHECK_DATA COALESCE(:NUMBER_FILE, '<NULL>') || ' ' || COALESCE(:SNP_RESPONDENT, '<NULL>');
 
             IF (:NUMBER_FILE IS NOT NULL) THEN
             BEGIN
                 -- Получаем исполнительный лист
                 ID_WRIT_EXEC = (SELECT RESULT FROM GET$WRIT_EXEC$SEARCH_BY_RESPOND(:NUMBER_FILE, :SNP_RESPONDENT));
-    
+
                 IF (:ID_WRIT_EXEC IS NULL) THEN
                 BEGIN
                     -- Убираем номер участка
@@ -2964,7 +2950,7 @@ BEGIN
                             NUMBER_FILE = :NUMBER_FILE_WO_CD;
                     END
                 END
-    
+
                 IF (:ID_WRIT_EXEC IS NULL) THEN
                 BEGIN
                     -- Меняем формат года
@@ -2974,13 +2960,13 @@ BEGIN
 
                     ID_WRIT_EXEC = (SELECT RESULT FROM GET$WRIT_EXEC$SEARCH_BY_RESPOND(:NUMBER_FILE, :SNP_RESPONDENT));
                 END
-    
+
                 IF (:ID_WRIT_EXEC IS NOT NULL) THEN
                 BEGIN
     --                EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Иск №' || :NUMBER_FILE || ' не найден (ответчик ' || :SNP_RESPONDENT || ').');
-    
+
                     ID_LAWSUIT = (SELECT WE.ID_LAWSUIT FROM DOC$LAWSUIT$WRIT_OF_EXEC WE WHERE WE.ID = :ID_WRIT_EXEC);
-    
+
                     -- Получаем исполнительное производство
                     ID_EXEC_PROC = (SELECT FIRST 1 EP.ID FROM DOC$LAWSUIT$EXEC_PROC EP WHERE EP.ID_WRIT_OF_EXEC = :ID_WRIT_EXEC AND EP.ID_BANK IS NULL AND EP.DATE_TRANSFERENCE < :DATE_PAYMENT ORDER BY EP.DATE_TRANSFERENCE DESC);
                     IF (:ID_EXEC_PROC IS NULL) THEN
@@ -2991,7 +2977,7 @@ BEGIN
                 END
             END
         END
-    
+
         IF (:ID_EXEC_PROC IS NOT NULL) THEN
         BEGIN
             IF (:ID_LAWSUIT IS NULL) THEN
@@ -3028,7 +3014,7 @@ BEGIN
             :ID_LAWSUIT,
             :ID_WRIT_EXEC,
             :ID_EXEC_PROC;
-    
+
         -- Если иск не найден, выходим
         IF (:ID_LAWSUIT IS NULL) THEN
         BEGIN
@@ -3036,7 +3022,7 @@ BEGIN
             SUSPEND;
             EXIT;
         END
-        
+
 --        ID_NF_ABONENT_FOR_PAYMENT_LAWSU = (SELECT ID_NF_ABONENT_FOR_PAYMENT_LAWSU FROM DIR$ENTERPRISE$GROUP_DISTRICT WHERE ID = PKG$CONNECT.ID_GROUP_DISTRICT());
 --        IF (:ID_NF_ABONENT_FOR_PAYMENT_LAWSU IS NULL) THEN
 --            EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('В группе участков "'
@@ -3051,11 +3037,11 @@ BEGIN
         -- Проверяем дублирование оплаты
         IF (EXISTS(SELECT 1 FROM BAT$RECEIPT$RECEIPT R INNER JOIN BAT$RECEIPT$BATCH B ON B.ID = R.ID_BATCH WHERE (B.ID_SOURCE = :ID_SOURCE) AND (R.DATE_PAYMENT = :DATE_PAYMENT) AND (R.NUMBER = :NUMBER_RECEIPT))) THEN
             EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Квитанция №' || :NUMBER_RECEIPT || ' от ' || FORMAT_DATE(:DATE_PAYMENT) || ' на сумму ' || :AMOUNT || ' уже создана.');
-    
+
         -- Создаем пачку
         IF ((SELECT COUNT(*) FROM BAT$RECEIPT$BATCH B WHERE (B.ID_GROUP_DISTRICT = :ID_GROUP_DISTRICT) AND (B.ID_SOURCE = :ID_SOURCE) AND (B.DATE_ACCOUNT = :DATE_ACCOUNT)) > 1) THEN
             EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('За ' || FORMAT_DATE(:DATE_ACCOUNT) || ' найдено более 1 пачки квитанций.');
-    
+
         ID_BATCH = (SELECT B.ID FROM BAT$RECEIPT$BATCH B WHERE (B.ID_GROUP_DISTRICT = :ID_GROUP_DISTRICT) AND (B.ID_SOURCE = :ID_SOURCE) AND (B.DATE_ACCOUNT = :DATE_ACCOUNT));
         IF (:ID_BATCH IS NULL) THEN
         BEGIN
@@ -3080,7 +3066,7 @@ BEGIN
             ID
         INTO
             :RESULT;
-        
+
         SUSPEND;
     END
 
@@ -3112,7 +3098,7 @@ BEGIN
     DECLARE VARIABLE ID_ABONENT DOM$ABONENT;
     BEGIN
         PURPOSE = REPLACE(REPLACE(:PURPOSE, '-', ''), ' ', '');
-        
+
         -- Поиск лицевого счета по шаблону
         -- ПАО "МТС-БАНК"
         ID_ABONENT = DETECT_PERS_ACCOUNT(:PURPOSE, 'л/сч', 'Плата');
@@ -3268,15 +3254,15 @@ BEGIN
         BEGIN
             -- Пробуем распознать плательщика
             ID_ABONENT = RECOGN_INDIVID(:PURPOSE);
-                    
+
             -- Получаем лицевой счет
             IF (:ID_ABONENT IS NULL) THEN
             BEGIN
                 EXIT;
 --                EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('Лицевой счет не распознан: "' || :PURPOSE || '" (' || :NUMBER_RECEIPT || ').');
-    
+
     /*            ID_ABONENT = (SELECT ID_NF_ABONENT_FOR_PAYMENT_LAWSU FROM DIR$ENTERPRISE$GROUP_DISTRICT WHERE ID = :ID_GROUP_DISTRICT);
-    
+
                 IF (:ID_ABONENT IS NULL) THEN
                     EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA('В группе участков "'
                         || (SELECT NAME FROM DIR$ENTERPRISE$GROUP_DISTRICT WHERE ID = :ID_GROUP_DISTRICT)
@@ -3302,7 +3288,7 @@ BEGIN
             ID_GROUP_DISTRICT = 2;
         ELSE
             EXECUTE PROCEDURE OPER$EXCEPTION$CHECK_DATA_BRANC(:ID_BRANCH, 'Не указана группа участков по умолчанию.');
-        
+
         -- Определяем, кто ведет учет
         IF ((SELECT RESULT FROM GET$ABONENT$CHARGING_GAS_AMURCC(:ID_ABONENT)) = 1) THEN
             COMMENT_BATCH = 'АмурВЦ';
@@ -3374,7 +3360,7 @@ BEGIN
             BEGIN
                 IN AUTONOMOUS TRANSACTION DO
                     DELETE FROM DIR$EXEC_PROC$CORRECTION WHERE ID = :ID_CORRECTION;
-                
+
                 EXCEPTION;
             -- ### this is line 1731 which was mentioned in the ticket ### -- END
         END
@@ -3457,7 +3443,7 @@ BEGIN
     DECLARE VARIABLE ERROR D_VARCHAR_255;
     BEGIN
     END
-        
+
     PROCEDURE SEND_TO_LIST_USERS(LIST_USERS D_LIST_ID NOT NULL, LIST_USERS_COPY D_LIST_ID, SUBJECT DOM$EMAIL_SUBJECT NOT NULL, BODY_MAIL DOM$EMAIL_BODY NOT NULL)
     AS
     DECLARE VARIABLE EMAILS DOM$EMAILS;
@@ -3616,19 +3602,18 @@ exit;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('- line .*', ''), ('At line .*', '')])
 
-expected_stderr_1 = """
+expected_stderr = """
 Statement failed, SQLSTATE = 42000
 Dynamic SQL Error
 -SQL error code = -104
 -Token unknown - line 1735, column 9
--IF  
+-IF
 """
 
 @pytest.mark.version('>=3.0.5')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

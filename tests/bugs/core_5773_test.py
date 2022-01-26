@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5773
-# title:        PSQL cursor doesn't see inserted record
-# decription:   
-#                     Confirmed wrong result on 3.0.4.32924
-#                     Works fine on 3.0.4.32939: OK, 1.453s.
-#                 
-# tracker_id:   CORE-5773
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6036
+ISSUE:       6036
+TITLE:       PSQL cursor doesn't see inserted record
+DESCRIPTION:
+JIRA:        CORE-5773
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set count on;
     create or alter procedure sp_test as begin end;
@@ -50,16 +40,15 @@ test_script_1 = """
     select * from sp_test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ROWCOUNT                        1
     Records affected: 1
 """
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

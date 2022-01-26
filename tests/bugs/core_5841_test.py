@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5841
-# title:        No permission for SELECT access to BLOB field if a TABLE is accessed using VIEW
-# decription:   
-#                   Confirmed bug on 3.0.4.32985
-#                   Checked on both Srp and Legacy_Auth, builds:
-#                       3.0.4.33053: OK, 4.125s.
-#                       4.0.0.1224: OK, 4.203s.
-#                
-# tracker_id:   CORE-5841
-# min_versions: ['3.0']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6102
+ISSUE:       6102
+TITLE:       No permission for SELECT access to BLOB field if a TABLE is accessed using VIEW
+DESCRIPTION:
+JIRA:        CORE-5841
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('BLOB_FLD.*', 'BLOB_FLD')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set list on;
     set blob all;
@@ -41,11 +29,11 @@ test_script_1 = """
            );
 
     create view v_test as
-    select 
-        name_fld, 
+    select
+        name_fld,
         blob_fld,
-        bool_fld 
-        from test 
+        bool_fld
+        from test
     ;
 
     grant select on test to view v_test;
@@ -53,12 +41,12 @@ test_script_1 = """
     commit;
 
     insert into test (
-        name_fld, 
-        blob_fld, 
+        name_fld,
+        blob_fld,
         bool_fld)
     values (
         upper('tmp$c5841'),
-        lpad('', 70, 'qwerty'), 
+        lpad('', 70, 'qwerty'),
         true
     );
 
@@ -81,9 +69,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('BLOB_FLD.*', 'BLOB_FLD')])
 
-expected_stdout_1 = """
+expected_stdout = """
     NAME_FLD                        TMP$C5841
     BLOB_FLD                        80:0
     qwertyqwertyqwertyqwertyqwertyqwertyqwertyqwertyqwertyqwertyqwertyqwer
@@ -92,8 +80,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

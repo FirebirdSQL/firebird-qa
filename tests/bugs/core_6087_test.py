@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6087
-# title:        Problem with casting within UNION
-# decription:   
-#                   Confirmed bug on WI-T4.0.0.1533.
-#                   Checked on 4.0.0.1534: OK, 1.465s.
-#                
-# tracker_id:   CORE-6087
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6337
+ISSUE:       6337
+TITLE:       Problem with casting within UNION
+DESCRIPTION:
+JIRA:        CORE-6087
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
    set list on;
    select cast(0.1234 as int) as result from rdb$database
    union all
@@ -31,16 +21,15 @@ test_script_1 = """
    ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RESULT                          0.0000
     RESULT                          0.1234
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

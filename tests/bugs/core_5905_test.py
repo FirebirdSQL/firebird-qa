@@ -1,47 +1,36 @@
 #coding:utf-8
-#
-# id:           bugs.core_5905
-# title:         Inconsistencies with PSQL FUNCTION vs UDF
-# decription:   
-#                    *** FOR FB 3.X ONLY ***
-#                       Test uses UDF 'strlen' declared in ib_udf.sql script which for sure present in every FB snapshot.
-#                       After this, we try to create PSQL function with the same signature.
-#               
-#                   *** FOR FB 4.X AND ABOVE  ***
-#                       Added separate code for running on FB 4.0.x.
-#                       UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
-#                       Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement 
-#                       in UDR library "udf_compat", see it in folder: ../plugins/udr/
-#               
-#                   Confirmed inconsistence output on: 3.0.4.32972, 4.0.0.875 and 4.0.0.1172 
-#                   (4.x - output phrase "UDF THE_FRAC" instead of "Function THE_FRAC" on attempt to drop function).
-#               
-#                   Checked on:
-#                       3.0.5.33086: OK, 1.937s.
-#                       4.0.0.1340: OK, 3.157s.
-#                       4.0.0.1378: OK, 4.281s.
-#                
-# tracker_id:   CORE-5905
-# min_versions: ['3.0']
-# versions:     3.0.4, 4.0
-# qmid:         None
+
+"""
+ID:          issue-6163
+ISSUE:       6163
+TITLE:       Inconsistencies with PSQL FUNCTION vs UDF
+DESCRIPTION:
+  *** FOR FB 3.X ONLY ***
+  Test uses UDF 'strlen' declared in ib_udf.sql script which for sure present in every FB snapshot.
+  After this, we try to create PSQL function with the same signature.
+
+  *** FOR FB 4.X AND ABOVE  ***
+  Added separate code for running on FB 4.0.x.
+  UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
+  Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
+  in UDR library "udf_compat", see it in folder: ../plugins/udr/
+
+  Confirmed inconsistence output on: 3.0.4.32972, 4.0.0.875 and 4.0.0.1172
+  (4.x - output phrase "UDF THE_FRAC" instead of "Function THE_FRAC" on attempt to drop function).
+JIRA:        CORE-5905
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+# version: 3.0
 
 test_script_1 = """
     set list on;
     create view v_check as
-    select 
+    select
         rf.rdb$function_name as func_name
        ,rf.rdb$legacy_flag as legacy_flag
     from rdb$functions rf where rf.rdb$function_name = upper('substrlen')
@@ -91,7 +80,7 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
     FUNC_NAME                       SUBSTRLEN
@@ -100,6 +89,7 @@ expected_stdout_1 = """
     FUNC_NAME                       SUBSTRLEN
     LEGACY_FLAG                     0
 """
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 38000
     unsuccessful metadata update
@@ -119,25 +109,18 @@ def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    assert (act_1.clean_stderr == act_1.clean_expected_stderr and
+            act_1.clean_stdout == act_1.clean_expected_stdout)
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     set list on;
     create view v_check as
-    select 
+    select
         rf.rdb$function_name as func_name
        ,rf.rdb$legacy_flag as legacy_flag
-    from rdb$functions rf 
+    from rdb$functions rf
     where rf.rdb$function_name = upper('the_frac')
     ;
     commit;
@@ -174,10 +157,10 @@ test_script_2 = """
 
     set term ^;
     alter function the_frac( val double precision ) returns double precision as
-    begin 
-        return 1. / abs(val - cast(val as int) )  ; 
+    begin
+        return 1. / abs(val - cast(val as int) )  ;
     end
-    ^ 
+    ^
     set term ;^
     commit;
 
@@ -201,21 +184,22 @@ test_script_2 = """
     commit;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2)
 
 expected_stdout_2 = """
     THE_FRAC_1                      -0.1415926535897931
 
-    FUNC_NAME                       THE_FRAC                                                                                                                                                                                                                                                    
+    FUNC_NAME                       THE_FRAC
     LEGACY_FLAG                     0
 
-    FUNC_NAME                       THE_FRAC                                                                                                                                                                                                                                                    
+    FUNC_NAME                       THE_FRAC
     LEGACY_FLAG                     0
 
     THE_FRAC_2                      7.062513305931052
 
     THE_FRAC_3                      -0.1415926535897931
 """
+
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 38000
     unsuccessful metadata update
@@ -235,6 +219,5 @@ def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.expected_stderr = expected_stderr_2
     act_2.execute()
-    assert act_2.clean_stderr == act_2.clean_expected_stderr
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
-
+    assert (act_2.clean_stderr == act_2.clean_expected_stderr and
+            act_2.clean_stdout == act_2.clean_expected_stdout)

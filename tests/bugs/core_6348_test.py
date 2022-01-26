@@ -268,6 +268,7 @@ expected_stdout_1 = """
     Median time for loading blob: acceptable.
 """
 
+@pytest.mark.skip('FIXME: firebird.conf')
 @pytest.mark.version('>=3.0.7')
 def test_1(act_1: Action):
-    pytest.skip("Requires changes to firebird.conf")
+    pytest.fail("Not IMPLEMENTED")

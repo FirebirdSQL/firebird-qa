@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_5853
-# title:        Forward-compatible expressions LOCALTIME and LOCALTIMESTAMP
-# decription:   
-#                   2.5.9.27115: OK, 0.375s.
-#                   3.0.4.33019: OK, 0.937s.
-#                   ::: NOTE :::
-#                   Test for 4.0 currently is EXCLUDED because changes not yet merged in master.
-#                
-# tracker_id:   CORE-5853
-# min_versions: ['2.5.9']
-# versions:     2.5.9, 4.0
-# qmid:         None
+
+"""
+ID:          issue-6113
+ISSUE:       6113
+TITLE:       Forward-compatible expressions LOCALTIME and LOCALTIMESTAMP
+DESCRIPTION:
+JIRA:        CORE-5853
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.9
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+# version: 3.0
 
 test_script_1 = """
     set planonly;
@@ -32,7 +22,7 @@ test_script_1 = """
     select localtimestamp from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
     PLAN (RDB$DATABASE NATURAL)
@@ -47,13 +37,6 @@ def test_1(act_1: Action):
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     set planonly;
@@ -62,7 +45,7 @@ test_script_2 = """
     --select localtimestamp from rdb$database;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2)
 
 expected_stdout_2 = """
     PLAN (RDB$DATABASE NATURAL)
@@ -73,4 +56,3 @@ def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_stdout == act_2.clean_expected_stdout
-

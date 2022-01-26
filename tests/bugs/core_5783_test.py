@@ -1,84 +1,34 @@
 #coding:utf-8
-#
-# id:           bugs.core_5783
-# title:        execute statement ignores the text of the SQL-query after a comment of the form "-"
-# decription:
-#                  We concatenate query from several elements and use '
-#               ' delimiter only to split this query into lines.
-#                  Also, we put single-line comment in SEPARATE line between 'select' and column/value that is obtained from DB.
-#                  Final query will lokk like this (lines are separated only by SINGLE delimiter, ascii_char(13), NO '
-#               ' here!):
-#                  ===
-#                      select
-#                      -- comment N1
-#                      'foo' as msg'
-#                      from
-#                      -- comment N2
-#                      rdb$database
-#                  ===
-#                  This query should NOT raise any exception and must produce normal output (string 'foo').
-#                  Thanks to hvlad for suggestions.
-#
-#                  Confirmed bug on:
-#                      3.0.4.32924
-#                      4.0.0.918
-#                  -- got:
-#                      Error while preparing SQL statement:
-#                      - SQLCODE: -104
-#                      - Dynamic SQL Error
-#                      - SQL error code = -104
-#                      - Unexpected end of command - line 1, column 1
-#                      -104
-#                      335544569
-#                  Checked on:
-#                      3.0.4.32941: OK, 1.187s.
-#                      4.0.0.947: OK, 1.328s.
-#
-# tracker_id:   CORE-5783
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6046
+ISSUE:       6046
+TITLE:       execute statement ignores the text of the SQL-query after a comment of the form "-"
+DESCRIPTION:
+    We concatenate query from several elements and use <CR> delimiter only to split this query into lines.
+    Also, we put single-line comment in SEPARATE line between 'select' and column/value that is obtained from DB.
+    Final query will lokk like this (lines are separated only by SINGLE delimiter, ascii_char(13), NO <CR> here!):
+    ===
+        select
+        -- comment N1
+        'foo' as msg'
+        from
+        -- comment N2
+        rdb$database
+    ===
+    This query should NOT raise any exception and must produce normal output (string 'foo').
+    Thanks to hvlad for suggestions.
+JIRA:        CORE-5783
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-# import sys
-#  import os
-#
-#  cur = db_conn.cursor()
-#
-#  # NB: one need to use TWO backslash characters ('\\r') as escape for CR only within fbtest.
-#  # Single '' should be used when running under "pure" Python control:
-#
-#  sql_expr = ' '.join( ('select', '\\r', '-- comment N1', '\\r', "'foo' as msg", '\\r', 'from', '\\r', '-- comment N2', '\\r', 'rdb$database') )
-#
-#  for i in sql_expr.split('\\r'):
-#      print('Query line: ' + i)
-#
-#  #sql_expr = 'select 1 FROM test'
-#  cur.execute( sql_expr )
-#  for r in cur:
-#      print( 'Query result: ' + r[0] )
-#
-#  cur.close()
-#
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     Query line: select
     Query line:  -- comment N1
     Query line:  'foo' as msg
@@ -89,8 +39,8 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action, capsys):
-    with act_1.db.connect() as con:
+def test_1(act: Action, capsys):
+    with act.db.connect() as con:
         c = con.cursor()
         sql_expr = "select \r -- comment N1 \r 'foo' as msg \r from \r -- comment N2 \r rdb$database"
         for line in sql_expr.split('\r'):
@@ -99,6 +49,6 @@ def test_1(act_1: Action, capsys):
         for row in c:
             print(f'Query result: {row[0]}')
     #
-    act_1.expected_stdout = expected_stdout_1
-    act_1.stdout = capsys.readouterr().out
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout

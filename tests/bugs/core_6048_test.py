@@ -1,64 +1,67 @@
 #coding:utf-8
-#
-# id:           bugs.core_6048
-# title:        Provide ability to see current state of DB encryption
-# decription:
-#                   Test database that is created by fbtest framework will be encrypted here using IBSurgeon Demo Encryption package
-#                   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
-#                   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
-#                   This file was preliminary stored in FF Test machine.
-#                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
-#
-#                   Anyone who wants to run this test on his own machine must
-#                   1) download https://ib-aid.com/download/crypt/CryptTest.zip AND
-#                   2) PURCHASE LICENSE and get from IBSurgeon file plugins\\dbcrypt.conf with apropriate expiration date and other info.
-#
-#                   ################################################ ! ! !    N O T E    ! ! ! ##############################################
-#                   FF tests storage (aka "fbt-repo") does not (and will not) contain any license file for IBSurgeon Demo Encryption package!
-#                   #########################################################################################################################
-#
-#                   Checked on:
-#                       4.0.0.1575: OK, 3.024s.
-#
-#                   === NOTE-1 ===
-#                   In case of "Crypt plugin DBCRYPT failed to load/607/335544351" check that all
-#                   needed files from IBSurgeon Demo Encryption package exist in %FB_HOME% and %FB_HOME%\\plugins
-#                   %FB_HOME%:
-#                       283136 fbcrypt.dll
-#                      2905600 libcrypto-1_1-x64.dll
-#                       481792 libssl-1_1-x64.dll
-#
-#                   %FB_HOME%\\plugins:
-#                       297984 dbcrypt.dll
-#                       306176 keyholder.dll
-#                          108 DbCrypt.conf
-#                          856 keyholder.conf
-#
-#                   === NOTE-2 ===
-#                   Version of DbCrypt.dll of october-2018 must be replaced because it has hard-coded
-#                   date of expiration rather than reading it from DbCrypt.conf !!
-#
-#                   === NOTE-3 ===
-#                   firebird.conf must contain following line:
-#                       KeyHolderPlugin = KeyHolder
-#
-#
-# tracker_id:   CORE-6048
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6298
+ISSUE:       6298
+TITLE:       Provide ability to see current state of DB encryption
+DESCRIPTION:
+    Test database that is created by fbtest framework will be encrypted here using IBSurgeon Demo Encryption package
+    ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
+    License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
+    This file was preliminary stored in FF Test machine.
+    Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
+
+    Anyone who wants to run this test on his own machine must
+    1) download https://ib-aid.com/download/crypt/CryptTest.zip AND
+    2) PURCHASE LICENSE and get from IBSurgeon file plugins\\dbcrypt.conf with apropriate expiration date and other info.
+
+    ################################################ ! ! !    N O T E    ! ! ! ##############################################
+    FF tests storage (aka "fbt-repo") does not (and will not) contain any license file for IBSurgeon Demo Encryption package!
+    #########################################################################################################################
+
+    Checked on:
+        4.0.0.1575: OK, 3.024s.
+
+    === NOTE-1 ===
+    In case of "Crypt plugin DBCRYPT failed to load/607/335544351" check that all
+    needed files from IBSurgeon Demo Encryption package exist in %FB_HOME% and %FB_HOME%\\plugins
+    %FB_HOME%:
+        283136 fbcrypt.dll
+       2905600 libcrypto-1_1-x64.dll
+        481792 libssl-1_1-x64.dll
+
+    %FB_HOME%\\plugins:
+        297984 dbcrypt.dll
+        306176 keyholder.dll
+           108 DbCrypt.conf
+           856 keyholder.conf
+
+    === NOTE-2 ===
+    Version of DbCrypt.dll of october-2018 must be replaced because it has hard-coded
+    date of expiration rather than reading it from DbCrypt.conf !!
+
+    === NOTE-3 ===
+    firebird.conf must contain following line:
+        KeyHolderPlugin = KeyHolder
+JIRA:        CORE-6048
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
+act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-init_script_1 = """"""
+expected_stdout = """
+    Is database encrypted ?         1
+    Is database encrypted ?         0
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: encryption plugin')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -186,15 +189,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Is database encrypted ?         1
-    Is database encrypted ?         0
-"""
-
-@pytest.mark.skip('FIXME: encryption plugin')
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

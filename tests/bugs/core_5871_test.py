@@ -1,29 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_5871
-# title:        Incorrect caching of the subquery result (procedure call) in independent queries
-# decription:   
-#                  Beside stanalone stored procedure it was decided to check also stored function, and packaged SP and func.
-#                  Checked on: FB40SS, build 4.0.0.1143: OK, 2.219s.
-#                
-# tracker_id:   CORE-5871
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6130
+ISSUE:       6130
+TITLE:       Incorrect caching of the subquery result (procedure call) in independent queries
+DESCRIPTION:
+  Beside stanalone stored procedure it was decided to check also stored function, and packaged SP and func.
+JIRA:        CORE-5871
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create or alter procedure p1 (n int) returns (r int) as
     begin
@@ -111,8 +102,8 @@ test_script_1 = """
           )
           from rdb$database
         into s4;
-        
-      
+
+
       end
       suspend;
     end
@@ -124,9 +115,9 @@ test_script_1 = """
     select * from sp_test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     S1                               1=1 2=2 3=3
     S2                               1=1 2=2 3=3
     S3                               1=1 2=2 3=3
@@ -134,8 +125,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

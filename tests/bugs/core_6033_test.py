@@ -1,35 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6033
-# title:        SUBSTRING(CURRENT_TIMESTAMP) does not work
-# decription:   
-#                   Confirmed bug on WI-T4.0.0.1457, got:
-#                   ===
-#                     Statement failed, SQLSTATE = 22001
-#                     arithmetic exception, numeric overflow, or string truncation
-#                     -string right truncation
-#                     -expected length 34, actual 38
-#                   ===
-#                   Checked on 4.0.0.1479: OK, 1.299s.
-#                
-# tracker_id:   CORE-6033
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6283
+ISSUE:       6283
+TITLE:       SUBSTRING(CURRENT_TIMESTAMP) does not work
+DESCRIPTION:
+JIRA:        CORE-6033
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     execute block as
         declare c varchar(100);
@@ -39,10 +23,8 @@ test_script_1 = """
     ^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    act.execute()

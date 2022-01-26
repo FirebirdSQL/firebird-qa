@@ -1,33 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_5985
-# title:        Regression: ROLE does not passed in ES/EDS (specifying it in the statement is ignored)
-# decription:   
-#                    Checked on:
-#                       400SS, build 4.0.0.1421: OK, 2.204s.
-#                       302SS, build 3.0.5.33097: OK, 1.214s.
-#                
-# tracker_id:   CORE-5985
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-6237
+ISSUE:       6237
+TITLE:       Regression: ROLE does not passed in ES/EDS (specifying it in the statement is ignored)
+DESCRIPTION:
+JIRA:        CORE-5985
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+user_foo = user_factory('db', name='tmp$c5985_foo', password='123')
+user_bar = user_factory('db', name='tmp$c5985_bar', password='456')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    create user tmp$c5985_foo password '123';
-    create user tmp$c5985_bar password '456';
-    commit;
+test_script = """
     create role worker;
     create role manager;
     commit;
@@ -53,26 +42,22 @@ test_script_1 = """
     begin
         v_extd = 'localhost:' || rdb$get_context('SYSTEM', 'DB_NAME');
         v_sttm = 'select mon$user, mon$role from mon$attachments where mon$attachment_id = current_connection';
-        
+
         execute statement
             v_sttm
             on external v_extd
             as user v_user password v_pswd role v_role
         into
             who_am_i, whats_my_role;
-        
+
         suspend;
- 
+
     end
     ^
     set term ;^
     commit;
 
     connect '$(DSN)' user 'SYSDBA' password 'masterkey';
-    drop user tmp$c5985_foo;
-    drop user tmp$c5985_bar;
-    commit;
-
     --                                    ||||||||||||||||||||||||||||
     -- ###################################|||  FB 4.0+, SS and SC  |||##############################
     --                                    ||||||||||||||||||||||||||||
@@ -87,12 +72,11 @@ test_script_1 = """
     -- #############################################################################################
     delete from mon$attachments where mon$attachment_id != current_connection;
     commit;
-
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AM_I                        TMP$C5985_BAR
     WHATS_MY_ROLE                   MANAGER
 
@@ -101,8 +85,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, user_foo, user_bar):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

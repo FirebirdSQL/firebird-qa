@@ -1,30 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_5847
-# title:        "Malformed string" instead of key value in PK violation error message
-# decription:
-#                    Confirmed bug on: 3.0.4.32972, 4.0.0.955.
-#                    Works fine on:
-#                       FB25SC, build 2.5.9.27112: OK, 1.187s.
-#                       FB30SS, build 3.0.4.32992: OK, 1.485s.
-#                       FB40SS, build 4.0.0.1023: OK, 1.500s.
-#
-# tracker_id:   CORE-5847
-# min_versions: ['2.5.9']
-# versions:     2.5.9
-# qmid:         None
+
+"""
+ID:          issue-6108
+ISSUE:       6108
+TITLE:       "Malformed string" instead of key value in PK violation error message
+DESCRIPTION:
+JIRA:        CORE-5847
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 from firebird.driver import DatabaseError
 
-# version: 2.5.9
-# resources: None
-
-#substitutions_1 = [('Problematic key value is .*', 'Problematic key value is')]
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table test(
         uid char(16) character set octets,
         constraint test_uid_pk primary key(uid) using index test_uid_pk
@@ -34,62 +22,15 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  db_conn.close()
-#
-#  con1 = fdb.connect(dsn = dsn, charset = 'utf8')
-#  con2 = fdb.connect(dsn = dsn)
-#
-#  sql_cmd='insert into test(uid) select uid from test rows 1'
-#  cur1=con1.cursor()
-#  cur2=con2.cursor()
-#  for i in(1,2,):
-#      c = cur1 if i==1 else cur2
-#      try:
-#          c.execute(sql_cmd)
-#      except Exception, e:
-#          for k,x in enumerate(e):
-#              print(i,' ',k,':',x)
-#      i+=1
-#
-#  con1.close()
-#  con2.close()
-#
-#---
+act = python_act('db')
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-#expected_stdout_1 = """
-    #1   0 : Error while executing SQL statement:
-    #- SQLCODE: -803
-    #- violation of PRIMARY or UNIQUE KEY constraint "TEST_UID_PK" on table "TEST"
-    #- Problematic key value is ("UID" = x'AA70F788EB634073AD328C284F775A3E')
-    #1   1 : -803
-    #1   2 : 335544665
-
-    #2   0 : Error while executing SQL statement:
-    #- SQLCODE: -803
-    #- violation of PRIMARY or UNIQUE KEY constraint "TEST_UID_PK" on table "TEST"
-    #- Problematic key value is ("UID" = x'AA70F788EB634073AD328C284F775A3E')
-    #2   1 : -803
-    #2   2 : 335544665
-#"""
-
-@pytest.mark.version('>=2.5.9')
-def test_1(act_1: Action):
-    with act_1.db.connect(charset='utf8') as con1, act_1.db.connect() as con2:
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    with act.db.connect(charset='utf8') as con1, act.db.connect() as con2:
         c1 = con1.cursor()
         c2 = con2.cursor()
-        cmd = 'insert into test(uid) select uid from test rows 1'
         for c in [c1, c2]:
             with pytest.raises(DatabaseError, match='.*Problematic key value is.*'):
-                c.execute(cmd)
+                c.execute('insert into test(uid) select uid from test rows 1')

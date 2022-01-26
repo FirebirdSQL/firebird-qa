@@ -1,40 +1,30 @@
 #coding:utf-8
-#
-# id:           bugs.core_5990
-# title:        Pool of external connections
-# decription:
-#                   Test assumes that firebird.conf contains:
-#                     ExtConnPoolSize = 100 (or at any other value >= 6)
-#                     ExtConnPoolLifeTime = 10
-#                   We run six execute blocks with COMMIT after each of them.
-#                   When EDS pool is enabled then every new execute block will use the same attachment as it was established in the 1st EB.
-#                   We check this by running query that show number of duplicates for each of N attachments: this number must be equal to N-1.
-#                   ::: NB :::
-#                   Final statement must be 'ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL' otherwise DB file will be kept by engine at least
-#                   for 10 seconds after this test finish (see parameter 'ExtConnPoolLifeTime').
-#
-#                   Thank hvlad for additional explanations, discuss in e-mail was 26.04.19 09:38.
-#
-#                   Checked on 4.0.0.1501 (both SS and CS): OK, 1.343s.
-#
-# tracker_id:   CORE-5990
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6240
+ISSUE:       6240
+TITLE:       Pool of external connections
+DESCRIPTION:
+  Test assumes that firebird.conf contains:
+    ExtConnPoolSize = 100 (or at any other value >= 6)
+    ExtConnPoolLifeTime = 10
+  We run six execute blocks with COMMIT after each of them.
+  When EDS pool is enabled then every new execute block will use the same attachment as it was established in the 1st EB.
+  We check this by running query that show number of duplicates for each of N attachments: this number must be equal to N-1.
+  ::: NB :::
+  Final statement must be 'ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL' otherwise DB file will be kept by engine at least
+  for 10 seconds after this test finish (see parameter 'ExtConnPoolLifeTime').
+
+  Thank hvlad for additional explanations, discuss in e-mail was 26.04.19 09:38.
+JIRA:        CORE-5990
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate view v_conn as
     select
         cast(rdb$get_context('SYSTEM', 'EXT_CONN_POOL_SIZE') as int) as pool_size,
@@ -157,9 +147,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     DUP_CNT                         5
     ID                              2
@@ -175,8 +165,9 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    if int(act.get_config('ExtConnPoolSize')) < 6 or int(act.get_config('ExtConnPoolLifeTime')) < 10:
+        pytest.skip('Needs config: ExtConnPoolSize >=6, ExtConnPoolLifeTime >= 10')
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

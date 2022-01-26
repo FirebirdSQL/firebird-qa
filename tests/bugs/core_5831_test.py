@@ -1,57 +1,65 @@
 #coding:utf-8
-#
-# id:           bugs.core_5831
-# title:        Not user friendly output of gstat at encrypted database
-# decription:
-#                   We create new database ('tmp_core_5831.fdb') and try to encrypt it usng IBSurgeon Demo Encryption package
-#                   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
-#                   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
-#                   This file was preliminary stored in FF Test machine.
-#                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
-#
-#                   After test database will be created, we try to encrypt it using 'alter database encrypt with <plugin_name> ...' command
-#                   (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\ folder that implements encryption).
-#                   Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
-#
-#                   After this we detach from DB, run 'gstat -h' and filter its attributes and messages from 'Variable header' section.
-#                   In the output of gstat we check that its 'tail' will look like this:
-#                   ===
-#                       Attributes	force write, encrypted, plugin DBCRYPT
-#                       Crypt checksum:	MUB2NTJqchh9RshmP6xFAiIc2iI=
-#                       Key hash: ask88tfWbinvC6b1JvS9Mfuh47c=
-#                       Encryption key name: RED
-#                   ===
-#                   (concrete values for checksum and hash will be ignored - see 'substitutions' section).
-#
-#                   Finally, we change this temp DB statee to full shutdown in order to have 100% ability to drop this file.
-#
-#                   Checked on:
-#                       40sS, build 4.0.0.1487: OK, 3.347s.
-#                       40Cs, build 4.0.0.1487: OK, 3.506s.
-#                       30sS, build 3.0.5.33120: OK, 2.697s.
-#                       30Cs, build 3.0.5.33120: OK, 3.054s.
-#
-#                   15.04.2021. Adapted for run both on Windows and Linux. Checked on:
-#                     Windows: 4.0.0.2416
-#                     Linux:   4.0.0.2416
-#
-# tracker_id:   CORE-5831
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6092
+ISSUE:       6092
+TITLE:       Not user friendly output of gstat at encrypted database
+DESCRIPTION:
+    We create new database ('tmp_core_5831.fdb') and try to encrypt it usng IBSurgeon Demo Encryption package
+    ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
+    License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
+    This file was preliminary stored in FF Test machine.
+    Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
+
+    After test database will be created, we try to encrypt it using 'alter database encrypt with <plugin_name> ...' command
+    (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\ folder that implements encryption).
+    Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
+
+    After this we detach from DB, run 'gstat -h' and filter its attributes and messages from 'Variable header' section.
+    In the output of gstat we check that its 'tail' will look like this:
+    ===
+        Attributes	force write, encrypted, plugin DBCRYPT
+        Crypt checksum:	MUB2NTJqchh9RshmP6xFAiIc2iI=
+        Key hash: ask88tfWbinvC6b1JvS9Mfuh47c=
+        Encryption key name: RED
+    ===
+    (concrete values for checksum and hash will be ignored - see 'substitutions' section).
+
+    Finally, we change this temp DB statee to full shutdown in order to have 100% ability to drop this file.
+
+    Checked on:
+        40sS, build 4.0.0.1487: OK, 3.347s.
+        40Cs, build 4.0.0.1487: OK, 3.506s.
+        30sS, build 3.0.5.33120: OK, 2.697s.
+        30Cs, build 3.0.5.33120: OK, 3.054s.
+
+    15.04.2021. Adapted for run both on Windows and Linux. Checked on:
+      Windows: 4.0.0.2416
+      Linux:   4.0.0.2416
+JIRA:        CORE-5831
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+substitutions = [('ATTRIBUTES FORCE WRITE, ENCRYPTED, PLUGIN.*', 'ATTRIBUTES FORCE WRITE, ENCRYPTED'),
+                 ('CRYPT CHECKSUM.*', 'CRYPT CHECKSUM'), ('KEY HASH.*', 'KEY HASH')]
 
-substitutions_1 = [('ATTRIBUTES FORCE WRITE, ENCRYPTED, PLUGIN.*', 'ATTRIBUTES FORCE WRITE, ENCRYPTED'),
-                   ('CRYPT CHECKSUM.*', 'CRYPT CHECKSUM'), ('KEY HASH.*', 'KEY HASH')]
+db = db_factory()
 
-init_script_1 = """"""
+act = python_act('db', substitutions=substitutions)
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+expected_stdout = """
+    ATTRIBUTES FORCE WRITE, ENCRYPTED, PLUGIN DBCRYPT
+    CRYPT CHECKSUM: MUB2NTJQCHH9RSHMP6XFAIIC2II=
+    KEY HASH: ASK88TFWBINVC6B1JVS9MFUH47C=
+    ENCRYPTION KEY NAME: RED
+"""
+
+@pytest.mark.skip('FIXME: encryption plugin')
+@pytest.mark.version('>=3.0.4')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -177,17 +185,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    ATTRIBUTES FORCE WRITE, ENCRYPTED, PLUGIN DBCRYPT
-    CRYPT CHECKSUM: MUB2NTJQCHH9RSHMP6XFAIIC2II=
-    KEY HASH: ASK88TFWBINVC6B1JVS9MFUH47C=
-    ENCRYPTION KEY NAME: RED
-"""
-
-@pytest.mark.skip('FIXME: encryption plugin')
-@pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

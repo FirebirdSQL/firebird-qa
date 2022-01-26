@@ -1,39 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_6044
-# title:        ISQL issues with increased identifier length
-# decription:
-#                   Confirmed problem on WI-T4.0.0.1421: FB crashed when we create sequence
-#               	with name = 63 on-ascii characters and then ask it using 'show sequ' command.
-#               	Also, FB crashe when we created a table with column which name contains 63
-#               	non-ascii characters and then this table metadata is queried by 'show table <T>' command.
-#                   Checked on 4.0.0.1485: OK, 1.576s.
-#
-#               	18.08.2020: added filter for 'current value: ...' of sequence. FB 4.x became incompatible
-#               	with previous versions since 06-aug-2020.
-#                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-#
-#
-# tracker_id:   CORE-6044
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6294
+ISSUE:       6294
+TITLE:       ISQL issues with increased identifier length
+DESCRIPTION:
+JIRA:        CORE-6044
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+substitutions = [('current value.*', 'current value'),
+                 ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
+                 ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
 
-substitutions_1 = [('current value.*', 'current value'),
-                   ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
-                   ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
+db = db_factory(charset='UTF8')
 
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script_ = """
 	set bail on;
 	create  exception "ИсключениеДляСообщенияПользователюОНевозможностиПреобразованияя" 'Ваша строка не может быть преобразована в число.';
 	create collation  "КоллацияДляСортировкиСтроковыхДанныхКоторыеПредставимыКакЧислаа" for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
@@ -57,9 +41,9 @@ test_script_1 = """
 	show table "ТаблицаКотораяВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю"; -- this also led to crash
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script_, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
 	ДоменДляХраненияСтроковыхДанныхКоторыеПредставимыДляСортировкии
 	ИсключениеДляСообщенияПользователюОНевозможностиПреобразованияя; Msg: Ваша строка не может быть преобразована в число.
 	КоллацияДляСортировкиСтроковыхДанныхКоторыеПредставимыКакЧислаа, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=153.88;NUMERIC-SORT=1'
@@ -72,8 +56,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute(charset='utf8')
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute(charset='utf8')
+    assert act.clean_stdout == act.clean_expected_stdout

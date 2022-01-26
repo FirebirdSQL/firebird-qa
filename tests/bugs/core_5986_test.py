@@ -1,32 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_5986
-# title:        Incorrect evaluation of NULL IS [NOT] {FALSE | TRUE}
-# decription:   
-#                    Test was implemented on the basis of 7IWD2-02-Foundation-2011-12.pdf, page 322
-#                    (as it was suggested by Mark Rotteveel in the ticket, see his note 17/Jan/19 03:13 PM).
-#                    Checked on:
-#                       4.0.0.1421: OK, 1.485s.
-#                       3.0.5.33097: OK, 0.844s.
-#                
-# tracker_id:   CORE-5986
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          issue-6238
+ISSUE:       6238
+TITLE:       Incorrect evaluation of NULL IS [NOT] {FALSE | TRUE}
+DESCRIPTION:
+  Test was implemented on the basis of 7IWD2-02-Foundation-2011-12.pdf, page 322
+  (as it was suggested by Mark Rotteveel in the ticket, see his note 17/Jan/19 03:13 PM).
+JIRA:        CORE-5986
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set list on;
 
@@ -36,7 +25,7 @@ test_script_1 = """
 
     -- Data for output in Truth-tables:
     recreate table test( x boolean, y boolean );
-    insert into test(x,y) select 
+    insert into test(x,y) select
     true,   true    from rdb$database union all select
     true,   false   from rdb$database union all select
     true,   unknown from rdb$database union all select
@@ -62,10 +51,10 @@ test_script_1 = """
     execute block returns( x boolean, y boolean, "x_IS_y" boolean) as
         declare run_expr varchar(128);
     begin
-        for 
+        for
             select
                  x
-                ,y 
+                ,y
                 ,''||coalesce(x,'unknown') || ' is ' || coalesce(y,'unknown')
             from test
         into x, y, run_expr
@@ -115,13 +104,11 @@ test_script_1 = """
         <null>  <false> <false>
         <null>  <null>  <true>
     */
-
-
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     B1                              <false>
     B2                              <true>
     B3                              <null>
@@ -239,8 +226,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

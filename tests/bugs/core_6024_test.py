@@ -1,33 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6024
-# title:        FB3.0.4.33063 vs FB3.0.5.33100 manual plan cause "index cannot be used in the specified plan"
-# decription:   
-#                   Confirmed bug on 3.0.5.33152 (got "index PK_WPLATA cannot be used in the specified plan").
-#                   On 3.0.5.33212 execution for expression WITHOUT explicit 'plan ...' clause will use: PLAN (W ORDER PK_WPLATA).
-#                   On 3.0.5.33215 both plans are as expected.
-#               
-#                   ::: NB :::
-#                   As of 20.12.2019, FB 4.0.0.1693 has the same problem and not yet fixed.
-#                
-# tracker_id:   CORE-6024
-# min_versions: ['3.0.5']
-# versions:     3.0.5
-# qmid:         None
+
+"""
+ID:          issue-6274
+ISSUE:       6274
+TITLE:       FB3.0.4.33063 vs FB3.0.5.33100 manual plan cause "index cannot be used in the specified plan"
+DESCRIPTION:
+JIRA:        CORE-6024
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table wplata
     (
         dyr_id smallint not null,
@@ -92,16 +78,15 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN SORT (W INDEX (IXA_WPLATA__KONTRAHENT__PK))
     PLAN (W ORDER PK_WPLATA INDEX (IXA_WPLATA__KONTRAHENT__PK))
 """
 
 @pytest.mark.version('>=3.0.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

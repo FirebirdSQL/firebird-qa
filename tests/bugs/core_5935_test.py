@@ -1,204 +1,43 @@
 #coding:utf-8
-#
-# id:           bugs.core_5935
-# title:        Bugcheck 165 (cannot find tip page) // Classic and SuperClassic only
-# decription:
-#                   ::: NB :::
-#                   Bug can be reproduced only when FIRST of ISQL sessions is lacunhed with '-n' switch.
-#                   Second ISQL must be started *WITHOUT* this switch!
-#                   Absence of '-n' means that ISQL always starts two transactions (first for DML and second for DDL)
-#                   and they both are committed at the same time for each executed statement.
-#                   Because of this, we use here two transaction for second connection and, furthermore, we use
-#                   the same isolation levels for them, namely: SNAPSHOT for DML and READ COMMITTED for DDL.
-#                   This is done by using custom TPB objects with apropriate properties - see 'dml_tpb' and 'ddl_tpb'.
-#
-#                   Database forced writes is changed here to OFF in order to make execution faster.
-#
-#                   Confirmed bug on 3.0.4.32972 (build date: 11-may-2018), got:
-#                       SQLCODE: -902 / - ... consistency check (can't continue after bugcheck) / -902 / 335544333
-#                   firebird.log will contain after this:
-#                       internal Firebird consistency check (cannot find tip page (165), file: tra.cpp line: 2331)
-#
-#                   Checked on 3.0.5.33084 -- all OK.
-#
-#
-# tracker_id:   CORE-5935
-# min_versions: ['3.0.5']
-# versions:     3.0.5
-# qmid:         None
 
-import pytest
-from firebird.qa import db_factory, python_act, Action
-from firebird.driver import tpb, Isolation
+"""
+ID:          issue-2224
+ISSUE:       2224
+TITLE:       Bugcheck 165 (cannot find tip page)
+DESCRIPTION:
+  Classic and SuperClassic only
 
-# version: 3.0.5
-# resources: None
+  Bug can be reproduced only when FIRST of ISQL sessions is lacunhed with '-n' switch.
+  Second ISQL must be started *WITHOUT* this switch!
+  Absence of '-n' means that ISQL always starts two transactions (first for DML and second for DDL)
+  and they both are committed at the same time for each executed statement.
+  Because of this, we use here two transaction for second connection and, furthermore, we use
+  the same isolation levels for them, namely: SNAPSHOT for DML and READ COMMITTED for DDL.
+  This is done by using custom TPB objects with apropriate properties - see 'dml_tpb' and 'ddl_tpb'.
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  svc = fdb.services.connect(host = 'localhost:service_mgr')
-#  svc.set_write_mode(database = db_conn.database_name, mode = services.WRITE_BUFFERED)
-#  svc.close()
-#
-#  db_conn.close()
-#
-#  #FB_CLNT=sys.argv[1]
-#  #DB_NAME='localhost:e30'
-#
-#  dml_tpb = fdb.TPB()
-#  dml_tpb.lock_resolution = fdb.isc_tpb_wait
-#  dml_tpb.isolation_level = fdb.isc_tpb_concurrency
-#
-#  ddl_tpb = fdb.TPB() # READ_COMMITTED | NO_REC_VERSION | WAIT | READ_WRITE)
-#  ddl_tpb.lock_resolution = fdb.isc_tpb_wait
-#  ddl_tpb.isolation_level = (fdb.isc_tpb_read_committed, fdb.isc_tpb_no_rec_version)
-#
-#  con1 = fdb.connect(dsn = dsn) # DB_NAME, fb_library_name = FB_CLNT )
-#
-#  con1.execute_immediate('recreate table a (id int)')
-#  con1.commit()
-#
-#  #---------------------------------------------------------
-#
-#  con1.execute_immediate('create index idx_a on a(id)')
-#  con1.commit()
-#
-#  sql='''
-#  create or alter procedure p_gen_tx(n int) as
-#      declare i int = 0;
-#  begin
-#      while (i < n) do
-#        in autonomous transaction do
-#          i = i + 1;
-#  end
-#  '''
-#
-#  con1.execute_immediate(sql)
-#  con1.commit()
-#  con1.close()
-#
-#  #----------------------------------------------------------
-#
-#  con1 = fdb.connect(dsn = dsn) # DB_NAME, fb_library_name = FB_CLNT )
-#
-#  tx1a = con1.trans( default_tpb = dml_tpb )
-#  tx1a.begin()
-#
-#  cur1 = tx1a.cursor()
-#  cur1.execute('delete from a')
-#  tx1a.commit()
-#
-#  tx1a.begin()
-#  cur1.execute("select current_transaction, rdb$get_context('SYSTEM', 'ISOLATION_LEVEL') from rdb$database")
-#  for r in cur1:
-#      pass
-#
-#  # ---------------------------------------------------------------
-#
-#  con2 = fdb.connect(dsn = dsn) # DB_NAME, fb_library_name = FB_CLNT )
-#
-#  tx2a = con2.trans( default_tpb = dml_tpb )
-#  tx2b = con2.trans( default_tpb = ddl_tpb )
-#
-#  tx2a.begin()
-#  tx2b.begin()
-#
-#  cur2 = tx2a.cursor()
-#  cur2.callproc('p_gen_tx', (33000,) )
-#  tx2a.commit()
-#  tx2b.commit()
-#
-#  tx2a.begin()
-#  tx2b.begin()
-#
-#  cur2.execute('insert into a(id) values(?)', (tx2a.transaction_id,) )
-#  tx2a.commit()
-#  tx2b.commit()
-#
-#  tx2a.begin()
-#  tx2b.begin()
-#  cur2.execute('set statistics index idx_a')
-#  tx2a.commit()
-#  tx2b.commit()
-#
-#  tx2a.begin()
-#  tx2b.begin()
-#  cur2.execute('select rdb$index_name, rdb$record_version from rdb$indices where rdb$relation_name = ?', ('A',) )
-#  for r in cur2:
-#      pass
-#  cur2.execute('select id from a where id > ?', (0,))
-#  for r in cur2:
-#      pass
-#  tx2a.commit()
-#  tx2b.commit()
-#
-#  tx2a.begin()
-#  tx2b.begin()
-#  cur2.callproc('p_gen_tx', (33000,) )
-#  tx2a.commit()
-#  tx2b.commit()
-#
-#  # -----------------------------------------------------------------
-#
-#  tx1a.commit()
-#
-#  # -----------------------------------------------------------------
-#
-#  tx2a.begin()
-#  tx2b.begin()
-#  cur2.execute('select id from a where id > ?', (0,))
-#  for r in cur2:
-#      pass
-#
-#  # -----------------------------------------------------------------
-#
-#  tx1a.begin()
-#  cur1.execute('select id from a where id > ?', (0,))
-#  for r in cur1:
-#      pass
-#
-#  cur1.close()
-#  tx1a.rollback()
-#  con1.close()
-#
-#  cur2.close()
-#  tx2a.rollback()
-#  tx2b.rollback()
-#  con2.close()
-#
-#  print('Passed.')
-#
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Passed.
+  Confirmed bug on 3.0.4.32972 (build date: 11-may-2018), got:
+    SQLCODE: -902 / - ... consistency check (can't continue after bugcheck) / -902 / 335544333
+  firebird.log will contain after this:
+    internal Firebird consistency check (cannot find tip page (165), file: tra.cpp line: 2331)
+JIRA:        CORE-5935
 """
 
+import pytest
+from firebird.qa import *
+from firebird.driver import tpb, Isolation
+
+db = db_factory()
+
+act = python_act('db')
+
 @pytest.mark.version('>=3.0.5')
-def test_1(act_1: Action):
+def test_1(act: Action):
     # CONCURRENCY | WAIT | READ_WRITE
     dml_tpb = tpb(isolation=Isolation.CONCURRENCY)
     # READ_COMMITTED | NO_REC_VERSION | WAIT | READ_WRITE
     ddl_tpb = tpb(isolation=Isolation.READ_COMMITTED_NO_RECORD_VERSION)
     #
-    with act_1.db.connect() as con:
+    with act.db.connect() as con:
         con.execute_immediate('recreate table a (id int)')
         con.commit()
         con.execute_immediate('create index idx_a on a(id)')
@@ -211,11 +50,11 @@ def test_1(act_1: Action):
               in autonomous transaction do
                 i = i + 1;
         end
-"""
+        """
         con.execute_immediate(sql)
         con.commit()
     # Test
-    con = act_1.db.connect()
+    con = act.db.connect()
     tx1a = con.transaction_manager(dml_tpb)
     tx1a.begin()
     cur1 = tx1a.cursor()
@@ -226,7 +65,7 @@ def test_1(act_1: Action):
     cur1.execute("select current_transaction, rdb$get_context('SYSTEM', 'ISOLATION_LEVEL') from rdb$database")
     cur1.fetchall()
     # ---
-    con2 = act_1.db.connect()
+    con2 = act.db.connect()
     tx2a = con2.transaction_manager(dml_tpb)
     tx2b = con2.transaction_manager(ddl_tpb)
     #

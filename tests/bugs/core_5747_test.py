@@ -1,32 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_5747
-# title:        User can grant usage privilege by himself
-# decription:   
-#                   Confirmed bug on: 4.0.0.890; 3.0.4.32912
-#                   Works fine on:
-#                       3.0.4.32917: OK, 1.891s.
-#                       4.0.0.907: OK, 1.765s.
-#                   Note: beside generator we also have to check the same issue about grant usage on exception.
-#                
-# tracker_id:   CORE-5747
-# min_versions: ['3.0.4']
-# versions:     3.0.4, 4.0
-# qmid:         None
+
+"""
+ID:          issue-6010
+ISSUE:       6010
+TITLE:       User can grant usage privilege by himself
+DESCRIPTION:
+  beside generator we also have to check the same issue about grant usage on exception.
+JIRA:        CORE-5747
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+substitutions = [('no G privilege with grant option on object .*',
+                  'no USAGE privilege with grant option on object'),
+                 ('GEN_FOR_DBA_ONLY', ''), ('EXC_FOR_DBA_ONLY', '')]
 
-substitutions_1 = [('no G privilege with grant option on object .*', 'no USAGE privilege with grant option on object'), ('GEN_FOR_DBA_ONLY', ''), ('EXC_FOR_DBA_ONLY', '')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     commit;
     connect '$(DSN)' user sysdba password 'masterkey';
 
@@ -46,7 +38,7 @@ test_script_1 = """
     connect '$(DSN)' user tmp$c5747 password '123';
 
     set list on;
-    
+
     select gen_id(gen_for_dba_only,1) as next_secret_system_sequence from rdb$database;
     set term ^;
     execute block as
@@ -63,7 +55,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
+
+# version: 3.0
 
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
@@ -81,58 +75,12 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.4,<4.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr_1
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('no G privilege with grant option on object .*', 'no USAGE privilege with grant option on object'), ('GEN_FOR_DBA_ONLY', ''), ('EXC_FOR_DBA_ONLY', '')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-test_script_2 = """
-    commit;
-    connect '$(DSN)' user sysdba password 'masterkey';
-
-    create or alter user tmp$c5747 password '123';
-    commit;
-
-    recreate sequence gen_for_dba_only;
-    recreate exception exc_for_dba_only 'Your names is: @1 - and you should not be able to use this exception!';
-    commit;
-
-    connect '$(DSN)' user tmp$c5747 password '123';
-
-    grant usage on generator gen_for_dba_only to tmp$c5747;
-    grant usage on exception exc_for_dba_only to tmp$c5747;
-    commit;
-
-    connect '$(DSN)' user tmp$c5747 password '123';
-
-    set list on;
-    
-    select gen_id(gen_for_dba_only,1) as next_secret_system_sequence from rdb$database;
-    set term ^;
-    execute block as
-    begin
-        exception exc_for_dba_only using (current_user);
-    end
-    ^
-    set term ;^
-
-    commit;
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user tmp$c5747;
-    commit;
-
-"""
-
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 42000
@@ -155,8 +103,7 @@ expected_stderr_2 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action):
-    act_2.expected_stderr = expected_stderr_2
-    act_2.execute()
-    assert act_2.clean_stderr == act_2.clean_expected_stderr
-
+def test_2(act: Action):
+    act.expected_stderr = expected_stderr_2
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

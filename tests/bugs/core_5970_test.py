@@ -1,35 +1,22 @@
 #coding:utf-8
-#
-# id:           bugs.core_5970
-# title:        Built-in cryptographic functions
-# decription:
-#                   Issues found during implementing this test - see CORE-6185, CORE-6186.
-#                   This test checks only ability to call ENCRYPT()/DECRYPT() functions with different parameters.
-#                   Also, it checks that <source> -> encrypt(<source>) -> decrypt(encrypted_source) gives the same <source>.
-#
-#                   Checked on:
-#                       4.0.0.1646 SS: 3.657s.
-#                       4.0.0.1637 SC: 3.271s.
-#                       4.0.0.1633 CS: 4.191s.
-#
-# tracker_id:   CORE-5970
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6222
+ISSUE:       6222
+TITLE:       Built-in cryptographic functions
+DESCRIPTION:
+  Issues found during implementing this test - see CORE-6185, CORE-6186.
+  This test checks only ability to call ENCRYPT()/DECRYPT() functions with different parameters.
+  Also, it checks that <source> -> encrypt(<source>) -> decrypt(encrypted_source) gives the same <source>.
+JIRA:        CORE-5970
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set blob all;
     set list on;
     create or alter procedure sp_block_test(a_alg varchar(30)) as begin end;
@@ -340,9 +327,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ENCRYPTION_ALGORITHM            AES
     ENCRYPTION_MODE                 CBC
     ENC_KEY_OCTET_LENGTH            16
@@ -1375,7 +1362,8 @@ expected_stdout_1 = """
       : table:   owner:
 
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22023
     Too big counter value -123, maximum 16 can be used
 
@@ -1390,10 +1378,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

@@ -1,38 +1,27 @@
 #coding:utf-8
-#
-# id:           bugs.core_5804
-# title:        Multiple error in REVOKE operator
-# decription:   
-#                    WARNING-1: test contains two separate sections for executing in 3.0.4+ and 4.0: 
-#                    one can NOT use 'DEFAULT' keyword in GRANT/REVOKE role statements. 
-#                    Such blocks are commented in 3.0 section.
-#               
-#                    WARNING-2: 'SHOW GRANTS' command was replaced with appropriate select from <view> in order to provide stable output.
-#               
-#                    Checked on:
-#                        WI-V3.0.4.32963, 
-#                        WI-T4.0.0.967.
-#                    
-#                    NB.
-#                    Firebird never does any kind of implicit revoke if we use GRANT statement that contains "less" options that previously issued one.
-#                    See additional explanations in the ticket 24/Apr/18 05:06 PM 
-#                
-# tracker_id:   CORE-5804
-# min_versions: ['3.0.4']
-# versions:     3.0.4, 4.0
-# qmid:         None
+
+"""
+ID:          issue-6066
+ISSUE:       6066
+TITLE:       Multiple error in REVOKE operator
+DESCRIPTION:
+  WARNING-1: test contains two separate sections for executing in 3.0.4+ and 4.0:
+  one can NOT use 'DEFAULT' keyword in GRANT/REVOKE role statements.
+  Such blocks are commented in 3.0 section.
+
+  WARNING-2: 'SHOW GRANTS' command was replaced with appropriate select from <view> in order to provide stable output.
+
+  Firebird never does any kind of implicit revoke if we use GRANT statement that contains "less" options that previously issued one.
+  See additional explanations in the ticket 24/Apr/18 05:06 PM
+JIRA:        CORE-5804
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+db = db_factory()
 
 # version: 3.0.4
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     set bail on;
@@ -66,7 +55,7 @@ test_script_1 = """
        ,p.rdb$object_type     as obj_type
        ,p.rdb$relation_name   as rel_name
        ,p.rdb$field_name      as fld_name
-    from rdb$database r left join rdb$user_privileges p on 1=1 
+    from rdb$database r left join rdb$user_privileges p on 1=1
     where p.rdb$user in( upper('tmp$c5804_john'), upper('tmp$r5804_boss'), upper('tmp$r5804_acnt') )
     order by 1,2,3,4,5,6,7,8
     ;
@@ -208,18 +197,18 @@ test_script_1 = """
 
     -- check revoke role --
     -----------------------
-    grant tmp$r5804_boss to 
+    grant tmp$r5804_boss to
     -- role -- allowed only in 4.0
     tmp$r5804_acnt;
-    commit; 
+    commit;
 
     -- execute procedure sp_msg('after grant tmp$r5804_boss to role tmp$r5804_acnt');
     -- select v.* from v_grants v;
 
-    revoke tmp$r5804_boss from 
+    revoke tmp$r5804_boss from
     -- role -- allowed only in 4.0
     tmp$r5804_acnt;
-    commit; 
+    commit;
 
     -- execute procedure sp_msg('revoked role tmp$r5804_boss from role tmp$r5804_acnt');
     -- select v.* from v_grants v; -- no rows should be displayed now
@@ -235,10 +224,10 @@ test_script_1 = """
 
         -- check revoke default of role --
         ----------------------------------
-        grant default tmp$r5804_boss 
+        grant default tmp$r5804_boss
         -- to role -- allowed only in 4.0
         tmp$r5804_acnt; -- ==> rdb$privileges.rdb$field_name = 'D' after this
-        commit; 
+        commit;
 
         --execute procedure sp_msg('after grant default tmp$r5804_boss to role tmp$r5804_acnt');
         --select v.* from v_roles v;
@@ -249,23 +238,23 @@ test_script_1 = """
         select v.* from v_grants v; -- ==> rdb$privileges.rdb$field_name must be 'D'
 
         revoke default tmp$r5804_boss from role tmp$r5804_acnt;-- revoke only default option
-        commit; 
+        commit;
 
         execute procedure sp_msg('after revoked only default tmp$r5804_boss from role tmp$r5804_acnt');
         select v.* from v_grants v; -- ==> rdb$privileges.rdb$field_name must be NULL
 
         revoke tmp$r5804_boss from role tmp$r5804_acnt; -- revoke whole role
-        commit; 
+        commit;
 
 
 
         -- check revoke whole role which was granted with DEFAULT clause --
         -------------------------------------------------------------------
         grant default tmp$r5804_boss to role tmp$r5804_acnt;
-        commit; 
+        commit;
 
         revoke tmp$r5804_boss from role tmp$r5804_acnt;
-        commit; 
+        commit;
 
         execute procedure sp_msg('after revoked role that was granted with DEFAULT clause');
         select v.* from v_grants v; -- ==> no rows must be displayed now
@@ -284,7 +273,7 @@ test_script_1 = """
     grant tmp$r5804_boss to
     -- role -- allowed only in 4.0
     tmp$r5804_acnt with admin option; -- rdb$roles.rdb$grant_option must be 2 after this
-    commit; 
+    commit;
 
     execute procedure sp_msg('before revoke admin option from role that was granted with this');
     select v.* from v_grants v;
@@ -292,7 +281,7 @@ test_script_1 = """
     revoke admin option for tmp$r5804_boss from
     -- role  -- allowed only in 4.0
     tmp$r5804_acnt; -- rdb$roles.rdb$grant_option must be 0 after this
-    commit; 
+    commit;
 
     execute procedure sp_msg('after revoke admin option from role that was granted with this');
     select v.* from v_grants v;
@@ -305,32 +294,32 @@ test_script_1 = """
         -- check revoke default from role granted with admin option --
         --------------------------------------------------------------
         grant default tmp$r5804_boss to role tmp$r5804_acnt with admin option;
-        commit; 
+        commit;
 
         execute procedure sp_msg('before revoke default tmp$r5804_boss that was granted with admin option to tmp$r5804_acnt');
         select v.* from v_grants v;
 
         revoke default tmp$r5804_boss from role tmp$r5804_acnt;
-        commit; 
+        commit;
 
         execute procedure sp_msg('after revoke default tmp$r5804_boss that was granted with admin option to tmp$r5804_acnt');
         select v.* from v_grants v;
 
         revoke tmp$r5804_boss from role tmp$r5804_acnt;
-        commit; 
+        commit;
 
 
         -- check revoke admin option from default role --
         -------------------------------------------------
         grant default tmp$r5804_boss to role tmp$r5804_acnt with admin option;
-        commit; 
+        commit;
 
 
         execute procedure sp_msg('before revoke admin option from default role');
         select v.* from v_grants v;
 
         revoke admin option for tmp$r5804_boss from role tmp$r5804_acnt;
-        commit; 
+        commit;
 
         execute procedure sp_msg('after revoke admin option from default role');
         select v.* from v_grants v;
@@ -340,10 +329,10 @@ test_script_1 = """
 
 
     -- added by myself:
-    revoke tmp$r5804_boss from 
-    -- role 
+    revoke tmp$r5804_boss from
+    -- role
     tmp$r5804_acnt;
-    commit; 
+    commit;
 
 
 
@@ -355,20 +344,20 @@ test_script_1 = """
         -- check revoke both GO and AO from granted role --
         ---------------------------------------------------
         grant default tmp$r5804_boss to role tmp$r5804_acnt with admin option;
-        commit; 
+        commit;
 
         execute procedure sp_msg('before revoke admin option for default role tmp$r5804_boss from role tmp$r5804_acnt');
         select v.* from v_grants v;
 
         revoke admin option for default tmp$r5804_boss from role tmp$r5804_acnt;
-        commit; 
+        commit;
 
         execute procedure sp_msg('after revoke admin option for default role tmp$r5804_boss from role tmp$r5804_acnt');
         select v.* from v_grants v;
 
         -- me:
         revoke tmp$r5804_boss from role tmp$r5804_acnt;
-        commit; 
+        commit;
 
     end of commented block-3
     *********************************/
@@ -382,7 +371,7 @@ test_script_1 = """
 
     -- commented in 3.0: grant default tmp$r5804_boss to role tmp$r5804_acnt;
 
-    grant tmp$r5804_boss to 
+    grant tmp$r5804_boss to
     -- role -- allowed in 4.0 only
     tmp$r5804_acnt with admin option;
 
@@ -409,7 +398,7 @@ test_script_1 = """
     select v.* from v_grants v; -- must be the same as it was at point-2a
 
     revoke all on t from tmp$c5804_john;
-    revoke tmp$r5804_boss from 
+    revoke tmp$r5804_boss from
     -- role -- allowed in 4.0 only
     tmp$r5804_acnt;
     drop role tmp$r5804_boss;
@@ -424,7 +413,7 @@ test_script_1 = """
 
     create role tmp$r5804_boss;
     create role tmp$r5804_acnt;
-    grant tmp$r5804_boss to 
+    grant tmp$r5804_boss to
     -- role  -- allowed in 4.0 only
     tmp$r5804_acnt;
     commit;
@@ -432,7 +421,7 @@ test_script_1 = """
     select v.* from v_grants v;
 
 
-    grant tmp$r5804_boss to 
+    grant tmp$r5804_boss to
     -- role  -- allowed in 4.0 only
     tmp$r5804_acnt with admin option;
     commit;
@@ -479,7 +468,7 @@ test_script_1 = """
     end of commented block-4
     **********************************/
 
-    grant tmp$r5804_boss to 
+    grant tmp$r5804_boss to
     -- role -- aloowed in 4.0 only
     tmp$r5804_acnt with admin option;
     commit;
@@ -495,7 +484,7 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
     MSG                             revoked grant option for update of the whole table
@@ -503,22 +492,22 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F1                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F1
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F2                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F2
 
 
     Records affected: 2
@@ -528,22 +517,22 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F1                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F1
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F2                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F2
 
 
     Records affected: 2
@@ -553,22 +542,22 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F2                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F2
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F1                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F1
 
 
     Records affected: 2
@@ -578,22 +567,22 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F1                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F1
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F2                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F2
 
 
     Records affected: 2
@@ -608,13 +597,13 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F2                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F2
 
 
     Records affected: 1
@@ -624,13 +613,13 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
-    FLD_NAME                        F1                                                                                           
+    REL_NAME                        T
+    FLD_NAME                        F1
 
 
     Records affected: 1
@@ -645,12 +634,12 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$R5804_ACNT                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                               
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -661,12 +650,12 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$R5804_ACNT                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       0
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                               
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -677,12 +666,12 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$R5804_ACNT                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                               
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -693,21 +682,21 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        S     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        S
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
+    REL_NAME                        T
     FLD_NAME                        <null>
 
     USR_TYPE                        8
-    USR_NAME                        TMP$R5804_ACNT                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                               
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -718,21 +707,21 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        S     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        S
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
+    REL_NAME                        T
     FLD_NAME                        <null>
 
     USR_TYPE                        8
-    USR_NAME                        TMP$R5804_ACNT                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                               
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -743,21 +732,21 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        S     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        S
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                            
+    REL_NAME                        T
     FLD_NAME                        <null>
 
     USR_TYPE                        8
-    USR_NAME                        TMP$R5804_ACNT                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                               
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -773,12 +762,12 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$R5804_ACNT                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       0
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                               
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -789,12 +778,12 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$R5804_ACNT                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                               
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -805,12 +794,12 @@ expected_stdout_1 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$R5804_ACNT                                                                               
-    WHO_GAVE                        SYSDBA                                                                                       
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                               
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -824,13 +813,6 @@ def test_1(act_1: Action):
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     set bail on;
@@ -865,7 +847,7 @@ test_script_2 = """
        ,p.rdb$object_type     as obj_type
        ,p.rdb$relation_name   as rel_name
        ,p.rdb$field_name      as fld_name
-    from rdb$database r left join rdb$user_privileges p on 1=1 
+    from rdb$database r left join rdb$user_privileges p on 1=1
     where p.rdb$user in( upper('tmp$c5804_john'), upper('tmp$r5804_boss'), upper('tmp$r5804_acnt') )
     order by 1,2,3,4,5,6,7,8
     ;
@@ -1011,13 +993,13 @@ test_script_2 = """
     -- check revoke role --
     -----------------------
     grant tmp$r5804_boss to role tmp$r5804_acnt;
-    commit; 
+    commit;
 
     --execute procedure sp_msg('after grant tmp$r5804_boss to role tmp$r5804_acnt');
     --select v.* from v_grants v;
 
     revoke tmp$r5804_boss from role tmp$r5804_acnt;
-    commit; 
+    commit;
 
     -- execute procedure sp_msg('revoked role tmp$r5804_boss from role tmp$r5804_acnt');
     -- select v.* from v_grants v; -- no rows should be displayed now
@@ -1026,7 +1008,7 @@ test_script_2 = """
     -- check revoke default of role --
     ----------------------------------
     grant default tmp$r5804_boss to role tmp$r5804_acnt; -- ==> rdb$privileges.rdb$field_name = 'D' after this
-    commit; 
+    commit;
 
     --execute procedure sp_msg('after grant default tmp$r5804_boss to role tmp$r5804_acnt');
     --select v.* from v_roles v;
@@ -1037,24 +1019,24 @@ test_script_2 = """
     select v.* from v_grants v; -- ==> rdb$privileges.rdb$field_name must be 'D'
 
     revoke default tmp$r5804_boss from role tmp$r5804_acnt;-- revoke only default option
-    commit; 
+    commit;
 
     execute procedure sp_msg('after revoked only default tmp$r5804_boss from role tmp$r5804_acnt');
     select v.* from v_grants v; -- ==> rdb$privileges.rdb$field_name must be NULL
 
 
     revoke tmp$r5804_boss from role tmp$r5804_acnt;-- revoke whole role
-    commit; 
+    commit;
 
 
 
     -- check revoke whole role which was granted with DEFAULT clause --
     -------------------------------------------------------------------
     grant default tmp$r5804_boss to role tmp$r5804_acnt;
-    commit; 
+    commit;
 
     revoke tmp$r5804_boss from role tmp$r5804_acnt;
-    commit; 
+    commit;
 
     execute procedure sp_msg('after revoked role that was granted with DEFAULT clause');
     select v.* from v_grants v; -- ==> no rows must be displayed now
@@ -1068,13 +1050,13 @@ test_script_2 = """
     -- check revoke admin option --
     -------------------------------
     grant tmp$r5804_boss to role tmp$r5804_acnt with admin option; -- rdb$roles.rdb$grant_option must be 2 after this
-    commit; 
+    commit;
 
     execute procedure sp_msg('before revoke admin option from role that was granted with this');
     select v.* from v_grants v;
 
     revoke admin option for tmp$r5804_boss from role tmp$r5804_acnt; -- rdb$roles.rdb$grant_option must be 0 after this
-    commit; 
+    commit;
 
     execute procedure sp_msg('after revoke admin option from role that was granted with this');
     select v.* from v_grants v;
@@ -1083,33 +1065,33 @@ test_script_2 = """
     -- check revoke default from role granted with admin option --
     --------------------------------------------------------------
     grant default tmp$r5804_boss to role tmp$r5804_acnt with admin option;
-    commit; 
+    commit;
 
     execute procedure sp_msg('before revoke default tmp$r5804_boss that was granted with admin option to tmp$r5804_acnt');
     select v.* from v_grants v;
 
     revoke default tmp$r5804_boss from role tmp$r5804_acnt;
-    commit; 
+    commit;
 
     execute procedure sp_msg('after revoke default tmp$r5804_boss that was granted with admin option to tmp$r5804_acnt');
     select v.* from v_grants v;
 
     revoke tmp$r5804_boss from role tmp$r5804_acnt;
-    commit; 
+    commit;
 
 
 
     -- check revoke admin option from default role --
     -------------------------------------------------
     grant default tmp$r5804_boss to role tmp$r5804_acnt with admin option;
-    commit; 
+    commit;
 
 
     execute procedure sp_msg('before revoke admin option from default role');
     select v.* from v_grants v;
 
     revoke admin option for tmp$r5804_boss from role tmp$r5804_acnt;
-    commit; 
+    commit;
 
     execute procedure sp_msg('after revoke admin option from default role');
     select v.* from v_grants v;
@@ -1117,25 +1099,25 @@ test_script_2 = """
 
     -- me:
     revoke tmp$r5804_boss from role tmp$r5804_acnt;
-    commit; 
+    commit;
 
     -- check revoke both GO and AO from granted role --
     ---------------------------------------------------
     grant default tmp$r5804_boss to role tmp$r5804_acnt with admin option;
-    commit; 
+    commit;
 
     execute procedure sp_msg('before revoke admin option for default role tmp$r5804_boss from role tmp$r5804_acnt');
     select v.* from v_grants v;
 
     revoke admin option for default tmp$r5804_boss from role tmp$r5804_acnt;
-    commit; 
+    commit;
 
     execute procedure sp_msg('after revoke admin option for default role tmp$r5804_boss from role tmp$r5804_acnt');
     select v.* from v_grants v;
 
     -- me:
     revoke tmp$r5804_boss from role tmp$r5804_acnt;
-    commit; 
+    commit;
 
 
     -- adding options to role grants --
@@ -1240,7 +1222,7 @@ test_script_2 = """
 
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2)
 
 expected_stdout_2 = """
     MSG                             revoked grant option for update of the whole table
@@ -1248,22 +1230,22 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F1                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F1
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F2                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F2
 
 
     Records affected: 2
@@ -1273,22 +1255,22 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F1                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F1
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F2                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F2
 
 
     Records affected: 2
@@ -1298,22 +1280,22 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F2                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F2
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F1                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F1
 
 
     Records affected: 2
@@ -1323,22 +1305,22 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F1                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F1
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F2                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F2
 
 
     Records affected: 2
@@ -1353,13 +1335,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F2                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F2
 
 
     Records affected: 1
@@ -1369,13 +1351,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        U     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        U
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
-    FLD_NAME                        F1                                                                                                                                                                                                                                                          
+    REL_NAME                        T
+    FLD_NAME                        F1
 
 
     Records affected: 1
@@ -1390,13 +1372,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       0
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1406,12 +1388,12 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       0
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -1427,12 +1409,12 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -1443,12 +1425,12 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       0
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -1459,13 +1441,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1475,12 +1457,12 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -1491,13 +1473,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1507,13 +1489,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       0
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1523,13 +1505,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1539,12 +1521,12 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       0
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -1555,13 +1537,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1571,22 +1553,22 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        S     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        S
     HAS_GRANT                       0
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
+    REL_NAME                        T
     FLD_NAME                        <null>
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 2
@@ -1596,22 +1578,22 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        S     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        S
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
+    REL_NAME                        T
     FLD_NAME                        <null>
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 2
@@ -1621,22 +1603,22 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        8
-    USR_NAME                        TMP$C5804_JOHN                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        S     
+    USR_NAME                        TMP$C5804_JOHN
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        S
     HAS_GRANT                       1
     OBJ_TYPE                        0
-    REL_NAME                        T                                                                                                                                                                                                                                                           
+    REL_NAME                        T
     FLD_NAME                        <null>
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 2
@@ -1651,12 +1633,12 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       0
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -1667,12 +1649,12 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
+    REL_NAME                        TMP$R5804_BOSS
     FLD_NAME                        <null>
 
 
@@ -1683,13 +1665,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1699,13 +1681,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1715,13 +1697,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       0
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1731,13 +1713,13 @@ expected_stdout_2 = """
 
 
     USR_TYPE                        13
-    USR_NAME                        TMP$R5804_ACNT                                                                                                                                                                                                                                              
-    WHO_GAVE                        SYSDBA                                                                                                                                                                                                                                                      
-    WHAT_CAN                        M     
+    USR_NAME                        TMP$R5804_ACNT
+    WHO_GAVE                        SYSDBA
+    WHAT_CAN                        M
     HAS_GRANT                       2
     OBJ_TYPE                        13
-    REL_NAME                        TMP$R5804_BOSS                                                                                                                                                                                                                                              
-    FLD_NAME                        D                                                                                                                                                                                                                                                           
+    REL_NAME                        TMP$R5804_BOSS
+    FLD_NAME                        D
 
 
     Records affected: 1
@@ -1749,4 +1731,3 @@ def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_stdout == act_2.clean_expected_stdout
-

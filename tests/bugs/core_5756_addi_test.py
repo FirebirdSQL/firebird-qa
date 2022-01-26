@@ -1,39 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.core_5756_addi
-# title:        Regression: FB crashes when trying to recreate table that is in use by DML
-# decription:   
-#                   A bug was detected during implementation of test for CORE-5754: FB crashed with currpupting database
-#                   after we run test script two times (letter to dimitr et al 20-feb-18 13:52). Moreover, gfix -v -full
-#                   did not produce any messages about database state, so test DB should be restored from copy.
-#                   Decided to change name of this .fbt after getting reply from Roman Simakov (21-feb-2018 12:19)
-#                   that this bug was already fixed by dimitr in:
-#                   https://github.com/FirebirdSQL/firebird/commit/9afef198c17368276ccd7a428e159c1ca5684a60
-#                   (Postfix for CORE-2284/CORE-5677, fixes regression CORE-5756)
-#                   Checked on:
-#                       3.0.4.32920: OK, 2.625s.
-#                       4.0.0.912: OK, 2.781s.
-#                   ::: NOTE :::
-#                   Script for test is launched here TWO times ("pass I", "pass II").
-#                
-# tracker_id:   CORE-5756
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6019-B
+ISSUE:       6019
+TITLE:       Regression: FB crashes when trying to recreate table that is in use by DML (3.0.3; 3.0.4; 4.0.0)
+DESCRIPTION:
+  A bug was detected during implementation of test for CORE-5754: FB crashed with currpupting database
+  after we run test script two times (letter to dimitr et al 20-feb-18 13:52). Moreover, gfix -v -full
+  did not produce any messages about database state, so test DB should be restored from copy.
+  Decided to change name of this test after getting reply from Roman Simakov (21-feb-2018 12:19)
+  that this bug was already fixed by dimitr in:
+  https://github.com/FirebirdSQL/firebird/commit/9afef198c17368276ccd7a428e159c1ca5684a60
+  (Postfix for CORE-2284/CORE-5677, fixes regression CORE-5756)
+NOTES:
+  Script for test is launched here TWO times ("pass I", "pass II").
+JIRA:        CORE-5756
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     commit;
 
@@ -120,9 +109,9 @@ test_script_1 = """
     set count on;
     --set echo on;
     select last_ddl_author
-    from ddl_log 
-    where 
-        evn_type = upper('alter') 
+    from ddl_log
+    where
+        evn_type = upper('alter')
         and obj_type = upper('trigger')
         and sql_text containing 'tmp$c5754'
     ;
@@ -211,18 +200,17 @@ test_script_1 = """
     set count on;
 
     select last_ddl_author
-    from ddl_log 
-    where 
-        evn_type = upper('alter') 
+    from ddl_log
+    where
+        evn_type = upper('alter')
         and obj_type = upper('trigger')
         and sql_text containing 'tmp$c5754'
     ;
-
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     LAST_DDL_AUTHOR                 TMP$C5754
     Records affected: 1
     LAST_DDL_AUTHOR                 TMP$C5754
@@ -230,8 +218,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,34 +1,24 @@
 #coding:utf-8
-#
-# id:           bugs.core_6049
-# title:        Builtin functions converting binary string to hexadecimal representation and vice versa
-# decription:
-#                   Test may need to be more complex. Currently only basic operations are checked:
-#                   * ability to insert into binary field result of hex_decode()
-#                   * result of double conversion: bin_data -> base64_encode -> base64_decode
-#                     - must be equal to initial bin_data (and similar for bin_data -> hex_encode -> hex_decode)
-#                   We get columns type details using sqlda_display in order to fix them in expected_stdout.
-#
-#                   Checked on 4.0.0.1496: OK, 1.679s.
-#
-# tracker_id:   CORE-6049
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6299
+ISSUE:       6299
+TITLE:       Builtin functions converting binary string to hexadecimal representation and vice versa
+DESCRIPTION:
+  Test may need to be more complex. Currently only basic operations are checked:
+  * ability to insert into binary field result of hex_decode()
+  * result of double conversion: bin_data -> base64_encode -> base64_decode
+    - must be equal to initial bin_data (and similar for bin_data -> hex_encode -> hex_decode)
+  We get columns type details using sqlda_display in order to fix them in expected_stdout.
+JIRA:        CORE-6049
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('INPUT message.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     recreate table test(uid binary(20));
     commit;
@@ -54,9 +44,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('INPUT message.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     OUTPUT message field count: 7
     01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 20 charset: 1 OCTETS
       :  name: UID  alias: UID
@@ -90,8 +80,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
