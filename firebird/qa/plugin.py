@@ -1280,7 +1280,7 @@ class Action:
         if result.returncode and not bool(self.expected_stderr) and not combine_output:
             self._node.add_report_section('call', 'ISQL stdout', result.stdout)
             self._node.add_report_section('call', 'ISQL stderr', result.stderr)
-            raise ExecutionError("ISQL script execution failed")
+            raise ExecutionError("Test script execution failed")
 
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
