@@ -1,45 +1,46 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6785
-# title:        Problem when restoring the database on FB 4.0 RC1 (gbak regression)
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6785
-#
-#                   Test used database backup that was provided in the ticket.
-#
-#                   Maximal allowed time is set here for restoring process and gbak will be
-#                   forcedly killed if it can not complete during this time.
-#                   Currently this time is 300 seconds (see 'MAX_THRESHOLD' variable).
-#
-#                   Database is validated (using 'gfix -v -full') after successful restore finish.
-#                   Test checks that returned codes for both gbak and validation are zero.
-#
-#                   Restore issues warnings:
-#                       gbak: WARNING:function F_DATETOSTR is not defined
-#                       gbak: WARNING:    module name or entrypoint could not be found
-#                       gbak: WARNING:function F_DATETOSTR is not defined
-#                       gbak: WARNING:    module name or entrypoint could not be found
-#                   All of them are ignored by this test when gbak output is parsed.
-#
-#                   Confirmed bug on 4.0.0.2452 SS: gbak infinitely hanged.
-#                   Checked on 4.0.0.2453 SS/CS (Linux and Windows): all OK, restore lasts near 200s.
-#
-# tracker_id:
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6785
+ISSUE:       6785
+TITLE:       Problem when restoring the database on FB 4.0 RC1 (gbak regression)
+DESCRIPTION:
+  Test used database backup that was provided in the ticket.
+
+  Maximal allowed time is set here for restoring process and gbak will be
+  forcedly killed if it can not complete during this time.
+  Currently this time is 300 seconds (see 'MAX_THRESHOLD' variable).
+
+  Database is validated (using 'gfix -v -full') after successful restore finish.
+  Test checks that returned codes for both gbak and validation are zero.
+
+  Restore issues warnings:
+    gbak: WARNING:function F_DATETOSTR is not defined
+    gbak: WARNING:    module name or entrypoint could not be found
+    gbak: WARNING:function F_DATETOSTR is not defined
+    gbak: WARNING:    module name or entrypoint could not be found
+  All of them are ignored by this test when gbak output is parsed.
+
+  Confirmed bug on 4.0.0.2452 SS: gbak infinitely hanged.
+  Checked on 4.0.0.2453 SS/CS (Linux and Windows): all OK, restore lasts near 200s.
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    Restore retcode: 0
+    Validation retcode: 0
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -166,14 +167,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( ( f_restore_log, tmpfdb, tmpfbk ) )
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Restore retcode: 0
-    Validation retcode: 0
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

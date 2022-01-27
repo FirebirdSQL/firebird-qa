@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6343
-# title:        Rolled back transaction produces unexpected results leading to duplicate values in PRIMARY KEY field
-# decription:   
-#                  Confirmed bug on 3.0.6.33322: duplicates in PK remain after test script.
-#                  Checked on 3.0.6.33326 - all fine.
-#               
-#                  NOTE: 3.0.x only was affected. No such problem in 4.x
-#                
-# tracker_id:   CORE-6343
-# min_versions: ['3.0.6']
-# versions:     3.0.6
-# qmid:         None
+
+"""
+ID:          issue-6584
+ISSUE:       6584
+TITLE:       Rolled back transaction produces unexpected results leading to duplicate values in PRIMARY KEY field
+DESCRIPTION:
+JIRA:        CORE-6343
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('line:.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_test as begin end;
 
     create global temporary table gtt_table (
@@ -54,7 +42,7 @@ test_script_1 = """
              -- in order to reproduce bug. Do not replace it with "pure PSQL".
              for
                  select 1 from rdb$database into :v
-             do 
+             do
                 if (:id1=3) then
                     id1 = 1/0; -- do NOT suppress this exception otherwise bug will not shown
 
@@ -93,22 +81,23 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line:.*', '')])
 
-expected_stdout_1 = """
-           1 
-           2 
+expected_stdout = """
+           1
+           2
 
-           1 
-           2 
+           1
+           2
 
-           1 
-           2 
+           1
+           2
 
-           1 
-           2 
+           1
+           2
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22012
     arithmetic exception, numeric overflow, or string truncation
     -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
@@ -131,10 +120,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.6')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr
+            and act.clean_stdout == act.clean_expected_stdout)

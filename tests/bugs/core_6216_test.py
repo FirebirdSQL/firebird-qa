@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6216
-# title:        request size limit exceeded when selecting from a table with large number of indicies
-# decription:   
-#                   Confirmed bug on 3.0.6.33240.
-#                   Checked on 3.0.6.33273, 4.0.0.1810 - works fine.
-#                
-# tracker_id:   CORE-6216
-# min_versions: ['3.0.6']
-# versions:     3.0.6
-# qmid:         None
+
+"""
+ID:          issue-6460
+ISSUE:       6460
+TITLE:       request size limit exceeded when selecting from a table with large number of indicies
+DESCRIPTION:
+JIRA:        CORE-6216
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table TABLE_TEST
     (
       FIELD0 bigint not null,
@@ -91,17 +81,16 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     FIELD1                          <null>
     FIELD1                          <null>
     FIELD1                          <null>
 """
 
 @pytest.mark.version('>=3.0.6')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

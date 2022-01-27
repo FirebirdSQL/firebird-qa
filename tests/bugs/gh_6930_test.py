@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6930
-# title:        Segfault when calling crypto functions (using NULL or empty string as a KEY parameter in RSA-functions)
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6930
-#               	
-#                   Confirmed crash on 5.0.0.158, 4.0.1.2554
-#               	Checked on: 5.0.0.169, 4.0.1.2574
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6930
+ISSUE:       6930
+TITLE:       Segfault when calling crypto functions
+DESCRIPTION:
+  Using NULL or empty string as a KEY parameter in RSA-functions leads to segfault.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	set list on;
 
 	recreate table rsa(
@@ -78,7 +66,7 @@ test_script_1 = """
 		end
 
 		-- This must execute normally:
-		update rsa set text_rsa_sign = rsa_sign_hash( crypt_hash(text_unencrypted using sha256) key k_prv hash sha256) 
+		update rsa set text_rsa_sign = rsa_sign_hash( crypt_hash(text_unencrypted using sha256) key k_prv hash sha256)
 		returning octet_length(text_rsa_sign) into rsa_sign_octet_length
 		;
 
@@ -199,34 +187,34 @@ test_script_1 = """
 	set term ;^
 
 	select text_unencrypted, text_decrypted from rsa;
- 
+
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	RSA_SIGN_SQLSTATE_LIST          22023,22023,
 	RSA_SIGN_GDSCODE_LIST           335545276,335545276,
 	RSA_SIGN_OCTET_LENGTH           256
-	
+
 	RSA_VERIFY_SQLSTATE_LIST        22023,22023,
 	RSA_VERIFY_GDSCODE_LIST         335545276,335545276,
 	TEXT_RSA_VRFY                   <true>
-	
+
 	RSA_ENCRYPT_SQLSTATE_LIST       22023,22023,
 	RSA_ENCRYPT_GDSCODE_LIST        335545276,335545276,
 	RSA_ENCRYPTED_OCTET_LENGTH      256
-	
+
 	RSA_DECRYPT_SQLSTATE_LIST       22023,22023,
 	RSA_DECRYPT_GDSCODE_LIST        335545276,335545276,
 	RSA_TEXT_DECRYPTED              lorem ipsum
-	
+
 	TEXT_UNENCRYPTED                lorem ipsum
-	TEXT_DECRYPTED                  lorem ipsum  
+	TEXT_DECRYPTED                  lorem ipsum
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

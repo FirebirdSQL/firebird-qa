@@ -1,37 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_6181
-# title:        Operations when using "SET DECFLOAT BIND BIGINT,n" with result of 11+ digits, fail with "Decimal float invalid operation"
-# decription:   
-#                   Confirmed bug on: 4.0.0.1633 SS: FAILED.
-#                   Checked on 4.0.0.1646 CS: 1.219s.
-#               
-#                   10.12.2019. Updated syntax for SET BIND command because it was changed in 11-nov-2019. 
-#                   Replaced 'bigint,3' with numeric(18,3) - can not specify scale using comma delimiter, i.e. ",3"
-#               
-#                   Checked on: WI-T4.0.0.1685.
-#               
-#                
-# tracker_id:   CORE-6181
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6426
+ISSUE:       6426
+TITLE:       Operations when using "SET DECFLOAT BIND BIGINT,n" with result of 11+ digits, fail with "Decimal float invalid operation"
+DESCRIPTION:
+JIRA:        CORE-6181
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
-    
+
     -- OLD SYNTAX: set decfloat bind bigint,3;
     -- Syntax after 11-nov-2019:
     -- https://github.com/FirebirdSQL/firebird/commit/a77295ba153e0c17061e2230d0ffdbaf08839114
@@ -48,9 +32,9 @@ test_script_1 = """
     select cast('9223372036854775.807' as DECFLOAT(34)) as test_05 from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TEST_01                         1234567.890
     TEST_02                         1234567.890
     TEST_03                         12345678.901
@@ -59,8 +43,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

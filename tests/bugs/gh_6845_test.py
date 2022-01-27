@@ -1,31 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6845
-# title:        Result type of AVG over BIGINT column results in type INT128
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6845
-#               
-#                   Confirmed ticket issue on 5.0.0.88 and 4.0.1.2523.
-#                   Checked on: 5.0.0.114, 4.0.1.2540 -- all OK.
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6845
+ISSUE:       6845
+TITLE:       Result type of AVG over BIGINT column results in type INT128
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!sqltype:|multiply_result).)*$', ''), ('[ \t]+', ' '), ('.*alias:.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(x bigint, y decfloat(16));
 
     set sqlda_display on;
@@ -34,9 +21,10 @@ test_script_1 = """
     select avg(x)over() as avg_bigint_over, avg(y)over() as avg_decf16_over from test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype:|multiply_result).)*$', ''),
+                                                 ('[ \t]+', ' '), ('.*alias:.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
     02: sqltype: 32760 DECFLOAT(16) Nullable scale: 0 subtype: 0 len: 8
 
@@ -45,7 +33,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

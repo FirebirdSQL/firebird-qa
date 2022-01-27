@@ -1,43 +1,41 @@
 #coding:utf-8
-#
-# id:           bugs.gh_5995
-# title:        Connection to server may hang when working with encrypted databases over non-TCP protocol [CORE5730]
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/5995
-#
-#                   Test implemented only to be run on Windows.
-#                   It assumes that there are files keyholder.dll and keyholder.conf in the %FIREBIRD_HOME%\\plugins dir.
-#                   These files were provided by IBSurgeon and added during fbt_run prepare phase by batch scenario (qa_rundaily).
-#                   File keyholder.conf initially contains several keys.
-#
-#                   If we make this file EMPTY then usage of XNET and WNET protocols became improssible before this ticket was fixed.
-#                   Great thanks to Alex for suggestions.
-#
-#                   Confirmed bug on 3.0.1.32609: ISQL hangs on attempt to connect to database when file plugins\\keyholder.conf is empty.
-#                   In order to properly finish test, we have to kill hanging ISQL and change DB state to full shutdown (with subsequent
-#                   returning it to online) - fortunately, connection using TCP remains avaliable in this case.
-#
-#                   Checked on:
-#                       5.0.0.181 SS;    5.0.0.169 CS;
-#                       4.0.1.2578 SS;   4.0.1.2578 CS;
-#                       3.0.8.33489 SS;  3.0.8.33476 CS.
-#
-# tracker_id:
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-5995
+ISSUE:       5995
+TITLE:       Connection to server may hang when working with encrypted databases over non-TCP protocol
+DESCRIPTION:
+  Test implemented only to be run on Windows.
+  It assumes that there are files keyholder.dll and keyholder.conf in the %FIREBIRD_HOME%\\plugins dir.
+  These files were provided by IBSurgeon and added during fbt_run prepare phase by batch scenario (qa_rundaily).
+  File keyholder.conf initially contains several keys.
+
+  If we make this file EMPTY then usage of XNET and WNET protocols became improssible before this ticket was fixed.
+  Great thanks to Alex for suggestions.
+
+  Confirmed bug on 3.0.1.32609: ISQL hangs on attempt to connect to database when file plugins\\keyholder.conf is empty.
+  In order to properly finish test, we have to kill hanging ISQL and change DB state to full shutdown (with subsequent
+  returning it to online) - fortunately, connection using TCP remains avaliable in this case.
+JIRA:        CORE-5730
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    MON$REMOTE_PROTOCOL             WNET
+    MON$REMOTE_PROTOCOL             XNET
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.4')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -153,15 +151,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    MON$REMOTE_PROTOCOL             WNET
-    MON$REMOTE_PROTOCOL             XNET
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.4')
-@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

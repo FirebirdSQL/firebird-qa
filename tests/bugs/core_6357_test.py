@@ -1,63 +1,54 @@
 #coding:utf-8
-#
-# id:           bugs.core_6357
-# title:        LEAD() and LAG() do not allow to specify 3rd argument ("DEFAULT" value when pointer is out of scope) of INT128 datatype.
-# decription:   
-#                   Checked on 4.0.0.2091 - all OK.
-#                   (intermediate snapshot with timestamp: 08.07.20 15:10)
-#                
-# tracker_id:   CORE-6357
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6598
+ISSUE:       6598
+TITLE:       LEAD() and LAG() do not allow to specify 3rd argument ("DEFAULT" value when pointer is out of scope) of INT128 datatype.
+DESCRIPTION:
+JIRA:        CORE-6357
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!sqltype|FIELD_A|LAG_FOR|LEAD_FOR).)*$', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
     recreate table test1 (a smallint);
     recreate table test2 (a bigint);
     recreate table test3 (a int128);
     recreate table test4 (a decfloat);
-     
+
     insert into test1 values (1);
     insert into test1 values (2);
-     
+
     insert into test2 select * from test1;
     insert into test3 select * from test1;
     insert into test4 select * from test1;
-     
+
     set list on;
     set sqlda_display on;
-     
+
     select a as field_a, lead(a, 1, 32767)over(order by a) lead_for_smallint from test1;
     select a as field_a, lag(a, 1, -32768)over(order by a) lag_for_smallint from test1;
-     
+
     select a as field_a, lead(a, 1, 9223372036854775807)over(order by a) lead_for_bigint from test2;
     select a as field_a, lag(a, 1, -9223372036854775808)over(order by a) lag_for_bigint from test2;
-     
+
     select a as field_a, lead(a, 1, 170141183460469231731687303715884105727)over(order by a) lead_for_int128 from test3;
     select a as field_a, lag(a, 1, -170141183460469231731687303715884105728)over(order by a) lag_for_int128 from test3;
-     
+
     select a as field_a, lag(a, 1, -9.999999999999999999999999999999999e6144) over (order by a) lag_for_decfloat_1 from test4;
     select a as field_a, lag(a, 1, -1.0e-6143)over(order by a) lag_for_decfloat_2 from test4;
     select a as field_a, lag(a, 1, 1.0e-6143)over(order by a) lag_for_decfloat_3 from test4;
     select a as field_a, lag(a, 1, 9.999999999999999999999999999999999e6144)over(order by a) lag_for_decfloat_4 from test4;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype|FIELD_A|LAG_FOR|LEAD_FOR).)*$', ''),
+                                                 ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 500 SHORT Nullable scale: 0 subtype: 0 len: 2
     :  name: A  alias: FIELD_A
     02: sqltype: 500 SHORT Nullable scale: 0 subtype: 0 len: 2
@@ -141,8 +132,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

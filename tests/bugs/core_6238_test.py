@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6238
-# title:        DECFLOAT: subtraction Num1 - Num2 leads to "Decimal float overflow" if Num2 is specified in scientific notation and less than max double ( 1.7976931348623157e308 )
-# decription:   
-#                   Checked on 4.0.0.1753: works fine.
-#                
-# tracker_id:   CORE-6238
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6482
+ISSUE:       6482
+TITLE:       DECFLOAT: subtraction Num1 - Num2 leads to "Decimal float overflow" if Num2 is specified in scientific notation and less than max double ( 1.7976931348623157e308 )
+DESCRIPTION:
+JIRA:        CORE-6238
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- All following statements raised before fix:
     -- Statement failed, SQLSTATE = 22003
     -- Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
@@ -55,9 +46,9 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RESULT_01                        9.999999999999999999999999999999998E+6144
     RESULT_02                        9.999999999999999999999999999999998E+6144
     RESULT_03                        9.999999999999999999999999999999998E+6144
@@ -65,8 +56,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,28 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.core_6987
-# title:        DATEDIFF does not support fractional value for MILLISECOND
-# decription:   
-#                   Checked on 5.0.0.240; 4.0.1.2621; 3.0.8.33506.
-#                
-# tracker_id:   CORE-6987
-# min_versions: []
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-6987
+ISSUE:       6987
+TITLE:       DATEDIFF does not support fractional value for MILLISECOND
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!sqltype:|DD_).)*$', ''), ('[ \t]+', ' '), ('.*alias:.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set sqlda_display on;
     set list on;
 
@@ -34,9 +24,10 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype:|DD_).)*$', ''),
+                                                 ('[ \t]+', ' '), ('.*alias:.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 580 INT64 scale: -1 subtype: 0 len: 8
     : name: DATEDIFF alias: DD_01
     : table: owner:
@@ -57,8 +48,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

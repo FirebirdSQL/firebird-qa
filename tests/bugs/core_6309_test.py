@@ -30,22 +30,100 @@
 # versions:     3.0.7
 # qmid:         None
 
+"""
+ID:          issue-6550
+ISSUE:       6550
+TITLE:       fbsvcmgr can not decode information buffer returned by gfix list limbo service
+DESCRIPTION:
+  Test creates two databases and uses fdb.ConnectionGroup() for working with them using two connections.
+  Then we add several rows in both databases (using autonomous transactions for one of them) and change state
+  of this DB to full shutdown (see 'dbname_a').
+  After this we return 'dbname_a' to online.
+  At this point this DB must contain dozen transaction in limbo state.
+  Both 'gfix -list' and 'fbsvcmgr action_repair rpr_list_limbo_trans' can display only 146 transactions because
+  of limited internal buffer size which is used.
+  We check that number of lines which are issued by these utilities is equal.
+  NB-1: concrete numbers of transactions will DIFFER on SS/SC/CS. We must check only *number* of lines.
+  NB-2: we can not use svc.get_limbo_transaction_ids( <dbname> ) because FDB raises exception:
+        File "build\\bdist.win-amd64\\egg\\fdb\\services.py", line 736, in get_limbo_transaction_ids
+        struct.error: unpack requires a string argument of length 4
+      Because of this, external child processes are called to obtain Tx list: gfix and fbcvmgr.
+
+  Confirmed bug on 4.0.0.1633: fbsvcmgr issues 0 rows instead of expected 146.
+NOTES:
+[21.12.2021] pcisar
+  On v3.0.8 & 4.0, the fbsvcmngr reports error: "unavailable database"
+  Which makes the test fail
+  See also: core_6141_test.py
+JIRA:        CORE-6309
+"""
+
 import pytest
 import re
-from firebird.qa import db_factory, python_act, Action, Database
+from firebird.qa import *
 from firebird.driver import DistributedTransactionManager, ShutdownMode, ShutdownMethod
 
-# version: 3.0.7
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
 create table test(id int, x int, constraint test_pk primary key(id) using index test_pk) ;
 """
 
-db_1_a = db_factory(sql_dialect=3, init=init_script_1, filename='core_6309_a.fdb')
-db_1_b = db_factory(sql_dialect=3, init=init_script_1, filename='core_6309_b.fdb')
+db_a = db_factory(init=init_script, filename='core_6309_a.fdb')
+db_b = db_factory(init=init_script, filename='core_6309_b.fdb')
+
+act = python_act('db_a')
+
+LIMBO_COUNT = 250
+
+@pytest.mark.skip("FIXME: see notes")
+@pytest.mark.version('>=3.0.7')
+def test_1(act: Action, db_b: Database):
+    dt_list = []
+    with act.db.connect() as con1, db_b.connect() as con2:
+        for i in range(LIMBO_COUNT):
+            dt = DistributedTransactionManager([con1, con2])
+            dt_list.append(dt)
+            cur1 = dt.cursor(con1)
+            cur1.execute("insert into test (id, x) values (?, ?)", [i, i * 11111])
+            cur1.close()
+            cur2 = dt.cursor(con2)
+            cur2.execute("insert into test (id, x) values (?, ?)", [-i, i * -2222])
+            cur2.close()
+        for dtc in dt_list:
+            # Initiate distributed commit: phase-1
+            dtc.prepare()
+        # Shut down the first database
+        with act.connect_server() as srv:
+            srv.database.shutdown(database=act.db.db_path, mode=ShutdownMode.FULL,
+                                  method=ShutdownMethod.FORCED, timeout=0)
+        #
+        while dt_list:
+            dtc = dt_list.pop()
+            dtc._tra = None # Needed hack to bypass commit and exception
+            dtc.close()
+        #
+        with act.connect_server() as srv:
+            srv.database.bring_online(database=act.db.db_path)
+    #
+    act.gfix(switches=['-list', act.db.dsn])
+    gfix_log = act.stdout
+    #
+    act.reset()
+    # [FIXME] Set EXPECTED_STDERR so we can get over "unavailable database" error and fail on assert
+    # Remove when svcmgr issue is resolved
+    act.expected_stderr = "We expect errors"
+    act.svcmgr(switches=['action_repair', 'rpr_list_limbo_trans', 'dbname', act.db.dsn])
+    mngr_log = act.stdout
+    #print(act.stderr)
+    #
+    pattern = re.compile('Transaction\\s+(\\d+\\s+(is\\s+)?in\\s+limbo)|(in\\s+limbo(:)?\\s+\\d+)', re.IGNORECASE)
+    found_limbos = [0, 0]
+    #
+    for i, limbo_log in enumerate([gfix_log, mngr_log]):
+        for line in limbo_log.splitlines():
+            found_limbos[i] += 1 if pattern.search(line) else 0
+    # Check [gfix, svsmgr]
+    assert found_limbos == [146, 146]
+
 
 # test_script_1
 #---
@@ -208,68 +286,3 @@ db_1_b = db_factory(sql_dialect=3, init=init_script_1, filename='core_6309_b.fdb
 #
 #
 #---
-
-act_1 = python_act('db_1_a', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    146
-    146
-"""
-
-LIMBO_COUNT = 250
-
-@pytest.mark.version('>=3.0.7')
-def test_1(act_1: Action, db_1_b: Database):
-    # [pcisar] 21.12.2021
-    # On v3.0.8 & 4.0, the fbsvcmngr reports error: "unavailable database"
-    # Which makes the test fail
-    # See also: core_6141_test.py
-    pytest.skip("FIXME")
-    dt_list = []
-    with act_1.db.connect() as con1, db_1_b.connect() as con2:
-        for i in range(LIMBO_COUNT):
-            dt = DistributedTransactionManager([con1, con2])
-            dt_list.append(dt)
-            cur1 = dt.cursor(con1)
-            cur1.execute("insert into test (id, x) values (?, ?)", [i, i * 11111])
-            cur1.close()
-            cur2 = dt.cursor(con2)
-            cur2.execute("insert into test (id, x) values (?, ?)", [-i, i * -2222])
-            cur2.close()
-        for dtc in dt_list:
-            # Initiate distributed commit: phase-1
-            dtc.prepare()
-        # Shut down the first database
-        with act_1.connect_server() as srv:
-            srv.database.shutdown(database=act_1.db.db_path, mode=ShutdownMode.FULL,
-                                  method=ShutdownMethod.FORCED, timeout=0)
-        #
-        while dt_list:
-            dtc = dt_list.pop()
-            dtc._tra = None # Needed hack to bypass commit and exception
-            dtc.close()
-        #
-        with act_1.connect_server() as srv:
-            srv.database.bring_online(database=act_1.db.db_path)
-    #
-    act_1.gfix(switches=['-list', act_1.db.dsn])
-    gfix_log = act_1.stdout
-    #
-    act_1.reset()
-    # Set EXPECTED_STDERR so we can get over "unavailable database" error and fail on assert
-    # Remove when svcmgr issue is resolved
-    act_1.expected_stderr = "We expect errors"
-    act_1.svcmgr(switches=['action_repair', 'rpr_list_limbo_trans', 'dbname', act_1.db.dsn])
-    mngr_log = act_1.stdout
-    #print(act_1.stderr)
-    #
-    pattern = re.compile('Transaction\\s+(\\d+\\s+(is\\s+)?in\\s+limbo)|(in\\s+limbo(:)?\\s+\\d+)', re.IGNORECASE)
-    found_limbos = [0, 0]
-    #
-    for i, limbo_log in enumerate([gfix_log, mngr_log]):
-        for line in limbo_log.splitlines():
-            found_limbos[i] += 1 if pattern.search(line) else 0
-    # Check [gfix, svsmgr]
-    assert found_limbos == [146, 146]
-
-

@@ -1,91 +1,93 @@
 #coding:utf-8
-#
-# id:           bugs.core_6348
-# title:        Wire compression causes freezes
-# decription:
-#                   Test was created at JULY-2020.
-#                   Lot of runs of this test *previous* version often showed outcome = 'F' (failed).
-#
-#                   Following snapshots were deep tested DURING 15...19-NOV-2021 in order to get reason this:
-#                       ----------------------------------------
-#                        FB | Without fix     | With fix
-#                       ----|-----------------|-----------------
-#                       3.x | WI-V3.0.6.33330 | WI-V3.0.6.33332
-#                       4.x | WI-V4.0.0.2084  | WI-V4.0.0.2089
-#
-#                   It was found out that:
-#                   1) there is no sence to compare performance of two possible cases of WireCompression parameter
-#                      in one snapshot (i.e. NO sense to set this parameter to false, then change it on true and compare results):
-#                      ratio between elapsed time in *all* four snapshots is approximately the same, about 1.20 ... 1.30
-#                      (and thus we can not to get difference between snapshots which have and have no fix of this bug).
-#                   2) It is NOT enough to see difference in performance by just changing from one snapshot to another.
-#                      Data that is used for loading into blob column must have GOOD or EXCELLENT degree of compression.
-#                      This is completely opposite to the data which was used in *previous* version of this test (.7z file)
-#                   3) One need to carefully choose length of data. If we use string with length >= 4 Mb then snapshots which
-#                      have this bug (3.0.6.33330 and 4.0.0.2084) can/will do their work EXTREMELY slow and all further tests
-#                      will not be executed because pof job termination (by scheduler when new instance of this job starts).
-#                      On the other hand, we must not use too short strings (less than 64 Kb) because otherwise one can not
-#                      to see how performance suffers on builds w/o fix.
-#                      After lot of runs (on Windows 2008 Server and Windows 10) it was decided to use length from 256 to 512 Kb.
-#                   4) There is no sense to measure CPU user_time (for example, using psutil package): all snapshots show almost
-#                      equal values of this value.
-#                   5) There is no sense to evaluate performance using trace because prepare and executing duration is about 0 ms.
-#                      But it must be noted snashots w/o fix have strange delay after PREPARE_STATEMENT and before EXECUTE_STATEMENT_START
-#                      actions.
-#                      This is example for blob length = 512K and FB 3.0.6.33330:
-#                      =====
-#                      2021-11-19T23:48:25.4400 ... PREPARE_STATEMENT
-#                      insert into test(b) values(?)
-#                      0 ms
-#
-#                      2021-11-19T23:48:33.6880 ... EXECUTE_STATEMENT_START
-#                      insert into test(b) values(?)
-#
-#                      2021-11-19T23:48:33.6880 ... EXECUTE_STATEMENT_FINISH
-#                      insert into test(b) values(?)
-#                      param0 = blob, "0000000000000001"
-#                      0 ms, 13 fetch(es), 9 mark(s)
-#                      =====
-#                      (NOTE on difference between 23:48:25.4400 and 23:48:33.6880 - it is more that 8000 ms!)
-#                    6) Bulds with fix can load blob very fast, for about 5...10 ms. Because of this, it was decided to use trivial way
-#                       for estimating outcome of this test: if we can load blob with length = <BLOB_LEN_KB> Kb for time less then
-#                       <MAX_THRESHOLD_MS> ms then test can be considered as passed (see apropriate settings below).
-#
-#                   ::: NB :::
-#                   Median value of list that has <N_MEASURES> results of measures is used for comparison with <MAX_THRESHOLD_MS>.
-#
-#                   NOTE-1
-#                       Test temporary changes firebird.conf, so any abnormal termination of it can cause
-#                       problems for other tests (which are to be executed after current).
-#
-#                   NOTE-2
-#                       EXTERNAL script for execution by Python is created here!
-#                       Otherwise one can not reproduce problem described in the ticket if original firebird.conf
-#                       We have to launch NEW (child) Python process which will run fully separately from current.
-#
-#                   19.11.2021: pre-created large binary file which was used for this test not needed anymore and has been deleted.
-#                   Checked on:
-#                       5.0.0.311 SS:   17.677s;   5.0.0.311 CS:   27.820s.
-#                       4.0.1.2660 SS:  17.589s;   4.0.1.2660 CS:  25.918s.
-#                       3.0.8.33535 SS: 13.108s;   3.0.8.33535 CS: 21.583s.
-#
-#
-# tracker_id:   CORE-6348
-# min_versions: ['3.0.7']
-# versions:     3.0.7
-# qmid:         None
+
+"""
+ID:          issue-6589
+ISSUE:       6589
+TITLE:       Wire compression causes freezes
+DESCRIPTION:
+    Test was created at JULY-2020.
+    Lot of runs of this test *previous* version often showed outcome = 'F' (failed).
+
+    Following snapshots were deep tested DURING 15...19-NOV-2021 in order to get reason this:
+        ----------------------------------------
+         FB | Without fix     | With fix
+        ----|-----------------|-----------------
+        3.x | WI-V3.0.6.33330 | WI-V3.0.6.33332
+        4.x | WI-V4.0.0.2084  | WI-V4.0.0.2089
+
+    It was found out that:
+    1) there is no sence to compare performance of two possible cases of WireCompression parameter
+       in one snapshot (i.e. NO sense to set this parameter to false, then change it on true and compare results):
+       ratio between elapsed time in *all* four snapshots is approximately the same, about 1.20 ... 1.30
+       (and thus we can not to get difference between snapshots which have and have no fix of this bug).
+    2) It is NOT enough to see difference in performance by just changing from one snapshot to another.
+       Data that is used for loading into blob column must have GOOD or EXCELLENT degree of compression.
+       This is completely opposite to the data which was used in *previous* version of this test (.7z file)
+    3) One need to carefully choose length of data. If we use string with length >= 4 Mb then snapshots which
+       have this bug (3.0.6.33330 and 4.0.0.2084) can/will do their work EXTREMELY slow and all further tests
+       will not be executed because pof job termination (by scheduler when new instance of this job starts).
+       On the other hand, we must not use too short strings (less than 64 Kb) because otherwise one can not
+       to see how performance suffers on builds w/o fix.
+       After lot of runs (on Windows 2008 Server and Windows 10) it was decided to use length from 256 to 512 Kb.
+    4) There is no sense to measure CPU user_time (for example, using psutil package): all snapshots show almost
+       equal values of this value.
+    5) There is no sense to evaluate performance using trace because prepare and executing duration is about 0 ms.
+       But it must be noted snashots w/o fix have strange delay after PREPARE_STATEMENT and before EXECUTE_STATEMENT_START
+       actions.
+       This is example for blob length = 512K and FB 3.0.6.33330:
+       =====
+       2021-11-19T23:48:25.4400 ... PREPARE_STATEMENT
+       insert into test(b) values(?)
+       0 ms
+
+       2021-11-19T23:48:33.6880 ... EXECUTE_STATEMENT_START
+       insert into test(b) values(?)
+
+       2021-11-19T23:48:33.6880 ... EXECUTE_STATEMENT_FINISH
+       insert into test(b) values(?)
+       param0 = blob, "0000000000000001"
+       0 ms, 13 fetch(es), 9 mark(s)
+       =====
+       (NOTE on difference between 23:48:25.4400 and 23:48:33.6880 - it is more that 8000 ms!)
+     6) Bulds with fix can load blob very fast, for about 5...10 ms. Because of this, it was decided to use trivial way
+        for estimating outcome of this test: if we can load blob with length = <BLOB_LEN_KB> Kb for time less then
+        <MAX_THRESHOLD_MS> ms then test can be considered as passed (see apropriate settings below).
+
+    ::: NB :::
+    Median value of list that has <N_MEASURES> results of measures is used for comparison with <MAX_THRESHOLD_MS>.
+
+    NOTE-1
+        Test temporary changes firebird.conf, so any abnormal termination of it can cause
+        problems for other tests (which are to be executed after current).
+
+    NOTE-2
+        EXTERNAL script for execution by Python is created here!
+        Otherwise one can not reproduce problem described in the ticket if original firebird.conf
+        We have to launch NEW (child) Python process which will run fully separately from current.
+
+    19.11.2021: pre-created large binary file which was used for this test not needed anymore and has been deleted.
+    Checked on:
+        5.0.0.311 SS:   17.677s;   5.0.0.311 CS:   27.820s.
+        4.0.1.2660 SS:  17.589s;   4.0.1.2660 CS:  25.918s.
+        3.0.8.33535 SS: 13.108s;   3.0.8.33535 CS: 21.583s.
+JIRA:        CORE-6348
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    Median time for loading blob: acceptable.
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: firebird.conf')
+@pytest.mark.version('>=3.0.7')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -261,14 +263,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( ( f_extern_py, f_external_py_log ) )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Median time for loading blob: acceptable.
-"""
-
-@pytest.mark.skip('FIXME: firebird.conf')
-@pytest.mark.version('>=3.0.7')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

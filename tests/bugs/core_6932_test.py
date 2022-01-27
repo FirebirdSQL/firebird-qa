@@ -1,65 +1,67 @@
 #coding:utf-8
-#
-# id:           bugs.core_6932
-# title:        GTT's pages are not released while dropping it
-# decription:
-#                   We extract value of config parameter 'TempTableDirectory' in order to get directory where GTT data are stored.
-#                   If this parameter is undefined then we query environment variables: FIREBIRD_TMP; TEMP and TMP - and stop after
-#                   finding first non-empty value in this list. Name of this folder is stored in GTT_DIR variable.
-#
-#                   Then we create GTT and add some data in it; file 'fb_table_*' will appear in <GTT_DIR> after this.
-#                   We have to obtain size of this file and invoke os.path.getsize(). Result will be NON-zero, despite that Windows
-#                   'dir' command shows that this file has size 0. We initialize list 'gtt_size_list' and save this size in it as
-#                   'initial' element (with index 0).
-#
-#                   After this, we make loop for <ITER_COUNT> iterations and do on each of them:
-#                       * drop GTT;
-#                       * create GTT (with new name);
-#                       * add some data into just created GTT
-#                       * get GTT file size and add it to the list for further analysis (see 'gtt_size_list.append(...)')
-#
-#                   Finally, we scan list 'gtt_size_list' (starting from 2nd element) and evaluate DIFFERENCE between size of GTT file
-#                   that was obtained on Nth and (N-1)th iterations. MEDIAN value of this difference must be ZERO.
-#
-#                   NB-1.
-#                   BEFOE this ticket was fixed, size of GTT grew noticeably only for the first ~10 iterations.
-#                   This is example how size was changed (in percents):
-#                       26.88
-#                       34.92
-#                       12.69
-#                       19.84
-#                       11.91
-#                       10.64
-#                       14.43
-#                        8.40
-#                        7.75
-#                   For big numbers of ITER_COUNT values quickly tend to zero.
-#                   AFTER this fix size is changed only for 2nd iteration (and not in every measure), for ~6%.
-#                   All rest changes (startingfrom 3rd measure) must be zero.
-#
-#                   NB-2. Test implemented for Windows only: there is no ability to get name of GTT file on Linux
-#                   because all such files marked as deleted immediately after creation.
-#
-#                   Confirmed bug on 5.0.0.169.
-#                   Checked on: WI-V4.0.1.2578; WI-T5.0.0.181 -- all OK.
-#
-#
-# tracker_id:   CORE-6932
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6932
+ISSUE:       6932
+TITLE:       GTT's pages are not released while dropping it
+DESCRIPTION:
+  We extract value of config parameter 'TempTableDirectory' in order to get directory where GTT data are stored.
+  If this parameter is undefined then we query environment variables: FIREBIRD_TMP; TEMP and TMP - and stop after
+  finding first non-empty value in this list. Name of this folder is stored in GTT_DIR variable.
+
+  Then we create GTT and add some data in it; file 'fb_table_*' will appear in <GTT_DIR> after this.
+  We have to obtain size of this file and invoke os.path.getsize(). Result will be NON-zero, despite that Windows
+  'dir' command shows that this file has size 0. We initialize list 'gtt_size_list' and save this size in it as
+  'initial' element (with index 0).
+
+  After this, we make loop for <ITER_COUNT> iterations and do on each of them:
+    * drop GTT;
+    * create GTT (with new name);
+    * add some data into just created GTT
+    * get GTT file size and add it to the list for further analysis (see 'gtt_size_list.append(...)')
+
+  Finally, we scan list 'gtt_size_list' (starting from 2nd element) and evaluate DIFFERENCE between size of GTT file
+  that was obtained on Nth and (N-1)th iterations. MEDIAN value of this difference must be ZERO.
+
+  NB-1.
+  BEFORE this ticket was fixed, size of GTT grew noticeably only for the first ~10 iterations.
+  This is example how size was changed (in percents):
+    26.88
+    34.92
+    12.69
+    19.84
+    11.91
+    10.64
+    14.43
+     8.40
+     7.75
+  For big numbers of ITER_COUNT values quickly tend to zero.
+  AFTER this fix size is changed only for 2nd iteration (and not in every measure), for ~6%.
+  All rest changes (startingfrom 3rd measure) must be zero.
+
+  NB-2. Test implemented for Windows only: there is no ability to get name of GTT file on Linux
+  because all such files marked as deleted immediately after creation.
+
+  Confirmed bug on 5.0.0.169.
+  Checked on: WI-V4.0.1.2578; WI-T5.0.0.181 -- all OK.
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    GTT file size remains the same.
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=4.0')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -151,16 +153,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          print( '{:.2f}'.format(p) )
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    GTT file size remains the same.
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-

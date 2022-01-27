@@ -1,31 +1,31 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6740
-# title:        Allow parenthesized query expression for standard-compliance
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6740
-#
-#                   NOTE. Queries which do not use `WITH` clause now can be enclosed in parenthesis,
-#                   but this leads to reduced number of max parts of UNIONed query, from 255 to 128.
-#
-#                   Checked on 5.0.0.88.
-#
-# tracker_id:
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-6740
+ISSUE:       6740
+TITLE:       Allow parenthesized query expression for standard-compliance
+DESCRIPTION:
+NOTES:
+  Queries which do not use `WITH` clause now can be enclosed in parenthesis,
+  but this leads to reduced number of max parts of UNIONed query, from 255 to 128.
+JIRA:        CORE-6511
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    8256
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=5.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -54,13 +54,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cur.close()
 #  print(total)
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    8256
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

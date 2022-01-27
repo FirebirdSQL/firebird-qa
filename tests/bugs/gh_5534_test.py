@@ -1,44 +1,31 @@
 #coding:utf-8
-#
-# id:           bugs.gh_5534
-# title:        String truncation exception on UPPER/LOWER functions, UTF8 database and some multibyte characters [CORE5255]
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/5534
-#               	
-#               	Test verifies work of predicates, functions for string handling and comparison.
-#               	::: NOTE :::
-#               	Test does not verify `CONTAINING`! This will be done in separate test, after gh-6851 will be fixed
-#               	(see note by Adriano in this ticket, date: 14.06.2021)
-#               	
-#               	None of them must raise exception, and result of actions is not displayed via suspend.
-#                   Thus 'expected-' sections must be empty.
-#               	If some character leads to error, apropriate repord ID is included into the list of problematic
-#               	unicode characters (see variables 'vchr_id_problem_list' and 'blob_id_problem_list').
-#               	This is performed for VARCHAR and BLOB datatypes.
-#               	Bug was detected with BLOBs, see https://github.com/FirebirdSQL/firebird/issues/6858
-#               	(fixed 17.06.2021)
-#               	
-#               	Confirmed problem on 5.0.0.75; 4.0.0.2508 (handling of all characters from this test raise error).
-#               	Checked on: 5.0.0.79; 4.0.1.2517 - all OK.
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-5534
+ISSUE:       5534
+TITLE:       String truncation exception on UPPER/LOWER functions, UTF8 database and some multibyte characters
+DESCRIPTION:
+  Test verifies work of predicates, functions for string handling and comparison.
+  ::: NOTE :::
+  Test does not verify `CONTAINING`! This will be done in separate test, after gh-6851 will be fixed
+  (see note by Adriano in this ticket, date: 14.06.2021)
+
+  None of them must raise exception, and result of actions is not displayed via suspend.
+  Thus 'expected-' sections must be empty.
+  If some character leads to error, apropriate repord ID is included into the list of problematic
+  unicode characters (see variables 'vchr_id_problem_list' and 'blob_id_problem_list').
+  This is performed for VARCHAR and BLOB datatypes.
+  Bug was detected with BLOBs, see https://github.com/FirebirdSQL/firebird/issues/6858
+  (fixed 17.06.2021)
+JIRA:        CORE-5255
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	set bail on;
 	set list on;
 
@@ -95,7 +82,7 @@ test_script_1 = """
 		blob_id_problem_list = '';
 		k_prv = rsa_private(256);
 		k_pub = rsa_public(k_prv);
-		
+
 		for select id, txt, blb from test as cursor c
 		do begin
 			begin
@@ -134,8 +121,8 @@ test_script_1 = """
 				v = crypt_hash(c.txt using sha1);
 				v = crypt_hash(c.txt using sha256);
 				v = crypt_hash(c.txt using sha512);
-				
-				-- 
+
+				--
 				text_encrypted = rsa_encrypt(c.txt key k_pub hash md5);
 				text_decrypted = rsa_decrypt(text_encrypted key k_prv hash md5);
 				text_encrypted = rsa_encrypt(c.txt key k_pub hash md5);
@@ -145,7 +132,7 @@ test_script_1 = """
 				text_encrypted = rsa_encrypt(c.txt key k_pub hash sha256);
 				text_decrypted = rsa_decrypt(text_encrypted key k_prv hash sha256);
 				text_encrypted = rsa_encrypt(c.txt key k_pub hash sha512);
-				text_decrypted = rsa_decrypt(text_encrypted key k_prv hash sha512);			
+				text_decrypted = rsa_decrypt(text_encrypted key k_prv hash sha512);
 
 			when any do
 				begin
@@ -189,7 +176,7 @@ test_script_1 = """
 				v = crypt_hash(c.blb using sha1);
 				v = crypt_hash(c.blb using sha256);
 				v = crypt_hash(c.blb using sha512);
-				
+
 				-- Following statements were commented out because of bug
 				-- described in https://github.com/FirebirdSQL/firebird/issues/6858
 				-- They are uncommented because bug was fixed 17.06.2021.
@@ -205,7 +192,7 @@ test_script_1 = """
 				text_encrypted = rsa_encrypt(c.blb key k_pub hash sha256);
 				text_decrypted = rsa_decrypt(text_encrypted key k_prv hash sha256);
 				text_encrypted = rsa_encrypt(c.blb key k_pub hash sha512);
-				text_decrypted = rsa_decrypt(text_encrypted key k_prv hash sha512);			
+				text_decrypted = rsa_decrypt(text_encrypted key k_prv hash sha512);
 				-- */
 
 			when any do
@@ -227,9 +214,8 @@ test_script_1 = """
 	set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.execute()
+def test_1(act: Action):
+    act.execute()

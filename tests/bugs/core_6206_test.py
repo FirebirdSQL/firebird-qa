@@ -1,33 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_6206
-# title:        VARCHAR of insufficient length used for set bind of decfloat to varchar
-# decription:
-#                   Confirmed bug on 4.0.0.1685
-#                   Checked on 4.0.0.1691: OK, 1.165s.
-#
-#                   26.06.2020: changed SET BIND argument from numeric(38) to INT128, adjusted output
-#                   (letter from Alex, 25.06.2020 17:56; needed after discuss CORE-6342).
-#                   Checked on 4.0.0.2078.
-#
-# tracker_id:   CORE-6206
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6451
+ISSUE:       6451
+TITLE:       VARCHAR of insufficient length used for set bind of decfloat to varchar
+DESCRIPTION:
+NOTES:
+[26.06.2020]
+  changed SET BIND argument from numeric(38) to INT128, adjusted output
+  (letter from Alex, 25.06.2020 17:56; needed after discuss CORE-6342).
+JIRA:        CORE-6206
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('charset.*', ''), ('^((?!(sqltype)).)*$', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set sqlda_display on;
     set list on;
 
@@ -47,9 +37,10 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('charset.*', ''), ('[ \t]+', ' '),
+                                                 ('^((?!(sqltype)).)*$', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 42
     01: sqltype: 448 VARYING scale: 0 subtype: 0 len: 42
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 47
@@ -57,8 +48,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

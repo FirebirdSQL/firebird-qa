@@ -1,32 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6802
-# title:        When the statement timeout is set, it causes the lock manager to delay reporting deadlocks until timeout is expired
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6802
-#               
-#                   Confirmed bug on 5.0.0.20: no exception for case when statement_timeout < Tx lock_timeout (case #3)
-#                   Checked on 5.0.0.29 -- all OK.
-#                   20.05.2021: adjusted expected_stderr for case-2: non-suppressed exception raises instead of issuing gdscode.
-#                
-# tracker_id:   
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-6802
+ISSUE:       6802
+TITLE:       When the statement timeout is set, it causes the lock manager to delay reporting deadlocks until timeout is expired
+DESCRIPTION:
+NOTES:
+[20.05.2021]
+  adjusted expected_stderr for case-2: non-suppressed exception raises instead of issuing gdscode.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     recreate global temporary table gt(f01 int) on commit preserve rows;
     commit;
@@ -58,9 +47,9 @@ test_script_1 = """
     set term ;^
     commit;
 
-    -- ####################### 
+    -- #######################
     -- ###  c a s e   N 1  ###
-    -- ####################### 
+    -- #######################
     -- Initial state:
     --    * statement_timeout > deadlocktimeout (which is supposed to be default, i.e. 10 seconds)
     --    * Tx lock resolution = WAIT
@@ -95,9 +84,9 @@ test_script_1 = """
     rollback;
 
 
-    -- ####################### 
+    -- #######################
     -- ###  c a s e   N 2  ###
-    -- ####################### 
+    -- #######################
     -- Initial state:
     --    * statement_timeout < deadlocktimeout
     --    * Tx lock resolution = WAIT
@@ -136,9 +125,9 @@ test_script_1 = """
     rollback;
 
 
-    -- ####################### 
+    -- #######################
     -- ###  c a s e   N 3  ###
-    -- ####################### 
+    -- #######################
     -- Initial state:
     --    * statement_timeout > 0 (no matter greater or less than deadlocktimeout);
     --    * Tx lock resolution = LOCK_TIMEOUT <N> and this value GREATER than statement_timeout
@@ -176,9 +165,9 @@ test_script_1 = """
     rollback;
 
 
-    -- ####################### 
+    -- #######################
     -- ###  c a s e   N 3  ###
-    -- ####################### 
+    -- #######################
     -- Initial state:
     --    * statement_timeout  > 0 (no matter greater or less than deadlocktimeout);
     --    * Tx lock resolution = LOCK_TIMEOUT <N> and this value LESS than statement_timeout
@@ -215,9 +204,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     RAISED_GDS_01                   335544336
     WAITING_TIME_01                 Acceptable.
 
@@ -228,7 +217,8 @@ expected_stdout_1 = """
     RAISED_GDS_04                   335544336
     WAITING_TIME_04                 Acceptable.
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = HY008
     operation was cancelled
     -Attachment level timeout expired.
@@ -239,9 +229,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

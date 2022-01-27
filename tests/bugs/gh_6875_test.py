@@ -1,55 +1,45 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6875
-# title:        Significant performance regression of SIMILAR TO and SUBSTRING(SIMILAR) when pattern is taken from variable (rather than directly specified)
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6875
-#               
-#                   Confirmed poor performance in 5.0.0.88 (before fix):
-#                                              in PSQL    explicitly
-#                                              variable   specified
-#                                              ----------------------
-#                   * for SIMILAR TO:            11.40"         2.23"
-#                   * for SUBSTRING...SIMILAR:   42.02"         1.37"
-#               
-#                   Checked 4.0.1.2523 and 5.0.0.89 -- all OK.
-#                   Performance in 5.0.0.89 (intermediate build 02.07.2021 14:43) after fix:
-#                                              in PSQL    explicitly
-#                                              variable   specified
-#                                              ----------------------
-#                   * for SIMILAR TO:             1.27"         1.15"
-#                   * for SUBSTRING...SIMILAR:    2.02"         2.00"
-#               
-#                   Performance in 4.0.1.2523 (intermediate build 02.07.2021 18:55) after fix:
-#                                              in PSQL    explicitly
-#                                              variable   specified
-#                                              ----------------------
-#                   * for SIMILAR TO:             1.03"         1.06"
-#                   * for SUBSTRING...SIMILAR:    1.96"         1.97"
-#               
-#                   So, values became almost the same and, moreover, performance was greatly improved.
-#               
-#                   Test checks ratio between elapsed times and compares it with thresholds.
-#                   Currently both SIMILAR TO and SUBSTRING...SIMILAR use the same thresholds =  1.30.
-#                
-# tracker_id:   
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-6875
+ISSUE:       6875
+TITLE:       Significant performance regression of SIMILAR TO and SUBSTRING(SIMILAR) when
+  pattern is taken from variable (rather than directly specified)
+DESCRIPTION:
+    Confirmed poor performance in 5.0.0.88 (before fix):
+                               in PSQL    explicitly
+                               variable   specified
+                               ----------------------
+    * for SIMILAR TO:            11.40"         2.23"
+    * for SUBSTRING...SIMILAR:   42.02"         1.37"
+
+    Checked 4.0.1.2523 and 5.0.0.89 -- all OK.
+    Performance in 5.0.0.89 (intermediate build 02.07.2021 14:43) after fix:
+                               in PSQL    explicitly
+                               variable   specified
+                               ----------------------
+    * for SIMILAR TO:             1.27"         1.15"
+    * for SUBSTRING...SIMILAR:    2.02"         2.00"
+
+    Performance in 4.0.1.2523 (intermediate build 02.07.2021 18:55) after fix:
+                               in PSQL    explicitly
+                               variable   specified
+                               ----------------------
+    * for SIMILAR TO:             1.03"         1.06"
+    * for SUBSTRING...SIMILAR:    1.96"         1.97"
+
+    So, values became almost the same and, moreover, performance was greatly improved.
+
+    Test checks ratio between elapsed times and compares it with thresholds.
+    Currently both SIMILAR TO and SUBSTRING...SIMILAR use the same thresholds =  1.30.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set list on;
     set term ^;
@@ -150,8 +140,8 @@ test_script_1 = """
         if ( 1.00 * elap_similar2_pattern_in_psql_var / elap_similar2_pattern_explicitly > SIMILAR2_THRESHOLD ) then
             msg_similar2 = 'INACCEPTABLE: '
                            || elap_similar2_pattern_in_psql_var
-                           || 's  == vs ==  ' 
-                           || elap_similar2_pattern_explicitly || 's' 
+                           || 's  == vs ==  '
+                           || elap_similar2_pattern_explicitly || 's'
                            || ' -  greater than treshold = ' || SIMILAR2_THRESHOLD
             ;
         else
@@ -161,14 +151,14 @@ test_script_1 = """
         if ( 1.00 * elap_subs_sim_pattern_in_psql_var / elap_subs_sim_pattern_explicitly > SUBS_SIM_THRESHOLD ) then
             msg_subs_sim = 'INACCEPTABLE: '
                            || elap_subs_sim_pattern_in_psql_var
-                           || 'ms  == vs ==  ' 
-                           || elap_subs_sim_pattern_explicitly || 'ms' 
+                           || 'ms  == vs ==  '
+                           || elap_subs_sim_pattern_explicitly || 'ms'
                            || ' -  greater than treshold = ' || SIMILAR2_THRESHOLD
             ;
         else
             msg_subs_sim = 'Acceptable.';
 
-        
+
         suspend;
 
     end
@@ -178,15 +168,15 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG_SIMILAR2                    Acceptable.
     MSG_SUBS_SIM                    Acceptable.
 """
 
 @pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

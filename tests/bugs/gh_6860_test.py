@@ -1,45 +1,52 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6860
-# title:        Create user statement fails with SQLSTATE = HY000 when using DataTypeCompatibility
-# decription:
-#                   Test makes back-copies of firebnird.conf + databases.conf and changes firebird.conf by adding DataTypeCompatibility = N.M;
-#                   also, databases.conf is changed by adding alias for new database which will be self-security and has alias = 'self_gh_6860'.
-#                   Such database (self-security) allows us to create new DBA (SYSDBA/masterkey) without any affect on common security.db data.
-#
-#                   Then we make file-level copy of security.db to database defined by alias 'self_gh_6860', do connect and apply SQL script that
-#                   creates and drops user. Repeat this for DataTypeCompatibility = 2.5 and 3.0.
-#                   No errors must raise during this work.
-#
-#                   Finally, test restored back-copies of .conf files.
-#
-#                   NOTE-1.
-#                   Perhaps, test can be significantly simplified (may be implemented without self-security database ?), but this will be done later.
-#
-#                   NOTE-2.
-#                   One need to change temporary DB state to 'full shutdown' before drop it otherwise we get 'Windows 32' error because DB file remains
-#                   opened by engine. In order to do this, we have to call fbsvcmgr and pass "expected_db" command switch to it with specifying name
-#                   of tempoprary DB which is self-security. Otherwise fbsvcmgr will try to connect to common security.db.
-#
-#                   Confirmed on 5.0.0.82, 4.0.1.2519: statement  'CREATE USER SYSDBA ...' fails with "SQLSTATE = HY000/.../-Incompatible data type"
-#                   Checked on 5.0.0.131 SS/CS, 4.0.1.2563 SS/CS -- all fine.
-#
-# tracker_id:
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-6860
+ISSUE:       6860
+TITLE:       Create user statement fails with SQLSTATE = HY000 when using DataTypeCompatibility
+DESCRIPTION:
+  Test makes back-copies of firebnird.conf + databases.conf and changes firebird.conf by adding DataTypeCompatibility = N.M;
+  also, databases.conf is changed by adding alias for new database which will be self-security and has alias = 'self_gh_6860'.
+  Such database (self-security) allows us to create new DBA (SYSDBA/masterkey) without any affect on common security.db data.
+
+  Then we make file-level copy of security.db to database defined by alias 'self_gh_6860', do connect and apply SQL script that
+  creates and drops user. Repeat this for DataTypeCompatibility = 2.5 and 3.0.
+  No errors must raise during this work.
+
+  Finally, test restored back-copies of .conf files.
+
+  NOTE-1.
+  Perhaps, test can be significantly simplified (may be implemented without self-security database ?), but this will be done later.
+
+  NOTE-2.
+  One need to change temporary DB state to 'full shutdown' before drop it otherwise we get 'Windows 32' error because DB file remains
+  opened by engine. In order to do this, we have to call fbsvcmgr and pass "expected_db" command switch to it with specifying name
+  of tempoprary DB which is self-security. Otherwise fbsvcmgr will try to connect to common security.db.
+
+  Confirmed on 5.0.0.82, 4.0.1.2519: statement  'CREATE USER SYSDBA ...' fails with "SQLSTATE = HY000/.../-Incompatible data type"
+  Checked on 5.0.0.131 SS/CS, 4.0.1.2563 SS/CS -- all fine.
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act_ = python_act('db_1')
 
-init_script_1 = """"""
+expected_stdout = """
+    SEC$USER_NAME                   TMP$GH_6860_25
+    SEC$USER_NAME                   TMP$GH_6860_25_X
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+
+    SEC$USER_NAME                   TMP$GH_6860_30
+    SEC$USER_NAME                   TMP$GH_6860_30_X
+"""
+
+@pytest.mark.skip('FIXME: databases.conf / firebird.conf')
+@pytest.mark.version('>=4.0.1')
+def test_1(act_: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -251,19 +258,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  shutil.move( dbconf_bak, dbconf_cur )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    SEC$USER_NAME                   TMP$GH_6860_25
-    SEC$USER_NAME                   TMP$GH_6860_25_X
-
-
-    SEC$USER_NAME                   TMP$GH_6860_30
-    SEC$USER_NAME                   TMP$GH_6860_30_X
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

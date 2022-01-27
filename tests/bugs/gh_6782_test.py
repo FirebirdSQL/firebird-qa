@@ -1,58 +1,80 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6782
-# title:        Getting "records fetched" for functions/procedures in trace
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6782
-#
-#                   Confirmed bug on 4.0.0.2436: there was no lines with numner of:
-#                       * number of fetched rows;
-#                       * additional info about number of fetches/reads/writes/marks (after elapsed time).
-#
-#                   In other words, trace log:
-#                   * was before fix:
-#                       Procedure <some_name>
-#                             0 ms
-#                  * became after fix:
-#                       Procedure <some_name>
-#                       5 records fetched    <<< --- added
-#                             0 ms, 10 fetch(es)
-#                                   ^^^^^^^^^^^^ --- added
-#
-#                   Test parses trace log and search there lines with names of known procedures/functions and
-#                   then checks presence of lines with number of fetched records (for selectable procedures) and
-#                   additional statistics ('fetches/reads/writes/marks').
-#
-#                   Checked on:
-#                       5.0.0.87 SS: 7.231s.
-#                       5.0.0.85 CS: 6.425s.
-#                       4.0.1.2520 SS: 6.929s.
-#                       4.0.1.2519 CS: 9.452s.
-#                       3.0.8.33476 SS: 12.199s.
-#                       3.0.8.33476 CS: 14.090s.
-#
-#                   29.06.2021: added delay for 1.1 second after ISQL finished its script and before we ask trace to stop.
-#                   This is the only way to make trace log be completed. DO NOT EVER remove this delay because fbsvcmgr
-#                   makes query to FB services only one time per SECOND.
-#
-#                   See also reply from Vlad related to test for core-6469, privately, letter: 04-mar-2021 13:02.
-#
-# tracker_id:   GH-6782
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-6782
+ISSUE:       6782
+TITLE:       Getting "records fetched" for functions/procedures in trace
+DESCRIPTION:
+  Confirmed bug on 4.0.0.2436: there was no lines with numner of:
+    * number of fetched rows;
+    * additional info about number of fetches/reads/writes/marks (after elapsed time).
+
+  In other words, trace log:
+  * was before fix:
+    Procedure <some_name>
+          0 ms
+  * became after fix:
+    Procedure <some_name>
+    5 records fetched    <<< --- added
+          0 ms, 10 fetch(es)
+                ^^^^^^^^^^^^ --- added
+
+  Test parses trace log and search there lines with names of known procedures/functions and
+  then checks presence of lines with number of fetched records (for selectable procedures) and
+  additional statistics ('fetches/reads/writes/marks').
+
+  Checked on:
+    5.0.0.87 SS: 7.231s.
+    5.0.0.85 CS: 6.425s.
+    4.0.1.2520 SS: 6.929s.
+    4.0.1.2519 CS: 9.452s.
+    3.0.8.33476 SS: 12.199s.
+    3.0.8.33476 CS: 14.090s.
+NOTES:
+[29.06.2021]
+  Added delay for 1.1 second after ISQL finished its script and before we ask trace to stop.
+  This is the only way to make trace log be completed. DO NOT EVER remove this delay because fbsvcmgr
+  makes query to FB services only one time per SECOND.
+
+  See also reply from Vlad related to test for core-6469, privately, letter: 04-mar-2021 13:02.
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    Procedure STANDALONE_SELECTABLE_SP:
+    FOUND line with number of fetched records
+    FOUND line with execution statistics
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+    Function STANDALONE_FUNC:
+    FOUND line with execution statistics
+
+    Procedure STANDALONE_NONSELECTED_SP:
+    FOUND line with execution statistics
+
+    Procedure PG_TEST.PACKAGED_SELECTABLE_SP:
+    FOUND line with number of fetched records
+    FOUND line with execution statistics
+
+    Function PG_TEST.PACKAGED_FUNC:
+    FOUND line with execution statistics
+
+    Procedure PG_TEST.PACKAGED_NONSELECTED_SP:
+    FOUND line with execution statistics
+
+    Procedure SP_MAIN:
+    FOUND line with execution statistics
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.8')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -325,34 +347,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( (trc_lst, trc_cfg, trc_log, isql_cmd, isql_log) )
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Procedure STANDALONE_SELECTABLE_SP:
-    FOUND line with number of fetched records
-    FOUND line with execution statistics
-
-    Function STANDALONE_FUNC:
-    FOUND line with execution statistics
-
-    Procedure STANDALONE_NONSELECTED_SP:
-    FOUND line with execution statistics
-
-    Procedure PG_TEST.PACKAGED_SELECTABLE_SP:
-    FOUND line with number of fetched records
-    FOUND line with execution statistics
-
-    Function PG_TEST.PACKAGED_FUNC:
-    FOUND line with execution statistics
-
-    Procedure PG_TEST.PACKAGED_NONSELECTED_SP:
-    FOUND line with execution statistics
-
-    Procedure SP_MAIN:
-    FOUND line with execution statistics
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

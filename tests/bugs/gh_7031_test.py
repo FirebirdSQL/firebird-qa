@@ -1,35 +1,31 @@
 #coding:utf-8
-#
-# id:           bugs.gh_7031
-# title:        gbak -b failed with "invalid transaction handle (expecting explicit transaction start)"
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/7031
-#
-#                   Confirmed bug on 3.0.8.33524, 4.0.0.2642, 5.0.0.271:
-#                   backup not completed (.fbk file was not created), got following:
-#                       * in the STDERR of gbak (only in FB 3.0.8; NOT in FB 4.0 and 5.0):
-#                           gbak: ERROR:invalid transaction handle (expecting explicit transaction start)
-#                           gbak:Exiting before completion due to errors
-#                       * in firebird.log (for all: 3.0.8, 4.0, 5.0):
-#                           internal Firebird consistency check (page in use during flush (210), file: cch.cpp line: NNN)
-#                   Checked on 3.0.8.33525
-#
-# tracker_id:
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-7031
+ISSUE:       7031
+TITLE:       gbak -b failed with "invalid transaction handle (expecting explicit transaction start)"
+DESCRIPTION:
+  Confirmed bug on 3.0.8.33524, 4.0.0.2642, 5.0.0.271:
+  backup not completed (.fbk file was not created), got following:
+    * in the STDERR of gbak (only in FB 3.0.8; NOT in FB 4.0 and 5.0):
+        gbak: ERROR:invalid transaction handle (expecting explicit transaction start)
+        gbak:Exiting before completion due to errors
+    * in firebird.log (for all: 3.0.8, 4.0, 5.0):
+        internal Firebird consistency check (page in use during flush (210), file: cch.cpp line: NNN)
+  Checked on 3.0.8.33525
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
+act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.8')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -174,10 +170,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( (test_fdb, test_fbk, test_res, f_gbak_log, f_gbak_err, f_diff_txt, f_fblog_before, f_fblog_after ) )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

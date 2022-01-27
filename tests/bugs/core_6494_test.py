@@ -1,42 +1,31 @@
 #coding:utf-8
-#
-# id:           bugs.core_6494
-# title:        Inconsistent translation "string->timestamp->string->timestamp" in dialect 1
-# decription:   
-#                   Confirmed bug on: 4.0.0.2406, 3.0.8.33441.
-#                   Checked on: 4.0.0.2416, 3.0.8.33445 - all fine.
-#                 
-# tracker_id:   CORE-6494
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         
+
+"""
+ID:          issue-6724
+ISSUE:       6724
+TITLE:       Inconsistent translation "string->timestamp->string->timestamp" in dialect 1
+DESCRIPTION:
+JIRA:        CORE-6494
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory(sql_dialect=1)
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=1, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
     select cast(cast(cast(cast('2-dec-0083' as timestamp) as varchar(64))as timestamp)as varchar(64)) from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     02-DEC-0083
 """
 
 @pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

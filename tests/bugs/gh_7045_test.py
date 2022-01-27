@@ -1,31 +1,28 @@
 #coding:utf-8
-#
-# id:           bugs.gh_7045
-# title:        International characters in table or alias names causes queries of MON$STATEMENTS to fail
-# decription:
-#                   NOTES.
-#                   Blob column mon$explained_plan seems to be source of problem, but only for mon$statements table.
-#                   Other blob columns (e.g. rdb$exceptions.rdb$description or sec$users.sec$description) not affected.
-#
-#                   Confirmed bug on 5.0.0.310.
-#                   Checked on 5.0.0.311 - all fine.
-#
-# tracker_id:
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-7045
+ISSUE:       7045
+TITLE:       International characters in table or alias names causes queries of MON$STATEMENTS to fail
+DESCRIPTION:
+  Blob column mon$explained_plan seems to be source of problem, but only for mon$statements table.
+  Other blob columns (e.g. rdb$exceptions.rdb$description or sec$users.sec$description) not affected.
+
+  Confirmed bug on 5.0.0.310.
+  Checked on 5.0.0.311 - all fine.
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=5.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -105,10 +102,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup((f_sql_chk, f_sql_log, f_sql_err))
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

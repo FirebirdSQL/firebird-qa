@@ -1,37 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_6466
-# title:        Comments before the first line of code are removed (when extract metadata)
-# decription:
-#                  Lot of comments (multi-line blocks) are inserted before each clause/token of created SP
-#                  (in its declaration of name, input and output parameters, sections of variables and after
-#                  final 'end').
-#                  Comments before 'AS' clause will be removed after SP commit (i.e. they must not be shown
-#                  when metadata is axtracted - at least for current versions of FB).
-#                  First comment _after_ 'AS' clause (and before 1st 'declare variable' statement) *must*
-#                  be preserved.
-#                  Comment after final 'end' of procedure must also be preserved.
-#
-#                  Confirmed bug on:
-#                      * 4.0.0.2353 - final comment ('950' in this script) was not stored;
-#                      * 3.0.8.33401 - comments before first declaration of variable ('900') and after final
-#                                      'end' ('950') were not stored.
-#                  Checked on 4.0.0.2365, 3.0.8.33415 -- all fine.
-#
-# tracker_id:   CORE-6466
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-6698
+ISSUE:       6698
+TITLE:       Comments before the first line of code are removed (when extract metadata)
+DESCRIPTION:
+  Lot of comments (multi-line blocks) are inserted before each clause/token of created SP
+  (in its declaration of name, input and output parameters, sections of variables and after
+  final 'end').
+  Comments before 'AS' clause will be removed after SP commit (i.e. they must not be shown
+  when metadata is axtracted - at least for current versions of FB).
+  First comment _after_ 'AS' clause (and before 1st 'declare variable' statement) *must*
+  be preserved.
+  Comment after final 'end' of procedure must also be preserved.
+JIRA:        CORE-6466
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
-
-substitutions_1 = [('^((?!comment-[\\d]+).)*$', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """
+init_script = """
     set term ^;
     create or alter procedure sp_test1
     		/*
@@ -115,18 +103,11 @@ init_script_1 = """
     set term ;^
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-#
-#  runProgram('isql', [dsn, '-x', '-user', user_name, '-pas', user_password], )
-#
-#---
+act = python_act('db', substitutions=[('^((?!comment-[\\d]+).)*$', ''), ('[ \t]+', ' ')])
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     comment-900
     comment-910
     comment-920
@@ -136,9 +117,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.extract_meta()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.extract_meta()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,37 +1,27 @@
 #coding:utf-8
-#
-# id:           bugs.gh_0310
-# title:        Feature CORE-6482 - System table with keywords.
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/pull/310
-#               
-#                
-# tracker_id:   
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-6713
+ISSUE:       6713
+TITLE:       System table with keywords
+DESCRIPTION:
+JIRA:        CORE-6482
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set count on;
     select * from rdb$keywords order by rdb$keyword_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$KEYWORD_NAME                ABS
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                ABSOLUTE
@@ -1020,8 +1010,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

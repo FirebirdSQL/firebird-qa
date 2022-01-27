@@ -1,52 +1,56 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6790
-# title:        MON$ATTACHMENTS.MON$TIMESTAMP is incorrect when DefaultTimeZone is configured with time zone different from the server's default
-# decription:
-#                   We make backup of current firebird.conf before changing its parameter DefaultTimeZone to randomly selected value from RDB$TIME_ZONES.
-#                   Then we close current connection and launch child ISQL process that makes *LOCAL* connect to current DB.
-#                   ISQL will obtain mon$session_timezone, mon$timestamp and current_timestamp values from mon$attachments.
-#                   Then it will extract time zone name from current_timestamp string (by call substring() with specifying starting position = 26).
-#
-#                   Values of mon$session_timezone and extracted time zone from current_timestamp must be equals.
-#                   Also, difference between mon$timestamp current_timestamp must be no more than 1..2 seconds (see 'MAX_DIFF_SECONDS' variable).
-#
-#                   ::: NB :::
-#                   1. Affect of changed parameter DefaultTimeZone can be seen only if DB is attached using *LOCAL* protocol.
-#                      Attempt to connect using remote protocol will fail: engine returns previous value of DefaultTimeZone.
-#                      One need to wait at least 130 seconds after changing firebird.conf for new value be returned at this case!
-#                      The reason of that is 10+60+60 seconds which are needed to fully unload shmem-related structures from memory.
-#                      Explanation from Vlad: letter 24.01.2021 18:00, subj: "System audit in FB.  Is there some kind of timeout of 130 seconds ?"
-#                      (it was discussion about attempts make test for CORE-5993)
-#                      See also: http://tracker.firebirdsql.org/browse/CORE-6476
-#
-#                   2. FDB driver loads client library only *once* before this test launch and, in turn, this library reads firebird.conf.
-#                      For this reason we have to launch separate (child) process two times, which will be forced to load firebird.conf
-#                      every launch. This is why subprocess.call(['isql', ...]) is needed here rather than just query DB using cursor of
-#                      pre-existing db_conn connection (see routine 'get_local_time').
-#
-#                   ::: NB ::: 22.05.2021
-#                   This test initially had wrong value of min_version = 4.0
-#                   Bug was fixed on 4.1.0.2468, build timestamp: 06-may-2021 12:34 thus min_version should be 4.1
-#                   After several days this new FB branch was renamed to 5.0.
-#                   Because of this, min_version for this test is 5.0
-#
-# tracker_id:
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-6790
+ISSUE:       6790
+TITLE:       MON$ATTACHMENTS.MON$TIMESTAMP is incorrect when DefaultTimeZone is configured
+  with time zone different from the server's default
+DESCRIPTION:
+  We make backup of current firebird.conf before changing its parameter DefaultTimeZone to randomly selected value from RDB$TIME_ZONES.
+  Then we close current connection and launch child ISQL process that makes *LOCAL* connect to current DB.
+  ISQL will obtain mon$session_timezone, mon$timestamp and current_timestamp values from mon$attachments.
+  Then it will extract time zone name from current_timestamp string (by call substring() with specifying starting position = 26).
+
+  Values of mon$session_timezone and extracted time zone from current_timestamp must be equals.
+  Also, difference between mon$timestamp current_timestamp must be no more than 1..2 seconds (see 'MAX_DIFF_SECONDS' variable).
+
+  ::: NB :::
+  1. Affect of changed parameter DefaultTimeZone can be seen only if DB is attached using *LOCAL* protocol.
+     Attempt to connect using remote protocol will fail: engine returns previous value of DefaultTimeZone.
+     One need to wait at least 130 seconds after changing firebird.conf for new value be returned at this case!
+     The reason of that is 10+60+60 seconds which are needed to fully unload shmem-related structures from memory.
+     Explanation from Vlad: letter 24.01.2021 18:00, subj: "System audit in FB.  Is there some kind of timeout of 130 seconds ?"
+     (it was discussion about attempts make test for CORE-5993)
+     See also: http://tracker.firebirdsql.org/browse/CORE-6476
+
+  2. FDB driver loads client library only *once* before this test launch and, in turn, this library reads firebird.conf.
+     For this reason we have to launch separate (child) process two times, which will be forced to load firebird.conf
+     every launch. This is why subprocess.call(['isql', ...]) is needed here rather than just query DB using cursor of
+     pre-existing db_conn connection (see routine 'get_local_time').
+NOTES:
+[22.05.2021]
+  This test initially had wrong value of min_version = 4.0
+  Bug was fixed on 4.1.0.2468, build timestamp: 06-may-2021 12:34 thus min_version should be 4.1
+  After several days this new FB branch was renamed to 5.0.
+  Because of this, min_version for this test is 5.0
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    mon$session_timezone = current_timestamp zone ? => OK, EQUALS.
+    mon$timestamp = current_timestamp ? => OK, EQUALS.
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=5.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -213,14 +217,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( (f_connect_sql, f_connect_log,) )
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    mon$session_timezone = current_timestamp zone ? => OK, EQUALS.
-    mon$timestamp = current_timestamp ? => OK, EQUALS.
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

@@ -1,29 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_6385
-# title:        Wrong line and column information after IF statement
-# decription:   
-#                   DO NOT make indentation or excessive empty lines in the code that is executed by ISQL.
-#                   Checked on 4.0.0.2170.
-#                 
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         
+
+"""
+ID:          issue-6624
+ISSUE:       6624
+TITLE:       Wrong line and column information after IF statement
+DESCRIPTION:
+  DO NOT make indentation or excessive empty lines in the code that is executed by ISQL.
+JIRA:        CORE-6385
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!At\\s+block\\s+line).)*$', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 set term ^;
 execute block
 as
@@ -36,15 +27,15 @@ end^
 set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!At\\s+block\\s+line).)*$', ''),
+                                                 ('[ \t]+', ' ')])
 
-expected_stderr_1 = """
+expected_stderr = """
 -At block line: 7, col: 5
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

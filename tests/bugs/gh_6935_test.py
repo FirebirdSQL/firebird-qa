@@ -1,95 +1,74 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6935
-# title:        SQL SECURITY DEFINER has inconsistent behaviour if the object owner is non-privileged
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6935
-#               
-#                   We create three users:
-#               
-#                       *  'tmp$sp_definer' - he will be temporary granted to create procedures 
-#                          and will create several SPs with 'SQL SECURITY DEFINER' modifier.
-#                          These procedures are following:
-#                            1 'sp_chk_mon_access' - it tries to gather all avaliable data 
-#                              about user attachments and active statements which they perform
-#                              (i.e. it queries ALL data from mon$-tables);
-#                            2 'sp_clear_ext_pool' - it makes attempt to clear external connections pool
-#                              (it does this within begin...when any...end block);
-#                            3 'sp_chk_sql_rights' - it tries to insert record in the table 'log_table'.
-#                          
-#                          NOTE. After these procedures will be created, test does re-connect as SYSDBA
-#                          and revokes any privilege from 'tmp$sp_definer', i.e. it becomes non-privileged.
-#               
-#                       * 'tmp$outside_caller' - he will execute procedure 'sp_chk_syspriv_main' which can
-#                          be invoked by public and calls, in turn, procedure 'sp_chk_mon_access'.
-#                       * 'tmp$almost_dba' - he will be granted with several system privileged:
-#                         MONITOR_ANY_ATTACHMENT, MODIFY_EXT_CONN_POOL and ACCESS_ANY_OBJECT_IN_DATABASE.
-#               
-#                   Following actions must be done after this:
-#               
-#                       * 1) check ticket issue:
-#                             -----------
-#                             "1. Usage of MON$ tables
-#                              ... when user 'tmp$outside_caller' calls procedure with definer 'tmp$sp_definer'
-#                              which (ooops) sees attachments by user 'tmp$outside_caller'
-#                             -----------
-#                         In order to do that, we connect as 'tmp$sp_definer' and invoke SP 'sp_chk_mon_access'
-#                         using ES mechanism and pass user 'tmp$outside_caller' access rights there
-#                         (NB: this SP was created by 'tmp$sp_definer' and has 'SQL SECURITY DEFINER' modifier).
-#               
-#                         Inside SP effective user becomes 'tmp$sp_definer' and he is also non-privileged (as 'tmp$outside_caller').
-#                         This means that he must be able to see only mon$attachments rows where mon$user = 'tmp$sp_definer'.
-#                         He must NOT see rows where mon$user = 'tmp$outside_caller' (which was so before this ticket fixed).
-#               
-#                       * 2) check ticket issue:
-#                             -----------
-#                             "2. System privileges.
-#                              if *privileged* user 'tmp$almost_dba' calls procedure with non-privileged definer 'tmp$sp_definer', it still
-#                              can perform every DBA action inside that SP, like if it was executed under 'tmp$almost_dba's permissions"
-#                             -----------
-#                         Three system privileges are checked here:
-#                             a. MONITOR_ANY_ATTACHMENT
-#                                 We connect as 'tmp$almost_dba' and invoke SP 'sp_chk_mon_access' as (again) user 'tmp$outside_caller'.
-#                                 Inside SP effective user becomes 'tmp$sp_definer'.
-#                                 He must be able to see only mon$attachments rows with mon$user = 'tmp$sp_definer' - but there are no such
-#                                 rows in monattachments at this moment because we did not connect as 'tmp$sp_definer'.
-#                                 This means that 'sp_chk_mon_access' must return NULLs instead of non-empty data from mon$ tables.
-#               
-#                             b. MODIFY_EXT_CONN_POOL
-#                                 connect as 'tmp$almost_dba' and invoke SP 'sp_clear_ext_pool' which tries to clear Ext. Connections Pool (ECP).
-#                                 But effective user inside this SP becomes 'tmp$sp_definer' and he has no any system privilege.
-#                                 This means that attempt to clear ECP must fail.
-#                       
-#                             c. ACCESS_ANY_OBJECT_IN_DATABASE
-#                                 connect as 'tmp$almost_dba' and invoke SP 'sp_chk_sql_rights' which tries to make DML agains table 'log_table'.
-#                                 Effective user inside this SP becomes 'tmp$sp_definer' and he has no any system privilege.
-#                                 Consequently, attempt to insert row into this table must fail.
-#               
-#                   Confirmed bug on 4.0.1.2573, 5.0.0.163
-#                   Checked on:
-#                       5.0.0.172 SS: 3.050s;    5.0.0.172 CS: 4.491s.
-#                      4.0.1.2578 SS: 3.017s;    4.0.1.2578 CS: 4.061s.
-#               
-#                   01.09.2021: added "where"-filtering for exclude statement with query to RDB$AUTH_MAPPING (4.0 Classic).
-#                
-# tracker_id:   
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-6935
+ISSUE:       6935
+TITLE:       SQL SECURITY DEFINER has inconsistent behaviour if the object owner is non-privileged
+DESCRIPTION:
+  We create three users:
+    *  'tmp$sp_definer' - he will be temporary granted to create procedures
+       and will create several SPs with 'SQL SECURITY DEFINER' modifier.
+       These procedures are following:
+         1 'sp_chk_mon_access' - it tries to gather all avaliable data
+           about user attachments and active statements which they perform
+           (i.e. it queries ALL data from mon$-tables);
+         2 'sp_clear_ext_pool' - it makes attempt to clear external connections pool
+           (it does this within begin...when any...end block);
+         3 'sp_chk_sql_rights' - it tries to insert record in the table 'log_table'.
+       NOTE. After these procedures will be created, test does re-connect as SYSDBA
+       and revokes any privilege from 'tmp$sp_definer', i.e. it becomes non-privileged.
+    * 'tmp$outside_caller' - he will execute procedure 'sp_chk_syspriv_main' which can
+       be invoked by public and calls, in turn, procedure 'sp_chk_mon_access'.
+    * 'tmp$almost_dba' - he will be granted with several system privileged:
+      MONITOR_ANY_ATTACHMENT, MODIFY_EXT_CONN_POOL and ACCESS_ANY_OBJECT_IN_DATABASE.
+
+  Following actions must be done after this:
+    * 1) check ticket issue:
+          -----------
+          "1. Usage of MON$ tables
+           ... when user 'tmp$outside_caller' calls procedure with definer 'tmp$sp_definer'
+           which (ooops) sees attachments by user 'tmp$outside_caller'
+          -----------
+      In order to do that, we connect as 'tmp$sp_definer' and invoke SP 'sp_chk_mon_access'
+      using ES mechanism and pass user 'tmp$outside_caller' access rights there
+      (NB: this SP was created by 'tmp$sp_definer' and has 'SQL SECURITY DEFINER' modifier).
+
+      Inside SP effective user becomes 'tmp$sp_definer' and he is also non-privileged (as 'tmp$outside_caller').
+      This means that he must be able to see only mon$attachments rows where mon$user = 'tmp$sp_definer'.
+      He must NOT see rows where mon$user = 'tmp$outside_caller' (which was so before this ticket fixed).
+    * 2) check ticket issue:
+          -----------
+          "2. System privileges.
+           if *privileged* user 'tmp$almost_dba' calls procedure with non-privileged definer 'tmp$sp_definer', it still
+           can perform every DBA action inside that SP, like if it was executed under 'tmp$almost_dba's permissions"
+          -----------
+      Three system privileges are checked here:
+          a. MONITOR_ANY_ATTACHMENT
+              We connect as 'tmp$almost_dba' and invoke SP 'sp_chk_mon_access' as (again) user 'tmp$outside_caller'.
+              Inside SP effective user becomes 'tmp$sp_definer'.
+              He must be able to see only mon$attachments rows with mon$user = 'tmp$sp_definer' - but there are no such
+              rows in monattachments at this moment because we did not connect as 'tmp$sp_definer'.
+              This means that 'sp_chk_mon_access' must return NULLs instead of non-empty data from mon$ tables.
+          b. MODIFY_EXT_CONN_POOL
+              connect as 'tmp$almost_dba' and invoke SP 'sp_clear_ext_pool' which tries to clear Ext. Connections Pool (ECP).
+              But effective user inside this SP becomes 'tmp$sp_definer' and he has no any system privilege.
+              This means that attempt to clear ECP must fail.
+
+          c. ACCESS_ANY_OBJECT_IN_DATABASE
+              connect as 'tmp$almost_dba' and invoke SP 'sp_chk_sql_rights' which tries to make DML agains table 'log_table'.
+              Effective user inside this SP becomes 'tmp$sp_definer' and he has no any system privilege.
+              Consequently, attempt to insert row into this table must fail.
+NOTES:
+[01.09.2021]
+  Added "where"-filtering for exclude statement with query to RDB$AUTH_MAPPING (4.0 Classic).
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('EXECUTING_SQL_BLOB .* \\d.*', 'EXECUTING_SQL_BLOB')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 set list on;
 set bail on;
 create table log_table(id int, eff_user varchar(32), mon_user varchar(32) );
@@ -127,7 +106,7 @@ begin
             a.mon$user
            ,s.mon$sql_text
         from rdb$database r
-        left join 
+        left join
         ( mon$attachments a
           join mon$statements s on a.mon$attachment_id = s.mon$attachment_id and s.mon$sql_text not like '%RDB$AUTH_MAPPING%'
         ) on 1=1
@@ -220,7 +199,7 @@ begin
     for
         execute statement
         (
-                'select /* Inside sp_chk_syspriv_main. Enter SP as: ' || current_user 
+                'select /* Inside sp_chk_syspriv_main. Enter SP as: ' || current_user
              || ', run ES as: ' || upper(:a_run_as_who)
              || ' */ who_am_i, eff_user, mon_user, executing_sql_blob'
              || ' from sp_chk_mon_access' -- its definer is 'tmp$sp_definer'
@@ -298,8 +277,8 @@ set term ;^
 
 select -- Invoke sp_chk_syspriv_main. Work as tmp$almost_dba
     'CHECK-1' as msg
-    ,p.* 
-from rdb$database 
+    ,p.*
+from rdb$database
 left join sp_chk_syspriv_main('tmp$outside_caller') p on 1=1
 ;
 commit;
@@ -341,7 +320,7 @@ set transaction read committed record_version;
 
 select /* Before sp_chk_syspriv_main. Work as tmp$almost_dba */
      'CHECK-3' as msg
-    ,p.* 
+    ,p.*
 from rdb$database
 left join sp_chk_syspriv_main('tmp$outside_caller') p on 1=1
 ;
@@ -351,7 +330,7 @@ left join sp_chk_syspriv_main('tmp$outside_caller') p on 1=1
 -- SP sp_clear_ext_pool was created with SQL SECURITY DEFINER and
 -- its definer ('tmp$sp_definer') has not any system privilege:
 --
-select 
+select
     'CHECK-4' as msg
     ,p.*
 from rdb$database
@@ -389,12 +368,12 @@ drop user tmp$sp_definer;
 drop user tmp$outside_caller;
 commit;
 
- 
+
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('EXECUTING_SQL_BLOB .* \\d.*', 'EXECUTING_SQL_BLOB')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             CHECK-1
     WHO_AM_I                        TMP$OUTSIDE_CALLER
     EFF_USER                        TMP$SP_DEFINER
@@ -431,7 +410,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

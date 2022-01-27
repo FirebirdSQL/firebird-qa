@@ -1,33 +1,27 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6866
-# title:        Some orphan records left at RDB$SECURITY_CLASSES and RDB$USER_PRIVILEGES after DROP PROCEDURE\\FUNCTION
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6866
-#
-#                   Note: code for 3.0.8 was separated from 4.x+: there is no 'sql security definer|invoker' clause before FB 4.x.
-#                   Only procedures, functions and packages are checked here.
-#                   More checks (for all other kinds of DB objects: tables, views etc) will be done in the test for GH-6868.
-#
-#                   Confirmed bug on 5.0.0.82
-#                   Checked on 5.0.0.85; 4.0.1.2520; 3.0.8.33476.
-#
-# tracker_id:
-# min_versions: ['3.0.8']
-# versions:     3.0.8, 3.0.8
-# qmid:         None
+
+"""
+ID:          issue-6866
+ISSUE:       6866
+TITLE:       Some orphan records left at RDB$SECURITY_CLASSES and RDB$USER_PRIVILEGES after DROP PROCEDURE\\FUNCTION
+DESCRIPTION:
+  Code for 3.0.8 was separated from 4.x+: there is no 'sql security definer|invoker' clause before FB 4.x.
+  Only procedures, functions and packages are checked here.
+  More checks (for all other kinds of DB objects: tables, views etc) will be done in the test for GH-6868.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+substitutions = [('[ ]+', ' ')]
+
+db = db_factory()
+
+expected_stdout = """
+    MSG                             Number of rows in rdb$security_classes and rdb$user_privileges was not changed.
+"""
 
 # version: 3.0.8
-# resources: None
-
-substitutions_1 = [('[ ]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     set bail on;
@@ -202,26 +196,15 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    MSG                             Number of rows in rdb$security_classes and rdb$user_privileges was not changed.
-"""
+act_1 = isql_act('db', test_script_1, substitutions=substitutions)
 
 @pytest.mark.version('>=3.0.8,<4.0')
 def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
+    act_1.expected_stdout = expected_stdout
     act_1.execute()
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
-# version: 3.0.8
-# resources: None
-
-substitutions_2 = [('[ ]+', ' ')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
+# version: 4.0
 
 test_script_2 = """
     set bail on;
@@ -396,14 +379,10 @@ test_script_2 = """
     commit;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
-
-expected_stdout_2 = """
-    MSG                             Number of rows in rdb$security_classes and rdb$user_privileges was not changed.
-"""
+act_2 = isql_act('db', test_script_2, substitutions=substitutions)
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
+    act_2.expected_stdout = expected_stdout
     act_2.execute()
     assert act_2.clean_stdout == act_2.clean_expected_stdout

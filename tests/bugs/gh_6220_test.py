@@ -1,51 +1,39 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6220
-# title:        Slow performance when executing SQL scripts as non-SYSDBA user [CORE5966]
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6220
-#
-#                   Confirmed poor ratio between sysdba/non_dba time on 3.0.4.33054 (03-oct-2018): ratio was about 3.5 ... 4.0.
-#                   Bug was fixed in 3.0.5, 11-nov-2018, build #33081 ( https://www.sql.ru/forum/actualutils.aspx?action=gotomsg&tid=1295388&msg=21800371 ).
-#
-#                   Recent FB versions have no problem, ratio is about 1.05 ... 1.15.
-#
-#                   Problem can be preproduced if each DML prepare will require lot of work, for example - check access rights for many nested views before
-#                   update underlying table.
-#
-#                   30.11.2021. Completely reworked: use psutil package in order to take in account CPU User Time instead of evaluating datediff.
-#                   Difference between CPU User Time values which are received before and after each call of stored procedure can be considered as much more
-#                   accurate way to evaluate time that was spent for job.
-#
-#                   Test creates table and lot of nested views based on this table and (furter) on each other.
-#                   Then stored procedure is created with DYNAMIC SQL, and we intentionally do NOT use parameters in it (because we want engine to compile
-#                   statement on each iteration).
-#                   Procedure performs loop for <N_COUNT_PER_MEASURE> times with executing statement like 'UPDATE <top_level_view> SET <new values here on each iteration>'.
-#                   Engine needs to determine access rights not only for <top_level_view> but also for all NESTED views and, eventually, for underlying table which must be
-#                   updated.
-#                   We call this procedure N_MEASURES times for SYSDBA and the same (N_MEASURES times) for NON_DBA user, and store difference values between CPU User Time
-#                   counters for each call. These differences then are divided (value that was received for NON_DBA is divided for apropriate value of SYSDBA).
-#                   MEDIAN of these ratios must be LESS than threshold MAX_TIME_RATIO.
-#
-#                   Checked on:
-#                       5.0.0.321 : 18.426s.
-#                       4.0.1.2672 : 18.469s.
-#                       3.0.8.33540 : 18.220s.
-#
-# tracker_id:
-# min_versions: ['3.0.4']
-# versions:     3.0.4
-# qmid:         None
+
+"""
+ID:          issue-6220
+ISSUE:       6220
+TITLE:       Slow performance when executing SQL scripts as non-SYSDBA user
+DESCRIPTION:
+  Confirmed poor ratio between sysdba/non_dba time on 3.0.4.33054 (03-oct-2018): ratio was about 3.5 ... 4.0.
+  Bug was fixed in 3.0.5, 11-nov-2018, build #33081 ( https://www.sql.ru/forum/actualutils.aspx?action=gotomsg&tid=1295388&msg=21800371 ).
+
+  Recent FB versions have no problem, ratio is about 1.05 ... 1.15.
+
+  Problem can be preproduced if each DML prepare will require lot of work, for example - check access rights for many nested views before
+  update underlying table.
+NOTES:
+[30.11.2021]
+  Completely reworked: use psutil package in order to take in account CPU User Time instead of evaluating datediff.
+  Difference between CPU User Time values which are received before and after each call of stored procedure can be considered as much more
+  accurate way to evaluate time that was spent for job.
+
+  Test creates table and lot of nested views based on this table and (furter) on each other.
+  Then stored procedure is created with DYNAMIC SQL, and we intentionally do NOT use parameters in it (because we want engine to compile
+  statement on each iteration).
+  Procedure performs loop for <N_COUNT_PER_MEASURE> times with executing statement like 'UPDATE <top_level_view> SET <new values here on each iteration>'.
+  Engine needs to determine access rights not only for <top_level_view> but also for all NESTED views and, eventually, for underlying table which must be
+  updated.
+  We call this procedure N_MEASURES times for SYSDBA and the same (N_MEASURES times) for NON_DBA user, and store difference values between CPU User Time
+  counters for each call. These differences then are divided (value that was received for NON_DBA is divided for apropriate value of SYSDBA).
+  MEDIAN of these ratios must be LESS than threshold MAX_TIME_RATIO.
+JIRA:        CORE-5966
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.4
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     set bail on;
     create or alter user tmp$gh_6220 password '123' using plugin Srp;
     recreate sequence g;
@@ -177,7 +165,18 @@ init_script_1 = """
 
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
+
+act = python_act('db')
+
+expected_stdout = """
+    Durations ratio for execution by NON-DBA vs SYSDBA: acceptable.
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.4')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -262,13 +261,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Durations ratio for execution by NON-DBA vs SYSDBA: acceptable.
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.4')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

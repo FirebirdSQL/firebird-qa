@@ -1,40 +1,41 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6976
-# title:        Lack of proper clean up after failure to initialize shared memory
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6976
-#
-#                   Test reads content of empty database (which is created auto) and makes several checks
-#                   by writing this content to another .fdb file but WITHOUT last <N> pages.
-#                   We have to start cut off last N pages and verisy that every time engine will instantly
-#                   detect damage of database (i.e. not waiting for ~110 seconds as it was before fix).
-#                   It is useless to cut off *last* 2..3 pages because engine makes reserving of space.
-#                   Test settings for 'starting' page to be cuted off and number of pages are:
-#                       SKIP_BACK_FROM_LAST_PAGE;
-#                       NUM_OF_CUTED_LAST_PAGES
-#                   Average time to wait exception with expected gdscode = 335544344 must be low: about 300...500 ms.
-#                   Test used THRESHOLD_FOR_MAKE_CONNECT_MS to alert if alert time is more than this time.
-#
-#                   Confirmed on WI-V4.0.1.2606: needed to wait for exactly 110s after each page starting from N-3.
-#                   Checked on 3.0.8.33501, 4.0.1.2613.
-#
-# tracker_id:
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:
+
+"""
+ID:          issue-6976
+ISSUE:       6976
+TITLE:       Lack of proper clean up after failure to initialize shared memory
+DESCRIPTION:
+  Test reads content of empty database (which is created auto) and makes several checks
+  by writing this content to another .fdb file but WITHOUT last <N> pages.
+  We have to start cut off last N pages and verisy that every time engine will instantly
+  detect damage of database (i.e. not waiting for ~110 seconds as it was before fix).
+  It is useless to cut off *last* 2..3 pages because engine makes reserving of space.
+  Test settings for 'starting' page to be cuted off and number of pages are:
+    SKIP_BACK_FROM_LAST_PAGE;
+    NUM_OF_CUTED_LAST_PAGES
+  Average time to wait exception with expected gdscode = 335544344 must be low: about 300...500 ms.
+  Test used THRESHOLD_FOR_MAKE_CONNECT_MS to alert if alert time is more than this time.
+
+  Confirmed on WI-V4.0.1.2606: needed to wait for exactly 110s after each page starting from N-3.
+  Checked on 3.0.8.33501, 4.0.1.2613.
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    Average time acceptable.
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.8')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -152,15 +153,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      print('UNEXPECTED FINAL: ENGINE COULD NOT DETECT DAMAGE OF DATABASE.')
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Average time acceptable.
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.8')
-@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

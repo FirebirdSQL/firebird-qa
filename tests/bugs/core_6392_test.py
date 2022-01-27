@@ -1,40 +1,63 @@
 #coding:utf-8
-#
-# id:           bugs.core_6392
-# title:        Space in database path prevent working gbak -se ... -b "pat to/database" backup
-# decription:
-#                   Test creates windows BATCH file for main job:
-#                   * create folder with spaces and some non-alphabetic characters (use "[", "]", "(", ")" etc);
-#                   * create .sql script which will make database with spaces and non-alphabetic characters in this folder;
-#                   * try to backup and restore using "simple" gbak commend (i.e. without "-se" command switch);
-#                   * try to backup and restore using "-se" command switch;
-#                   * try to backup and restore using services manager.
-#                   Batch output is redirected to log and then we parse this log with expectation to find there messages
-#                   which prove successful results for each action.
-#
-#                   Confirmed bug on 4.0.0.2173.
-#                   Checked on 3.0.7.33358; 4.0.0.2180 SS/SC/CS: all fine.
-#
-#                   ::: NOTE :::
-#                   Some problem still exists when DB file or folder has name which last character is '.' or ' ' (dot or space).
-#                   Database will be created but attempt to backup raises: "gbak: ERROR:cannot open backup file ..."
-#
-# tracker_id:   CORE-6392
-# min_versions: ['3.0.7']
-# versions:     3.0.7
-# qmid:         None
+
+"""
+ID:          issue-6630
+ISSUE:       6630
+TITLE:       Space in database path prevent working gbak -se ... -b "pat to/database" backup
+DESCRIPTION:
+    Test creates windows BATCH file for main job:
+    * create folder with spaces and some non-alphabetic characters (use "[", "]", "(", ")" etc);
+    * create .sql script which will make database with spaces and non-alphabetic characters in this folder;
+    * try to backup and restore using "simple" gbak commend (i.e. without "-se" command switch);
+    * try to backup and restore using "-se" command switch;
+    * try to backup and restore using services manager.
+    Batch output is redirected to log and then we parse this log with expectation to find there messages
+    which prove successful results for each action.
+
+    Confirmed bug on 4.0.0.2173.
+    Checked on 3.0.7.33358; 4.0.0.2180 SS/SC/CS: all fine.
+
+    ::: NOTE :::
+    Some problem still exists when DB file or folder has name which last character is '.' or ' ' (dot or space).
+    Database will be created but attempt to backup raises: "gbak: ERROR:cannot open backup file ..."
+JIRA:        CORE-6392
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[\t ]+', ' ')]
+act = python_act('db', substitutions=[('[\t ]+', ' ')])
 
-init_script_1 = """"""
+expected_stdout = """
+    CHECK POINT. Trying to create database.
+    CHECK POINT. Result: SUCCESS.
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+    CHECK POINT. Trying to BACKUP without "-se" switch.
+    closing file, committing, and finishing
+
+    CHECK POINT. Trying to restore without "-se".
+    finishing, closing, and going home
+
+    CHECK POINT. Trying to backup using gbak WITH "-se" switch.
+    closing file, committing, and finishing
+
+    CHECK POINT. Trying to restore using gbak WITH "-se" switch.
+    finishing, closing, and going home
+
+    CHECK POINT. Trying to backup using fbsvcmgr.
+    closing file, committing, and finishing
+
+    CHECK POINT. Trying to restore using fbsvcmgr.
+    finishing, closing, and going home
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.7')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -202,36 +225,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  #cleanup( [extbat, extlog] )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    CHECK POINT. Trying to create database.
-    CHECK POINT. Result: SUCCESS.
-
-    CHECK POINT. Trying to BACKUP without "-se" switch.
-    closing file, committing, and finishing
-
-    CHECK POINT. Trying to restore without "-se".
-    finishing, closing, and going home
-
-    CHECK POINT. Trying to backup using gbak WITH "-se" switch.
-    closing file, committing, and finishing
-
-    CHECK POINT. Trying to restore using gbak WITH "-se" switch.
-    finishing, closing, and going home
-
-    CHECK POINT. Trying to backup using fbsvcmgr.
-    closing file, committing, and finishing
-
-    CHECK POINT. Trying to restore using fbsvcmgr.
-    finishing, closing, and going home
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.7')
-@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-

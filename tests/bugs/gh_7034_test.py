@@ -1,31 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.gh_7034
-# title:        Scroll cursor server crash
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/7034
-#               
-#                   Confirmed bug (crash) on 5.0.0.279, 4.0.1.2649, 3.0.8.33525.
-#                   Checked on intermediate snapshots: 5.0.0.292; 4.0.1.2650; 3.0.8.33527 -- all OK.
-#                
-# tracker_id:   
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-7034
+ISSUE:       7034
+TITLE:       Server crashes while fetching from a scrollable cursor in PSQL
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^ ;
     create table ca (
         f1 integer,
@@ -89,14 +76,14 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     3
 """
 
 @pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

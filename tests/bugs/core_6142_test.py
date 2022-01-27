@@ -1,44 +1,62 @@
 #coding:utf-8
-#
-# id:           bugs.core_6142
-# title:        Error "connection lost to database" could happen when application creates few local attachments (using XNET) simultaneously
-# decription:
-#                   Test uses 15 threads and each of them launches loop for 10 iterations with making attach/detach from DB.
-#                   We use Python package with name "threading" here, but it should be declared as global inside class because of fbtest specific
-#                   (otherwise test will failed with message "global name 'threading' is not defined").
-#                   No such declaration is needed in normal way (i.e. when running code directly from Python, w/o using fbtest).
-#                   Each instance of worker thread has dict() for storing its ID (as a key) and pair of values (success and fail count) as value.
-#
-#                   We have to ensure at the final point that for every of <THREADS_CNT> threads:
-#                   * 1) number of SUCCESSFUL attempts is equal to limit that is declared here as LOOP_CNT.
-#                   * 2) number of FAILED attempts is ZERO.
-#
-#                   Confirmed bug on 4.0.0.1598, 3.0.5.33166 (checked both SS and CS).
-#                   It was enough 3 threads (which tried to establish attachments at the same time) to get runtime error:
-#                   "- SQLCODE: -901 / - connection lost to database".
-#
-#                   Checked on 4.0.0.1607, 3.0.5.33171.
-#                   :: NB ::
-#                   Execution time for this test strongly depends on major version and server mode:
-#                       4.0 Classic: ~9"; 3.0.5 Classic: ~5";
-#                       4.0 Super:   ~5"; 3.0.5 Super:   ~1".
-#
-# tracker_id:   CORE-6142
-# min_versions: ['3.0.5']
-# versions:     3.0.5
-# qmid:         None
+
+"""
+ID:          issue-6391
+ISSUE:       6391
+TITLE:       Error "connection lost to database" could happen when application creates few local attachments (using XNET) simultaneously
+DESCRIPTION:
+    Test uses 15 threads and each of them launches loop for 10 iterations with making attach/detach from DB.
+    We use Python package with name "threading" here, but it should be declared as global inside class because of fbtest specific
+    (otherwise test will failed with message "global name 'threading' is not defined").
+    No such declaration is needed in normal way (i.e. when running code directly from Python, w/o using fbtest).
+    Each instance of worker thread has dict() for storing its ID (as a key) and pair of values (success and fail count) as value.
+
+    We have to ensure at the final point that for every of <THREADS_CNT> threads:
+    * 1) number of SUCCESSFUL attempts is equal to limit that is declared here as LOOP_CNT.
+    * 2) number of FAILED attempts is ZERO.
+
+    Confirmed bug on 4.0.0.1598, 3.0.5.33166 (checked both SS and CS).
+    It was enough 3 threads (which tried to establish attachments at the same time) to get runtime error:
+    "- SQLCODE: -901 / - connection lost to database".
+
+    Checked on 4.0.0.1607, 3.0.5.33171.
+    :: NB ::
+    Execution time for this test strongly depends on major version and server mode:
+        4.0 Classic: ~9"; 3.0.5 Classic: ~5";
+        4.0 Super:   ~5"; 3.0.5 Super:   ~1".
+JIRA:        CORE-6142
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!OVERALL RESULT).)*$', '')]
+act = python_act('db', substitutions=[('^((?!OVERALL RESULT).)*$', '')])
 
-init_script_1 = """"""
+expected_stdout = """
+    ID of thread:   1. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:   2. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:   3. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:   4. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:   5. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:   6. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:   7. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:   8. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:   9. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:  10. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:  11. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:  12. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:  13. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:  14. OVERALL RESULT: PASSED=10, FAILED=0
+    ID of thread:  15. OVERALL RESULT: PASSED=10, FAILED=0
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.5')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -144,29 +162,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    ID of thread:   1. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:   2. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:   3. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:   4. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:   5. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:   6. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:   7. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:   8. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:   9. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:  10. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:  11. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:  12. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:  13. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:  14. OVERALL RESULT: PASSED=10, FAILED=0
-    ID of thread:  15. OVERALL RESULT: PASSED=10, FAILED=0
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.5')
-@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

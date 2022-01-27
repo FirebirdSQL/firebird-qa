@@ -1,32 +1,32 @@
 #coding:utf-8
-#
-# id:           bugs.core_6264
-# title:        gbak with PIPE to stdout: invalid content if user '-se <host>:service_mgr' command switch
-# decription:
-#                   NB: bug can be reproduced only if we create batch file and run it from Python using shell invocation,
-#                   i.e. via subprocess.call(). Python builtin PIPE mechanism does not show any errors.
-#                   For this reason, we create temp batch scenario, add necessary commands there and run it.
-#                   Currently this scenario exists only for Windows. It will be implemented for POSIX later.
-#
-#                   Confirmed bug on 3.0.6.33276, 4.0.0.1850.
-#                   Works fine on 3.0.6.33277, 4.0.0.1854
-#
-# tracker_id:   CORE-6264
-# min_versions: ['3.0.6']
-# versions:     3.0.6
-# qmid:         None
+
+"""
+ID:          issue-6506
+ISSUE:       6506
+TITLE:       gbak with PIPE to stdout: invalid content if user '-se <host>:service_mgr' command switch
+DESCRIPTION:
+  NB: bug can be reproduced only if we create batch file and run it from Python using shell invocation,
+  i.e. via subprocess.call(). Python builtin PIPE mechanism does not show any errors.
+  For this reason, we create temp batch scenario, add necessary commands there and run it.
+  Currently this scenario exists only for Windows. It will be implemented for POSIX later.
+
+  Confirmed bug on 3.0.6.33276, 4.0.0.1850.
+  Works fine on 3.0.6.33277, 4.0.0.1854
+JIRA:        CORE-6264
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.6')
+#@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -125,14 +125,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.6')
-#@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-

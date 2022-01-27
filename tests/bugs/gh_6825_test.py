@@ -1,31 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6825
-# title:        Correct error message for DROP VIEW
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6825
-#               
-#                   Confirmed issue on 5.0.0.56, 4.0.0.2468.
-#                   Checked on 5.0.0.60, 4.0.0.2502, 3.0.8.33470 -- all OK.
-#                
-# tracker_id:   
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-6825
+ISSUE:       6825
+TITLE:       Correct error message for DROP VIEW
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('(-)?Effective user is.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate view v1 as select 1 x from rdb$database;
     create or alter user tmp$gh_6825 password '123' using plugin Srp;
     commit;
@@ -37,9 +24,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('(-)?Effective user is.*', '')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     unsuccessful metadata update
     -DROP VIEW V1 failed
@@ -48,7 +35,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

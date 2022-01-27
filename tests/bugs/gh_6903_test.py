@@ -1,36 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6903
-# title:        Unable to create ICU-based collation with locale keywords
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6903
-#               
-#                   Also: https://github.com/FirebirdSQL/firebird/pull/6914
-#                         Allow keywords in locales when creating ICU collations
-#               
-#                   AFAIU, term 'keywords' here means collation types that can be found here:
-#                   https://unicode-org.github.io/icu/userguide/collation/api.html
-#               
-#                   Checked on WI-T5.0.0.126 (intermediate build, timestamp: 04-aug-2021 12:08); WI-V4.0.1.2556.
-#                
-# tracker_id:   
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-6903
+ISSUE:       6903
+TITLE:       Unable to create ICU-based collation with locale keywords
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- should PASS:
     create collation unicode_txt_01 for utf8 from unicode
       pad space
@@ -46,7 +28,7 @@ test_script_1 = """
 
     -- should PASS:
     create collation unicode_txt_03 for utf8 from unicode
-      pad space                  
+      pad space
       case sensitive
       accent sensitive
       'LOCALE=el@colCaseFirst=upper'
@@ -55,15 +37,15 @@ test_script_1 = """
     -- should FAIL!
     -- See: https://github.com/FirebirdSQL/firebird/pull/6914
     -- Note by Adriano "I tried ... it worked, but should not"
-    create collation unicode_bad_01 for utf8 from unicode 
+    create collation unicode_bad_01 for utf8 from unicode
       'LOCALE=pt_BRx'
     ;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     unsuccessful metadata update
     -CREATE COLLATION UNICODE_BAD_01 failed
@@ -71,7 +53,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

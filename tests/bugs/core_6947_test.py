@@ -1,38 +1,40 @@
 #coding:utf-8
-#
-# id:           bugs.core_6947
-# title:        Query to mon$ tables does not return data when the encryption/decryption thread is running
-# decription:
-#                   Test creates table with wide indexed column and add some data to it.
-#                   Volume of data must be big enough enough so that the encryption process does not have time to end in 1 second.
-#
-#                   Then ALTER DATABASE ENCRYPT ... is called and we allow encryption process to work for 1 second.
-#                   After this we query MON$DATABASE and check that MON$CRYPT_STATE column has value = 3 ('is encrypting').
-#                   Before fix this value always was 1, i.e. 'fully encrypted' - because control returned to 'main' code only
-#                   after encryption process was completed.
-#
-#                   Note: name for encryption plugin differs on Windows vs Linux:
-#                      PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else '"fbSampleDbCrypt"'
-#
-#                   Confirmed bug on 5.0.0.219 (Windows), 5.0.0.236 (Linux).
-#                   Checked on 5.0.0.240 (Windows; SS/Cs), 5.0.0.241 (Linux; SS/CS).
-#
-# tracker_id:   CORE-6947
-# min_versions: ['5.0.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-6947
+ISSUE:       6947
+TITLE:       Query to mon$ tables does not return data when the encryption/decryption thread is running
+DESCRIPTION:
+  Test creates table with wide indexed column and add some data to it.
+  Volume of data must be big enough enough so that the encryption process does not have time to end in 1 second.
+
+  Then ALTER DATABASE ENCRYPT ... is called and we allow encryption process to work for 1 second.
+  After this we query MON$DATABASE and check that MON$CRYPT_STATE column has value = 3 ('is encrypting').
+  Before fix this value always was 1, i.e. 'fully encrypted' - because control returned to 'main' code only
+  after encryption process was completed.
+
+  Note: name for encryption plugin differs on Windows vs Linux:
+   PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else '"fbSampleDbCrypt"'
+
+  Confirmed bug on 5.0.0.219 (Windows), 5.0.0.236 (Linux).
+  Checked on 5.0.0.240 (Windows; SS/Cs), 5.0.0.241 (Linux; SS/CS).
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    DB encryption state: is encrypting.
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=5.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -175,15 +177,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( ( f_dbshut_log,tmpfdb )  )
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    DB encryption state: is encrypting.
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-

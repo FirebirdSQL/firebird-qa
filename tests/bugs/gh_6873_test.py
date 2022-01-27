@@ -1,30 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6873
-# title:        SIMILAR TO does not use index when pattern starts with non-wildcard character (in contrary to LIKE)
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6873
-#               	
-#                   Checked on: 5.0.0.113.
-#                
-# tracker_id:   
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-6873
+ISSUE:       6873
+TITLE:       SIMILAR TO does not use index when pattern starts with non-wildcard character (in contrary to LIKE)
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 	create collation name_coll_ci for utf8 from unicode case insensitive;
 	create collation name_coll_ci_ai for utf8 from unicode case insensitive accent insensitive;
 
@@ -110,12 +98,12 @@ test_script_1 = """
 	select id from test where y3 similar to 'Â_';
 
 	select id from test where y3 similar to 'Â';
-  
+
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 	PLAN (TEST INDEX (TEST_X1_ASC))
 	ID                              2
 	ID                              4
@@ -174,11 +162,11 @@ expected_stdout_1 = """
 	ID                              4
 
 	PLAN (TEST INDEX (TEST_Y3_DEC))
-	ID                              2  
+	ID                              2
 """
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

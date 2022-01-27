@@ -1,95 +1,88 @@
 #coding:utf-8
-#
-# id:           bugs.core_6163
-# title:        Generator pages are not encrypted
-# decription:
-#                   Database in this test is encrypted using IBSurgeon Demo Encryption package
-#                   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
-#                   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
-#                   This file was preliminary stored in FF Test machine.
-#                   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
-#
-#                   Anyone who wants to run this test on his own machine must
-#                   1) download https://ib-aid.com/download/crypt/CryptTest.zip AND
-#                   2) PURCHASE LICENSE and get from IBSurgeon file plugins\\dbcrypt.conf with apropriate expiration date and other info.
-#
-#                   ################################################ ! ! !    N O T E    ! ! ! ##############################################
-#                   FF tests storage (aka "fbt-repo") does not (and will not) contain any license file for IBSurgeon Demo Encryption package!
-#                   #########################################################################################################################
-#
-#                   Several sequences are created in this test.
-#                   Then we obtain generator page ID and page size by querying RDB$PAGES and MON$DATABASE tables.
-#                   After this, we check that values of sequences *PRESENT* in NON-encrypted database by opening DB file in 'rb' mode
-#                   and reading content of its generator page.
-#                   Further, we encrypt database and wait for 1 second in order to give engine complete this job.
-#                   Finally, we read generator page again. NO any value of secuences must be found at this point.
-#
-#                   Encryprion is performed by 'alter database encrypt with <plugin_name> key ...' statement,
-#                   where <plugin_name> = dbcrypt - is the name of .dll in FB_HOME\\plugins\\  folder that implements encryption.
-#
-#                   === NOTE-1 ===
-#                   In case of "Crypt plugin DBCRYPT failed to load/607/335544351" check that all
-#                   needed files from IBSurgeon Demo Encryption package exist in %FB_HOME% and %FB_HOME%\\plugins
-#                   %FB_HOME%:
-#                       283136 fbcrypt.dll
-#                      2905600 libcrypto-1_1-x64.dll
-#                       481792 libssl-1_1-x64.dll
-#
-#                   %FB_HOME%\\plugins:
-#                       297984 dbcrypt.dll
-#                       306176 keyholder.dll
-#                          108 DbCrypt.conf
-#                          856 keyholder.conf
-#
-#                   === NOTE-2 ===
-#                   Version of DbCrypt.dll of october-2018 must be replaced because it has hard-coded
-#                   date of expiration rather than reading it from DbCrypt.conf !!
-#
-#                   === NOTE-3 ===
-#                   firebird.conf must contain following line:
-#                       KeyHolderPlugin = KeyHolder
-#
-#                   Confirmed non-encrypted content of generators page on: 4.0.0.1627; 3.0.5.33178.
-#                   Checked on: 4.0.0.1633: OK, 2.260s; 3.0.5.33180: OK, 1.718s.
-#
-#                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
-#                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-#                   statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
-#                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-#                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-#                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#
-#                   Because of this, it was decided to make separate section for check results of FB 4.x
-#                   Checked on 4.0.0.2164, 3.0.7.33356
-#
-#                   28.02.2021
-#                   For unknown reason 3.x and 4.x Classic hangs during run this test, both on Linux and (unexpectedly) Windows.
-#                   Fortunately, simple solution was found.
-#                   FB hangs only when encryption is done in ISQL but we wait for its finish within 'main' (Python) code (rather than in ISQL).
-#                   If we force ISQL *itself*  wait for several seconds than all fine.
-#                   So, the only way to avoid hang (at least nowadays, 01-mar-2021) is to make encryption *and* waiting for its finish
-#                   within ONE attachment to the database that is created by ISQL.
-#                   Because of this, 'init_script' contains special table and procedure for making pauses: 'tets' and 'sp_delay'.
-#                   Procedure 'sp_delay' must be called within Tx which was declared as SET TRANSACTION LOCK TIMEOU <N> where <N> =  1...3.
-#
-#                   Checked on: 4.0.0.2372 SS/CS; 3.0.8.33420 SS/CS.
-#
-#
-# tracker_id:   CORE-6163
-# min_versions: ['3.0.5']
-# versions:     3.0.5, 4.0
-# qmid:         None
+
+"""
+ID:          issue-6412
+ISSUE:       6412
+TITLE:       Generator pages are not encrypted
+DESCRIPTION:
+   Database in this test is encrypted using IBSurgeon Demo Encryption package
+   ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
+   License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
+   This file was preliminary stored in FF Test machine.
+   Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
+
+   Anyone who wants to run this test on his own machine must
+   1) download https://ib-aid.com/download/crypt/CryptTest.zip AND
+   2) PURCHASE LICENSE and get from IBSurgeon file plugins\\dbcrypt.conf with apropriate expiration date and other info.
+
+   ################################################ ! ! !    N O T E    ! ! ! ##############################################
+   FF tests storage (aka "fbt-repo") does not (and will not) contain any license file for IBSurgeon Demo Encryption package!
+   #########################################################################################################################
+
+   Several sequences are created in this test.
+   Then we obtain generator page ID and page size by querying RDB$PAGES and MON$DATABASE tables.
+   After this, we check that values of sequences *PRESENT* in NON-encrypted database by opening DB file in 'rb' mode
+   and reading content of its generator page.
+   Further, we encrypt database and wait for 1 second in order to give engine complete this job.
+   Finally, we read generator page again. NO any value of secuences must be found at this point.
+
+   Encryprion is performed by 'alter database encrypt with <plugin_name> key ...' statement,
+   where <plugin_name> = dbcrypt - is the name of .dll in FB_HOME\\plugins\\  folder that implements encryption.
+
+   === NOTE-1 ===
+   In case of "Crypt plugin DBCRYPT failed to load/607/335544351" check that all
+   needed files from IBSurgeon Demo Encryption package exist in %FB_HOME% and %FB_HOME%\\plugins
+   %FB_HOME%:
+       283136 fbcrypt.dll
+      2905600 libcrypto-1_1-x64.dll
+       481792 libssl-1_1-x64.dll
+
+   %FB_HOME%\\plugins:
+       297984 dbcrypt.dll
+       306176 keyholder.dll
+          108 DbCrypt.conf
+          856 keyholder.conf
+
+   === NOTE-2 ===
+   Version of DbCrypt.dll of october-2018 must be replaced because it has hard-coded
+   date of expiration rather than reading it from DbCrypt.conf !!
+
+   === NOTE-3 ===
+   firebird.conf must contain following line:
+       KeyHolderPlugin = KeyHolder
+
+   Confirmed non-encrypted content of generators page on: 4.0.0.1627; 3.0.5.33178.
+   Checked on: 4.0.0.1633: OK, 2.260s; 3.0.5.33180: OK, 1.718s.
+
+   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
+   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
+   statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
+   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
+   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
+   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
+
+   Because of this, it was decided to make separate section for check results of FB 4.x
+   Checked on 4.0.0.2164, 3.0.7.33356
+
+   28.02.2021
+   For unknown reason 3.x and 4.x Classic hangs during run this test, both on Linux and (unexpectedly) Windows.
+   Fortunately, simple solution was found.
+   FB hangs only when encryption is done in ISQL but we wait for its finish within 'main' (Python) code (rather than in ISQL).
+   If we force ISQL *itself*  wait for several seconds than all fine.
+   So, the only way to avoid hang (at least nowadays, 01-mar-2021) is to make encryption *and* waiting for its finish
+   within ONE attachment to the database that is created by ISQL.
+   Because of this, 'init_script' contains special table and procedure for making pauses: 'tets' and 'sp_delay'.
+   Procedure 'sp_delay' must be called within Tx which was declared as SET TRANSACTION LOCK TIMEOU <N> where <N> =  1...3.
+
+   Checked on: 4.0.0.2372 SS/CS; 3.0.8.33420 SS/CS.
+JIRA:        CORE-6163
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.5
-# resources: None
-
-substitutions_1 = [('^((?!(FOUND.|Database\\s+encrypted)).)*$', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """
+init_script = """
     recreate table test(x bigint unique);
     set term ^;
     create or alter procedure sp_delay as
@@ -114,9 +107,12 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(sql_dialect=3, init=init_script)
+act = python_act('db', substitutions=[('^((?!(FOUND.|Database\\s+encrypted)).)*$', ''), ('[ \t]+', ' ')])
 
-# test_script_1
+# version: 3.0
+
+test_script_1 = """
 #---
 #
 #  import os
@@ -263,9 +259,7 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
+"""
 expected_stdout_1 = """
 12192683   ab0bba   FOUND.
 195948557  0df0ad0b FOUND.
@@ -288,44 +282,14 @@ Database encrypted
 
 @pytest.mark.skip('FIXME: encryption plugin')
 @pytest.mark.version('>=3.0.5,<4')
-def test_1(act_1: Action):
-   pytest.fail("Not IMPLEMENTED")
-
+def test_1(act: Action):
+    # Code for v3 and v4 differ, run this test with SKIP disabled to see the difference
+    assert test_script_1 == test_script_2
+    pytest.fail("Not IMPLEMENTED")
 
 # version: 4.0
-# resources: None
 
-substitutions_2 = [('^((?!(FOUND.|Database\\s+encrypted)).)*$', ''), ('[ \t]+', ' ')]
-
-init_script_2 = """
-    recreate table test(x bigint unique);
-    set term ^;
-    create or alter procedure sp_delay as
-        declare r bigint;
-    begin
-        r = rand() * 9223372036854775807;
-        insert into test(x) values(:r);
-        begin
-            -- #########################################################
-            -- #######################  D E L A Y  #####################
-            -- #########################################################
-            in autonomous transaction do
-            insert into test(x) values(:r); -- this will cause delay because of duplicate in index
-        when any do
-            begin
-                -- nop --
-            end
-        end
-    end
-    ^
-    set term ;^
-    commit;
-
-"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-# test_script_2
+test_script_2 = """
 #---
 #
 #  import os
@@ -481,8 +445,7 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #
 #
 #---
-
-act_2 = python_act('db_2', substitutions=substitutions_2)
+"""
 
 expected_stdout_2 = """
 12192682    aa0bba    FOUND.
@@ -506,5 +469,7 @@ Database encrypted
 
 @pytest.mark.skip('FIXME: encryption plugin')
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action):
+def test_2(act: Action):
+    # Code for v3 and v4 differ, run this test with SKIP disabled to see the difference
+    assert test_script_1 == test_script_2
     pytest.fail("Not IMPLEMENTED")

@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6239
-# title:        Procedures and EXECUTE BLOCK without RETURNS should not be allowed to use SUSPEND
-# decription:   
-#                   Checked on 4.0.0.1763.
-#                
-# tracker_id:   CORE-6239
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6483
+ISSUE:       6483
+TITLE:       Procedures and EXECUTE BLOCK without RETURNS should not be allowed to use SUSPEND
+DESCRIPTION:
+JIRA:        CORE-6239
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- these two collations and domain not needed for TEST per se.
     -- We create them here only for reference in declaration of SP input params, see below:
     create collation nums_coll for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
@@ -30,7 +21,7 @@ test_script_1 = """
     create domain dm_test varchar(20) character set utf8 default 'foo' not null collate nums_coll;
     commit;
 
-    -- All following statements should be declined with 
+    -- All following statements should be declined with
     --     Statement failed, SQLSTATE = 42000
     --     Dynamic SQL Error
     --     -SQL error code = -104
@@ -97,9 +88,9 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -140,8 +131,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

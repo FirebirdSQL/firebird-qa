@@ -1,31 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.gh_7018
-# title:        Problems with windows frames
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/7018
-#               
-#                   Confirmed bug on 5.0.0.259
-#                   Checked on 5.0.0.263, 4.0.1.2642 -- all fine.
-#                
-# tracker_id:   
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-7018
+ISSUE:       7018
+TITLE:       Problems with windows frames
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('LIST\\s+\\d+:\\d+', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table t1 (id integer, f01 integer);
     recreate table entries(id int, f01 int);
 
@@ -47,9 +34,9 @@ test_script_1 = """
     select 'sttm-9' as msg, count(distinct f01) over (rows between unbounded preceding and unbounded following) id from entries where id <= 2 order by id;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('LIST\\s+\\d+:\\d+', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             sttm-1
     ID                              1
     F01                             -1
@@ -129,7 +116,7 @@ expected_stdout_1 = """
     ID                              5
     SUM                             5
 
-    
+
     MSG                             sttm-5
     ID                              1
     F01                             -1
@@ -155,8 +142,8 @@ expected_stdout_1 = """
     F01                             -5
     LIST                            0:1
     -5,-4,-3,-2,-1
-    
-    
+
+
     MSG                             sttm-6
     ID                              1
     F01                             -1
@@ -184,7 +171,7 @@ expected_stdout_1 = """
     -1,-2,-3,-4,-5
 """
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     RANGE based window with <offset> PRECEDING/FOLLOWING must have a single ORDER BY key of numerical, date, time or timestamp types
 
@@ -198,9 +185,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

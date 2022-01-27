@@ -1,34 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6798
-# title:        Add built-in functions UNICODE_CHAR and UNICODE_VAL to convert between Unicode code point and character
-# decription:   
-#                   NB. Only basic checks are peformed here.
-#                   This test mostly will be re-implemented later in order to check more complex cases.
-#                   Lists of unicode characters and their codes:
-#                       https://en.wikipedia.org/wiki/List_of_Unicode_characters
-#                       https://gist.github.com/ngs/2782436
-#               
-#                   Checked on 5.0.0.29.
-#                 
-# tracker_id:   
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         
+
+"""
+ID:          issue-6798
+ISSUE:       6798
+TITLE:       Add built-in functions UNICODE_CHAR and UNICODE_VAL to convert between Unicode code point and character
+DESCRIPTION:
+  NB. Only basic checks are peformed here.
+  This test mostly will be re-implemented later in order to check more complex cases.
+  Lists of unicode characters and their codes:
+    https://en.wikipedia.org/wiki/List_of_Unicode_characters
+    https://gist.github.com/ngs/2782436
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select unicode_val('') as "uv_empty_string" from rdb$database;
     select unicode_val('	') as "uv_tab_character" from rdb$database;
@@ -65,9 +54,9 @@ test_script_1 = """
     select unicode_char( 170141183460469231731687303715884105727) from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     uv_empty_string                 0
     uv_tab_character                9
     uv_line_feed                    10
@@ -78,7 +67,8 @@ expected_stdout_1 = """
     uv_eszett_uppercase             ß
     unicode_char(0)=ascii_char(0) ? <true>
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22000
     arithmetic exception, numeric overflow, or string truncation
     -Malformed string
@@ -109,10 +99,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

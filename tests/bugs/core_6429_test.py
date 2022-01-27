@@ -1,33 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_6429
-# title:        Timezone offset in timestamp/time literal, CAST, SET TIME ZONE and AT TIME ZONE should follow SQL standard syntax only
-# decription:   
-#                  Test verifies miscelaneous forms of OFFSET for timezone part.
-#                  According to note by Adriano (see ticket), values that represent HOURS and MINUTES, *can* be written in single-character form,
-#                  i.e. 'H' and 'M' (rather than form 'HH' and 'MM' which was proposed by Mark).
-#                  It looks srange but currently offset parts can be written with leading (non-valuable) zeroes.
-#               
-#                  Checked on 4.0.0.2240.
-#                
-# tracker_id:   CORE-6429
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6666
+ISSUE:       6666
+TITLE:       Timezone offset in timestamp/time literal, CAST, SET TIME ZONE and AT TIME ZONE should follow SQL standard syntax only
+DESCRIPTION:
+  Test verifies miscelaneous forms of OFFSET for timezone part.
+  According to note by Adriano (see ticket), values that represent HOURS and MINUTES, *can* be written in single-character form,
+  i.e. 'H' and 'M' (rather than form 'HH' and 'MM' which was proposed by Mark).
+  It looks srange but currently offset parts can be written with leading (non-valuable) zeroes.
+JIRA:        CORE-6429
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
 
 
@@ -183,108 +173,108 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-    2018-01-02 02:02:02.2222 -03:00                           
-
-
-    2018-01-02 02:02:02.2222 -03:00                           
+expected_stdout = """
+    2018-01-02 02:02:02.2222 -03:00
 
 
-    2018-01-02 02:02:02.2222 -14:00                           
+    2018-01-02 02:02:02.2222 -03:00
 
 
-    2018-01-02 02:02:02.2222 +14:00                           
+    2018-01-02 02:02:02.2222 -14:00
 
 
-    2018-01-02 02:02:02.2222 +14:00                           
+    2018-01-02 02:02:02.2222 +14:00
 
 
-    2018-01-02 02:02:02.2222 +00:00                           
+    2018-01-02 02:02:02.2222 +14:00
 
 
-    2018-01-02 02:02:02.2222 +00:00                           
+    2018-01-02 02:02:02.2222 +00:00
 
 
-    03:03:03.3333 -03:00                           
+    2018-01-02 02:02:02.2222 +00:00
 
 
-    03:03:03.3333 -03:00                           
+    03:03:03.3333 -03:00
 
 
-    03:03:03.3333 -14:00                           
+    03:03:03.3333 -03:00
 
 
-    03:03:03.3333 +14:00                           
+    03:03:03.3333 -14:00
 
 
-    03:03:03.3333 +14:00                           
+    03:03:03.3333 +14:00
 
 
-    03:03:03.3333 +00:00                           
+    03:03:03.3333 +14:00
 
 
-    03:03:03.3333 +00:00                           
+    03:03:03.3333 +00:00
 
 
-    2018-01-02 04:04:04.4444 -03:00                           
+    03:03:03.3333 +00:00
 
 
-    2018-01-02 04:04:04.4444 -03:00                           
+    2018-01-02 04:04:04.4444 -03:00
 
 
-    2018-01-02 04:04:04.4444 -14:00                           
+    2018-01-02 04:04:04.4444 -03:00
 
 
-    2018-01-02 04:04:04.4444 +14:00                           
+    2018-01-02 04:04:04.4444 -14:00
 
 
-    2018-01-02 04:04:04.4444 +14:00                           
+    2018-01-02 04:04:04.4444 +14:00
 
 
-    2018-01-02 04:04:04.4444 +00:00                           
+    2018-01-02 04:04:04.4444 +14:00
 
 
-    2018-01-02 04:04:04.4444 +00:00                           
+    2018-01-02 04:04:04.4444 +00:00
+
+
+    2018-01-02 04:04:04.4444 +00:00
 
 
 
 
-    01:04:05.5555 -03:00                           
+    01:04:05.5555 -03:00
 
 
-    01:04:05.5555 -03:00                           
+    01:04:05.5555 -03:00
 
 
-    14:04:05.5555 -14:00                           
+    14:04:05.5555 -14:00
 
 
-    18:04:05.5555 +14:00                           
+    18:04:05.5555 +14:00
 
 
-    18:04:05.5555 +14:00                           
+    18:04:05.5555 +14:00
 
 
-    04:04:05.5555 +00:00                           
+    04:04:05.5555 +00:00
 
 
-    04:04:05.5555 +00:00                           
-
+    04:04:05.5555 +00:00
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 
+    Invalid time zone region:
 
     Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 
+    Invalid time zone region:
 
     Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 
+    Invalid time zone region:
 
     Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 
-        
+    Invalid time zone region:
+
 
     Statement failed, SQLSTATE = 22009
     Invalid time zone region: 00:00
@@ -317,35 +307,34 @@ expected_stderr_1 = """
     Invalid time zone offset: +00:00.0 - must use format +/-hours:minutes and be between -14:00 and +14:00
 
     Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 0		:	0		
+    Invalid time zone region: 0		:	0
 
     Statement failed, SQLSTATE = 22009
     Invalid time zone region: 11:1
 
     Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 0		:	0		
+    Invalid time zone region: 0		:	0
 
     Statement failed, SQLSTATE = 22009
     Invalid time zone region: 11:1
 
     Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 0		:	0		
+    Invalid time zone region: 0		:	0
 
     Statement failed, SQLSTATE = 22009
     Invalid time zone region: 11:1
 
     Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 0		:	0		
+    Invalid time zone region: 0		:	0
 
     Statement failed, SQLSTATE = 22009
     Invalid time zone region: 11:1
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

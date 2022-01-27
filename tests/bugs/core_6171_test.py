@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6171
-# title:        "No current record for fetch operation" with queries with aggregated subselect
-# decription:   
-#                   Confrmed bug on: 4.0.0.1635, 3.0.5.33182.
-#                   Works fine on:
-#                       4.0.0.1639 SS: 1.291s.
-#                       3.0.5.33183 SS: 0.769s.
-#                
-# tracker_id:   CORE-6171
-# min_versions: ['3.0.5']
-# versions:     3.0.5
-# qmid:         None
+
+"""
+ID:          issue-6419
+ISSUE:       6419
+TITLE:       "No current record for fetch operation" with queries with aggregated subselect
+DESCRIPTION:
+JIRA:        CORE-6171
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     recreate table tmain( s varchar(10) );
     recreate table tdetl( s varchar(10), u int );
@@ -63,21 +51,20 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (D NATURAL)
     PLAN (R NATURAL)
 
-    foo        
-    bar        
-    rio        
-    boo        
+    foo
+    bar
+    rio
+    boo
 """
 
 @pytest.mark.version('>=3.0.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,47 +1,63 @@
 #coding:utf-8
-#
-# id:           bugs.core_6441
-# title:        Srp plugin keeps connection after database has been removed for ~10 seconds (SS and SC).
-# decription:
-#                   Test is based on CORE-6412, but instead of complex DDL it only creates DB and makes connection.
-#                   Then it leaves ISQL and 'main' code changes DB state to full shutdown and removes database.
-#                   After this, test immediatelly starts next iteration with the same actions. All of them must pass.
-#                   Total number of iterations = 3.
-#
-#                   Confirmed bug on 4.0.0.2265:
-#                      Statement failed, SQLSTATE = 08006
-#                      Error occurred during login, please check server firebird.log for details
-#                      Error occurred during login, please check server firebird.log for details
-#
-#                   NB. Content of firebird.log will be added with following lines:
-#                      Srp Server
-#                      connection shutdown
-#                      Database is shutdown.
-#                   This is expected (got reply from Alex, e-mail 19.11.2020 11:12).
-#
-#                  Checked on 3.0.8.33392 SS/SC, 4.0.0.2269 SC/SS - all fine.
-#
-#                  03-mar-2021: fixed call syntax in runProgram() macros.
-#                  Checked on:
-#                       * WINDOWS: 335544344 : I/O error during "CreateFile (open)" operation ...
-#                       * LINUX:   335544344 : I/O error during "open" operation ...
-#
-# tracker_id:   CORE-6441
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-2367
+ISSUE:       2367
+TITLE:       Srp plugin keeps connection after database has been removed for ~10 seconds (SS and SC)
+DESCRIPTION:
+    Test is based on CORE-6412, but instead of complex DDL it only creates DB and makes connection.
+    Then it leaves ISQL and 'main' code changes DB state to full shutdown and removes database.
+    After this, test immediatelly starts next iteration with the same actions. All of them must pass.
+    Total number of iterations = 3.
+
+    Confirmed bug on 4.0.0.2265:
+       Statement failed, SQLSTATE = 08006
+       Error occurred during login, please check server firebird.log for details
+       Error occurred during login, please check server firebird.log for details
+
+    NB. Content of firebird.log will be added with following lines:
+       Srp Server
+       connection shutdown
+       Database is shutdown.
+    This is expected (got reply from Alex, e-mail 19.11.2020 11:12).
+
+   Checked on 3.0.8.33392 SS/SC, 4.0.0.2269 SC/SS - all fine.
+
+   03-mar-2021: fixed call syntax in runProgram() macros.
+   Checked on:
+        * WINDOWS: 335544344 : I/O error during "CreateFile (open)" operation ...
+        * LINUX:   335544344 : I/O error during "open" operation ...
+JIRA:        CORE-6441
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    ITERATION_NO                    0
+    MSG                             DB creation completed OK.
+    ITERATION_NO                    0
+    MSG                             Remote connection established OK.
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+    ITERATION_NO                    1
+    MSG                             DB creation completed OK.
+    ITERATION_NO                    1
+    MSG                             Remote connection established OK.
+
+    ITERATION_NO                    2
+    MSG                             DB creation completed OK.
+    ITERATION_NO                    2
+    MSG                             Remote connection established OK.
+"""
+
+@pytest.mark.skip('FIXME: databases.conf')
+@pytest.mark.version('>=3.0.8')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -160,28 +176,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  shutil.move( dbcbak, dbconf )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    ITERATION_NO                    0
-    MSG                             DB creation completed OK.
-    ITERATION_NO                    0
-    MSG                             Remote connection established OK.
-
-    ITERATION_NO                    1
-    MSG                             DB creation completed OK.
-    ITERATION_NO                    1
-    MSG                             Remote connection established OK.
-
-    ITERATION_NO                    2
-    MSG                             DB creation completed OK.
-    ITERATION_NO                    2
-    MSG                             Remote connection established OK.
-"""
-
-@pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    pytest.skip("Requires change to databases.conf")
-
-

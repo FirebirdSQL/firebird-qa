@@ -1,44 +1,30 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6815
-# title:        Support multiple rows for DML RETURNING
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6815
-#               
-#                   ::: NB :::
-#                   Test verifies only basic issues related mostly to syntax and ability to get multiple rows.
-#                   Both DSQL and PSQL are tested.
-#               
-#                   Interruption of fetching process by client (and check number of affected rows) is NOT verified:
-#                   separate test will be made later (see ticket, comment by Adriano, date: 15-JUL-2021).
-#               
-#                   Checked on: 5.0.0.181 - works fine.
-#                
-# tracker_id:   
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-6815
+ISSUE:       6815
+TITLE:       Support multiple rows for DML RETURNING
+DESCRIPTION:
+  Test verifies only basic issues related mostly to syntax and ability to get multiple rows.
+  Both DSQL and PSQL are tested.
+
+  Interruption of fetching process by client (and check number of affected rows) is NOT verified:
+  separate test will be made later (see ticket, comment by Adriano, date: 15-JUL-2021).
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table test(id int, x int, y int);
     commit;
 
     insert into test(id, x, y)
-    select 
+    select
         row_number()over()
         ,row_number()over()*2
         ,row_number()over()*3
@@ -89,7 +75,7 @@ test_script_1 = """
         for execute statement
             '
                 insert into test(id, x, y)
-                select 
+                select
                     row_number()over()
                     ,row_number()over()*2
                     ,row_number()over()*3
@@ -183,9 +169,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     DSQL_ID_INSERTED                1
     DSQL_X_INSERTED                 2
     DSQL_Y_INSERTED                 3
@@ -410,7 +396,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

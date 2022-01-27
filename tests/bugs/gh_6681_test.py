@@ -2,29 +2,30 @@
 #
 # id:           bugs.gh_6681
 # title:        error no permision occurred while ALTER USER SET TAGS on snapshot build WI-V3.0.8.33482
-# decription:   
+# decription:
 #                   https://github.com/FirebirdSQL/firebird/issues/6681
-#               
+#
 #                   Checked on: 5.0.0.197
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['5.0']
 # versions:     5.0
 # qmid:         None
 
+"""
+ID:          issue-6681
+ISSUE:       6681
+TITLE:       Support for WHEN NOT MATCHED BY SOURCE for MERGE statement
+DESCRIPTION:
+JIRA:        CORE-6448
+"""
+
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table ts(id int primary key, x int);
@@ -84,9 +85,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TT_ID_1                         5
     TT_X_1                          550
 
@@ -172,7 +173,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

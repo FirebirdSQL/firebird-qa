@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6109
-# title:        Changing FLOAT to a SQL standard compliant FLOAT datatype
-# decription:   
-#                   Checked on 4.0.0.1763 SS: 1.453s.
-#                
-# tracker_id:   CORE-6109
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6358
+ISSUE:       6358
+TITLE:       Changing FLOAT to a SQL standard compliant FLOAT datatype
+DESCRIPTION:
+JIRA:        CORE-6109
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!(sqltype)).)*$', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(
        r real
       ,f float
@@ -37,9 +28,9 @@ test_script_1 = """
     select * from test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!(sqltype)).)*$', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 482 FLOAT Nullable scale: 0 subtype: 0 len: 4
     02: sqltype: 482 FLOAT Nullable scale: 0 subtype: 0 len: 4
     03: sqltype: 482 FLOAT Nullable scale: 0 subtype: 0 len: 4
@@ -49,8 +40,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

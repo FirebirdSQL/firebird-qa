@@ -1,62 +1,74 @@
 #coding:utf-8
-#
-# id:           bugs.core_6147
-# title:        PLG$SRP table, PLG$SRP_VIEW View instructions are strangely added in the metadata script extracted when Windows trusted authentication is enabled
-# decription:
-#                  ::: NOTE :::
-#                  References to the table PLG$SRP and view PLG$SRP_VIEW *always* present in extracted metadata,
-#                  regardless of using auth plugin (and this is NOT a bug!).
-#
-#                  Fix was introduced in 4.0.0.2087: extracted metadata must contain "OR ALTER" clause in:
-#                      CREATE OR ALTER GLOBAL MAPPING TRUSTED_AUTH_C6147 ...
-#                             ^^^^^^^^
-#                  Builds before 4.0.0.2084 did not add this clause in extracted metadata script (checked 4.0.0.2076).
-#                  (see also discussion with Alex, 02-jun-2020 08:23).
-#
-#                  ### NB ###
-#                  For unclear reason ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL + DROP DATABASE do not work as expected in this test:
-#                  test DB remains opened by firebird.exe about 5...7 seconds after test finish, and 'drop database' does not issues any error.
-#                  Because of this it was decided to forcedly change DB state to full shutdown in order to have ability to drop it.
-#                  22.02.2021: perhaps, this was somehow related to core-6441.
-#
-#                  NOTES FOR WINDOWS:
-#                  ##################
-#                  We create copy of %FIREBIRD_HOME%\\database.conf and change it content by adding lines:
-#                       tmp_alias_6147 = ...
-#                       {
-#                           SecurityDatabase = tmp_alias_6147
-#                       }
-#                  Then we create trest DB in embedded mode, create SYSDBA that belongs to this DB and create global mapping.
-#                  We check content of rdb$auth_mapping table after this step in order to ensure that mapping was actually created.
-#                  After this we do connect to DB using Win_SSPI and extract metadata.
-#
-#                  NOTES FOR LINUX:
-#                  ################
-#                  03-mar-2021. This test can run on Linux but we have to use plugin = Srp instead of win_sspi.
-#                  This is done by check result of os.name (see below).
-#                  Local mapping (i.e. in RDB$DATABASE) will *not* be created in this case (in contrary to win_sspi),
-#                  thus we create and drop it "manually" in order to pass expected results check.
-#
-#                  Checked on:
-#                  * Windows: 4.0.0.2377 SS/CS (done for both win_sspi and Srp, but only win_sspi is used in this test for Windows)
-#                  * Linux:   4.0.0.2377 SS/CS (done for Srp)
-#
-# tracker_id:   CORE-6147
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6396
+ISSUE:       6396
+TITLE:       PLG$SRP table, PLG$SRP_VIEW View instructions are strangely added in the metadata script extracted when Windows trusted authentication is enabled
+DESCRIPTION:
+    References to the table PLG$SRP and view PLG$SRP_VIEW *always* present in extracted metadata,
+    regardless of using auth plugin (and this is NOT a bug!).
+
+    Fix was introduced in 4.0.0.2087: extracted metadata must contain "OR ALTER" clause in:
+        CREATE OR ALTER GLOBAL MAPPING TRUSTED_AUTH_C6147 ...
+               ^^^^^^^^
+    Builds before 4.0.0.2084 did not add this clause in extracted metadata script (checked 4.0.0.2076).
+    (see also discussion with Alex, 02-jun-2020 08:23).
+
+    ### NB ###
+    For unclear reason ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL + DROP DATABASE do not work as expected in this test:
+    test DB remains opened by firebird.exe about 5...7 seconds after test finish, and 'drop database' does not issues any error.
+    Because of this it was decided to forcedly change DB state to full shutdown in order to have ability to drop it.
+    22.02.2021: perhaps, this was somehow related to core-6441.
+
+    NOTES FOR WINDOWS:
+    ##################
+    We create copy of %FIREBIRD_HOME%\\database.conf and change it content by adding lines:
+         tmp_alias_6147 = ...
+         {
+             SecurityDatabase = tmp_alias_6147
+         }
+    Then we create trest DB in embedded mode, create SYSDBA that belongs to this DB and create global mapping.
+    We check content of rdb$auth_mapping table after this step in order to ensure that mapping was actually created.
+    After this we do connect to DB using Win_SSPI and extract metadata.
+
+    NOTES FOR LINUX:
+    ################
+    03-mar-2021. This test can run on Linux but we have to use plugin = Srp instead of win_sspi.
+    This is done by check result of os.name (see below).
+    Local mapping (i.e. in RDB$DATABASE) will *not* be created in this case (in contrary to win_sspi),
+    thus we create and drop it "manually" in order to pass expected results check.
+
+    Checked on:
+    * Windows: 4.0.0.2377 SS/CS (done for both win_sspi and Srp, but only win_sspi is used in this test for Windows)
+    * Linux:   4.0.0.2377 SS/CS (done for Srp)
+JIRA:        CORE-6147
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' '), ('.*===.*', ''), ('PLUGIN .*', 'PLUGIN')]
+act = python_act('db', substitutions=[('[ \t]+', ' '), ('.*===.*', ''), ('PLUGIN .*', 'PLUGIN')])
 
-init_script_1 = """"""
+expected_stdout = """
+AFTER_MADE_MAPPING: MAP_NAME                        MAP_TYPE   FROM_TYPE  MAP_FROM   TO_TYPE MAP_TO
+AFTER_MADE_MAPPING: =============================== ========== ========== ========== ======= ==========
+AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              local      USER       *                0 <null>
+AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              global     USER       *                0 <null>
+AFTER_MADE_MAPPING: Records affected: 2
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+EXTRACTED_METADATA: CREATE MAPPING TRUSTED_AUTH_C6147 USING PLUGIN
+EXTRACTED_METADATA: CREATE OR ALTER GLOBAL MAPPING TRUSTED_AUTH_C6147 USING PLUGIN
+
+AFTER_DROP_MAPPING: Records affected: 0
+
+"""
+
+@pytest.mark.skip('FIXME: databases.conf')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -349,25 +361,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-AFTER_MADE_MAPPING: MAP_NAME                        MAP_TYPE   FROM_TYPE  MAP_FROM   TO_TYPE MAP_TO
-AFTER_MADE_MAPPING: =============================== ========== ========== ========== ======= ==========
-AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              local      USER       *                0 <null>
-AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              global     USER       *                0 <null>
-AFTER_MADE_MAPPING: Records affected: 2
-
-EXTRACTED_METADATA: CREATE MAPPING TRUSTED_AUTH_C6147 USING PLUGIN
-EXTRACTED_METADATA: CREATE OR ALTER GLOBAL MAPPING TRUSTED_AUTH_C6147 USING PLUGIN
-
-AFTER_DROP_MAPPING: Records affected: 0
-
-"""
-
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.skip("Requires change to databases.conf")
-
-

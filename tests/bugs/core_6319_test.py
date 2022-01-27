@@ -1,299 +1,43 @@
 #coding:utf-8
-#
-# id:           bugs.core_6319
-# title:        NBACKUP locks db file on error
-# decription:
-#                  We create level-0 copy of test DB (so called "stand-by DB") and obtain DB backup GUID for just performed action.
-#                  Then we create incremental copy using this GUID ("nbk_level_1") and obtain new DB backup GUID again.
-#                  After this we repeat - create next incrementa copy using this (new) GUID ("nbk_level_2").
-#
-#                  (note: cursor for 'select h.rdb$guid from rdb$backup_history h order by h.rdb$backup_id desc rows 1' can be used
-#                  to get last database backup GUID instead of running 'gstat -h').
-#
-#                  Further, we try to apply two incremental copies but in WRONG order of restore: specify <nbk_level_2> twice instead
-#                  of proper order: <nbk_level_1> and after this - <nbk_level_2>.
-#
-#                  First and second attempts should issue THE SAME message:
-#                  "Wrong order of backup files or invalid incremental backup file detected, file: <nbk_02>".
-#
-#                  We do this check both for NBACKUP and FBSVCMGR.
-#
-#                  Confirmed bug on 4.0.0.2000: second attempt to run restore using FBSVCMGR issues:
-#                  =====
-#                      Error opening database file: [disk]:\\path	o\\standby_db.dfb
-#                      process cannot access the file <nbk_level_2> because it is being used by another process
-#                  =====
-#                  - and file <nbk_level_2> could not be deleted after this until restart of FB.
-#
-#                  Works fine on 4.0.0.2025 CS/SS.
-#                  13.06.2020: adapted for use both in 3.x and 4.x; checked on 4.0.0.2037, 3.0.6.33307 - all OK.
-#
-#                  ::: NOTE :::
-#                      bug has nothing with '-inplace' option that present only in FB 4.x - it was also in FB 3.x.
-#                      Fix for 3.x was 11.06.2020 12:36, include in "aedc22: Fixed assert in Statement::freeClientData()",
-#                      see: https://github.com/FirebirdSQL/firebird/commit/fdf758099c6872579ad6b825027fe81fea3ae1b5
-#
-#                  20.01.2021. CRITICAL NOTE (detected when run tests against HQbird 33288, ServerMode = Classic).
-#                  #########################
-#                  Method "codecs.open()" must be used to process logs, instead of 'plain' open() !
-#                  Any FB utility which have access problems with file can/will report *part* of error message in localized form.
-#                  This text is not in utf-8 (at least in case of Windows) and thus can not be converted and correctly displayed:
-#                      PROBLEM ON "ATTACH DATABASE".
-#                      I/O ERROR DURING "CREATEFILE (OPEN)" OPERATION FOR FILE "C:/HQBWORK/1IMPORTANT/QA-RUNDAILY/FBT-REPO/TMP/BUGS.CORE_6319.FDB"
-#                      -ERROR WHILE TRYING TO OPEN FILE
-#                      <The process cannot access the file because the file is being occupied by another process.> // <<< CAN BE IN LOCALIZED FORM!
-#                      SQLCODE:-902
-#
-#                  Because of this, fbt_db utility will fail on attempt to store in ANNOTATIONS table such message with "335544849 : Malformed string".
-#                  The worst part is that no any other tests will be saved, i.e. we will have DB with EMPTY result, despite the fact that a problem
-#                  occured only on one test (the reason is that fbt_db does all actions within the single transaction).
-#
-#                  Because of this all messages that are iussued by nbackup/fbsvcmgr or all other utilities must be handled using codecs.open()
-#                  method with request to IGNORE all non-ascii character (do NOT try to show it) and take next one.
-#                  Example: "with codecs.open( e.name, 'r', encoding = 'utf-8', errors = 'ignore' ) as f: ..."
-#
-#                  Checked (after replace "open(): with "codecs.open(... errors = 'ignore')" call) on:
-#                      4.0.0.2307 SS: 2.639s; 4.0.0.2324 CS: 3.610s; 3.0.8.33401 SS: 2.210s; 3.0.8.33401 CS: 3.400s.
-#
-#
-# tracker_id:   CORE-6319
-# min_versions: ['3.0.6']
-# versions:     3.0.6
-# qmid:
+
+"""
+ID:          issue-6560
+ISSUE:       6560
+TITLE:       NBACKUP locks db file on error
+DESCRIPTION:
+    We create level-0 copy of test DB (so called "stand-by DB") and obtain DB backup GUID for just performed action.
+    Then we create incremental copy using this GUID ("nbk_level_1") and obtain new DB backup GUID again.
+    After this we repeat - create next incrementa copy using this (new) GUID ("nbk_level_2").
+
+    (note: cursor for 'select h.rdb$guid from rdb$backup_history h order by h.rdb$backup_id desc rows 1' can be used
+    to get last database backup GUID instead of running 'gstat -h').
+
+    Further, we try to apply two incremental copies but in WRONG order of restore: specify <nbk_level_2> twice instead
+    of proper order: <nbk_level_1> and after this - <nbk_level_2>.
+
+    First and second attempts should issue THE SAME message:
+    "Wrong order of backup files or invalid incremental backup file detected, file: <nbk_02>".
+
+    We do this check both for NBACKUP and FBSVCMGR.
+
+    Confirmed bug on 4.0.0.2000: second attempt to run restore using FBSVCMGR issues:
+    =====
+        Error opening database file: [disk]:\\path	o\\standby_db.dfb
+        process cannot access the file <nbk_level_2> because it is being used by another process
+    =====
+    - and file <nbk_level_2> could not be deleted after this until restart of FB.
+JIRA:        CORE-6319
+"""
 
 import pytest
 from pathlib import Path
-from firebird.qa import db_factory, python_act, Action, temp_file
+from firebird.qa import *
 
-# version: 3.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import time
-#  import shutil
-#  import codecs
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_source=db_conn.database_name
-#
-#  nbk_level_0 = os.path.splitext(db_source)[0] + '.standby.fdb'
-#
-#  # this is for 3.x only by using command:
-#  # nbackup -r db_3x_restore nbk_level_0 nbk_level_1 nbk_level_2
-#  db_3x_restore = os.path.splitext(db_source)[0] + '.restored_in_3x.fdb'
-#
-#  nbk_level_1 = os.path.splitext(db_source)[0] + '.nbk_01'
-#  nbk_level_2 = os.path.splitext(db_source)[0] + '.nbk_02'
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  cleanup( (db_3x_restore, nbk_level_0, nbk_level_1, nbk_level_2,) )
-#
-#  # 1. Create standby copy: make clone of source DB using nbackup -b 0:
-#  ########################
-#  f_nbk0_log=open( os.path.join(context['temp_directory'],'tmp_nbk0_6319.log'), 'w')
-#  f_nbk0_err=open( os.path.join(context['temp_directory'],'tmp_nbk0_6319.err'), 'w')
-#  subprocess.call( [ context['nbackup_path'], '-b', '0', db_source, nbk_level_0], stdout=f_nbk0_log, stderr=f_nbk0_err )
-#  flush_and_close( f_nbk0_log )
-#  flush_and_close( f_nbk0_err )
-#
-#  get_last_bkup_guid_sttm = 'select h.rdb$guid from rdb$backup_history h order by h.rdb$backup_id desc rows 1'
-#
-#  # Read DB-backup GUID after this 1st nbackup run:
-#  #####################
-#  cur = db_conn.cursor()
-#  cur.execute(get_last_bkup_guid_sttm)
-#  for r in cur:
-#     db_guid = r[0]
-#
-#
-#  # Create 1st copy using just obtained DB backup GUID:
-#  ############
-#  nbk_call_01 = [ context['nbackup_path'], '-b' ] + ( [ db_guid ] if db_conn.engine_version >= 4.0 else [ '1' ] ) + [ db_source, nbk_level_1 ]
-#
-#  f_nbk1_log=open( os.path.join(context['temp_directory'],'tmp_nbk1_6319.log'), 'w')
-#  f_nbk1_err=open( os.path.join(context['temp_directory'],'tmp_nbk1_6319.err'), 'w')
-#  subprocess.call( nbk_call_01, stdout=f_nbk1_log, stderr=f_nbk1_err )
-#  flush_and_close( f_nbk1_log )
-#  flush_and_close( f_nbk1_err )
-#
-#  # Re-read DB backup GUID: it is changed after each new nbackup!
-#  ########################
-#  cur.execute(get_last_bkup_guid_sttm)
-#  for r in cur:
-#     db_guid = r[0]
-#
-#  # Create 2nd copy using LAST obtained GUID of backup:
-#  ############
-#  nbk_call_02 = [ context['nbackup_path'], '-b' ] + ( [ db_guid ] if db_conn.engine_version >= 4.0 else [ '2' ] ) + [ db_source, nbk_level_2 ]
-#
-#  f_nbk2_log=open( os.path.join(context['temp_directory'],'tmp_nbk2_6319.log'), 'w')
-#  f_nbk2_err=open( os.path.join(context['temp_directory'],'tmp_nbk2_6319.err'), 'w')
-#  subprocess.call( nbk_call_02, stdout=f_nbk2_log, stderr=f_nbk2_err )
-#  flush_and_close( f_nbk2_log )
-#  flush_and_close( f_nbk2_err )
-#
-#  # Try to merge standby DB and SECOND copy, i.e. wrongly skip 1st incremental copy.
-#  # NB: we do this TWISE. And both time this attempt should fail with:
-#  # "Wrong order of backup files or invalid incremental backup file detected, file:  ..."
-#  ########################
-#
-#  if db_conn.engine_version >= 4.0:
-#      nbk_wrong_call = [ context['nbackup_path'], '-inplace', '-restore', 'localhost:'+ nbk_level_0, nbk_level_2]
-#  else:
-#      # Invalid level 2 of incremental backup file: C:/FBTESTING/qa/fbt-repo/tmp/tmp_core_6319.nbk_02, expected 1
-#      nbk_wrong_call = [ context['nbackup_path'], '-restore', db_3x_restore, nbk_level_0, nbk_level_2]
-#
-#  f_nbk_poor_log=open( os.path.join(context['temp_directory'],'tmp_nbk_poor_6319.log'), 'w')
-#  f_nbk_poor_err=open( os.path.join(context['temp_directory'],'tmp_nbk_poor_6319.err'), 'w')
-#
-#  cleanup( (db_3x_restore,) )
-#  subprocess.call( nbk_wrong_call, stdout=f_nbk_poor_log, stderr=f_nbk_poor_err ) # [1]
-#  cleanup( (db_3x_restore,) )
-#  subprocess.call( nbk_wrong_call, stdout=f_nbk_poor_log, stderr=f_nbk_poor_err ) # [2]
-#
-#  # FB 3.0.6.33307:
-#  #Invalid level 2 of incremental backup file: <nbk_02>, expected 1
-#  #Invalid level 2 of incremental backup file: <nbk_02>, expected 1
-#  # FB 4.0.0.2037:
-#  # Wrong order of backup files or invalid incremental backup file detected, file: <nbk_02>
-#  # Wrong order of backup files or invalid incremental backup file detected, file: <nbk_02>
-#
-#  flush_and_close( f_nbk_poor_log )
-#  flush_and_close( f_nbk_poor_err )
-#
-#  cleanup( (db_3x_restore,) )
-#
-#  # Try to do the same using FBSVCMGR.
-#  # We also do this twise and both attempts must finish the same as previous pair:
-#  # Wrong order of backup files or invalid incremental backup file detected, file: C:/FBTESTING/qa/fbt-repo/tmp/tmp_core_6319.nbk_02
-#
-#  if db_conn.engine_version >= 4.0:
-#      fbsvc_call_01 = [ context['fbsvcmgr_path'], 'localhost:service_mgr', 'action_nrest', 'nbk_inplace', 'dbname', nbk_level_0, 'nbk_file', nbk_level_1]
-#      fbsvc_call_02 = [ context['fbsvcmgr_path'], 'localhost:service_mgr', 'action_nrest', 'nbk_inplace', 'dbname', nbk_level_0, 'nbk_file', nbk_level_2]
-#  else:
-#      fbsvc_call_01 = [ context['fbsvcmgr_path'], 'localhost:service_mgr', 'action_nrest', 'dbname', db_3x_restore, 'nbk_file', nbk_level_0, 'nbk_file', nbk_level_1, 'nbk_file', nbk_level_2]
-#      fbsvc_call_02 = [ context['fbsvcmgr_path'], 'localhost:service_mgr', 'action_nrest', 'dbname', db_3x_restore, 'nbk_file', nbk_level_0, 'nbk_file', nbk_level_2, 'nbk_file', nbk_level_2]
-#
-#  # On 4.0.0.2000 second attempt raised:
-#  # Error opening database file: [disk]:\\path	o\\standby_db.dfb
-#  # process cannot access the file <nbk_level_2> because it is being used by another process
-#  ####################
-#  f_svc_poor_log=open( os.path.join(context['temp_directory'],'tmp_svc_res_poor_6319.log'), 'w')
-#  f_svc_poor_err=open( os.path.join(context['temp_directory'],'tmp_svc_res_poor_6319.err'), 'w')
-#
-#  cleanup( (db_3x_restore,) )
-#  subprocess.call( fbsvc_call_02, stdout=f_svc_poor_log, stderr=f_svc_poor_err ) # [1]
-#  cleanup( (db_3x_restore,) )
-#  subprocess.call( fbsvc_call_02, stdout=f_svc_poor_log, stderr=f_svc_poor_err ) # [2]
-#
-#  # FB 3.0.6.33307:
-#  #Invalid level 2 of incremental backup file: C:/FBTESTING/qa/fbt-repo/tmp/tmp_core_6319.nbk_02, expected 1
-#  #Invalid level 2 of incremental backup file: C:/FBTESTING/qa/fbt-repo/tmp/tmp_core_6319.nbk_02, expected 1
-#  # FB 4.0.0.2037:
-#  # Wrong order of backup files or invalid incremental backup file detected, file: <nbk_02>
-#  # Wrong order of backup files or invalid incremental backup file detected, file: <nbk_02>
-#
-#  flush_and_close( f_svc_poor_log )
-#  flush_and_close( f_svc_poor_err )
-#  cleanup( (db_3x_restore,) )
-#
-#  # Try to apply incremental copies in proper order, also using FBSVCMGR.
-#  # No errors must occur in this case:
-#  ####################################
-#  f_svc_good_log=open( os.path.join(context['temp_directory'],'tmp_svc_res_good_6319.log'), 'w')
-#  f_svc_good_err=open( os.path.join(context['temp_directory'],'tmp_svc_res_good_6319.err'), 'w')
-#
-#  cleanup( (db_3x_restore,) )
-#
-#  subprocess.call( fbsvc_call_01, stdout=f_svc_good_log, stderr=f_svc_good_err )
-#  if db_conn.engine_version >= 4.0:
-#      subprocess.call( fbsvc_call_02, stdout=f_svc_good_log, stderr=f_svc_good_err )
-#
-#  flush_and_close( f_svc_good_log )
-#  flush_and_close( f_svc_good_err )
-#
-#
-#  # Check. All of these files must be empty:
-#  ###################################
-#  f_list=(f_nbk0_err, f_nbk1_err, f_nbk2_err, f_nbk_poor_log, f_svc_poor_log, f_svc_good_log, f_svc_good_err)
-#  for i in range(len(f_list)):
-#      # WRONG >>> with open( f_list[i].name,'r') as f:: <<< LOCALIZED MESSAGE CAN PRESENT IN CASE OF FILE-ACCESS PROBLEMS!
-#      with codecs.open( f_list[i].name, 'r', encoding = 'utf-8', errors = 'ignore' ) as f:
-#          for line in f:
-#              if line.split():
-#                  print( 'UNEXPECTED output in file '+f_list[i].name+': '+line.upper() )
-#
-#  # BOTH lines in every of: {f_nbk_poor_err, f_svc_poor_err} -- must be equal:
-#  # "Wrong order of backup files or invalid incremental backup file detected, file ..."
-#  for e in (f_nbk_poor_err, f_svc_poor_err):
-#      i=0
-#      # WRONG >>> with open( e.name,'r') as f: <<< LOCALIZED MESSAGE CAN PRESENT IN CASE OF FILE-ACCESS PROBLEMS!
-#      with codecs.open( e.name, 'r', encoding = 'utf-8', errors = 'ignore' ) as f:
-#          for line in f:
-#              if line:
-#                  i += 1
-#                  if db_conn.engine_version < 4 and 'Invalid level 2 of incremental backup file' in line:
-#                      print( 'Attempt %d. Error message is expected.' % i )
-#                  elif db_conn.engine_version >= 4 and ('Wrong order of backup' in line or 'invalid incremental backup' in line):
-#                      print( 'Attempt %d. Error message is expected.' % i )
-#                  else:
-#                      print( ('Attempt %d. Error message is UNEXPECTED: ' + line + ', file: ' + e.name ) % i )
-#
-#  # Cleanup.
-#  ##########
-#  time.sleep(1)
-#  cleanup( (f_nbk0_log,f_nbk0_err, f_nbk1_log,f_nbk1_err, f_nbk2_log,f_nbk2_err, f_nbk_poor_log, f_nbk_poor_err, f_svc_poor_log, f_svc_poor_err, f_svc_good_log, f_svc_good_err, db_3x_restore, nbk_level_0, nbk_level_1, nbk_level_2 ) )
-#
-#
-#---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     Attempt 1. Error message is expected.
     Attempt 2. Error message is expected.
     Attempt 1. Error message is expected.
@@ -315,7 +59,7 @@ nbk_level_2 = temp_file('core_6319.nbk_02')
 db_3x_restore = temp_file('core_6319_restored_in_3x.nbk_02')
 
 @pytest.mark.version('>=3.0.6')
-def test_1(act_1: Action, db_3x_restore: Path, nbk_level_0: Path, nbk_level_1: Path,
+def test_1(act: Action, db_3x_restore: Path, nbk_level_0: Path, nbk_level_1: Path,
            nbk_level_2: Path, capsys):
 
     def cleanup(files):
@@ -324,35 +68,35 @@ def test_1(act_1: Action, db_3x_restore: Path, nbk_level_0: Path, nbk_level_1: P
                 item.unlink()
 
     def check_stderr(step: int, source: str):
-        for line in act_1.stderr.splitlines():
+        for line in act.stderr.splitlines():
             if line:
-                if act_1.is_version('<4') and 'Invalid level 2 of incremental backup file' in line:
+                if act.is_version('<4') and 'Invalid level 2 of incremental backup file' in line:
                     print(f'Attempt {step}. Error message is expected.')
-                elif act_1.is_version('>=4') and ('Wrong order of backup' in line or 'invalid incremental backup' in line):
+                elif act.is_version('>=4') and ('Wrong order of backup' in line or 'invalid incremental backup' in line):
                     print(f'Attempt {step}. Error message is expected.')
                 else:
                     print(f'Attempt {step}. UNEXPECTED {source} message: {line}')
 
     get_last_bkup_guid_sttm = 'select h.rdb$guid from rdb$backup_history h order by h.rdb$backup_id desc rows 1'
     # 1. Create standby copy: make clone of source DB using nbackup -b 0:
-    act_1.nbackup(switches=['-b', '0', str(act_1.db.db_path), str(nbk_level_0)])
+    act.nbackup(switches=['-b', '0', str(act.db.db_path), str(nbk_level_0)])
     #nbk_level_0.chmod(16895) # Set permissions
     # Read DB-backup GUID after this 1st nbackup run:
-    with act_1.db.connect() as con:
+    with act.db.connect() as con:
         c = con.cursor()
         db_guid = c.execute(get_last_bkup_guid_sttm).fetchone()[0]
     # Create 1st copy using just obtained DB backup GUID:
-    act_1.reset()
-    act_1.nbackup(switches=['-b', db_guid if act_1.is_version('>=4') else '1',
-                            str(act_1.db.db_path), str(nbk_level_1)])
+    act.reset()
+    act.nbackup(switches=['-b', db_guid if act.is_version('>=4') else '1',
+                            str(act.db.db_path), str(nbk_level_1)])
     # Re-read DB backup GUID: it is changed after each new nbackup!
-    with act_1.db.connect() as con:
+    with act.db.connect() as con:
         c = con.cursor()
         db_guid = c.execute(get_last_bkup_guid_sttm).fetchone()[0]
     # Create 2nd copy using LAST obtained GUID of backup:
-    act_1.reset()
-    act_1.nbackup(switches=['-b', db_guid if act_1.is_version('>=4') else '2',
-                            str(act_1.db.db_path), str(nbk_level_2)])
+    act.reset()
+    act.nbackup(switches=['-b', db_guid if act.is_version('>=4') else '2',
+                            str(act.db.db_path), str(nbk_level_2)])
     # Set permissions
     nbk_level_0.chmod(16895)
     nbk_level_1.chmod(16895)
@@ -360,23 +104,23 @@ def test_1(act_1: Action, db_3x_restore: Path, nbk_level_0: Path, nbk_level_1: P
     # Try to merge standby DB and SECOND copy, i.e. wrongly skip 1st incremental copy.
     # NB: we do this TWICE. And both time this attempt should fail with:
     # "Wrong order of backup files or invalid incremental backup file detected, file:  ..."
-    if act_1.is_version('>=4'):
-        nbk_wrong_call = ['-inplace', '-restore', act_1.get_dsn(nbk_level_0), str(nbk_level_2)]
+    if act.is_version('>=4'):
+        nbk_wrong_call = ['-inplace', '-restore', act.get_dsn(nbk_level_0), str(nbk_level_2)]
     else:
         nbk_wrong_call = ['-restore', str(db_3x_restore), str(nbk_level_0), str(nbk_level_2)]
     for step in [1, 2]:
-        act_1.reset()
-        act_1.expected_stderr = "We expect errors"
-        act_1.nbackup(switches=nbk_wrong_call)
+        act.reset()
+        act.expected_stderr = "We expect errors"
+        act.nbackup(switches=nbk_wrong_call)
         check_stderr(step, 'nbakup')
         cleanup([db_3x_restore])
     # Try to do the same using FBSVCMGR.
     # We also do this twice and both attempts must finish the same as previous pair:
     # Wrong order of backup files or invalid incremental backup file detected, file: C:/FBTESTING/qa/fbt-repo/tmp/tmp_core_6319.nbk_02
-    if act_1.is_version('>=4'):
-        fbsvc_call_01 = ['action_nrest', 'nbk_inplace', 'dbname', act_1.get_dsn(nbk_level_0),
+    if act.is_version('>=4'):
+        fbsvc_call_01 = ['action_nrest', 'nbk_inplace', 'dbname', act.get_dsn(nbk_level_0),
                          'nbk_file', str(nbk_level_1)]
-        fbsvc_call_02 = ['action_nrest', 'nbk_inplace', 'dbname', act_1.get_dsn(nbk_level_0),
+        fbsvc_call_02 = ['action_nrest', 'nbk_inplace', 'dbname', act.get_dsn(nbk_level_0),
                             'nbk_file', str(nbk_level_2)]
     else:
         fbsvc_call_01 = ['action_nrest', 'dbname', str(db_3x_restore), 'nbk_file', str(nbk_level_0),
@@ -384,21 +128,21 @@ def test_1(act_1: Action, db_3x_restore: Path, nbk_level_0: Path, nbk_level_1: P
         fbsvc_call_02 = ['action_nrest', 'dbname', str(db_3x_restore), 'nbk_file', str(nbk_level_0),
                             'nbk_file', str(nbk_level_2), 'nbk_file', str(nbk_level_2)]
     for step in [1, 2]:
-        act_1.reset()
-        act_1.expected_stderr = "We expect errors"
-        act_1.svcmgr(switches=fbsvc_call_02)
+        act.reset()
+        act.expected_stderr = "We expect errors"
+        act.svcmgr(switches=fbsvc_call_02)
         check_stderr(step, 'svcmgr')
         cleanup([db_3x_restore])
     # Try to apply incremental copies in proper order, also using FBSVCMGR.
     # No errors must occur in this case:
-    act_1.reset()
-    act_1.svcmgr(switches=fbsvc_call_01)
+    act.reset()
+    act.svcmgr(switches=fbsvc_call_01)
     cleanup([db_3x_restore])
-    if act_1.is_version('>=4'):
-        act_1.reset()
-        act_1.svcmgr(switches=fbsvc_call_02)
+    if act.is_version('>=4'):
+        act.reset()
+        act.svcmgr(switches=fbsvc_call_02)
     # Check
-    act_1.reset()
-    act_1.expected_stdout = expected_stdout_1
-    act_1.stdout = capsys.readouterr().out
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+    act.reset()
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout

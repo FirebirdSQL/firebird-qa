@@ -1,35 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6810
-# title:        Use precise limit of salt length when signing messages and verifying the sign
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6810
-#               
-#                   ::: NB :::
-#                   With selected key lengh = 256 max len of SALT will very depending on algorithm!
-#                   Test currently uses MAXIMAL allowed values, see 'declare v_salt_len smallint = ...'.
-#                   Discussed with Alex, letters 17.05.2021
-#               
-#                   Checked on 5.0.0.29.
-#                
-# tracker_id:   
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-6810
+ISSUE:       6810
+TITLE:       Use precise limit of salt length when signing messages and verifying the sign
+DESCRIPTION:
+  With selected key lengh = 256 max len of SALT will very depending on algorithm!
+  Test currently uses MAXIMAL allowed values, see 'declare v_salt_len smallint = ...'.
+  Discussed with Alex, letters 17.05.2021
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     -- ALl following execute-block's must return <true>.
@@ -122,9 +108,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     RSA_VRFY_HASH                   <true>
     RSA_VRFY_HASH                   <true>
     RSA_VRFY_HASH                   <true>
@@ -132,7 +118,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

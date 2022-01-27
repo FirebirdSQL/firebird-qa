@@ -1,33 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6788
-# title:        Extend EXTRACT to extract time zone strings
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6788
-#               
-#                   Commit ('master' only; not 4.0!):
-#                       https://github.com/FirebirdSQL/firebird/commit/a02f0dea8163de64caa13c9a8637fa28eea0e9d3
-#                   
-#                   Checked on intermediate build 4.0.0.2452 (timestamp: 03-may-2021 14:48).
-#                
-# tracker_id:   
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-6788
+ISSUE:       6788
+TITLE:       Extend EXTRACT to extract time zone strings
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     -- Examples from ticket:
@@ -71,7 +56,7 @@ test_script_1 = """
     having min(i) is distinct from 1 or max(i) is distinct from 2;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
 expected_stdout_1 = """
     TZ_INFO1 America/Sao_Paulo
@@ -79,7 +64,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_1
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

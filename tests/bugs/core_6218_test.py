@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6218
-# title:        COUNT(DISTINCT <DECFLOAT_FIELD>) leads FB to crash when there are duplicate values of this field
-# decription:   
-#                   Checked on 4.0.0.1731
-#                
-# tracker_id:   CORE-6218
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6462
+ISSUE:       6462
+TITLE:       COUNT(DISTINCT <DECFLOAT_FIELD>) leads FB to crash when there are duplicate values of this field
+DESCRIPTION:
+JIRA:        CORE-6218
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(n decfloat);
     commit;
 
@@ -35,12 +26,12 @@ test_script_1 = """
 
     select n as n_grouped_from_test0 from test group by 1; --- [ 1 ]
     select distinct n as n_uniq_from_test0 from test; -- [ 2 ]
-    select count(distinct n) as count_uniq_from_test0 from test; -- [ 3 ] 
+    select count(distinct n) as count_uniq_from_test0 from test; -- [ 3 ]
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Select Expression
         -> Aggregate
             -> Sort (record length: 68, key length: 24)
@@ -66,8 +57,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

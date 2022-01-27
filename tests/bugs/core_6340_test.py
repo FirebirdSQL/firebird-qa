@@ -1,30 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_6340
-# title:        Alternate quoting does not work on some particular cases
-# decription:
-#                   Checked on build 4.0.0.2073 with timestamp 24.06.2020 13:40 (intermediate).
-#                   NOTE: test tries several cases + checks that string with maximum limit of length (65533) can be properly parsed.
-#                   04.07.2020: changed min_version to 3.0.6 - checked on 3.0.6.33332.
-#
-# tracker_id:   CORE-6340
-# min_versions: ['3.0.6']
-# versions:     3.0.6
-# qmid:         None
+
+"""
+ID:          issue-6581
+ISSUE:       6581
+TITLE:       Alternate quoting does not work on some particular cases
+DESCRIPTION:
+  Test tries several cases + checks that string with maximum limit of length (65533) can be properly parsed.
+JIRA:        CORE-6340
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 -- ::: NB ::: DO NOT MAKE INDENTATION OF TEXT THAT IS BELOW :::
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -195,9 +185,9 @@ select 'point-5.10' as msg, q'q 'q 'q' as result from rdb$database; -- expected:
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 MSG                             point-0.01
 RESULT                          {
 
@@ -585,8 +575,7 @@ RESULT                           'q '
 """
 
 @pytest.mark.version('>=3.0.6')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

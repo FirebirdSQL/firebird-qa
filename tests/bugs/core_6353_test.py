@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6353
-# title:        INT128 has problems with some PSQL objects
-# decription:   
-#                    Checked on 4.0.0.2104.
-#                
-# tracker_id:   CORE-6353
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6594
+ISSUE:       6594
+TITLE:       INT128 has problems with some PSQL objects
+DESCRIPTION:
+JIRA:        CORE-6353
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('line: [\\d]+, col: [\\d]+', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     create exception ex_zero_div_not_allowed 'Can not delete @1 by zero';
@@ -89,8 +80,8 @@ test_script_1 = """
     recreate table test1( i_min dm_int128_least1, i_max dm_int128_great1);
     alter table test1
         add constraint test1_chk
-        check( 
-                i_min in(170141183460469231731687303715884105727, -170141183460469231731687303715884105728) 
+        check(
+                i_min in(170141183460469231731687303715884105727, -170141183460469231731687303715884105728)
                 and
                 i_max in(170141183460469231731687303715884105727, -170141183460469231731687303715884105728)
              );
@@ -198,9 +189,10 @@ test_script_1 = """
     rollback;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line: [\\d]+, col: [\\d]+', ''),
+                                                 ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ID 1
     ID2 170141183460469231731687303715884105726
     ID -9223372036854775808
@@ -234,7 +226,8 @@ expected_stdout_1 = """
     P_MIN 1
     P_MIN -1
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST2"."I_MIN", value "-2"
     Statement failed, SQLSTATE = 23000
@@ -247,10 +240,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

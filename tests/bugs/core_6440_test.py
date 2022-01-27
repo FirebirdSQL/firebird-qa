@@ -1,31 +1,20 @@
 #coding:utf-8
-#
-# id:           bugs.core_6440
-# title:        Expression indexes containing COALESCE inside cannot be matched by the optimizer after migration from v2.5 to v3.0
-# decription:   
-#                   Confirmed bug on 3.0.7.33388 (wrong plans of queris specified in the ticked; need to RESTORE database from 2.5 on 3.x).
-#                   Test uses .fbk that was created on FB 2.5.9, file: core6440-ods11.fbk
-#               
-#                   Checked on 4.0.0.2269; 3.0.8.33390 -- all OK.
-#                 
-# tracker_id:   CORE-6440
-# min_versions: []
-# versions:     3.0.8
-# qmid:         
+
+"""
+ID:          issue-6674
+ISSUE:       6674
+TITLE:       Expression indexes containing COALESCE inside cannot be matched by the optimizer after migration from v2.5 to v3.0
+DESCRIPTION:
+  Test uses .fbk that was created on FB 2.5.9, file: core6440-ods11.fbk
+JIRA:        CORE-6440
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory(from_backup='core6440-ods11.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='core6440-ods11.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set planonly;
     --set echo on;
 
@@ -54,9 +43,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (TEST INDEX (PK_TEST))
 
     PLAN (TEST INDEX (TEST_IDX4))
@@ -69,8 +58,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

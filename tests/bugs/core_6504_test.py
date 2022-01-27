@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6504
-# title:        Provide same results for date arithmetics when date is changed by values near +/-max(bigint)
-# decription:   
-#                   Checked on 4.0.0.2437 (both on Linux and Windows).
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6734
+ISSUE:       6734
+TITLE:       Provide same results for date arithmetics when date is changed by values near +/-max(bigint)
+DESCRIPTION:
+JIRA:        CORE-6504
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
 
     -- All following statements must raise SQLSTATE = 22008.
@@ -37,9 +28,9 @@ test_script_1 = """
     select 6 as chk_6, date '01.02.2020' - -9223372036854775808 from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 22008
     value exceeds the range for valid dates
 
@@ -60,8 +51,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

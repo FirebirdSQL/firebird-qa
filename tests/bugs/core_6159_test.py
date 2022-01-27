@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6159
-# title:        SUBSTRING SIMILAR is described with wrong data type in DSQL
-# decription:   
-#                   Confirmed correct work on 4.0.0.1627.
-#                   FB 3.x and 4.0.0.1535 raises exception after select substring(blob_field similar <pattern> ) from ...:
-#                       Statement failed, SQLSTATE = 42000
-#                       Invalid SIMILAR TO pattern
-#                
-# tracker_id:   CORE-6159
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6408
+ISSUE:       6408
+TITLE:       SUBSTRING SIMILAR is described with wrong data type in DSQL
+DESCRIPTION:
+JIRA:        CORE-6159
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!sqltype|harc|lobb|affected).)*$', ''), ('[ \t]+', ' '), ('Nullable.*', 'Nullable')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(id int, s varchar(1000), b blob);
     insert into test(id, s,b) values( 1, 'charchar', 'fooobaar' );
     insert into test(id, s,b) values( 2, 'fooobaar', 'blobblob' );
@@ -40,9 +28,10 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype|harc|lobb|affected).)*$', ''),
+                                                 ('[ \t]+', ' '), ('Nullable.*', 'Nullable')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 448 VARYING Nullable
     X harc
     Records affected: 1
@@ -53,8 +42,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

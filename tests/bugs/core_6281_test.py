@@ -1,44 +1,34 @@
 #coding:utf-8
-#
-# id:           bugs.core_6281
-# title:        Invalid timestamp errors with RDB$TIME_ZONE_UTIL.TRANSITIONS
-# decription:   
-#                   NB: it isn crusial for this test to add 'GMT' after each of timestamp values if we are in the Eastern hemisphere.
-#                   Otherwise (e.g. 'timestamp '0001-01-01', timestamp '9999-12-31') leads to:
-#                       Statement failed, SQLSTATE = 22008
-#                       value exceeds the range for valid timestamps
-#                       -At procedure 'RDB$TIME_ZONE_UTIL.TRANSITIONS'
-#               
-#                   Checked on 4.0.0.1876: all OK.
-#                
-# tracker_id:   CORE-6281
-# min_versions: []
-# versions:     4.0.0
-# qmid:         None
+
+"""
+ID:          issue-6523
+ISSUE:       6523
+TITLE:       Invalid timestamp errors with RDB$TIME_ZONE_UTIL.TRANSITIONS
+DESCRIPTION:
+  NB: it isn crucial for this test to add 'GMT' after each of timestamp values if we are in the Eastern hemisphere.
+  Otherwise (e.g. 'timestamp '0001-01-01', timestamp '9999-12-31') leads to:
+    Statement failed, SQLSTATE = 22008
+    value exceeds the range for valid timestamps
+    -At procedure 'RDB$TIME_ZONE_UTIL.TRANSITIONS'
+JIRA:        CORE-6281
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set count on;
-    select p.* 
+    select p.*
     from rdb$time_zone_util.transitions('Europe/Moscow', timestamp '0001-01-01 GMT', timestamp '9999-12-31 GMT') p
     order by p.rdb$zone_offset, p.rdb$dst_offset, p.rdb$effective_offset, p.rdb$start_timestamp, p.rdb$end_timestamp;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$START_TIMESTAMP             1922-09-30 21:00:00.0000 GMT
     RDB$END_TIMESTAMP               1930-06-20 21:59:59.9999 GMT
     RDB$ZONE_OFFSET                 120
@@ -512,8 +502,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

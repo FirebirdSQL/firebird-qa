@@ -1,84 +1,82 @@
 #coding:utf-8
-#
-# id:           bugs.core_6444
-# title:        Ability to query Firebird configuration using SQL
-# decription:
-#                   Test found FB_HOME directory and makes copy its firebird.conf and database.conf files.
-#                   Then:
-#                   * for Windows it founds free TCP port and overwrites content of firebird.conf: this new port
-#                     will be specified for RemoveServicePort and some other parameters also will be added.
-#                   * for Linux it will use local protocol rather than TCP (it is not possible to connect to
-#                     any database using TCP if new FB instance is launched using subprocess.Popen('firebird');
-#                     the reason of this is unknown)
-#
-#                   File <FB_HOME>\\databases.conf is also changed: we add new alias for database that will
-#                   be self-security and specify lot of per-database parameters for it.
-#
-#                   Some numeric parameters intentionally will be assigned to huge bigint values, namely:
-#                       * FileSystemCacheThreshold
-#                       * TempCacheLimit
-#                   Their huge values do not affect on actual work; this is done only for check proper
-#                   interpretation of them.
-#                   ServerMode is set to SuperClassic.
-#
-#                   After this test:
-#                   * for Windows: launches Firebird as application (see async. call of Popen()) and make
-#                     connect to new database by launching ISQL.
-#                   * for Linux: makes connection to database using local (embedded) protocol.
-#
-#                   When connect is established, we query RDB$CONFIG table two times:
-#                       * as SYSDBA (in this case all config parameters and their actual values must be seen);
-#                       * as NON-privileged user (zero rows must be issued for query to RDB$CONFIG).
-#
-#                   Finally (after return from ISQL, and only for Windows) test terminates Firebird application process.
-#
-#                   ::: CAUTION-1 :::
-#                   This test will fail if new parameter will appear in firebird.conf or if old one removed from there.
-#                   One need to adjust expected_stdout in this case.
-#
-#                   ::: CAUTION-2 :::
-#                   Windows Firewall can block attempt to launch FB as application (dialog window appears in this case).
-#                   One may need to configure Firewall so that process <FB_HOME>
-#               irebird.exe is enable to operate on any port.
-#
-#                   Perhaps, following command will be useful: netsh advfirewall set privateprofile state off
-#
-#                   ::: CAUTION-3 :::
-#                   Default values for some parameters differ on Windows and Linux.
-#                   They are: IpcName, MaxUnflushed* and OutputRedirectionFile.
-#
-#                   Because of such valuable differences, it was decided to make code for Windows and Linux separate.
-#
-#                   Initially checked on 4.0.0.2365 (Windows only).
-#                   Checked on 4.0.0.2422 - after adapted for work both Windows and Linux.
-#                   Checked on 4.0.0.2436 - parameter 'TempTableDirectory' appeared.
-#
-#                   22.05.2021: definition of full path and name to security.db was wrong because it supposed that FB major version
-#                   corresponds to numeric suffix of security database (FB 3.x --> security3.fdb; FB 4.x --> security4.fdb).
-#                   But in major version FB 5.x currently remains to use security4.fdb.
-#                   Proper way is either to use Services API (call to get_security_database_path()) or get this info from fbtest
-#                   built-in context variable context['isc4_path'].
-#                   Checked on 5.0.0.47  (Linux, Windows).
-#
-#
-# tracker_id:   CORE-6444
-# min_versions: ['4.0']
-# versions:     4.0, 4.0, 5.0, 5.0
-# qmid:         None
+
+"""
+ID:          issue-6677
+ISSUE:       6677
+TITLE:       Ability to query Firebird configuration using SQL
+DESCRIPTION:
+  Test found FB_HOME directory and makes copy its firebird.conf and database.conf files.
+  Then:
+  * for Windows it founds free TCP port and overwrites content of firebird.conf: this new port
+    will be specified for RemoveServicePort and some other parameters also will be added.
+  * for Linux it will use local protocol rather than TCP (it is not possible to connect to
+    any database using TCP if new FB instance is launched using subprocess.Popen('firebird');
+    the reason of this is unknown)
+
+  File <FB_HOME>\\databases.conf is also changed: we add new alias for database that will
+  be self-security and specify lot of per-database parameters for it.
+
+  Some numeric parameters intentionally will be assigned to huge bigint values, namely:
+    * FileSystemCacheThreshold
+    * TempCacheLimit
+  Their huge values do not affect on actual work; this is done only for check proper
+  interpretation of them.
+  ServerMode is set to SuperClassic.
+
+  After this test:
+  * for Windows: launches Firebird as application (see async. call of Popen()) and make
+    connect to new database by launching ISQL.
+  * for Linux: makes connection to database using local (embedded) protocol.
+
+  When connect is established, we query RDB$CONFIG table two times:
+    * as SYSDBA (in this case all config parameters and their actual values must be seen);
+    * as NON-privileged user (zero rows must be issued for query to RDB$CONFIG).
+
+  Finally (after return from ISQL, and only for Windows) test terminates Firebird application process.
+
+  ::: CAUTION-1 :::
+  This test will fail if new parameter will appear in firebird.conf or if old one removed from there.
+  One need to adjust expected_stdout in this case.
+
+  ::: CAUTION-2 :::
+  Windows Firewall can block attempt to launch FB as application (dialog window appears in this case).
+  One may need to configure Firewall so that process <FB_HOME>\\firebird.exe is enable to operate on any port.
+
+  Perhaps, following command will be useful: netsh advfirewall set privateprofile state off
+
+  ::: CAUTION-3 :::
+  Default values for some parameters differ on Windows and Linux.
+  They are: IpcName, MaxUnflushed* and OutputRedirectionFile.
+
+  Because of such valuable differences, it was decided to make code for Windows and Linux separate.
+
+  Initially checked on 4.0.0.2365 (Windows only).
+  Checked on 4.0.0.2422 - after adapted for work both Windows and Linux.
+  Checked on 4.0.0.2436 - parameter 'TempTableDirectory' appeared.
+NOTES:
+[22.05.2021]
+  definition of full path and name to security.db was wrong because it supposed that FB major version
+  corresponds to numeric suffix of security database (FB 3.x --> security3.fdb; FB 4.x --> security4.fdb).
+  But in major version FB 5.x currently remains to use security4.fdb.
+  Proper way is either to use Services API (call to get_security_database_path()) or get this info from fbtest
+  built-in context variable context['isc4_path'].
+[27.1.2022] pcisar
+  Original Python test code moved to multiline strings, so they could be easily compared
+  for differences via pytest asserts.
+JIRA:        CORE-6444
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+subs_linux = [('[ \t]+', ' '), ('[=]+', '')]
+subs_windows = [('OutputRedirectionFile.*', ''), ('[ \t]+', ' '), ('[=]+', '')]
 
-substitutions_1 = [('[ \t]+', ' '), ('[=]+', '')]
+db = db_factory()
 
-init_script_1 = """"""
+# version: 4.0 - Linux
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
+test_script_1 = """
 #---
 #
 #  import sys
@@ -379,8 +377,9 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  # cleanup( [ i.name for i in f_list ] + [fdb_test] )
 #
 #---
+"""
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act_1 = python_act('db', substitutions=subs_linux)
 
 expected_stdout_1 = """
     PARAM_NAME                                         PARAM_VALUE                                                      PARAM_DEFAULT                                                    PARAM_IS_SET PARAM_SOURCE
@@ -461,22 +460,15 @@ expected_stdout_1 = """
     Records affected: 0
 """
 
+@pytest.mark.skip('FIXME: databases.conf / firebird.conf')
 @pytest.mark.version('>=4.0,<5.0')
 @pytest.mark.platform('Linux')
 def test_1(act_1: Action):
-    pytest.skip("Requires change to databases.conf / firebird.conf")
+    pytest.fail("Not IMPLEMENTED")
 
+# version: 4.0 - Windows
 
-# version: 4.0
-# resources: None
-
-substitutions_2 = [('OutputRedirectionFile.*', ''), ('[ \t]+', ' '), ('[=]+', '')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-# test_script_2
+test_script_2 = """
 #---
 #
 #  import sys
@@ -781,8 +773,8 @@ db_2 = db_factory(sql_dialect=3, init=init_script_2)
 #  cleanup( ( f_sql_log, f_sql_err, f_sql_cmd, fdb_test ) )
 #
 #---
-
-act_2 = python_act('db_2', substitutions=substitutions_2)
+"""
+act_2 = python_act('db', substitutions=subs_windows)
 
 expected_stdout_2 = """
     PARAM_NAME                                         PARAM_VALUE                                                      PARAM_DEFAULT                                                    PARAM_IS_SET PARAM_SOURCE
@@ -863,21 +855,15 @@ expected_stdout_2 = """
     Records affected: 0
 """
 
+@pytest.mark.skip('FIXME: databases.conf / firebird.conf')
 @pytest.mark.version('>=4.0,<5.0')
 @pytest.mark.platform('Windows')
 def test_2(act_2: Action):
     pytest.skip("Requires change to databases.conf / firebird.conf")
 
-# version: 5.0
-# resources: None
+# version: 5.0 - Linux
 
-substitutions_3 = [('[ \t]+', ' '), ('[=]+', '')]
-
-init_script_3 = """"""
-
-db_3 = db_factory(sql_dialect=3, init=init_script_3)
-
-# test_script_3
+test_script_3 = """
 #---
 #
 #  import sys
@@ -1178,8 +1164,8 @@ db_3 = db_factory(sql_dialect=3, init=init_script_3)
 #  # cleanup( [ i.name for i in f_list ] + [fdb_test] )
 #
 #---
-
-act_3 = python_act('db_3', substitutions=substitutions_3)
+"""
+act_3 = python_act('db', substitutions=subs_linux)
 
 expected_stdout_3 = """
     PARAM_NAME                                         PARAM_VALUE                                                      PARAM_DEFAULT                                                    PARAM_IS_SET PARAM_SOURCE
@@ -1260,21 +1246,15 @@ expected_stdout_3 = """
     Records affected: 0
 """
 
+@pytest.mark.skip('FIXME: databases.conf / firebird.conf')
 @pytest.mark.version('>=5.0')
 @pytest.mark.platform('Linux')
 def test_3(act_3: Action):
     pytest.skip("Requires change to databases.conf / firebird.conf")
 
-# version: 5.0
-# resources: None
+# version: 5.0 - Windows
 
-substitutions_4 = [('OutputRedirectionFile.*', ''), ('[ \t]+', ' '), ('[=]+', '')]
-
-init_script_4 = """"""
-
-db_4 = db_factory(sql_dialect=3, init=init_script_4)
-
-# test_script_4
+test_script_4 = """
 #---
 #
 #  import sys
@@ -1579,8 +1559,8 @@ db_4 = db_factory(sql_dialect=3, init=init_script_4)
 #  cleanup( ( f_sql_log, f_sql_err, f_sql_cmd, fdb_test ) )
 #
 #---
-
-act_4 = python_act('db_4', substitutions=substitutions_4)
+"""
+act_4 = python_act('db', substitutions=subs_windows)
 
 expected_stdout_4 = """
     PARAM_NAME                                         PARAM_VALUE                                                      PARAM_DEFAULT                                                    PARAM_IS_SET PARAM_SOURCE
@@ -1661,7 +1641,8 @@ expected_stdout_4 = """
     Records affected: 0
 """
 
+@pytest.mark.skip('FIXME: databases.conf / firebird.conf')
 @pytest.mark.version('>=5.0')
 @pytest.mark.platform('Windows')
 def test_4(act_4: Action):
-    pytest.skip("Requires change to databases.conf / firebird.conf")
+    pytest.fail("Not IMPLEMENTED")

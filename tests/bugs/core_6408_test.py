@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6408
-# title:        RETURNING clause in MERGE cannot reference column in aliased target table using qualified reference (alias.column) if DELETE action present
-# decription:   
-#                  Confirmed problem on 4.0.0.2225 ("-SQL error code = -206 / -Column unknown / -D.VAL"
-#                  Checked on 4.0.0.2240 - all fine.
-#                
-# tracker_id:   CORE-6408
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6646
+ISSUE:       6646
+TITLE:       RETURNING clause in MERGE cannot reference column in aliased target table using qualified reference (alias.column) if DELETE action present
+DESCRIPTION:
+JIRA:        CORE-6408
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table dummy2 (
@@ -47,9 +37,9 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     VAL                             ab
     CONSTANT                        ab
     VAL                             <null>
@@ -57,8 +47,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

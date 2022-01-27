@@ -1,38 +1,40 @@
 #coding:utf-8
-#
-# id:           bugs.gh_3106
-# title:        Many indexed reads in a compound index with NULLs [CORE2709]
-# decription:
-#                  https://github.com/FirebirdSQL/firebird/issues/3106
-#
-#                  BEFORE fix trace log was like this:
-#                  ======
-#                    Table         Natural     Index
-#                    *******************************
-#                    RDB$DATABASE        1
-#                    TEST_TABLE                    3 <<< this line must NOT present now.
-#                  ======
-#                  AFTER fix trace must contain line only for RDB$DATABASE in the table statistics section.
-#
-#                  Confirmed bug on 4.0.0.2451: trace statistics contain line with three indexed reads for test table.
-#                  Checked on 4.0.0.2453 SS/CS: all OK, there are no indexed reads on test table in the trace log.
-#
-# tracker_id:
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-3106
+ISSUE:       3106
+TITLE:       Many indexed reads in a compound index with NULLs
+DESCRIPTION:
+    BEFORE fix trace log was like this:
+    ======
+      Table         Natural     Index
+      *******************************
+      RDB$DATABASE        1
+      TEST_TABLE                    3 <<< this line must NOT present now.
+    ======
+    AFTER fix trace must contain line only for RDB$DATABASE in the table statistics section.
+
+    Confirmed bug on 4.0.0.2451: trace statistics contain line with three indexed reads for test table.
+    Checked on 4.0.0.2453 SS/CS: all OK, there are no indexed reads on test table in the trace log.
+JIRA:        CORE-2709
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    Found table statistics header.
+    Found EXPECTED line for rdb$database.
+"""
 
-db_1 = db_factory(page_size=8192, sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -217,14 +219,3 @@ db_1 = db_factory(page_size=8192, sql_dialect=3, init=init_script_1)
 #  time.sleep(1)
 #  cleanup( (f_trc_cfg, f_trc_lst, f_trc_log, f_trc_err, sql_log, sql_err, sql_cmd) )
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Found table statistics header.
-    Found EXPECTED line for rdb$database.
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

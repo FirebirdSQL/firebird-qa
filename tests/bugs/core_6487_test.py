@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6487
-# title:        FETCH ABSOLUTE and RELATIVE beyond bounds of cursor should always position immediately before-first or after-last
-# decription:   
-#                 Confirmed bug on 4.0.0.2365, 3.0.8.33415.
-#                 Checked on 4.0.0.2369, 3.0.8.33416 - works OK.
-# tracker_id:   CORE-6487
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-6717
+ISSUE:       6717
+TITLE:       FETCH ABSOLUTE and RELATIVE beyond bounds of cursor should always position immediately before-first or after-last
+DESCRIPTION:
+JIRA:        CORE-6487
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('-At block line:.*', '-At block line')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
     set term ^;
     execute block returns(id int, rc int) as
@@ -41,7 +32,7 @@ test_script_1 = """
         id = c.id;
         rc = row_count;
         suspend;
-        
+
         close c;
     end
     ^
@@ -62,16 +53,16 @@ test_script_1 = """
         id = c.id;
         rc = row_count;
         suspend;
-        
+
         close c;
     end
     ^
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-At block line:.*', '-At block line')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = HY109
     Cursor C is not positioned in a valid record
     -At block line: 14, col: 5
@@ -82,8 +73,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

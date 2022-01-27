@@ -1,31 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6998
-# title:        Problems with access to RDB$CONFIG table for non-privileged user when he has grant on execution of SP which has necessary access rights (created by SYSDBA with SQL DEFINER clause)
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6998
-#               
-#                   Confirmed ticket issue on 5.0.0.243.
-#                   Checked on: 5.0.0.244, 4.0.1.2625, SS/CS, intermediate build (09-oct-2021 06:39).
-#                
-# tracker_id:   
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-6998
+ISSUE:       6998
+TITLE:       Problems with access to RDB$CONFIG table for non-privileged user when he has
+  grant on execution of SP which has necessary access rights (created by SYSDBA with SQL DEFINER clause)
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set list on;
     create or alter user tmp$gh_6998 password '123' revoke admin role;
@@ -49,7 +37,7 @@ test_script_1 = """
 
     connect '$(DSN)' user tmp$gh_6998 password '123';
     commit;
-    
+
     select current_user as who_am_i, sign(p.cnt) as is_rdb$config_avaliable
     from sp_check_rdb$config_avaliable p;
     commit;
@@ -59,15 +47,15 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AM_I                        TMP$GH_6998
     IS_RDB$CONFIG_AVALIABLE         1
 """
 
 @pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

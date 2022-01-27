@@ -1,37 +1,46 @@
 #coding:utf-8
-#
-# id:           bugs.core_6362
-# title:        Better diagnostic when 'Missing security context'
-# decription:
-#                   ::: NB :::
-#                   List of AuthClient plugins must contain Win_Sspi in order to reproduce this test expected results.
-#                   Otherwise firebird.log will not contain any message like "Available context(s): ..."
-#
-#                   Checked on 3.0.7.33348, 4.0.0.2119 (SS/CS): OK.
-#
-#                   01-mar-2021: attribute 'platform' was restricted to 'Windows'.
-#                   05-mar-2021: list of plugins specified in AuthServer *also* must contain Win_Sspi.
-#
-#                   11-mar-2021. As of FB 3.x, messages appears in the firebird.log more than one time.
-#                   Because of this, we are interested only for at least one occurence of each message
-#                   rather than for each of them (see 'found_patterns', type: set()).
-#
-# tracker_id:   CORE-6362
-# min_versions: ['3.0.7']
-# versions:     3.0.7
-# qmid:
+
+"""
+ID:          issue-2343
+ISSUE:       2343
+TITLE:       Better diagnostic when 'Missing security context'
+DESCRIPTION:
+  ::: NB :::
+  List of AuthClient plugins must contain Win_Sspi in order to reproduce this test expected results.
+  Otherwise firebird.log will not contain any message like "Available context(s): ..."
+
+  Checked on 3.0.7.33348, 4.0.0.2119 (SS/CS): OK.
+
+  01-mar-2021: attribute 'platform' was restricted to 'Windows'.
+  05-mar-2021: list of plugins specified in AuthServer *also* must contain Win_Sspi.
+
+  11-mar-2021. As of FB 3.x, messages appears in the firebird.log more than one time.
+  Because of this, we are interested only for at least one occurence of each message
+  rather than for each of them (see 'found_patterns', type: set()).
+JIRA:        CORE-6362
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    Error message on attempt to get server version w/o user/password and ISC_USER/ISC_PASSWORD:
+    Missing security context for services manager
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+    Found patterns in firebird.log diff file:
+    Available context\\.*
+    Missing\\s+security\\s+context\\.*
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.7')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -164,22 +173,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Error message on attempt to get server version w/o user/password and ISC_USER/ISC_PASSWORD:
-    Missing security context for services manager
-
-    Found patterns in firebird.log diff file:
-    Available context\\.*
-    Missing\\s+security\\s+context\\.*
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.7')
-@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-

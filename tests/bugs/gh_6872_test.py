@@ -1,53 +1,44 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6872
-# title:        Indexed STARTING WITH execution is very slow with UNICODE collation
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6872
-#
-#                   21.11.2021. Totally re-implemented, package 'psutil' must be installed.
-#
-#                   We make two calls of psutil.Process(fb_pid).cpu_times() (before and after SQL code) and obtain CPU User Time
-#                   values from each result.
-#                   Difference between them can be considered as much more accurate performance estimation.
-#
-#                   Test creates two tables and two procedures for measuring performance of STARTING WITH operator when it is applied
-#                   to the table WITH or WITHOUNT unicode collation.
-#
-#                   On each calls of procedural code (see variable N_MEASURES) dozen execution of 'SELECT ... FROM <T> WHERE <T.C> starting with ...'
-#                   are performed, where names '<T>' and '<T.C>' points to apropriate table and column (with or without collation).
-#                   Number of iterations within procedures is defined by variable N_COUNT_PER_MEASURE.
-#
-#                   Each result (difference between cpu_times().user values when PSQL code finished) is added to the list.
-#                   Finally, we evaluate MEDIAN of ratio values between cpu user time which was received for both of procedures.
-#                   If this median is less then threshold (see var. ADDED_COLL_TIME_MAX_RATIO) then result can be considered as ACCEPTABLE.
-#
-#                   See also:
-#                   https://psutil.readthedocs.io/en/latest/#psutil.cpu_times
-#
-#                   Checked on Windows:
-#                   * builds before/without fix:
-#                       3.0.8.33540: median = 16.30;
-#                       4.0.1.2520:  median = 47.65
-#                       5.0.0.85:    median = 43.14
-#                   * builds after fix:
-#                       4.0.1.2668:  median = 1.70
-#                       5.0.0.313:   median = 1.80
-#
-# tracker_id:
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-6872
+ISSUE:       6872
+TITLE:       Indexed STARTING WITH execution is very slow with UNICODE collation
+DESCRIPTION:
+    21.11.2021. Totally re-implemented, package 'psutil' must be installed.
+
+    We make two calls of psutil.Process(fb_pid).cpu_times() (before and after SQL code) and obtain CPU User Time
+    values from each result.
+    Difference between them can be considered as much more accurate performance estimation.
+
+    Test creates two tables and two procedures for measuring performance of STARTING WITH operator when it is applied
+    to the table WITH or WITHOUNT unicode collation.
+
+    On each calls of procedural code (see variable N_MEASURES) dozen execution of 'SELECT ... FROM <T> WHERE <T.C> starting with ...'
+    are performed, where names '<T>' and '<T.C>' points to apropriate table and column (with or without collation).
+    Number of iterations within procedures is defined by variable N_COUNT_PER_MEASURE.
+
+    Each result (difference between cpu_times().user values when PSQL code finished) is added to the list.
+    Finally, we evaluate MEDIAN of ratio values between cpu user time which was received for both of procedures.
+    If this median is less then threshold (see var. ADDED_COLL_TIME_MAX_RATIO) then result can be considered as ACCEPTABLE.
+
+    See also:
+    https://psutil.readthedocs.io/en/latest/#psutil.cpu_times
+
+    Checked on Windows:
+    * builds before/without fix:
+        3.0.8.33540: median = 16.30;
+        4.0.1.2520:  median = 47.65
+        5.0.0.85:    median = 43.14
+    * builds after fix:
+        4.0.1.2668:  median = 1.70
+        5.0.0.313:   median = 1.80
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table test_utf8_miss_coll (c1 varchar(10) character set utf8);
     create index test_utf8_miss_coll_idx on test_utf8_miss_coll (c1);
 
@@ -55,7 +46,18 @@ init_script_1 = """
     create index test_utf8_with_coll_idx on test_utf8_with_coll(c1);
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
+
+act = python_act('db')
+
+expected_stdout = """
+    Duration ratio: acceptable.
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=4.0.1')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -151,14 +153,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #      print('\\nMedian value: %12.2f' % median_ratio)
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Duration ratio: acceptable.
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

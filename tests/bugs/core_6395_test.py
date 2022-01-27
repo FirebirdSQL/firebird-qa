@@ -1,50 +1,52 @@
 #coding:utf-8
-#
-# id:           bugs.core_6395
-# title:        Allow usage of time zone displacement in config DefaultTimeZone
-# decription:
-#                   We make backup of current firebird.conf for changing it two times:
-#                   1. Add line with DefaultTimeZone = -7:00 and get local time by making *LOCAL* connect to current DB;
-#                   2. Restore previous firebird.conf from its .bak-copy do second change: add line with DefaultTimeZone = 7:00.
-#                      Then we run second local connect.
-#
-#                   Each connect will ask FB to return CURRENT_TIME value (with casting it to '%H:%M:%S' format).
-#                   Expected result: values must change from 1st to 2nd run for 14 hours (840 minutes).
-#
-#                   ::: NB :::
-#                   1. Affect of changed parameter DefaultTimeZone can be seen only if DB is attached using *LOCAL* protocol.
-#                      Attempt to connect using remote protocol will fail: engine returns previous value of DefaultTimeZone.
-#                      One need to wait at least 130 seconds after changing firebird.conf for new value be returned at this case!
-#                      The reason of that is 10+60+60 seconds which are needed to fully unload shmem-related structures from memory.
-#                      Explanation from Vlad: letter 24.01.2021 18:00, subj: "System audit in FB.  Is there some kind of timeout of 130 seconds ?"
-#                      (it was discussion about attempts make test for CORE-5993)
-#                      See also: http://tracker.firebirdsql.org/browse/CORE-6476
-#
-#                   2. FDB driver loads client library only *once* before this test launch and, in turn, this library reads firebird.conf.
-#                      For this reason we have to launch separate (child) process two times, which will be forced to load firebird.conf
-#                      every launch. This is why subprocess.call(['isql', ...]) is needed here rather than just query DB using cursor of
-#                      pre-existing db_conn connection (see routine 'get_local_time').
-#
-#                   Confirmed improvement on 4.0.0.2185.
-#                   Value of time did not differ on previous builds (checked 4..0.2170).
-#
-#
-# tracker_id:   CORE-6395
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6633
+ISSUE:       6633
+TITLE:       Allow usage of time zone displacement in config DefaultTimeZone
+DESCRIPTION:
+    We make backup of current firebird.conf for changing it two times:
+    1. Add line with DefaultTimeZone = -7:00 and get local time by making *LOCAL* connect to current DB;
+    2. Restore previous firebird.conf from its .bak-copy do second change: add line with DefaultTimeZone = 7:00.
+       Then we run second local connect.
+
+    Each connect will ask FB to return CURRENT_TIME value (with casting it to '%H:%M:%S' format).
+    Expected result: values must change from 1st to 2nd run for 14 hours (840 minutes).
+
+    ::: NB :::
+    1. Affect of changed parameter DefaultTimeZone can be seen only if DB is attached using *LOCAL* protocol.
+       Attempt to connect using remote protocol will fail: engine returns previous value of DefaultTimeZone.
+       One need to wait at least 130 seconds after changing firebird.conf for new value be returned at this case!
+       The reason of that is 10+60+60 seconds which are needed to fully unload shmem-related structures from memory.
+       Explanation from Vlad: letter 24.01.2021 18:00, subj: "System audit in FB.  Is there some kind of timeout of 130 seconds ?"
+       (it was discussion about attempts make test for CORE-5993)
+       See also: http://tracker.firebirdsql.org/browse/CORE-6476
+
+    2. FDB driver loads client library only *once* before this test launch and, in turn, this library reads firebird.conf.
+       For this reason we have to launch separate (child) process two times, which will be forced to load firebird.conf
+       every launch. This is why subprocess.call(['isql', ...]) is needed here rather than just query DB using cursor of
+       pre-existing db_conn connection (see routine 'get_local_time').
+
+    Confirmed improvement on 4.0.0.2185.
+    Value of time did not differ on previous builds (checked 4..0.2170).
+JIRA:        CORE-6395
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    840
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: firebird.conf')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -191,14 +193,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    840
-"""
-
-@pytest.mark.skip('FIXME: firebird.conf')
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

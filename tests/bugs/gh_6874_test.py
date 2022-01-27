@@ -1,40 +1,29 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6874
-# title:        Literal 65536 (interpreted as int) can not be multiplied by itself w/o cast if result more than 2^63-1
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6874
-#               
-#                   Confirmed need to explicitly cast literal 65536 on: 5.0.0.88, 4.0.1.2523 (otherwise get SQLSTATE = 22003).
-#                   Checked on: 5.0.0.113, 4.0.1.2539 -- all OK.
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6874
+ISSUE:       6874
+TITLE:       Literal 65536 (interpreted as int) can not be multiplied by itself w/o cast if result more than 2^63-1
+DESCRIPTION:
+  Confirmed need to explicitly cast literal 65536 on: 5.0.0.88, 4.0.1.2523 (otherwise get SQLSTATE = 22003).
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!sqltype:|multiply_result).)*$', ''), ('[ \t]+', ' '), ('.*alias:.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set sqlda_display on;
     select 65536*65536*65536*65536 as "multiply_result_1" from rdb$database;
     select -65536*-65536*-65536*-65536 as "multiply_result_2" from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype:|multiply_result).)*$', ''),
+                                                 ('[ \t]+', ' '), ('.*alias:.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 32752 INT128 scale: 0 subtype: 0 len: 16
     multiply_result_1                18446744073709551616
 
@@ -43,7 +32,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

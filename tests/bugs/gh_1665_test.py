@@ -1,56 +1,61 @@
 #coding:utf-8
-#
-# id:           bugs.gh_1665
-# title:        TempTableDirectory: include FILE NAME into error message when creation of temp file failed.
-# decription:
-#                   Source discussions:
-#                       1) https://github.com/FirebirdSQL/firebird/pull/311
-#                          ("Introduce new setting TempTableDirectory as discussed in fb-devel, see also CORE-1241")
-#                       2) https://github.com/FirebirdSQL/firebird/issues/1665
-#                          ("TempDirectories parameter in firebird.conf ignored by global temporary tables [CORE1241]")
-#                           Old: CORE-1241; discussion resumed 14.12.2020.
-#                   Commits (17.05.2021 15:46):
-#                       1) https://github.com/FirebirdSQL/firebird/commit/f2805020a6f34d253c93b8edac6068c1b35f9b89
-#                          "New setting TempTableDirectory.
-#                          Used to set directory where engine should put data of temporary tables and temporary blobs."
-#                       2) https://github.com/FirebirdSQL/firebird/commit/fd0fa8a3a58fbfe7fdc0641b4e48258643d72127
-#                          "Let include file name into error message when creation of temp file failed."
-#
-#                   This test checks only second commit of above mentioned (i.e. message about invalid/incaccessible TempTableDirectory).
-#
-#                   We make backup of current firebird.conf for changing it by adding line with 'TempTableDirectory' parameter
-#                   which has INVALID form for both Windows and Linux: '|DEFINITELY|INACCESSIBLE|' (no such folder can exist).
-#
-#                   Then we establish connection to the test DB and run SQL which creates GTT and adds several rows in it.
-#                   NO exception must be raised in this case: GTT must be fulfilled w/o problems and FB must create temporary
-#                   file (fb_table_*) in some existing folder (defined by FIREBIRD_TMP variable; if it is undefined then such
-#                   file will be created in C:\\TEMP or  /tmp - depending on OS).
-#
-#                   But firebird.log must contain message about problem with creating file (fb_table_*) in the directory which
-#                   could not be accessed. We check old and new content of firebird.log with expecting to see message that
-#                   did appear about this problem.
-#
-#                   ::: NB :::
-#                   Affect of changed parameter TempTableDirectory can be seen only if DB is attached using *LOCAL* protocol.
-#
-#                   Checked on 5.0.0.40
-#
-# tracker_id:
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-1665
+ISSUE:       1665
+TITLE:       TempDirectories parameter in firebird.conf ignored by global temporary tables
+DESCRIPTION:
+  Source discussions:
+    1) https://github.com/FirebirdSQL/firebird/pull/311
+       ("Introduce new setting TempTableDirectory as discussed in fb-devel, see also CORE-1241")
+    2) https://github.com/FirebirdSQL/firebird/issues/1665
+       ("TempDirectories parameter in firebird.conf ignored by global temporary tables [CORE1241]")
+        Old: CORE-1241; discussion resumed 14.12.2020.
+  Commits (17.05.2021 15:46):
+    1) https://github.com/FirebirdSQL/firebird/commit/f2805020a6f34d253c93b8edac6068c1b35f9b89
+       "New setting TempTableDirectory.
+       Used to set directory where engine should put data of temporary tables and temporary blobs."
+    2) https://github.com/FirebirdSQL/firebird/commit/fd0fa8a3a58fbfe7fdc0641b4e48258643d72127
+       "Let include file name into error message when creation of temp file failed."
+
+  This test checks only second commit of above mentioned (i.e. message about invalid/incaccessible TempTableDirectory).
+
+  We make backup of current firebird.conf for changing it by adding line with 'TempTableDirectory' parameter
+  which has INVALID form for both Windows and Linux: '|DEFINITELY|INACCESSIBLE|' (no such folder can exist).
+
+  Then we establish connection to the test DB and run SQL which creates GTT and adds several rows in it.
+  NO exception must be raised in this case: GTT must be fulfilled w/o problems and FB must create temporary
+  file (fb_table_*) in some existing folder (defined by FIREBIRD_TMP variable; if it is undefined then such
+  file will be created in C:\\TEMP or  /tmp - depending on OS).
+
+  But firebird.log must contain message about problem with creating file (fb_table_*) in the directory which
+  could not be accessed. We check old and new content of firebird.log with expecting to see message that
+  did appear about this problem.
+
+  ::: NB :::
+  Affect of changed parameter TempTableDirectory can be seen only if DB is attached using *LOCAL* protocol.
+
+  Checked on 5.0.0.40
+JIRA:        CORE-1241
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' '), ('.*fb_table_.*', 'fb_table_')]
+act = python_act('db', substitutions=[('[ \t]+', ' '), ('.*fb_table_.*', 'fb_table_')])
 
-init_script_1 = """"""
+expected_stdout = """
+    + Error creating file in TempTableDirectory "|DEFINITELY|INACCESSIBLE|"
+    + I/O error during "CreateFile (create)" operation for file "|DEFINITELY|INACCESSIBLE|\\fb_table_"
+    + Error while trying to create file
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=5.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -251,15 +256,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( (old_fb_log, new_fb_log, f_diff) )
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    + Error creating file in TempTableDirectory "|DEFINITELY|INACCESSIBLE|"
-    + I/O error during "CreateFile (create)" operation for file "|DEFINITELY|INACCESSIBLE|\\fb_table_"
-    + Error while trying to create file
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

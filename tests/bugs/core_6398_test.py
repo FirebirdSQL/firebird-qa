@@ -1,36 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_6398
-# title:        Error converting string with hex representation of integer to smallint
-# decription:   
-#                  Bug initially was detected when adapted some of GTCS-tests which tries to convert
-#                  numeric values from all possible combinations of datatypes.
-#                  Particularly, conversion error was when try to cast "0x7fffffffffffffff" to bigint.
-#                  See letter to Alex et al, 08-JUN-2020 15:38.
-#               
-#                  It was decided to check here not only cast to smallint but also to other integer dadatypes.
-#               
-#                  Confirmed bug on 4.0.0.2188.
-#                  Checked on 4.0.0.2191 - all OK.
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6636
+ISSUE:       6636
+TITLE:       Error converting string with hex representation of integer to smallint
+DESCRIPTION:
+  Bug initially was detected when adapted some of GTCS-tests which tries to convert
+  numeric values from all possible combinations of datatypes.
+  Particularly, conversion error was when try to cast "0x7fffffffffffffff" to bigint.
+  See letter to Alex et al, 08-JUN-2020 15:38.
+
+  It was decided to check here not only cast to smallint but also to other integer dadatypes.
+JIRA:        CORE-6398
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create or alter procedure "blob_smallint_explicit_cast" ( a blob ) returns ( b smallint ) as
     begin
@@ -58,27 +47,27 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-     
+
     set heading off;
 
     select p.b as "blob_smallint_explicit_cast" from "blob_smallint_explicit_cast"('0x7fff') p;
 
     -- FAILED before fix: "numeric value is out of range":
     select p.b as "blob_smallint_explicit_cast" from "blob_smallint_explicit_cast"('0x8000') p;
-     
+
     select p.b as "blob_int_explicit_cast" from "blob_int_explicit_cast"('0x7fffffff') p;
     select p.b as "blob_int_explicit_cast" from "blob_int_explicit_cast"('0x80000000') p;
-     
+
     select p.b as "blob_bigint_explicit_cast" from "blob_bigint_explicit_cast"('0x7fffffffffffffff') p;
     select p.b as "blob_bigint_explicit_cast" from "blob_bigint_explicit_cast"('0x8000000000000000') p;
-     
+
     select p.b as "blob_int128_explicit_cast" from "blob_int128_explicit_cast"('0x7fffffffffffffffffffffffffffffff') p;
     select p.b as "blob_int128_explicit_cast" from "blob_int128_explicit_cast"('0x80000000000000000000000000000000') p;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     32767
     -32768
     2147483647
@@ -90,8 +79,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

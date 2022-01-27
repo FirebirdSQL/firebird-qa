@@ -1,29 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.core_6317
-# title:        Server is crashing on long GRANT statement
-# decription:   
-#                   Confirmed crash on: 4.0.0.1963 SC; 3.0.6.33289 SC
-#                   Checked on: 4.0.0.2006 SS/SC, 3.0.6.33296 SS/SC -- all fine.
-#                
-# tracker_id:   CORE-6317
-# min_versions: ['3.0.6']
-# versions:     3.0.6
-# qmid:         None
+
+"""
+ID:          issue-6558
+ISSUE:       6558
+TITLE:       Server is crashing on long GRANT statement
+DESCRIPTION:
+JIRA:        CORE-6317
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set wng off;
     create or alter user tmp$c6317 password '123';
@@ -61,9 +51,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$USER                        TMP$C6317
     RDB$RELATION_NAME               TEST
     RDB$PRIVILEGE                   S
@@ -75,8 +65,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.6')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

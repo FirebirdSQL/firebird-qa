@@ -1,35 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_6358
-# title:        Adding NOT NULL column with DEFAULT value may cause default values to update when selecting or have the wrong charset
-# decription:   
-#                   Confirmed bug on 4.0.0.2089
-#                   Checked on 4.0.0.2090  - all OK.
-#                   (intermediate snapshot with timestamps: 07-JUL-2020, 18:06)
-#               
-#                   Checked on 3.0.7.33340 - all OK
-#                   (intermediate snapshot with timestamps: 10-JUL-2020, 15:50)
-#                
-# tracker_id:   CORE-6358
-# min_versions: ['3.0.7']
-# versions:     3.0.7
-# qmid:         None
+
+"""
+ID:          issue-6599
+ISSUE:       6599
+TITLE:       Adding NOT NULL column with DEFAULT value may cause default values to update when selecting or have the wrong charset
+DESCRIPTION:
+JIRA:        CORE-6358
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.7
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
-	
+
     -- Part 1: adding field of timestamp datatype with default value = 'now'
     -- #######
 
@@ -82,7 +68,7 @@ test_script_1 = """
 		-- HERE WE MAKE DELAY:
 		-- ###################
         select count(*) from sp_delay p into c;
-		
+
         select dts from t into t2;
         diff_ms = datediff(millisecond from t1 to t2);
         suspend;
@@ -99,12 +85,12 @@ test_script_1 = """
     alter table t2 add c1 varchar(10) character set win1252 default '123áé456' not null;
     insert into t2 (n) values (2);
     select * from t2;
-  
+
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	DIFF_MS                         0
 
 	N                               1
@@ -114,8 +100,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

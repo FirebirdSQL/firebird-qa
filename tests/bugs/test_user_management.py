@@ -1,44 +1,75 @@
 #coding:utf-8
-#
-# id:           bugs.user_management
-# title:        Check ability to create/alter/drop users by NON-dba user which is granted with necessary system privilege.
-# decription:
-#                   NOTE: there is no difference between user who is granted with admin role when it was created and user who has no granted with this but
-#                   has system privilege 'USER_MANAGEMENT': both of them can *only* add/edit/drop another users and no other actions.
-#                   For example, they can give grants to just created users and can not select for any user-defined tables (until this was explicitly granted).
-#
-#                   But if we create user <U01> on SELF-SECURITY database and give to him adminn role ('CREATE USER ... GRANT ADMIN ROLE') then this <U01> will
-#                   be able to do such actions: he can grant rights to other users etc.
-#                   In contrary to this, if we create user <U02> in such self-security DB but instead grant to him sytem privilege USER_MANAGEMENT then he
-#                   will NOT be able to do these actions. Only create/alter/drop users will be avaliable to him.
-#
-#                   Test verifies exactly this case: abilities of user created inSELF-SECURITY database with granting to him privilege USER_MANAGEMENT.
-#
-#                   We make back-copy of databases.conf and change it by adding alias for new DB which will be self-security and has alias = 'syspriv_usermgr'.
-#
-#                   Then we make file-level copy of security.db to database defined by alias 'self_usermgr', do connect and apply SQL script that does all
-#                   necessary actions. NOTE that some actions must fail (see comments below, in generated .sql script).
-#
-#                   Finally, test restores back copy of databases.conf file.
-#
-#                   Checked on 5.0.0.139 (SS/CS), 4.0.1.2568 (SS/CS).
-#
-# tracker_id:
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          user-management
+ISSUE:
+TITLE:       Incorrect results when left join on subquery with constant column
+DESCRIPTION:
+  NOTE: there is no difference between user who is granted with admin role when it was created and user who has no granted with this but
+  has system privilege 'USER_MANAGEMENT': both of them can *only* add/edit/drop another users and no other actions.
+  For example, they can give grants to just created users and can not select for any user-defined tables (until this was explicitly granted).
+
+  But if we create user <U01> on SELF-SECURITY database and give to him adminn role ('CREATE USER ... GRANT ADMIN ROLE') then this <U01> will
+  be able to do such actions: he can grant rights to other users etc.
+  In contrary to this, if we create user <U02> in such self-security DB but instead grant to him sytem privilege USER_MANAGEMENT then he
+  will NOT be able to do these actions. Only create/alter/drop users will be avaliable to him.
+
+  Test verifies exactly this case: abilities of user created inSELF-SECURITY database with granting to him privilege USER_MANAGEMENT.
+
+  We make back-copy of databases.conf and change it by adding alias for new DB which will be self-security and has alias = 'syspriv_usermgr'.
+
+  Then we make file-level copy of security.db to database defined by alias 'self_usermgr', do connect and apply SQL script that does all
+  necessary actions. NOTE that some actions must fail (see comments below, in generated .sql script).
+
+  Finally, test restores back copy of databases.conf file.
+
+  Checked on 5.0.0.139 (SS/CS), 4.0.1.2568 (SS/CS).
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('.*After line \\d+.*', '')]
+act = python_act('db', substitutions=[('.*After line \\d+.*', '')])
 
-init_script_1 = """"""
+expected_stdout = """
+    STDOUT: WHO_AM_I                        JOHN_SMITH_DBA_HELPER
+    STDOUT: RDB$ROLE_NAME                   RDB$ADMIN
+    STDOUT: RDB$ROLE_IN_USE                 <false>
+    STDOUT: RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
+    STDOUT: MON$SEC_DATABASE                Self
+    STDOUT: WHO_AM_I                        JOHN_SMITH_DBA_HELPER
+    STDOUT: RDB$ROLE_NAME                   R_FOR_GRANT_REVOKE_ANY_DDL_RIGHT
+    STDOUT: RDB$ROLE_IN_USE                 <true>
+    STDOUT: RDB$SYSTEM_PRIVILEGES           0200000000000000
+    STDOUT: MON$SEC_DATABASE                Self
+    STDOUT: Records affected: 2
+    STDOUT: SEC$USER_NAME                   STOCK_BOSS
+    STDOUT: SEC$FIRST_NAME                  foo-rio-bar
+    STDOUT: SEC$ADMIN                       <false>
+    STDOUT: SEC$ACTIVE                      <true>
+    STDOUT: SEC$USER_NAME                   STOCK_MNGR
+    STDOUT: SEC$FIRST_NAME                  <null>
+    STDOUT: SEC$ADMIN                       <false>
+    STDOUT: SEC$ACTIVE                      <false>
+    STDOUT: Records affected: 2
+    STDOUT: Records affected: 0
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+    STDERR: Statement failed, SQLSTATE = 42000
+    STDERR: unsuccessful metadata update
+    STDERR: -GRANT failed
+    STDERR: -no SELECT privilege with grant option on table/view TEST_SS
+
+    STDERR: Statement failed, SQLSTATE = 28000
+    STDERR: no permission for SELECT access to TABLE TEST_SS
+    STDERR: -Effective user is JOHN_SMITH_DBA_HELPER
+"""
+
+@pytest.mark.skip('FIXME: databases.conf')
+@pytest.mark.version('>=4.0.1')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -270,42 +301,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  shutil.move( dbconf_bak, dbconf_cur )
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    STDOUT: WHO_AM_I                        JOHN_SMITH_DBA_HELPER
-    STDOUT: RDB$ROLE_NAME                   RDB$ADMIN
-    STDOUT: RDB$ROLE_IN_USE                 <false>
-    STDOUT: RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
-    STDOUT: MON$SEC_DATABASE                Self
-    STDOUT: WHO_AM_I                        JOHN_SMITH_DBA_HELPER
-    STDOUT: RDB$ROLE_NAME                   R_FOR_GRANT_REVOKE_ANY_DDL_RIGHT
-    STDOUT: RDB$ROLE_IN_USE                 <true>
-    STDOUT: RDB$SYSTEM_PRIVILEGES           0200000000000000
-    STDOUT: MON$SEC_DATABASE                Self
-    STDOUT: Records affected: 2
-    STDOUT: SEC$USER_NAME                   STOCK_BOSS
-    STDOUT: SEC$FIRST_NAME                  foo-rio-bar
-    STDOUT: SEC$ADMIN                       <false>
-    STDOUT: SEC$ACTIVE                      <true>
-    STDOUT: SEC$USER_NAME                   STOCK_MNGR
-    STDOUT: SEC$FIRST_NAME                  <null>
-    STDOUT: SEC$ADMIN                       <false>
-    STDOUT: SEC$ACTIVE                      <false>
-    STDOUT: Records affected: 2
-    STDOUT: Records affected: 0
-
-    STDERR: Statement failed, SQLSTATE = 42000
-    STDERR: unsuccessful metadata update
-    STDERR: -GRANT failed
-    STDERR: -no SELECT privilege with grant option on table/view TEST_SS
-
-    STDERR: Statement failed, SQLSTATE = 28000
-    STDERR: no permission for SELECT access to TABLE TEST_SS
-    STDERR: -Effective user is JOHN_SMITH_DBA_HELPER
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

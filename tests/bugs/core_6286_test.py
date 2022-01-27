@@ -1,30 +1,21 @@
 #coding:utf-8
-#
-# id:           bugs.core_6286
-# title:        Make usage of TIMESTAMP/TIME WITH TIME ZONE convenient for users when appropriate ICU library is not installed on the client side
-# decription:   
-#                   Test only verifies ability to use 'EXTENDED' clause in SET BIND statement.
-#                   We can not simulate absense of appropriate ICU library and for this reason values of time/timestamp are suppressednot checked.
-#                   Checked on 4.0.0.1905.
-#                
-# tracker_id:   CORE-6286
-# min_versions: []
-# versions:     4.0.0
-# qmid:         None
+
+"""
+ID:          issue-6528
+ISSUE:       6528
+TITLE:       Make usage of TIMESTAMP/TIME WITH TIME ZONE convenient for users when appropriate ICU library is not installed on the client side
+DESCRIPTION:
+  Test only verifies ability to use 'EXTENDED' clause in SET BIND statement.
+  We can not simulate absense of appropriate ICU library and for this reason values of time/timestamp are suppressednot checked.
+JIRA:        CORE-6286
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!(sqltype|extended)).)*$', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set sqlda_display on;
 
     set bind of time with time zone to extended;
@@ -34,9 +25,10 @@ test_script_1 = """
     select timestamp '2018-12-31 12:31:42.543 Pacific/Fiji' as "check_bind_timestamp_with_zone_to_extended" from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!(sqltype|extended)).)*$', ''),
+                                                 ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 32750 EXTENDED TIME WITH TIME ZONE scale: 0 subtype: 0 len: 8
       :  name: CONSTANT  alias: check_bind_time_with_zone_to_extended
     check_bind_time_with_zone_to_extended
@@ -47,8 +39,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

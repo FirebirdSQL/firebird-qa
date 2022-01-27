@@ -1,25 +1,17 @@
 #coding:utf-8
-#
-# id:           bugs.core_6351
-# title:        Computed field could be wrongly evaluated as NULL
-# decription:   
-#                   Confirmed bug on 4.0.0.2087.
-#                   Checked on 4.0.0.2170, 3.0.7.33357 -- all fine.
-#                 
-# tracker_id:   
-# min_versions: ['3.0.7']
-# versions:     3.0.7
-# qmid:         
+
+"""
+ID:          issue-6592
+ISSUE:       6592
+TITLE:       Computed field could be wrongly evaluated as NULL
+DESCRIPTION:
+JIRA:        CORE-6351
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.7
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create table t1
     (
       id int,
@@ -54,9 +46,9 @@ init_script_1 = """
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     select 'case-1' as msg, p.val from p_t1(1) p;
     select t.* from t1 t;
@@ -66,12 +58,12 @@ test_script_1 = """
 
     select t.* from t1 t;
     select 'case-2' as msg, p.val from p_t1(1) p;
-    exit; 
+    exit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             case-1
     VAL                             id = 1
     ID                              1
@@ -86,8 +78,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.7')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

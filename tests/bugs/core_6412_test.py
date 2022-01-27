@@ -1,38 +1,44 @@
 #coding:utf-8
-#
-# id:           bugs.core_6412
-# title:        Firebird is freezing when trying to manage users via triggers
-# decription:
-#                   Confirmed hang on 4.0.0.2214
-#
-#                   Checked on 4.0.0.2249 - no hang, but if this test runs in loop, w/o pauses for at least ~4s, then starting from 2nd run following fail raises:
-#                      Statement failed, SQLSTATE = 08006
-#                      Error occurred during login, please check server firebird.log for details
-#                      Error occurred during login, please check server firebird.log for details
-#                   This was because of: http://tracker.firebirdsql.org/browse/CORE-6441 (fixed).
-#
-#                   Content of firebird.log will be added with following lines:
-#                      Srp Server
-#                      connection shutdown
-#                      Database is shutdown.
-#                   Sent report to Alex et al, 09.11.2020.
-#
-# tracker_id:   CORE-6412
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6650
+ISSUE:       6650
+TITLE:       Firebird is freezing when trying to manage users via triggers
+DESCRIPTION:
+  Confirmed hang on 4.0.0.2214
+
+  Checked on 4.0.0.2249 - no hang, but if this test runs in loop, w/o pauses for at
+  least ~4s, then starting from 2nd run following fail raises:
+   Statement failed, SQLSTATE = 08006
+   Error occurred during login, please check server firebird.log for details
+   Error occurred during login, please check server firebird.log for details
+  This was because of: http://tracker.firebirdsql.org/browse/CORE-6441 (fixed).
+
+  Content of firebird.log will be added with following lines:
+   Srp Server
+   connection shutdown
+   Database is shutdown.
+  Sent report to Alex et al, 09.11.2020.
+JIRA:        CORE-6412
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('\t+', ' '), ('TCPv.*', 'TCP')]
+act = python_act('db', substitutions=[('\t+', ' '), ('TCPv.*', 'TCP')])
 
-init_script_1 = """"""
+expected_stdout = """
+    MON$REMOTE_PROTOCOL             TCPv6
+    MON$SEC_DATABASE                Self
+    RESULT                          Completed
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: databases.conf')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -192,17 +198,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    MON$REMOTE_PROTOCOL             TCPv6
-    MON$SEC_DATABASE                Self
-    RESULT                          Completed
-"""
-
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.skip("Requires change to databases.conf")
-
-

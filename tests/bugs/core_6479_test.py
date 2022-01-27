@@ -1,34 +1,23 @@
 #coding:utf-8
-#
-# id:           bugs.core_6479
-# title:        COMMENT ON USER can only apply comment on user defined by the default usermanager plugin
-# decription:   
-#                   ::: NOTE :::
-#                   There is no sense to check for Legacy_UserManarer: comment for user will not be stored in the sec$users for this plugin.
-#                   Test verifies only Srp. Discussed with Alex, 12.03.2021
-#               
-#                   Checked on: 4.0.02386, 3.0.8.33425
-#                
-# tracker_id:   CORE-6479
-# min_versions: ['3.0.8']
-# versions:     3.0.8
-# qmid:         None
+
+"""
+ID:          issue-6710
+ISSUE:       6710
+TITLE:       COMMENT ON USER can only apply comment on user defined by the default usermanager plugin
+DESCRIPTION:
+  There is no sense to check for Legacy_UserManarer: comment for user will not be stored
+  in the sec$users for this plugin. Test verifies only Srp. Discussed with Alex, 12.03.2021
+JIRA:        CORE-6479
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('SEC_DESCR_BLOB_ID .*', ''), ('[\t ]+', ' ')]
+tmp_user = user_factory('db', name='tmp$c6479_srp', password='123', plugin='Srp')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    create or alter user tmp$c6479_srp password '123' using plugin Srp;
-    commit;
+test_script = """
     comment on user tmp$c6479_srp using plugin Srp is 'This is description for Srp-user';
     --                            ================
     commit;
@@ -39,13 +28,11 @@ test_script_1 = """
     from sec$users s
     where s.sec$user_name  = upper('tmp$c6479_srp')
     ;
-    drop user tmp$c6479_srp using plugin Srp;
-    commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('SEC_DESCR_BLOB_ID .*', ''), ('[\t ]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     SEC$USER_NAME                   TMP$C6479_SRP
     SEC$PLUGIN                      Srp
     This is description for Srp-user
@@ -53,8 +40,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0.8')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, tmp_user):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

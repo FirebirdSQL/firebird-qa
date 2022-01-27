@@ -1,32 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6963
-# title:        grant references not working
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6963
-#                   
-#                   Confirmed bug on 4.0.1.2658, 5.0.0.309.
-#                   Checked on 4.0.1.2660, 5.0.0.310 -- all fine.
-#               
-#                
-# tracker_id:   
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-6963
+ISSUE:       6963
+TITLE:       grant references not working
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table tmain_a(
         id int primary key
        ,pid int
@@ -94,15 +80,16 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$RELATION_NAME               TDETL_A_WITHOUT_CASC
     RDB$RELATION_NAME               TDETL_A_WITH_CASC
     RDB$RELATION_NAME               TMAIN_A
     Records affected: 3
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     unsuccessful metadata update
     -ALTER TABLE TMAIN_A failed
@@ -117,9 +104,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

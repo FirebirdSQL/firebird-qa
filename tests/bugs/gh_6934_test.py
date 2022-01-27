@@ -1,45 +1,31 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6934
-# title:        SQL SECURITY DEFINER does not affect the ownership of created DDL objects
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/6934
-#               
-#                   Test invokes procedure that is declared with 'SQL SECURITY DEFINER' two times:
-#                   1) for executing 'CREATE TABLE' statement WITHOUT specifying privileges (and current user in this case is 'SENIOR');
-#                   2) for executing 'CREATE TABLE' *with* specifyin 'WITH CALLER PRIVILEGES' clause (and current user is 'JUNIOR').
-#               
-#                   Then it queries to RDB$ tables in order to get info about ONWER of created tables.
-#                   In any case owner must be 'SYSDBA' rather than 'SENIOR' or 'JUNIOR'.
-#               
-#                   NB. Clause 'WITH CALLER PRIVILEGE' must *not* affect on result, owner will be 'SYSDBA' (as it is w/o such clause).
-#                   This is because that clause replaces access rights of current user with rights of STORED PROCEDURE.
-#                   Before 4.x this meaned access rights that were explicitly granted to this SP.
-#                   But since 4.x SECURITY DEFINER set access rights of SP equal to its owner (i.e. SYSDBA).
-#                   It means that WITH CALLER PRIVILEGES does the same, i.e. it is pointless in this case.
-#                   Explained by dimitr, see letter 08-sep-2021 10:06.
-#               
-#                   Confirmed bug on 4.0.0.2573.
-#                   Checked on 5.0.0.192; 4.0.1.2585 - all OK.
-#                
-# tracker_id:   
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-6934
+ISSUE:       6934
+TITLE:       SQL SECURITY DEFINER does not affect the ownership of created DDL objects
+DESCRIPTION:
+  Test invokes procedure that is declared with 'SQL SECURITY DEFINER' two times:
+  1) for executing 'CREATE TABLE' statement WITHOUT specifying privileges (and current user in this case is 'SENIOR');
+  2) for executing 'CREATE TABLE' *with* specifyin 'WITH CALLER PRIVILEGES' clause (and current user is 'JUNIOR').
+
+  Then it queries to RDB$ tables in order to get info about ONWER of created tables.
+  In any case owner must be 'SYSDBA' rather than 'SENIOR' or 'JUNIOR'.
+
+  NB. Clause 'WITH CALLER PRIVILEGE' must *not* affect on result, owner will be 'SYSDBA' (as it is w/o such clause).
+  This is because that clause replaces access rights of current user with rights of STORED PROCEDURE.
+  Before 4.x this meaned access rights that were explicitly granted to this SP.
+  But since 4.x SECURITY DEFINER set access rights of SP equal to its owner (i.e. SYSDBA).
+  It means that WITH CALLER PRIVILEGES does the same, i.e. it is pointless in this case.
+  Explained by dimitr, see letter 08-sep-2021 10:06.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('RDB_ACL_BLOB_ID.*', ''), ('ACL version.*', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set term ^;
     create procedure sp_test( a_do_with_caller_access smallint default 0 ) sql security definer as
@@ -93,9 +79,10 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('RDB_ACL_BLOB_ID.*', ''), ('[ \t]+', ' '),
+                                                 ('ACL version.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$RELATION_NAME               TABLE_FOR_JUNIOR
     RDB$OWNER_NAME                  SYSDBA
 
@@ -115,7 +102,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

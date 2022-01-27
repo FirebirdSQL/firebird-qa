@@ -1,37 +1,25 @@
 #coding:utf-8
-#
-# id:           bugs.core_6219
-# title:        Add support for special (inf/nan) values when sorting DECFLOAT values
-# decription:   
-#                    Old descr: DECFLOAT values and queries with ORDER BY and/or windowed (analitical) functions.
-#                    Confirmed wrong order of data in 4.0.0.1796.
-#                    Checked on 4.0.0.1799 - all fine.
-#                
-# tracker_id:   CORE-6219
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6463
+ISSUE:       6463
+TITLE:       Add support for special (inf/nan) values when sorting DECFLOAT values
+DESCRIPTION:
+JIRA:        CORE-6219
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set decfloat traps to;
 
-
     recreate table test0(n decfloat);
     commit;
-     
+
     insert into test0 values( cast('-0' as decfloat ) );
     insert into test0 values( cast('NaN' as decfloat ) );
     insert into test0 values( cast('sNaN' as decfloat ) );
@@ -76,19 +64,18 @@ test_script_1 = """
             ,cast('snan' as decfloat) as "snan"
             ,cast('bar' as decfloat) as "nan"
         from rdb$database
-    ) t; 
+    ) t;
 
     -----------------------------------------------------------------------------
-     
+
     select n as data_ordered_by_n from test0 order by n;
 
     select lead(n)over(order by n) as data_lead_n from test0;
-
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     -nan                                                                  -NaN
     -snan                                                                -sNaN
     -inf                                                             -Infinity
@@ -141,8 +128,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

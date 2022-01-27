@@ -1,53 +1,51 @@
 #coding:utf-8
-#
-# id:           bugs.gh_7038
-# title:        Improve performance of STARTING WITH with insensitive collations
-# decription:
-#                    https://github.com/FirebirdSQL/firebird/issues/7038
-#
-#                    21.11.2021. Totally re-implemented, package 'psutil' must be installed.
-#
-#                    We make two calls of psutil.Process(fb_pid).cpu_times() (before and after SQL code) and obtain CPU User Time
-#                    values from each result.
-#                    Difference between them can be considered as much more accurate performance estimation.
-#
-#                    We make <N_MEASURES> calls of two stored procedures with names: 'sp_ptbr_test' and 'sp_utf8_test'.
-#                    Each procedure has input argument which is required number of iterations with evaluation result of STARTING WITH.
-#                    Number of iterations it set in variable N_COUNT_PER_MEASURE.
-#
-#                    Each result (difference between cpu_times().user values when apropriate procedure finishes) is added to the list.
-#                    Finally, we evaluate MEDIAN of ration between cpu user time which was received for SIMILAR_TO and LIKE statements.
-#                    If this median is less then threshold (see var. UTF8_TO_PTBR_MAX_RATIO) then result can be considered as ACCEPTABLE.
-#
-#                    See also:
-#                    https://psutil.readthedocs.io/en/latest/#psutil.cpu_times
-#
-#                    Confirmed poor perfromance on 5.0.0.279: ratio median is about 1.8.
-#                    Checked on 5.0.0.298 (intermediate build, date: 05.11.2021 13:10) - performance is better, ratio is about 1.35.
-#                        Example of data (for 15 calls):
-#                        [ 1.36 ,1.36 ,1.33 ,1.35 ,1.28 ,1.36 ,1.36 ,1.37 ,1.36 ,1.33 ,1.30 ,1.79 ,1.31 ,1.30 ,1.30 ]
-#
-#                    21.11.2021. Checked on Linux (after installing pakage psutil):
-#                        5.0.0.313 SS: 17.076s
-#
-#               	     5.0.0.313 CS: median = 1.51163, data:  1.56, 1.40, 1.52, 1.50, 1.63, 1.53, 1.52, 1.28, 1.40, 1.75, 1.45, 1.43, 1.51, 1.48, 1.52.
-#
-# tracker_id:
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-7038
+ISSUE:       7038
+TITLE:       Improve performance of STARTING WITH with insensitive collations
+DESCRIPTION:
+  21.11.2021. Totally re-implemented, package 'psutil' must be installed.
+
+  We make two calls of psutil.Process(fb_pid).cpu_times() (before and after SQL code) and obtain CPU User Time
+  values from each result.
+  Difference between them can be considered as much more accurate performance estimation.
+
+  We make <N_MEASURES> calls of two stored procedures with names: 'sp_ptbr_test' and 'sp_utf8_test'.
+  Each procedure has input argument which is required number of iterations with evaluation result of STARTING WITH.
+  Number of iterations it set in variable N_COUNT_PER_MEASURE.
+
+  Each result (difference between cpu_times().user values when apropriate procedure finishes) is added to the list.
+  Finally, we evaluate MEDIAN of ration between cpu user time which was received for SIMILAR_TO and LIKE statements.
+  If this median is less then threshold (see var. UTF8_TO_PTBR_MAX_RATIO) then result can be considered as ACCEPTABLE.
+
+  See also: https://psutil.readthedocs.io/en/latest/#psutil.cpu_times
+
+  Confirmed poor perfromance on 5.0.0.279: ratio median is about 1.8.
+  Checked on 5.0.0.298 (intermediate build, date: 05.11.2021 13:10) - performance is better, ratio is about 1.35.
+    Example of data (for 15 calls):
+    [ 1.36 ,1.36 ,1.33 ,1.35 ,1.28 ,1.36 ,1.36 ,1.37 ,1.36 ,1.33 ,1.30 ,1.79 ,1.31 ,1.30 ,1.30 ]
+
+  21.11.2021. Checked on Linux (after installing pakage psutil):
+    5.0.0.313 SS: 17.076s
+    5.0.0.313 CS: median = 1.51163, data:  1.56, 1.40, 1.52, 1.50, 1.63, 1.53, 1.52, 1.28, 1.40, 1.75, 1.45, 1.43, 1.51, 1.48, 1.52.
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    Duration ratio: acceptable
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=5.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -153,14 +151,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #          print( '%12.2f' % p )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Duration ratio: acceptable
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

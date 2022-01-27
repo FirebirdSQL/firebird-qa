@@ -1,32 +1,18 @@
 #coding:utf-8
-#
-# id:           bugs.gh_7062
-# title:        Creation of expression index does not release its statement correctly
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/7062
-#               
-#                   Confirmed bug on 5.0.0.321.
-#                   Checked on 5.0.0.336 - all fine.
-#                   Checked on 4.0.1.2682 (11.12.2021) - all OK, reduced min_version to 4.0.1
-#                
-# tracker_id:   
-# min_versions: ['4.0.1']
-# versions:     4.0.1
-# qmid:         None
+
+"""
+ID:          issue-7062
+ISSUE:       7062
+TITLE:       Creation of expression index does not release its statement correctly
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- case-1:
     create table test_1 (n integer);
     create table test_2 (n integer);
@@ -47,9 +33,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 22012
     Expression evaluation error for index "***unknown***" on table "TEST_A"
     -arithmetic exception, numeric overflow, or string truncation
@@ -57,7 +43,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0.1')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

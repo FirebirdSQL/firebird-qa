@@ -1,29 +1,31 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6709
-# title:        gbak discards replica mode [CORE6478]
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6709
-#
-#                   Confirmed bug on 4.0.0.2353: 'replica' flag was not preserved after restoring DB.
-#                   Checked on: 4.0.1.2624, 5.0.0.244 -- all OK.
-#
-# tracker_id:
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6709
+ISSUE:       6709
+TITLE:       gbak discards replica mode
+DESCRIPTION:
+JIRA:        CORE-6478
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
+act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-init_script_1 = """"""
+expected_stdout = """
+    Result of gfix -replica read_only:       READ-ONLY
+    Result of backup/restore for read_only:  READ-ONLY
+    Result of gfix -replica read_write:      READ-WRITE
+    Result of backup/restore for read_write: READ-WRITE
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -73,16 +75,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( (test_fdb, test_fbk, test_res) )
 #
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    Result of gfix -replica read_only:       READ-ONLY
-    Result of backup/restore for read_only:  READ-ONLY
-    Result of gfix -replica read_write:      READ-WRITE
-    Result of backup/restore for read_write: READ-WRITE
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")

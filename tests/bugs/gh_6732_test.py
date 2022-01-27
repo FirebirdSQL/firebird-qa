@@ -2,9 +2,9 @@
 #
 # id:           bugs.gh_6732
 # title:        Stored procedure isn't able to execute statement 'GRANT' [CORE6502]
-# decription:   
+# decription:
 #                   https://github.com/FirebirdSQL/firebird/issues/6732
-#               
+#
 #                   Confirmed bug on 4.0.0.2453, got:
 #                       Statement failed, SQLSTATE = 27000
 #                       unsuccessful metadata update
@@ -12,31 +12,45 @@
 #                       -action cancelled by trigger (0) to preserve data integrity
 #                       -User cannot write to RDB$USER_PRIVILEGES
 #                       -At procedure 'SP_TEST' line: 3, col: 8
-#               
+#
 #                   ::: NB ::: 22.05.2021
 #                   This test initially had wrong value of min_version = 4.0
 #                   Bug was fixed on 4.1.0.2468, build timestamp: 06-may-2021 12:34 thus min_version should be 4.1
 #                   After several days this new FB branch was renamed to 5.0.
 #                   Because of this, min_version for this test is 5.0
-#                
-# tracker_id:   
+#
+# tracker_id:
 # min_versions: ['5.0']
 # versions:     5.0
 # qmid:         None
 
+"""
+ID:          issue-6732
+ISSUE:       6732
+TITLE:       Stored procedure isn't able to execute statement 'GRANT'
+DESCRIPTION:
+  Confirmed bug on 4.0.0.2453, got:
+    Statement failed, SQLSTATE = 27000
+    unsuccessful metadata update
+    -GRANT failed
+    -action cancelled by trigger (0) to preserve data integrity
+    -User cannot write to RDB$USER_PRIVILEGES
+    -At procedure 'SP_TEST' line: 3, col: 8
+NOTES:
+[22.05.2021]
+  This test initially had wrong value of min_version = 4.0
+  Bug was fixed on 4.1.0.2468, build timestamp: 06-may-2021 12:34 thus min_version should be 4.1
+  After several days this new FB branch was renamed to 5.0.
+  Because of this, min_version for this test is 5.0
+JIRA:        CORE-6502
+"""
+
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter user tmp$gh6732_boss password 'boss' using plugin Srp;
     create or alter user tmp$gh6732_acnt password 'acnt' using plugin Srp;
     commit;
@@ -63,9 +77,8 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.execute()
+def test_1(act: Action):
+    act.execute()

@@ -1,55 +1,34 @@
 #coding:utf-8
-#
-# id:           bugs.core_6143
-# title:        Error 'Multiple maps found for ...' is raised in not appropriate case
-# decription:
-#                   Confirmed bug on: 4.0.0.1535, 3.0.5.33152.
-#                   Checked on:
-#                        4.0.0.1614: OK, 2.740s.
-#                        3.0.5.33172: OK, 2.282s.
-#                   ::: NB :::
-#                   There was issue about mapping of ROLES: currently mapping can be done only for trusted role.
-#                   But documentation does not mention about this. One can conclude that mapping should work
-#                   as for trusted role and also for "usual" way (i.e. when used specifies 'ROLE ...' clause).
-#                   Discussion about this with Alex was in 23-sep-2019, and his solution not yet known.
-#                   For this reason it was decided to comment code that relates tgo ROLE mapping in this test.
-#
-#                   [pcisar] 3.11.2021 This test fails for 4.0, WHO_AM_I = TMP$C6143_FOO
-#
-# tracker_id:   CORE-6143
-# min_versions: ['3.0.5']
-# versions:     3.0.5
-# qmid:         None
+
+"""
+ID:          issue-6392
+ISSUE:       6392
+TITLE:       Error 'Multiple maps found for ...' is raised in not appropriate case
+DESCRIPTION:
+  There was issue about mapping of ROLES: currently mapping can be done only for trusted role.
+  But documentation does not mention about this. One can conclude that mapping should work
+  as for trusted role and also for "usual" way (i.e. when used specifies 'ROLE ...' clause).
+  Discussion about this with Alex was in 23-sep-2019, and his solution not yet known.
+  For this reason it was decided to comment code that relates tgo ROLE mapping in this test.
+NOTES:
+[3.11.2021] pcisar
+  This test fails for 4.0, WHO_AM_I = TMP$C6143_FOO
+JIRA:        CORE-6143
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action, user_factory, User, role_factory, Role
+from firebird.qa import *
 
-# version: 3.0.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+user_foo = user_factory('db', name='tmp$c6143_foo', password='123', plugin='Srp')
+role_boss = role_factory('db', name='tmp$r6143_boss')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- set echo on;
     set list on;
     set wng off;
-/*
-    set term ^;
-    execute block as
-    begin
-        execute statement 'drop role tmp$r6143_boss';
-        when any do
-            begin
-            end
-    end
-    ^
-    set term ;^
-    commit;
-*/
+
     create or alter view v_show_mapping as
     select
          a.rdb$map_name
@@ -138,16 +117,11 @@ test_script_1 = """
     drop global mapping gmap_boss2mngr_a;
     drop global mapping gmap_boss2mngr_b;
     commit;
-    --drop user tmp$c6143_foo using plugin Srp;
-    --commit;
-    --drop role tmp$r6143_boss;
-    --commit;
-
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             Connected OK when local mapping is duplicated.
     WHO_AM_I                        TMP$C6143_BAR
 
@@ -195,12 +169,8 @@ expected_stdout_1 = """
     Records affected: 1
 """
 
-user_foo = user_factory('db_1', name='tmp$c6143_foo', password='123', plugin='Srp')
-role_boss = role_factory('db_1', name='tmp$r6143_boss')
-
 @pytest.mark.version('>=3.0.5')
-def test_1(act_1: Action, role_boss: Role, user_foo: User):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, role_boss: Role, user_foo: User):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

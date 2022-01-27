@@ -1,58 +1,66 @@
 #coding:utf-8
-#
-# id:           bugs.core_6208
-# title:        Grant lost in security.db after backup/restore cycle
-# decription:
-#                   Ticket shows scenario with local protocol which allows security.db to be overwritten.
-#                   This can not be done when we work using remote protocol, but we can exploit ability
-#                   to change security DB. This is done by specifying parameter SecurityDatabase in databases.conf
-#                   and its value is equal to alias of test database that we use:
-#                       tmp_6208 = <path__and_name_of_test_database> {
-#                           SecurityDatabase = tmp_6208
-#                       }
-#
-#                   Test DB is named here 'fdb_init' and it is created by file copy of $FB_HOME\\securityN.db
-#                   Then file 'databases.conf' as adjusted so that SecurityDatabase will point to this test DB.
-#                   After this we can connect to $fdb_ini, create user (his name: 'TMP6208DBA') and give him
-#                   privilege to create database.
-#
-#                   Futher, we make backup of this test DB and restore it. New database name is 'fdb_rest'.
-#                   After this, we change state of test DB to full shutdown and overwrite it by $fdb_rest.
-#                   Finaly, we make connection to this DB (that was just overwritten) and check that output
-#                   of 'show grants' command contains:
-#
-#                       GRANT CREATE DATABASE TO USER TMP6208DBA
-#
-#                   Confirmed lost of grant on 4.0.0.1691 (build 14-dec-2019).
-#
-#                   26.08.2020.
-#                   IT CRUSIAL FOR THIS TEST DO MAKE ALL RESTORE AND FURTHER ACTIONS IN LOCAL/EMBEDDED PROTOCOL.
-#                   Discissed with Alex, see letter 24.08.2020 19:49.
-#
-#                   Main problem is in SuperClassic: after restore finish, we can not connect to this DB by TCP,
-#                   error is
-#                       "Statement failed, SQLSTATE = 08006 / Error occurred during login, please check server firebird.log for details"
-#                   Server log contains in this case: "Srp Server / connection shutdown / Database is shutdown."
-#
-#                   Checked initially on 4.0.0.1712 SC: 11s, 4.0.0.1714 SS, CS (7s, 16s).
-#                   Checked again 26.08.2020 on 4.0.0.2173 SS/CS/SC.
-#
-# tracker_id:   CORE-6208
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          issue-6453
+ISSUE:       6453
+TITLE:       CREATE DATABASE grant is lost in security.db after backup/restore cycle
+DESCRIPTION:
+  Ticket shows scenario with local protocol which allows security.db to be overwritten.
+  This can not be done when we work using remote protocol, but we can exploit ability
+  to change security DB. This is done by specifying parameter SecurityDatabase in databases.conf
+  and its value is equal to alias of test database that we use:
+    tmp_6208 = <path__and_name_of_test_database> {
+        SecurityDatabase = tmp_6208
+    }
+
+  Test DB is named here 'fdb_init' and it is created by file copy of $FB_HOME\\securityN.db
+  Then file 'databases.conf' as adjusted so that SecurityDatabase will point to this test DB.
+  After this we can connect to $fdb_ini, create user (his name: 'TMP6208DBA') and give him
+  privilege to create database.
+
+  Futher, we make backup of this test DB and restore it. New database name is 'fdb_rest'.
+  After this, we change state of test DB to full shutdown and overwrite it by $fdb_rest.
+  Finaly, we make connection to this DB (that was just overwritten) and check that output
+  of 'show grants' command contains:
+
+    GRANT CREATE DATABASE TO USER TMP6208DBA
+
+  Confirmed lost of grant on 4.0.0.1691 (build 14-dec-2019).
+NOTES:
+[26.08.2020]
+  IT CRUSIAL FOR THIS TEST DO MAKE ALL RESTORE AND FURTHER ACTIONS IN LOCAL/EMBEDDED PROTOCOL.
+  Discissed with Alex, see letter 24.08.2020 19:49.
+
+  Main problem is in SuperClassic: after restore finish, we can not connect to this DB by TCP,
+  error is
+    "Statement failed, SQLSTATE = 08006 / Error occurred during login, please check server firebird.log for details"
+  Server log contains in this case: "Srp Server / connection shutdown / Database is shutdown."
+
+  Checked initially on 4.0.0.1712 SC: 11s, 4.0.0.1714 SS, CS (7s, 16s).
+  Checked again 26.08.2020 on 4.0.0.2173 SS/CS/SC.
+JIRA:        CORE-6208
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db_= db_factory()
 
-substitutions_1 = [('\t+', ' ')]
+act = python_act('db', substitutions=[('\t+', ' ')])
 
-init_script_1 = """"""
+expected_stdout = """
+    mon$database.mon$owner          SYSDBA
+    mon$database.mon$sec_database   Self
+    rdb$database.rdb$linger         0
+    WHOAMI                          TMP6208DBA
+    sec$users.sec_user              TMP6208DBA
+    sec$db_creators.sec$user_type   8
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: databases.conf')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -259,20 +267,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #  cleanup( (f_backup_log, f_backup_err, f_restore_log, f_restore_err, f_chk_sql, f_chk_log, f_shut_log, fdb_init, fdb_bkup) )
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    mon$database.mon$owner          SYSDBA
-    mon$database.mon$sec_database   Self
-    rdb$database.rdb$linger         0
-    WHOAMI                          TMP6208DBA
-    sec$users.sec_user              TMP6208DBA
-    sec$db_creators.sec$user_type   8
-"""
-
-@pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    pytest.skip("Requires change to databases.conf")
-
-

@@ -1,29 +1,33 @@
 #coding:utf-8
-#
-# id:           bugs.core_6329
-# title:         GBAK with service_mgr and WinSSPI authentication for Windows SYSTEM user producing error in clumplet API
-# decription:
-#                   Confirmed bug on 4.0.0.2035 SS: got
-#                   "gbak: ERROR:Internal error when using clumplet API: attempt to store 866 bytes in a clumplet with maximum size 255 bytes"
-#
-#                   Checked on 4.0.0.2066 SS/CS, 3.0.6.33212 SS/CS.
-#
-# tracker_id:   CORE-6329
-# min_versions: ['3.0.6']
-# versions:     3.0.6
-# qmid:
+
+"""
+ID:          issue-6570
+ISSUE:       6570
+TITLE:       GBAK with service_mgr and WinSSPI authentication for Windows SYSTEM user producing error in clumplet API
+DESCRIPTION:
+  Confirmed bug on 4.0.0.2035 SS: got
+  "gbak: ERROR:Internal error when using clumplet API: attempt to store 866 bytes in a clumplet with maximum size 255 bytes"
+
+  Checked on 4.0.0.2066 SS/CS, 3.0.6.33212 SS/CS.
+JIRA:        CORE-6329
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0.6
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
+expected_stdout = """
+    EXPECTED output found in the backup log
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0.6')
+@pytest.mark.platform('Windows')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -147,17 +151,3 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #
 #
 #---
-
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    EXPECTED output found in the backup log
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.6')
-@pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-

@@ -1,30 +1,19 @@
 #coding:utf-8
-#
-# id:           bugs.gh_5588
-# title:        Support full SQL standard binary string literal syntax [CORE5311]
-# decription:   
-#                   https://github.com/FirebirdSQL/firebird/issues/5588
-#               
-#                   Checked on intermediate build 5.0.0.22.
-#                
-# tracker_id:   
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
+
+"""
+ID:          issue-5588
+ISSUE:       5588
+TITLE:       upport full SQL standard binary string literal syntax
+DESCRIPTION:
+JIRA:        CORE-5311
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 5.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('line\\s+\\d+,\\s+col.*', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set blob all;
     set list on;
     select x'01AB' as good_bin_literal_1 from rdb$database;
@@ -72,9 +61,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line\\s+\\d+,\\s+col.*', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     GOOD_BIN_LITERAL_1              01AB
     GOOD_BIN_LITERAL_2              01AB
     GOOD_BIN_LITERAL_3              01AB
@@ -83,7 +72,8 @@ expected_stdout_1 = """
     GOOD_BIN_LITERAL_6              01AB
     GOOD_BIN_LITERAL_7              01ABCD
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -92,10 +82,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
