@@ -85,7 +85,7 @@ def pytest_addoption(parser, pluginmanager):
 
     .. seealso:: `pytest documentation <_pytest.hookspec.pytest_addoption>` for details.
     """
-    grp = parser.getgroup('firebird', "Firebird server", 'general')
+    grp = parser.getgroup('firebird', "Firebird QA", 'general')
     grp.addoption('--server', help="Server configuration name", default='')
     grp.addoption('--bin-dir', metavar='PATH', help="Path to directory with Firebird utilities")
     grp.addoption('--protocol',
@@ -93,6 +93,8 @@ def pytest_addoption(parser, pluginmanager):
                   help="Network protocol used for database attachments")
     grp.addoption('--runslow', action='store_true', default=False, help="Run slow tests")
     grp.addoption('--save-output', action='store_true', default=False, help="Save test std[out|err] output to files")
+    grp.addoption('--skip-deselected', action='store_true', default=False, help="SKIP tests instead deselection")
+    grp.addoption('--install-terminal', action='store_true', default=False, help="Use our own terminal reporter")
 
 def pytest_report_header(config):
     """Returns plugin-specific test session header.
@@ -240,6 +242,7 @@ def pytest_configure(config):
     _vars_['server'] = config.getoption('server')
     _vars_['protocol'] = config.getoption('protocol')
     _vars_['save-output'] = config.getoption('save_output')
+    _vars_['skip-deselected'] = config.getoption('skip_deselected')
     srv_conf = driver_config.get_server(_vars_['server'])
     _vars_['host'] = srv_conf.host.value if srv_conf is not None else ''
     _vars_['port'] = srv_conf.port.value if srv_conf is not None else ''
@@ -288,7 +291,7 @@ def pytest_configure(config):
         max(iif(a.mon$remote_protocol is null, 1, 0))
         from mon$attachments a
         where a.mon$attachment_id in ({con1.info.id}, {con2.info.id}) or upper(a.mon$user) = upper('cache writer')
-    """
+        """
         cur1 = con1.cursor()
         cur1.execute(sql)
         server_cnt, server_pro, cache_wrtr = cur1.fetchone()
@@ -306,39 +309,58 @@ def pytest_configure(config):
             result = 'SuperClassic' if f1 == f2 else 'SuperServer'
     _vars_['server-arch'] = result
     # Change terminal reporter
-    standard_reporter = config.pluginmanager.getplugin('terminalreporter')
-    pspec_reporter = QATerminalReporter(standard_reporter.config)
-    config.pluginmanager.unregister(standard_reporter)
-    config.pluginmanager.register(pspec_reporter, 'terminalreporter')
+    if config.getoption('install_terminal'):
+        standard_reporter = config.pluginmanager.getplugin('terminalreporter')
+        pspec_reporter = QATerminalReporter(standard_reporter.config)
+        config.pluginmanager.unregister(standard_reporter)
+        config.pluginmanager.register(pspec_reporter, 'terminalreporter')
 
 def pytest_collection_modifyitems(session, config, items):
+    _version = _vars_['version']
     skip_slow = pytest.mark.skip(reason="need --runslow option to run")
     # Apply skip markers
     for item in items:
         if 'slow' in item.keywords and not _vars_['runslow']:
             item.add_marker(skip_slow)
-    # Deselect tests not applicable to tested engine version and platform
-    selected = []
-    deselected = []
-    for item in items:
-        platform_ok = True
-        for platforms in [mark.args for mark in item.iter_markers(name="platform")]:
-            platform_ok = _platform in platforms
-        versions = [mark.args for mark in item.iter_markers(name="version")]
-        if versions:
-            spec = SpecifierSet(','.join(list(versions[0])))
-            if platform_ok and _vars_['version'] in spec:
-                selected.append(item)
-            else:
-                deselected.append(item)
-    items[:] = selected
-    config.hook.pytest_deselected(items=deselected)
+    if _vars_['skip-deselected']:
+        skip_platform = pytest.mark.skip(reason=f"Not for {_platform}")
+        skip_version = pytest.mark.skip(reason=f"Not for {_version}")
+        # Skip tests not applicable to tested engine version and platform
+        for item in items:
+            platform_ok = True
+            for platforms in [mark.args for mark in item.iter_markers(name="platform")]:
+                platform_ok = _platform in platforms
+            if not platform_ok:
+                item.add_marker(skip_platform)
+                continue
+            versions = [mark.args for mark in item.iter_markers(name="version")]
+            if versions:
+                spec = SpecifierSet(','.join(list(versions[0])))
+                if not _version in spec:
+                    item.add_marker(skip_version)
+    else:
+        # Deselect tests not applicable to tested engine version and platform
+        selected = []
+        deselected = []
+        for item in items:
+            platform_ok = True
+            for platforms in [mark.args for mark in item.iter_markers(name="platform")]:
+                platform_ok = _platform in platforms
+            versions = [mark.args for mark in item.iter_markers(name="version")]
+            if versions:
+                spec = SpecifierSet(','.join(list(versions[0])))
+                if platform_ok and _version in spec:
+                    selected.append(item)
+                else:
+                    deselected.append(item)
+        items[:] = selected
+        config.hook.pytest_deselected(items=deselected)
     # Add OUR OWN test metadata to Item
     for item in items:
         item._qa_id_ = item.nodeid
         item._qa_issue_ = None
         item._qa_jira_ = None
-        item._qa_title_ = 'UNKNOWN'
+        item._qa_title_ = ''
         item._qa_description_ = ''
         item._qa_notes_ = ''
         module_doc = item.parent.obj.__doc__
@@ -362,10 +384,14 @@ def pytest_collection_modifyitems(session, config, items):
                 item._qa_title_ = line[len(FIELD_TITLE):].strip()
             elif uline.startswith(FIELD_DECRIPTION):
                 current_field = FIELD_DECRIPTION
-                item._qa_description_ = line[len(FIELD_DECRIPTION):].strip()
+                item._qa_description_ = line[len(FIELD_DECRIPTION):]
             elif uline.startswith(FIELD_NOTES):
                 current_field = FIELD_NOTES
-                item._qa_notes_ = line[len(FIELD_NOTES):].strip()
+                item._qa_notes_ = line[len(FIELD_NOTES):]
+            elif current_field == FIELD_TITLE:
+                if item._qa_title_:
+                    item._qa_title_ += ' '
+                item._qa_title_ += line.strip()
             elif current_field == FIELD_DECRIPTION:
                 if item._qa_description_:
                     item._qa_description_ += '\n'
