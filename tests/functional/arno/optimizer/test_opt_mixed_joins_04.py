@@ -1,22 +1,16 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_mixed_joins_04
-# title:        Mixed JOINS
-# decription:   Tables without indexes should be merged (when inner join) and those who can use a index, should use it.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_mixed_joins_04
+
+"""
+ID:          optimizer.mixed-joins-04
+TITLE:       Mixed JOINS
+DESCRIPTION:
+  Tables without indexes should be merged (when inner join) and those who can use a index, should use it.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_1 (
+init_script = """CREATE TABLE Table_1 (
   ID INTEGER NOT NULL
 );
 
@@ -93,9 +87,9 @@ CREATE UNIQUE ASC INDEX PK_Table_50 ON Table_50 (ID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(sql_dialect=3, init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   Count(*)
 FROM
@@ -105,9 +99,9 @@ FROM
   LEFT JOIN Table_50 t50 ON (t50.ID = t100.ID)
 JOIN Table_1000 t1000 ON (t1000.ID = t100.ID);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN HASH (T1000 NATURAL, JOIN (HASH (T100 NATURAL, JOIN (T10 NATURAL, T1 INDEX (PK_TABLE_1))), T50 INDEX (PK_TABLE_50)))
+expected_stdout = """PLAN HASH (T1000 NATURAL, JOIN (HASH (T100 NATURAL, JOIN (T10 NATURAL, T1 INDEX (PK_TABLE_1))), T50 INDEX (PK_TABLE_50)))
 
                 COUNT
 =====================
@@ -115,8 +109,7 @@ expected_stdout_1 = """PLAN HASH (T1000 NATURAL, JOIN (HASH (T100 NATURAL, JOIN 
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

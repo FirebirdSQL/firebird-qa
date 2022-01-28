@@ -1,22 +1,15 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_inner_join_04
-# title:        INNER JOIN join order LIKE and IS NULL
-# decription:   IS NULL should also be used for determing join order.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_inner_join_04
+
+"""
+ID:          optimizer.inner-join-04
+TITLE:       INNER JOIN join order LIKE and IS NULL
+DESCRIPTION: IS NULL should also be used for determing join order.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Countries (
+init_script = """CREATE TABLE Countries (
   CountryID INTEGER NOT NULL,
   CountryName VARCHAR(50),
   ISO3166_1_A2 CHAR(2)
@@ -303,9 +296,9 @@ CREATE UNIQUE ASC INDEX I_CountryName ON Countries (CountryName);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   Count(*)
 FROM
@@ -314,9 +307,9 @@ FROM
 WHERE
 c.COUNTRYID IS NULL;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN JOIN (C INDEX (PK_COUNTRIES), R INDEX (FK_RELATIONS_COUNTRIES))
+expected_stdout = """PLAN JOIN (C INDEX (PK_COUNTRIES), R INDEX (FK_RELATIONS_COUNTRIES))
 
                 COUNT
 =====================
@@ -324,8 +317,7 @@ expected_stdout_1 = """PLAN JOIN (C INDEX (PK_COUNTRIES), R INDEX (FK_RELATIONS_
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,22 +1,16 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_left_join_13
-# title:        LEFT OUTER JOIN VIEW with full match
-# decription:   TableX LEFT OUTER JOIN ViewY with full match. Every reference from ViewY should have a value.
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.optimizer.opt_left_join_13
+
+"""
+ID:          optimizer.left-join-13
+TITLE:       LEFT OUTER JOIN VIEW with full match
+DESCRIPTION:
+  TableX LEFT OUTER JOIN ViewY with full match. Every reference from ViewY should have a value.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Colors (
+init_script = """CREATE TABLE Colors (
   ColorID INTEGER NOT NULL,
   ColorName VARCHAR(20)
 );
@@ -62,9 +56,9 @@ CREATE ASC INDEX FK_Flowers_Colors ON Flowers (ColorID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 /* LEFT JOIN should return all lookups */
 SELECT
   f.FlowerName,
@@ -73,9 +67,9 @@ FROM
   Flowers f
 LEFT JOIN VW_Colors vc ON (vc.ColorID = f.ColorID);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN JOIN (F NATURAL, VC C INDEX (PK_COLORS))
+expected_stdout = """PLAN JOIN (F NATURAL, VC C INDEX (PK_COLORS))
 FLOWERNAME                     COLORNAME
 ============================== ====================
 
@@ -83,9 +77,8 @@ Rose                           Red
 Tulip                          Yellow
 Gerbera                        Not defined"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

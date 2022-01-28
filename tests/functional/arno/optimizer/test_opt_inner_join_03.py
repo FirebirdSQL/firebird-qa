@@ -1,27 +1,20 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_inner_join_03
-# title:        INNER JOIN join order
-# decription:
-#                  With a INNER JOIN the relation with the smallest expected result should be the first one in process order.
-#                  The next relation should be the next relation with expected smallest result based on previous relation
-#                  and do on till last relation.
-#                  Before 2.0, Firebird did stop checking order possibilties above 7 relations.
-#
-# tracker_id:
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.optimizer.opt_inner_join_03
+
+"""
+ID:          optimizer.inner-join-03
+TITLE:       INNER JOIN join order
+DESCRIPTION:
+  With a INNER JOIN the relation with the smallest expected result should be the first one
+  in process order. The next relation should be the next relation with expected smallest
+  result based on previous relation and do on till last relation.
+
+  Before 2.0, Firebird did stop checking order possibilties above 7 relations.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """CREATE TABLE Table_1 (
+init_script = """CREATE TABLE Table_1 (
   ID INTEGER NOT NULL
 );
 
@@ -99,9 +92,9 @@ CREATE UNIQUE ASC INDEX PK_Table_10K ON Table_10K (ID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   Count(*)
 FROM
@@ -115,18 +108,18 @@ FROM
   JOIN Table_2K t2K ON (t2K.ID = t1K.ID)
 JOIN Table_1 t1 ON (t1.ID = t2K.ID);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T5K INDEX (PK_TABLE_5K), T4K INDEX (PK_TABLE_4K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
+expected_stdout = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T5K INDEX (PK_TABLE_5K), T4K INDEX (PK_TABLE_4K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
 
        COUNT
 ============
 
-1"""
+1
+"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

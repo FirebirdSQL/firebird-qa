@@ -1,23 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.arno.indices.upper_bound_desc_02_segments_01
-# title:        DESC 2-segment index upper bound
-# decription:   Check if all 5 values are fetched with "equals" operator over first segment and "greater than or equal" operator on second segment.
-#               2 values are bound to the upper segments and 1 value is bound to the lower segment.
-# tracker_id:   
-# min_versions: []
-# versions:     1.5
-# qmid:         functional.arno.indexes.upper_bound_desc_02_segments_01
+
+"""
+ID:          index.upper-bound-desc-2-segments
+TITLE:       DESC 2-segment index upper bound
+DESCRIPTION:
+  Check if all 5 values are fetched with "equals" operator over first segment and
+  "greater than or equal" operator on second segment. 2 values are bound to the upper
+  segments and 1 value is bound to the lower segment.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_2_10 (
+init_script = """CREATE TABLE Table_2_10 (
   F1 INTEGER,
   F2 INTEGER
 );
@@ -52,9 +47,9 @@ CREATE DESC INDEX I_Table_2_10_DESC ON Table_2_10 (F1, F2);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(sql_dialect=3, init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   t.F1,
   t.F2
@@ -63,9 +58,9 @@ FROM
 WHERE
 t.F1 = 1 and t.F2 >= 6;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN (T INDEX (I_TABLE_2_10_DESC))
+expected_stdout = """PLAN (T INDEX (I_TABLE_2_10_DESC))
 
           F1           F2
 ============ ============
@@ -76,9 +71,8 @@ expected_stdout_1 = """PLAN (T INDEX (I_TABLE_2_10_DESC))
            1            9
 1           10"""
 
-@pytest.mark.version('>=1.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

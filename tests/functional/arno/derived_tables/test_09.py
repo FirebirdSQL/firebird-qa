@@ -1,22 +1,15 @@
 #coding:utf-8
-#
-# id:           functional.arno.derived_tables.09
-# title:        Derived table 9 outer reference
-# decription:   Outer reference inside derived table to other relations in from clause is not allowed.
-# tracker_id:   
-# min_versions: []
-# versions:     2.5.0
-# qmid:         functional.arno.derived_tables.derived_tables_09
+
+"""
+ID:          derived-table-09
+TITLE:       Outer reference inside derived table to other relations in from clause is not allowed
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = [('column.*', '')]
-
-init_script_1 = """CREATE TABLE Table_10 (
+init_script = """CREATE TABLE Table_10 (
   ID INTEGER NOT NULL,
   DESCRIPTION VARCHAR(10)
 );
@@ -37,17 +30,17 @@ INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (9, 'nine');
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SELECT
+test_script = """SELECT
   dt.*
 FROM
   Table_10 t10
 FULL JOIN (SELECT * FROM Table_10 t2 WHERE t2.ID = t10.ID) dt ON (1 = 1);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('column.*', '')])
 
-expected_stderr_1 = """Statement failed, SQLSTATE = 42S22
+expected_stderr = """Statement failed, SQLSTATE = 42S22
 Dynamic SQL Error
 -SQL error code = -206
 -Column unknown
@@ -55,9 +48,8 @@ Dynamic SQL Error
 -At line 5, column 58
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

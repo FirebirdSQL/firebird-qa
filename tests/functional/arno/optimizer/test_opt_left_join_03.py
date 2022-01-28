@@ -1,23 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_left_join_03
-# title:        LEFT OUTER JOIN with full match and reference in WHERE clause
-# decription:   TableX LEFT OUTER JOIN TableY with full match.
-#               ON clause contains (1 = 1) and WHERE clause contains relation between TableX and TableY. The WHERE comparison should be distributed to TableY. Thus TableY should use the index.
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.optimizer.opt_left_join_03
+
+"""
+ID:          optimizer.left-join-03
+TITLE:       LEFT OUTER JOIN with full match and reference in WHERE clause
+DESCRIPTION:
+  TableX LEFT OUTER JOIN TableY with full match.
+  ON clause contains (1 = 1) and WHERE clause contains relation between TableX and TableY.
+  The WHERE comparison should be distributed to TableY. Thus TableY should use the index.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Colors (
+init_script = """CREATE TABLE Colors (
   ColorID INTEGER NOT NULL,
   ColorName VARCHAR(20)
 );
@@ -51,9 +46,9 @@ CREATE ASC INDEX FK_Flowers_Colors ON Flowers (ColorID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 /* LEFT JOIN should return a match for every Flowers record */
 SELECT
   f.FlowerName,
@@ -64,9 +59,9 @@ FROM
 WHERE
 f.ColorID = c.ColorID;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN JOIN (F NATURAL, C INDEX (PK_COLORS))
+expected_stdout = """PLAN JOIN (F NATURAL, C INDEX (PK_COLORS))
 FLOWERNAME                     COLORNAME
 ============================== ====================
 
@@ -74,9 +69,8 @@ Rose                           Red
 Tulip                          Yellow
 Gerbera                        Not defined"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

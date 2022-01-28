@@ -1,23 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_sort_by_index_09
-# title:        ORDER BY ASC using index (non-unique)
-# decription:   ORDER BY X
-#               If WHERE clause is present it should also use index if possible.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_sort_by_index_09
+
+"""
+ID:          optimizer.sort-by-index-09
+TITLE:       ORDER BY ASC using index (non-unique)
+DESCRIPTION:
+  ORDER BY X
+  If WHERE clause is present it should also use index if possible.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """
+init_script = """
     create table table_66 (id integer);
     commit;
     set term ^ ;
@@ -43,29 +37,29 @@ init_script_1 = """
     ^
     set term ; ^
     commit;
-    
+
     execute procedure pr_filltable_66;
     commit;
-    
+
     create asc index i_table_66_asc on table_66 (id);
     create desc index i_table_66_desc on table_66 (id);
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     -- Queries with RANGE index scan now have in the plan only "ORDER"
     -- clause (index navigation) without bitmap building.
     -- See: http://tracker.firebirdsql.org/browse/CORE-1550
     -- ("the same index should never appear in both ORDER and INDEX parts of the same plan item")
 
     -- :::::::::::::::::::::::::::::::::::::::::::::::
-    -- do *NOT* use SET E`XPLAIN untill extremely need. 
+    -- do *NOT* use SET E`XPLAIN untill extremely need.
     -- Always consult with Dmitry before doing this!
     -- :::::::::::::::::::::::::::::::::::::::::::::::
 
-    set plan on; 
+    set plan on;
 
     select id as id_asc
     from table_66 t66
@@ -79,9 +73,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (T66 ORDER I_TABLE_66_ASC)
     ID_ASC
        -16
@@ -110,8 +104,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

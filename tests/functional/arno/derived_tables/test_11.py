@@ -1,22 +1,15 @@
 #coding:utf-8
-#
-# id:           functional.arno.derived_tables.11
-# title:        Derived table 11 outer reference
-# decription:   Outer reference to upper scope-level is allowed. Such as fields inside derived table part of sub-query (IN-predicate).
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.derived_tables.derived_tables_11
+
+"""
+ID:          derived-table-11
+TITLE:       Outer reference to upper scope-level is allowed
+DESCRIPTION: Such as fields inside derived table part of sub-query (IN-predicate).
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_10 (
+init_script = """CREATE TABLE Table_10 (
   ID INTEGER NOT NULL,
   DESCRIPTION VARCHAR(10)
 );
@@ -37,9 +30,9 @@ INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (9, 'nine');
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(sql_dialect=3, init=init_script)
 
-test_script_1 = """SELECT
+test_script = """SELECT
   t10.ID,
   t10.Description
 FROM
@@ -48,9 +41,9 @@ WHERE
   t10.ID IN (SELECT dt.ID FROM (SELECT t1.ID FROM
 Table_10 t1 WHERE t1.ID = t10.ID) dt);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """          ID DESCRIPTION
+expected_stdout = """          ID DESCRIPTION
 ============ ===========
            0 <null>
            1 one
@@ -63,9 +56,8 @@ expected_stdout_1 = """          ID DESCRIPTION
            8 eight
 9 nine"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

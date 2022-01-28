@@ -1,22 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_left_join_08
-# title:        LEFT OUTER JOIN with full match, but limited in ON and WHERE clause
-# decription:   TableX LEFT OUTER JOIN TableY with full match, but TableY results limited in ON clause. Which should result in partial NULL results for TableY. Due the WHERE clause a index for TableX should be used.
-# tracker_id:   
-# min_versions: []
-# versions:     2.5
-# qmid:         functional.arno.optimizer.opt_left_join_08
+
+"""
+ID:          optimizer.left-join-08
+TITLE:       LEFT OUTER JOIN with full match, but limited in ON and WHERE clause
+DESCRIPTION:
+  TableX LEFT OUTER JOIN TableY with full match, but TableY results limited in ON clause.
+  Which should result in partial NULL results for TableY. Due the WHERE clause a index for
+  TableX should be used.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Colors (
+init_script = """CREATE TABLE Colors (
   ColorID INTEGER NOT NULL,
   ColorName VARCHAR(20)
 );
@@ -50,9 +46,9 @@ CREATE ASC INDEX FK_Flowers_Colors ON Flowers (ColorID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 /*  */
 SELECT
   f.ColorID,
@@ -64,9 +60,9 @@ FROM
 WHERE
 f.ColorID >= 0;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 PLAN JOIN (F INDEX (FK_FLOWERS_COLORS), C INDEX (PK_COLORS))
 
      COLORID      COLORID
@@ -76,9 +72,8 @@ PLAN JOIN (F INDEX (FK_FLOWERS_COLORS), C INDEX (PK_COLORS))
            0       <null>
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

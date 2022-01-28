@@ -1,35 +1,27 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_sort_by_index_19
-# title:        ORDER BY ASC using index (multi) and WHERE clause
-# decription:   WHERE X = 1 ORDER BY Y
-#               When multi-segment index is present with X as first and Y as second this index can be used.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_sort_by_index_19
+
+"""
+ID:          optimizer.sort-by-index-19
+TITLE:       ORDER BY ASC using index (multi) and WHERE clause
+DESCRIPTION:
+  WHERE X = 1 ORDER BY Y
+  When multi-segment index is present with X as first and Y as second this index can be used.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure pr_filltable_53 as begin end;
     commit;
-    
+
     recreate table table_53 (
       id1 integer,
       id2 integer
     );
-    
+
     set term ^;
     create or alter procedure pr_filltable_53
     as
@@ -53,10 +45,10 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     execute procedure pr_filltable_53;
     commit;
-    
+
     create asc index i_table_53_id1_asc on table_53 (id1);
     create desc index i_table_53_id1_desc on table_53 (id1);
     create asc index i_table_53_id2_asc on table_53 (id2);
@@ -65,7 +57,7 @@ test_script_1 = """
     create desc index i_table_53_id1_id2_desc on table_53 (id1, id2);
     create asc index i_table_53_id2_id1_asc on table_53 (id2, id1);
     create desc index i_table_53_id2_id1_desc on table_53 (id2, id1);
-    
+
     commit;
 
     set planonly;
@@ -85,15 +77,14 @@ test_script_1 = """
     --                -> Index "I_TABLE_53_ID1_ID2_ASC" Range Scan (partial match: 1/2)
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (T53 ORDER I_TABLE_53_ID1_ID2_ASC)
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

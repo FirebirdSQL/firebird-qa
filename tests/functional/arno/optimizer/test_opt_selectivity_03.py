@@ -1,22 +1,16 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_selectivity_03
-# title:        SELECTIVITY - INDEX INACTIVE / ACTIVE
-# decription:   Check if selectivity is calculated correctly.
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.optimizer.opt_selectivity_03
+
+"""
+ID:          optimizer.selectivity-03
+TITLE:       SELECTIVITY - INDEX INACTIVE / ACTIVE
+DESCRIPTION:
+  Check if selectivity is calculated correctly.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE SelectivityTest (
+init_script = """CREATE TABLE SelectivityTest (
   F1 INTEGER NOT NULL,
   F2 INTEGER,
   F5 INTEGER,
@@ -88,9 +82,9 @@ ALTER INDEX I_F50_DESC ACTIVE;
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN OFF;
+test_script = """SET PLAN OFF;
 SELECT
   CAST(RDB$INDEX_NAME AS CHAR(31)) AS INDEX_NAME,
   CAST(RDB$STATISTICS AS NUMERIC(18,5)) AS SELECTIVITY
@@ -101,9 +95,9 @@ WHERE
 ORDER BY
 RDB$INDEX_NAME;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """INDEX_NAME                                SELECTIVITY
+expected_stdout = """INDEX_NAME                                SELECTIVITY
 =============================== =====================
 
 I_F01_ASC                                     0.00100
@@ -115,9 +109,8 @@ I_F05_DESC                                    0.00498
 I_F50_ASC                                     0.04762
 I_F50_DESC                                    0.04762"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

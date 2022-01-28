@@ -1,27 +1,19 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_single_index_selection_03
-# title:        Best match index selection (single segment)
-# decription:   
-#                  Check if it will select the indexes which can be used. 
-#                  Also prefer ASC index above DESC unique index.
-#                  Unique index isn't the only best to use here, because 
-#                  there's not a equals operator on it.
-#                
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_single_index_selection_03
+
+"""
+ID:          optimizer.single-index-selection-03
+TITLE:       Best match index selection (single segment)
+DESCRIPTION:
+  Check if it will select the indexes which can be used.
+  Also prefer ASC index above DESC unique index.
+  Unique index isn't the only best to use here, because
+  there's not a equals operator on it.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """CREATE TABLE SelectionTest (
+init_script = """CREATE TABLE SelectionTest (
   F1 INTEGER NOT NULL,
   F2 INTEGER
 );
@@ -60,9 +52,9 @@ CREATE DESC INDEX I_F2_DESC ON SelectionTest (F2);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   st.F1, st.F2
 FROM
@@ -71,9 +63,9 @@ WHERE
   st.F2 = 100 and
 st.F1 >= 1;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """PLAN (ST INDEX (I_F2_ASC))
+expected_stdout = """PLAN (ST INDEX (I_F2_ASC))
 
           F1           F2
 ============ ============
@@ -82,8 +74,7 @@ expected_stdout_1 = """PLAN (ST INDEX (I_F2_ASC))
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

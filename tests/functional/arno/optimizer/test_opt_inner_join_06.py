@@ -1,23 +1,19 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_inner_join_06
-# title:        INNER JOIN join order and VIEW
-# decription:   With a INNER JOIN the table with the smallest expected result should be the first one in process order.
-#               All inner joins are combined to 1 inner join, because then a order can be decided between them. Relations from a VIEW can also be "merged" to the 1 inner join (of course not with outer joins/unions/etc..)
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_inner_join_06
+
+"""
+ID:          optimizer.inner-join-06
+TITLE:       INNER JOIN join order and VIEW
+DESCRIPTION:
+  With a INNER JOIN the table with the smallest expected result should be the first one in
+  process order. All inner joins are combined to 1 inner join, because then a order can be
+  decided between them. Relations from a VIEW can also be "merged" to the 1 inner join
+  (of course not with outer joins/unions/etc..)
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_10 (
+init_script = """CREATE TABLE Table_10 (
   ID INTEGER NOT NULL
 );
 
@@ -84,18 +80,18 @@ CREATE UNIQUE ASC INDEX PK_Table_100 ON Table_100 (ID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   Count(*)
 FROM
   View_100 v100
 JOIN View_10 v10 ON (v10.ID = v100.ID);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN JOIN (V10 TABLE_10 NATURAL, V100 TABLE_100 INDEX (PK_TABLE_100))
+expected_stdout = """PLAN JOIN (V10 TABLE_10 NATURAL, V100 TABLE_100 INDEX (PK_TABLE_100))
 
                 COUNT
 =====================
@@ -103,8 +99,7 @@ expected_stdout_1 = """PLAN JOIN (V10 TABLE_10 NATURAL, V100 TABLE_100 INDEX (PK
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

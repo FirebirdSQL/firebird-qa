@@ -1,24 +1,20 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_inner_join_02
-# title:        INNER JOIN join order
-# decription:   With a INNER JOIN the table with the smallest expected result should be the first one in process order.
-#               When all tables have the same avg. recordsize (recordformat) the next table should be the second smallest.
-#               Note that calculation is based on page-size. Thus for tables which use the same nr. of data-pages, but have in reality different nr. of records the table N could be bigger as table N+1 in the order.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_inner_join_02
+
+"""
+ID:          optimizer.inner-join-02
+TITLE:       INNER JOIN join order
+DESCRIPTION:
+  With a INNER JOIN the table with the smallest expected result should be the first one in
+  process order. When all tables have the same avg. recordsize (recordformat) the next table
+  should be the second smallest. Note that calculation is based on page-size. Thus for tables
+  which use the same nr. of data-pages, but have in reality different nr. of records
+  the table N could be bigger as table N+1 in the order.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_10 (
+init_script = """CREATE TABLE Table_10 (
   ID INTEGER NOT NULL
 );
 
@@ -86,9 +82,9 @@ CREATE UNIQUE ASC INDEX PK_Table_3K ON Table_3K (ID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   Count(*)
 FROM
@@ -96,9 +92,9 @@ FROM
   JOIN Table_100 t100 ON (t100.ID = t3K.ID)
 JOIN Table_10 t10 ON (t10.ID = t100.ID);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN JOIN (T10 NATURAL, T100 INDEX (PK_TABLE_100), T3K INDEX (PK_TABLE_3K))
+expected_stdout = """PLAN JOIN (T10 NATURAL, T100 INDEX (PK_TABLE_100), T3K INDEX (PK_TABLE_3K))
 
                 COUNT
 =====================
@@ -106,8 +102,7 @@ expected_stdout_1 = """PLAN JOIN (T10 NATURAL, T100 INDEX (PK_TABLE_100), T3K IN
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

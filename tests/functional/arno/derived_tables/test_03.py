@@ -1,22 +1,15 @@
 #coding:utf-8
-#
-# id:           functional.arno.derived_tables.03
-# title:        Simple derived table 3
-# decription:   Test explicit column names for derived table
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.derived_tables.derived_tables_03
+
+"""
+ID:          derived-table-03
+TITLE:       Explicit column names for derived table
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_10 (
+init_script = """CREATE TABLE Table_10 (
   ID INTEGER NOT NULL,
   DESCRIPTION VARCHAR(10)
 );
@@ -37,16 +30,16 @@ INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (9, 'nine');
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SELECT
+test_script = """SELECT
   dt.*
 FROM
 (SELECT * FROM Table_10 t10) dt (TEST_ID, TEST_DESC);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """     TEST_ID TEST_DESC
+expected_stdout = """     TEST_ID TEST_DESC
 ============ ==========
            0 <null>
            1 one
@@ -59,9 +52,8 @@ expected_stdout_1 = """     TEST_ID TEST_DESC
            8 eight
 9 nine"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

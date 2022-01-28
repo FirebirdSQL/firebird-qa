@@ -1,23 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_sort_by_index_13
-# title:        ORDER BY ASC using index (multi)
-# decription:   WHERE X = 1 ORDER BY Y ASC
-#               WHERE clause and ORDER BY nodes can sometimes be merged to get optimal result from compound index.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_sort_by_index_13
+
+"""
+ID:          optimizer.sort-by-index-13
+TITLE:       ORDER BY ASC using index (multi)
+DESCRIPTION:
+  WHERE X = 1 ORDER BY Y ASC
+  WHERE clause and ORDER BY nodes can sometimes be merged to get optimal result from
+  compound index.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """
+init_script = """
     recreate table test_idx (
       id1 integer,
       id2 integer
@@ -29,7 +24,7 @@ init_script_1 = """
     insert into test_idx (id1, id2) values (null, 0);
     insert into test_idx (id1, id2) values (null, null);
     commit;
-    
+
     create asc  index idx_id1_asc      on test_idx(id1);
     create desc index idx_id1_desc     on test_idx(id1);
     create asc  index idx_id2_asc      on test_idx(id2);
@@ -41,9 +36,9 @@ init_script_1 = """
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     -- Queries with RANGE index scan now have in the plan only "ORDER"
     -- clause (index navigation) without bitmap building.
     -- See: http://tracker.firebirdsql.org/browse/CORE-1550
@@ -56,9 +51,9 @@ test_script_1 = """
     order by  t.id2 asc;  ----/
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
   PLAN (T ORDER IDX_ID1_ID2_ASC)
 
          ID1          ID2
@@ -75,8 +70,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

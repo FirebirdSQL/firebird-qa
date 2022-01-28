@@ -1,23 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_sort_by_index_18
-# title:        ORDER BY ASC using index (single) and WHERE clause
-# decription:   WHERE X = 1 ORDER BY Y
-#               Index for both X and Y should be used when available.
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.optimizer.opt_sort_by_index_18
+
+"""
+ID:          optimizer.sort-by-index-18
+TITLE:       ORDER BY ASC using index (single) and WHERE clause
+DESCRIPTION:
+  WHERE X = 1 ORDER BY Y
+  Index for both X and Y should be used when available.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_53 (
+init_script = """CREATE TABLE Table_53 (
   ID1 INTEGER,
   ID2 INTEGER
 );
@@ -59,9 +53,9 @@ CREATE DESC INDEX I_Table_53_ID2_DESC ON Table_53 (ID2);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   t53.ID2,
   t53.ID1
@@ -72,9 +66,9 @@ WHERE
 ORDER BY
 t53.ID2 ASC;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN (T53 ORDER I_TABLE_53_ID2_ASC INDEX (I_TABLE_53_ID1_ASC))
+expected_stdout = """PLAN (T53 ORDER I_TABLE_53_ID2_ASC INDEX (I_TABLE_53_ID1_ASC))
 
          ID2          ID1
 ============ ============
@@ -90,9 +84,8 @@ expected_stdout_1 = """PLAN (T53 ORDER I_TABLE_53_ID2_ASC INDEX (I_TABLE_53_ID1_
            8           30
 9           30"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

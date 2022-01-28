@@ -1,22 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_aggregate_distribution_04
-# title:        Try to deliver HAVING CLAUSE conjunctions to the WHERE clause
-# decription:   Comparisons which doesn't contain (anywhere hiding in the expression) aggregate-functions should be delivered to the where clause. The underlying aggregate stream could possible use it for a index and speed it up.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_aggregate_distribution_04
+
+"""
+ID:          optimizer.aggregate-distribution-04
+TITLE:       Try to deliver HAVING CLAUSE conjunctions to the WHERE clause
+DESCRIPTION:
+  Comparisons which doesn't contain (anywhere hiding in the expression) aggregate-functions
+  should be delivered to the where clause. The underlying aggregate stream could possible
+  use it for a index and speed it up.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Colors (
+init_script = """CREATE TABLE Colors (
   ColorID INTEGER NOT NULL,
   ColorName VARCHAR(20)
 );
@@ -61,9 +57,9 @@ CREATE ASC INDEX FK_Flowers_Colors ON Flowers (ColorID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   f.ColorID,
   c.ColorName,
@@ -84,9 +80,9 @@ HAVING
   MAX(DISTINCT f.FlowerID) >= 1 and
 AVG(DISTINCT f.FlowerID) >= 1;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN SORT (JOIN (F INDEX (FK_FLOWERS_COLORS), C INDEX (PK_COLORS)))
+expected_stdout = """PLAN SORT (JOIN (F INDEX (FK_FLOWERS_COLORS), C INDEX (PK_COLORS)))
 
      COLORID COLORNAME                            COUNT
 ============ ==================== =====================
@@ -94,8 +90,7 @@ expected_stdout_1 = """PLAN SORT (JOIN (F INDEX (FK_FLOWERS_COLORS), C INDEX (PK
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

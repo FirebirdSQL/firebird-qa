@@ -1,22 +1,15 @@
 #coding:utf-8
-#
-# id:           functional.arno.derived_tables.05
-# title:        Simple derived table 5
-# decription:   Derived table column names must be unique.
-# tracker_id:   
-# min_versions: []
-# versions:     2.5.0
-# qmid:         functional.arno.derived_tables.derived_tables_05
+
+"""
+ID:          derived-table-05
+TITLE:       Derived table column names must be unique
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_10 (
+init_script = """CREATE TABLE Table_10 (
   ID INTEGER NOT NULL,
   DESCRIPTION VARCHAR(10)
 );
@@ -37,24 +30,23 @@ INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (9, 'nine');
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(sql_dialect=3, init=init_script)
 
-test_script_1 = """SELECT
+test_script = """SELECT
   dt.*
 FROM
 (SELECT * FROM Table_10 t10) dt (ID, ID);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """Statement failed, SQLSTATE = 42000
+expected_stderr = """Statement failed, SQLSTATE = 42000
 Dynamic SQL Error
 -SQL error code = -104
 -Invalid command
 -column ID was specified multiple times for derived table DT"""
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

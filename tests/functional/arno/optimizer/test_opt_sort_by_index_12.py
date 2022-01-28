@@ -1,23 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_sort_by_index_12
-# title:        ORDER BY ASC, DESC using index (multi)
-# decription:   ORDER BY X ASC, Y DESC
-#               When more fields are given in ORDER BY clause try to use a compound index, but look out for mixed directions.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_sort_by_index_12
+
+"""
+ID:          optimizer.sort-by-index-12
+TITLE:       ORDER BY ASC, DESC using index (multi)
+DESCRIPTION:
+  ORDER BY X ASC, Y DESC
+  When more fields are given in ORDER BY clause try to use a compound index, but look out
+  for mixed directions.
+"""
 
 import pytest
 from firebird.qa import db_factory, isql_act, Action
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_53 (
+init_script = """CREATE TABLE Table_53 (
   ID1 INTEGER,
   ID2 INTEGER
 );
@@ -63,9 +58,9 @@ CREATE DESC INDEX I_Table_53_ID2_ID1_DESC ON Table_53 (ID2, ID1);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   t53.ID1, t53.ID2
 FROM
@@ -76,9 +71,9 @@ WHERE
 ORDER BY
 t53.ID1 ASC, t53.ID2 DESC;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN SORT (T53 INDEX (I_TABLE_53_ID2_ASC, I_TABLE_53_ID1_ASC))
+expected_stdout = """PLAN SORT (T53 INDEX (I_TABLE_53_ID2_ASC, I_TABLE_53_ID1_ASC))
 
          ID1          ID2
 ============ ============
@@ -97,8 +92,7 @@ expected_stdout_1 = """PLAN SORT (T53 INDEX (I_TABLE_53_ID2_ASC, I_TABLE_53_ID1_
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

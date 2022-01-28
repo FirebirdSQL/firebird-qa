@@ -1,22 +1,15 @@
 #coding:utf-8
-#
-# id:           functional.arno.indices.upper_bound_asc_01_segments_02
-# title:        ASC single index upper bound
-# decription:   Check if all 32 values are fetched with "lower than" operator.
-# tracker_id:   
-# min_versions: []
-# versions:     1.5
-# qmid:         functional.arno.indexes.upper_bound_asc_01_segments_02
+
+"""
+ID:          index.upper-bound-asc-1-segment-02
+TITLE:       ASC single segment index upper bound
+DESCRIPTION: Check if all 32 values are fetched with "lower than" operator.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_66 (
+init_script = """CREATE TABLE Table_66 (
   ID INTEGER
 );
 
@@ -55,9 +48,9 @@ CREATE ASC INDEX I_Table_66_ASC ON Table_66 (ID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   ID
 FROM
@@ -65,9 +58,9 @@ FROM
 WHERE
 t66.ID < 0;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN (T66 INDEX (I_TABLE_66_ASC))
+expected_stdout = """PLAN (T66 INDEX (I_TABLE_66_ASC))
 
           ID
 ============
@@ -108,9 +101,8 @@ expected_stdout_1 = """PLAN (T66 INDEX (I_TABLE_66_ASC))
           -2
 -1"""
 
-@pytest.mark.version('>=1.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_left_join_07
-# title:        4 JOINed tables with 1 LEFT OUTER JOIN
-# decription:   A INNER JOINed TableD to a LEFT JOINed TableC should be able to access the outer TableB of TableC. Also TableB is INNER JOINed to TableA. Three indexes can and should be used here.
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.optimizer.opt_left_join_07
+
+"""
+ID:          optimizer.left-join-07
+TITLE:       4 JOINed tables with 1 LEFT OUTER JOIN
+DESCRIPTION:
+  A INNER JOINed TableD to a LEFT JOINed TableC should be able to access the outer TableB
+  of TableC. Also TableB is INNER JOINed to TableA. Three indexes can and should be used here.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Colors (
+init_script = """CREATE TABLE Colors (
   ColorID INTEGER NOT NULL,
   ColorName VARCHAR(20)
 );
@@ -50,9 +45,9 @@ CREATE ASC INDEX FK_Flowers_Colors ON Flowers (ColorID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 /* 4 joined tables with 1 LEFT JOIN */
 SELECT
   f.ColorID,
@@ -65,9 +60,9 @@ FROM
   LEFT JOIN Colors c2 ON (c2.ColorID = c1.ColorID)
 JOIN Colors c3 ON (c3.ColorID = c1.ColorID);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN JOIN (JOIN (JOIN (F NATURAL, C1 INDEX (PK_COLORS)), C2 INDEX (PK_COLORS)), C3 INDEX (PK_COLORS))
+expected_stdout = """PLAN JOIN (JOIN (JOIN (F NATURAL, C1 INDEX (PK_COLORS)), C2 INDEX (PK_COLORS)), C3 INDEX (PK_COLORS))
 
      COLORID      COLORID      COLORID      COLORID
 ============ ============ ============ ============
@@ -76,9 +71,8 @@ expected_stdout_1 = """PLAN JOIN (JOIN (JOIN (F NATURAL, C1 INDEX (PK_COLORS)), 
            2            2            2            2
 0            0            0            0"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

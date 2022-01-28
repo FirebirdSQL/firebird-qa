@@ -1,23 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_sort_by_index_16
-# title:        ORDER BY DESC NULLS FIRST using index
-# decription:   ORDER BY X DESC NULLS FIRST
-#               When a index can be used for sorting, use it.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_sort_by_index_16
+
+"""
+ID:          optimizer.sort-by-index-16
+TITLE:       ORDER BY DESC NULLS FIRST using index
+DESCRIPTION:
+  ORDER BY X DESC NULLS FIRST
+  When a index can be used for sorting, use it.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_66 (
+init_script = """CREATE TABLE Table_66 (
   ID INTEGER
 );
 
@@ -57,9 +51,9 @@ CREATE DESC INDEX I_Table_66_DESC ON Table_66 (ID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   ID
 FROM
@@ -67,9 +61,9 @@ FROM
 ORDER BY
 t66.ID DESC NULLS FIRST;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN SORT (T66 NATURAL)
+expected_stdout = """PLAN SORT (T66 NATURAL)
 
           ID
 ============
@@ -151,8 +145,7 @@ expected_stdout_1 = """PLAN SORT (T66 NATURAL)
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

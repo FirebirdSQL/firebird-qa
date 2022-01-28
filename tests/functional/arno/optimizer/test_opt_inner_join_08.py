@@ -1,22 +1,15 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_inner_join_08
-# title:        INNER JOIN join order and VIEW
-# decription:   Try to merge the top INNER JOINs of VIEWS/TABLES together to 1 inner join.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_inner_join_08
+
+"""
+ID:          optimizer.inner-join-08
+TITLE:       INNER JOIN join order and VIEW
+DESCRIPTION: Try to merge the top INNER JOINs of VIEWS/TABLES together to 1 inner join.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_1 (
+init_script = """CREATE TABLE Table_1 (
   ID INTEGER NOT NULL
 );
 
@@ -115,18 +108,18 @@ CREATE UNIQUE ASC INDEX PK_Table_250 ON Table_250 (ID);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   Count(*)
 FROM
   View_B vb
 JOIN View_A va ON (va.ID1 = vb.ID100);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN JOIN (JOIN (VA T1 NATURAL, VA T250 INDEX (PK_TABLE_250)), JOIN (VB T50 INDEX (PK_TABLE_50), VB T100 INDEX (PK_TABLE_100)))
+expected_stdout = """PLAN JOIN (JOIN (VA T1 NATURAL, VA T250 INDEX (PK_TABLE_250)), JOIN (VB T50 INDEX (PK_TABLE_50), VB T100 INDEX (PK_TABLE_100)))
 
                 COUNT
 =====================
@@ -134,8 +127,7 @@ expected_stdout_1 = """PLAN JOIN (JOIN (VA T1 NATURAL, VA T250 INDEX (PK_TABLE_2
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

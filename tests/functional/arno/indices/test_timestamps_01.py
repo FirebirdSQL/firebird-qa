@@ -1,28 +1,23 @@
 #coding:utf-8
-#
-# id:           functional.arno.indices.timestamps_01
-# title:        TIMESTAMP in index with values below julian date
-# decription:   Datetime values below the julian date (firebird base date '1858-11-17') should be stored in correct order.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.indexes.timestamps_01
+
+"""
+ID:          index.timestamps
+TITLE:       TIMESTAMP in index with values below julian date
+DESCRIPTION:
+  Datetime values below the julian date (firebird base date '1858-11-17') should be stored
+  in correct order.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """
+init_script = """
     create table era (
       begindatetime timestamp not null,
       enddatetime timestamp not null
     );
     commit;
-    
+
     insert into era (begindatetime, enddatetime) values ('1500-01-01', '1550-12-31');
     insert into era (begindatetime, enddatetime) values ('1858-11-17', '1858-11-17');
     insert into era (begindatetime, enddatetime) values ('1858-11-15 18:00', '1858-11-15 20:00');
@@ -30,15 +25,15 @@ init_script_1 = """
     insert into era (begindatetime, enddatetime) values ('1858-11-18 16:00', '1858-11-18 17:00');
     insert into era (begindatetime, enddatetime) values ('2004-04-08 02:00', '2004-04-08 02:09');
     commit;
-    
+
     create unique asc index pk_begindatetime on era (begindatetime);
     create unique asc index pk_enddatetime on era (enddatetime);
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     -- Queries with RANGE index scan now have in the plan only "ORDER"
     -- clause (index navigation) without bitmap building.
     -- See: http://tracker.firebirdsql.org/browse/CORE-1550
@@ -55,9 +50,9 @@ test_script_1 = """
       begindatetime asc;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (E ORDER PK_BEGINDATETIME)
                 BEGINDATETIME               ENDDATETIME
     ========================= =========================
@@ -69,8 +64,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

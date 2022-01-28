@@ -1,52 +1,19 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_sort_by_index_11
-# title:        ORDER BY ASC using index (multi)
-# decription:   
-#                  ORDER BY X, Y
-#                  When more fields are given in ORDER BY clause try to use a compound index.
-#               
-#                  Refactored 26-feb-2016: use common code for 2.5 and 3.0 with checking that 
-#                  actual plan matches expected one that is defined in differ variables: plan_25 & plan_30.
-#                  If actual plan will differ from expected message about this will contain BOTH plans
-#                  (actual and expected), otherwise only text about matching will appear - but NO plan content
-#                  because it depends on FB version.
-#               
-#                  Checked on WI-V2.5.6.26970
-#                  3.0.0.32358 -- plan was invalid
-#                  3.0.2.32708, 4.0.0.572 -- changed expected plan string after letter from dimitr, 21-mar-2017 09:08
-#               
-#                  22.12.2019.
-#                  1. Denied from common code for all major versions, it was a bad idea: we need EXPLAINED PLAN here
-#                     and this set of rows must be displayed explicitly, without just showing brief result of comparison.
-#                     For this reason separate sections for each majoer FB version was returned.
-#                  2. Added several other statements in order to have more different plans.
-#                     Checked on:
-#                       4.0.0.1693 SS: 1.283s.
-#                       3.0.5.33215 SS: 0.664s.
-#                       2.5.9.27149 SC: 0.282s.
-#               
-#                  25.07.2020: removed section for 4.0 because expected size must be equal in both major FB version, as it is given for 3.0.
-#                  (letter from dimitr, 25.07.2020 12:42). Checked on 3.0.7.33348, 4.0.0.2119
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          optimizer.sort-by-index-11
+TITLE:       ORDER BY ASC using index (multi)
+DESCRIPTION:
+  ORDER BY X, Y
+  When more fields are given in ORDER BY clause try to use a compound index.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter procedure sp_fill_data as begin end;
     recreate table test (
         id1 int,
@@ -79,10 +46,10 @@ test_script_1 = """
 
     create asc  index test_id1_asc on test (id1);
     create desc index test_id1_des on test (id1);
-    
+
     create asc  index test_id2_asc on test (id2);
     create desc index test_id2_des on test (id2);
-    
+
     create asc  index test_id1_id2_asc on test (id1, id2);
     create desc index test_id1_id2_des on test (id1, id2);
 
@@ -101,19 +68,19 @@ test_script_1 = """
 
     select t.id2, t.id1
     from test t
-    where t.id1 = 30 and t.id2 <= 5 
+    where t.id1 = 30 and t.id2 <= 5
     order by t.id2 desc, t.id1 desc
     ;
 
     select t.id2, t.id1
     from test t
-    where t.id1 >= 30 and t.id2 = 5 
+    where t.id1 >= 30 and t.id2 = 5
     order by t.id2 asc, t.id1 asc
     ;
 
     select t.id2, t.id1
     from test t
-    where t.id1 <= 30 and t.id2 = 5 
+    where t.id1 <= 30 and t.id2 = 5
     order by t.id2 desc, t.id1 desc
     ;
 
@@ -127,27 +94,27 @@ test_script_1 = """
 
     select t.id2, t.id1
     from test t
-    where t.id1 <= 30 and t.id2 <= 5 
+    where t.id1 <= 30 and t.id2 <= 5
     order by t.id2 desc, t.id1 desc
     ;
 
     select t.id2, t.id1
     from test t
-    where t.id1 >= 30 and t.id2 >= 5 
+    where t.id1 >= 30 and t.id2 >= 5
     order by t.id2 asc, t.id1 asc
     ;
 
     select t.id2, t.id1
     from test t
-    where t.id1 >= 30 and t.id2 >= 5 
+    where t.id1 >= 30 and t.id2 >= 5
     order by t.id2 desc, t.id1 desc
     ;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Select Expression
         -> Sort (record length: 36, key length: 16)
             -> Filter
@@ -202,8 +169,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

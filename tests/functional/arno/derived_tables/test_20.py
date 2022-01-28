@@ -1,22 +1,15 @@
 #coding:utf-8
-#
-# id:           functional.arno.derived_tables.20
-# title:        Simple derived table
-# decription:   Test sub-select inside derived table.
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.derived_tables.derived_tables_20
+
+"""
+ID:          derived-table-20
+TITLE:       Sub-select inside derived table
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE Table_10 (
+init_script = """CREATE TABLE Table_10 (
   ID INTEGER NOT NULL,
   GROUPID INTEGER,
   DESCRIPTION VARCHAR(10)
@@ -38,9 +31,9 @@ INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (9, 3, 'nine');
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SELECT
+test_script = """SELECT
   dt.*
 FROM
   (SELECT
@@ -52,18 +45,17 @@ FROM
    GROUP BY
 t2.GROUPID) dt (GROUPID, MIN_ID, MAX_ID);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """     GROUPID       MIN_ID       MAX_ID
+expected_stdout = """     GROUPID       MIN_ID       MAX_ID
 ============ ============ ============
       <null>       <null>       <null>
            1            1            2
            2            3            5
 3            6            9"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

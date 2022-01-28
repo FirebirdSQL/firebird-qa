@@ -1,23 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_multi_index_selection_07
-# title:        Best match index selection (multi segment)
-# decription:   Check if it will select the index with the best selectivity and match.
-#               IS NULL should also be used in compound indexes (Only in new index structure ODS > FB 1.5.1)
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.optimizer.opt_multi_index_selection_07
+
+"""
+ID:          optimizer.multi-index-selection-06
+TITLE:       Best match index selection (multi segment)
+DESCRIPTION:
+  Check if it will select the index with the best selectivity and match.
+  IS NULL should also be used in compound indexes.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE SelectionTest (
+init_script = """CREATE TABLE SelectionTest (
   F1 INTEGER NOT NULL,
   F2 INTEGER
 );
@@ -67,9 +61,9 @@ CREATE DESC INDEX I_F1_F2_DESC ON SelectionTest (F1, F2);
 COMMIT;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET PLAN ON;
+test_script = """SET PLAN ON;
 SELECT
   st.F1, st.F2
 FROM
@@ -78,9 +72,9 @@ WHERE
   st.F1 = 55 and
 st.F2 IS NULL;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """PLAN (ST INDEX (I_F1_F2_ASC))
+expected_stdout = """PLAN (ST INDEX (I_F1_F2_ASC))
 
           F1           F2
 ============ ============
@@ -91,9 +85,8 @@ expected_stdout_1 = """PLAN (ST INDEX (I_F1_F2_ASC))
           55       <null>
 55       <null>"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,47 +1,41 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_avoid_index_usage
-# title:        AVOID index usage in WHERE <indexed_varchar_field> = <integer_value>
-# decription:   
-#                  Samples here are from CORE-3051.
-#                  Confirmed usage 'PLAN INDEX ...' in FB 2.0.0.12724
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5.0
-# qmid:         functional.arno.optimizer.opt_avoid_index_usage
+
+"""
+ID:          optimizer.avoid-index-usage
+ISSUE:       3431
+TITLE:       AVOID index usage in WHERE <indexed_varchar_field> = <integer_value>
+DESCRIPTION:
+  Samples here are from #3431.
+  Confirmed usage 'PLAN INDEX ...' in FB 2.0.0.12724
+JIRA:        CORE-3051
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     recreate table t(x varchar(10), y varchar(10));
     create index t_x_asc on t(x);
     create descending index t_y_desc on t(y);
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set planonly;
     --set echo on;
-    select * from t where x = 0; 
-    select * from t where y = 0; 
-    select * from t where x > 0; 
-    select * from t where y < 0; 
+    select * from t where x = 0;
+    select * from t where y = 0;
+    select * from t where x > 0;
+    select * from t where y < 0;
     select * from t where x between 0 and 1;
     select * from t where y between 0 and 1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN (T NATURAL)
     PLAN (T NATURAL)
     PLAN (T NATURAL)
@@ -50,9 +44,8 @@ expected_stdout_1 = """
     PLAN (T NATURAL)
 """
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

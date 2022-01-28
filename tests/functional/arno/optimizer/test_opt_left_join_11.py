@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_left_join_11
-# title:        LEFT OUTER JOIN with STARTING WITH in WHERE clause
-# decription:   
-#                   TableX LEFT OUTER JOIN TableY with no match, thus result should contain all NULLs for TableY references.
-#                   WHERE clause contains STARTING WITH on a field which is also in a single segment index.
-#                   The WHERE clause should be distributed to the joined table.
-#                 
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.arno.optimizer.opt_left_join_11
+
+"""
+ID:          optimizer.left-join-11
+TITLE:       LEFT OUTER JOIN with STARTING WITH in WHERE clause
+DESCRIPTION:
+  TableX LEFT OUTER JOIN TableY with no match, thus result should contain all NULLs for
+  TableY references. WHERE clause contains STARTING WITH on a field which is also in
+  a single segment index. The WHERE clause should be distributed to the joined table.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     CREATE TABLE Colors (
         ColorID INTEGER NOT NULL,
         ColorName VARCHAR(20)
@@ -56,9 +48,9 @@ init_script_1 = """
     COMMIT;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set planonly;
     SET PLAN ON;
     -- WHERE clause should be distributed to LEFT JOIN ON clause
@@ -74,15 +66,14 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     PLAN JOIN (F NATURAL, C INDEX (I_COLORS_NAME))
 """
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
