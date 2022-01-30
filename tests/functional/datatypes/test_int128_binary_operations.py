@@ -1,30 +1,21 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.int128_binary_operations
-# title:        Basic test for binary functions against INT128 datatype
-# decription:   
-#                   Test verifies https://github.com/FirebirdSQL/firebird/commit/137c3a96e51b8bc34cb74732687067e96c971226
-#                   (Postfix for CORE-6342: enable support of int128 in bin_* family of functions).
-#                   Checked on 4.0.0.2083 (intermediate build 30.06.2020 16:38).
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          int128.binary-operations
+ISSUE:       6583
+JIRA:        CORE-6342
+TITLE:       Basic test for binary functions against INT128 datatype
+DESCRIPTION:
+  Test verifies https://github.com/FirebirdSQL/firebird/commit/137c3a96e51b8bc34cb74732687067e96c971226
+  (Postfix for #6583: enable support of int128 in bin_* family of functions).
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
     recreate table test_i128(bi_least int128, bi_great int128);
     commit;
@@ -50,9 +41,9 @@ test_script_1 = """
     select bin_xor(bi_least, bin_xor(bi_least, bi_great)) from test_i128; -- expected: 170141183460469231731687303715884105727
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     0
     170141183460469231731687303715884105727
     -170141183460469231731687303715884105728
@@ -67,8 +58,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

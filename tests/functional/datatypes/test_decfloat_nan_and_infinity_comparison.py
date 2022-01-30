@@ -1,36 +1,25 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decfloat_nan_and_infinity_comparison
-# title:        DECFLOAT should not throw exceptions when +/-NaN, +/-sNaN and +/-Infinity is used in comparisons
-# decription:   
-#                   Checked on 4.0.0.920.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          decfloat.nan-and-infinity-comparison
+TITLE:       DECFLOAT should not throw exceptions when +/-NaN, +/-sNaN and +/-Infinity is used in comparisons
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[\\s]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- NB: need to set decfloat traps to <EMPTY>, otherwise get:
     -- Statement failed, SQLSTATE = 22012
     -- Decimal float divide by zero.  The code attempted to divide a DECFLOAT value by zero.
     set decfloat traps to;
     set list on;
     set count on;
-    select 
-        i 
+    select
+        i
        ,n
        ,i < i+i as is_infinity_less_then_itself_plus_same_infinity
        ,i = i-i is_infinity_equal_to_itself_reduced_by_any_value
@@ -43,9 +32,9 @@ test_script_1 = """
     );
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[\\s]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     I Infinity
     N NaN
     IS_INFINITY_LESS_THEN_ITSELF_PLUS_SAME_INFINITY <false>
@@ -59,8 +48,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

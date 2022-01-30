@@ -1,29 +1,20 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decfloat_columns_handlng
-# title:        Check ability of misc. actions against table column for DECFLOAT datatype.
-# decription:   
-#                   See CORE-5535 and doc\\sql.extensions\\README.data_types
-#                   FB40CS, build 4.0.0.651: OK, 2.203ss.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          decfloat.columns-handling
+ISSUE:       5803
+JIRA:        CORE-5535
+TITLE:       Check ability of misc. actions against table column for DECFLOAT datatype
+DESCRIPTION:
+  See  doc/sql.extensions/README.data_types
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table test(id int, x decfloat(16));
@@ -98,20 +89,20 @@ test_script_1 = """
 
     insert into test2 select * from test; -- should FAIL
 
-    insert into test3 
-    select 
-        cast(id as decfloat(16))*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id, 
-        -n, 
-        -x 
+    insert into test3
+    select
+        cast(id as decfloat(16))*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id*id,
+        -n,
+        -x
     from test; -- should PASS
 
     set count off;
     select * from test3;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              9223372036854775807
     N                               -9.999999999999999999999999999999999E+6144
     X                               -9.999999999999999E+384
@@ -124,7 +115,8 @@ expected_stdout_1 = """
     X                                9.999999999999999E+384
 
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -ALTER TABLE TEST failed
@@ -135,11 +127,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

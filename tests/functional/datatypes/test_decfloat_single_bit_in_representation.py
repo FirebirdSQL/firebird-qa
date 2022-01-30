@@ -1,31 +1,20 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decfloat_single_bit_in_representation
-# title:        DECFLOAT: check result of EXP() which can be represented only by one ("last") significant bit
-# decription:   
-#                   Get minimal distinguish from zero value for DEFCFLOAT datatype using EXP() function.
-#                   Check some trivial arithmetic results for this value and pair of other values which are closest to it.
-#                   See also: https://en.wikipedia.org/wiki/Decimal_floating_point
-#                   Checked on 4.0.0.1714
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          decfloat.single-bit-in-representation
+TITLE:       Check result of EXP() which can be represented only by one ("last") significant bit
+DESCRIPTION:
+  Get minimal distinguish from zero value for DEFCFLOAT datatype using EXP() function.
+  Check some trivial arithmetic results for this value and pair of other values which are closest to it.
+  See also: https://en.wikipedia.org/wiki/Decimal_floating_point
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ ]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     select
          df0 as decfloat_near_zero
@@ -43,13 +32,13 @@ test_script_1 = """
             exp( cast( -14221.4586815117860898045324562520948 as decfloat) ) as df0
            ,exp( cast( -14221.4586815117860898045324562520949 as decfloat) ) as df1
            ,exp( cast( -14221.4586815117860898045324562520950 as decfloat) ) as df2
-        from rdb$database 
+        from rdb$database
     );
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ ]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     DECFLOAT_NEAR_ZERO                                                 1E-6176
     MIN_DECFLOAT_DISTINGUISH_FROM_ZERO                                    1E-6176
     MAX_DECFLOAT_NON_DISTINCT_FROM_ZERO                                    0E-6176
@@ -63,8 +52,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

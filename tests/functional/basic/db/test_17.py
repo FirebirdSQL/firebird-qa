@@ -1,31 +1,30 @@
 #coding:utf-8
-#
-# id:           functional.basic.db.17
-# title:        Empty DB - RDB$LOG_FILES
-# decription:   Check for correct content of RDB$LOG_FILES in empty database.
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.basic.db.db_17
+
+"""
+ID:          new-database-17
+TITLE:       New DB - RDB$LOG_FILES content
+DESCRIPTION: Check the correct content of RDB$LOG_FILES in new database.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+test_script = """
+set list on;
+set count on;
+select * from RDB$LOG_FILES;
+"""
 
-init_script_1 = """"""
+act = isql_act('db', test_script)
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+expected_stdout = """
+    Records affected: 0
+"""
 
-test_script_1 = """select * from RDB$LOG_FILES;"""
-
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

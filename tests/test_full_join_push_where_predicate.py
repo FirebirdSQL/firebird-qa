@@ -1,30 +1,21 @@
 #coding:utf-8
-#
-# id:           full_join_push_where_predicate
-# title:        WHERE-filter must be applied after FULL JOIN result
-# decription:   
-#                   See (rus): https://www.sql.ru/forum/1326682/dva-cte-ih-full-join-i-uslovie-daut-nekorrektnyy-rezultat
-#                   Confirmed bug on 2.5.9.27151.
-#                   Checked on 3.0.6.33322, 4.0.0.2073 -- all fine.
-#                 
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          full-join-push-where-predicate
+TITLE:       WHERE-filter must be applied after FULL JOIN result
+DESCRIPTION:
+  See (rus): https://www.sql.ru/forum/1326682/dva-cte-ih-full-join-i-uslovie-daut-nekorrektnyy-rezultat
+  Confirmed bug on 2.5.9.27151.
+  Checked on 3.0.6.33322, 4.0.0.2073 -- all fine.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
 
-substitutions_1 = [('[ \t]+', ' ')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table t (
@@ -53,16 +44,15 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     T1_F1                           <null>
     T2_F1                           d
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

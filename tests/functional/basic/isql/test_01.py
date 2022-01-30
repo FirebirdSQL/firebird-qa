@@ -1,41 +1,33 @@
 #coding:utf-8
-#
-# id:           functional.basic.isql.01
-# title:        ISQL - SHOW DATABASE
-# decription:   Check for correct output of SHOW DATABASE on empty database.
-# tracker_id:
-# min_versions: ['2.5.2']
-# versions:     3.0, 4.0, 5.0
-# qmid:         functional.basic.isql.isql_01
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('Owner.*', 'Owner'), ('PAGE_SIZE.*', 'PAGE_SIZE'),
-                   ('Number of DB pages allocated.*', 'Number of DB pages allocated'),
-                   ('Number of DB pages used.*', 'Number of DB pages used'),
-                   ('Number of DB pages free.*', 'Number of DB pages free'),
-                   ('Sweep.*', 'Sweep'), ('Forced Writes.*', 'Forced Writes'),
-                   ('Transaction -.*', ''), ('ODS.*', 'ODS'),
-                   ('Creation date.*', 'Creation date'),
-                   ('Default Character.*', 'Default Character')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
-    -- 19.01.2016: added line  "Database not encrypted", see  http://sourceforge.net/p/firebird/code/62825
-    show database;
+"""
+ID:          isql-02
+TITLE:       ISQL - SHOW DATABASE
+DESCRIPTION: Check for correct output of SHOW DATABASE on empty database.
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+import pytest
+from firebird.qa import *
+
+# version: 3.0
+
+substitutions = [('Owner.*', 'Owner'), ('PAGE_SIZE.*', 'PAGE_SIZE'),
+                 ('Number of DB pages allocated.*', 'Number of DB pages allocated'),
+                 ('Number of DB pages used.*', 'Number of DB pages used'),
+                 ('Number of DB pages free.*', 'Number of DB pages free'),
+                 ('Sweep.*', 'Sweep'), ('Forced Writes.*', 'Forced Writes'),
+                 ('Transaction -.*', ''), ('ODS.*', 'ODS'),
+                 ('Wire crypt plugin.*', 'Wire crypt plugin'),
+                 ('Creation date.*', 'Creation date'),
+                 ('Protocol version.*', 'Protocol version'),
+                 ('Default Character.*', 'Default Character')]
+
+db = db_factory()
+
+act = isql_act('db', 'show database;', substitutions=substitutions)
 
 expected_stdout_1 = """
-    Database: localhost:c:\\job\\qa\\fbtest-repo\\tmp\\functional.basic.isql.isql_01.fdb
+    Database: localhost:test.fdb
     Owner: SYSDBA
     PAGE_SIZE 8192
     Number of DB pages allocated
@@ -54,38 +46,15 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_1
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('Owner.*', 'Owner'), ('PAGE_SIZE.*', 'PAGE_SIZE'),
-                   ('Number of DB pages allocated.*', 'Number of DB pages allocated'),
-                   ('Number of DB pages used.*', 'Number of DB pages used'),
-                   ('Number of DB pages free.*', 'Number of DB pages free'),
-                   ('Sweep.*', 'Sweep'), ('Forced Writes.*', 'Forced Writes'),
-                   ('Transaction -.*', ''), ('ODS.*', 'ODS'),
-                   ('Wire crypt plugin.*', 'Wire crypt plugin'),
-                   ('Creation date.*', 'Creation date'),
-                   ('Protocol version.*', 'Protocol version'),
-                   ('Default Character.*', 'Default Character')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-test_script_2 = """
-    -- Separate for FB 4.0 since 22.01.2020
-    show database;
-"""
-
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stdout_2 = """
-    Database: localhost:c:\\job\\qa\\fbtest-repo\\tmp\\functional.basic.isql.isql_01.fdb
+    Database: localhost:test.fdb
     Owner: SYSDBA
     PAGE_SIZE 8192
     Number of DB pages allocated = 212
@@ -106,42 +75,15 @@ expected_stdout_2 = """
 """
 
 @pytest.mark.version('>=4.0,<5.0')
-def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.execute()
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+def test_2(act: Action):
+    act.expected_stdout = expected_stdout_2
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
 # version: 5.0
-# resources: None
-
-substitutions_3 = [('Owner.*', 'Owner'), ('PAGE_SIZE.*', 'PAGE_SIZE'),
-                   ('Number of DB pages allocated.*', 'Number of DB pages allocated'),
-                   ('Number of DB pages used.*', 'Number of DB pages used'),
-                   ('Number of DB pages free.*', 'Number of DB pages free'),
-                   ('Sweep.*', 'Sweep'), ('Forced Writes.*', 'Forced Writes'),
-                   ('Transaction -.*', ''), ('ODS.*', 'ODS'),
-                   ('Wire crypt plugin.*', 'Wire crypt plugin'),
-                   ('Creation date.*', 'Creation date'),
-                   ('Protocol version.*', 'Protocol version'),
-                   ('Default Character.*', 'Default Character')]
-
-init_script_3 = """"""
-
-db_3 = db_factory(sql_dialect=3, init=init_script_3)
-
-test_script_3 = """
-    -- Separate for FB 5.0 since 10.09.2021
-    -- New lines in the output (builds >= 5.0.0.196):
-    --     Creation date: Sep 10, 2021 7:13:17 GMT
-    --     Protocol version = 17
-
-    show database;
-"""
-
-act_3 = isql_act('db_3', test_script_3, substitutions=substitutions_3)
 
 expected_stdout_3 = """
-    Database: localhost:c:\\job\\qa\\fbtest-repo\\tmp\\functional.basic.isql.isql_01.fdb
+    Database: localhost:test.fdb
     Owner: SYSDBA
     PAGE_SIZE 8192
     Number of DB pages allocated = 212
@@ -162,8 +104,7 @@ expected_stdout_3 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_3(act_3: Action):
-    act_3.expected_stdout = expected_stdout_3
-    act_3.execute()
-    assert act_3.clean_stdout == act_3.clean_expected_stdout
-
+def test_3(act: Action):
+    act.expected_stdout = expected_stdout_3
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

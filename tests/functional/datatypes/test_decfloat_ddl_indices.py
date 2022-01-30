@@ -1,29 +1,20 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decfloat_ddl_indices
-# title:        Check ability to create table with 16 fields of type decfloat(34), plus create indices and add data.
-# decription:   
-#                   See CORE-5535 and doc\\sql.extensions\\README.data_types
-#                   FB40SS, build 4.0.0.688: OK, 1.156s.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          decfloat.ddl-indices
+TITLE:       Check ability to create table with 16 fields of type decfloat(34), plus create indices and add data
+ISSUE:       5803
+JIRA:        CORE-5535
+DESCRIPTION:
+  See  doc/sql.extensions/README.data_types
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set list on;
     recreate table test(
@@ -121,9 +112,9 @@ test_script_1 = """
     select * from test where fff > 0;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     F1                               1.239999999999999999999955600000000E+1023
     F2                              -1.239999999999999999999955600000000E+1022
     F3                               1.239999999999999999999955600000000E+1022
@@ -144,8 +135,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

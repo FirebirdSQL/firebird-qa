@@ -1,32 +1,16 @@
 #coding:utf-8
-#
-# id:           functional.basic.db.11
-# title:        New DB - RDB$FUNCTION_ARGUMENTS
-# decription:   
-#                   Check for correct content of RDB$FUNCTION_ARGUMENTS in a new database.
-#                   Checked on:
-#                       2.5.9.27126: OK, 0.656s.
-#                       3.0.5.33086: OK, 1.156s.
-#                       4.0.0.1378: OK, 5.344s.
-#                
-# tracker_id:   
-# min_versions: []
-# versions:     3.0, 4.0
-# qmid:         functional.basic.db.db_11
+
+"""
+ID:          new-database-11
+TITLE:       New DB - RDB$FUNCTION_ARGUMENTS
+DESCRIPTION: Check for correct content of RDB$FUNCTION_ARGUMENTS in a new database.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+db = db_factory()
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set count on;
     select *
@@ -34,39 +18,24 @@ test_script_1 = """
     order by fa.rdb$function_name, fa.rdb$argument_position;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
+
+# version: 3.0
 
 expected_stdout_1 = """
     Records affected: 0
 """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_1
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-test_script_2 = """
-    set list on;
-    set count on;
-    select *
-    from rdb$function_arguments fa
-    order by fa.rdb$function_name, fa.rdb$argument_position;
-"""
-
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stdout_2 = """
-    RDB$FUNCTION_NAME               DATABASE_VERSION                                                                                                                                                                                                                                            
+    RDB$FUNCTION_NAME               DATABASE_VERSION
     RDB$ARGUMENT_POSITION           0
     RDB$MECHANISM                   <null>
     RDB$FIELD_TYPE                  <null>
@@ -76,9 +45,9 @@ expected_stdout_2 = """
     RDB$CHARACTER_SET_ID            <null>
     RDB$FIELD_PRECISION             <null>
     RDB$CHARACTER_LENGTH            <null>
-    RDB$PACKAGE_NAME                RDB$TIME_ZONE_UTIL                                                                                                                                                                                                                                          
+    RDB$PACKAGE_NAME                RDB$TIME_ZONE_UTIL
     RDB$ARGUMENT_NAME               <null>
-    RDB$FIELD_SOURCE                RDB$DBTZ_VERSION                                                                                                                                                                                                                                            
+    RDB$FIELD_SOURCE                RDB$DBTZ_VERSION
     RDB$DEFAULT_VALUE               <null>
     RDB$DEFAULT_SOURCE              <null>
     RDB$COLLATION_ID                <null>
@@ -93,8 +62,7 @@ expected_stdout_2 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.execute()
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
-
+def test_2(act: Action):
+    act.expected_stdout = expected_stdout_2
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

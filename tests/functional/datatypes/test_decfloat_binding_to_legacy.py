@@ -1,52 +1,45 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decfloat_binding_to_legacy
-# title:        Test ability for DECFLOAT values to be represented as other data types using LEGACY keyword.
-# decription:   
-#                   We check here that values from DECFLOAT will be actually converted to legacy datatypes 
-#                   according to following table from sql.extensions\\README.set_bind.md:
-#                       ----------------------------------------------------------
-#                       | Native datatype          | Legacy datatype             |
-#                       |--------------------------|-----------------------------|
-#                       | BOOLEAN                  | CHAR(5)                     |
-#                       | DECFLOAT                 | DOUBLE PRECISION            |
-#                       | NUMERIC(38)              | NUMERIC(18)                 |
-#                       | TIME WITH TIME ZONE      | TIME WITHOUT TIME ZONE      |
-#                       | TIMESTAMP WITH TIME ZONE | TIMESTAMP WITHOUT TIME ZONE |
-#                       ----------------------------------------------------------
-#                    SQLDA must contain the same datatypes when we use either explicit rule or LEGACY keyword.
-#                    Checked on 4.0.0.1691 SS: 1.113s.
-#               
-#                    WARNING, 11.03.2020.
-#                    Test verifies binding of TIME WITH TIMEZONE data and uses America/Los_Angeles timezone.
-#                    But there is daylight saving time in the USA, they change clock at the begining of March.
-#               
-#                    For this reason query like: "select time '10:00 America/Los_Angeles' from ..." will return
-#                    different values depending on current date. For example, if we are in Moscow timezone then
-#                    returned value will be either 20:00 in February or 21:00 in March. 
-#                    Result for other timezone (e.g. Tokyo) will be differ, etc.
-#                    For this reason, special replacement will be done in 'substitution' section: we replace
-#                    value of hours with '??' because it is no matter what's the time there, we have to ensure
-#                    only the ability to work with such time using SET BIND clause.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          decfloat.binding-to-legacy
+TITLE:       Test ability for DECFLOAT values to be represented as other data types using LEGACY keyword.
+DESCRIPTION:
+  We check here that values from DECFLOAT will be actually converted to legacy datatypes
+  according to following table from sql.extensions\\README.set_bind.md:
+    ----------------------------------------------------------
+    | Native datatype          | Legacy datatype             |
+    |--------------------------|-----------------------------|
+    | BOOLEAN                  | CHAR(5)                     |
+    | DECFLOAT                 | DOUBLE PRECISION            |
+    | NUMERIC(38)              | NUMERIC(18)                 |
+    | TIME WITH TIME ZONE      | TIME WITHOUT TIME ZONE      |
+    | TIMESTAMP WITH TIME ZONE | TIMESTAMP WITHOUT TIME ZONE |
+    ----------------------------------------------------------
+   SQLDA must contain the same datatypes when we use either explicit rule or LEGACY keyword.
+ NOTES:
+ [11.03.2020]
+   WARNING
+   Test verifies binding of TIME WITH TIMEZONE data and uses America/Los_Angeles timezone.
+   But there is daylight saving time in the USA, they change clock at the begining of March.
+
+   For this reason query like: "select time '10:00 America/Los_Angeles' from ..." will return
+   different values depending on current date. For example, if we are in Moscow timezone then
+   returned value will be either 20:00 in February or 21:00 in March.
+   Result for other timezone (e.g. Tokyo) will be differ, etc.
+   For this reason, special replacement will be done in 'substitution' section: we replace
+   value of hours with '??' because it is no matter what's the time there, we have to ensure
+   only the ability to work with such time using SET BIND clause.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+substitutions = [(' \\d{2}:00:00.0000', ' ??:00:00.0000'), ('charset.*', ''),
+                 ('.*alias:.*', ''), ('^((?!(sqltype|check_bind_)).)*$', ''), ('[ \t]+', ' ')]
 
-substitutions_1 = [(' \\d{2}:00:00.0000', ' ??:00:00.0000'), ('charset.*', ''), ('.*alias:.*', ''), ('^((?!(sqltype|check_bind_)).)*$', ''), ('[ \t]+', ' ')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     --set bail on;
     --set echo on;
@@ -90,9 +83,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 5
     check_bind_bool_to_char TRUE
 
@@ -125,8 +118,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

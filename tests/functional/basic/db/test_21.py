@@ -1,40 +1,30 @@
 #coding:utf-8
-#
-# id:           functional.basic.db.21
-# title:        Empty DB - RDB$REF_CONSTRAINTS
-# decription:   Check for correct content of RDB$REF_CONSTRAINTS in empty database.
-# tracker_id:   
-# min_versions: []
-# versions:     2.5
-# qmid:         functional.basic.db.db_21
+
+"""
+ID:          new-database-21
+TITLE:       New DB - RDB$REF_CONSTRAINTS content
+DESCRIPTION: Check the correct content of RDB$REF_CONSTRAINTS in new database.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set count on;
     select * from rdb$ref_constraints order by rdb$constraint_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     Records affected: 0
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

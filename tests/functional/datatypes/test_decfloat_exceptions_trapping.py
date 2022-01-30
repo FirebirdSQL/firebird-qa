@@ -1,35 +1,25 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decfloat_exceptions_trapping
-# title:        Test exception trapping for result of DECFLOAT operations.
-# decription:   
-#                   See CORE-5535 and doc\\sql.extensions\\README.data_types:
-#                   ---
-#                       SET DECFLOAT TRAPS TO <comma-separated traps list - may be empty> - controls which
-#                       exceptional conditions cause a trap. Valid traps are: Division_by_zero, Inexact,
-#                       Invalid_operation, Overflow and Underflow. By default traps are set to:
-#                       Division_by_zero, Invalid_operation, Overflow, Underflow.
-#                   ---
-#                   FB40SS, build 4.0.0.651: OK, 0.782s.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          decfloat.exceptions-trapping
+ISSUE:       5803
+JIRA:        CORE-5535
+TITLE:       Test exception trapping for result of DECFLOAT operations
+DESCRIPTION:
+  See  doc/sql.extensions/README.data_types
+
+  SET DECFLOAT TRAPS TO <comma-separated traps list - may be empty> - controls which
+  exceptional conditions cause a trap. Valid traps are: Division_by_zero, Inexact,
+  Invalid_operation, Overflow and Underflow. By default traps are set to:
+  Division_by_zero, Invalid_operation, Overflow, Underflow.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     ------------------------- check: empty vs Division_by_zero ------------------------
@@ -104,17 +94,18 @@ test_script_1 = """
     from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ZERO_DIV_WHEN_DF_TRAP_EMPTY                                       Infinity
     HUGE_WHEN_DF_TRAP_EMPTY                                           Infinity
     ABOUT_ZERO_WHEN_DF_TRAP_EMPTY                                      0E-6176
     ADD_HUGES_WHEN_DF_TRAP_EMPTY                                      Infinity
     NAN_WHEN_DF_TRAP_EMPTY                              NaN
-                                                        
+
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22012
     Decimal float divide by zero.  The code attempted to divide a DECFLOAT value by zero.
 
@@ -132,11 +123,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

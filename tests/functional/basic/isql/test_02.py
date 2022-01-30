@@ -1,35 +1,19 @@
 #coding:utf-8
-#
-# id:           functional.basic.isql.02
-# title:        ISQL - SHOW SYSTEM TABLES
-# decription:   
-#                   Check for correct output of "SHOW SYSTEM;" command on empty database.
-#                   Checked on:
-#                       2.5.9.27126
-#                       3.0.5.33086
-#                       4.0.0.2491
-#                       5.0.0.43 // 21.05.2021: created separate section for this major FB version.
-#                 
-# tracker_id:   
-# min_versions: []
-# versions:     3.0, 4.0, 5.0
-# qmid:         functional.basic.isql.isql_02
+
+"""
+ID:          isql-03
+TITLE:       ISQL - SHOW SYSTEM TABLES
+DESCRIPTION: Check for correct output of "SHOW SYSTEM;" command on empty database.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+db = db_factory()
+
+act = isql_act('db', 'show system;')
 
 # version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """show system ;"""
-
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
 
 expected_stdout_1 = """
 Tables:
@@ -138,25 +122,12 @@ Collations:
 """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_1
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = []
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-test_script_2 = """
-    show system;
-"""
-
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stdout_2 = """
     Tables:
@@ -371,25 +342,12 @@ expected_stdout_2 = """
 """
 
 @pytest.mark.version('>=4.0,<5.0')
-def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.execute()
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+def test_2(act: Action):
+    act.expected_stdout = expected_stdout_2
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
 # version: 5.0
-# resources: None
-
-substitutions_3 = []
-
-init_script_3 = """"""
-
-db_3 = db_factory(sql_dialect=3, init=init_script_3)
-
-test_script_3 = """
-    show system;
-"""
-
-act_3 = isql_act('db_3', test_script_3, substitutions=substitutions_3)
 
 expected_stdout_3 = """
     Tables:
@@ -605,8 +563,7 @@ expected_stdout_3 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_3(act_3: Action):
-    act_3.expected_stdout = expected_stdout_3
-    act_3.execute()
-    assert act_3.clean_stdout == act_3.clean_expected_stdout
-
+def test_3(act: Action):
+    act.expected_stdout = expected_stdout_3
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

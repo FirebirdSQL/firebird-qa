@@ -1,32 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decimal_declared_scale
-# title:        Declared scale does not act as a constraint, it just defines the accuracy of the storage
-# decription:   
-#                  Samples are from CORE-3556 and CORE-5723.
-#                  Checked on:
-#                      FB25SC, build 2.5.8.27090: OK, 0.453s.
-#                      FB30SS, build 3.0.3.32897: OK, 1.047s.
-#                      FB40SS, build 4.0.0.872: OK, 1.313s.
-#                
-# tracker_id:   
-# min_versions: ['2.5.8']
-# versions:     2.5.8
-# qmid:         None
+
+"""
+ID:          decimal-declared-scale
+TITLE:       Dummy test
+DESCRIPTION: Samples are from #3912 and  #5989.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.8
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     recreate table test ( id int, b numeric(18,5) );
     insert into test(id, b) values (1, 1.0000199);
@@ -43,9 +28,9 @@ test_script_1 = """
     select * from test order by id;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     B                               1.00002
     C                               true
@@ -59,9 +44,8 @@ expected_stdout_1 = """
     B                               999999.999
 """
 
-@pytest.mark.version('>=2.5.8')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

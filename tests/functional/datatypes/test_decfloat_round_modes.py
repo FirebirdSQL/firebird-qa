@@ -1,36 +1,23 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decfloat_round_modes
-# title:        Check validity of different ROUNDING modes that are defined for DECFLOAT datatype.
-# decription:   
-#                   See CORE-5535 and doc\\sql.extensions\\README.data_types
-#               
-#                   Sample with results of diff. rounding modes: ibm.com/developerworks/ru/library/dm-0801chainani/
-#                   Sample for round(1608.90*5/100, 2):  sql.ru/forum/actualutils.aspx?action=gotomsg&tid=729836&msg=8243077
-#               
-#                   Results (24.05.2017):
-#                       FB40CS, build 4.0.0.651: OK, 2.640ss
-#                       FB40SC, build 4.0.0.651: OK, 1.469ss
-#                       FB40SS, build 4.0.0.651: OK, 1.312ss
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          decfloat.round-modes
+ISSUE:       5803
+JIRA:        CORE-5535
+TITLE:       Check validity of different ROUNDING modes that are defined for DECFLOAT datatype
+DESCRIPTION:
+  See  doc/sql.extensions/README.data_types
+
+  Sample with results of diff. rounding modes: ibm.com/developerworks/ru/library/dm-0801chainani/
+  Sample for round(1608.90*5/100, 2):  sql.ru/forum/actualutils.aspx?action=gotomsg&tid=729836&msg=8243077
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ ]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     /******
     round-mode	12.341	12.345	12.349 	12.355 	12.405 	-12.345
@@ -64,13 +51,13 @@ test_script_1 = """
     ;
     commit;
 
-    insert into test2( v1,     v2,     v3,     v4,     v5,      v6,        vc,   vp,     vd) 
+    insert into test2( v1,     v2,     v3,     v4,     v5,      v6,        vc,   vp,     vd)
                 values(12.341, 12.345, 12.349, 12.355, 12.405, -12.345,  1608.90, 5.00, 100.00);
     commit;
 
     recreate view v_test2 as
-    select 
-        round(v1, 2) r1, round(v2, 2) r2, round(v3, 2) r3, 
+    select
+        round(v1, 2) r1, round(v2, 2) r2, round(v3, 2) r3,
         round(v4, 2) r4, round(v5, 2) r5, round(v6, 2) r6,
         round( vx, 2) as rx,
         round( -vy, 2) as ry
@@ -102,9 +89,9 @@ test_script_1 = """
     select 'reround' as round_mode, v.* from v_test2 v; --   +80.44; -80.44
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ ]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ROUND_MODE ceiling
     R1 12.35
     R2 12.35
@@ -180,8 +167,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

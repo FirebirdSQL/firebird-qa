@@ -1,53 +1,42 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decfloat_binding_to_other_types
-# title:        Test ability for DECFLOAT values to be represented as other data types (char, double, bigint).
-# decription:   
-#                   See CORE-5535 and doc\\sql.extensions\\README.data_types:
-#                   ---
-#                   SET DECFLOAT BIND <bind-type> - controls how are DECFLOAT values represented in outer
-#                   world (i.e. in messages or in XSQLDA). Valid binding types are: NATIVE (use IEEE754
-#                   binary representation), CHAR/CHARACTER (use ASCII string), DOUBLE PRECISION (use
-#                   8-byte FP representation - same as used for DOUBLE PRECISION fields) or BIGINT
-#                   with possible comma-separated SCALE clause (i.e. 'BIGINT, 3').
-#                   ---
-#                   FB40SS, build 4.0.0.651: OK, 0.921s.
-#               
-#                   ::: NB ::::
-#                   Temply deferred check of "set decfloat bind bigint, 3" when value has at least one digit in floating part.
-#                   Also, one need to check case when we try to bind to BIGINT value that is too big for it (say, more than 19 digits).
-#                   Waiting for reply from Alex, letters 25.05.2017 21:12 & 21:22.
-#               
-#               
-#                   10.12.2019. Updated syntax for SET BIND command because it was changed in 11-nov-2019. 
-#                   Replaced 'bigint,3' with numeric(18,3) - can not specify scale using comma delimiter, i.e. ",3"
-#                   Checked on: WI-T4.0.0.1685.
-#               
-#                   27.12.2019. Updated expected_stdout after discuss with Alex: subtype now must be zero in all cases.
-#                   Checked on: WI-T4.0.0.1710.
-#               
-#                   25.06.2020, 4.0.0.2076: changed types in SQLDA from numeric to int128 // after discuss with Alex about CORE-6342.
-#                   01.07.2020, 4.0.0.2084: adjusted expected output ('subtype' values). Added SET BIND from decfloat to INT128.
-#                   Removed unnecessary lines from output and added substitution section for result to be properly filtered.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          decfloat.binding-to-other-types
+ISSUE:       5803
+JIRA:        CORE-5535
+TITLE:       Test ability for DECFLOAT values to be represented as other data types (char, double, bigint).
+DESCRIPTION:
+  See  doc/sql.extensions/README.data_types:
+
+  SET DECFLOAT BIND <bind-type> - controls how are DECFLOAT values represented in outer
+  world (i.e. in messages or in XSQLDA). Valid binding types are: NATIVE (use IEEE754
+  binary representation), CHAR/CHARACTER (use ASCII string), DOUBLE PRECISION (use
+  8-byte FP representation - same as used for DOUBLE PRECISION fields) or BIGINT
+  with possible comma-separated SCALE clause (i.e. 'BIGINT, 3').
+
+  ::: NB ::::
+  Temply deferred check of "set decfloat bind bigint, 3" when value has at least one digit in floating part.
+  Also, one need to check case when we try to bind to BIGINT value that is too big for it (say, more than 19 digits).
+  Waiting for reply from Alex, letters 25.05.2017 21:12 & 21:22.
+NOTES:
+[10.12.2019]
+  Updated syntax for SET BIND command because it was changed in 11-nov-2019.
+  Replaced 'bigint,3' with numeric(18,3) - can not specify scale using comma delimiter, i.e. ",3"
+[27.12.2019]
+  Updated expected_stdout after discuss with Alex: subtype now must be zero in all cases.
+[25.06.2020]
+  changed types in SQLDA from numeric to int128 // after discuss with Alex about CORE-6342.
+[01.07.2020]
+  adjusted expected output ('subtype' values). Added SET BIND from decfloat to INT128.
+  Removed unnecessary lines from output and added substitution section for result to be properly filtered.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!sqltype|DECFLOAT_TO_).)*$', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set sqlda_display on;
 
@@ -91,9 +80,10 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype|DECFLOAT_TO_).)*$', ''),
+                                                 ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 32752 INT128 scale: -4 subtype: 0 len: 16
     :  name: CONSTANT  alias: DECFLOAT_TO_CHAR
     DECFLOAT_TO_CHAR                          123456789012345678901234567890.1234
@@ -118,8 +108,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -3,6 +3,7 @@
 """
 ID:          dummy
 TITLE:       Dummy test
+DESCRIPTION:
 """
 
 import pytest

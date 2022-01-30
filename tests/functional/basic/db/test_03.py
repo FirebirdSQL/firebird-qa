@@ -1,27 +1,20 @@
 #coding:utf-8
-#
-# id:           functional.basic.db.03
-# title:        Empty DB - RDB$COLLATIONS
-# decription:   Check the correct content of RDB$COLLATIONS on empty DB.
-# tracker_id:
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         functional.basic.db.db_03
+
+"""
+ID:          new-database-03
+TITLE:       New DB - RDB$COLLATIONS
+DESCRIPTION: Check the correct content of RDB$COLLATIONS on new DB.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+substitutions = [('RDB\\$SPECIFIC_ATTRIBUTES.*', ''), ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', ''),
+                 ('COLL-VERSION=\\d+\\.\\d+', ''), ('RDB\\$SECURITY_CLASS[ ]+SQL\\$.*', '')]
 
-substitutions_1 = [('RDB\\$SPECIFIC_ATTRIBUTES.*', ''), ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', ''),
-                   ('COLL-VERSION=\\d+\\.\\d+', ''), ('RDB\\$SECURITY_CLASS[ ]+SQL\\$.*', '')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set blob all;
     set count on;
@@ -29,9 +22,9 @@ test_script_1 = """
     select * from rdb$collations order by rdb$collation_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
 
     RDB$COLLATION_NAME              ASCII
     RDB$COLLATION_ID                0
@@ -1837,8 +1830,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

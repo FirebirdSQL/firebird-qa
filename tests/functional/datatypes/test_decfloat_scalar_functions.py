@@ -1,41 +1,31 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.decfloat_scalar_functions
-# title:        Test common math functions that should work with DECFLOAT datatype.
-# decription:   
-#                   See CORE-5535 and doc\\sql.extensions\\README.data_types:
-#                   ---
-#                       A number of standard functions can be used with DECFLOAT datatype. It is:
-#                       ABS, CEILING, EXP, FLOOR, LN, LOG, LOG10, POWER, SIGN, SQRT.
-#                   ---
-#                   Checked on:
-#                   4.0.0.680: OK, 0.891s.
-#                   4.0.0.651: FAILED on SIGN() with:
-#                       Statement failed, SQLSTATE = 22003
-#                       Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
-#               
-#                   31.10.2019: adjusted output to recent FB version. Checked on 4.0.0.1635 SS: 0.917s.
-#                   26.06.2020: adjusted output to recent FB version. Checked on 4.0.0.2079, intermediate snapshot with timestamp = 26.06.2020 14:34.
-#                   21.08.2020: put literal numeric values into a table with DECFLOAT table; replaced UNIONED-code with separate statements. Checked on 4.0.0.2173
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          decfloat.scalar-functions
+ISSUE:       5803
+JIRA:        CORE-5535
+TITLE:       Test common math functions that should work with DECFLOAT datatype
+DESCRIPTION:
+  See  doc/sql.extensions/README.data_types
+    A number of standard functions can be used with DECFLOAT datatype. It is:
+    ABS, CEILING, EXP, FLOOR, LN, LOG, LOG10, POWER, SIGN, SQRT.
+NOTES:
+[31.10.2019]
+  adjusted output to recent FB version. Checked on 4.0.0.1635 SS: 0.917s.
+[26.06.2020]
+  adjusted output to recent FB version. Checked on 4.0.0.2079, intermediate snapshot with
+  timestamp = 26.06.2020 14:34.
+[21.08.2020]
+  put literal numeric values into a table with DECFLOAT table; replaced UNIONED-code with
+  separate statements. Checked on 4.0.0.2173
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table test(n1 decfloat);
@@ -82,9 +72,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ABS_X                                   123456789012345678901234567890.123
     CEILING_X                                  -123456789012345678901234567890
     FLOOR_X                                    -123456789012345678901234567891
@@ -111,8 +101,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

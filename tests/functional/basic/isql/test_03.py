@@ -1,31 +1,27 @@
 #coding:utf-8
-#
-# id:           functional.basic.isql.03
-# title:        SHOW SYSTEM parameters
-# decription:   Extend ISQL SHOW SYSTEM command to accept parameters TABLES, COLLATIONS and FUNCTIONS
-# tracker_id:   CORE-978
-# min_versions: []
-# versions:     3.0, 4.0, 5.0
-# qmid:         functional.basic.isql.isql_14
+
+"""
+ID:          isql-04
+ISSUE:       1383
+TITLE:       ISQL - SHOW SYSTEM parameters
+DESCRIPTION: Extend ISQL SHOW SYSTEM command to accept parameters TABLES, COLLATIONS and FUNCTIONS
+JIRA:        CORE-978
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [("'COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', ", ''), ("'COLL-VERSION=\\d+\\.\\d+', ", '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SHOW SYSTEM TABLES;
+test_script = """SHOW SYSTEM TABLES;
 SHOW SYSTEM COLLATIONS;
 SHOW SYSTEM FUNCTIONS;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[("'COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', ", ''),
+                                                 ("'COLL-VERSION=\\d+\\.\\d+', ", '')])
+
+# version: 3.0
 
 expected_stdout_1 = """
        MON$ATTACHMENTS                        MON$CALL_STACK
@@ -206,27 +202,12 @@ WIN_PTBR, CHARACTER SET WIN1252, PAD SPACE, CASE INSENSITIVE, ACCENT INSENSITIVE
 """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_1
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [("'COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', ", ''), ("'COLL-VERSION=\\d+\\.\\d+', ", '')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-test_script_2 = """
-    SHOW SYSTEM TABLES;
-    SHOW SYSTEM COLLATIONS;
-    SHOW SYSTEM FUNCTIONS;
-"""
-
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stdout_2 = """
     MON$ATTACHMENTS
@@ -436,27 +417,12 @@ expected_stdout_2 = """
 """
 
 @pytest.mark.version('>=4.0,<5.0')
-def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.execute()
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+def test_2(act: Action):
+    act.expected_stdout = expected_stdout_2
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
 # version: 5.0
-# resources: None
-
-substitutions_3 = [("'COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', ", ''), ("'COLL-VERSION=\\d+\\.\\d+', ", '')]
-
-init_script_3 = """"""
-
-db_3 = db_factory(sql_dialect=3, init=init_script_3)
-
-test_script_3 = """
-    SHOW SYSTEM TABLES;
-    SHOW SYSTEM COLLATIONS;
-    SHOW SYSTEM FUNCTIONS;
-"""
-
-act_3 = isql_act('db_3', test_script_3, substitutions=substitutions_3)
 
 expected_stdout_3 = """
     MON$ATTACHMENTS
@@ -667,8 +633,7 @@ expected_stdout_3 = """
 """
 
 @pytest.mark.version('>=5.0')
-def test_3(act_3: Action):
-    act_3.expected_stdout = expected_stdout_3
-    act_3.execute()
-    assert act_3.clean_stdout == act_3.clean_expected_stdout
-
+def test_3(act: Action):
+    act.expected_stdout = expected_stdout_3
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

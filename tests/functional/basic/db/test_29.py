@@ -1,43 +1,32 @@
 #coding:utf-8
-#
-# id:           functional.basic.db.29
-# title:        Empty DB - RDB$TRIGGERS
-# decription:   
-#                   Verify content of RDB$TRIGGERS in empty database.
-#                   Checked on:
-#                       2.5.9.27126: OK, 0.625s.
-#                       3.0.5.33086: OK, 1.156s.
-#                       4.0.0.1378: OK, 4.812s.
-#                
-# tracker_id:   
-# min_versions: ['2.5.7']
-# versions:     3.0, 4.0, 4.1
-# qmid:         functional.basic.db.db_29
+
+"""
+ID:          new-database-29
+TITLE:       New DB - RDB$TRIGGERS content
+DESCRIPTION: Check the correct content of RDB$TRIGGERS in new database.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('RDB\\$TRIGGER_BLR.*', ''), ('RDB\\$TRIGGER_NAME[\\s]+RDB\\$TRIGGER.*', 'RDB\\$TRIGGER_NAME RDB\\$TRIGGER')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set blob all;
     set count on;
     select * from rdb$triggers rt order by rt.rdb$trigger_name;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('RDB\\$TRIGGER_BLR.*', ''),
+                                                 ('RDB\\$TRIGGER_NAME[\\s]+RDB\\$TRIGGER.*',
+                                                  'RDB\\$TRIGGER_NAME RDB\\$TRIGGER')])
+
+# version: 3.0
 
 expected_stdout_1 = """
-    RDB$TRIGGER_NAME                RDB$TRIGGER_1                                                                                
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_1
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -55,8 +44,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_10                                                                               
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                     
+    RDB$TRIGGER_NAME                RDB$TRIGGER_10
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -210,8 +199,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_11                                                                               
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                     
+    RDB$TRIGGER_NAME                RDB$TRIGGER_11
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -333,8 +322,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_12                                                                               
-    RDB$RELATION_NAME               RDB$REF_CONSTRAINTS                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_12
+    RDB$RELATION_NAME               RDB$REF_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                1
     RDB$TRIGGER_SOURCE              <null>
@@ -389,8 +378,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_13                                                                               
-    RDB$RELATION_NAME               RDB$REF_CONSTRAINTS                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_13
+    RDB$RELATION_NAME               RDB$REF_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -410,8 +399,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_14                                                                               
-    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                        
+    RDB$TRIGGER_NAME                RDB$TRIGGER_14
+    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -431,8 +420,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_15                                                                               
-    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                        
+    RDB$TRIGGER_NAME                RDB$TRIGGER_15
+    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -462,8 +451,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_16                                                                               
-    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                        
+    RDB$TRIGGER_NAME                RDB$TRIGGER_16
+    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -535,8 +524,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_17                                                                               
-    RDB$RELATION_NAME               RDB$INDEX_SEGMENTS                                                                           
+    RDB$TRIGGER_NAME                RDB$TRIGGER_17
+    RDB$RELATION_NAME               RDB$INDEX_SEGMENTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -566,8 +555,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_18                                                                               
-    RDB$RELATION_NAME               RDB$INDEX_SEGMENTS                                                                           
+    RDB$TRIGGER_NAME                RDB$TRIGGER_18
+    RDB$RELATION_NAME               RDB$INDEX_SEGMENTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -611,8 +600,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_19                                                                               
-    RDB$RELATION_NAME               RDB$INDICES                                                                                  
+    RDB$TRIGGER_NAME                RDB$TRIGGER_19
+    RDB$RELATION_NAME               RDB$INDICES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -642,8 +631,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_2                                                                                
-    RDB$RELATION_NAME               RDB$TRIGGERS                                                                                 
+    RDB$TRIGGER_NAME                RDB$TRIGGER_2
+    RDB$RELATION_NAME               RDB$TRIGGERS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -666,8 +655,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_20                                                                               
-    RDB$RELATION_NAME               RDB$INDICES                                                                                  
+    RDB$TRIGGER_NAME                RDB$TRIGGER_20
+    RDB$RELATION_NAME               RDB$INDICES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -797,8 +786,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_21                                                                               
-    RDB$RELATION_NAME               RDB$TRIGGERS                                                                                 
+    RDB$TRIGGER_NAME                RDB$TRIGGER_21
+    RDB$RELATION_NAME               RDB$TRIGGERS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -837,8 +826,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_22                                                                               
-    RDB$RELATION_NAME               RDB$TRIGGERS                                                                                 
+    RDB$TRIGGER_NAME                RDB$TRIGGER_22
+    RDB$RELATION_NAME               RDB$TRIGGERS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -917,8 +906,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_23                                                                               
-    RDB$RELATION_NAME               RDB$RELATION_FIELDS                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_23
+    RDB$RELATION_NAME               RDB$RELATION_FIELDS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -1043,8 +1032,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_24                                                                               
-    RDB$RELATION_NAME               RDB$RELATION_FIELDS                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_24
+    RDB$RELATION_NAME               RDB$RELATION_FIELDS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -1106,8 +1095,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_25                                                                               
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                     
+    RDB$TRIGGER_NAME                RDB$TRIGGER_25
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -1127,8 +1116,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_26                                                                               
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                     
+    RDB$TRIGGER_NAME                RDB$TRIGGER_26
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                1
     RDB$TRIGGER_SOURCE              <null>
@@ -1207,8 +1196,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_27                                                                               
-    RDB$RELATION_NAME               RDB$RELATION_FIELDS                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_27
+    RDB$RELATION_NAME               RDB$RELATION_FIELDS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -1252,8 +1241,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_3                                                                                
-    RDB$RELATION_NAME               RDB$TRIGGERS                                                                                 
+    RDB$TRIGGER_NAME                RDB$TRIGGER_3
+    RDB$RELATION_NAME               RDB$TRIGGERS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -1276,8 +1265,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_31                                                                               
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_31
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -1348,8 +1337,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_32                                                                               
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_32
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -1420,8 +1409,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_33                                                                               
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_33
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                1
     RDB$TRIGGER_SOURCE              <null>
@@ -1492,8 +1481,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_34                                                                               
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                     
+    RDB$TRIGGER_NAME                RDB$TRIGGER_34
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -1541,8 +1530,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_35                                                                               
-    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                        
+    RDB$TRIGGER_NAME                RDB$TRIGGER_35
+    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -1581,8 +1570,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_36                                                                               
-    RDB$RELATION_NAME               RDB$FIELDS                                                                                   
+    RDB$TRIGGER_NAME                RDB$TRIGGER_36
+    RDB$RELATION_NAME               RDB$FIELDS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -1649,8 +1638,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_8                                                                                
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_8
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -1710,8 +1699,8 @@ expected_stdout_1 = """
     RDB$ENGINE_NAME                 <null>
     RDB$ENTRYPOINT                  <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_9                                                                                
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_9
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                1
     RDB$TRIGGER_SOURCE              <null>
@@ -2397,32 +2386,16 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0,<4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_1
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('RDB\\$TRIGGER_BLR.*', ''), ('RDB\\$TRIGGER_NAME[\\s]+RDB\\$TRIGGER.*', 'RDB\\$TRIGGER_NAME RDB\\$TRIGGER')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-test_script_2 = """
-    set list on;
-    set blob all;
-    set count on;
-    select * from rdb$triggers rt order by rt.rdb$trigger_name;
-"""
-
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stdout_2 = """
-    RDB$TRIGGER_NAME                RDB$TRIGGER_1                                                                                                                                                                                                                                               
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_1
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -2441,8 +2414,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_10                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+    RDB$TRIGGER_NAME                RDB$TRIGGER_10
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -2597,8 +2570,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_11                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+    RDB$TRIGGER_NAME                RDB$TRIGGER_11
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -2721,8 +2694,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_12                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$REF_CONSTRAINTS                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_12
+    RDB$RELATION_NAME               RDB$REF_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                1
     RDB$TRIGGER_SOURCE              <null>
@@ -2778,8 +2751,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_13                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$REF_CONSTRAINTS                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_13
+    RDB$RELATION_NAME               RDB$REF_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -2800,8 +2773,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_14                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                                                                                                                                                                                       
+    RDB$TRIGGER_NAME                RDB$TRIGGER_14
+    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -2837,8 +2810,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_15                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                                                                                                                                                                                       
+    RDB$TRIGGER_NAME                RDB$TRIGGER_15
+    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -2869,8 +2842,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_16                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                                                                                                                                                                                       
+    RDB$TRIGGER_NAME                RDB$TRIGGER_16
+    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -2943,8 +2916,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_17                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$INDEX_SEGMENTS                                                                                                                                                                                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_17
+    RDB$RELATION_NAME               RDB$INDEX_SEGMENTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -2975,8 +2948,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_18                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$INDEX_SEGMENTS                                                                                                                                                                                                                                          
+    RDB$TRIGGER_NAME                RDB$TRIGGER_18
+    RDB$RELATION_NAME               RDB$INDEX_SEGMENTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -3021,8 +2994,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_19                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$INDICES                                                                                                                                                                                                                                                 
+    RDB$TRIGGER_NAME                RDB$TRIGGER_19
+    RDB$RELATION_NAME               RDB$INDICES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -3053,8 +3026,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_2                                                                                                                                                                                                                                               
-    RDB$RELATION_NAME               RDB$TRIGGERS                                                                                                                                                                                                                                                
+    RDB$TRIGGER_NAME                RDB$TRIGGER_2
+    RDB$RELATION_NAME               RDB$TRIGGERS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -3078,8 +3051,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_20                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$INDICES                                                                                                                                                                                                                                                 
+    RDB$TRIGGER_NAME                RDB$TRIGGER_20
+    RDB$RELATION_NAME               RDB$INDICES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -3210,8 +3183,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_21                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$TRIGGERS                                                                                                                                                                                                                                                
+    RDB$TRIGGER_NAME                RDB$TRIGGER_21
+    RDB$RELATION_NAME               RDB$TRIGGERS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -3251,8 +3224,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_22                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$TRIGGERS                                                                                                                                                                                                                                                
+    RDB$TRIGGER_NAME                RDB$TRIGGER_22
+    RDB$RELATION_NAME               RDB$TRIGGERS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -3332,8 +3305,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_23                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$RELATION_FIELDS                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_23
+    RDB$RELATION_NAME               RDB$RELATION_FIELDS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -3459,8 +3432,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_24                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$RELATION_FIELDS                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_24
+    RDB$RELATION_NAME               RDB$RELATION_FIELDS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -3523,8 +3496,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_25                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+    RDB$TRIGGER_NAME                RDB$TRIGGER_25
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -3545,8 +3518,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_26                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+    RDB$TRIGGER_NAME                RDB$TRIGGER_26
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                1
     RDB$TRIGGER_SOURCE              <null>
@@ -3626,8 +3599,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_27                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$RELATION_FIELDS                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_27
+    RDB$RELATION_NAME               RDB$RELATION_FIELDS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -3672,8 +3645,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_3                                                                                                                                                                                                                                               
-    RDB$RELATION_NAME               RDB$TRIGGERS                                                                                                                                                                                                                                                
+    RDB$TRIGGER_NAME                RDB$TRIGGER_3
+    RDB$RELATION_NAME               RDB$TRIGGERS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -3697,8 +3670,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_31                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_31
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -3753,8 +3726,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_32                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_32
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -3809,8 +3782,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_33                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_33
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                1
     RDB$TRIGGER_SOURCE              <null>
@@ -3865,8 +3838,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_34                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+    RDB$TRIGGER_NAME                RDB$TRIGGER_34
+    RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -3915,8 +3888,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_35                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                                                                                                                                                                                       
+    RDB$TRIGGER_NAME                RDB$TRIGGER_35
+    RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                6
     RDB$TRIGGER_SOURCE              <null>
@@ -3956,8 +3929,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_36                                                                                                                                                                                                                                              
-    RDB$RELATION_NAME               RDB$FIELDS                                                                                                                                                                                                                                                  
+    RDB$TRIGGER_NAME                RDB$TRIGGER_36
+    RDB$RELATION_NAME               RDB$FIELDS
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                3
     RDB$TRIGGER_SOURCE              <null>
@@ -4025,8 +3998,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_8                                                                                                                                                                                                                                               
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_8
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                5
     RDB$TRIGGER_SOURCE              <null>
@@ -4087,8 +4060,8 @@ expected_stdout_2 = """
     RDB$ENTRYPOINT                  <null>
     RDB$SQL_SECURITY                <null>
 
-    RDB$TRIGGER_NAME                RDB$TRIGGER_9                                                                                                                                                                                                                                               
-    RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                                                                                                                                                                                         
+    RDB$TRIGGER_NAME                RDB$TRIGGER_9
+    RDB$RELATION_NAME               RDB$USER_PRIVILEGES
     RDB$TRIGGER_SEQUENCE            0
     RDB$TRIGGER_TYPE                1
     RDB$TRIGGER_SOURCE              <null>
@@ -4307,7 +4280,7 @@ expected_stdout_2 = """
             	                                    blr_literal, blr_long, 0, 1,0,0,0,
             	                           blr_field, 15, 18, 'R','D','B','$','S','E','C','U','R','I','T','Y','_','C','L','A','S','S',
             	                        blr_end,
-            	
+
             	           blr_if,
             	                     blr_not,
             	                        blr_starting,
@@ -4485,34 +4458,18 @@ expected_stdout_2 = """
     Records affected: 29
 """
 
-@pytest.mark.version('>=4.0,<4.1')
-def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.execute()
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+@pytest.mark.version('>=4.0,<5.0')
+def test_2(act: Action):
+    act.expected_stdout = expected_stdout_2
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
 
-# version: 4.1
-# resources: None
-
-substitutions_3 = [('RDB\\$TRIGGER_BLR.*', ''), ('RDB\\$TRIGGER_NAME[\\s]+RDB\\$TRIGGER.*', 'RDB\\$TRIGGER_NAME RDB\\$TRIGGER')]
-
-init_script_3 = """"""
-
-db_3 = db_factory(sql_dialect=3, init=init_script_3)
-
-test_script_3 = """
-    set list on;
-    set blob all;
-    set count on;
-    select * from rdb$triggers rt order by rt.rdb$trigger_name;
-"""
-
-act_3 = isql_act('db_3', test_script_3, substitutions=substitutions_3)
+# version: 5.0
 
 expected_stdout_3 = """
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_1                                                                                                                                                                                                                                               
-RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                                                                                                                                                                                         
+RDB$TRIGGER_NAME                RDB$TRIGGER_1
+RDB$RELATION_NAME               RDB$USER_PRIVILEGES
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -4531,8 +4488,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_10                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+RDB$TRIGGER_NAME                RDB$TRIGGER_10
+RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                5
 RDB$TRIGGER_SOURCE              <null>
@@ -4687,8 +4644,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_11                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+RDB$TRIGGER_NAME                RDB$TRIGGER_11
+RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                6
 RDB$TRIGGER_SOURCE              <null>
@@ -4811,8 +4768,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_12                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$REF_CONSTRAINTS                                                                                                                                                                                                                                         
+RDB$TRIGGER_NAME                RDB$TRIGGER_12
+RDB$RELATION_NAME               RDB$REF_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                1
 RDB$TRIGGER_SOURCE              <null>
@@ -4868,8 +4825,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_13                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$REF_CONSTRAINTS                                                                                                                                                                                                                                         
+RDB$TRIGGER_NAME                RDB$TRIGGER_13
+RDB$RELATION_NAME               RDB$REF_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -4890,8 +4847,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_14                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                                                                                                                                                                                       
+RDB$TRIGGER_NAME                RDB$TRIGGER_14
+RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -4927,8 +4884,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_15                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                                                                                                                                                                                       
+RDB$TRIGGER_NAME                RDB$TRIGGER_15
+RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                5
 RDB$TRIGGER_SOURCE              <null>
@@ -4959,8 +4916,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_16                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                                                                                                                                                                                       
+RDB$TRIGGER_NAME                RDB$TRIGGER_16
+RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                6
 RDB$TRIGGER_SOURCE              <null>
@@ -5033,8 +4990,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_17                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$INDEX_SEGMENTS                                                                                                                                                                                                                                          
+RDB$TRIGGER_NAME                RDB$TRIGGER_17
+RDB$RELATION_NAME               RDB$INDEX_SEGMENTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                5
 RDB$TRIGGER_SOURCE              <null>
@@ -5065,8 +5022,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_18                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$INDEX_SEGMENTS                                                                                                                                                                                                                                          
+RDB$TRIGGER_NAME                RDB$TRIGGER_18
+RDB$RELATION_NAME               RDB$INDEX_SEGMENTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -5111,8 +5068,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_19                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$INDICES                                                                                                                                                                                                                                                 
+RDB$TRIGGER_NAME                RDB$TRIGGER_19
+RDB$RELATION_NAME               RDB$INDICES
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                5
 RDB$TRIGGER_SOURCE              <null>
@@ -5143,8 +5100,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_2                                                                                                                                                                                                                                               
-RDB$RELATION_NAME               RDB$TRIGGERS                                                                                                                                                                                                                                                
+RDB$TRIGGER_NAME                RDB$TRIGGER_2
+RDB$RELATION_NAME               RDB$TRIGGERS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -5168,8 +5125,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_20                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$INDICES                                                                                                                                                                                                                                                 
+RDB$TRIGGER_NAME                RDB$TRIGGER_20
+RDB$RELATION_NAME               RDB$INDICES
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -5300,8 +5257,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_21                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$TRIGGERS                                                                                                                                                                                                                                                
+RDB$TRIGGER_NAME                RDB$TRIGGER_21
+RDB$RELATION_NAME               RDB$TRIGGERS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                5
 RDB$TRIGGER_SOURCE              <null>
@@ -5341,8 +5298,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_22                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$TRIGGERS                                                                                                                                                                                                                                                
+RDB$TRIGGER_NAME                RDB$TRIGGER_22
+RDB$RELATION_NAME               RDB$TRIGGERS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -5422,8 +5379,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_23                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$RELATION_FIELDS                                                                                                                                                                                                                                         
+RDB$TRIGGER_NAME                RDB$TRIGGER_23
+RDB$RELATION_NAME               RDB$RELATION_FIELDS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                5
 RDB$TRIGGER_SOURCE              <null>
@@ -5549,8 +5506,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_24                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$RELATION_FIELDS                                                                                                                                                                                                                                         
+RDB$TRIGGER_NAME                RDB$TRIGGER_24
+RDB$RELATION_NAME               RDB$RELATION_FIELDS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -5613,8 +5570,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_25                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+RDB$TRIGGER_NAME                RDB$TRIGGER_25
+RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -5635,8 +5592,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_26                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+RDB$TRIGGER_NAME                RDB$TRIGGER_26
+RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                1
 RDB$TRIGGER_SOURCE              <null>
@@ -5716,8 +5673,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_27                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$RELATION_FIELDS                                                                                                                                                                                                                                         
+RDB$TRIGGER_NAME                RDB$TRIGGER_27
+RDB$RELATION_NAME               RDB$RELATION_FIELDS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                6
 RDB$TRIGGER_SOURCE              <null>
@@ -5762,8 +5719,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_3                                                                                                                                                                                                                                               
-RDB$RELATION_NAME               RDB$TRIGGERS                                                                                                                                                                                                                                                
+RDB$TRIGGER_NAME                RDB$TRIGGER_3
+RDB$RELATION_NAME               RDB$TRIGGERS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                5
 RDB$TRIGGER_SOURCE              <null>
@@ -5787,8 +5744,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_34                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS                                                                                                                                                                                                                                    
+RDB$TRIGGER_NAME                RDB$TRIGGER_34
+RDB$RELATION_NAME               RDB$RELATION_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                6
 RDB$TRIGGER_SOURCE              <null>
@@ -5837,8 +5794,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_35                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS                                                                                                                                                                                                                                       
+RDB$TRIGGER_NAME                RDB$TRIGGER_35
+RDB$RELATION_NAME               RDB$CHECK_CONSTRAINTS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                6
 RDB$TRIGGER_SOURCE              <null>
@@ -5878,8 +5835,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_36                                                                                                                                                                                                                                              
-RDB$RELATION_NAME               RDB$FIELDS                                                                                                                                                                                                                                                  
+RDB$TRIGGER_NAME                RDB$TRIGGER_36
+RDB$RELATION_NAME               RDB$FIELDS
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                3
 RDB$TRIGGER_SOURCE              <null>
@@ -5947,8 +5904,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_8                                                                                                                                                                                                                                               
-RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                                                                                                                                                                                         
+RDB$TRIGGER_NAME                RDB$TRIGGER_8
+RDB$RELATION_NAME               RDB$USER_PRIVILEGES
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                5
 RDB$TRIGGER_SOURCE              <null>
@@ -6009,8 +5966,8 @@ RDB$ENGINE_NAME                 <null>
 RDB$ENTRYPOINT                  <null>
 RDB$SQL_SECURITY                <null>
 
-RDB$TRIGGER_NAME                RDB$TRIGGER_9                                                                                                                                                                                                                                               
-RDB$RELATION_NAME               RDB$USER_PRIVILEGES                                                                                                                                                                                                                                         
+RDB$TRIGGER_NAME                RDB$TRIGGER_9
+RDB$RELATION_NAME               RDB$USER_PRIVILEGES
 RDB$TRIGGER_SEQUENCE            0
 RDB$TRIGGER_TYPE                1
 RDB$TRIGGER_SOURCE              <null>
@@ -6229,7 +6186,7 @@ RDB$TRIGGER_BLR                 c:2
         	                                    blr_literal, blr_long, 0, 1,0,0,0,
         	                           blr_field, 15, 18, 'R','D','B','$','S','E','C','U','R','I','T','Y','_','C','L','A','S','S',
         	                        blr_end,
-        	
+
         	           blr_if,
         	                     blr_not,
         	                        blr_starting,
@@ -6408,9 +6365,8 @@ Records affected: 26
 
 """
 
-@pytest.mark.version('>=4.1')
-def test_3(act_3: Action):
-    act_3.expected_stdout = expected_stdout_3
-    act_3.execute()
-    assert act_3.clean_stdout == act_3.clean_expected_stdout
-
+@pytest.mark.version('>=5.0')
+def test_3(act: Action):
+    act.expected_stdout = expected_stdout_3
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

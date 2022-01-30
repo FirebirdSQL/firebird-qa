@@ -1,39 +1,27 @@
 #coding:utf-8
-#
-# id:           functional.datatypes.int128_math_functions
-# title:        Basic test for math functions against INT128 datatype
-# decription:   
-#                   Test verifies https://github.com/FirebirdSQL/firebird/commit/57551c3bc0f348306ac10917cb4cc862886c88c5
-#                   (Postfix for CORE-6344 - fixed ROUND() & TRUNC()).
-#               
-#                   Also it checks result of all other math functions that can be applied to boundary values of INT128 datatype.
-#                   This .fbt is used instead of separate test for CORE-6344 in order to verify all math-functions to in one file.
-#                   
-#                   ::: NB :::
-#               
-#                   Some expression still can not be evaluated and produce errors - they are commented (see "deferred" here).
-#                   See notes in http://tracker.firebirdsql.org/browse/CORE-6344
-#               
-#                   Checked on 4.0.0.2089, intermediate snapshot with timestamp: 06-jun-2020 14:05.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          int128.math-functions
+ISSUE:       6585
+JIRA:        CORE-6344
+TITLE:       Basic test for math functions against INT128 datatype
+DESCRIPTION:
+  Test verifies https://github.com/FirebirdSQL/firebird/commit/57551c3bc0f348306ac10917cb4cc862886c88c5
+  (Postfix for #6585 - fixed ROUND() & TRUNC()).
+
+  Also it checks result of all other math functions that can be applied to boundary values of INT128 datatype.
+  This test is used instead of separate test for #6585 in order to verify all math-functions to in one file.
+
+  Some expression still can not be evaluated and produce errors - they are commented (see "deferred" here).
+  See notes in https://github.com/FirebirdSQL/firebird/issues/6585
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table test(i128_least int128 , i128_great int128);
@@ -76,7 +64,7 @@ test_script_1 = """
 
     select round(170141183460469231731687303715884105727,0) from rdb$database;
 
-    /* 
+    /*
     deferred: currently these all fail:
     select round(170141183460469231731687303715884105727,1) from rdb$database;
     select round(-170141183460469231731687303715884105728,0) from rdb$database;
@@ -114,9 +102,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MATH_DIVISION                                                              -1
     MATH_ADDITION                                                              -1
     MATH_MOD_A                                                                 -1
@@ -146,8 +134,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
