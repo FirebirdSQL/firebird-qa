@@ -3,12 +3,14 @@
 """
 ID:          issue-5525
 ISSUE:       5525
-TITLE:       String truncation error while selecting from MON$ tables if some user-defined context variable exceeds 255 bytes in length
+TITLE:       String truncation error while selecting from MON$ tables if some user-defined
+  context variable exceeds 255 bytes in length
 DESCRIPTION:
   More description see here:
   https://github.com/FirebirdSQL/firebird/commit/373c4599d3f2be06ea9d239a25e18248c8d38a64
   See also: #6492
 JIRA:        CORE-5246
+FBTEST:      bugs.core_5246
 """
 
 import pytest

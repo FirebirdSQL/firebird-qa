@@ -6,6 +6,7 @@ ISSUE:       6357
 TITLE:       Regression: FB3 throws "Datatypes are not comparable in expression" in procedure parameters
 DESCRIPTION:
 JIRA:        CORE-6108
+FBTEST:      bugs.core_6108
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5014
 TITLE:       ISQL pads blob columns wrongly when the column alias has more than 17 characters
 DESCRIPTION:
 JIRA:        CORE-4706
+FBTEST:      bugs.core_4706
 """
 
 import pytest

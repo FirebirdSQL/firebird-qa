@@ -1,12 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.core_3296
-# title:        Error "context already in use" for the simple case function with a sub-select operand
-# decription:
-# tracker_id:   CORE-3296
-# min_versions: ['2.1.5']
-# versions:     2.1.5
-# qmid:         None
 
 """
 ID:          issue-1298
@@ -14,6 +6,7 @@ ISSUE:       1298
 TITLE:       Error "context already in use" for the simple case function with a sub-select operand
 DESCRIPTION:
 JIRA:        CORE-3296
+FBTEST:      bugs.core_3296
 """
 
 import pytest

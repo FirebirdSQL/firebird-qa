@@ -6,6 +6,7 @@ ISSUE:       1362
 TITLE:       GSTAT does not work using the localhost connection string
 DESCRIPTION:
 JIRA:        CORE-959
+FBTEST:      bugs.core_0959
 """
 
 import pytest

@@ -10,6 +10,7 @@ NOTES:
   changed SET BIND argument from numeric(38) to INT128, adjusted output
   (letter from Alex, 25.06.2020 17:56; needed after discuss CORE-6342).
 JIRA:        CORE-6206
+FBTEST:      bugs.core_6206
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4471
 TITLE:       Error "context already in use (BLR error)" when preparing a query with UNION
 DESCRIPTION:
 JIRA:        CORE-4144
+FBTEST:      bugs.core_4144
 """
 
 import pytest

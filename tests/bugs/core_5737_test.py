@@ -16,6 +16,7 @@ DESCRIPTION:
 
   Confirmed bug on 3.0.3.32837 and 4.0.0.800 (ISQL did hang when issued any of 'SHOW TABLE' / 'SHOW INDEX' copmmand).
 JIRA:        CORE-5737
+FBTEST:      bugs.core_5737
 """
 
 import pytest

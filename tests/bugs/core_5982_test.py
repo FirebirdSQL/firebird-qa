@@ -6,6 +6,7 @@ ISSUE:       6234
 TITLE:       error read permission for BLOB field, when it is input/output procedure`s parametr
 DESCRIPTION:
 JIRA:        CORE-5982
+FBTEST:      bugs.core_5982
 """
 
 import pytest

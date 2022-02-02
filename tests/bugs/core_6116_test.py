@@ -3,7 +3,8 @@
 """
 ID:          issue-6365
 ISSUE:       6365
-TITLE:       The Metadata script extracted using ISQL of a database restored from a Firebird 2.5.9 Backup is invalid/incorrect when table has COMPUTED BY field
+TITLE:       The Metadata script extracted using ISQL of a database restored from a Firebird
+  2.5.9 Backup is invalid/incorrect when table has COMPUTED BY field
 DESCRIPTION:
   Test uses backup of preliminary created database in FB 2.5.9, DDL is the same as in the ticket.
   This .fbk is restored and we launch ISQL -X in order to get metadata. Then we check that two
@@ -13,6 +14,7 @@ DESCRIPTION:
   2) line with ALTER COLUMN statement:
      ALTER FULL_NAME TYPE VARCHAR(100) ... COMPUTED BY ...
 JIRA:        CORE-6116
+FBTEST:      bugs.core_6116
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3578
 TITLE:       Constraint violation error of CAST is not raised inside views
 DESCRIPTION:
 JIRA:        CORE-3204
+FBTEST:      bugs.core_3204
 """
 
 import pytest

@@ -13,6 +13,7 @@ NOTES:
   Discussed with hvlad and dimitr, letters since 21.12.2020 08:59
   See CORE-6460 and fix: https://github.com/FirebirdSQL/firebird/commit/964438507cacdfa192b8140ca3f1a2df340d511d
 JIRA:        CORE-5346
+FBTEST:      bugs.core_5346
 """
 
 import pytest

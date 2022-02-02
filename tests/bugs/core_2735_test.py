@@ -6,6 +6,7 @@ ISSUE:       3130
 TITLE:       isql hangs when trying to show a view based on a procedure
 DESCRIPTION:
 JIRA:        CORE-2735
+FBTEST:      bugs.core_2735
 """
 
 import pytest

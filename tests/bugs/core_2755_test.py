@@ -6,6 +6,7 @@ ISSUE:       3149
 TITLE:       SIMILAR TO works wrongly
 DESCRIPTION:
 JIRA:        CORE-2755
+FBTEST:      bugs.core_2755
 """
 
 import pytest

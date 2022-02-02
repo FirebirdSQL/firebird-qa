@@ -6,6 +6,7 @@ ISSUE:       4817
 TITLE:       FB 3.0 crashes when getting an explained plan for a DBKEY based retrieval
 DESCRIPTION:
 JIRA:        CORE-4498
+FBTEST:      bugs.core_4498
 """
 
 import pytest

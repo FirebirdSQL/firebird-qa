@@ -6,6 +6,7 @@ ISSUE:       2871
 TITLE:       UNICODE_CI internal gds software consistency check
 DESCRIPTION:
 JIRA:        CORE-2457
+FBTEST:      bugs.core_2457
 """
 
 import pytest

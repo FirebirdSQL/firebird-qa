@@ -6,6 +6,7 @@ ISSUE:       2643
 TITLE:       GROUP BY concatenation with empty string
 DESCRIPTION:
 JIRA:        CORE-2215
+FBTEST:      bugs.core_2215
 """
 
 import pytest

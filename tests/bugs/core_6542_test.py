@@ -53,6 +53,7 @@ DESCRIPTION:
         lpad()/rpad():       0.73
   =================
 JIRA:        CORE-6542
+FBTEST:      bugs.core_6542
 """
 
 import pytest

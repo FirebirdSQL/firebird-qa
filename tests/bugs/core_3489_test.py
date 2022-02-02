@@ -6,6 +6,7 @@ ISSUE:       3848
 TITLE:       Blob transliteration may not happen inside the union
 DESCRIPTION:
 JIRA:        CORE-3489
+FBTEST:      bugs.core_3489
 """
 
 import pytest

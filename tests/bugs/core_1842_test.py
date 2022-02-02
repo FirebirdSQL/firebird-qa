@@ -6,6 +6,7 @@ ISSUE:       2271
 TITLE:       DEFAULT values are unnecessary evaluated
 DESCRIPTION:
 JIRA:        CORE-1842
+FBTEST:      bugs.core_1842
 """
 
 import pytest

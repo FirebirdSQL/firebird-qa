@@ -3,9 +3,11 @@
 """
 ID:          issue-5349
 ISSUE:       5349
-TITLE:       CHAR_TO_UUID on column with index throws expression evaluation not supported Human readable UUID argument for CHAR_TO_UUID must be of exact length 36
+TITLE:       CHAR_TO_UUID on column with index throws expression evaluation not supported
+  Human readable UUID argument for CHAR_TO_UUID must be of exact length 36
 DESCRIPTION:
 JIRA:        CORE-5062
+FBTEST:      bugs.core_5062
 """
 
 import pytest

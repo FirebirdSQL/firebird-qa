@@ -13,6 +13,7 @@ DESCRIPTION:
   Confirmed problem on 4.0.0.1633: ISQL crashed when performing script which contains DDL with non-ascii names
   of  max allowed len (63 characters).
 JIRA:        CORE-6166
+FBTEST:      bugs.core_6166
 """
 
 import pytest

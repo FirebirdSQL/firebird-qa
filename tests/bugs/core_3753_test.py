@@ -6,6 +6,7 @@ ISSUE:       4097
 TITLE:       The trigger together with the operator MERGE if in a condition of connection ON contains new is not compiled
 DESCRIPTION:
 JIRA:        CORE-3753
+FBTEST:      bugs.core_3753
 """
 
 import pytest

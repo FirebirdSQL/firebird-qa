@@ -10,6 +10,7 @@ NOTES:
   doc\\sql.extensions\\README.similar_to.txt:
   Since FB 4 the repeat factor low/high values could not be greater than 1000.
 JIRA:        CORE-5854
+FBTEST:      bugs.core_5854
 """
 
 import pytest

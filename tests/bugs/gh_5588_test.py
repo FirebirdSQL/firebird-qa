@@ -6,6 +6,7 @@ ISSUE:       5588
 TITLE:       upport full SQL standard binary string literal syntax
 DESCRIPTION:
 JIRA:        CORE-5311
+FBTEST:      bugs.gh_5588
 """
 
 import pytest

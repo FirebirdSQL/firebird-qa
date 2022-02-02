@@ -6,6 +6,7 @@ ISSUE:       4330
 TITLE:       Parametrized execute statement fails
 DESCRIPTION:
 JIRA:        CORE-3998
+FBTEST:      bugs.core_3998
 """
 
 import pytest

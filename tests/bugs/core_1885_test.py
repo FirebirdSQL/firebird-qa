@@ -11,6 +11,7 @@ NOTES:
   it FAIL unless newer ICU (63) is installed. Hence as this issue was POSIX-only,
   we'll not run it on Windows.
 JIRA:        CORE-1885
+FBTEST:      bugs.core_1885
 """
 
 import pytest

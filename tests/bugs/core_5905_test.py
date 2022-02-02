@@ -18,6 +18,7 @@ DESCRIPTION:
   Confirmed inconsistence output on: 3.0.4.32972, 4.0.0.875 and 4.0.0.1172
   (4.x - output phrase "UDF THE_FRAC" instead of "Function THE_FRAC" on attempt to drop function).
 JIRA:        CORE-5905
+FBTEST:      bugs.core_5905
 """
 
 import pytest

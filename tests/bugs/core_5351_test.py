@@ -11,6 +11,7 @@ NOTES:
   to operate with usual PSQL fcuntion (rather than UDF).
   Thus test nothing has to do with UDF or UDR.
 JIRA:        CORE-5351
+FBTEST:      bugs.core_5351
 """
 
 import pytest

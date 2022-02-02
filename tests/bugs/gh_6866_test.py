@@ -8,6 +8,7 @@ DESCRIPTION:
   Code for 3.0.8 was separated from 4.x+: there is no 'sql security definer|invoker' clause before FB 4.x.
   Only procedures, functions and packages are checked here.
   More checks (for all other kinds of DB objects: tables, views etc) will be done in the test for GH-6868.
+FBTEST:      bugs.gh_6866
 """
 
 import pytest

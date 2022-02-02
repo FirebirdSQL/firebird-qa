@@ -6,6 +6,7 @@ ISSUE:       4698
 TITLE:       Preparation of erroneous DDL statement does not show the main command failed
 DESCRIPTION:
 JIRA:        CORE-4376
+FBTEST:      bugs.core_4376
 """
 
 import pytest

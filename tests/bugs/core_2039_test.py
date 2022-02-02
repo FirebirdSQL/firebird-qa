@@ -6,6 +6,7 @@ ISSUE:       2476
 TITLE:       Domain-level CHECK constraints wrongly process NULL values
 DESCRIPTION:
 JIRA:        CORE-2039
+FBTEST:      bugs.core_2039
 """
 
 import pytest

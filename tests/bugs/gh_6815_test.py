@@ -10,6 +10,7 @@ DESCRIPTION:
 
   Interruption of fetching process by client (and check number of affected rows) is NOT verified:
   separate test will be made later (see ticket, comment by Adriano, date: 15-JUL-2021).
+FBTEST:      bugs.gh_6815
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3389
 TITLE:       Add attachment's CHARACTER SET name into corresponding trace records
 DESCRIPTION:
 JIRA:        CORE-3008
+FBTEST:      bugs.core_3008
 """
 
 import pytest

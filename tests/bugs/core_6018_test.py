@@ -3,7 +3,8 @@
 """
 ID:          issue-6268
 ISSUE:       6268
-TITLE:       Make it possible to start multiple transactions (possibly in different attachments) using the same initial transaction snapshot
+TITLE:       Make it possible to start multiple transactions (possibly in different attachments)
+  using the same initial transaction snapshot
 DESCRIPTION:
   We open first connect using FDB and set custom transaction parameter block which is used to start SNAPSHOT transaction.
   Within this first transaction (tx1a) we insert into test table record with value = -2 and commit this Tx.
@@ -22,6 +23,7 @@ DESCRIPTION:
     Statement failed, SQLSTATE = 0B000
     Transaction's base snapshot number does not exist
 JIRA:        CORE-6018
+FBTEST:      bugs.core_6018
 """
 
 import pytest

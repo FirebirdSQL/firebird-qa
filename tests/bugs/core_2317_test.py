@@ -6,6 +6,7 @@ ISSUE:       2741
 TITLE:       select * from (select cast(.... returns null
 DESCRIPTION:
 JIRA:        CORE-2317
+FBTEST:      bugs.core_2317
 """
 
 import pytest

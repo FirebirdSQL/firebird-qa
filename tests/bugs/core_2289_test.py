@@ -6,6 +6,7 @@ ISSUE:       2714
 TITLE:       Wrong (primary) constraint name is reported for the foreign key violation during FK creation
 DESCRIPTION:
 JIRA:        CORE-2289
+FBTEST:      bugs.core_2289
 """
 
 import pytest

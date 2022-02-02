@@ -6,6 +6,7 @@ ISSUE:       3118
 TITLE:       Storage of malformed blob is allowed when copying from a blob with NONE/OCTETS charset
 DESCRIPTION:
 JIRA:        CORE-2722
+FBTEST:      bugs.core_2722
 """
 
 import pytest

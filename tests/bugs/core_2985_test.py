@@ -6,6 +6,7 @@ ISSUE:       3367
 TITLE:       The new 2.5 feature to alter COMPUTED columns doesn't handle dependencies well
 DESCRIPTION:
 JIRA:        CORE-2985
+FBTEST:      bugs.core_2985
 """
 
 import pytest

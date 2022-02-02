@@ -9,6 +9,7 @@ NOTES:
 Ortiginal test:
 https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_28.script
 JIRA:        CORE-185
+FBTEST:      bugs.core_0185
 """
 
 import pytest

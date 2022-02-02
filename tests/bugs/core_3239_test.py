@@ -6,6 +6,7 @@ ISSUE:       3610
 TITLE:       UTF8 UNICODE_CI collate can not be used in compound index
 DESCRIPTION:
 JIRA:        CORE-3239
+FBTEST:      bugs.core_3239
 """
 
 import pytest

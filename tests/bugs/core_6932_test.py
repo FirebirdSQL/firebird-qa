@@ -44,6 +44,7 @@ DESCRIPTION:
 
   Confirmed bug on 5.0.0.169.
   Checked on: WI-V4.0.1.2578; WI-T5.0.0.181 -- all OK.
+FBTEST:      bugs.core_6932
 """
 
 import pytest

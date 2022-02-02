@@ -6,6 +6,7 @@ ISSUE:       1802
 TITLE:       LIKE doesn't work correctly with collations using SPECIALS-FIRST=1
 DESCRIPTION:
 JIRA:        CORE-1384
+FBTEST:      bugs.core_1384
 """
 
 import pytest

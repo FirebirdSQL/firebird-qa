@@ -10,6 +10,7 @@ DESCRIPTION:
   after first attach did commit (but main record was not visible to 2nd attach
   because of SNAPSHOT isolation level).
 JIRA:        CORE-6138
+FBTEST:      bugs.core_6138
 """
 
 import pytest

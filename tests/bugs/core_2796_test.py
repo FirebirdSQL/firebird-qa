@@ -9,6 +9,7 @@ NOTES:
   !!! IMPORTANT !!!
   This test requires config ExternalFileAccess = Full
 JIRA:        CORE-2796
+FBTEST:      bugs.core_2796
 """
 
 import pytest

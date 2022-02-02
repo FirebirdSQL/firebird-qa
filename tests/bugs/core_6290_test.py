@@ -3,9 +3,11 @@
 """
 ID:          issue-6532
 ISSUE:       6532
-TITLE:       Hex number used at end of statement (e.g. CREATE DOMAIN ... DEFAULT) may read invalid memory and produce wrong values or exceptions
+TITLE:       Hex number used at end of statement (e.g. CREATE DOMAIN ... DEFAULT) may read
+  invalid memory and produce wrong values or exceptions
 DESCRIPTION:
 JIRA:        CORE-6290
+FBTEST:      bugs.core_6290
 """
 
 import pytest

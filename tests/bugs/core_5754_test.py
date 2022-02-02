@@ -6,6 +6,7 @@ ISSUE:       6017
 TITLE:       ALTER TRIGGER check privilege for alter database instead of table
 DESCRIPTION:
 JIRA:        CORE-5754
+FBTEST:      bugs.core_5754
 """
 
 import pytest

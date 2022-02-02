@@ -6,6 +6,7 @@ ISSUE:       6019
 TITLE:       Regression: FB crashes when trying to recreate table that is in use by DML (3.0.3; 3.0.4; 4.0.0)
 DESCRIPTION:
 JIRA:        CORE-5756
+FBTEST:      bugs.core_5756
 """
 
 import pytest

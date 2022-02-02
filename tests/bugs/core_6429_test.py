@@ -3,13 +3,15 @@
 """
 ID:          issue-6666
 ISSUE:       6666
-TITLE:       Timezone offset in timestamp/time literal, CAST, SET TIME ZONE and AT TIME ZONE should follow SQL standard syntax only
+TITLE:       Timezone offset in timestamp/time literal, CAST, SET TIME ZONE and AT TIME ZONE
+  should follow SQL standard syntax only
 DESCRIPTION:
   Test verifies miscelaneous forms of OFFSET for timezone part.
   According to note by Adriano (see ticket), values that represent HOURS and MINUTES, *can* be written in single-character form,
   i.e. 'H' and 'M' (rather than form 'HH' and 'MM' which was proposed by Mark).
   It looks srange but currently offset parts can be written with leading (non-valuable) zeroes.
 JIRA:        CORE-6429
+FBTEST:      bugs.core_6429
 """
 
 import pytest

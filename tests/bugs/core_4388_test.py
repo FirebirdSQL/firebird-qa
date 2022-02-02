@@ -6,6 +6,7 @@ ISSUE:       4710
 TITLE:       SELECT WITH LOCK may enter an infinite loop for a single record
 DESCRIPTION:
 JIRA:        CORE-4388
+FBTEST:      bugs.core_4388
 """
 
 import pytest

@@ -8,6 +8,7 @@ DESCRIPTION:
   Difference between old and new firebird.log should _NOT_ contain lines with words 'gds__detach' or 'lost'.
   If these words absent - all fine, actual and expected output both have to be empty.
 JIRA:        CORE-3328
+FBTEST:      bugs.core_3328
 """
 
 import pytest

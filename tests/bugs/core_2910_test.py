@@ -6,6 +6,7 @@ ISSUE:       3294
 TITLE:       PK index is not used for derived tables
 DESCRIPTION:
 JIRA:        CORE-2910
+FBTEST:      bugs.core_2910
 """
 
 import pytest

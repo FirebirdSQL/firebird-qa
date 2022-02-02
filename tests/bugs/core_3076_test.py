@@ -68,6 +68,7 @@ NOTES:
     *****************************************************
     TEST                                              90
 JIRA:        CORE-3076
+FBTEST:      bugs.core_3076
 """
 
 import pytest

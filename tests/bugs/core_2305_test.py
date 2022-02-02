@@ -6,6 +6,7 @@ ISSUE:       2729
 TITLE:       Make mon$statement_id value constant among monitoring snapshots
 DESCRIPTION:
 JIRA:        CORE-2305
+FBTEST:      bugs.core_2305
 """
 
 import pytest

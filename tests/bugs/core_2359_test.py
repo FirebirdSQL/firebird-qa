@@ -6,6 +6,7 @@ ISSUE:       2782
 TITLE:       Logical multibyte maximum string length is not respected when assigning numbers
 DESCRIPTION:
 JIRA:        CORE-2359
+FBTEST:      bugs.core_2359
 """
 
 import pytest

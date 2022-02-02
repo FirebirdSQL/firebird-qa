@@ -6,6 +6,7 @@ ISSUE:       2994
 TITLE:       Wrong results for CASE used together with GROUP BY
 DESCRIPTION:
 JIRA:        CORE-2584
+FBTEST:      bugs.core_2584
 """
 
 import pytest

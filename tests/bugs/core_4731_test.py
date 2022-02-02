@@ -42,6 +42,7 @@ NOTES:
 [18.02.2020]
   REFACTORED: most of initial code was moved into $files_location/core_4731.sql; changed test_type to 'Python'.
 JIRA:        CORE-4731
+FBTEST:      bugs.core_4731
 """
 
 import pytest

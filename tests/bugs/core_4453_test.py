@@ -6,6 +6,7 @@ ISSUE:       4773
 TITLE:       Regression: NOT NULL constraint, declared in domain, does not work
 DESCRIPTION:
 JIRA:        CORE-4453
+FBTEST:      bugs.core_4453
 """
 
 import pytest

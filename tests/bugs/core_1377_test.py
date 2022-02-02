@@ -6,6 +6,7 @@ ISSUE:       1795
 TITLE:       Add an ability to change role without reconnecting to database.
 DESCRIPTION:
 JIRA:        CORE-1377
+FBTEST:      bugs.core_1377
 """
 
 import pytest

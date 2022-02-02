@@ -5,7 +5,8 @@ ID:          issue-5924
 ISSUE:       5924
 TITLE:       Execute statement with excess parameters
 DESCRIPTION:
-JIRA:        CORE-1000
+JIRA:        CORE-5658
+FBTEST:      bugs.core_5658
 """
 
 import pytest

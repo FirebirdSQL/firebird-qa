@@ -6,6 +6,7 @@ ISSUE:       3171
 TITLE:       Include client library version and protocol version in mon$attachments
 DESCRIPTION:
 JIRA:        CORE-2780
+FBTEST:      bugs.core_2780
 """
 
 import pytest

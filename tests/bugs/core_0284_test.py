@@ -1,12 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.core_0284
-# title:        Blob Comparison with constant
-# decription:
-# tracker_id:   CORE-284
-# min_versions: []
-# versions:     3.0
-# qmid:         bugs.core_284
 
 """
 ID:          issue-615
@@ -14,6 +6,7 @@ ISSUE:       615
 TITLE:       Blob comparison with constant
 DESCRIPTION:
 JIRA:        CORE-284
+FBTEST:      bugs.core_0284
 """
 
 import pytest

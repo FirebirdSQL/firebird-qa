@@ -6,6 +6,7 @@ ISSUE:       1599
 TITLE:       Crash on infinite mutual SP calls (instead of "Too many concurrent executions of the same request.")
 DESCRIPTION:
 JIRA:        CORE-4653
+FBTEST:      bugs.core_4653
 """
 
 import pytest

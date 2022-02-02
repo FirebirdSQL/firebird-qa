@@ -6,6 +6,7 @@ ISSUE:       4666
 TITLE:       Error "no current record for fetch operation" when table inner join procedure inner join table
 DESCRIPTION:
 JIRA:        CORE-4344
+FBTEST:      bugs.core_4344
 """
 
 import pytest

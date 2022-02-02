@@ -9,6 +9,7 @@ DESCRIPTION:
   1) boolean field with reference in WHERE clause;
   2) indexed integer field.
 JIRA:        CORE-5743
+FBTEST:      bugs.core_5743
 """
 
 import pytest

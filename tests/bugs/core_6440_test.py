@@ -3,10 +3,12 @@
 """
 ID:          issue-6674
 ISSUE:       6674
-TITLE:       Expression indexes containing COALESCE inside cannot be matched by the optimizer after migration from v2.5 to v3.0
+TITLE:       Expression indexes containing COALESCE inside cannot be matched by the optimizer
+  after migration from v2.5 to v3.0
 DESCRIPTION:
   Test uses .fbk that was created on FB 2.5.9, file: core6440-ods11.fbk
 JIRA:        CORE-6440
+FBTEST:      bugs.core_6440
 """
 
 import pytest

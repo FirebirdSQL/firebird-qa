@@ -12,6 +12,7 @@ DESCRIPTION:
   2) table column can refer to domain which was declared as int128
   3) one may to write SET BIND OF INT128 TO <any_other_numeric_datatype> ans vice versa.
 JIRA:        CORE-6342
+FBTEST:      bugs.core_6342
 """
 
 import pytest

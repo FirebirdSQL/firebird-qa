@@ -40,6 +40,7 @@ DESCRIPTION:
     The reason currently (03-mar-2021) remains unknown.
     Sent letter to Alex et al, 03-mar-2021.
 JIRA:        CORE-6469
+FBTEST:      bugs.core_6469
 """
 
 import pytest

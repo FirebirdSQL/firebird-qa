@@ -6,6 +6,7 @@ ISSUE:       4442
 TITLE:       SIMILAR TO does not work with x-prefixed literals
 DESCRIPTION:
 JIRA:        CORE-4114
+FBTEST:      bugs.core_4114
 """
 
 import pytest

@@ -5,6 +5,7 @@ ID:          issue-7064
 ISSUE:       7064
 TITLE:       Linear regression functions aren't implemented correctly
 DESCRIPTION:
+FBTEST:      bugs.gh_7064
 """
 
 import pytest

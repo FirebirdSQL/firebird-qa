@@ -6,6 +6,7 @@ ISSUE:       3508
 TITLE:       WIN1257_LV (Latvian) collation is wrong for 4 letters: A E I U
 DESCRIPTION:
 JIRA:        CORE-3131
+FBTEST:      bugs.core_3131
 """
 
 import pytest

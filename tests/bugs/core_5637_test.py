@@ -10,6 +10,7 @@ NOTES:
   restored DB state must be changed to full shutdown in order to make sure tha all attachments are gone.
   Otherwise got on CS: "WindowsError: 32 The process cannot access the file because it is being used by another process".
 JIRA:        CORE-5637
+FBTEST:      bugs.core_5637
 """
 
 import pytest

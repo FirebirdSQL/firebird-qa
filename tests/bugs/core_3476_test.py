@@ -6,6 +6,7 @@ ISSUE:       3837
 TITLE:       LIST function wrongly concatenates binary blobs
 DESCRIPTION:
 JIRA:        CORE-3476
+FBTEST:      bugs.core_3476
 """
 
 import pytest

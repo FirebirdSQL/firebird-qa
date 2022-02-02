@@ -18,6 +18,7 @@ DESCRIPTION:
     1) check that all error logs are empty;
     2) compare logs of DML, metadata extraction - they should be identical.
 JIRA:        CORE-2192
+FBTEST:      bugs.core_2192
 """
 
 import pytest

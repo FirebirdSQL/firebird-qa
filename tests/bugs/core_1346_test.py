@@ -6,6 +6,7 @@ ISSUE:       1765
 TITLE:       lpad and rpad with two columns not working
 DESCRIPTION:
 JIRA:        CORE-1346
+FBTEST:      bugs.core_1346
 """
 
 import pytest

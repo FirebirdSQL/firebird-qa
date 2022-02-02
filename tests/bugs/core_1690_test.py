@@ -6,6 +6,7 @@ ISSUE:       2116
 TITLE:       Arithmetic exception, numeric overflow, or string truncation in utf8 tables
 DESCRIPTION:
 JIRA:        CORE-1690
+FBTEST:      bugs.core_1690
 """
 
 import pytest

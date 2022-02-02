@@ -6,6 +6,7 @@ ISSUE:       2148
 TITLE:        Common table expressions cannot be used in computed columns and quantified predicates (IN / ANY / ALL)
 DESCRIPTION:
 JIRA:        CORE-1724
+FBTEST:      bugs.core_1724
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2115
 TITLE:       'There are <n> dependencies' error message shows the wrong count of dependent objects.
 DESCRIPTION:
 JIRA:        CORE-1689
+FBTEST:      bugs.core_1689
 """
 
 import pytest

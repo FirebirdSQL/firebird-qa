@@ -25,6 +25,7 @@ DESCRIPTION:
     ****************************************************
     TEST                                              20
 JIRA:        CORE-5489
+FBTEST:      bugs.core_5489
 """
 
 import pytest

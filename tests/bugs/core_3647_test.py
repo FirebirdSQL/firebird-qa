@@ -24,6 +24,7 @@ NOTES:
   added 'EMPNO' (primary key column) to ORDER BY list inside OVER() clauses.
   Otherwise records in 'sample2-a' can appear in unpredictable order.
 JIRA:        CORE-3647
+FBTEST:      bugs.core_3647
 """
 
 import pytest

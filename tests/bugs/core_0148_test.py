@@ -6,6 +6,7 @@ ISSUE:       477
 TITLE:       SELECT '1' UNION SELECT '12'
 DESCRIPTION:
 JIRA:        CORE-148
+FBTEST:      bugs.core_0148
 """
 
 import pytest

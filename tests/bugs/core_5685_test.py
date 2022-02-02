@@ -37,6 +37,7 @@ DESCRIPTION:
   ====
   (expected: all fields in ITER #2 must be NULL)
 JIRA:        CORE-5685
+FBTEST:      bugs.core_5685
 """
 
 import pytest

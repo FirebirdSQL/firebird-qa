@@ -6,6 +6,7 @@ ISSUE:       1930
 TITLE:       Many new 2.1 built in functions have incorrect NULL semantics
 DESCRIPTION:
 JIRA:        CORE-1514
+FBTEST:      bugs.core_1514
 """
 
 import pytest

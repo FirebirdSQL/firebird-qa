@@ -6,6 +6,7 @@ ISSUE:       4368
 TITLE:       Broken optimization for the stored dbkeys
 DESCRIPTION:
 JIRA:        CORE-4038
+FBTEST:      bugs.core_4038
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5508
 TITLE:       Allow to enforce IPv4 or IPv6 in URL-like connection strings
 DESCRIPTION:
 JIRA:        CORE-5229
+FBTEST:      bugs.core_5229
 """
 
 import pytest

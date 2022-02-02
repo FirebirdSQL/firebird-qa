@@ -6,6 +6,7 @@ ISSUE:       3645
 TITLE:       Wrong result for RIGHT(UTF8 varchar)
 DESCRIPTION: Text was taken from Gutenberg project, several European languages are used
 JIRA:        CORE-3277
+FBTEST:      bugs.core_3277
 """
 
 import pytest

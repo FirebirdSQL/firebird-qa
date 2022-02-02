@@ -6,6 +6,7 @@ ISSUE:       1541
 TITLE:       Conversion from string to number is not standard compliant
 DESCRIPTION:
 JIRA:        CORE-1120
+FBTEST:      bugs.core_1120
 """
 
 import pytest

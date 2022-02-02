@@ -6,6 +6,7 @@ ISSUE:       6408
 TITLE:       SUBSTRING SIMILAR is described with wrong data type in DSQL
 DESCRIPTION:
 JIRA:        CORE-6159
+FBTEST:      bugs.core_6159
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4492
 TITLE:       Replace the hierarchical union execution with the plain one
 DESCRIPTION:
 JIRA:        CORE-4165
+FBTEST:      bugs.core_4165
 """
 
 import pytest

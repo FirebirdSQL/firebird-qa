@@ -6,6 +6,7 @@ ISSUE:       4476
 TITLE:       New permission types are not displayed by ISQL
 DESCRIPTION:
 JIRA:        CORE-4149
+FBTEST:      bugs.core_4149
 """
 
 import pytest

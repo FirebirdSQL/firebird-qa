@@ -14,6 +14,7 @@ NOTES:
   Sent letter to dimitr, 25.11.2017 22:42. Waiting for reply.
 [27.12.2017] seems that this note will remain unresolved for undef. time.
 JIRA:        CORE-4492
+FBTEST:      bugs.core_4492
 """
 
 import pytest

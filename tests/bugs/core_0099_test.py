@@ -6,6 +6,7 @@ ISSUE:       423
 TITLE:       Strange/Inconsistent query results
 DESCRIPTION:
 JIRA:        CORE-99
+FBTEST:      bugs.core_0099
 """
 
 import pytest

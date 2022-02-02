@@ -6,6 +6,7 @@ ISSUE:       3419
 TITLE:       The insert failed because a column definition includes validation constraints. validation error for variable
 DESCRIPTION:
 JIRA:        CORE-3038
+FBTEST:      bugs.core_3038
 """
 
 import pytest

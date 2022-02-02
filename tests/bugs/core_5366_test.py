@@ -6,6 +6,7 @@ ISSUE:       5639
 TITLE:       Regression: could not use CASE expression with more than 255 conditions
 DESCRIPTION:
 JIRA:        CORE-5366
+FBTEST:      bugs.core_5366
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5662
 TITLE:       Query cannot be executed if win1251 characters used in field aliases
 DESCRIPTION:
 JIRA:        CORE-5389
+FBTEST:      bugs.core_5389
 """
 
 import pytest

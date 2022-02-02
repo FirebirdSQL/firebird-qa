@@ -6,6 +6,7 @@ ISSUE:       649
 TITLE:       View with equally named source fields not faisible
 DESCRIPTION:
 JIRA:        CORE-1078
+FBTEST:      bugs.core_1078
 """
 
 import pytest

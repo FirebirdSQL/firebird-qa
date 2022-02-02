@@ -23,6 +23,7 @@ DESCRIPTION:
 
   Confirmed bug on 4.0.0.2452 SS: gbak infinitely hanged.
   Checked on 4.0.0.2453 SS/CS (Linux and Windows): all OK, restore lasts near 200s.
+FBTEST:      bugs.gh_6785
 """
 
 import pytest

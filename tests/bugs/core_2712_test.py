@@ -6,6 +6,7 @@ ISSUE:       3109
 TITLE:       Do not print "invalid request BLR" for par.cpp errors with valid BLR
 DESCRIPTION:
 JIRA:        CORE-2712
+FBTEST:      bugs.core_2712
 """
 
 import pytest

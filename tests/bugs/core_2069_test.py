@@ -6,6 +6,7 @@ ISSUE:       2505
 TITLE:       Incorrect VIEW expansion when RDB$DB_KEY is used in view body
 DESCRIPTION:
 JIRA:        CORE-2069
+FBTEST:      bugs.core_2069
 """
 
 import pytest

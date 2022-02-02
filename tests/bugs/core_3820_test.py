@@ -6,6 +6,7 @@ ISSUE:       4162
 TITLE:       RDB$TYPES contain duplicate character sets
 DESCRIPTION:
 JIRA:        CORE-3820
+FBTEST:      bugs.core_3820
 """
 
 import pytest

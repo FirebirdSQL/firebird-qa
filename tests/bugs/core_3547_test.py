@@ -6,6 +6,7 @@ ISSUE:       3903
 TITLE:       Floating-point negative zero doesn't match positive zero in the index
 DESCRIPTION:
 JIRA:        CORE-3547
+FBTEST:      bugs.core_3547
 """
 
 import pytest

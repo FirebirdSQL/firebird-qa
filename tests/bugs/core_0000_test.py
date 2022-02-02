@@ -4,6 +4,7 @@
 ID:          dummy
 TITLE:       Dummy test
 DESCRIPTION:
+FBTEST:      bugs.core_0000
 """
 
 import pytest

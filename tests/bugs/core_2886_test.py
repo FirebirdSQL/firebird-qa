@@ -6,6 +6,7 @@ ISSUE:       3270
 TITLE:       Query with "NOT IN <subselect from view>" fails
 DESCRIPTION:
 JIRA:        CORE-2886
+FBTEST:      bugs.core_2886
 """
 
 import pytest

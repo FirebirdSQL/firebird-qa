@@ -6,6 +6,7 @@ ISSUE:       4682
 TITLE:       SELECT from derived table which contains GROUP BY on field with literal value returns wrong result
 DESCRIPTION:
 JIRA:        CORE-4360
+FBTEST:      bugs.core_4360
 """
 
 import pytest

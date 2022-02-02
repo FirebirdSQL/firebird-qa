@@ -6,6 +6,7 @@ ISSUE:       5020
 TITLE:       "BLOB not found" error at rollback after insert into table with expression index
 DESCRIPTION:
 JIRA:        CORE-4713
+FBTEST:      bugs.core_4713
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4153
 TITLE:       isql: zero divide + coredump when use "-pag 0" command switch & set heading on inside .sql script
 DESCRIPTION:
 JIRA:        CORE-3810
+FBTEST:      bugs.core_1286
 """
 
 import pytest

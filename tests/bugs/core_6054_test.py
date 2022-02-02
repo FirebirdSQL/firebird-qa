@@ -6,6 +6,7 @@ ISSUE:       6304
 TITLE:       Random crash 64bit fb_inet_server. Possible collation issue
 DESCRIPTION:
 JIRA:        CORE-6054
+FBTEST:      bugs.core_6054
 """
 
 import pytest

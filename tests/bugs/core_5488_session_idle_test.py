@@ -28,6 +28,7 @@ DESCRIPTION: Timeout for IDLE connection (SET SESSION IDLE TIMEOUT <N>)
     ::: NB:::
     No events related to SECOND statement should be in the trace log.
 JIRA:        CORE-5488
+FBTEST:      bugs.core_5488_session_idle
 """
 
 import pytest

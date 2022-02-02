@@ -6,6 +6,7 @@ ISSUE:       5573
 TITLE:       Validation could read after the end-of-file when handle multifile database
 DESCRIPTION:
 JIRA:        CORE-5295
+FBTEST:      bugs.core_5295
 """
 
 import pytest

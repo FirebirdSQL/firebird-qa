@@ -6,6 +6,7 @@ ISSUE:       3347
 TITLE:       Incorrect ROW_COUNT value after SINGULAR condition
 DESCRIPTION:
 JIRA:        CORE-2965
+FBTEST:      bugs.core_2965
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2464
 TITLE:       Incorrect buffer size for ORDER BY expression with system fields
 DESCRIPTION:
 JIRA:        CORE-2027
+FBTEST:      bugs.core_2027
 """
 
 import pytest

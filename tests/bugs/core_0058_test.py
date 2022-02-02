@@ -6,6 +6,7 @@ ISSUE:       383
 TITLE:       WHERE CURRENT OF doesn't work
 DESCRIPTION:
 JIRA:        CORE-58
+FBTEST:      bugs.core_0058
 """
 
 import pytest

@@ -5,6 +5,7 @@ ID:          issue-7034
 ISSUE:       7034
 TITLE:       Server crashes while fetching from a scrollable cursor in PSQL
 DESCRIPTION:
+FBTEST:      bugs.gh_7034
 """
 
 import pytest

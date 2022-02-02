@@ -6,6 +6,7 @@ ISSUE:       2338
 TITLE:       Dropping and adding a domain constraint in the same transaction leaves incorrect dependencies
 DESCRIPTION:
 JIRA:        CORE-1907
+FBTEST:      bugs.core_1907
 """
 
 import pytest

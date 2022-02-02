@@ -21,7 +21,8 @@ DESCRIPTION:
 
   Reproduced on on several builds 4.x before 17.01.2020 (tested: 4.0.0.1712 CS, 4.0.0.1731 CS - got ratio = ~1.95).
   Reproduced also on 3.0.5.33221 Classic - got ratio ~1.50 ... 1.70; could NOT reproduce on 3.0.5 SuperClassic / SuperServer.
-  JIRA:        CORE-6237
+JIRA:        CORE-6237
+FBTEST:      bugs.core_6237
 """
 
 import pytest

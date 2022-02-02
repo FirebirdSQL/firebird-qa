@@ -6,6 +6,7 @@ ISSUE:       2140
 TITLE:       Incorrect "key size exceeds implementation restriction for index" error
 DESCRIPTION:
 JIRA:        CORE-1715
+FBTEST:      bugs.core_1715
 """
 
 import pytest

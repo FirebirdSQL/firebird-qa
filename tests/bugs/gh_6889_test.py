@@ -5,6 +5,7 @@ ID:          issue-6889
 ISSUE:       6889
 TITLE:       error no permision occurred while ALTER USER SET TAGS on snapshot build WI-V3.0.8.33482
 DESCRIPTION:
+FBTEST:      bugs.gh_6889
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5136
 TITLE:       Transactions with isc_tpb_autocommit can hang the server
 DESCRIPTION:
 JIRA:        CORE-4840
+FBTEST:      bugs.core_4840
 """
 
 import pytest

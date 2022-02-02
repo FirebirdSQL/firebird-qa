@@ -6,6 +6,7 @@ ISSUE:       2811
 TITLE:       Wrong matching of SIMILAR TO expression with brackets
 DESCRIPTION:
 JIRA:        CORE-2389
+FBTEST:      bugs.core_2389
 """
 
 import pytest

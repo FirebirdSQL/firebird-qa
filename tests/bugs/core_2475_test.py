@@ -12,6 +12,7 @@ NOTES:
   THIS TEST WILL END WITH ERROR IF EXTERNAL TABLE ACCESS IS NOT ALLOWED, WHICH IS BY DEFAULT.
   It's necessary to adjust firebird.conf.
 JIRA:        CORE-2475
+FBTEST:      bugs.core_2475
 """
 
 import pytest

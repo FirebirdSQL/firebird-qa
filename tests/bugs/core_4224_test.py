@@ -6,6 +6,7 @@ ISSUE:       4548
 TITLE:       Database replace through services API fails
 DESCRIPTION:
 JIRA:        CORE-4224
+FBTEST:      bugs.core_4224
 """
 
 import pytest

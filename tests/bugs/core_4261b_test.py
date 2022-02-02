@@ -6,6 +6,7 @@ ISSUE:       4585
 TITLE:       Wrong result of join when joined fields are created via row_number() function
 DESCRIPTION:
 JIRA:        CORE-4261
+FBTEST:      bugs.core_4261b
 """
 
 import pytest

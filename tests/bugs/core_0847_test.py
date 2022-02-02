@@ -6,6 +6,7 @@ ISSUE:       1236
 TITLE:       Computed field can't be changed to non-computed using 'alter table alter column type xy'
 DESCRIPTION:
 JIRA:        CORE-847
+FBTEST:      bugs.core_0847
 """
 
 import pytest

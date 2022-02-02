@@ -8,6 +8,7 @@ DESCRIPTION:
   NB: currently join oth three and more sources made by USING or NATURAL clauses will use NL.
   See CORE-4809
 JIRA:        CORE-4528
+FBTEST:      bugs.core_4528
 """
 
 import pytest

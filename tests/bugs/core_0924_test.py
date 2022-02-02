@@ -6,6 +6,7 @@ ISSUE:       1324
 TITLE:       An attempt to select DB_KEY from a procedure crashes the server
 DESCRIPTION:
 JIRA:        CORE-924
+FBTEST:      bugs.core_0924
 """
 
 import pytest

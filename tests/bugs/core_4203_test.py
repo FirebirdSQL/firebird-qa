@@ -6,6 +6,7 @@ ISSUE:       4528
 TITLE:       Cannot create packaged routines with [VAR]CHAR parameters
 DESCRIPTION:
 JIRA:        CORE-4203
+FBTEST:      bugs.core_4203
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6596
 TITLE:       TRUNC() does not accept second argument = -128 (but shows it as required boundary in error message)
 DESCRIPTION:
 JIRA:        CORE-6355
+FBTEST:      bugs.core_6355
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3016
 TITLE:       Multibyte CHAR value requested as VARCHAR is returned with padded spaces
 DESCRIPTION:
 JIRA:        CORE-2606
+FBTEST:      bugs.core_2606
 """
 
 import pytest

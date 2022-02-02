@@ -8,6 +8,7 @@ DESCRIPTION:
   When non-SYSDBA user selects from MON$ATTACHMENTS and other attachments are active at this point,
   the resulting rowset refers to a wrong attachment (the one with minimal ID) instead of the current attachment.
 JIRA:        CORE-1642
+FBTEST:      bugs.core_1642
 """
 
 import pytest

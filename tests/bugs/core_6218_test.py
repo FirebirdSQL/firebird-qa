@@ -6,6 +6,7 @@ ISSUE:       6462
 TITLE:       COUNT(DISTINCT <DECFLOAT_FIELD>) leads FB to crash when there are duplicate values of this field
 DESCRIPTION:
 JIRA:        CORE-6218
+FBTEST:      bugs.core_6218
 """
 
 import pytest

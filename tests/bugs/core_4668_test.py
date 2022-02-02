@@ -6,6 +6,7 @@ ISSUE:       4979
 TITLE:       Select from mon$table_stats doesn`t work on SC and CS
 DESCRIPTION:
 JIRA:        CORE-4668
+FBTEST:      bugs.core_4668
 """
 
 import pytest

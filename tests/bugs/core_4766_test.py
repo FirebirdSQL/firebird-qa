@@ -3,7 +3,8 @@
 """
 ID:          issue-5066
 ISSUE:       5066
-TITLE:       AV when trying to manage users list using EXECUTE STATEMENT on behalf of non-sysdba user which has RDB$ADMIN role
+TITLE:       AV when trying to manage users list using EXECUTE STATEMENT on behalf of
+  non-sysdba user which has RDB$ADMIN role
 DESCRIPTION:
 NOTES:
 [24.11.2021] pcisar
@@ -14,6 +15,7 @@ NOTES:
     -At block line: 3, col: 9
   Variant for FB 3 works fine.
 JIRA:        CORE-4766
+FBTEST:      bugs.core_4766
 """
 
 import pytest

@@ -8,6 +8,7 @@ DESCRIPTION:
   Check if sort order for collate ES_ES is the one of DRAE , the oficial organization for
   standarization of spanish
 JIRA:        CORE-426
+FBTEST:      bugs.core_426
 """
 
 import pytest

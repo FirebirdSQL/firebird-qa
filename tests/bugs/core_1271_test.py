@@ -6,6 +6,7 @@ ISSUE:       1692
 TITLE:       Ceation of invalid procedures/triggers allowed
 DESCRIPTION:
 JIRA:        CORE-1271
+FBTEST:      bugs.core_1271
 """
 
 import pytest

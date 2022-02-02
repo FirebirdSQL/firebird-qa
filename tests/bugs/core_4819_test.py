@@ -3,9 +3,11 @@
 """
 ID:          issue-5116
 ISSUE:       5116
-TITLE:       EXECUTE PROCEDURE's RETURNING_VALUES and EXECUTE STATEMENT's INTO does not check validity of assignments targets leading to bugcheck
+TITLE:       EXECUTE PROCEDURE's RETURNING_VALUES and EXECUTE STATEMENT's INTO does not
+  check validity of assignments targets leading to bugcheck
 DESCRIPTION:
 JIRA:        CORE-4819
+FBTEST:      bugs.core_4819
 """
 
 import pytest

@@ -16,6 +16,7 @@ DESCRIPTION:
   We will use this inability of restore index by checking 'gbak -rep -v ...' return code: it should be NON zero.
  If code will skip exception then this will mean FAIL of test.
 JIRA:        CORE-5201
+FBTEST:      bugs.core_5201
 """
 
 import pytest

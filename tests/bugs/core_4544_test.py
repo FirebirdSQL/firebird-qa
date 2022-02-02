@@ -6,6 +6,7 @@ ISSUE:       4862
 TITLE:       Allow hiding source code of procedures and triggers in FB 3
 DESCRIPTION:
 JIRA:        CORE-4544
+FBTEST:      bugs.core_4544
 """
 
 import pytest

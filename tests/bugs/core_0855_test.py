@@ -6,6 +6,7 @@ ISSUE:       1245
 TITLE:       Aggregates in the WHERE clause vs derived tables
 DESCRIPTION:
 JIRA:        CORE-855
+FBTEST:      bugs.core_0855
 """
 
 import pytest

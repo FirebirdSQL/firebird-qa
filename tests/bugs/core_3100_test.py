@@ -3,9 +3,11 @@
 """
 ID:          issue-3478
 ISSUE:       3478
-TITLE:       Wait mode and lock timeout of external transaction of EXECUTE STATEMENT not matched to corresponding parameters of local transaction
+TITLE:       Wait mode and lock timeout of external transaction of EXECUTE STATEMENT not
+  matched to corresponding parameters of local transaction
 DESCRIPTION:
 JIRA:        CORE-3100
+FBTEST:      bugs.core_3100
 """
 
 import pytest

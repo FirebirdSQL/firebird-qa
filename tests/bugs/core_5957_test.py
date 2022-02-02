@@ -3,9 +3,11 @@
 """
 ID:          issue-6211
 ISSUE:       6211
-TITLE:       Bug in SIMILAR TO when adding numeric quantifier as bound for repetetion of expression leads to empty resultset
+TITLE:       Bug in SIMILAR TO when adding numeric quantifier as bound for repetetion
+  of expression leads to empty resultset
 DESCRIPTION:
 JIRA:        CORE-5957
+FBTEST:      bugs.core_5957
 """
 
 import pytest

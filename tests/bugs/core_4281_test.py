@@ -3,9 +3,11 @@
 """
 ID:          issue-4604
 ISSUE:       4604
-TITLE:       FB 3: TYPE OF arguments of stored functions will hang firebird engine if depending domain or column is changed
+TITLE:       FB 3: TYPE OF arguments of stored functions will hang firebird engine
+  if depending domain or column is changed
 DESCRIPTION:
 JIRA:        CORE-4281
+FBTEST:      bugs.core_4281
 """
 
 import pytest

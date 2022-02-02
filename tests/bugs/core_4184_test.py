@@ -6,6 +6,7 @@ ISSUE:       4510
 TITLE:       Executing empty EXECUTE BLOCK with NotNull output parameter raised error
 DESCRIPTION:
 JIRA:        CORE-4184
+FBTEST:      bugs.core_4184
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3428
 TITLE:       Wrong logic is used to resolve EXECUTE BLOCK parameters collations
 DESCRIPTION:
 JIRA:        CORE-3047
+FBTEST:      bugs.core_3047
 """
 
 import pytest

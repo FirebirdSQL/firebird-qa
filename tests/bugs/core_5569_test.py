@@ -6,6 +6,7 @@ ISSUE:       5836
 TITLE:       ISQL incorrectly pads UNICODE_FSS/UTF8 columns when they use a collation
 DESCRIPTION:
 JIRA:        CORE-5569
+FBTEST:      bugs.core_5569
 """
 
 import pytest

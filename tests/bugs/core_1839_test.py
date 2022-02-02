@@ -7,6 +7,7 @@ TITLE:       AV when sorting by field, calculated using recursive CTE
 DESCRIPTION:
   Bug happens only when table used in CTE contains records with different formats
 JIRA:        CORE-1839
+FBTEST:      bugs.core_1839
 """
 
 import pytest

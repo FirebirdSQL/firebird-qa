@@ -6,6 +6,7 @@ ISSUE:       6284
 TITLE:       The original time zone should be set to the current time zone at routine invocation
 DESCRIPTION:
 JIRA:        CORE-6034
+FBTEST:      bugs.core_6034
 """
 
 import pytest

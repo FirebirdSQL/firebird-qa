@@ -6,6 +6,7 @@ ISSUE:       5347
 TITLE:       Cannot CREATE VIEW that selects from a system table, despite having all grants
 DESCRIPTION:
 JIRA:        CORE-5060
+FBTEST:      bugs.core_5060
 """
 
 import pytest

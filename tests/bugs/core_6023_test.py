@@ -30,6 +30,7 @@ DESCRIPTION:
   See letter to Vlad et al 16.02.2021 09:02
   ("Crash of 4.0.0.2365 when attempt to get server version just after doing the same on 4.0.0.1803")
 JIRA:        CORE-6023
+FBTEST:      bugs.core_6023
 """
 
 import pytest

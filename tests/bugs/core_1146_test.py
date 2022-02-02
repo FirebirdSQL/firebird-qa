@@ -6,6 +6,7 @@ ISSUE:       1568
 TITLE:       AV in rse\\invalidate_child_rpbs for recursive queies
 DESCRIPTION:
 JIRA:        CORE-1146
+FBTEST:      bugs.core_1146
 """
 
 import pytest

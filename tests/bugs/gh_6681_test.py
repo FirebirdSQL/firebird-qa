@@ -1,16 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6681
-# title:        error no permision occurred while ALTER USER SET TAGS on snapshot build WI-V3.0.8.33482
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6681
-#
-#                   Checked on: 5.0.0.197
-#
-# tracker_id:
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
 
 """
 ID:          issue-6681
@@ -18,6 +6,7 @@ ISSUE:       6681
 TITLE:       Support for WHEN NOT MATCHED BY SOURCE for MERGE statement
 DESCRIPTION:
 JIRA:        CORE-6448
+FBTEST:      bugs.gh_6681
 """
 
 import pytest

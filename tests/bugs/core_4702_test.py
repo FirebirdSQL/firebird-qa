@@ -6,6 +6,7 @@ ISSUE:       5010
 TITLE:       Regression: Join order in v3 is less optimal than in v2.x
 DESCRIPTION:
 JIRA:        CORE-4702
+FBTEST:      bugs.core_4702
 """
 
 import pytest

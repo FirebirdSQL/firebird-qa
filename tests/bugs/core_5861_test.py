@@ -6,6 +6,7 @@ ISSUE:       6121
 TITLE:       GRANT OPTION is not checked for new object
 DESCRIPTION:
 JIRA:        CORE-5861
+FBTEST:      bugs.core_5861
 """
 
 import pytest

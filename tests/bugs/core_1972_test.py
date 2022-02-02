@@ -31,6 +31,7 @@ NOTES:
   This is intentional change in firebird-driver from fdb, as using these DPB options
   on connect has side-effects (changes database option) which was considered dangerous.
 JIRA:        CORE-1972
+FBTEST:      bugs.core_1972
 """
 
 import pytest
@@ -40,6 +41,32 @@ from firebird.driver import driver_config, connect
 db = db_factory()
 
 tmp_user = user_factory('db', name='TMP$C1972', password='123')
+
+act = python_act('db', substitutions=[('^((?!Successfully|Trying_to_establish|SQLCODE:).)*$', '')])
+
+expected_stdout = """
+    Successfully added non-privileged user
+
+    Trying_to_establish connection with specifying force_write
+    - SQLCODE: -901
+
+    Trying_to_establish connection with specifying no_reserve
+    - SQLCODE: -901
+
+    Successfully removed non-privileged user
+    Successfully finished script
+"""
+
+@pytest.mark.skip("Can't be implement with new Python driver")
+@pytest.mark.version('>=3')
+def test_1(act: Action, tmp_user: User):
+    # 1. Try to specifying 'force_write' flag: no errors and NO changes in 2.1.1; error in 2.1.2 and above
+    act.db._make_config(user=tmp_user.name, password=tmp_user.password)
+    db_conf = driver_config.get_database('pytest')
+    db_conf.forced_writes.value = True
+    with pytest.raises():
+        connect('pytest')
+    # 2. Try to specifying 'no_reserve' flag: no errors and NO changes in 2.1.1; error in 2.1.2 and above
 
 # test_script_1
 #---
@@ -113,30 +140,3 @@ tmp_user = user_factory('db', name='TMP$C1972', password='123')
 #
 #
 #---
-
-act = python_act('db', substitutions=[('^((?!Successfully|Trying_to_establish|SQLCODE:).)*$', '')])
-
-expected_stdout = """
-    Successfully added non-privileged user
-
-    Trying_to_establish connection with specifying force_write
-    - SQLCODE: -901
-
-    Trying_to_establish connection with specifying no_reserve
-    - SQLCODE: -901
-
-    Successfully removed non-privileged user
-    Successfully finished script
-"""
-
-@pytest.mark.skip("Can't be implement with new Python driver")
-@pytest.mark.version('>=3')
-def test_1(act: Action, tmp_user: User):
-    # 1. Try to specifying 'force_write' flag: no errors and NO changes in 2.1.1; error in 2.1.2 and above
-    act.db._make_config(user=tmp_user.name, password=tmp_user.password)
-    db_conf = driver_config.get_database('pytest')
-    db_conf.forced_writes.value = True
-    with pytest.raises():
-        connect('pytest')
-    # 2. Try to specifying 'no_reserve' flag: no errors and NO changes in 2.1.1; error in 2.1.2 and above
-

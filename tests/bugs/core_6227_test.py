@@ -12,6 +12,7 @@ DESCRIPTION:
   We check that length of this path is more than zero.
   Note that befor fix reply was: ('', security.db') - so the PATH was empty string rather that None!
 JIRA:        CORE-6227
+FBTEST:      bugs.core_6227
 """
 
 import pytest

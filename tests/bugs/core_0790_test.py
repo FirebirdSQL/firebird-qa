@@ -6,6 +6,7 @@ ISSUE:       1175
 TITLE:       Alter view
 DESCRIPTION:
 JIRA:        CORE-790
+FBTEST:      bugs.core_0790
 """
 
 import pytest

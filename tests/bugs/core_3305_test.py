@@ -6,6 +6,7 @@ ISSUE:       3672
 TITLE:       "BLOB not found" error after creation/altering of the invalid trigger
 DESCRIPTION:
 JIRA:        CORE-3305
+FBTEST:      bugs.core_3305
 """
 
 import pytest

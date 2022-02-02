@@ -6,6 +6,7 @@ ISSUE:       5406
 TITLE:       Expression index may not be used by the optimizer if created and used in different connection charsets
 DESCRIPTION:
 JIRA:        CORE-5122
+FBTEST:      bugs.core_5122
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6460
 TITLE:       request size limit exceeded when selecting from a table with large number of indicies
 DESCRIPTION:
 JIRA:        CORE-6216
+FBTEST:      bugs.core_6216
 """
 
 import pytest

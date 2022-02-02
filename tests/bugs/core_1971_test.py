@@ -6,6 +6,7 @@ ISSUE:       2409
 TITLE:       Set the fixed and documented check order for WHERE clause and other conditional sentences
 DESCRIPTION:
 JIRA:        CORE-1971
+FBTEST:      bugs.core_1971
 """
 
 import pytest

@@ -26,6 +26,7 @@ NOTES:
   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
   Because of this, it was decided to filter out concrete values that are produced in 'SHOW SEQUENCE' command.
 JIRA:        CORE-4806
+FBTEST:      bugs.core_4806
 """
 
 import pytest

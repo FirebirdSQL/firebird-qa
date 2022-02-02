@@ -6,6 +6,7 @@ ISSUE:       1552
 TITLE:       Bad optimization -- <procedure> left join <subquery> (or <view>)
 DESCRIPTION:
 JIRA:        CORE-1130
+FBTEST:      bugs.core_1130
 """
 
 import pytest

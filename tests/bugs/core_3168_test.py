@@ -6,6 +6,7 @@ ISSUE:       3543
 TITLE:       exclude_filter doesn't work for <services></section> section of the Trace facility
 DESCRIPTION:
 JIRA:        CORE-3168
+FBTEST:      bugs.core_3168
 """
 
 import pytest

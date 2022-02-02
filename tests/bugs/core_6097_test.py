@@ -19,6 +19,7 @@ DESCRIPTION:
   that contains necessary command to run isql.exe, i.e. we actually invoke new instance of cmd.exe.
   The reason of why 'invalid user/password' raises (in other cases) remains unclear for me.
 JIRA:        CORE-6097
+FBTEST:      bugs.core_6097
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6033
 TITLE:       User who is allowed to manage other users must have this ability WITHOUT need to grant him RDB$ADMIN role
 DESCRIPTION:
 JIRA:        CORE-5770
+FBTEST:      bugs.core_5770
 """
 
 import pytest

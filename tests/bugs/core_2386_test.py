@@ -6,6 +6,7 @@ ISSUE:       2808
 TITLE:       ALTER VIEW could remove column used in stored procedure or trigger
 DESCRIPTION:
 JIRA:        CORE-2386
+FBTEST:      bugs.core_2386
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5804
 TITLE:       Connections compressed and encrypted in MON$ATTACHMENTS table
 DESCRIPTION:
 JIRA:        CORE-5536
+FBTEST:      bugs.core_5536
 """
 
 import pytest

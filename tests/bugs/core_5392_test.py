@@ -3,7 +3,8 @@
 """
 ID:          issue-5665
 ISSUE:       5665
-TITLE:       BUGCHECK 179 (decompression overran buffer) or unexpected lock conflict may happen during record versions backout
+TITLE:       BUGCHECK 179 (decompression overran buffer) or unexpected lock conflict may
+  happen during record versions backout
 DESCRIPTION:
   NOTE: bug can be reproduced only in SuperServer arch.
 
@@ -15,6 +16,7 @@ DESCRIPTION:
   For SS test lasts about 40 seconds, for SC/CS it should pass instantly because we SKIP entire test
   for both SC and CS architectures and just print 'OK' for matching expected_stdout.
 JIRA:        CORE-5392
+FBTEST:      bugs.core_5392
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5088
 TITLE:       Prohibit ability to cast timestamps that out of valid range to varchar
 DESCRIPTION:
 JIRA:        CORE-4789
+FBTEST:      bugs.core_4789
 """
 
 import pytest

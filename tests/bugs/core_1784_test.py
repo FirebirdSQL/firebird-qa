@@ -6,6 +6,7 @@ ISSUE:       2211
 TITLE:       Error with EXECUTE PROCEDURE inside EXECUTE STATEMENT
 DESCRIPTION:
 JIRA:        CORE-1784
+FBTEST:      bugs.core_1784
 """
 
 import pytest

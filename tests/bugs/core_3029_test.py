@@ -6,6 +6,7 @@ ISSUE:       3410
 TITLE:       Bugcheck "Too many savepoints (287)" at rollback after exception at EXECUTE BLOCK with exception handler
 DESCRIPTION:
 JIRA:        CORE-3029
+FBTEST:      bugs.core_3029
 """
 
 import pytest

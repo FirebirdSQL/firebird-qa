@@ -6,6 +6,7 @@ ISSUE:       6104
 TITLE:       Wrong handling of failures of TRANSACTION START trigger
 DESCRIPTION:
 JIRA:        CORE-5843
+FBTEST:      bugs.core_5843
 """
 
 import pytest

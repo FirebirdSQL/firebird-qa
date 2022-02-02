@@ -6,6 +6,7 @@ ISSUE:       1272
 TITLE:       Dependencies are not cleared when creation of expression index fails
 DESCRIPTION:
 JIRA:        CORE-879
+FBTEST:      bugs.core_0879
 """
 
 import pytest

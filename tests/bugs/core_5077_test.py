@@ -28,6 +28,7 @@ DESCRIPTION:
        PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else '"fbSampleDbCrypt"'
        KHOLDER_NAME = 'KeyHolder' if os.name == 'nt' else "fbSampleKeyHolder"
 JIRA:        CORE-5077
+FBTEST:      bugs.core_5077
 """
 
 import pytest

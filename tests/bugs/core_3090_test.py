@@ -6,6 +6,7 @@ ISSUE:       3469
 TITLE:       Incorrect LEFT JOIN result using table and derived constant subquery
 DESCRIPTION:
 JIRA:        CORE-3090
+FBTEST:      bugs.core_3090
 """
 
 import pytest

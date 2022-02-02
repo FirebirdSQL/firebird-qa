@@ -12,6 +12,7 @@ DESCRIPTION:
     Implementation limit exceeded.
     Block size exceeds implementation restriction.
 JIRA:        CORE-1227
+FBTEST:      bugs.core_1227
 """
 
 import pytest

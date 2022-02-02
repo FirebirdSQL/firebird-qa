@@ -5,6 +5,7 @@ ID:          issue-6873
 ISSUE:       6873
 TITLE:       SIMILAR TO does not use index when pattern starts with non-wildcard character (in contrary to LIKE)
 DESCRIPTION:
+FBTEST:      bugs.gh_6873
 """
 
 import pytest

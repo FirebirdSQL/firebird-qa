@@ -6,6 +6,7 @@ ISSUE:       4750
 TITLE:       Properties of user created in Legacy_UserManager padded with space up to 10 character
 DESCRIPTION:
 JIRA:        CORE-4430
+FBTEST:      bugs.core_4430
 """
 
 import pytest

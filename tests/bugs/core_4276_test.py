@@ -6,6 +6,7 @@ ISSUE:       4600
 TITLE:       Error on create table with "CHARACTER SET DOS775" field
 DESCRIPTION:
 JIRA:        CORE-4276
+FBTEST:      bugs.core_4276
 """
 
 import pytest

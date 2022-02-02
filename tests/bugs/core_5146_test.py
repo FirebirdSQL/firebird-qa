@@ -6,6 +6,7 @@ ISSUE:       5429
 TITLE:       Suboptimal join order if one table has a selective predicate and MIN is calculated for the other one
 DESCRIPTION:
 JIRA:        CORE-5146
+FBTEST:      bugs.core_5146
 """
 
 import pytest

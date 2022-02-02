@@ -14,6 +14,7 @@ DESCRIPTION:
   be preserved.
   Comment after final 'end' of procedure must also be preserved.
 JIRA:        CORE-6466
+FBTEST:      bugs.core_6466
 """
 
 import pytest

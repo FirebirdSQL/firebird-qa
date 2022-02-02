@@ -6,6 +6,7 @@ ISSUE:       4349
 TITLE:       Using system domain in procedures arguments/returns cause the proc to be unchangeable
 DESCRIPTION:
 JIRA:        CORE-4018
+FBTEST:      bugs.core_4018
 """
 
 import pytest

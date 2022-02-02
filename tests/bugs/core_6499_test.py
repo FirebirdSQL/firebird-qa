@@ -9,6 +9,7 @@ DESCRIPTION:
   Output must contain for one and only one (selected) table - TEST_01 (and its index).
   All lines from output which do not include this name are ignored (see 'subst' section).
 JIRA:        CORE-6499
+FBTEST:      bugs.core_6499
 """
 
 import pytest

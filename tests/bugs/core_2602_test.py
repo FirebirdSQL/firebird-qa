@@ -6,6 +6,7 @@ ISSUE:       3012
 TITLE:       Attachments using NONE charset may cause reads from MON$ tables to fail
 DESCRIPTION:
 JIRA:        CORE-2602
+FBTEST:      bugs.core_2602
 """
 
 import pytest

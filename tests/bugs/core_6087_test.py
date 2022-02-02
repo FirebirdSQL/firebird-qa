@@ -6,6 +6,7 @@ ISSUE:       6337
 TITLE:       Problem with casting within UNION
 DESCRIPTION:
 JIRA:        CORE-6087
+FBTEST:      bugs.core_6087
 """
 
 import pytest

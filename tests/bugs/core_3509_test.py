@@ -6,6 +6,7 @@ ISSUE:       3867
 TITLE:       Alter procedure allows to add the parameter with the same name
 DESCRIPTION:
 JIRA:        CORE-3509
+FBTEST:      bugs.core_3509
 """
 
 import pytest

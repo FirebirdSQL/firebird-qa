@@ -6,6 +6,7 @@ ISSUE:       3117
 TITLE:       Issue with SIMILAR TO and UTF8 on 2.5 Beta 2 (and 1)
 DESCRIPTION:
 JIRA:        CORE-2721
+FBTEST:      bugs.core_2721
 """
 
 import pytest

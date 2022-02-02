@@ -37,6 +37,7 @@ DESCRIPTION:
 
   Checked on 5.0.0.40
 JIRA:        CORE-1241
+FBTEST:      bugs.gh_1665
 """
 
 import pytest

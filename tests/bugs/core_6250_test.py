@@ -18,6 +18,7 @@ DESCRIPTION:
   Completely fixed in snapshots 4.0.0.1783 and 3.0.6.33254 (checked 23.02.2020).
   Added special check for parameter that is declared of built-in datatype rather than domain.
 JIRA:        CORE-6250
+FBTEST:      bugs.core_6250
 """
 
 import pytest

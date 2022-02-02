@@ -6,6 +6,7 @@ ISSUE:       1092
 TITLE:       Tricky index names can defeat the parsing logic when generating a human readable plan
 DESCRIPTION:
 JIRA:        CORE-2508
+FBTEST:      bugs.core_2508
 """
 
 import pytest

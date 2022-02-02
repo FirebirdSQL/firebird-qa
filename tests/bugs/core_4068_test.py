@@ -6,6 +6,7 @@ ISSUE:       4396
 TITLE:       create package fails on creating header as soon as there is at least 1 procedure name
 DESCRIPTION:
 JIRA:        CORE-4068
+FBTEST:      bugs.core_4068
 """
 
 import pytest

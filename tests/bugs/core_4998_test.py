@@ -26,6 +26,7 @@ DESCRIPTION:
     File firebird.log is compared BEFORE and AFTER os.system( f_python_separate_exec_context ).
     No new messages related to 10054 error should occur during this test in firebird.log.
 JIRA:        CORE-4998
+FBTEST:      bugs.core_4998
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6118
 TITLE:       Command 'REVOKE ALL ON ALL FROM <anyname>' lead server to crash
 DESCRIPTION:
 JIRA:        CORE-5858
+FBTEST:      bugs.core_5858
 """
 
 import pytest

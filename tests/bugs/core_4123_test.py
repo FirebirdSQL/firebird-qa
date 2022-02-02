@@ -6,6 +6,7 @@ ISSUE:       4451
 TITLE:       Firebird crash when executing an stored procedure called by a trigger that converts string to upper
 DESCRIPTION:
 JIRA:        CORE-4123
+FBTEST:      bugs.core_4123
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-5933
 ISSUE:       5933
-TITLE:       Regression in 3.0+: message CTE 'X' has cyclic dependencies appear when 'X' is alias for resultset and there is previous CTE part with the same name 'X' in the query
+TITLE:       Regression in 3.0+: message CTE 'X' has cyclic dependencies appear when 'X'
+  is alias for resultset and there is previous CTE part with the same name 'X' in the query
 DESCRIPTION:
 JIRA:        CORE-5667
+FBTEST:      bugs.core_5667
 """
 
 import pytest

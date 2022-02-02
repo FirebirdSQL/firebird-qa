@@ -27,6 +27,7 @@ DESCRIPTION:
     ::: NB ::: Test has separate code for 3.0.x and 4.0 because there is no column
     mon$attachments.mon$wire_encrypted in FB 3.x
 JIRA:        CORE-5948
+FBTEST:      bugs.core_5948
 """
 
 import pytest

@@ -7,6 +7,7 @@ TITLE:       Incorrect caching of the subquery result (procedure call) in indepe
 DESCRIPTION:
   Beside stanalone stored procedure it was decided to check also stored function, and packaged SP and func.
 JIRA:        CORE-5871
+FBTEST:      bugs.core_5871
 """
 
 import pytest

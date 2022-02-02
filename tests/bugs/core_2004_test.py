@@ -16,6 +16,7 @@ DESCRIPTION:
 NOTES:
   FB config parameters AuthClient and UserManager must contain 'Srp' plugin in their values.
 JIRA:        CORE-2004
+FBTEST:      bugs.core_2004
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1543
 TITLE:       Recursive Query bug in FB2.1
 DESCRIPTION:
 JIRA:        CORE-1122
+FBTEST:      bugs.core_1122
 """
 
 import pytest

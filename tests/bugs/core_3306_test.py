@@ -3,9 +3,11 @@
 """
 ID:          issue-3673
 ISSUE:       3673
-TITLE:       Invariant sub-query is treated as variant thus causing multiple invokations of a nested stored procedure
+TITLE:       Invariant sub-query is treated as variant thus causing multiple invokations
+  of a nested stored procedure
 DESCRIPTION:
 JIRA:        CORE-3306
+FBTEST:      bugs.core_3306
 """
 
 import pytest

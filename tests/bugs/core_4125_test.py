@@ -6,6 +6,7 @@ ISSUE:       4453
 TITLE:       Using COLLATE UNICODE_CI_AI in WHERE clause (not indexed) is extremely slow
 DESCRIPTION:
 JIRA:        CORE-4125
+FBTEST:      bugs.core_4125
 """
 
 import pytest

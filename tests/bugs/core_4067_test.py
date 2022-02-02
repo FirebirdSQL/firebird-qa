@@ -6,6 +6,7 @@ ISSUE:       4395
 TITLE:       Problem with "CREATE DATABASE ... COLLATION ..." and 1 dialect
 DESCRIPTION:
 JIRA:        CORE-4067
+FBTEST:      bugs.core_4067
 """
 
 import pytest

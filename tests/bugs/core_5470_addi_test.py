@@ -28,6 +28,7 @@ DESCRIPTION:
     Confirmed bug on 3.0.6.33273: only 'point-1' appears in the trace. No further statements at all.
     All fine on 3.0.6.33276: all three statements can be seen in the trace.
 JIRA:        CORE-5470
+FBTEST:      bugs.core_5470_addi
 """
 
 import pytest

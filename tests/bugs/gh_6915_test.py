@@ -7,6 +7,7 @@ TITLE:       Allow attribute DISABLE-COMPRESSIONS in UNICODE collations
 DESCRIPTION:
   Only ability to use 'DISABLE-COMPRESSION' in attributes list is checked here.
   Performance comparison with and without this attribute will be checked in separate test.
+FBTEST:      bugs.gh_6915
 """
 
 import pytest

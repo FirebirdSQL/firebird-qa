@@ -6,6 +6,7 @@ ISSUE:       4873
 TITLE:       DDL trigger remains active after dropped
 DESCRIPTION:
 JIRA:        CORE-4555
+FBTEST:      bugs.core_4555
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2198
 TITLE:       Problem with COLLATE ES_ES_CI_AI
 DESCRIPTION:
 JIRA:        CORE-1774
+FBTEST:      bugs.core_1774
 """
 
 import pytest

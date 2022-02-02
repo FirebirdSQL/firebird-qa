@@ -6,6 +6,7 @@ ISSUE:       2965
 TITLE:       CI column does not group correctly with a second column
 DESCRIPTION:
 JIRA:        CORE-2555
+FBTEST:      bugs.core_2555
 """
 
 import pytest

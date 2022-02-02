@@ -6,6 +6,7 @@ ISSUE:       4446
 TITLE:       Expression index may be not used for derived fields or view fields
 DESCRIPTION:
 JIRA:        CORE-4118
+FBTEST:      bugs.core_4118
 """
 
 import pytest

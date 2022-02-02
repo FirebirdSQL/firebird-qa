@@ -6,6 +6,7 @@ ISSUE:       3740
 TITLE:       Server may crash or corrupt data if SELECT WITH LOCK is issued against records not in the latest format
 DESCRIPTION:
 JIRA:        CORE-3374
+FBTEST:      bugs.core_3374
 """
 
 import pytest

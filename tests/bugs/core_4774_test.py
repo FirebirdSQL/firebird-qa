@@ -11,6 +11,7 @@ NOTES:
   and collect all requested data in a type of temporary table, once execution is complete,
   fetches are done against this temporary table"
 JIRA:        CORE-4774
+FBTEST:      bugs.core_4774
 """
 
 import pytest

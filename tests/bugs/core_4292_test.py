@@ -3,7 +3,8 @@
 """
 ID:          issue-4615
 ISSUE:       4615
-TITLE:       Server ignores asynchronous (monitoring or cancellation) requests while preparing a query with lot of windowed functions
+TITLE:       Server ignores asynchronous (monitoring or cancellation) requests while
+  preparing a query with lot of windowed functions
 DESCRIPTION:
   Preparing stage of test query will last lot of time even on power host.
   We launch separate (child) process with ISQL and allow him to start preparing this query during several
@@ -11,6 +12,7 @@ DESCRIPTION:
   Before this ticket was fixed it was NOT possible neither to cancel it by using MON$ATTACHMENTS nor even
   query MON$ tables at all (until this 'complex query' preparing finish).
 JIRA:        CORE-4292
+FBTEST:      bugs.core_4292
 """
 
 import pytest

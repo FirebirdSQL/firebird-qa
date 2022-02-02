@@ -6,6 +6,7 @@ ISSUE:       4886
 TITLE:       BIN_SHL and BIN_SHR does not work in Dialect 1
 DESCRIPTION:
 JIRA:        CORE-4569
+FBTEST:      bugs.core_4569
 """
 
 import pytest

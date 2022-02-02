@@ -6,6 +6,7 @@ ISSUE:       3585
 TITLE:       String truncation occurs when selecting from a view containing NOT IN inside
 DESCRIPTION:
 JIRA:        CORE-3211
+FBTEST:      bugs.core_3211
 """
 
 import pytest

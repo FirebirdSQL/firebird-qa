@@ -3,9 +3,11 @@
 """
 ID:          issue-5425
 ISSUE:       5425
-TITLE:       Error "no current record to fetch" if some record is to be deleted both by the statement itself and by some trigger fired during statement execution
+TITLE:       Error "no current record to fetch" if some record is to be deleted both by
+  the statement itself and by some trigger fired during statement execution
 DESCRIPTION:
 JIRA:        CORE-5142
+FBTEST:      bugs.core_5142
 """
 
 import pytest

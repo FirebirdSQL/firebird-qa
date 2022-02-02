@@ -6,6 +6,7 @@ ISSUE:       1281
 TITLE:       DDL - object in use
 DESCRIPTION:
 JIRA:        CORE-888
+FBTEST:      bugs.core_0888
 """
 
 import pytest

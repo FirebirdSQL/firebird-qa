@@ -6,6 +6,7 @@ ISSUE:       1854
 TITLE:       Outer joins don't work properly with the MON$ tables
 DESCRIPTION:
 JIRA:        CORE-1436
+FBTEST:      bugs.core_1436
 """
 
 import pytest

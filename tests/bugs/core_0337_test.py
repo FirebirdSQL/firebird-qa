@@ -17,6 +17,7 @@ DESCRIPTION:
   Found in FB tracker as: http://tracker.firebirdsql.org/browse/CORE-337
   Fixed in 2.0 Beta 1
 JIRA:        CORE-337
+FBTEST:      bugs.core_0337
 """
 
 import pytest

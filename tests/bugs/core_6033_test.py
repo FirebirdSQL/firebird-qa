@@ -6,6 +6,7 @@ ISSUE:       6283
 TITLE:       SUBSTRING(CURRENT_TIMESTAMP) does not work
 DESCRIPTION:
 JIRA:        CORE-6033
+FBTEST:      bugs.core_6033
 """
 
 import pytest

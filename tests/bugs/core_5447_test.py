@@ -3,7 +3,8 @@
 """
 ID:          issue-5718
 ISSUE:       5718
-TITLE:       EXECUTE STATEMENT <e> when <e> starts with '--' issues -Unexpected ... column <NNN>, value <NNN> is invalid and can change randomly
+TITLE:       EXECUTE STATEMENT <e> when <e> starts with '--' issues -Unexpected ... column <NNN>,
+  value <NNN> is invalid and can change randomly
 DESCRIPTION:
   We run EB that is show in the ticket three times, with redirection STDOUT and STDERR to separate files.
   Then we open file of STDERR and parse it: search for lines which contain "-Unexpected end of command" text.
@@ -12,6 +13,7 @@ DESCRIPTION:
   1) all columns are positive integers;
   2) contains only one element (i.e. all columns have the same value).
 JIRA:        CORE-5447
+FBTEST:      bugs.core_5447
 """
 
 import pytest

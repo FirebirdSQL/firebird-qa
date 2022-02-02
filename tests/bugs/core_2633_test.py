@@ -6,6 +6,7 @@ ISSUE:       3041
 TITLE:       SELECT WITH LOCK with no fields are accessed clears the data
 DESCRIPTION:
 JIRA:        CORE-2633
+FBTEST:      bugs.core_2633
 """
 
 import pytest

@@ -32,6 +32,7 @@ DESCRIPTION:
 
     Test checks ratio between elapsed times and compares it with thresholds.
     Currently both SIMILAR TO and SUBSTRING...SIMILAR use the same thresholds =  1.30.
+FBTEST:      bugs.gh_6875
 """
 
 import pytest

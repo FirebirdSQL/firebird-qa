@@ -9,6 +9,7 @@ DESCRIPTION:
   Create Table T1(ID integer, FName Varchar(20); -- OK
   Commit; ---Error Message: CHARACTER SET GBK is not installed
 JIRA:        CORE-1167
+FBTEST:      bugs.core_1167
 """
 
 import pytest

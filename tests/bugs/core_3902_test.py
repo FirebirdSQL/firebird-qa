@@ -6,6 +6,7 @@ ISSUE:       4238
 TITLE:       Derived fields may not be optimized via an index
 DESCRIPTION:
 JIRA:        CORE-3902
+FBTEST:      bugs.core_3902
 """
 
 import pytest

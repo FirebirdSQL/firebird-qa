@@ -6,6 +6,7 @@ ISSUE:       4443
 TITLE:       EXECUTE BLOCK execution cause server crash
 DESCRIPTION:
 JIRA:        CORE-4115
+FBTEST:      bugs.core_4115
 """
 
 import pytest

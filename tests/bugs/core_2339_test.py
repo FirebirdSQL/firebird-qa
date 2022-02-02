@@ -6,6 +6,7 @@ ISSUE:       2763
 TITLE:       Incorrect result for the derived expression based on aggregate and computation
 DESCRIPTION:
 JIRA:        CORE-2339
+FBTEST:      bugs.core_2339
 """
 
 import pytest

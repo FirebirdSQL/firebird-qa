@@ -5,6 +5,7 @@ ID:          issue-6816
 ISSUE:       6816
 TITLE:       Illegal output length in base64/hex_encode/decode functions
 DESCRIPTION:
+FBTEST:      bugs.gh_6816
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1967
 TITLE:       Unnecessary index scan happens when the same index is mapped to both WHERE and ORDER BY clauses
 DESCRIPTION:
 JIRA:        CORE-1550
+FBTEST:      bugs.core_1550
 """
 
 import pytest

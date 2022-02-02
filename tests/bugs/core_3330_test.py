@@ -5,7 +5,8 @@ ID:          issue-3696
 ISSUE:       3696
 TITLE:       Server crashes while recreating the table with a NULL -> NOT NULL change
 DESCRIPTION:
-JIRA:        CORE-1000
+JIRA:        CORE-3330
+FBTEST:      bugs.core_3330
 """
 
 import pytest

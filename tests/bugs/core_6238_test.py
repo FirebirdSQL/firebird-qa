@@ -3,9 +3,11 @@
 """
 ID:          issue-6482
 ISSUE:       6482
-TITLE:       DECFLOAT: subtraction Num1 - Num2 leads to "Decimal float overflow" if Num2 is specified in scientific notation and less than max double ( 1.7976931348623157e308 )
+TITLE:       DECFLOAT: subtraction Num1 - Num2 leads to "Decimal float overflow" if Num2
+  is specified in scientific notation and less than max double ( 1.7976931348623157e308 )
 DESCRIPTION:
 JIRA:        CORE-6238
+FBTEST:      bugs.core_6238
 """
 
 import pytest

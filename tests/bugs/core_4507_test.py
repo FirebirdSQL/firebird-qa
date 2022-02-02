@@ -6,6 +6,7 @@ ISSUE:       4826
 TITLE:       Unable delete procedure source on Firebird 3.0 Alpha 2.0
 DESCRIPTION:
 JIRA:        CORE-4507
+FBTEST:      bugs.core_4507
 """
 
 import pytest

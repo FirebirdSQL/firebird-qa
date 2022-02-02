@@ -10,6 +10,7 @@ DESCRIPTION:
   NB: currently acceptable value for '-buffers' is limited from 50 to 2147483646.
   [pcisar] 22.12.2021 Crashes v4.0.0.2496 64-bit Linux
 JIRA:        CORE-6509
+FBTEST:      bugs.core_6509
 """
 
 import pytest

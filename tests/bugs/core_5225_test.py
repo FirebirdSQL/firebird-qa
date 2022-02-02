@@ -9,6 +9,7 @@ DESCRIPTION:
   Then we try to establish subsequent attachments via ES/EDS for each of them.
   No error should occur.
 JIRA:        CORE-5225
+FBTEST:      bugs.core_5225
 """
 
 import pytest

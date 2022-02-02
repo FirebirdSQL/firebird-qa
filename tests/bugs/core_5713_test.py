@@ -6,6 +6,7 @@ ISSUE:       5979
 TITLE:       Field alias disapears in complex query
 DESCRIPTION:
 JIRA:        CORE-5713
+FBTEST:      bugs.core_5713
 """
 
 import pytest

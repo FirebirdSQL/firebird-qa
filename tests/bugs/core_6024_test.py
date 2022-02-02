@@ -6,6 +6,7 @@ ISSUE:       6274
 TITLE:       FB3.0.4.33063 vs FB3.0.5.33100 manual plan cause "index cannot be used in the specified plan"
 DESCRIPTION:
 JIRA:        CORE-6024
+FBTEST:      bugs.core_6024
 """
 
 import pytest

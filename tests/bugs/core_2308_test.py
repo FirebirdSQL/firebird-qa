@@ -6,6 +6,7 @@ ISSUE:       2732
 TITLE:       SIMILAR TO produces random results with [x-y] expressions
 DESCRIPTION:
 JIRA:        CORE-2308
+FBTEST:      bugs.core_2308
 """
 
 import pytest

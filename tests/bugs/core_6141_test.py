@@ -32,6 +32,7 @@ NOTES:
   gfix works fine, although the outpout is more verbose than original test expected
   See also: core_6309_test.py
 JIRA:        CORE-6141
+FBTEST:      bugs.core_6141
 """
 
 import pytest

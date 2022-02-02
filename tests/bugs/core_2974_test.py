@@ -6,6 +6,7 @@ ISSUE:       3356
 TITLE:       Unexpected "Invalid SIMILAR TO pattern" error
 DESCRIPTION:
 JIRA:        CORE-2974
+FBTEST:      bugs.core_2974
 """
 
 import pytest

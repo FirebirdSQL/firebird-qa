@@ -3,11 +3,13 @@
 """
 ID:          issue-6528
 ISSUE:       6528
-TITLE:       Make usage of TIMESTAMP/TIME WITH TIME ZONE convenient for users when appropriate ICU library is not installed on the client side
+TITLE:       Make usage of TIMESTAMP/TIME WITH TIME ZONE convenient for users when appropriate
+  ICU library is not installed on the client side
 DESCRIPTION:
   Test only verifies ability to use 'EXTENDED' clause in SET BIND statement.
   We can not simulate absense of appropriate ICU library and for this reason values of time/timestamp are suppressednot checked.
 JIRA:        CORE-6286
+FBTEST:      bugs.core_6286
 """
 
 import pytest

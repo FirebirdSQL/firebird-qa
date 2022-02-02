@@ -20,6 +20,7 @@ DESCRIPTION:
   firebird.log will contain after this:
     internal Firebird consistency check (cannot find tip page (165), file: tra.cpp line: 2331)
 JIRA:        CORE-5935
+FBTEST:      bugs.core_5935
 """
 
 import pytest

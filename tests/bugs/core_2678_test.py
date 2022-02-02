@@ -6,6 +6,7 @@ ISSUE:       3081
 TITLE:       Full outer join cannot use available indices (very slow execution)
 DESCRIPTION:
 JIRA:        CORE-2678
+FBTEST:      bugs.core_2678
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4529
 TITLE:       Error when compiling the procedure containing the statement if (x = (select ...))
 DESCRIPTION:
 JIRA:        CORE-4204
+FBTEST:      bugs.core_4204
 """
 
 import pytest

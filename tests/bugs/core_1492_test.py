@@ -6,6 +6,7 @@ ISSUE:       1907
 TITLE:       BLOB isn't compatible with [VAR]CHAR in COALESCE
 DESCRIPTION:
 JIRA:        CORE-1492
+FBTEST:      bugs.core_1492
 """
 
 import pytest

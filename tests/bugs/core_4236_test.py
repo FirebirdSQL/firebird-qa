@@ -32,6 +32,7 @@ DESCRIPTION:
     before and after validation: it must contain phrase "Validation finished: 0 errors"
     (we check that both validation *did* complete and absense of errors in DB).
 JIRA:        CORE-4236
+FBTEST:      bugs.core_4236
 """
 
 from __future__ import annotations

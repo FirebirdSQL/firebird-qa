@@ -6,6 +6,7 @@ ISSUE:       5971
 TITLE:       Store precision of DECFLOAT in RDB$FIELDS
 DESCRIPTION:
 JIRA:        CORE-5705
+FBTEST:      bugs.core_5705
 """
 
 import pytest

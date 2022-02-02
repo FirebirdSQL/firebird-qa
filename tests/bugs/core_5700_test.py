@@ -7,6 +7,7 @@ TITLE:       DECFLOAT underflow should yield zero instead of an error
 DESCRIPTION:
   Test case is based on letter from Alex, 05-feb-2018 20:23.
 JIRA:        CORE-5700
+FBTEST:      bugs.core_5700
 """
 
 import pytest

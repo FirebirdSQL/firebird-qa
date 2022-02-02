@@ -6,6 +6,7 @@ ISSUE:       5444
 TITLE:       Unique index could be created on non-unique data
 DESCRIPTION:
 JIRA:        CORE-5161
+FBTEST:      bugs.core_5161
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2219
 TITLE:       AV at prepare of query with unused parametrized CTE
 DESCRIPTION:
 JIRA:        CORE-1793
+FBTEST:      bugs.core_1793
 """
 
 import pytest

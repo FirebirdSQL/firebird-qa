@@ -6,6 +6,7 @@ ISSUE:       2976
 TITLE:       internal error [335544384]
 DESCRIPTION:
 JIRA:        CORE-2566
+FBTEST:      bugs.core_2566
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5081
 TITLE:       Command `SHOW TABLE` fails when the table contains field with unicode collationin its DDL
 DESCRIPTION:
 JIRA:        CORE-4782
+FBTEST:      bugs.core_4782
 """
 
 import pytest

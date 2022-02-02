@@ -36,6 +36,7 @@ DESCRIPTION:
     335544351
   ========
 JIRA:        CORE-6028
+FBTEST:      bugs.core_6028
 """
 
 import pytest

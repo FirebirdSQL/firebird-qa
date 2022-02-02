@@ -6,6 +6,7 @@ ISSUE:       3072
 TITLE:       Write note into log when automatic sweep is started
 DESCRIPTION:
 JIRA:        CORE-2668
+FBTEST:      bugs.core_2668
 """
 
 import pytest

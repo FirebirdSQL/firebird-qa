@@ -6,6 +6,7 @@ ISSUE:       2847
 TITLE:       String values in error messages are not converted to connection charset
 DESCRIPTION:
 JIRA:        CORE-2431
+FBTEST:      bugs.core_2431
 """
 
 import pytest

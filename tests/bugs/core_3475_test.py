@@ -6,6 +6,7 @@ ISSUE:       3836
 TITLE:       Parameters inside the CAST function are described as not nullable
 DESCRIPTION:
 JIRA:        CORE-3475
+FBTEST:      bugs.core_3475
 """
 
 import pytest

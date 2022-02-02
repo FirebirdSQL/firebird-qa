@@ -6,6 +6,7 @@ ISSUE:       5681
 TITLE:       Result of boolean expression can not be concatenated with string literal
 DESCRIPTION:
 JIRA:        CORE-5408
+FBTEST:      bugs.core_5408
 """
 
 import pytest

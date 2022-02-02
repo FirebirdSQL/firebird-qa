@@ -6,6 +6,7 @@ ISSUE:       3136
 TITLE:       Naive metadata extraction code in isql is defeated by "check" keyword typed in mixed case
 DESCRIPTION:
 JIRA:        CORE-2741
+FBTEST:      bugs.core_2741
 """
 
 import pytest

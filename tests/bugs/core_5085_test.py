@@ -6,6 +6,7 @@ ISSUE:       5370
 TITLE:       Allow to fixup (nbackup) database via Services API
 DESCRIPTION:
 JIRA:        CORE-5085
+FBTEST:      bugs.core_5085
 """
 
 import pytest

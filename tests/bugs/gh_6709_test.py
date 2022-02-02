@@ -6,6 +6,7 @@ ISSUE:       6709
 TITLE:       gbak discards replica mode
 DESCRIPTION:
 JIRA:        CORE-6478
+FBTEST:      bugs.gh_6709
 """
 
 import pytest

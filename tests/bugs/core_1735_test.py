@@ -6,6 +6,7 @@ ISSUE:       2159
 TITLE:       Bug in SET DEFAULT statement
 DESCRIPTION:
 JIRA:        CORE-1735
+FBTEST:      bugs.core_1735
 """
 
 import pytest

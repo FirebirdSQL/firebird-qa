@@ -8,6 +8,7 @@ DESCRIPTION:
   Confirmed bug on: 4.0.0.1573, 3.0.5.33166
   (got in firebird.log: "internal Firebird consistency check (invalid SEND request (167), file: JrdStatement.cpp line: 327)")
 JIRA:        CORE-6137
+FBTEST:      bugs.core_6137
 """
 
 import pytest

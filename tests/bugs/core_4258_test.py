@@ -6,6 +6,7 @@ ISSUE:       4582
 TITLE:       Regression: Wrong boundary for minimum value for BIGINT/DECIMAL(18)
 DESCRIPTION:
 JIRA:        CORE-4258
+FBTEST:      bugs.core_4258
 """
 
 import pytest

@@ -11,6 +11,7 @@ DESCRIPTION:
   Furter, we have to remove digital ID for this charset because it can be changed in the future:
   'charset: 2 ASCII' --> 'charset: ASCII'
 JIRA:        CORE-6160
+FBTEST:      bugs.core_6160
 """
 
 import pytest

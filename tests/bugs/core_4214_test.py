@@ -6,6 +6,7 @@ ISSUE:       4539
 TITLE:       GTT should not reference permanent relation
 DESCRIPTION:
 JIRA:        CORE-4214
+FBTEST:      bugs.core_4214
 """
 
 import pytest

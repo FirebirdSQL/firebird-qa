@@ -10,6 +10,7 @@ DESCRIPTION:
   The only new record in firebird.log must be:
     "Modifying procedure SP_CALC_VAL which is currently in use by active user requests"
 JIRA:        CORE-5457
+FBTEST:      bugs.core_5457
 """
 
 import pytest

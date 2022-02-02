@@ -3,9 +3,11 @@
 """
 ID:          issue-5053
 ISSUE:       5053
-TITLE:       Can not restore in FB 3.0 SuperServer from .fbk which source .fdb was created on 2.5.4 and moved to READ-ONLY before backed up
+TITLE:       Can not restore in FB 3.0 SuperServer from .fbk which source .fdb was created
+  on 2.5.4 and moved to READ-ONLY before backed up
 DESCRIPTION:
 JIRA:        CORE-4748
+FBTEST:      bugs.core_4748
 """
 
 import pytest

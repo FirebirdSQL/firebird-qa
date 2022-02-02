@@ -20,6 +20,7 @@ DESCRIPTION:
   When this parameter is True, all info passed to DPB in UTF-8. Test uses this to form proper DPB and connect
   to database with non-ascii role. This role must be specified WITHOUT double quotes.
 JIRA:        CORE-3511
+FBTEST:      bugs.core_3511
 """
 
 import pytest
@@ -110,7 +111,6 @@ expected_stdout_2 = """
 @pytest.mark.platform('Windows')
 def test_2(act_2: Action, tmp_user: User):
     pytest.fail("Not IMPLEMENTED")
-
 
 # test_script_2
 #---

@@ -6,6 +6,7 @@ ISSUE:       5818
 TITLE:       Computed decimal field in a view has wrong RDB$FIELD_PRECISION
 DESCRIPTION:
 JIRA:        CORE-5550
+FBTEST:      bugs.core_5550
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4230
 TITLE:       Wrong numbers in error message for decreasing char/varchar columns
 DESCRIPTION:
 JIRA:        CORE-3894
+FBTEST:      bugs.core_3894
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-3909
 ISSUE:       3909
-TITLE:       Nested loop plan is chosen instead of the sort merge for joining independent streams using keys of different types
+TITLE:       Nested loop plan is chosen instead of the sort merge for joining independent
+  streams using keys of different types
 DESCRIPTION:
 JIRA:        CORE-3553
+FBTEST:      bugs.core_3553
 """
 
 import pytest

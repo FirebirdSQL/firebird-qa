@@ -6,6 +6,7 @@ ISSUE:       3351
 TITLE:       rdb$set_context does NOT allow to overwrite any vars after encountering limit (default=1000) of them
 DESCRIPTION:
 JIRA:        CORE-2969
+FBTEST:      bugs.core_2969
 """
 
 import pytest

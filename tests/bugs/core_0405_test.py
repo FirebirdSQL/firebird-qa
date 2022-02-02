@@ -13,6 +13,7 @@ DESCRIPTION:
     -803
     335544349
 JIRA:        CORE-405
+FBTEST:      bugs.core_0405
 """
 
 import pytest

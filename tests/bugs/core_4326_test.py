@@ -6,6 +6,7 @@ ISSUE:       4649
 TITLE:       Keyword SET should not be required in ALTER USER statement
 DESCRIPTION:
 JIRA:        CORE-4326
+FBTEST:      bugs.core_4326
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-6456
 ISSUE:       6456
-TITLE:       Command "ISQL -X" can not extract ROLE name when use multi-byte charset for connection (4.x only is affected)
+TITLE:       Command "ISQL -X" can not extract ROLE name when use multi-byte charset for
+  connection (4.x only is affected)
 DESCRIPTION:
 JIRA:        CORE-6211
+FBTEST:      bugs.core_6211
 """
 
 import pytest

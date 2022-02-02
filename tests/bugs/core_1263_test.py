@@ -6,6 +6,7 @@ ISSUE:       1686
 TITLE:       GSec incorrectly processes some switches
 DESCRIPTION:
 JIRA:        CORE-1263
+FBTEST:      bugs.core_1263
 """
 
 import pytest

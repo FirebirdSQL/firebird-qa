@@ -17,6 +17,7 @@ DESCRIPTION:
   In order to properly finish test, we have to kill hanging ISQL and change DB state to full shutdown (with subsequent
   returning it to online) - fortunately, connection using TCP remains avaliable in this case.
 JIRA:        CORE-5730
+FBTEST:      bugs.gh_5995
 """
 
 import pytest

@@ -5,6 +5,7 @@ ID:          issue-7018
 ISSUE:       7018
 TITLE:       Problems with windows frames
 DESCRIPTION:
+FBTEST:      bugs.gh_7018
 """
 
 import pytest

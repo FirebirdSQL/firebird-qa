@@ -12,6 +12,7 @@ DESCRIPTION:
   ISQL should _not_ issue any error and all lines of its STDOUT should start from the names of
   output arguments (letter 'O': O1, O2, ... O5000).
 JIRA:        CORE-5231
+FBTEST:      bugs.core_5231
 """
 
 import pytest

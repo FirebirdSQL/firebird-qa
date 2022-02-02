@@ -6,6 +6,7 @@ ISSUE:       910
 TITLE:       Inconsistent results using STARTING WITH and COALESCE
 DESCRIPTION:
 JIRA:        CORE-555
+FBTEST:      bugs.core_555
 """
 
 import pytest

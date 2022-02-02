@@ -3,7 +3,8 @@
 """
 ID:          issue-5806
 ISSUE:       5806
-TITLE:       Add ability to backup/restore only those (several) tables which are enumerated as command line argument (pattern)
+TITLE:       Add ability to backup/restore only those (several) tables which are enumerated
+  as command line argument (pattern)
 DESCRIPTION:
   We create several tables and add single row to each of them. Row contains name of corresponding table.
   Then we create view that based on UNIONED-query to all of these tables.
@@ -15,6 +16,7 @@ DESCRIPTION:
   For this purpose we create single pattern for EXCLUDING some tables (see 'skip_ptn' variable) and use
   this pattern together with elements from patterns list for tables which data must be included in .fbk.
 JIRA:        CORE-5538
+FBTEST:      bugs.core_5538
 """
 
 import pytest

@@ -18,6 +18,7 @@ DESCRIPTION:
 
   Confirmed on WI-V4.0.1.2606: needed to wait for exactly 110s after each page starting from N-3.
   Checked on 3.0.8.33501, 4.0.1.2613.
+FBTEST:      bugs.gh_6976
 """
 
 import pytest

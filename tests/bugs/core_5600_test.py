@@ -6,6 +6,7 @@ ISSUE:       5866
 TITLE:       Invalid blob id when add a new blob column of type text and update another field
 DESCRIPTION:
 JIRA:        CORE-5600
+FBTEST:      bugs.core_5600
 """
 
 import pytest

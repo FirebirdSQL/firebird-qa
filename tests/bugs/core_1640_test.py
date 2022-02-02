@@ -6,6 +6,7 @@ ISSUE:       2066
 TITLE:       CREATE OR ALTER VIEW statement
 DESCRIPTION:
 JIRA:        CORE-1640
+FBTEST:      bugs.core_1640
 """
 
 import pytest

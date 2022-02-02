@@ -6,6 +6,7 @@ ISSUE:       4401
 TITLE:       Constant columns getting empty value with subselect from procedure
 DESCRIPTION:
 JIRA:        CORE-4073
+FBTEST:      bugs.core_4073
 """
 
 import pytest

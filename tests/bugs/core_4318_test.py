@@ -6,6 +6,7 @@ ISSUE:       4641
 TITLE:       Regression: Predicates involving PSQL variables/parameters are not pushed inside the aggregation
 DESCRIPTION:
 JIRA:        CORE-4318
+FBTEST:      bugs.core_4318
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6237
 TITLE:       Regression: ROLE does not passed in ES/EDS (specifying it in the statement is ignored)
 DESCRIPTION:
 JIRA:        CORE-5985
+FBTEST:      bugs.core_5985
 """
 
 import pytest

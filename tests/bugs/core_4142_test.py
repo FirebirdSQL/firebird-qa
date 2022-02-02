@@ -6,6 +6,7 @@ ISSUE:       4469
 TITLE:       Regression: Server crashes while preparing a query with DISTINCT and ORDER BY
 DESCRIPTION:
 JIRA:        CORE-4142
+FBTEST:      bugs.core_4142
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2443
 TITLE:       SUBSTRING with regular expression (SIMILAR TO) capability
 DESCRIPTION:
 JIRA:        CORE-2006
+FBTEST:      bugs.core_2006
 """
 
 import pytest

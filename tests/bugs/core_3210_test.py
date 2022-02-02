@@ -3,9 +3,11 @@
 """
 ID:          issue-3584
 ISSUE:       3584
-TITLE:       The cursor identified in the UPDATE or DELETE statement is not positioned on a row. no current record for fetch operation in SELECT query
+TITLE:       The cursor identified in the UPDATE or DELETE statement is not positioned on
+  a row. no current record for fetch operation in SELECT query
 DESCRIPTION:
 JIRA:        CORE-3210
+FBTEST:      bugs.core_3210
 """
 
 import pytest

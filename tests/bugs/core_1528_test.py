@@ -6,6 +6,7 @@ ISSUE:       1942
 TITLE:       Functions DATEDIFF does not work in dialect 1
 DESCRIPTION:
 JIRA:        CORE-1528
+FBTEST:      bugs.core_1528
 """
 
 import pytest

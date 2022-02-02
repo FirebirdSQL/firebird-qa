@@ -6,6 +6,7 @@ ISSUE:       5166
 TITLE:       Incorrect number of affected rows for UPDATE against VIEW created WITH CHECK OPTION
 DESCRIPTION:
 JIRA:        CORE-4870
+FBTEST:      bugs.core_4870
 """
 
 import pytest

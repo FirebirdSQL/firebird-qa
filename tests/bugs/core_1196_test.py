@@ -6,6 +6,7 @@ ISSUE:       1621
 TITLE:       Long SQL statements break TCP/IP connection
 DESCRIPTION:
 JIRA:        CORE-1196
+FBTEST:      bugs.core_1196
 """
 
 import pytest

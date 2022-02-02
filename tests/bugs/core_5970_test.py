@@ -9,6 +9,7 @@ DESCRIPTION:
   This test checks only ability to call ENCRYPT()/DECRYPT() functions with different parameters.
   Also, it checks that <source> -> encrypt(<source>) -> decrypt(encrypted_source) gives the same <source>.
 JIRA:        CORE-5970
+FBTEST:      bugs.core_5970
 """
 
 import pytest

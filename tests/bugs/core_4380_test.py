@@ -6,6 +6,7 @@ ISSUE:       4702
 TITLE:       ISQL truncates blob when reading an empty segment
 DESCRIPTION:
 JIRA:        CORE-4380
+FBTEST:      bugs.core_4380
 """
 
 import pytest

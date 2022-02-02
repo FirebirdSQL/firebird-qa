@@ -6,6 +6,7 @@ ISSUE:       6156
 TITLE:       ROLE not passed in EXECUTE STATEMENT ... ON EXTERNAL
 DESCRIPTION:
 JIRA:        CORE-5898
+FBTEST:      bugs.core_5898
 """
 
 import pytest

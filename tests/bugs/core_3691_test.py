@@ -6,6 +6,7 @@ ISSUE:       4039
 TITLE:       Missing constraint name in foreign key error message in FB 2.1.4
 DESCRIPTION:
 JIRA:        CORE-3691
+FBTEST:      bugs.core_3691
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6659
 TITLE:       Parameter in offset expression in LAG, LEAD, NTH_VALUE window functions requires explicit cast to BIGINT or INTEGER
 DESCRIPTION:
 JIRA:        CORE-6421
+FBTEST:      bugs.core_6421
 """
 
 import pytest

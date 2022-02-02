@@ -6,6 +6,7 @@ ISSUE:       3443
 TITLE:       Using both the procedure name and alias inside an explicit plan crashes the server
 DESCRIPTION:
 JIRA:        CORE-3064
+FBTEST:      bugs.core_3064
 """
 
 import pytest

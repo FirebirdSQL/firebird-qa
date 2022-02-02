@@ -6,6 +6,7 @@ ISSUE:       1416
 TITLE:       DISTINCT vs NULLS LAST clause: wrong order of NULLs
 DESCRIPTION:
 JIRA:        CORE-1005
+FBTEST:      bugs.core_1005
 """
 
 import pytest

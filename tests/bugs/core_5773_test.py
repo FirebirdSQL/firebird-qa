@@ -6,6 +6,7 @@ ISSUE:       6036
 TITLE:       PSQL cursor doesn't see inserted record
 DESCRIPTION:
 JIRA:        CORE-5773
+FBTEST:      bugs.core_5773
 """
 
 import pytest

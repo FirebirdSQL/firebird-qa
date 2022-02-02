@@ -3,9 +3,11 @@
 """
 ID:          issue-5414
 ISSUE:       5414
-TITLE:       Compiler issues message about "invalid request BLR" when attempt to compile wrong DDL of view with both subquery and "WITH CHECK OPTION" in its DDL
+TITLE:       Compiler issues message about "invalid request BLR" when attempt to compile
+  wrong DDL of view with both subquery and "WITH CHECK OPTION" in its DDL
 DESCRIPTION:
 JIRA:        CORE-5130
+FBTEST:      bugs.core_5130
 """
 
 import pytest

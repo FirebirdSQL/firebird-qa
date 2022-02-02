@@ -3,12 +3,14 @@
 """
 ID:          issue-6183
 ISSUE:       6183
-TITLE:       Attempt to create mapping with non-ascii user name which is encoded in SINGLE-BYTE codepage leads to '-Malformed string'
+TITLE:       Attempt to create mapping with non-ascii user name which is encoded in
+  SINGLE-BYTE codepage leads to '-Malformed string'
 DESCRIPTION:
   NB: different data are used for FB 3.x and 4.x because DDL in 4.x allows to store names with length up to 63 character.
   See variables 'mapping_name' and 'non_ascii_user_name'.
   FB 3.x restricts max_length of DB object name with value = 31 (bytes, not character!).
 JIRA:        CORE-5926
+FBTEST:      bugs.core_5926
 """
 
 import pytest

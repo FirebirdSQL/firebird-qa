@@ -6,6 +6,7 @@ ISSUE:       2434
 TITLE:       Broken foreign key handling for multi-segmented index using multi-level collations
 DESCRIPTION:
 JIRA:        CORE-1997
+FBTEST:      bugs.core_1997
 """
 
 import pytest

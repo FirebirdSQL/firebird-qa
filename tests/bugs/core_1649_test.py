@@ -6,6 +6,7 @@ ISSUE:       2073
 TITLE:       AV when recursive query used MERGE JOIN in execution plan
 DESCRIPTION:
 JIRA:        CORE-1649
+FBTEST:      bugs.core_1649
 """
 
 import pytest

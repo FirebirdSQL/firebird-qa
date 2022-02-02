@@ -6,6 +6,7 @@ ISSUE:       6450
 TITLE:       Generate proper error for UNION DISTINCT with more than 255 columns
 DESCRIPTION:
 JIRA:        CORE-6205
+FBTEST:      bugs.core_6205
 """
 
 import pytest

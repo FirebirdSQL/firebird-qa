@@ -3,7 +3,8 @@
 """
 ID:          issue-5864
 ISSUE:       5864
-TITLE:       Error "block size exceeds implementation restriction" while inner joining large datasets with a long key using the HASH JOIN plan
+TITLE:       Error "block size exceeds implementation restriction" while inner joining large
+  datasets with a long key using the HASH JOIN plan
 DESCRIPTION:
   Hash join have to operate with keys of total length >= 1 Gb if we want to reproduce runtime error
   "Statement failed, SQLSTATE = HY001 / unable to allocate memory from operating system"
@@ -16,6 +17,7 @@ DESCRIPTION:
 
   Discuss with dimitr: letters 08-jan-2018 .. 06-feb-2018.
 JIRA:        CORE-5598
+FBTEST:      bugs.core_5598
 """
 
 import pytest

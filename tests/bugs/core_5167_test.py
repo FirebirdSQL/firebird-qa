@@ -11,6 +11,7 @@ DESCRIPTION:
   Inside this cursor we register values of gdscode and sqlstate that raise, and issue via output args
   three columns: statement, gdscode, sqlstate. This output is then checked for matching with expected.
 JIRA:        CORE-5167
+FBTEST:      bugs.core_5167
 """
 
 import pytest

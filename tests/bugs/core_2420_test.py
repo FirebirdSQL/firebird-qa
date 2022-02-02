@@ -6,6 +6,7 @@ ISSUE:       2836
 TITLE:       Parsing error in EXECUTE STATEMENT with named parameters
 DESCRIPTION:
 JIRA:        CORE-2420
+FBTEST:      bugs.core_2420
 """
 
 import pytest

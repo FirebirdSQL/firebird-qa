@@ -6,6 +6,7 @@ ISSUE:       4436
 TITLE:       Regression: Server crashes when executing sql query "delete from mytable order by id desc rows 2"
 DESCRIPTION:
 JIRA:        CORE-4108
+FBTEST:      bugs.core_4108
 """
 
 import pytest

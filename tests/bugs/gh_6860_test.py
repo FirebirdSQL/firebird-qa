@@ -25,6 +25,7 @@ DESCRIPTION:
 
   Confirmed on 5.0.0.82, 4.0.1.2519: statement  'CREATE USER SYSDBA ...' fails with "SQLSTATE = HY000/.../-Incompatible data type"
   Checked on 5.0.0.131 SS/CS, 4.0.1.2563 SS/CS -- all fine.
+FBTEST:      bugs.gh_6860
 """
 
 import pytest

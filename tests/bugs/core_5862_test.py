@@ -6,6 +6,7 @@ ISSUE:       6122
 TITLE:       Varchar computed column without explicit type does not populate RDB$CHARACTER_LENGTH
 DESCRIPTION:
 JIRA:        CORE-5862
+FBTEST:      bugs.core_5862
 """
 
 import pytest

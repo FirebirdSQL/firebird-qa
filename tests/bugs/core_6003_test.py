@@ -9,6 +9,7 @@ DESCRIPTION:
   NB-2: connection-1 (which finally asks value of rdb$get_transaction_cn(<Tx2>)) must start Tx1
         *BEFORE* connection-2 will start his Tx2.
 JIRA:        CORE-6003
+FBTEST:      bugs.core_6003
 """
 
 import pytest

@@ -8,6 +8,7 @@ DESCRIPTION:
   This test does NOT verifies work when table has some data. It only checks ability to
   issue DDL statement.
 JIRA:        CORE-4466
+FBTEST:      bugs.core_4466
 """
 
 import pytest

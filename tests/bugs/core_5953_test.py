@@ -43,6 +43,7 @@ NOTES:
 [3.11.2021] pcisar
   This test fails for v4.0.0.2496 (4.0 final)
 JIRA:        CORE-5953
+FBTEST:      bugs.core_5953
 """
 
 import pytest

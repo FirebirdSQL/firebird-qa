@@ -6,6 +6,7 @@ ISSUE:       4891
 TITLE:       Regression: Incorrect result in subquery with aggregate
 DESCRIPTION:
 JIRA:        CORE-4574
+FBTEST:      bugs.core_4574
 """
 
 import pytest

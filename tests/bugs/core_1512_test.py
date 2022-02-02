@@ -6,6 +6,7 @@ ISSUE:       1928
 TITLE:       Connection lost running script
 DESCRIPTION:
 JIRA:        CORE-1512
+FBTEST:      bugs.core_1512
 """
 
 import pytest

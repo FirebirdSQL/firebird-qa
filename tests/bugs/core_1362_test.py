@@ -6,6 +6,7 @@ ISSUE:       1780
 TITLE:       Too large numbers cause positive infinity to be inserted into database
 DESCRIPTION:
 JIRA:        CORE-1362
+FBTEST:      bugs.core_1362
 """
 
 import pytest

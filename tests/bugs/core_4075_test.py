@@ -17,6 +17,7 @@ NOTES:
   contains name of index that causes problem - this is so after core-5606
   was implemented ("Add expression index name to exception message ...")
 JIRA:        CORE-4075
+FBTEST:      bugs.core_4075
 """
 
 import pytest

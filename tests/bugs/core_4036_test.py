@@ -6,6 +6,7 @@ ISSUE:       4366
 TITLE:       Bugcheck or database corruption when attempting to store long incompressible data into a table
 DESCRIPTION:
 JIRA:        CORE-4036
+FBTEST:      bugs.core_4036
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4568
 TITLE:       Problem with creation procedure which contain adding text in DOS864 charset
 DESCRIPTION:
 JIRA:        CORE-4244
+FBTEST:      bugs.core_4244
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       679
 TITLE:       Symbols ignored for ES_ES_CI_AI collation
 DESCRIPTION:
 JIRA:        CORE-1172
+FBTEST:      bugs.core_1172
 """
 
 import pytest

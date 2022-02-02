@@ -11,6 +11,7 @@ NOTES:
   Replaced 'ADD ... to publication' and 'DROP ... from publication' with
   'INCLUDE ...' and 'EXCLUDE ...' respectively (after reply from dimitr).
 JIRA:        CORE-6285
+FBTEST:      bugs.core_6285
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3405
 TITLE:       Error "no current record for fetch operation" after ALTER VIEW
 DESCRIPTION:
 JIRA:        CORE-3024
+FBTEST:      bugs.core_3024
 """
 
 import pytest

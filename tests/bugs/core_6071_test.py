@@ -42,6 +42,7 @@ DESCRIPTION:
 
     Test remains WINDOWS only.
 JIRA:        CORE-6071
+FBTEST:      bugs.core_6071
 """
 
 import pytest

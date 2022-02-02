@@ -9,6 +9,7 @@ DESCRIPTION:
   local_status. It seems to be the first time (DYN errors + stack trace facility) when 20
   status words are not enough to store the complete error info.
 JIRA:        CORE-1010
+FBTEST:      bugs.core_1010
 """
 
 import pytest

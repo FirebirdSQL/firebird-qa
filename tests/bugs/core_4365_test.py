@@ -6,6 +6,7 @@ ISSUE:       4687
 TITLE:       Equality predicate distribution does not work for some complex queries
 DESCRIPTION:
 JIRA:        CORE-4365
+FBTEST:      bugs.core_4365
 """
 
 import pytest

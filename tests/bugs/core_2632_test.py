@@ -6,6 +6,7 @@ ISSUE:       3040
 TITLE:       Invalid BLOB ID when working with monitoring tables
 DESCRIPTION:
 JIRA:        CORE-2632
+FBTEST:      bugs.core_2632
 """
 
 import pytest

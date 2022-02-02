@@ -6,6 +6,7 @@ ISSUE:       3550
 TITLE:       View with "subselect" column join table and not use index
 DESCRIPTION:
 JIRA:        CORE-3176
+FBTEST:      bugs.core_3176
 """
 
 import pytest

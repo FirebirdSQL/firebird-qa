@@ -3,9 +3,11 @@
 """
 ID:          issue-6485
 ISSUE:       6485
-TITLE:       Values greater than number of days between 01.01.0001 and 31.12.9999 (=3652058) can be added or subtracted from DATE
+TITLE:       Values greater than number of days between 01.01.0001 and 31.12.9999 (=3652058)
+  can be added or subtracted from DATE
 DESCRIPTION:
 JIRA:        CORE-6241
+FBTEST:      bugs.core_6241
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1971
 TITLE:       select ... where ... <> ALL (select ... join ...) bug
 DESCRIPTION:
 JIRA:        CORE-1554
+FBTEST:      bugs.core_1554
 """
 
 import pytest

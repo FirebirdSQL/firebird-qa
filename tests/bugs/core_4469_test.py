@@ -6,6 +6,7 @@ ISSUE:       4789
 TITLE:       Add field in SEC$USERS reflecting whether a user has RDB$ADMIN role in security database
 DESCRIPTION:
 JIRA:        CORE-4469
+FBTEST:      bugs.core_4469
 """
 
 import pytest

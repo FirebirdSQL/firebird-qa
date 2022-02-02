@@ -6,6 +6,7 @@ ISSUE:       536
 TITLE:       CHECK constraints fire twice
 DESCRIPTION:
 JIRA:        CORE-209
+FBTEST:      bugs.core_0209
 """
 
 import pytest

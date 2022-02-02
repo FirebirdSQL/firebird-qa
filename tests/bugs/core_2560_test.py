@@ -6,6 +6,7 @@ ISSUE:       2970
 TITLE:       Maximum and minimum identifier length should be enforced by DSQL
 DESCRIPTION:
 JIRA:        CORE-2560
+FBTEST:      bugs.core_2560
 """
 
 import pytest

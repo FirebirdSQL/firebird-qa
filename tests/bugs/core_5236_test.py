@@ -27,6 +27,7 @@ DESCRIPTION:
                         -> Bitmap
                             -> Index "UNQ1_DP_RECIBO" Range Scan (partial match: 1/2)
 JIRA:        CORE-5236
+FBTEST:      bugs.core_5236
 """
 
 import pytest

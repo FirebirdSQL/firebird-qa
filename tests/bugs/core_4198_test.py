@@ -6,6 +6,7 @@ ISSUE:       4523
 TITLE:       Incorrect "token unknown" error when the SQL string ends with a hex number literal
 DESCRIPTION:
 JIRA:        CORE-4198
+FBTEST:      bugs.core_4198
 """
 
 import pytest

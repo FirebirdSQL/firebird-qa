@@ -3,9 +3,11 @@
 """
 ID:          issue-5548
 ISSUE:       5548
-TITLE:       FBSVCMGR does not produce error while attempting to shutdown a database without specified timeout (prp_force_shutdown N)
+TITLE:       FBSVCMGR does not produce error while attempting to shutdown a database without
+  specified timeout (prp_force_shutdown N)
 DESCRIPTION:
 JIRA:        CORE-5270
+FBTEST:      bugs.core_5270
 """
 
 import pytest

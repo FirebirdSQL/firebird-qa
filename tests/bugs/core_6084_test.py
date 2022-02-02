@@ -13,6 +13,7 @@ DESCRIPTION:
   Test verifies several possible cases for this by making different START/INCREMENT clauses combination.
   See also: doc/README.incompatibilities.3to4.txt
 JIRA:        CORE-6084
+FBTEST:      bugs.core_6084
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2459
 TITLE:       "EXECUTE BLOCK" statement does not support "CREATE USER"
 DESCRIPTION:
 JIRA:        CORE-2022
+FBTEST:      bugs.core_2022
 """
 
 import pytest

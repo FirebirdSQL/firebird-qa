@@ -6,6 +6,7 @@ ISSUE:       2429
 TITLE:       bad BLR -- invalid stream for union select
 DESCRIPTION:
 JIRA:        CORE-1992
+FBTEST:      bugs.core_1992
 """
 
 import pytest

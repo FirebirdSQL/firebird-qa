@@ -6,6 +6,7 @@ ISSUE:       2796
 TITLE:       ALTER TRIGGER / PROCEDURE wrong error message
 DESCRIPTION:
 JIRA:        CORE-2374
+FBTEST:      bugs.core_2374
 """
 
 import pytest

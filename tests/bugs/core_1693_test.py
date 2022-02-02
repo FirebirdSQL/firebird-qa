@@ -6,6 +6,7 @@ ISSUE:       2118
 TITLE:       Error in EXECUTE STATEMENT inside CONNECT / TRANSACTION START triggers
 DESCRIPTION:
 JIRA:        CORE-1693
+FBTEST:      bugs.core_1693
 """
 
 import pytest

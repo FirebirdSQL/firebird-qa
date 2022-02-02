@@ -6,6 +6,7 @@ ISSUE:       6536
 TITLE:       Negative 128-bit integer constants are not accepted in DEFAULT clause
 DESCRIPTION:
 JIRA:        CORE-6294
+FBTEST:      bugs.core_6294
 """
 
 import pytest

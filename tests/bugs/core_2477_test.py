@@ -33,6 +33,7 @@ NOTES:
 [16.11.2021] pcisar
   This test is too complicated and fragile, and it's IMHO not worth to be implemented
 JIRA:        CORE-2477
+FBTEST:      bugs.core_2477
 """
 
 import pytest
@@ -84,6 +85,23 @@ init_script = """
 """
 
 db = db_factory(init=init_script)
+
+act = python_act('db')
+
+expected_stdout = """
+    1 attachment
+    * DELTA of mon$memory_used: OK, expected: increased significantly.
+    * DELTA of mon$memory_allo: OK, expected: increased significantly.
+
+    3 statement
+    * DELTA of mon$memory_used: OK, expected: increased significantly.
+    * DELTA of mon$memory_allo: OK, expected: increased significantly.
+"""
+
+@pytest.mark.version('>=3.0')
+@pytest.mark.skip("FIXME: Test fate to be determined")
+def test_1():
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -358,22 +376,3 @@ db = db_factory(init=init_script)
 #
 #
 #---
-
-act = python_act('db')
-
-expected_stdout = """
-    1 attachment
-    * DELTA of mon$memory_used: OK, expected: increased significantly.
-    * DELTA of mon$memory_allo: OK, expected: increased significantly.
-
-    3 statement
-    * DELTA of mon$memory_used: OK, expected: increased significantly.
-    * DELTA of mon$memory_allo: OK, expected: increased significantly.
-"""
-
-@pytest.mark.version('>=3.0')
-@pytest.mark.skip("FIXME: Test fate to be determined")
-def test_1():
-    pytest.fail("Not IMPLEMENTED")
-
-

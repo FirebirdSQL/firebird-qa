@@ -6,6 +6,7 @@ ISSUE:       4564
 TITLE:       Regression: recursive query in SQL query returns incorrect results if more than one branch bypass
 DESCRIPTION:
 JIRA:        CORE-4240
+FBTEST:      bugs.core_4240
 """
 
 import pytest

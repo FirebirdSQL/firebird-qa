@@ -6,6 +6,7 @@ ISSUE:       1279
 TITLE:       SPs in views
 DESCRIPTION:
 JIRA:        CORE-886
+FBTEST:      bugs.core_0886
 """
 
 import pytest

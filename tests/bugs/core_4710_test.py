@@ -6,6 +6,7 @@ ISSUE:       5017
 TITLE:       invalid request BLR at offset 361 context already in use (BLR error)
 DESCRIPTION:
 JIRA:        CORE-4710
+FBTEST:      bugs.core_4710
 """
 
 import pytest

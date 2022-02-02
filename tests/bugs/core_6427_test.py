@@ -10,6 +10,7 @@ DESCRIPTION:
     cast( '01.01.00 03:04:05.678' || ascii_char(10) as timestamp)
   -- leads to "Statement failed, SQLSTATE = 22009 / Invalid time zone region:"
 JIRA:        CORE-6427
+FBTEST:      bugs.core_6427
 """
 
 import pytest

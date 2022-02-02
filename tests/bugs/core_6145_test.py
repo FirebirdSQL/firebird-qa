@@ -6,6 +6,7 @@ ISSUE:       6394
 TITLE:       Wrong result in "similar to" with non latin characters
 DESCRIPTION:
 JIRA:        CORE-6145
+FBTEST:      bugs.core_6145
 """
 
 import pytest

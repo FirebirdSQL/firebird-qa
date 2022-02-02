@@ -24,6 +24,7 @@ DESCRIPTION:
   Finally, test restores back copy of databases.conf file.
 
   Checked on 5.0.0.139 (SS/CS), 4.0.1.2568 (SS/CS).
+FBTEST:      bugs.user_management
 """
 
 import pytest

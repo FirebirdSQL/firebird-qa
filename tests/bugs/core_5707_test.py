@@ -6,6 +6,7 @@ ISSUE:       5973
 TITLE:       Begin and end of physical backup in the same transaction could crash engine
 DESCRIPTION:
 JIRA:        CORE-5707
+FBTEST:      bugs.core_5707
 """
 
 import pytest

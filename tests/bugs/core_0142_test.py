@@ -6,6 +6,7 @@ ISSUE:       469
 TITLE:       Index breaks = ANY result
 DESCRIPTION:
 JIRA:        CORE-142
+FBTEST:      bugs.core_0142
 """
 
 import pytest

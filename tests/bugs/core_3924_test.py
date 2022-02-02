@@ -3,9 +3,11 @@
 """
 ID:          issue-4259
 ISSUE:       4259
-TITLE:       Bugcheck 291 (cannot find record back version) if GTT is modified concurrently using at least one read-committed read-only transaction
+TITLE:       Bugcheck 291 (cannot find record back version) if GTT is modified concurrently
+  using at least one read-committed read-only transaction
 DESCRIPTION:
 JIRA:        CORE-3924
+FBTEST:      bugs.core_3924
 """
 
 import pytest

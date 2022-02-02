@@ -6,6 +6,7 @@ ISSUE:       5032
 TITLE:       Inconsistencies with ALTER DOMAIN and ALTER TABLE with DROP NOT NULL and PRIMARY KEYs
 DESCRIPTION:
 JIRA:        CORE-4725
+FBTEST:      bugs.core_4725
 """
 
 import pytest

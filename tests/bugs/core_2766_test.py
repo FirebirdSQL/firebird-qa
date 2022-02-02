@@ -6,6 +6,7 @@ ISSUE:       3158
 TITLE:       Error "page 0 is of wrong type (expected 6, found 1)" is thrown while accessing a non-corrupted table
 DESCRIPTION:
 JIRA:        CORE-2766
+FBTEST:      bugs.core_2766
 """
 
 import pytest

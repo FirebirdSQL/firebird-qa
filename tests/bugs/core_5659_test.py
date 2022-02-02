@@ -8,6 +8,7 @@ DESCRIPTION:
   Test is based on data from original database that was provided in the ticket by its author.
   Lot of data from tables were removed in order to reduce DB size.
 JIRA:        CORE-5659
+FBTEST:      bugs.core_5659
 """
 
 import pytest

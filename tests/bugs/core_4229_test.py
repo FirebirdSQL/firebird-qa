@@ -6,6 +6,7 @@ ISSUE:       4553
 TITLE:       Bidirectional cursor is not positioned by the first call of FETCH LAST
 DESCRIPTION:
 JIRA:        CORE-4229
+FBTEST:      bugs.core_4229
 """
 
 import pytest

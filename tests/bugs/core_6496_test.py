@@ -9,6 +9,7 @@ DESCRIPTION:
   up to 4.0.0.1227 (29-09-2018), and is forbidden since 4.0.0.1346 (17.12.2018).
   FB 3.x allows this character to be used and issues timestamp instead of error.
 JIRA:        CORE-6496
+FBTEST:      bugs.core_6496
 """
 
 import pytest

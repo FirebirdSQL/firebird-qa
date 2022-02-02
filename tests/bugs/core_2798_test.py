@@ -6,6 +6,7 @@ ISSUE:       3188
 TITLE:       Incomplete plan output (lack of view names) when selecting from views containing procedures inside
 DESCRIPTION:
 JIRA:        CORE-2798
+FBTEST:      bugs.core_2798
 """
 
 import pytest

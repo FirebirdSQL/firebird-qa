@@ -6,6 +6,7 @@ ISSUE:       2174
 TITLE:       DDL statement with AUTODDL ON won't show statistics
 DESCRIPTION:
 JIRA:        CORE-1749
+FBTEST:      bugs.core_1749
 """
 
 import pytest

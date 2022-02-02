@@ -3,9 +3,11 @@
 """
 ID:          issue-5082
 ISSUE:       5082
-TITLE:       Exception "too few key columns found for index" raises when attempt to create table with PK and immediatelly drop this PK within the same transaction [CORE4783]
+TITLE:       Exception "too few key columns found for index" raises when attempt to create
+  table with PK and immediatelly drop this PK within the same transaction [CORE4783]
 DESCRIPTION:
 JIRA:        CORE-4783
+FBTEST:      bugs.gh_5082
 """
 
 import pytest

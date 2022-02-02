@@ -6,6 +6,7 @@ ISSUE:       3860
 TITLE:       DROP VIEW ignores the existing non-column dependencies
 DESCRIPTION:
 JIRA:        CORE-3502
+FBTEST:      bugs.core_3502
 """
 
 import pytest

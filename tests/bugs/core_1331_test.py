@@ -6,6 +6,7 @@ ISSUE:       1750
 TITLE:       Charset transliterations don't work with EXECUTE STATEMENT
 DESCRIPTION:
 JIRA:        CORE-1331
+FBTEST:      bugs.core_1331
 """
 
 import pytest

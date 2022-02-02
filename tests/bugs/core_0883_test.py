@@ -6,6 +6,7 @@ ISSUE:       1276
 TITLE:       The built-in BLR printer doesn't support all FB2 features
 DESCRIPTION:
 JIRA:        CORE-883
+FBTEST:      bugs.core_0883
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4141
 TITLE:       fb server die when carry out the LEFT + INNER JOIN
 DESCRIPTION:
 JIRA:        CORE-3798
+FBTEST:      bugs.core_3798
 """
 
 import pytest

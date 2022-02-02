@@ -6,6 +6,7 @@ ISSUE:       1813
 TITLE:       Few problems with domains's check constraints
 DESCRIPTION:
 JIRA:        CORE-1395
+FBTEST:      bugs.core_1395
 """
 
 import pytest

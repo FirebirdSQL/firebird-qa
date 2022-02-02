@@ -6,6 +6,7 @@ ISSUE:       1791
 TITLE:       Incorrect result of recursive CTE query when recursive member's SELECT list contains expression using self-referenced fields
 DESCRIPTION:
 JIRA:        CORE-1373
+FBTEST:      bugs.core_1373
 """
 
 import pytest

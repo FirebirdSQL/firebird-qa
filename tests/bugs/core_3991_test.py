@@ -6,6 +6,7 @@ ISSUE:       4323
 TITLE:       "attempted update of read-only column" when trying update editable view without triggers
 DESCRIPTION:
 JIRA:        CORE-3991
+FBTEST:      bugs.core_3991
 """
 
 import pytest

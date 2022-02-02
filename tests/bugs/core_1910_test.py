@@ -6,6 +6,7 @@ ISSUE:       2341
 TITLE:       Not valid fields in MERGE's insert clause are allowed
 DESCRIPTION:
 JIRA:        CORE-1910
+FBTEST:      bugs.core_1910
 """
 
 import pytest

@@ -12,6 +12,7 @@ DESCRIPTION:
   This mean that 'expected_stdout' section must be EMPTY. Otherwise expected_stdout will contain info
   about error or invalid plan.
 JIRA:        CORE-5061
+FBTEST:      bugs.core_5061
 """
 
 import pytest

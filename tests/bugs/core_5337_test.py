@@ -3,9 +3,11 @@
 """
 ID:          issue-5613
 ISSUE:       5613
-TITLE:       Regression: The subquery in the insert list expressions ignore the changes made earlier in the same executable block.
+TITLE:       Regression: The subquery in the insert list expressions ignore the changes
+  made earlier in the same executable block.
 DESCRIPTION:
 JIRA:        CORE-5337
+FBTEST:      bugs.core_5337
 """
 
 import pytest

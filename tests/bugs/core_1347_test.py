@@ -6,6 +6,7 @@ ISSUE:       1766
 TITLE:       Unexpected "cannot transliterate" error
 DESCRIPTION:
 JIRA:        CORE-1347
+FBTEST:      bugs.core_1347
 """
 
 import pytest

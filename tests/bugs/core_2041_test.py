@@ -6,6 +6,7 @@ ISSUE:       2477
 TITLE:       update or insert with gen_id() with wrong generator value
 DESCRIPTION:
 JIRA:        CORE-2041
+FBTEST:      bugs.core_2041
 """
 
 import pytest

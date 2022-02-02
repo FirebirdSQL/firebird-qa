@@ -7,6 +7,7 @@ TITLE:       Error recompiling a package with some combination of nested functio
 DESCRIPTION:
   FB crashes on attempt to recompile a package with some combination of nested functions.
   Confirmed crash on 4.0.0.2506; 5.0.0.60
+FBTEST:      bugs.gh_6801
 """
 
 import pytest

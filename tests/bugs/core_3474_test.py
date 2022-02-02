@@ -6,6 +6,7 @@ ISSUE:       3835
 TITLE:       Regression in joins on procedures
 DESCRIPTION:
 JIRA:        CORE-3474
+FBTEST:      bugs.core_3474
 """
 
 import pytest

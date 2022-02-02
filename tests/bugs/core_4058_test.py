@@ -6,6 +6,7 @@ ISSUE:       4386
 TITLE:       Remote Stack Buffer Overflow in Firebird SQL Server (when specially crafted packet is sent via socket API)
 DESCRIPTION:
 JIRA:        CORE-4058
+FBTEST:      bugs.core_4058
 """
 
 import pytest

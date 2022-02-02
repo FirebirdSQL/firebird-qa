@@ -6,6 +6,7 @@ ISSUE:       1397
 TITLE:       IS NOT DISTINCT FROM NULL doesn't use index
 DESCRIPTION:
 JIRA:        CORE-3722
+FBTEST:      bugs.core_3722
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2365
 TITLE:       Possible AV in engine if procedure was altered to have no outputs and dependent procedures was not recompiled
 DESCRIPTION:
 JIRA:        CORE-1930
+FBTEST:      bugs.core_1930
 """
 
 import pytest

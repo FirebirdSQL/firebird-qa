@@ -6,6 +6,7 @@ ISSUE:       2295
 TITLE:       BLR error on restore database with computed by Field
 DESCRIPTION:
 JIRA:        CORE-1865
+FBTEST:      bugs.core_1865
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1748
 TITLE:       Bug with size of alias name in a table (but still minor that 31 characters)
 DESCRIPTION:
 JIRA:        CORE-1329
+FBTEST:      bugs.core_1329
 """
 
 import pytest

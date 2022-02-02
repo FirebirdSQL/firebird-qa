@@ -6,6 +6,7 @@ ISSUE:       3097
 TITLE:       Support the "? in (SELECT some_col FROM some_table)" subqueries
 DESCRIPTION:
 JIRA:        CORE-2697
+FBTEST:      bugs.core_2697
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5123
 TITLE:       Make ISQL display character set when sqlda_display is on
 DESCRIPTION:
 JIRA:        CORE-4826
+FBTEST:      bugs.core_4826
 """
 
 import pytest

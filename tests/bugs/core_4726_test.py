@@ -6,6 +6,7 @@ ISSUE:       5033
 TITLE:       Provide ability to do: REcreate user <user_name> password <user_pwd>
 DESCRIPTION:
 JIRA:        CORE-4726
+FBTEST:      bugs.core_4726
 """
 
 import pytest

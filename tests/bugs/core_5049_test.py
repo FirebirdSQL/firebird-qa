@@ -6,6 +6,7 @@ ISSUE:       5336
 TITLE:       Regression: incorrect calculation of byte-length for view columns
 DESCRIPTION:
 JIRA:        CORE-5049
+FBTEST:      bugs.core_5049
 """
 
 import pytest

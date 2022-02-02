@@ -30,6 +30,7 @@ DESCRIPTION:
   Confirmed bug on 4.0.0.2307: query could NOT be interrupted and we had to wait until it completed.
   Checked on 4.0.0.2324 (SS/CS): works OK, query can be interrupted via sending Ctrl-C signal.
 JIRA:        CORE-6458
+FBTEST:      bugs.core_6458
 """
 
 import pytest

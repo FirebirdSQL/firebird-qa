@@ -6,6 +6,7 @@ ISSUE:       2948
 TITLE:       PSQL doesnt allow to use singleton query result as input parameter of stored procedure when procedure accessed using 'execute procedure'
 DESCRIPTION:
 JIRA:        CORE-2538
+FBTEST:      bugs.core_2538
 """
 
 import pytest

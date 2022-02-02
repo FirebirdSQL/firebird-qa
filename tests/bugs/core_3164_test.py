@@ -6,6 +6,7 @@ ISSUE:       3539
 TITLE:       Parameterized requests involving blob fields fails when connected using charset UTF8
 DESCRIPTION:
 JIRA:        CORE-3164
+FBTEST:      bugs.core_3164
 """
 
 import pytest

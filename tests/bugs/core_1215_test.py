@@ -6,6 +6,7 @@ ISSUE:       1639
 TITLE:       Wrong SELECT query results using index to evaluate >= condition
 DESCRIPTION:
 JIRA:        CORE-1215
+FBTEST:      bugs.core_1215
 """
 
 import pytest

@@ -13,6 +13,7 @@ NOTES:
 [7.12.2021] pcisar
   Test requires direct changes to firebird.log which could require elevated privileges!
 JIRA:        CORE-5418
+FBTEST:      bugs.core_5418
 """
 
 import pytest

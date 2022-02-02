@@ -6,6 +6,7 @@ ISSUE:       478
 TITLE:       Left joining views with null fails
 DESCRIPTION:
 JIRA:        CORE-149
+FBTEST:      bugs.core_0149
 """
 
 import pytest

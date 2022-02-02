@@ -8,6 +8,7 @@ DESCRIPTION:
   grant execute on proc|func|package and grant usage on sequence|exception -- still does NOT produce error/warning.
   These statements temply disabled until some additional comments in tracker.
 JIRA:        CORE-5755
+FBTEST:      bugs.core_5755
 """
 
 import pytest

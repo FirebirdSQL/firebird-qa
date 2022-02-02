@@ -6,6 +6,7 @@ ISSUE:       5241
 TITLE:       Statistics for any system index can not be updated/recalculated
 DESCRIPTION:
 JIRA:        CORE-4950
+FBTEST:      bugs.core_4950
 """
 
 import pytest

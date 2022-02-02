@@ -3,7 +3,8 @@
 """
 ID:          issue-6094
 ISSUE:       6094
-TITLE:       DDL triggers for some object types (views, exceptions, roles, indexes, domains) are lost in backup-restore process
+TITLE:       DDL triggers for some object types (views, exceptions, roles, indexes, domains)
+  are lost in backup-restore process
 DESCRIPTION:
   We create DDL triggers for all cases that are enumerated in $FB_HOME/doc/sql.extensions/README.ddl_triggers.txt.
   Then query to RDB$TRIGGERS table is applied to database and its results are stored in <log_file_1>.
@@ -12,6 +13,7 @@ DESCRIPTION:
   (these are "prefixes" for RDB$TRIGGER_BLR and RDB$TRIGGER_SOURCE).
   Difference should be empty.
 JIRA:        CORE-5833
+FBTEST:      bugs.core_5833
 """
 
 import pytest

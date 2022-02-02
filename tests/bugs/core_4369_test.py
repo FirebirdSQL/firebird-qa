@@ -11,6 +11,7 @@ NOTES:
   MERGE can not change the same record multiple times.
   For this reason we have to check only presense of ERROR in 4.x and that result is the same after merge and rollback.
 JIRA:        CORE-4369
+FBTEST:      bugs.core_4369
 """
 
 import pytest

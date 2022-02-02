@@ -6,6 +6,7 @@ ISSUE:       4622
 TITLE:       Inappropriate self-reference of column when using "with check option" with extract(...)
 DESCRIPTION:
 JIRA:        CORE-4299
+FBTEST:      bugs.core_4299
 """
 
 import pytest

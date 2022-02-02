@@ -6,6 +6,7 @@ ISSUE:       3609
 TITLE:       Makes GEN_UUID return a compliant RFC-4122 UUID
 DESCRIPTION:
 JIRA:        CORE-3238
+FBTEST:      bugs.core_3238
 """
 
 import pytest

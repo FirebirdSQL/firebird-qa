@@ -8,6 +8,7 @@ DESCRIPTION:
   Text verifies only ability to query replication-related info from mon$database and system context namespace.
   Query to isc_database_info does not perform.
 JIRA:        CORE-6474
+FBTEST:      bugs.core_6474
 """
 
 import pytest

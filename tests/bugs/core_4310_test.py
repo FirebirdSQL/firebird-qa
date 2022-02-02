@@ -6,6 +6,7 @@ ISSUE:       4633
 TITLE:       DateAdd(): change input <amount> argument from INT to BIGINT
 DESCRIPTION:
 JIRA:        CORE-4310
+FBTEST:      bugs.core_4310
 """
 
 import pytest

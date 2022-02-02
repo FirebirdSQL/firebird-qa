@@ -5,6 +5,7 @@ ID:          issue-6854
 ISSUE:       6854
 TITLE:       Crash occurs when use SIMILAR TO ...
 DESCRIPTION:
+FBTEST:      bugs.gh_6854
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       328
 JIRA:        CORE-10
 TITLE:       Navigation vs IS NULL vs compound index
 DESCRIPTION:
+FBTEST:      bugs.core_0010
 """
 
 import pytest

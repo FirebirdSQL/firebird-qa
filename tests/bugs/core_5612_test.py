@@ -6,6 +6,7 @@ ISSUE:       5878
 TITLE:       Gradual slowdown compilation (create, recreate or drop) of views
 DESCRIPTION:
 JIRA:        CORE-5612
+FBTEST:      bugs.core_5612
 """
 
 import pytest

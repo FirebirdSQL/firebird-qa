@@ -6,6 +6,7 @@ ISSUE:       1293
 TITLE:       SUBSTRING with NULL offset or length don't return NULL
 DESCRIPTION:
 JIRA:        CORE-896
+FBTEST:      bugs.core_0896
 """
 
 import pytest

@@ -3,7 +3,8 @@
 """
 ID:          issue-6577
 ISSUE:       6577
-TITLE:       Regression in FB 4.x: error "Implementation of text subtype <NNNN> not located" on attempt to use some collations defined in fbintl.conf
+TITLE:       Regression in FB 4.x: error "Implementation of text subtype <NNNN> not located"
+  on attempt to use some collations defined in fbintl.conf
 DESCRIPTION:
   Test uses list of character sets and collations defined in %FB_HOME%\\intl\\fbintl.conf.
   For each charset <W> we try following:
@@ -58,8 +59,9 @@ DESCRIPTION:
     <DROP JUST CREATED OBJECTS>
 
     ... and so on for all other collations defined for charset ISO8859_1 ...
-========
+  ========
 JIRA:        CORE-6336
+FBTEST:      bugs.core_6336
 """
 
 import pytest

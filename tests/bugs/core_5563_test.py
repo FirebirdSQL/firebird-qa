@@ -10,6 +10,7 @@ NOTES:
   Query like here can not be run in MS SQL or Postgress.
   Sent letters to dimitr, 19.06.2018.
 JIRA:        CORE-5563
+FBTEST:      bugs.core_5563
 """
 
 import pytest

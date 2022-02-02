@@ -6,6 +6,7 @@ ISSUE:       6430
 TITLE:       Some (wrong ?) parameters of ENCRYPT() leads FB to crash
 DESCRIPTION:
 JIRA:        CORE-6185
+FBTEST:      bugs.core_6185
 """
 
 import pytest

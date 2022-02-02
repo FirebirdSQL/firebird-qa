@@ -6,6 +6,7 @@ ISSUE:       773
 TITLE:       Server crash caused by a buffer overrun in the optimizer when more than 255 relation references exist in the query
 DESCRIPTION:
 JIRA:        CORE-1462
+FBTEST:      bugs.core_1462
 """
 
 import pytest

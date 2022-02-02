@@ -6,6 +6,7 @@ ISSUE:       2041
 TITLE:       Incorrect error message (column number) if the empty SQL string is prepared
 DESCRIPTION:
 JIRA:        CORE-1620
+FBTEST:      bugs.core_1620
 """
 
 import pytest

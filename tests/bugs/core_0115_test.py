@@ -6,6 +6,7 @@ ISSUE:       353
 TITLE:       Bug with ALL keyword
 DESCRIPTION:
 JIRA:        CORE-115
+FBTEST:      bugs.core_0115
 """
 
 import pytest

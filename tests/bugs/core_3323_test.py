@@ -37,6 +37,7 @@ notes:
   This test is too complicated and fragile (can screw the test environment)
   It should be reimplemnted in more robust way, or removed from suite
 JIRA:        CORE-3323
+FBTEST:      bugs.core_3323
 """
 
 import pytest

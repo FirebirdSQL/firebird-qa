@@ -6,6 +6,7 @@ ISSUE:       5234
 TITLE:       Dialect 1 casting date to string breaks when in the presence a domain with a check constraint
 DESCRIPTION:
 JIRA:        CORE-4943
+FBTEST:      bugs.core_4943
 """
 
 import pytest

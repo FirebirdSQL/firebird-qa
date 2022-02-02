@@ -6,6 +6,7 @@ ISSUE:       4586
 TITLE:       Context parsing error with derived tables and CASE functions
 DESCRIPTION:
 JIRA:        CORE-4262
+FBTEST:      bugs.core_4262
 """
 
 import pytest

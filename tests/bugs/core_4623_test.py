@@ -3,9 +3,11 @@
 """
 ID:          issue-4938
 ISSUE:       4938
-TITLE:       Regression: SP "Domain" and "Type Of" based variables referring BLOB with sub_type < 0 no longer work
+TITLE:       Regression: SP "Domain" and "Type Of" based variables referring BLOB with
+  sub_type < 0 no longer work
 DESCRIPTION:
 JIRA:        CORE-4623
+FBTEST:      bugs.core_4623
 """
 
 import pytest

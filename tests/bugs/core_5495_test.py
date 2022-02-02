@@ -15,6 +15,7 @@ NOTES:
   This test fails with 4.0, even with specified config
   Although user is created, the connect as user tmp$c5495 fails (unknown user)
 JIRA:        CORE-5495
+FBTEST:      bugs.core_5495
 """
 
 import pytest

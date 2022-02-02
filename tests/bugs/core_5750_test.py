@@ -11,6 +11,7 @@ DESCRIPTION:
   See: https://github.com/FirebirdSQL/firebird/commit/ff37d445ce844f991242b1e2c1f96b80a5d1636d
   Adjusted expected stdout/stderr after discuss with Adriano.
 JIRA:        CORE-5750
+FBTEST:      bugs.core_5750
 """
 
 import pytest

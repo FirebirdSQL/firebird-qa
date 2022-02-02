@@ -6,6 +6,7 @@ ISSUE:       5601
 TITLE:       Malformed string error when using cyrilic symbols and x'0d0a' in exception
 DESCRIPTION:
 JIRA:        CORE-5325
+FBTEST:      bugs.core_5325
 """
 
 import pytest

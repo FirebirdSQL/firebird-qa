@@ -12,6 +12,7 @@ NOTES:
   Re-implemented in order to generate SQL script with more than 32K create / get gen_id / drop sequences.
   Total number of created sequences is set by 'TOTAL_SEQUENCES_COUNT' variable.
 JIRA:        CORE-3058
+FBTEST:      bugs.core_3058
 """
 
 import pytest

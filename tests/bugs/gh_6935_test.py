@@ -61,6 +61,7 @@ DESCRIPTION:
 NOTES:
 [01.09.2021]
   Added "where"-filtering for exclude statement with query to RDB$AUTH_MAPPING (4.0 Classic).
+FBTEST:      bugs.gh_6935
 """
 
 import pytest

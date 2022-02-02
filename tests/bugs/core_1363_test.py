@@ -6,6 +6,7 @@ ISSUE:       1781
 TITLE:       ISQL crash when converted-from-double string longer than 23 bytes
 DESCRIPTION:
 JIRA:        CORE-1363
+FBTEST:      bugs.core_1363
 """
 
 import pytest

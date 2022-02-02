@@ -6,6 +6,7 @@ ISSUE:       3606
 TITLE:       Support for text BLOBs >= 32K as first argument for TRIM()
 DESCRIPTION:
 JIRA:        CORE-3234
+FBTEST:      bugs.core_3234
 """
 
 import pytest

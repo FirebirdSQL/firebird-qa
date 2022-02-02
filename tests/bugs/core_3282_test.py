@@ -6,6 +6,7 @@ ISSUE:       3650
 TITLE:       EXECUTE STATEMENT parses the SQL text using wrong charset
 DESCRIPTION:
 JIRA:        CORE-3282
+FBTEST:      bugs.core_3282
 """
 
 import pytest

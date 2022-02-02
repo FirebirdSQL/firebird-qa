@@ -9,6 +9,7 @@ DESCRIPTION:
   Following code is intentionaly aborted in the middle point because some cases are not
   covered by fix of this ticket (see also issue in the ticket, 22/Nov/16 06:10 PM).
 JIRA:        CORE-5404
+FBTEST:      bugs.core_5404
 """
 
 import pytest

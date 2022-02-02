@@ -13,6 +13,7 @@ DESCRIPTION:
        runtime exception SQLSTATE = 54000, "Maximum index level reached"
     4. Start validation of database: index should NOT be corrupted in its report.
 JIRA:        CORE-4904
+FBTEST:      bugs.core_4904
 """
 
 import pytest

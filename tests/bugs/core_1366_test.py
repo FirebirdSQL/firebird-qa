@@ -6,6 +6,7 @@ ISSUE:       1784
 TITLE:       French insensitive collation FR_FR_CI_AI
 DESCRIPTION:
 JIRA:        CORE-1366
+FBTEST:      bugs.core_1366
 """
 
 import pytest

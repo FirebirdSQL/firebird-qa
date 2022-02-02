@@ -6,6 +6,7 @@ ISSUE:       3923
 TITLE:       CHAR(32767) present in XSQLVAR with length 32765
 DESCRIPTION:
 JIRA:        CORE-3569
+FBTEST:      bugs.core_3569
 """
 
 import pytest

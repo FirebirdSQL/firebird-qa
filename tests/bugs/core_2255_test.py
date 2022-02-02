@@ -6,6 +6,7 @@ ISSUE:       2681
 TITLE:       '...exception...string right truncation' when alter view with join
 DESCRIPTION:
 JIRA:        CORE-2255
+FBTEST:      bugs.core_2255
 """
 
 import pytest

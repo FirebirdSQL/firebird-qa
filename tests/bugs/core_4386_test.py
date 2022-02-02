@@ -12,6 +12,7 @@ NOTES:
   because all drop commands pass without exception even with ReadConsistency disabled.
   The same happens under 3.0.8 (no errors raised).
 JIRA:        CORE-4386
+FBTEST:      bugs.core_4386
 """
 
 import pytest

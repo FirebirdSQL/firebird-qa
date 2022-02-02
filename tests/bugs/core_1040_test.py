@@ -6,6 +6,7 @@ ISSUE:       1457
 TITLE:       Wrong single-segment ascending index on character field with NULL and empty string values
 DESCRIPTION:
 JIRA:        CORE-1040
+FBTEST:      bugs.core_1040
 """
 
 import pytest

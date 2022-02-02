@@ -6,6 +6,7 @@ ISSUE:       5751
 TITLE:       Available indices are not used in some cases if ORDER BY expression is a filtered one
 DESCRIPTION:
 JIRA:        CORE-5481
+FBTEST:      bugs.core_5481
 """
 
 import pytest

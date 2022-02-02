@@ -3,9 +3,11 @@
 """
 ID:          issue-5067
 ISSUE:       5067
-TITLE:       CREATE USER ... TAGS ( attr = 'prefix #suffix' ): suffix will be removed from storage because of character '#' in the value of attribute
+TITLE:       CREATE USER ... TAGS ( attr = 'prefix #suffix' ): suffix will be removed from
+  storage because of character '#' in the value of attribute
 DESCRIPTION:
 JIRA:        CORE-4767
+FBTEST:      bugs.core_4767
 """
 
 import pytest

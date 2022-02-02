@@ -6,6 +6,7 @@ ISSUE:       1850
 TITLE:       Collation not propagated between record formats
 DESCRIPTION:
 JIRA:        CORE-1432
+FBTEST:      bugs.core_1432
 """
 
 import pytest

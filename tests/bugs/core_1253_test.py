@@ -6,6 +6,7 @@ ISSUE:       1677
 TITLE:       LIST(DISTINCT) concatenate VARCHAR values as CHAR
 DESCRIPTION:
 JIRA:        CORE-1253
+FBTEST:      bugs.core_1253
 """
 
 import pytest

@@ -8,6 +8,7 @@ DESCRIPTION:
   Order of expressions in the join condition could negatively affect the generated plan
   and thus performance
 JIRA:        CORE-4530
+FBTEST:      bugs.core_4530
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6713
 TITLE:       System table with keywords
 DESCRIPTION:
 JIRA:        CORE-6482
+FBTEST:      bugs.gh_0310
 """
 
 import pytest

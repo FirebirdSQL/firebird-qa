@@ -6,6 +6,7 @@ ISSUE:       2473
 TITLE:       Parameters order of EXECUTE BLOCK statement is reversed if called from EXECUTE STATEMENT
 DESCRIPTION:
 JIRA:        CORE-2036
+FBTEST:      bugs.core_2036
 """
 
 import pytest

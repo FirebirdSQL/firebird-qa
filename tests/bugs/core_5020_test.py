@@ -6,6 +6,7 @@ ISSUE:       5308
 TITLE:       Regression: ORDER BY clause on compound index may disable usage of other indices
 DESCRIPTION:
 JIRA:        CORE-5020
+FBTEST:      bugs.core_5020
 """
 
 import pytest

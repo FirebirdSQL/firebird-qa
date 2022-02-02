@@ -6,6 +6,7 @@ ISSUE:       3678
 TITLE:       Error "data type unknown" while preparing UPDATE/DELETE statements with the parameterized ROWS clause
 DESCRIPTION:
 JIRA:        CORE-3311
+FBTEST:      bugs.core_3311
 """
 
 import pytest

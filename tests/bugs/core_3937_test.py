@@ -6,6 +6,7 @@ ISSUE:       4270
 TITLE:       eActivate/Activate INDEX or RESTORE not possible with NULL in unique index.
 DESCRIPTION:
 JIRA:        CORE-3937
+FBTEST:      bugs.core_3937
 """
 
 import pytest

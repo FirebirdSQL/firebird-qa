@@ -6,6 +6,7 @@ ISSUE:       5557
 TITLE:       Granting access rights to view is broken
 DESCRIPTION:
 JIRA:        CORE-5279
+FBTEST:      bugs.core_5279
 """
 
 import pytest

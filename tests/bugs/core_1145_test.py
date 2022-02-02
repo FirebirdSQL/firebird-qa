@@ -6,6 +6,7 @@ ISSUE:       1567
 TITLE:       Server locks up while attempting to commit a deletion of an expression index
 DESCRIPTION:
 JIRA:        CORE-1145
+FBTEST:      bugs.core_1145
 """
 
 import pytest

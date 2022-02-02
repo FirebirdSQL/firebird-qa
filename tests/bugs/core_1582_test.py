@@ -6,6 +6,7 @@ ISSUE:       2001
 TITLE:       ABS() rounds NUMERIC values
 DESCRIPTION:
 JIRA:        CORE-1582
+FBTEST:      bugs.core_1582
 """
 
 import pytest

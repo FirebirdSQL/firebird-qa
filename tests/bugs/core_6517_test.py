@@ -3,9 +3,11 @@
 """
 ID:          issue-6746
 ISSUE:       6746
-TITLE:       Regression: CREATE DATABASE fails with 'Token unknown' error when DB name is enclosed in double quotes and 'DEFAULT CHARACTER SET' is specified after DB name
+TITLE:       Regression: CREATE DATABASE fails with 'Token unknown' error when DB name is
+  enclosed in double quotes and 'DEFAULT CHARACTER SET' is specified after DB name
 DESCRIPTION:
 JIRA:        CORE-6517
+FBTEST:      bugs.core_6517
 """
 
 import pytest

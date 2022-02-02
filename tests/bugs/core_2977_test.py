@@ -6,6 +6,7 @@ ISSUE:       3359
 TITLE:       FB 2.1 incorrectly works with indexed fields of type DATE in OLD ODS (9.1)
 DESCRIPTION:
 JIRA:        CORE-2977
+FBTEST:      bugs.core_2977
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2739
 TITLE:       Firebird float support does not conform to Interbase spec
 DESCRIPTION:
 JIRA:        CORE-2315
+FBTEST:      bugs.core_2315
 """
 
 import pytest

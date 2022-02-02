@@ -33,6 +33,7 @@ NOTES:
   Bug was fixed on 4.1.0.2468, build timestamp: 06-may-2021 12:34 thus min_version should be 4.1
   After several days this new FB branch was renamed to 5.0.
   Because of this, min_version for this test is 5.0
+FBTEST:      bugs.gh_6790
 """
 
 import pytest

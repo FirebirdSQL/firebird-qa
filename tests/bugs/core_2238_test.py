@@ -14,6 +14,7 @@ DESCRIPTION:
     -implementation limit exceeded
     -block size exceeds implementation restriction
 JIRA:        CORE-2238
+FBTEST:      bugs.core_2238
 """
 
 import pytest

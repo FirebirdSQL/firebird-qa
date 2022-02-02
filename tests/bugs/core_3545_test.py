@@ -6,6 +6,7 @@ ISSUE:       3901
 TITLE:       Inconsistent domain's constraint validation in PSQL
 DESCRIPTION:
 JIRA:        CORE-3545
+FBTEST:      bugs.core_3545
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-5132
 ISSUE:       5132
-TITLE:       Grant update(c) on t to U01 with grant option: user U01 will not be able to `revoke update(c) on t from <user | role>` if this `U01` do some DML before revoke
+TITLE:       Grant update(c) on t to U01 with grant option: user U01 will not be able to
+  `revoke update(c) on t from <user | role>` if this `U01` do some DML before revoke
 DESCRIPTION:
 JIRA:        CORE-4836
+FBTEST:      bugs.core_4836
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4906
 TITLE:       Change type of returning value of CHAR_LENGTH, BIT_LENGTH and OCTET_LENGTH of BLOBs to bigint
 DESCRIPTION:
 JIRA:        CORE-4590
+FBTEST:      bugs.core_4590
 """
 
 import pytest

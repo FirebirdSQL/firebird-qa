@@ -6,6 +6,7 @@ ISSUE:       873
 TITLE:       Maximum key size using PXW_CSY collation
 DESCRIPTION:
 JIRA:        CORE-1802
+FBTEST:      bugs.core_1802
 """
 
 import pytest

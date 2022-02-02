@@ -6,6 +6,7 @@ ISSUE:       5668
 TITLE:       Invalid data type for negation (minus operator)
 DESCRIPTION:
 JIRA:        CORE-5395
+FBTEST:      bugs.core_5395
 """
 
 import pytest

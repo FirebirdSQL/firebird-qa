@@ -9,6 +9,7 @@ DESCRIPTION:
   Instead of this it was decided to extract form ZIP archieve .fbk and then to restore it.
   Instead of actual execution we can only obtain PLAN by querying cursor read-only property "plan"
 JIRA:        CORE-5965
+FBTEST:      bugs.core_5965
 """
 
 import pytest

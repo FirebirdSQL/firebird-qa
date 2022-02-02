@@ -7,6 +7,7 @@ TITLE:       SIMILAR TO leads to an infinite loop
 DESCRIPTION:
   One more test to check 're2' library.
 JIRA:        CORE-6452
+FBTEST:      bugs.core_6452
 """
 
 import pytest

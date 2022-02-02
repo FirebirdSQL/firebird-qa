@@ -6,6 +6,7 @@ ISSUE:       4482
 TITLE:       External routines DDL in Packages wrongly report error for termination with semi-colon
 DESCRIPTION:
 JIRA:        CORE-4155
+FBTEST:      bugs.core_4155
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1637
 TITLE:       CURRENT OF support views
 DESCRIPTION:
 JIRA:        CORE-1213
+FBTEST:      bugs.core_1213
 """
 
 import pytest

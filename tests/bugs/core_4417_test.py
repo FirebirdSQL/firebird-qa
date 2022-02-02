@@ -6,6 +6,7 @@ ISSUE:       4739
 TITLE:       gbak: cannot commit index ; primary key with german umlaut
 DESCRIPTION:
 JIRA:        CORE-4417
+FBTEST:      bugs.core_4417
 """
 
 import pytest

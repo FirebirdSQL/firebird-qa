@@ -8,6 +8,7 @@ DESCRIPTION:
   We create stored procedure as it was specified in the ticket, and call it with input arg = 3.
   This mean that we have to receive THREE events after code which calls this SP will issue COMMIT.
 JIRA:        CORE-3095
+FBTEST:      bugs.core_3095
 """
 
 import pytest

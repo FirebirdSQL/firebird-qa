@@ -8,6 +8,7 @@ DESCRIPTION:
   Originale tite is: If some VIEW used derived tables and long table names/aliases,
     It is possible to overflow RDB$VIEW_RELATIONS.RDB$CONTEXT_NAME
 JIRA:        CORE-1841
+FBTEST:      bugs.core_1841
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       732
 TITLE:       NULLS FIRST does not work with unions
 DESCRIPTION:
 JIRA:        CORE-389
+FBTEST:      bugs.core_0389
 """
 
 import pytest

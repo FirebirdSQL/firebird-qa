@@ -8,6 +8,7 @@ DESCRIPTION:
   Attempt to create user with empty password should raise error with message related to
   this problem.
 JIRA:        CORE-2434
+FBTEST:      bugs.core_2434
 """
 
 import pytest

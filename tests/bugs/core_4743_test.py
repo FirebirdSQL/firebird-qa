@@ -6,6 +6,7 @@ ISSUE:       5048
 TITLE:       Granted role does not work with non-ascii username
 DESCRIPTION:
 JIRA:        CORE-4743
+FBTEST:      bugs.core_4743
 """
 
 import pytest

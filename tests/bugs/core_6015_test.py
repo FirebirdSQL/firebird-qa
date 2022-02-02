@@ -25,6 +25,7 @@ DESCRIPTION:
   for static PSQL code (instead of "Attempt to evaluate index expression recursively").
   Also, error messages differ because CORE-5606 was not backported to FB 3.x.
 JIRA:        CORE-6015
+FBTEST:      bugs.core_6015
 """
 
 import pytest

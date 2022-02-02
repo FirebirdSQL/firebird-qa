@@ -6,6 +6,7 @@ ISSUE:       673
 TITLE:       DateTime math imprecision
 DESCRIPTION:
 JIRA:        CORE-336
+FBTEST:      bugs.core_336
 """
 
 import pytest

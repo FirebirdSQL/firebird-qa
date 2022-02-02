@@ -11,6 +11,7 @@ NOTES:
   ("service_mgr" to be cleaned out from connection string completely...")
 [26.05.2021] changed code for FB 4.x and enabled after discuss with Alex.
 JIRA:        CORE-5039
+FBTEST:      bugs.core_5039
 """
 
 import pytest

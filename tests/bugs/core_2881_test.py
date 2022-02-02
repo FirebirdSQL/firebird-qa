@@ -6,6 +6,7 @@ ISSUE:       3265
 TITLE:       isql should show packaged procedures and functions categorized per package
 DESCRIPTION:
 JIRA:        CORE-2881
+FBTEST:      bugs.core_2881
 """
 
 import pytest

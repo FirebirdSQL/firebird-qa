@@ -6,6 +6,7 @@ ISSUE:       4608
 TITLE:       Choose the best matching index for navigation
 DESCRIPTION:
 JIRA:        CORE-4285
+FBTEST:      bugs.core_4285
 """
 
 import pytest

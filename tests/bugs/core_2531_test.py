@@ -6,6 +6,7 @@ ISSUE:       2941
 TITLE:       The famous "cannot transliterate" error may be thrown when selecting data from the monitoring tables
 DESCRIPTION:
 JIRA:        CORE-2531
+FBTEST:      bugs.core_2531
 """
 
 import pytest

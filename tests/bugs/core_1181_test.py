@@ -6,6 +6,7 @@ ISSUE:       1607
 TITLE:       Union returns inconsistent field names
 DESCRIPTION:
 JIRA:        CORE-1181
+FBTEST:      bugs.core_1181
 """
 
 import pytest

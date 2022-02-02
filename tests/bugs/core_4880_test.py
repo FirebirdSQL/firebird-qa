@@ -46,6 +46,7 @@ DESCRIPTION:
     Finally, we compare these medians with THRESHOLDS, which values have been taken from the table that is shown above,
     with increasing by approx. 20%
 JIRA:        CORE-4880
+FBTEST:      bugs.core_4880
 """
 
 import pytest

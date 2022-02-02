@@ -17,6 +17,7 @@ DESCRIPTION:
 
   Thank hvlad for additional explanations, discuss in e-mail was 26.04.19 09:38.
 JIRA:        CORE-5990
+FBTEST:      bugs.core_5990
 """
 
 import pytest

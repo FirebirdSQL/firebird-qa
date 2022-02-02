@@ -71,6 +71,7 @@ DESCRIPTION:
         4.0.1.2660 SS:  17.589s;   4.0.1.2660 CS:  25.918s.
         3.0.8.33535 SS: 13.108s;   3.0.8.33535 CS: 21.583s.
 JIRA:        CORE-6348
+FBTEST:      bugs.core_6348
 """
 
 import pytest

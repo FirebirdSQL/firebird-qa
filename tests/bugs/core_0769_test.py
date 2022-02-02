@@ -6,6 +6,7 @@ ISSUE:       1151
 TITLE:       Wildcards/Regular Expressions in WHERE clause - SIMILAR TO predicate
 DESCRIPTION:
 JIRA:        CORE-769
+FBTEST:      bugs.core_0769
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2607
 TITLE:       Unexpected (wrong) results with COALESCE and GROUP BY
 DESCRIPTION:
 JIRA:        CORE-2176
+FBTEST:      bugs.core_2176
 """
 
 import pytest

@@ -18,6 +18,7 @@ DESCRIPTION:
   Finally (after ISQL will finish), we stop trace and parse its log.
   For *each* table TWO lines with performance statristics must exist: both for COMMIT and ROLLBACK events.
 JIRA:        CORE-3598
+FBTEST:      bugs.core_3598
 """
 
 import pytest

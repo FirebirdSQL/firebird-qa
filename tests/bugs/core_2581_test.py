@@ -6,6 +6,7 @@ ISSUE:       2991
 TITLE:       Infinity should not escape from the engine
 DESCRIPTION:
 JIRA:        CORE-2581
+FBTEST:      bugs.core_2581
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6686
 TITLE:       EXECUTE STATEMENT fails on FB 4.x if containing time/timestamp with time zone parameters
 DESCRIPTION:
 JIRA:        CORE-6453
+FBTEST:      bugs.core_6453
 """
 
 import pytest

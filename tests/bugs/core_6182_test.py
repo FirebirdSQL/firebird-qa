@@ -28,6 +28,7 @@ DESCRIPTION:
     4.0.0.1646 SS/SC: ~19s (most of time is idle because of delays that is necessary for check that connections disappeared from ExtPool)
     4.0.0.1646 CS: 21.339s - but this test is not needed for this acrh.
 JIRA:        CORE-6182
+FBTEST:      bugs.core_6182
 """
 
 import pytest

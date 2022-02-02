@@ -8,6 +8,7 @@ DESCRIPTION:
   Samples were provided by Vlad, privately.
   Confirmed bug on 3.0.4.32972, 4.0.0.955; SUPERSERVER only (see also note in the ticket)
 JIRA:        CORE-5837
+FBTEST:      bugs.core_5837
 """
 
 import pytest

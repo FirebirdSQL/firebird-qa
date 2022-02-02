@@ -23,6 +23,7 @@ DESCRIPTION:
 
   DO NOT change this value to some "really too big" value otherwise it will fail with "unable to allocate memory"!
 JIRA:        CORE-6437
+FBTEST:      bugs.core_6437
 """
 
 import pytest

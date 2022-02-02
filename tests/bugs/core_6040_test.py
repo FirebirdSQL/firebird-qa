@@ -7,6 +7,7 @@ TITLE:       Metadata script extracted using ISQL is invalid/incorrect when tabl
 DESCRIPTION:
   'collate' clause must present in DDL of computed_by field, otherwise extracted metadata script will be correct.
 JIRA:        CORE-6040
+FBTEST:      bugs.core_6040
 """
 
 import pytest

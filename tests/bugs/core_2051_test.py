@@ -6,6 +6,7 @@ ISSUE:       2487
 TITLE:       Don't work subquery in COALESCE
 DESCRIPTION:
 JIRA:        CORE-2051
+FBTEST:      bugs.core_2051
 """
 
 import pytest

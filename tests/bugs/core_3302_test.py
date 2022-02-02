@@ -8,6 +8,7 @@ DESCRIPTION:
   LIST() does not guarantee that returned values will be sorted so we can only count words
   in the resulting string and compare it with checked count.
 JIRA:        CORE-3302
+FBTEST:      bugs.core_3302
 """
 
 import pytest

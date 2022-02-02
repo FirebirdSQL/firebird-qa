@@ -3,9 +3,11 @@
 """
 ID:          issue-5219
 ISSUE:       5219
-TITLE:       It is not possible to save the connection information in the ON CONNECT trigger, if the connection is created by the gbak
+TITLE:       It is not possible to save the connection information in the ON CONNECT trigger,
+  if the connection is created by the gbak
 DESCRIPTION:
 JIRA:        CORE-4928
+FBTEST:      bugs.core_4928
 """
 
 import pytest

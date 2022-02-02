@@ -6,6 +6,7 @@ ISSUE:       3199
 TITLE:       Prohibit any improper mixture of explicit and implicit joins
 DESCRIPTION:
 JIRA:        CORE-2812
+FBTEST:      bugs.core_2812
 """
 
 import pytest

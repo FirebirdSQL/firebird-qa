@@ -11,6 +11,7 @@ DESCRIPTION:
 
   Neither test query nor validation should raise any output in the STDERR.
 JIRA:        CORE-5576
+FBTEST:      bugs.core_5576
 """
 
 import pytest

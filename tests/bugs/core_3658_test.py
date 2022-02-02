@@ -9,6 +9,7 @@ NOTES:
 [17.11.2021] pcisar
   Implementation is complicated, and IMHO not worth of realization
 JIRA:        CORE-3658
+FBTEST:      bugs.core_3658
 """
 
 import pytest

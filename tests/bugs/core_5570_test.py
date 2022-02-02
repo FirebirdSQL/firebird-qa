@@ -11,6 +11,7 @@ DESCRIPTION:
   After this we try to query this table. Expected result: "minus" sign should be shown
   leftside of negative infinity.
 JIRA:        CORE-5570
+FBTEST:      bugs.core_5570
 """
 
 import pytest

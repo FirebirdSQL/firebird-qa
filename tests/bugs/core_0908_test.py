@@ -10,6 +10,7 @@ DESCRIPTION:
   doesn't crash, but don't returns the truncated plan as supposed either). Now when 2.1
   line is at 2.1.3 we can hope for proper fix in 2.1.4. It should work as intended in 2.5 line.
 JIRA:        CORE-908
+FBTEST:      bugs.core_0908
 """
 
 import pytest

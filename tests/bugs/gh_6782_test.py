@@ -37,6 +37,7 @@ NOTES:
   makes query to FB services only one time per SECOND.
 
   See also reply from Vlad related to test for core-6469, privately, letter: 04-mar-2021 13:02.
+FBTEST:      bugs.gh_6782
 """
 
 import pytest

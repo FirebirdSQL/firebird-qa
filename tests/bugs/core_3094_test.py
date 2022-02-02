@@ -6,6 +6,7 @@ ISSUE:       3473
 TITLE:       Parameters doesn't work with NOT IN from a selectable procedure
 DESCRIPTION:
 JIRA:        CORE-3094
+FBTEST:      bugs.core_3094
 """
 
 import pytest

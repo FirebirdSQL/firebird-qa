@@ -3,11 +3,13 @@
 """
 ID:          issue-6797
 ISSUE:       6797
-TITLE:       Functions DECRYPT and RSA_DECRYPT return VARCHAR CHARACTER SET NONE instead of VARBINARY (VARCHAR CHARACTER SET OCTETS)
+TITLE:       Functions DECRYPT and RSA_DECRYPT return VARCHAR CHARACTER SET NONE instead
+  of VARBINARY (VARCHAR CHARACTER SET OCTETS)
 DESCRIPTION:
 NOTES:
   As of current FB 4.x doc, following is wrong: "Functions return ... *varbinary* for all other types."
   (see note by Alex in the tracker, 11.05.2021 11:17).
+FBTEST:      bugs.gh_6797
 """
 
 import pytest

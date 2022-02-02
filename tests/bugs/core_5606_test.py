@@ -14,6 +14,7 @@ NOTES:
   The order of which of them will raise first is undefined, so this test could fail because of appearance
   "wrong" index name in its STDERR. Detected on 4.0.0.2173. Discussed with hvlad, letter 23.08.2020 16:58.
 JIRA:        CORE-5606
+FBTEST:      bugs.core_5606
 """
 
 import pytest

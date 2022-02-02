@@ -6,6 +6,7 @@ ISSUE:       2727
 TITLE:       Include PLAN in mon$statements
 DESCRIPTION:
 JIRA:        CORE-2303
+FBTEST:      bugs.core_2303
 """
 
 import pytest

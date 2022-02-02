@@ -6,6 +6,7 @@ ISSUE:       3615
 TITLE:       SUBSTRING on long blobs truncates result to 32767 if third argument not present
 DESCRIPTION:
 JIRA:        CORE-3245
+FBTEST:      bugs.core_3245
 """
 
 import pytest

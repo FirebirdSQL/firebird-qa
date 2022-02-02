@@ -6,6 +6,7 @@ ISSUE:       4078
 TITLE:       Segfault when closing attachment to database
 DESCRIPTION:
 JIRA:        CORE-3732
+FBTEST:      bugs.core_3732
 """
 
 import pytest

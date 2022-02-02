@@ -8,6 +8,7 @@ DESCRIPTION:
   Only basic support is checked here (i.e. only table and one-to-one projection view,
   WITHOUT trigger(s)).
 JIRA:        CORE-1036
+FBTEST:      bugs.core_1036
 """
 
 import pytest

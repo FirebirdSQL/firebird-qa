@@ -6,6 +6,7 @@ ISSUE:       1789
 TITLE:       Execute block fails within execute statement
 DESCRIPTION:
 JIRA:        CORE-1371
+FBTEST:      bugs.core_1371
 """
 
 import pytest

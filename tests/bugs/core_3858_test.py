@@ -10,6 +10,7 @@ DESCRIPTION:
   And it should NOT be changed to somewhat like "[[:ALNUM:]]\\_\\-": previoud FB versions hanged exactly
   because of this "strange and wrong" pattern.
 JIRA:        CORE-3858
+FBTEST:      bugs.core_3858
 """
 
 import pytest

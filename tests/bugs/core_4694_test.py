@@ -3,9 +3,11 @@
 """
 ID:          issue-5002
 ISSUE:       5002
-TITLE:       "Column unknown" error while preparing a recursive query if the recursive part contains ALIASED datasource in the join with anchor table
+TITLE:       "Column unknown" error while preparing a recursive query if the recursive part
+  contains ALIASED datasource in the join with anchor table
 DESCRIPTION:
 JIRA:        CORE-4694
+FBTEST:      bugs.core_4694
 """
 
 import pytest

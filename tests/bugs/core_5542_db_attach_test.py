@@ -3,10 +3,13 @@
 """
 ID:          issue-5810-A
 ISSUE:       5810
-TITLE:       Database-level triggers related to TRANSACTION events (i.e. start, commit and rollback) do not take in account their POSITION index (when more than one trigger for the same event type is defined)
+TITLE:       Database-level triggers related to TRANSACTION events (i.e. start, commit and
+  rollback) do not take in account their POSITION index (when more than one trigger for
+  the same event type is defined)
 DESCRIPTION:
   This test does check only for 'DATABASE CONNECT' case (though it worked Ok before this bug was found).
 JIRA:        CORE-5542
+FBTEST:      bugs.core_5542_db_attach
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3217
 TITLE:       isql shouldn't display db and user name when extracting a script
 DESCRIPTION:
 JIRA:        CORE-2831
+FBTEST:      bugs.core_2831
 """
 
 import pytest

@@ -12,6 +12,7 @@ DESCRIPTION:
 
   We restore this database and try to use existing collation again.
 JIRA:        CORE-4425
+FBTEST:      bugs.core_4425
 """
 
 import pytest

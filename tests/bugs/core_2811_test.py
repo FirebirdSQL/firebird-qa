@@ -27,6 +27,7 @@ DESCRIPTION:
   -- Now update the record to see the error:
   update new_table set new_field = 6;
 JIRA:        CORE-2811
+FBTEST:      bugs.core_2811
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1726
 TITLE:       Indices not used for views
 DESCRIPTION:
 JIRA:        CORE-1306
+FBTEST:      bugs.core_1306
 """
 
 import pytest

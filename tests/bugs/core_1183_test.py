@@ -6,6 +6,7 @@ ISSUE:       1609
 TITLE:       View cannot be created if its WHERE clause contains IN <subquery> with a procedure reference
 DESCRIPTION:
 JIRA:        CORE-1183
+FBTEST:      bugs.core_1183
 """
 
 import pytest

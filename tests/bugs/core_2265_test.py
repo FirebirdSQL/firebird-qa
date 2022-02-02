@@ -6,6 +6,7 @@ ISSUE:       2691
 TITLE:       Grouping by function doesn't work properly
 DESCRIPTION:
 JIRA:        CORE-2265
+FBTEST:      bugs.core_2265
 """
 
 import pytest

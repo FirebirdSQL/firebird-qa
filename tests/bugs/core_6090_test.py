@@ -11,6 +11,7 @@ DESCRIPTION:
   This number must be equal to number of records in the table (three in this test).
   Beside of this, we check that all blobs are not null, see 'null_blob_cnt' counter.
 JIRA:        CORE-6090
+FBTEST:      bugs.core_6090
 """
 
 import pytest

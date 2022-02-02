@@ -6,6 +6,7 @@ ISSUE:       2225
 TITLE:       DB$DB_KEY evaluates to NULL in INSERT ... RETURNING
 DESCRIPTION:
 JIRA:        CORE-1798
+FBTEST:      bugs.core_1798
 """
 
 import pytest

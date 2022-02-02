@@ -3,9 +3,11 @@
 """
 ID:          issue-6188
 ISSUE:       6188
-TITLE:       SIMILAR TO does not return result when invalid pattern is used (with two adjacent special characters that should be escaped but aren't)
+TITLE:       SIMILAR TO does not return result when invalid pattern is used (with two
+  adjacent special characters that should be escaped but aren't)
 DESCRIPTION:
 JIRA:        CORE-5931
+FBTEST:      bugs.core_5931
 """
 
 import pytest

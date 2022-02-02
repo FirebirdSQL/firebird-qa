@@ -11,6 +11,7 @@ NOTES:
   2. For sake of completness, it was reimplemented by simply using
      user_factory fixture.
 JIRA:        CORE-4760
+FBTEST:      bugs.core_4760
 """
 
 import pytest

@@ -3,7 +3,8 @@
 """
 ID:          issue-5362
 ISSUE:       5362
-TITLE:       Regression. Triger on DISCONNECT with dynamic SQL (ES 'insert into ...'): 1) does not work in 3.0; 2) leads FB to crash when it is recreated
+TITLE:       Regression. Triger on DISCONNECT with dynamic SQL (ES 'insert into ...'):
+  1) does not work in 3.0; 2) leads FB to crash when it is recreated
 DESCRIPTION:
     Test does following:
     * obtains firebird.log as it was _before_ actions;
@@ -15,6 +16,7 @@ DESCRIPTION:
     * obtains firebird.log as it is _after_ actions;
     * compare two firebird.log versions - diff must be empty.
 JIRA:        CORE-5075
+FBTEST:      bugs.core_5075
 """
 
 import pytest

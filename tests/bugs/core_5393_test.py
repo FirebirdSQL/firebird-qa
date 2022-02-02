@@ -54,6 +54,7 @@ DESCRIPTION:
     Plans differ on 3.0.2 and 4.0 thus they are excluded from the output!
     Performance of 4.0 significantly _WORSE_ than of 3.0.2, sent letter to dimitr, 11.11.2016 13:47.
 JIRA:        CORE-5393
+FBTEST:      bugs.core_5393
 """
 
 import pytest

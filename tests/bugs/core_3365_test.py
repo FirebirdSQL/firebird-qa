@@ -6,6 +6,7 @@ ISSUE:       3731
 TITLE:       Extend syntax for ALTER USER CURRENT_USER
 DESCRIPTION:
 JIRA:        CORE-3365
+FBTEST:      bugs.core_3365
 """
 
 import pytest

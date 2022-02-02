@@ -25,6 +25,7 @@ NOTES:
   This statement will issued BEFORE our call of stored procedure, so we have to analyze
   lines from trace only AFTER we found pattern 'execute procedure sp_test'.
 JIRA:        CORE-4094
+FBTEST:      bugs.core_4094
 """
 
 import pytest

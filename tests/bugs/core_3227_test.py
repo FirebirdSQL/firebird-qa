@@ -6,6 +6,7 @@ ISSUE:       3601
 TITLE:       ASCII_VAL() fails if argument contains multi-byte character anywhere
 DESCRIPTION:
 JIRA:        CORE-3227
+FBTEST:      bugs.core_3227
 """
 
 import pytest

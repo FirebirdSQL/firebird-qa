@@ -9,6 +9,7 @@ DESCRIPTION:
   Ouput of restore is filtered so that only lines with 'ERROR' word can be displayed.
   This output should be EMPTY (i.e. no errors should occur).
 JIRA:        CORE-5304
+FBTEST:      bugs.core_5304
 """
 
 import pytest

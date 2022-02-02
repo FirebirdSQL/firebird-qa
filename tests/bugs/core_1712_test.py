@@ -9,6 +9,7 @@ DESCRIPTION:
     * "buffer overrun" when use dialect 1;
     * "string right truncation" when use dialect 3.
 JIRA:        CORE-1712
+FBTEST:      bugs.core_1712
 """
 
 import pytest

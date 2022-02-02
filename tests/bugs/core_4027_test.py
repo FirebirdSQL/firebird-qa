@@ -6,6 +6,7 @@ ISSUE:       4357
 TITLE:       Creating table with computed fields containing "SELECT FIRST" produces corrupted result
 DESCRIPTION: Broken output in ISQL command SHOW TABLE <T> for computed-by field(s).
 JIRA:        CORE-4027
+FBTEST:      bugs.core_4027
 """
 
 import pytest

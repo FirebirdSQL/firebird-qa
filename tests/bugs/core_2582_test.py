@@ -9,7 +9,8 @@ NOTES:
 [24.01.2019]
   Disabled this test to be run on FB 4.0
   UDF usage is deprecated in FB 4+, see: ".../doc/README.incompatibilities.3to4.txt".
-JIRA:        CORE-1000
+JIRA:        CORE-2582
+FBTEST:      bugs.core_2582
 """
 
 import pytest

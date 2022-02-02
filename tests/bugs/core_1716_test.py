@@ -6,6 +6,7 @@ ISSUE:       2141
 TITLE:       Wrong variable initialization in recursive procedures
 DESCRIPTION:
 JIRA:        CORE-1716
+FBTEST:      bugs.core_1716
 """
 
 import pytest

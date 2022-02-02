@@ -6,6 +6,7 @@ ISSUE:       5847
 TITLE:       Signature of packaged functions is not checked for mismatch with [NOT] DETERMINISTIC attribute
 DESCRIPTION:
 JIRA:        CORE-5580
+FBTEST:      bugs.core_5580
 """
 
 import pytest

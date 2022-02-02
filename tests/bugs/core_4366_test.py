@@ -6,6 +6,7 @@ ISSUE:       4688
 TITLE:       Wrong result of WHERE predicate when it contains NULL IS NOT DISTINCT FROM (select min(NULL) from ...)
 DESCRIPTION:
 JIRA:        CORE-4366
+FBTEST:      bugs.core_4366
 """
 
 import pytest

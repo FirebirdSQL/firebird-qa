@@ -6,6 +6,7 @@ ISSUE:       4937
 TITLE:       Regression: Trigger with UPDATE OR INSERT statement and IIF() not working as expected
 DESCRIPTION:
 JIRA:        CORE-4622
+FBTEST:      bugs.core_4622
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1384
 TITLE:       Make RDB$DB_KEY in outer joins return NULL when appropriate
 DESCRIPTION:
 JIRA:        CORE-979
+FBTEST:      bugs.core_0979
 """
 
 import pytest

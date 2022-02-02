@@ -9,6 +9,7 @@ NOTES:
 [28.10.2019]
   Replaced PSQL function name 'localtime()' with 'fn_local_time()': first of them became keyword in FB 4.0
 JIRA:        CORE-4470
+FBTEST:      bugs.core_4470
 """
 
 import pytest

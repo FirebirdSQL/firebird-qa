@@ -6,6 +6,7 @@ ISSUE:       2586
 TITLE:       Join of SP with view or table may fail with "No current record for fetch operation"
 DESCRIPTION:
 JIRA:        CORE-2155
+FBTEST:      bugs.core_2155
 """
 
 import pytest

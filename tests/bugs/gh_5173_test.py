@@ -7,6 +7,7 @@ TITLE:       Compound ALTER TABLE statement with ADD and DROP the same constrain
   if this constraint involves index creation (PK/UNQ/FK)
 DESCRIPTION:
 JIRA:        CORE-4878
+FBTEST:      bugs.gh_5173
 """
 
 import pytest

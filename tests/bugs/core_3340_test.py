@@ -3,9 +3,11 @@
 """
 ID:          issue-3706
 ISSUE:       3706
-TITLE:       Error in autonomous transaction with empty exception handler: can insert duplicate values into PK/UK column (leads to unrestorable backup)
+TITLE:       Error in autonomous transaction with empty exception handler: can insert
+  duplicate values into PK/UK column (leads to unrestorable backup)
 DESCRIPTION:
 JIRA:        CORE-3340
+FBTEST:      bugs.core_3340
 """
 
 import pytest

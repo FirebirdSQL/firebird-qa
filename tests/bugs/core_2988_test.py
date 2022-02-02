@@ -24,6 +24,7 @@ NOTES:
   and use UPDATE statement instead of 'select * from test' (UPDATE also must READ
   data before changing).
 JIRA:        CORE-2988
+FBTEST:      bugs.core_2988
 """
 
 import pytest

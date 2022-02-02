@@ -3,7 +3,8 @@
 """
 ID:          issue-5255
 ISSUE:       5255
-TITLE:       Real errors during connect to security database are hidden by Srp user manager. Errors should be logged no matter what AuthServer is used
+TITLE:       Real errors during connect to security database are hidden by Srp user manager.
+  Errors should be logged no matter what AuthServer is used
 DESCRIPTION:
     Test obtains full path to $fb_home via FBSVCMGR info_get_env.
     Then it makes copy of file 'databases.conf' that is in $fb_home directory because
@@ -44,6 +45,7 @@ DESCRIPTION:
 
     Refactored 05.01.2020 (firebird.conf now contains Srp as first plugin in UserManager parameter):
 JIRA:        CORE-4964
+FBTEST:      bugs.core_4964
 """
 
 import pytest

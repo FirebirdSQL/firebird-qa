@@ -6,6 +6,7 @@ ISSUE:       3739
 TITLE:       It is possible to store string with lenght 31 chars into column varchar(25)
 DESCRIPTION:
 JIRA:        CORE-3373
+FBTEST:      bugs.core_3373
 """
 
 import pytest

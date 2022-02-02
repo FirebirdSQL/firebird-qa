@@ -9,6 +9,7 @@ DESCRIPTION:
   an internal buffer flow in generating the access
   control list that actually enforces the rights.
 JIRA:        CORE-216
+FBTEST:      bugs.core_0216
 """
 
 import pytest

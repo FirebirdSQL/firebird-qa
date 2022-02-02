@@ -3,9 +3,11 @@
 """
 ID:          issue-4081
 ISSUE:       4081
-TITLE:       WITH LOCK clause is allowed for users with read-only rights on some table, thus blocking others from updating this table
+TITLE:       WITH LOCK clause is allowed for users with read-only rights on some table, thus
+  blocking others from updating this table
 DESCRIPTION:
 JIRA:        CORE-3736
+FBTEST:      bugs.core_3736
 """
 
 import pytest

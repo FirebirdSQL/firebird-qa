@@ -6,6 +6,7 @@ ISSUE:       3679
 TITLE:       Sub-optimal join plan when the slave table depends on the master one via the OR predicate
 DESCRIPTION:
 JIRA:        CORE-3312
+FBTEST:      bugs.core_3312
 """
 
 import pytest

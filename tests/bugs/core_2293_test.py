@@ -6,6 +6,7 @@ ISSUE:       2718
 TITLE:       Wrong dependent object type (RELATION) in RDB$DEPEDENCIES for VIEW's
 DESCRIPTION:
 JIRA:        CORE-2293
+FBTEST:      bugs.core_2293
 """
 
 import pytest

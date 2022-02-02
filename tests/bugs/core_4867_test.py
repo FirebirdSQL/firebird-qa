@@ -6,6 +6,7 @@ ISSUE:       5163
 TITLE:       Server crash when preparing a query with PLAN clause at some CTE
 DESCRIPTION:
 JIRA:        CORE-4867
+FBTEST:      bugs.core_4867
 """
 
 import pytest

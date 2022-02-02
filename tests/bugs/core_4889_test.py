@@ -6,6 +6,7 @@ ISSUE:       5183
 TITLE:       FBSVCMGR with `action_trace_start` prevents in 3.0 SuperServer from connecting using local protocol
 DESCRIPTION:
 JIRA:        CORE-4889
+FBTEST:      bugs.core_4889
 """
 
 import pytest

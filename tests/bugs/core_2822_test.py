@@ -6,6 +6,7 @@ ISSUE:       3209
 TITLE:       Error "no current row for fetch operation" when subquery includes a non-trivial derived table
 DESCRIPTION:
 JIRA:        CORE-2822
+FBTEST:      bugs.core_2822
 """
 
 import pytest

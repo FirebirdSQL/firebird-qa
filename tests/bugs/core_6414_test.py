@@ -3,7 +3,8 @@
 """
 ID:          issue-6652
 ISSUE:       6652
-TITLE:       Error message "expected length N, actual M" contains wrong value of M when charset UTF8 is used in the field declaration of a table
+TITLE:       Error message "expected length N, actual M" contains wrong value of M when
+  charset UTF8 is used in the field declaration of a table
 DESCRIPTION:
   All attempts to create/alter table with not-null column with size that not enough space to fit default value must fail.
   Length of such column can be declared either directly or via domain - and both of these ways must fail.
@@ -12,6 +13,7 @@ DESCRIPTION:
   Confirmed wrong result on 4.0.0.2225: some statements failed with SQLSTATE=22000 (malformed string),
   some issue wrong value of "actual M" for length.
 JIRA:        CORE-6414
+FBTEST:      bugs.core_6414
 """
 
 import pytest

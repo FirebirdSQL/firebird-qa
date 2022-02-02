@@ -3,13 +3,15 @@
 """
 ID:          issue-4642
 ISSUE:       4642
-TITLE:       Engine crashes when trace config contains line "connection_id=NN" and we attempt to connect to non-existent database/alias
+TITLE:       Engine crashes when trace config contains line "connection_id=NN" and we
+  attempt to connect to non-existent database/alias
 DESCRIPTION:
 NOTES:
 [15.1.2022] pcisar
   This test fails on localized Windows due to encoding error and other
   expected output differences, so we skip it for now.
 JIRA:        CORE-4319
+FBTEST:      bugs.core_4319
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-6616
 ISSUE:       6616
-TITLE:       Unable to restore database with tables using GENERATED ALWAYS AS IDENTITY columns (ERROR:OVERRIDING SYSTEM VALUE should be used)
+TITLE:       Unable to restore database with tables using GENERATED ALWAYS AS IDENTITY
+  columns (ERROR:OVERRIDING SYSTEM VALUE should be used)
 DESCRIPTION:
 JIRA:        CORE-6377
+FBTEST:      bugs.core_6377
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4594
 TITLE:       Error in case of subquery with windowed function + where <field> IN(select ...)
 DESCRIPTION:
 JIRA:        CORE-4270
+FBTEST:      bugs.core_4270
 """
 
 import pytest

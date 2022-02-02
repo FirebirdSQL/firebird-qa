@@ -37,6 +37,7 @@ DESCRIPTION:
       Windows: 4.0.0.2416
       Linux:   4.0.0.2416
 JIRA:        CORE-5831
+FBTEST:      bugs.core_5831
 """
 
 import pytest

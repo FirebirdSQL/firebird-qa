@@ -33,6 +33,7 @@ DESCRIPTION:
 
     Later this test may be expanded for check non-ascii metadata and/or data.
 JIRA:        CORE-4462
+FBTEST:      bugs.core_4462
 """
 
 import pytest

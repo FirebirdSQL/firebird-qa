@@ -10,6 +10,7 @@ DESCRIPTION:
   We do NOT check correctness of query results - this will be done by another ticket, CORE-5165:
   wrong result in 3.0 RC2 and 4.0 comparing 2.5. It's NOT related to this ticket.
 JIRA:        CORE-5153
+FBTEST:      bugs.core_5153
 """
 
 import pytest

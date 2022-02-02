@@ -6,6 +6,7 @@ ISSUE:       2497
 TITLE:       ALTER VIEW WITH CHECK OPTION crashes the engin
 DESCRIPTION:
 JIRA:        CORE-2061
+FBTEST:      bugs.core_2061
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3612
 TITLE:       Recursive stored procedure shouldnt require execute right to call itself
 DESCRIPTION:
 JIRA:        CORE-3242
+FBTEST:      bugs.core_3242
 """
 
 import pytest

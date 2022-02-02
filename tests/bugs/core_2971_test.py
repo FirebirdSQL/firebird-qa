@@ -6,6 +6,7 @@ ISSUE:       3353
 TITLE:       Invalid UPDATE OR INSERT usage may lead to successive "request depth exceeded. (Recursive definition?)" error
 DESCRIPTION:
 JIRA:        CORE-2971
+FBTEST:      bugs.core_2971
 """
 
 import pytest

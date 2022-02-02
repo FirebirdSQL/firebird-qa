@@ -6,6 +6,7 @@ ISSUE:       6874
 TITLE:       Literal 65536 (interpreted as int) can not be multiplied by itself w/o cast if result more than 2^63-1
 DESCRIPTION:
   Confirmed need to explicitly cast literal 65536 on: 5.0.0.88, 4.0.1.2523 (otherwise get SQLSTATE = 22003).
+FBTEST:      bugs.gh_6874
 """
 
 import pytest

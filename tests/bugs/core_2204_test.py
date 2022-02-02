@@ -6,6 +6,7 @@ ISSUE:       2632
 TITLE:       Constraints on sp output parameters are checked even when the sp returns zero rows
 DESCRIPTION:
 JIRA:        CORE-2204
+FBTEST:      bugs.core_2204
 """
 
 import pytest

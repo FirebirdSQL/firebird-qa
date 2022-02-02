@@ -6,6 +6,7 @@ ISSUE:       2989
 TITLE:       Parameters and variables cannot be used as expressions in EXECUTE PROCEDURE parameters without a colon prefix
 DESCRIPTION:
 JIRA:        CORE-2579
+FBTEST:      bugs.core_2579
 """
 
 import pytest

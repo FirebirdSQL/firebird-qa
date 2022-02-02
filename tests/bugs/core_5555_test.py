@@ -6,6 +6,7 @@ ISSUE:       5822
 TITLE:       3.0 error handling for SELECT WITH LOCK breaks compatibility with 2.5
 DESCRIPTION:
 JIRA:        CORE-5555
+FBTEST:      bugs.core_5555
 """
 
 import pytest

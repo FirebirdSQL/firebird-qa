@@ -6,6 +6,7 @@ ISSUE:       2683
 TITLE:       Internal Firebird consistency check when alter dependent procedures
 DESCRIPTION:
 JIRA:        CORE-2257
+FBTEST:      bugs.core_2257
 """
 
 import pytest

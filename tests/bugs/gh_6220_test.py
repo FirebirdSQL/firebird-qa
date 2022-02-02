@@ -28,6 +28,7 @@ NOTES:
   counters for each call. These differences then are divided (value that was received for NON_DBA is divided for apropriate value of SYSDBA).
   MEDIAN of these ratios must be LESS than threshold MAX_TIME_RATIO.
 JIRA:        CORE-5966
+FBTEST:      bugs.gh_6220
 """
 
 import pytest

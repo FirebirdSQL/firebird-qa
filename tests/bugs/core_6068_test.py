@@ -6,6 +6,7 @@ ISSUE:       6318
 TITLE:       Server hangs when compiling big package with error
 DESCRIPTION:
 JIRA:        CORE-6068
+FBTEST:      bugs.core_6068
 """
 
 import pytest

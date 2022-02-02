@@ -6,6 +6,7 @@ ISSUE:       1021
 TITLE:       Blob Type 1 compatibility with VarChar
 DESCRIPTION:
 JIRA:        CORE-655
+FBTEST:      bugs.core_0655
 """
 
 import pytest

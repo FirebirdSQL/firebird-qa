@@ -9,6 +9,7 @@ DESCRIPTION:
   in doc/sql.extensions/README.context_variables2
   See also: https://github.com/FirebirdSQL/firebird/commit/22ad236f625716f5f2885f8d9e783cca9516f7b3
 JIRA:        CORE-6300
+FBTEST:      bugs.core_6300
 """
 
 import pytest

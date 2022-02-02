@@ -6,6 +6,7 @@ ISSUE:       5304
 TITLE:       Server crashes during GC when DELETE is executed after adding new referencing column
 DESCRIPTION:
 JIRA:        CORE-5016
+FBTEST:      bugs.core_5016
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5261
 TITLE:       Table trigger does not see its mode: inserting or updating or deleting
 DESCRIPTION:
 JIRA:        CORE-4970
+FBTEST:      bugs.core_4970
 """
 
 import pytest

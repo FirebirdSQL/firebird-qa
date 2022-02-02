@@ -6,6 +6,7 @@ ISSUE:       3783
 TITLE:       BOOLEAN not present in system table RDB$TYPES
 DESCRIPTION:
 JIRA:        CORE-3420
+FBTEST:      bugs.core_3420
 """
 
 import pytest

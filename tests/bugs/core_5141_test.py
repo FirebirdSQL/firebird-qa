@@ -6,6 +6,7 @@ ISSUE:       5424
 TITLE:       Field definition allows several NOT NULL clauses
 DESCRIPTION:
 JIRA:        CORE-5141
+FBTEST:      bugs.core_5141
 """
 
 import pytest

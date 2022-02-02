@@ -10,6 +10,7 @@ DESCRIPTION:
   and even can change FK-values in these added rows, but can do it only with maintenance that
   MAIN table's PK exists for new values in FK
 JIRA:        CORE-1606
+FBTEST:      bugs.core_1606
 """
 
 import pytest

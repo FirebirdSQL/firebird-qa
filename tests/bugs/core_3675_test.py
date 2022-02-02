@@ -6,6 +6,7 @@ ISSUE:       4025
 TITLE:       CREATE INDEX considers NULL and empty string being the same in compound indices
 DESCRIPTION:
 JIRA:        CORE-3675
+FBTEST:      bugs.core_3675
 """
 
 import pytest

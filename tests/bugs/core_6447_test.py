@@ -7,6 +7,7 @@ TITLE:       Unexpectedly different text of message for parameterized expression
 DESCRIPTION:
   Previous title: "SET SQLDA_DISPLAY ON: different text of message for parameterized expression starting from second run"
 JIRA:        CORE-6447
+FBTEST:      bugs.core_6447
 """
 
 import pytest

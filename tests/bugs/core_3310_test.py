@@ -6,6 +6,7 @@ ISSUE:       3677
 TITLE:       RDB$GET_CONTEXT and between in view
 DESCRIPTION:
 JIRA:        CORE-3310
+FBTEST:      bugs.core_3310
 """
 
 import pytest

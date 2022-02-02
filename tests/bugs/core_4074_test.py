@@ -6,6 +6,7 @@ ISSUE:       4402
 TITLE:       Computed by columns and position function
 DESCRIPTION:
 JIRA:        CORE-4074
+FBTEST:      bugs.core_4074
 """
 
 import pytest

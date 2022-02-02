@@ -6,6 +6,7 @@ ISSUE:       3760
 TITLE:       Failed attempt to violate unique constraint could leave unneeded "lock conflict" error in status-vector
 DESCRIPTION:
 JIRA:        CORE-3394
+FBTEST:      bugs.core_3394
 """
 
 import pytest

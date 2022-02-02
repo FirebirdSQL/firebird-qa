@@ -3,9 +3,11 @@
 """
 ID:          issue-5192
 ISSUE:       5192
-TITLE:       GFIX -online: message "IProvider::attachDatabase failed when loading mapping cache" appears in Classic (only) if access uses remote protocol
+TITLE:       GFIX -online: message "IProvider::attachDatabase failed when loading mapping cache"
+  appears in Classic (only) if access uses remote protocol
 DESCRIPTION:
 JIRA:        CORE-4899
+FBTEST:      bugs.core_4899
 """
 
 import pytest

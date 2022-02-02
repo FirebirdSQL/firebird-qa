@@ -6,6 +6,7 @@ ISSUE:       6016
 TITLE:       Parser should not allow to use GRANT OPTION for FUNCTION and PACKAGE
 DESCRIPTION:
 JIRA:        CORE-5753
+FBTEST:      bugs.core_5753
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5056
 TITLE:       EXECUTE STATEMENT using BLOB parameters results in "Invalid BLOB ID" error
 DESCRIPTION:
 JIRA:        CORE-4752
+FBTEST:      bugs.core_4752
 """
 
 import pytest

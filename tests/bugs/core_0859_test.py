@@ -9,6 +9,7 @@ NOTES:
   For now we test that such operations raise an exception, as we restored the legacy
   behavior until we're able to implement DISTINCT for blobs properly,
 JIRA:        CORE-859
+FBTEST:      bugs.core_0859
 """
 
 import pytest

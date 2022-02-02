@@ -3,9 +3,11 @@
 """
 ID:          issue-3204
 ISSUE:       3204
-TITLE:       If stored procedure or trigger contains query with PLAN ORDER it could fail after disconnect of attachment where procedure/trigger executed first time
+TITLE:       If stored procedure or trigger contains query with PLAN ORDER it could fail
+  after disconnect of attachment where procedure/trigger executed first time
 DESCRIPTION:
 JIRA:        CORE-2817
+FBTEST:      bugs.core_2817
 """
 
 import pytest

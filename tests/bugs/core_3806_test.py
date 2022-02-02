@@ -6,6 +6,7 @@ ISSUE:       4149
 TITLE:       Wrong data returned if a sub-query or a computed field refers to the base table in the ORDER BY clause
 DESCRIPTION:
 JIRA:        CORE-3806
+FBTEST:      bugs.core_3806
 """
 
 import pytest

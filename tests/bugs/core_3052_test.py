@@ -7,6 +7,7 @@ TITLE:       Wrong resultset
 DESCRIPTION:
   Empty rowset when selecting from table with compound index on PXW_HUNDC-collated fields
 JIRA:        CORE-3052
+FBTEST:      bugs.core_3052
 """
 
 import pytest

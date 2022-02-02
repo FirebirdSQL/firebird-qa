@@ -6,6 +6,7 @@ ISSUE:       1871
 TITLE:       Allow usage of functions in LIST delimiter parameter
 DESCRIPTION:
 JIRA:        CORE-1443
+FBTEST:      bugs.core_1453
 """
 
 import pytest

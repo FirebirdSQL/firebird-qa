@@ -6,6 +6,7 @@ ISSUE:       5423
 TITLE:       Wrong error message when user tries to set number of page buffers into not supported value
 DESCRIPTION:
 JIRA:        CORE-5140
+FBTEST:      bugs.core_5140
 """
 
 import pytest

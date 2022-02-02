@@ -6,6 +6,7 @@ ISSUE:       2478
 TITLE:       Connection lost to database when used AUTONOMOUS TRANSACTION
 DESCRIPTION:
 JIRA:        CORE-2042
+FBTEST:      bugs.core_2042
 """
 
 import pytest

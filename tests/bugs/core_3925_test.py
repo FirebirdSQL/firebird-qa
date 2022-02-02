@@ -9,6 +9,7 @@ DESCRIPTION:
   Checked on WI-V3.0.5.33123, WI-T4.0.0.1501 (both SS an CS): works OK, got only SQLSTATE = 23000 when try to add FK.
   DELETE statement does not raise error.
 JIRA:        CORE-3925
+FBTEST:      bugs.core_3925
 """
 
 import pytest

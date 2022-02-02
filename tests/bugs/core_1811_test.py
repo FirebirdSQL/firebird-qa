@@ -6,6 +6,7 @@ ISSUE:       2241
 TITLE:       Incorrect parser's reaction to the unquoted usage of the keyword "VALUE"
 DESCRIPTION:
 JIRA:        CORE-1811
+FBTEST:      bugs.core_1811
 """
 
 import pytest

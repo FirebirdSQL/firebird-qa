@@ -6,6 +6,7 @@ ISSUE:       1444
 TITLE:       ad plan in outer joins with IS NULL clauses (dependent on order of predicates)
 DESCRIPTION:
 JIRA:        CORE-1029
+FBTEST:      bugs.core_1029
 """
 
 import pytest

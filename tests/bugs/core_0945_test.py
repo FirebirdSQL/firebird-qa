@@ -6,6 +6,7 @@ ISSUE:       1346
 TITLE:       Bad error message when tring to create FK to non-existent table
 DESCRIPTION:
 JIRA:        CORE-945
+FBTEST:      bugs.core_0945
 """
 
 import pytest

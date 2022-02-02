@@ -3,9 +3,11 @@
 """
 ID:          issue-1927
 ISSUE:       1927
-TITLE:       ISQL doesn`t show number of affected rows for "MERGE ... WHEN MATCHING" in case when this number surely > 0
+TITLE:       ISQL doesn`t show number of affected rows for "MERGE ... WHEN MATCHING" in
+  case when this number surely > 0
 DESCRIPTION:
 JIRA:        CORE-4817
+FBTEST:      bugs.core_4817
 """
 
 import pytest

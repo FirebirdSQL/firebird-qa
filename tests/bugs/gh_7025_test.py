@@ -7,6 +7,7 @@ TITLE:       Results of negation must be the same for each datatype
   (smallint / int /bigint / int128) when argument is least possible value for this type
 DESCRIPTION:
   Confirmed 'sqltype: 496 LONG' for -(-2147483648). Before fix was: '580 INT64'.
+FBTEST:      bugs.gh_7025
 """
 
 import pytest

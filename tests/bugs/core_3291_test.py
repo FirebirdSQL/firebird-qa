@@ -6,6 +6,7 @@ ISSUE:       3659
 TITLE:       New pseudocolumn (RDB$RECORD_VERSION) to get number of the transaction that created a record version
 DESCRIPTION:
 JIRA:        CORE-3291
+FBTEST:      bugs.core_3291
 """
 
 import pytest

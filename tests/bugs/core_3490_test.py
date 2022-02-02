@@ -6,6 +6,7 @@ ISSUE:       3849
 TITLE:       Concurrency problem when using named cursors
 DESCRIPTION:
 JIRA:        CORE-3490
+FBTEST:      bugs.core_3490
 """
 
 import pytest

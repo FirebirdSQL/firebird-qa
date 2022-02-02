@@ -6,6 +6,7 @@ ISSUE:       3348
 TITLE:       Wrong results or unexpected errors while sorting a large data set
 DESCRIPTION:
 JIRA:        CORE-2966
+FBTEST:      bugs.core_2966
 """
 
 import pytest

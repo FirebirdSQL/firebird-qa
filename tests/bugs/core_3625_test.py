@@ -20,6 +20,7 @@ DESCRIPTION:
   attachments thus counter mon$page_writes is NOT changed in this scenario.
   For this reason in SS we can only "simulate" proper outcome.
 JIRA:        CORE-3625
+FBTEST:      bugs.core_3625
 """
 
 import pytest

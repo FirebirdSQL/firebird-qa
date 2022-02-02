@@ -6,6 +6,7 @@ ISSUE:       3887
 TITLE:       BETWEEN operand/clause not supported for COMPUTED columns -- "feature is not supported"
 DESCRIPTION:
 JIRA:        CORE-3530
+FBTEST:      bugs.core_3530
 """
 
 import pytest

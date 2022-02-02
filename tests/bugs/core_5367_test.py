@@ -5,7 +5,8 @@ ID:          issue-5640
 ISSUE:       5640
 TITLE:       Regression: (boolean) parameters as search condition no longer allowed
 DESCRIPTION:
-JIRA:        CORE-v
+JIRA:        CORE-5367
+FBTEST:      bugs.core_5367
 """
 
 import pytest

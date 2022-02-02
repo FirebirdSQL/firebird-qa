@@ -9,6 +9,7 @@ DESCRIPTION:
   read-only database. This GTT serves as temp buffer for output row (we can not use
   windowed function in 2.5)
 JIRA:        CORE-2018
+FBTEST:      bugs.core_2018
 """
 
 import pytest

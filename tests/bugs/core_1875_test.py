@@ -15,6 +15,7 @@ DESCRIPTION:
     into c;
   -- finished without errors.
 JIRA:        CORE-1875
+FBTEST:      bugs.core_1875
 """
 
 import pytest

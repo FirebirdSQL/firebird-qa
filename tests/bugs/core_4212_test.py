@@ -6,6 +6,7 @@ ISSUE:       4537
 TITLE:       Dropping FK on GTT crashes server
 DESCRIPTION:
 JIRA:        CORE-4212
+FBTEST:      bugs.core_4212
 """
 
 import pytest

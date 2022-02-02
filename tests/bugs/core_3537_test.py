@@ -27,6 +27,7 @@ DESCRIPTION:
      This statistics was added since 2.5.2 (see CORE-3598).
   2. We have to use 'gstat -t <table>'instead of 'fbsvcmgr sts_table <...>'in 2.5.x - see CORE-5426.
 JIRA:        CORE-3537
+FBTEST:      bugs.core_3537
 """
 
 import pytest

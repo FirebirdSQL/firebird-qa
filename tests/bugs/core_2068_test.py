@@ -6,6 +6,7 @@ ISSUE:       2504
 TITLE:       Comparision with IN and subquery with RDB$DB_KEY returns wrong result
 DESCRIPTION:
 JIRA:        CORE-2068
+FBTEST:      bugs.core_2068
 """
 
 import pytest

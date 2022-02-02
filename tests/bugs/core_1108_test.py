@@ -6,6 +6,7 @@ ISSUE:       1528
 TITLE:       Wrong results with GROUP BY on constants
 DESCRIPTION:
 JIRA:        CORE-1108
+FBTEST:      bugs.core_1108
 """
 
 import pytest

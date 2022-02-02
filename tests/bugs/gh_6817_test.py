@@ -5,6 +5,7 @@ ID:          issue-6817
 ISSUE:       6817
 TITLE:       Command switch "-fetch_password <passwordfile>" does not work with gfix
 DESCRIPTION:
+FBTEST:      bugs.gh_6817
 """
 
 import pytest

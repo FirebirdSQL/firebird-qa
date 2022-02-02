@@ -6,6 +6,7 @@ ISSUE:       2988
 TITLE:       select rdb$db_key from a view with a more than 1 table joined, results in conversion error
 DESCRIPTION:
 JIRA:        CORE-2578
+FBTEST:      bugs.core_2578
 """
 
 import pytest

@@ -16,6 +16,7 @@ If underlying query became suitable to be run with PLAN INDEX (e.g. such index w
 then this 'PLAN NATURAL' will be IGNORED until it is explicitly specified in the client query.
 See below example #4 for view v_test1 defined as "select * from ... plan (t natural)".
 JIRA:        CORE-203
+FBTEST:      bugs.core_0203
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5170
 TITLE:       Infinite "similar to" matching
 DESCRIPTION:
 JIRA:        CORE-4874
+FBTEST:      bugs.core_4874
 """
 
 import pytest

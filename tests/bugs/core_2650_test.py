@@ -16,6 +16,7 @@ DESCRIPTION:
 
   Thanks to dimitr for lot of explanations (e-mail discussion was 28.12.2020).
 JIRA:        CORE-2650
+FBTEST:      bugs.core_2650
 """
 
 import pytest

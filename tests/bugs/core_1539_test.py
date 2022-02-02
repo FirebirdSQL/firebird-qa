@@ -6,6 +6,7 @@ ISSUE:       1957
 TITLE:       select * from rdb$triggers where rdb$trigger_source like 'CHECK%'
 DESCRIPTION:
 JIRA:        CORE-1539
+FBTEST:      bugs.core_1539
 """
 
 import pytest

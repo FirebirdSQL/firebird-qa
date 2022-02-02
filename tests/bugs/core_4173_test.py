@@ -6,6 +6,7 @@ ISSUE:       4499
 TITLE:       Setting generator value twice in single transaction will set it to zero
 DESCRIPTION:
 JIRA:        CORE-4173
+FBTEST:      bugs.core_4173
 """
 
 import pytest

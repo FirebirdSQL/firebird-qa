@@ -14,6 +14,7 @@ DESCRIPTION:
   For this reason, old code was removed and now test checks only ability to use statements rather than results of them.
   Checked on: 4.0.0.2119; 4.0.0.2164; 3.0.7.33356.
 JIRA:        CORE-3018
+FBTEST:      bugs.core_3018
 """
 
 import pytest

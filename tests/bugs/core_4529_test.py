@@ -6,6 +6,7 @@ ISSUE:       4847
 TITLE:       Allow to use index when GROUP BY on field which has DESCENDING index
 DESCRIPTION:
 JIRA:        CORE-4529
+FBTEST:      bugs.core_4529
 """
 
 import pytest

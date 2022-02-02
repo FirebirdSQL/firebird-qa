@@ -6,6 +6,7 @@ ISSUE:       2080
 TITLE:       Ability to format UUID from char(16) OCTETS to human readable form and vice versa
 DESCRIPTION:
 JIRA:        CORE-1656
+FBTEST:      bugs.core_1656
 """
 
 import pytest

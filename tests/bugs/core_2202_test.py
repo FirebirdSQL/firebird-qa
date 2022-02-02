@@ -6,6 +6,7 @@ ISSUE:       2630
 TITLE:       RDB$VIEW_RELATIONS is not cleaned when altering a view
 DESCRIPTION:
 JIRA:        CORE-2202
+FBTEST:      bugs.core_2202
 """
 
 import pytest

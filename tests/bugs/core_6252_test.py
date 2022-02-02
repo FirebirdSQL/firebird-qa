@@ -3,9 +3,11 @@
 """
 ID:          issue-6495
 ISSUE:       6495
-TITLE:       UNIQUE / PRIMARY KEY constraint can be violated when AUTODDL = OFF and mixing commands for DDL and DML
+TITLE:       UNIQUE / PRIMARY KEY constraint can be violated when AUTODDL = OFF and
+  mixing commands for DDL and DML
 DESCRIPTION:
 JIRA:        CORE-6252
+FBTEST:      bugs.core_6252
 """
 
 import pytest

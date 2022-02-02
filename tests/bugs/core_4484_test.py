@@ -7,6 +7,7 @@ TITLE:       Description (COMMENT ON) for package procedures and functions, and 
 DESCRIPTION:
   Test verifies ability to store comments and also to encode them in UTF8
 JIRA:        CORE-4484
+FBTEST:      bugs.core_4484
 """
 
 import pytest

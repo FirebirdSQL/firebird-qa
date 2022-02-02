@@ -3,7 +3,8 @@
 """
 ID:          issue-6522
 ISSUE:       6522
-TITLE:       MERGE statement loses parameters in WHEN (NOT) MATCHED clause that will never be matched, crashes server in some situations
+TITLE:       MERGE statement loses parameters in WHEN (NOT) MATCHED clause that will never
+  be matched, crashes server in some situations
 DESCRIPTION:
   Confirmed crash on WI-V3.0.5.33220, WI-T4.0.0.1871 - but only when run MERGE statements with parameters from Python. NO crash when run it from ISQL.
   No crash on 4.0.0.1881, but message "No SQLDA for input values provided" will raise for any number of input parameters: 2 or 3.
@@ -16,6 +17,7 @@ NOTES:
   parameters - returned by iMessageMetadata.get_count().
   ALSO, as new driver uses OO API, it does not use SQLDA structures at all.
 JIRA:        CORE-6280
+FBTEST:      bugs.core_6280
 """
 
 import pytest

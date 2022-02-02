@@ -5,6 +5,7 @@ ID:          issue-6903
 ISSUE:       6903
 TITLE:       Unable to create ICU-based collation with locale keywords
 DESCRIPTION:
+FBTEST:      bugs.gh_6903
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1595
 TITLE:       Expression index based on computed fields
 DESCRIPTION: Index based on COMPUTED-BY column must be taken in account by optimizer.
 JIRA:        CORE-1173
+FBTEST:      bugs.core_1173
 """
 
 import pytest

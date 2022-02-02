@@ -6,6 +6,7 @@ ISSUE:       416
 TITLE:       Recreate and self-referencing indexes
 DESCRIPTION:
 JIRA:        CORE-91
+FBTEST:      bugs.core_0091
 """
 
 import pytest

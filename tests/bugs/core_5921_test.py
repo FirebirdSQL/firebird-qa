@@ -3,7 +3,8 @@
 """
 ID:          issue-6179
 ISSUE:       6179
-TITLE:       Provide information about Global Commit Number, Commit Number of currently used database snapshot (if any) and Commit Numbers assigned to the committed transactions
+TITLE:       Provide information about Global Commit Number, Commit Number of currently used
+  database snapshot (if any) and Commit Numbers assigned to the committed transactions
 DESCRIPTION:
   From doc\\sql.extensions\\README.builtin_functions.txt about rdb$get_transaction_cn() function:
   ===
@@ -25,6 +26,7 @@ NOTES:
 [09.11.2019]
   added section with substitutions because GET_OIT_CN can differ in SS vs CS: 9 and 10.
 JIRA:        CORE-5921
+FBTEST:      bugs.core_5921
 """
 
 import pytest

@@ -12,6 +12,7 @@ NOTES:
   in UDR library "udf_compat", see it in folder: ../plugins/udr/
   UDF function 'sright' has direct built-in analog 'right', there is no UDR function for it.
 JIRA:        CORE-858
+FBTEST:      bugs.core_0858
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-4645
 ISSUE:       4645
-TITLE:       Engine crashes when use aggregate or window functions in recursive query (instead of producing compiling error)
+TITLE:       Engine crashes when use aggregate or window functions in recursive query
+  (instead of producing compiling error)
 DESCRIPTION:
 JIRA:        CORE-4322
+FBTEST:      bugs.core_4322
 """
 
 import pytest

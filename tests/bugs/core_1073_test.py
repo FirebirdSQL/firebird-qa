@@ -6,6 +6,7 @@ ISSUE:       1495
 TITLE:       SINGULAR buggy when nulls present
 DESCRIPTION:
 JIRA:        CORE-1073
+FBTEST:      bugs.core_1073
 """
 
 import pytest

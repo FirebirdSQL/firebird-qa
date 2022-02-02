@@ -27,6 +27,7 @@ DESCRIPTION:
 
   We expect appearing of this exception (see try/except block): check its class and content of message.
 JIRA:        CORE-5972
+FBTEST:      bugs.core_5972
 """
 
 import pytest

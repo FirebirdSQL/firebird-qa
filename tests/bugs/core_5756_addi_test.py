@@ -15,6 +15,7 @@ DESCRIPTION:
 NOTES:
   Script for test is launched here TWO times ("pass I", "pass II").
 JIRA:        CORE-5756
+FBTEST:      bugs.core_5756_addi
 """
 
 import pytest

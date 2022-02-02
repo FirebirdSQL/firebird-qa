@@ -10,6 +10,7 @@ NOTES:
   code for FB 4.0: added filtering 'where rdb$system_flag is distinct from 1' for query to rdb$procedures.
   Currently there is one system-defined package (RDB$TIME_ZONE_UTIL) and one stand-alone procedure (RDB$TRANSITIONS)
 JIRA:        CORE-2350
+FBTEST:      bugs.core_2350
 """
 
 import pytest

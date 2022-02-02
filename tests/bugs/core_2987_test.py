@@ -6,6 +6,7 @@ ISSUE:       3281
 TITLE:       Don't send full length of field over the wire when field is null
 DESCRIPTION:
 JIRA:        CORE-2897
+FBTEST:      bugs.core_2987
 """
 
 import pytest

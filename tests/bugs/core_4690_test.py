@@ -6,6 +6,7 @@ ISSUE:       4998
 TITLE:       DISTINCT vs non-DISTINCT affects the result of IN subquery
 DESCRIPTION:
 JIRA:        CORE-4690
+FBTEST:      bugs.core_4690
 """
 
 import pytest

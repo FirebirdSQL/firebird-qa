@@ -6,6 +6,7 @@ ISSUE:       2475
 TITLE:       New EXECUTE STATEMENT implementation asserts or throws an error if used both before and after commin/rollback retaining
 DESCRIPTION:
 JIRA:        CORE-2038
+FBTEST:      bugs.core_2038
 """
 
 import pytest

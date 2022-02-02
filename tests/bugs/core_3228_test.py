@@ -6,6 +6,7 @@ ISSUE:       1283
 TITLE:       RIGHT() fails with multibyte text blobs > 1024 chars
 DESCRIPTION:
 JIRA:        CORE-3228
+FBTEST:      bugs.core_3228
 """
 
 import pytest

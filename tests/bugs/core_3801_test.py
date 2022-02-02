@@ -6,6 +6,7 @@ ISSUE:       4144
 TITLE:       Warnings could be put twice in status-vector
 DESCRIPTION:
 JIRA:        CORE-3801
+FBTEST:      bugs.core_3801
 """
 
 import pytest

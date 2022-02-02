@@ -9,6 +9,7 @@ NOTES:
 [26.08.2018]
   Added check of rdb$relation_fields.rdb$null_flag after suggestion by Adriano, 26.08.2018 19:12.
 JIRA:        CORE-5896
+FBTEST:      bugs.core_5896
 """
 
 import pytest

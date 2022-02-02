@@ -6,6 +6,7 @@ ISSUE:       4503
 TITLE:       Problem with some boolean expressions not being allowed
 DESCRIPTION:
 JIRA:        CORE-4177
+FBTEST:      bugs.core_4177
 """
 
 import pytest

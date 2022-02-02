@@ -14,6 +14,7 @@ DESCRIPTION:
   thus we can get number of occurences for each character, including CR and NL.
   Finally, we compare number of occurences of CR and NL. Difference has to be no more than 1.
 JIRA:        CORE-5477
+FBTEST:      bugs.core_5477
 """
 
 import pytest

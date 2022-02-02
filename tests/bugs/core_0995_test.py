@@ -6,6 +6,7 @@ ISSUE:       1406
 TITLE:       select with FIRST and LEFT JOIN needs excess SORT in plan
 DESCRIPTION:
 JIRA:        CORE-995
+FBTEST:      bugs.core_0995
 """
 
 import pytest

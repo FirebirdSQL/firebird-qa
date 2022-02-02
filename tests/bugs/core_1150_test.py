@@ -6,6 +6,7 @@ ISSUE:       1572
 TITLE:       Error conversion error from string " " using outer join on int64 and int fields
 DESCRIPTION:
 JIRA:        CORE-1150
+FBTEST:      bugs.core_1150
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6584
 TITLE:       Rolled back transaction produces unexpected results leading to duplicate values in PRIMARY KEY field
 DESCRIPTION:
 JIRA:        CORE-6343
+FBTEST:      bugs.core_6343
 """
 
 import pytest

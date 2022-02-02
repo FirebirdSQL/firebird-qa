@@ -1,42 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.core_5501
-# title:        Unclear gstat's diagnostic when damaged page in DB file appears encrypted
-# decription:
-#                  Test creates table 'TEST' with varchar and blob fields, + index on varchar, and add some data to it.
-#                  Blob field is filled by long values in order to prevent acomodation of its content within data pages.
-#                  As result, this table should have pages of three different types: DataPage, BTreePage and BlobPage.
-#
-#                  Then we find number of first PP of this table by scrolling RDB$PAGES join RDB$RELATIONS result set.
-#                  After this we:
-#                  * define type of every page starting from first PP for 'TEST' table and up to total pages of DB,
-#                    and doing this for each subsequent page, until ALL THREE different page types will be detected:
-#                    1) data page, 2) index B-Tree and 3) blob page.
-#                    These page numbers are stored in variables: (brk_datapage, brk_indxpage, brk_blobpage).
-#                    When all three page numbers are found, loop is terminated;
-#                  * close connection and open dB as binary file for reading and writing;
-#                  * store previous content of .fdb in variable 'raw_db_content' (for further restore);
-#                  * move file seek pointer at the beginning of every page from list: (brk_datapage, brk_indxpage, brk_blobpage);
-#                  * BREAK page content by writing invalid binary data in the header of page;
-#                    This invalid data are: bytes 0...7 ==> 0xFFAACCEEBB0000CC; bytes 8...15 ==> 0xDDEEAADDCC00DDEE;
-#                  * Close DB file handle and:
-#                  ** 1) run 'gstat -e';
-#                  ** 2) run online validation;
-#                  * open DB file again as binary and restore its content from var. 'raw_db_content' in order
-#                    fbtest framework could finish this test (by making connect and drop this database);
-#
-#                  KEY POINTS:
-#                  * report of 'gstat -e' should contain line with text 'ENCRYPTED 3 (DB problem!)'
-#                    (number '3' should present becase we damaged pages of THREE diff. types: DP, BTree and Blob).
-#                  * report of online validation should contain lines with info about three diff. page types which have problems.
-#
-#                  Checked on 3.0.2.32702 (CS/SC/SS), 4.0.0.563 (CS/SC/SS)
-#
-#
-# tracker_id:   CORE-5501
-# min_versions: ['3.0.2']
-# versions:     3.0.2
-# qmid:         None
 
 """
 ID:          issue-5770
@@ -79,6 +41,7 @@ NOTES:
     Generator pages: total 1, encrypted 0, non-crypted 1
   Validation does not report BLOB page errors, only data and index corruptions.
 JIRA:        CORE-5501
+FBTEST:      bugs.core_5501
 """
 
 from __future__ import annotations

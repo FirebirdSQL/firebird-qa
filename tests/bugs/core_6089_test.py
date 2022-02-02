@@ -10,6 +10,7 @@ DESCRIPTION:
   Each BLOB_ID is added to set(), so eventually we can get total number of UNIQUE blob IDs that were generated during test.
   This number must be equal to number of records in the table (three in this test).
 JIRA:        CORE-6089
+FBTEST:      bugs.core_6089
 """
 
 import pytest

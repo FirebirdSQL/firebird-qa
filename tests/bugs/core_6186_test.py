@@ -6,6 +6,7 @@ ISSUE:       6431
 TITLE:       Original content of column which is involved into ENCRYPT() is displayed as distorted view after this call
 DESCRIPTION:
 JIRA:        CORE-6186
+FBTEST:      bugs.core_6186
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       394
 TITLE:       Expression index regression since 2.0a3
 DESCRIPTION:
 JIRA:        CORE-70
+FBTEST:      bugs.core_0070
 """
 
 import pytest

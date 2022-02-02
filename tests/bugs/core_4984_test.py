@@ -6,6 +6,7 @@ ISSUE:       5275
 TITLE:       Ordering by compound index together with a range condition gives wrong results
 DESCRIPTION:
 JIRA:        CORE-4984
+FBTEST:      bugs.core_4984
 """
 
 import pytest

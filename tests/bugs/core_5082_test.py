@@ -13,6 +13,7 @@ DESCRIPTION:
 NOTES:
 [06.02.2019] added separate code for 4.0 because of new error message ("Missing security context for ...")
 JIRA:        CORE-5082
+FBTEST:      bugs.core_5082
 """
 
 import pytest

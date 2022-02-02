@@ -6,6 +6,7 @@ ISSUE:       1186
 TITLE:       Easy metadata extract improvements
 DESCRIPTION: Domain DDL: move its CHECK clause from 'create' to 'alter' statement.
 JIRA:        CORE-800
+FBTEST:      bugs.core_0800
 """
 
 import pytest

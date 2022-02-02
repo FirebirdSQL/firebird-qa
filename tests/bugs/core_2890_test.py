@@ -6,6 +6,7 @@ ISSUE:       3274
 TITLE:       SQLSTATE should also be available as a PSQL context variable like GDSCODE/SQLCODE
 DESCRIPTION:
 JIRA:        CORE-2890
+FBTEST:      bugs.core_2890
 """
 
 import pytest

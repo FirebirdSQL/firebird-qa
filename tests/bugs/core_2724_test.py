@@ -12,6 +12,7 @@ DESCRIPTION:
   This charset (NONE) should result in question marks after we finish DDL and want to query log table
   that was filled by DDL trigger and contains issued DDL statements.
 JIRA:        CORE-2724
+FBTEST:      bugs.core_2724
 """
 
 import pytest

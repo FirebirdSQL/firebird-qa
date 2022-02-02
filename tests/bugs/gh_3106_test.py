@@ -17,6 +17,7 @@ DESCRIPTION:
     Confirmed bug on 4.0.0.2451: trace statistics contain line with three indexed reads for test table.
     Checked on 4.0.0.2453 SS/CS: all OK, there are no indexed reads on test table in the trace log.
 JIRA:        CORE-2709
+FBTEST:      bugs.gh_3106
 """
 
 import pytest

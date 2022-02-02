@@ -6,6 +6,7 @@ ISSUE:       5527
 TITLE:       Improve consistency in GRANT syntax between roles and privileges according to SQL standard
 DESCRIPTION:
 JIRA:        CORE-5248
+FBTEST:      bugs.core_5248
 """
 
 import pytest

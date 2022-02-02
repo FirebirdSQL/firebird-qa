@@ -6,6 +6,7 @@ ISSUE:       3303
 TITLE:       Incorrect execution of volatile SQL statements inside EXECUTE STATEMENT
 DESCRIPTION:
 JIRA:        CORE-2920
+FBTEST:      bugs.core_2920
 """
 
 import pytest

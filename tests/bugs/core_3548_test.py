@@ -6,6 +6,7 @@ ISSUE:       3904
 TITLE:       GFIX returns an error after correctly shutting down a database
 DESCRIPTION: Affects only local connections
 JIRA:        CORE-3548
+FBTEST:      bugs.core_3548
 """
 
 import pytest

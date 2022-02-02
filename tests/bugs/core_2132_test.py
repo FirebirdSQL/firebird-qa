@@ -6,6 +6,7 @@ ISSUE:       2563
 TITLE:       Indexed retrieval cannot be chosen if a stored procedure is used inside the comparison predicate
 DESCRIPTION:
 JIRA:        CORE-2132
+FBTEST:      bugs.core_2132
 """
 
 import pytest

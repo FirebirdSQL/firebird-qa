@@ -6,6 +6,7 @@ ISSUE:       5218
 TITLE:       IIF function prevents the condition from being pushed into the union for better optimization
 DESCRIPTION:
 JIRA:        CORE-4927
+FBTEST:      bugs.core_4927
 """
 
 import pytest

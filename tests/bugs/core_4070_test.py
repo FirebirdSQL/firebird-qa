@@ -6,6 +6,7 @@ ISSUE:       4398
 TITLE:       NOT-NULL-column can be used as primary key and filled with NULL-values
 DESCRIPTION:
 JIRA:        CORE-4070
+FBTEST:      bugs.core_4070
 """
 
 import pytest

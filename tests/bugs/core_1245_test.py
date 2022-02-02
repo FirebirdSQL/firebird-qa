@@ -6,6 +6,7 @@ ISSUE:       1669
 TITLE:       Incorrect column values with outer joins and views
 DESCRIPTION:
 JIRA:        CORE-1245
+FBTEST:      bugs.core_1245
 """
 
 import pytest

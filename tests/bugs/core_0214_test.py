@@ -6,6 +6,7 @@ ISSUE:       542
 TITLE:       Count ( DISTINCT ... ) is too slow
 DESCRIPTION:
 JIRA:        CORE-214
+FBTEST:      bugs.core_0214
 """
 
 import pytest

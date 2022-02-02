@@ -6,6 +6,7 @@ ISSUE:       3902
 TITLE:       Aliases for the RETURNING clause
 DESCRIPTION:
 JIRA:        CORE-3546
+FBTEST:      bugs.core_3546
 """
 
 import pytest

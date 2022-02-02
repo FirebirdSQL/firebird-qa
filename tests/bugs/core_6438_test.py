@@ -6,6 +6,7 @@ ISSUE:       2366
 TITLE:       ISQL: bad headers when text columns has >= 80 characters
 DESCRIPTION:
 JIRA:        CORE-6438
+FBTEST:      bugs.core_6438
 """
 
 import pytest

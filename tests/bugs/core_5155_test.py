@@ -6,6 +6,7 @@ ISSUE:       5438
 TITLE:       [CREATE OR] ALTER USER statement: clause PASSWORD (if present) must be always specified just after USER
 DESCRIPTION:
 JIRA:        CORE-5155
+FBTEST:      bugs.core_5155
 """
 
 import pytest

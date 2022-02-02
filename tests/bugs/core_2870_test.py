@@ -6,6 +6,7 @@ ISSUE:       3254
 TITLE:       View created from JOIN and LEFT JOIN doesnt order
 DESCRIPTION:
 JIRA:        CORE-2870
+FBTEST:      bugs.core_2870
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6084
 TITLE:       No permission for SELECT access to blob field in stored procedure
 DESCRIPTION:
 JIRA:        CORE-5823
+FBTEST:      bugs.core_5823
 """
 
 import pytest

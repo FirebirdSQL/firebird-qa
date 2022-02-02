@@ -6,6 +6,7 @@ ISSUE:       3721
 TITLE:       Wrong comparsion of DATE and TIMESTAMP if index is used
 DESCRIPTION:
 JIRA:        CORE-3355
+FBTEST:      bugs.core_3355
 """
 
 import pytest

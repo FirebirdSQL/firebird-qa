@@ -6,6 +6,7 @@ ISSUE:       1735
 TITLE:       NOT NULL constraint for procedure parameters and variables
 DESCRIPTION:
 JIRA:        CORE-1316
+FBTEST:      bugs.core_1316
 """
 
 import pytest

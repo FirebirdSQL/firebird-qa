@@ -10,6 +10,7 @@ DESCRIPTION:
   Then we search metadata log for phrase 'GRANT USAGE ON DOMAIN' - it should NOT present there.
   Afterall, we try to apply extracted metadata to temp database (that was created auto by fbtest).
 JIRA:        CORE-5207
+FBTEST:      bugs.core_5207
 """
 
 import pytest

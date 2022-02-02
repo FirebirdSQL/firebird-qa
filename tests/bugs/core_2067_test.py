@@ -6,6 +6,7 @@ ISSUE:       2503
 TITLE:       GROUP by and RDB$DB_KEY problems
 DESCRIPTION:
 JIRA:        CORE-2067
+FBTEST:      bugs.core_2067
 """
 
 import pytest

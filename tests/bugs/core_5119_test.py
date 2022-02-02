@@ -8,6 +8,7 @@ DESCRIPTION:
   Test starts transaction by issuing ISQL command with 'auto commit' clause and check then
   whether transaction data are written in the table, despite of final rollback.
 JIRA:        CORE-5119
+FBTEST:      bugs.core_5119
 """
 
 import pytest

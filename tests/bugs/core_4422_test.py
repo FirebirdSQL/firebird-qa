@@ -6,6 +6,7 @@ ISSUE:       4744
 TITLE:       FB crashes when using row_number()over( PARTITION BY x) in ORDER by clause
 DESCRIPTION:
 JIRA:        CORE-4422
+FBTEST:      bugs.core_4422
 """
 
 import pytest

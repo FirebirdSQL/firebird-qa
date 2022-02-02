@@ -6,6 +6,7 @@ ISSUE:       3765
 TITLE:       Allow write operations to temporary tables in read only transactions
 DESCRIPTION:
 JIRA:        CORE-3399
+FBTEST:      bugs.core_3399
 """
 
 import pytest

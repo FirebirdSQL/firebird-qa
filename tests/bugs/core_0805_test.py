@@ -6,6 +6,7 @@ ISSUE:       1192
 TITLE:       Privileges of dynamic statements in SP
 DESCRIPTION:
 JIRA:        CORE-805
+FBTEST:      bugs.core_0805
 """
 
 import pytest

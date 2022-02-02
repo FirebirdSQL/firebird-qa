@@ -3,7 +3,9 @@
 """
 ID:          issue-5374
 ISSUE:       5374
-TITLE:       Metadata extration (ISQL -X): "CREATE PROCEDURE/FUNCTION" statement contains reference to column of table(s) that not yet exists if this procedure had parameter of such type when it was created
+TITLE:       Metadata extration (ISQL -X): "CREATE PROCEDURE/FUNCTION" statement contains
+  reference to column of table(s) that not yet exists if this procedure had parameter
+  of such type when it was created
 DESCRIPTION:
   Test creates database with table 'TEST' and standalone and packaged procedures and functions which have parameters or variables
   with referencing to the table 'TEST' column. Also, there are DB-level and DDL-level triggers with similar references.
@@ -11,6 +13,7 @@ DESCRIPTION:
   After this we drop all objects and make attempt to APPLY just extracted metadata script. It should perform without errors.
   Finally, we extract metadata again and do COMPARISON of their current content and those which are stored 'initial' file.
 JIRA:        CORE-5089
+FBTEST:      bugs.core_5089
 """
 
 import pytest

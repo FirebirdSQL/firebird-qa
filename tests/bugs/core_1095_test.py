@@ -6,6 +6,7 @@ ISSUE:       1517
 TITLE:       Support BETWEEN predicate for select expressions
 DESCRIPTION:
 JIRA:        CORE-1095
+FBTEST:      bugs.core_1095
 """
 
 import pytest

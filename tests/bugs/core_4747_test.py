@@ -3,9 +3,11 @@
 """
 ID:          issue-5052
 ISSUE:       5052
-TITLE:       Error "invalid BLOB ID" can occur when retrieving MON$STATEMENTS.MON$SQL_TEXT using ES/EDS and db_connect argument is not specified
+TITLE:       Error "invalid BLOB ID" can occur when retrieving MON$STATEMENTS.MON$SQL_TEXT
+  using ES/EDS and db_connect argument is not specified
 DESCRIPTION:
 JIRA:        CORE-4747
+FBTEST:      bugs.core_4747
 """
 
 import pytest

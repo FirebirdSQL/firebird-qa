@@ -17,6 +17,7 @@ DESCRIPTION:
 NOTES:
 [27.07.2021]
   Adjusted expected* sections to results in current snapshots FB 4.x and 5.x: this is needed since fix #6874
+FBTEST:      bugs.gh_6809
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1713
 TITLE:       Can't create table using long username and UTF8 as attachment charset
 DESCRIPTION:
 JIRA:        CORE-1292
+FBTEST:      bugs.core_1292
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3990
 TITLE:       Allow the use of multiple WHEN MATCHED / NOT MATCHED clauses in MERGE, as per the SQL 2008 specification
 DESCRIPTION:
 JIRA:        CORE-3639
+FBTEST:      bugs.core_3639
 """
 
 import pytest

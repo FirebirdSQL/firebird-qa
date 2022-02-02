@@ -6,6 +6,7 @@ ISSUE:       4901
 TITLE:       Can't create column check constraint when the column is domain based
 DESCRIPTION:
 JIRA:        CORE-4585
+FBTEST:      bugs.core_4585
 """
 
 import pytest

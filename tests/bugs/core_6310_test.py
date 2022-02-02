@@ -6,6 +6,7 @@ ISSUE:       6551
 TITLE:       Varchar length limit is not enforced when assigning string with trailing spaces in MBCS
 DESCRIPTION:
 JIRA:        CORE-6310
+FBTEST:      bugs.core_6310
 """
 
 import pytest

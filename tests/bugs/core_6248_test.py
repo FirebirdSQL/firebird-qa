@@ -21,6 +21,7 @@ DESCRIPTION:
     gbak:text for attribute 7 is too large in put_asciz(), truncating to 255 bytes
   - but currently this is not checked here.
 JIRA:        CORE-6248
+FBTEST:      bugs.core_6248
 """
 
 import pytest

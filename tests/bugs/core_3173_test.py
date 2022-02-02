@@ -6,6 +6,7 @@ ISSUE:       3547
 TITLE:       Empty result when select from SP that contains two CTE (second of them with GROUP BY clause) and INNER join
 DESCRIPTION:
 JIRA:        CORE-3173
+FBTEST:      bugs.core_3173
 """
 
 import pytest

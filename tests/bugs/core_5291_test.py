@@ -3,9 +3,11 @@
 """
 ID:          issue-5569
 ISSUE:       5569
-TITLE:       Error messages differ when regular user tries to RESTORE database, depending on his default role and (perhaps) system privilege USE_GBAK_UTILITY
+TITLE:       Error messages differ when regular user tries to RESTORE database, depending
+  on his default role and (perhaps) system privilege USE_GBAK_UTILITY
 DESCRIPTION:
 JIRA:        CORE-5291
+FBTEST:      bugs.core_5291
 """
 
 import pytest

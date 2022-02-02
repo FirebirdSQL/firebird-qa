@@ -6,6 +6,7 @@ ISSUE:       4579
 TITLE:       Parametrized queries using RDB$DB_KEY do not work
 DESCRIPTION:
 JIRA:        CORE-4255
+FBTEST:      bugs.core_4255
 """
 
 import pytest

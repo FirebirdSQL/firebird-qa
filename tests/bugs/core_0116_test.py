@@ -6,6 +6,7 @@ ISSUE:       438
 TITLE:       BLOBs in external tables
 DESCRIPTION:
 JIRA:        CORE-116
+FBTEST:      bugs.core_0116
 """
 
 import pytest

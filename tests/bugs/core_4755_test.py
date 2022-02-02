@@ -6,6 +6,7 @@ ISSUE:       5059
 TITLE:       Parameterized exception: wrong output when number of arguments greater than 7
 DESCRIPTION:
 JIRA:        CORE-4755
+FBTEST:      bugs.core_4755
 """
 
 import pytest

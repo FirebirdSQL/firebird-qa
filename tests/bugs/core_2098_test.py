@@ -6,6 +6,7 @@ ISSUE:       2532
 TITLE:       View over global temporary table
 DESCRIPTION:
 JIRA:        CORE-2098
+FBTEST:      bugs.core_2098
 """
 
 import pytest

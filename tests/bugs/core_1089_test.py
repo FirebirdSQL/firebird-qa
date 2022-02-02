@@ -6,6 +6,7 @@ ISSUE:       1510
 TITLE:       Wrong ordering with views, distinct, left join and order by
 DESCRIPTION:
 JIRA:        CORE-1089
+FBTEST:      bugs.core_1089
 """
 
 import pytest

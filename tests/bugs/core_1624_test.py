@@ -6,6 +6,7 @@ ISSUE:       2045
 TITLE:       MERGE not correctly worked with parameters in MATCHING clause
 DESCRIPTION:
 JIRA:        CORE-1624
+FBTEST:      bugs.core_1624
 """
 
 import pytest

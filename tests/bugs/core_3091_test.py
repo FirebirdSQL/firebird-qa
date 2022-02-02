@@ -3,9 +3,11 @@
 """
 ID:          issue-3470
 ISSUE:       3470
-TITLE:       Built-in function POWER(X, Y) does not work when the X argument is negative and the Y value is scaled numeric but integral
+TITLE:       Built-in function POWER(X, Y) does not work when the X argument is negative
+  and the Y value is scaled numeric but integral
 DESCRIPTION:
 JIRA:        CORE-3091
+FBTEST:      bugs.core_3091
 """
 
 import pytest

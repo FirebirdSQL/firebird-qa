@@ -6,6 +6,7 @@ ISSUE:       4948
 TITLE:       Regression: ORDER BY via an index + WHERE clause: error "no current record for fetch operation"
 DESCRIPTION:
 JIRA:        CORE-4634
+FBTEST:      bugs.core_4634
 """
 
 import pytest

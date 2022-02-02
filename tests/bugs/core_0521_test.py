@@ -6,6 +6,7 @@ ISSUE:       875
 TITLE:       Permissions are checked case-insensitively
 DESCRIPTION:
 JIRA:        CORE-521
+FBTEST:      bugs.core_0521
 """
 
 import pytest

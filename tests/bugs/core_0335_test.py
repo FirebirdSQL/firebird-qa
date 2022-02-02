@@ -11,6 +11,7 @@ DESCRIPTION:
   2) we can *not* run query with <N+1> unions.
   Actual value of <N> is 128 for 2.5.x (NOT 255 as errormessage issues!) and 255 for 3.0.
 JIRA:        CORE-335
+FBTEST:      bugs.core_0335
 """
 
 import pytest

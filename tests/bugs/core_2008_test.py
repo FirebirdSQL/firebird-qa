@@ -6,6 +6,7 @@ ISSUE:       2445
 TITLE:       NOT NULL procedure parameters
 DESCRIPTION:
 JIRA:        CORE-2008
+FBTEST:      bugs.core_2008
 """
 
 import pytest

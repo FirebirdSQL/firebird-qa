@@ -6,6 +6,7 @@ ISSUE:       4382
 TITLE:       role not passed on external execute stmt
 DESCRIPTION:
 JIRA:        CORE-4054
+FBTEST:      bugs.core_4054
 """
 
 import pytest

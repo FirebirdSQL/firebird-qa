@@ -3,9 +3,11 @@
 """
 ID:          issue-4593
 ISSUE:       4593
-TITLE:       Wrong output when field with result of windowed function is used in query with useless WHERE 0=0 and GROUP BY clause
+TITLE:       Wrong output when field with result of windowed function is used in query
+  with useless WHERE 0=0 and GROUP BY clause
 DESCRIPTION:
 JIRA:        CORE-4269
+FBTEST:      bugs.core_4269
 """
 
 import pytest

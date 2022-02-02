@@ -6,6 +6,7 @@ ISSUE:       1547
 TITLE:       Incorrect results when left join on subquery with constant column
 DESCRIPTION:
 JIRA:        CORE-1126
+FBTEST:      bugs.core_1126
 """
 
 import pytest

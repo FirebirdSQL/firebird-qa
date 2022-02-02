@@ -6,6 +6,7 @@ ISSUE:       5228
 TITLE:       View/subselect with "union" does not use computed index
 DESCRIPTION:
 JIRA:        CORE-4937
+FBTEST:      bugs.core_4937
 """
 
 import pytest

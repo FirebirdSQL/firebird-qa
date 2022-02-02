@@ -6,6 +6,7 @@ ISSUE:       5555
 TITLE:       Parameters with multibyte character sets allow to bypass the character limit of varchar fields
 DESCRIPTION:
 JIRA:        CORE-5277
+FBTEST:      bugs.core_5277
 """
 
 import pytest

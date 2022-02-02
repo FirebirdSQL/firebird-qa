@@ -6,6 +6,7 @@ ISSUE:       6724
 TITLE:       Inconsistent translation "string->timestamp->string->timestamp" in dialect 1
 DESCRIPTION:
 JIRA:        CORE-6494
+FBTEST:      bugs.core_6494
 """
 
 import pytest

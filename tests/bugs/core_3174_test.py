@@ -6,6 +6,7 @@ ISSUE:       3548
 TITLE:       Expression index with TRIM may lead to incorrect indexed lookup
 DESCRIPTION:
 JIRA:        CORE-3174
+FBTEST:      bugs.core_3174
 """
 
 import pytest

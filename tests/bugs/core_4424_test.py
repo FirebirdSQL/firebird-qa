@@ -6,6 +6,7 @@ ISSUE:       4745
 TITLE:       Rollback to wrong savepoint if several exception handlers on the same level are executed
 DESCRIPTION:
 JIRA:        CORE-4424
+FBTEST:      bugs.core_4424
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4441
 TITLE:       EXECUTE BLOCK prepare fails
 DESCRIPTION:
 JIRA:        CORE-4113
+FBTEST:      bugs.core_4113
 """
 
 import pytest

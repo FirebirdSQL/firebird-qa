@@ -16,6 +16,7 @@ DESCRIPTION:
   We should have TWO distinct elements in this dict, and numbers in their values must
   differ at (N-1), where N = number of rows in the table.
 JIRA:        CORE-5441
+FBTEST:      bugs.core_5441
 """
 
 import pytest

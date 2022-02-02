@@ -6,6 +6,7 @@ ISSUE:       411
 TITLE:       Query with not in (select) returns wrong result
 DESCRIPTION:
 JIRA:        CORE-85
+FBTEST:      bugs.core_0085
 """
 
 import pytest

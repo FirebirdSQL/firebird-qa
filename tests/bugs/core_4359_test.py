@@ -6,6 +6,7 @@ ISSUE:       4681
 TITLE:       non-priviledged user can insert and update rdb$database
 DESCRIPTION:
 JIRA:        CORE-4359
+FBTEST:      bugs.core_4359
 """
 
 import pytest

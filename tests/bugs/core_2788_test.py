@@ -6,6 +6,7 @@ ISSUE:       3179
 TITLE:       isql extracts the array dimensions after the character set name
 DESCRIPTION:
 JIRA:        CORE-2788
+FBTEST:      bugs.core_2788
 """
 
 import pytest

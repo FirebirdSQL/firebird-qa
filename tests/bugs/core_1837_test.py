@@ -6,6 +6,7 @@ ISSUE:       2266
 TITLE:       Procedure text is stored truncated in system tables if any variable have default value
 DESCRIPTION:
 JIRA:        CORE-1837
+FBTEST:      bugs.core_1837
 """
 
 import pytest

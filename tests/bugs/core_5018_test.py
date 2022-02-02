@@ -3,9 +3,11 @@
 """
 ID:          issue-5306
 ISSUE:       5306
-TITLE:       Regression: Non-indexed predicates may not be applied immediately after retrieval when tables are being joined
+TITLE:       Regression: Non-indexed predicates may not be applied immediately after
+  retrieval when tables are being joined
 DESCRIPTION:
 JIRA:        CORE-5018
+FBTEST:      bugs.core_5018
 """
 
 import pytest

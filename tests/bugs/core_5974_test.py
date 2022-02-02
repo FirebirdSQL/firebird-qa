@@ -6,6 +6,7 @@ ISSUE:       6226
 TITLE:       Wrong result of select distinct with decfload/timezone/collated column
 DESCRIPTION:
 JIRA:        CORE-5974
+FBTEST:      bugs.core_5974
 """
 
 import pytest

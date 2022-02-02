@@ -6,6 +6,7 @@ ISSUE:       987
 TITLE:       Token unknown in simple SELECT with GROUP BY and ORDER BY
 DESCRIPTION: Getting SQL error code = -104, Token unknown count.
 JIRA:        CORE-625
+FBTEST:      bugs.core_0625
 """
 
 import pytest

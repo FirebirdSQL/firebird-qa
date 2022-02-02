@@ -6,6 +6,7 @@ ISSUE:       3910
 TITLE:       Server crashes during prepare or throws incorrect parsing error if the remotely passed SQL query is empty
 DESCRIPTION:
 JIRA:        CORE-3554
+FBTEST:      bugs.core_3554
 """
 
 import pytest

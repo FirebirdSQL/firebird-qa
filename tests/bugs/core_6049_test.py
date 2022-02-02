@@ -11,6 +11,7 @@ DESCRIPTION:
     - must be equal to initial bin_data (and similar for bin_data -> hex_encode -> hex_decode)
   We get columns type details using sqlda_display in order to fix them in expected_stdout.
 JIRA:        CORE-6049
+FBTEST:      bugs.core_6049
 """
 
 import pytest

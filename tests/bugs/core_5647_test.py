@@ -6,6 +6,7 @@ ISSUE:       5913
 TITLE:       Increase number of formats/versions of views from 255 to 32K
 DESCRIPTION:
 JIRA:        CORE-5647
+FBTEST:      bugs.core_5647
 """
 
 import pytest

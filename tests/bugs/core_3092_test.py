@@ -6,6 +6,7 @@ ISSUE:       3471
 TITLE:       ROW_COUNT is not cleared before the singleton INSERT statement
 DESCRIPTION:
 JIRA:        CORE-3092
+FBTEST:      bugs.core_3092
 """
 
 import pytest

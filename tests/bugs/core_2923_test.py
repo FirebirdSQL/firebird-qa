@@ -6,6 +6,7 @@ ISSUE:       3306
 TITLE:       Problem with dependencies between a procedure and a view using that procedure
 DESCRIPTION:
 JIRA:        CORE-2923
+FBTEST:      bugs.core_2923
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4022
 TITLE:       computed index by substring function for long columns
 DESCRIPTION:
 JIRA:        CORE-3672
+FBTEST:      bugs.core_3672
 """
 
 import pytest

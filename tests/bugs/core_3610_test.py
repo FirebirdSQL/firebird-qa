@@ -6,6 +6,7 @@ ISSUE:       3964
 TITLE:       Can insert DUPLICATE keys in UNIQUE index
 DESCRIPTION:
 JIRA:        CORE-3610
+FBTEST:      bugs.core_3610
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5361
 TITLE:       Lost the charset ID in selection of array element
 DESCRIPTION:
 JIRA:        CORE-5074
+FBTEST:      bugs.core_5074
 """
 
 import pytest

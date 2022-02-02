@@ -13,6 +13,7 @@ DESCRIPTION:
   Confirmed bug on 3.0.6.33276, 4.0.0.1850.
   Works fine on 3.0.6.33277, 4.0.0.1854
 JIRA:        CORE-6264
+FBTEST:      bugs.core_6264
 """
 
 import pytest

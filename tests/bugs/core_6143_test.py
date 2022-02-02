@@ -14,6 +14,7 @@ NOTES:
 [3.11.2021] pcisar
   This test fails for 4.0, WHO_AM_I = TMP$C6143_FOO
 JIRA:        CORE-6143
+FBTEST:      bugs.core_6143
 """
 
 import pytest

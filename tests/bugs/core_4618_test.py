@@ -3,7 +3,8 @@
 """
 ID:          issue-4933
 ISSUE:       4933
-TITLE:       Rollback doesn`t undo changes when MERGE statement updates the same target rows multiple times and PLAN MERGE is used
+TITLE:       Rollback doesn`t undo changes when MERGE statement updates the same target
+  rows multiple times and PLAN MERGE is used
 DESCRIPTION:
 NOTES:
 [07.06.2020]
@@ -12,6 +13,7 @@ NOTES:
   For this reason we have to check only presense of ERROR in 4.x and that result is the
   same after merge and rollback.
 JIRA:        CORE-4618
+FBTEST:      bugs.core_4618
 """
 
 import pytest

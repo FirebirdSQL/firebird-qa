@@ -11,6 +11,7 @@ NOTES:
   See also:
   https://github.com/FirebirdSQL/firebird/commit/a372f319f61d88151f5a34c4ee4ecdab6fe052f3
 JIRA:        CORE-4409
+FBTEST:      bugs.core_4409
 """
 
 import pytest

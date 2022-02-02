@@ -6,6 +6,7 @@ ISSUE:       5694
 TITLE:       Performance degradation in FB 3.0.2 compared to FB 2.5.7
 DESCRIPTION:
 JIRA:        CORE-5421
+FBTEST:      bugs.core_5421
 """
 
 import pytest

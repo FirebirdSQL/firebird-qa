@@ -6,6 +6,7 @@ ISSUE:       5144
 TITLE:       MERGE ... WHEN NOT MATCHED ... RETURNING returns wrong (non-null) values when no insert is performed
 DESCRIPTION:
 JIRA:        CORE-4848
+FBTEST:      bugs.core_4848
 """
 
 import pytest

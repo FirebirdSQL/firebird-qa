@@ -6,6 +6,7 @@ ISSUE:       4760
 TITLE:       isql crash without connect when execute command "show version"
 DESCRIPTION:
 JIRA:        CORE-4440
+FBTEST:      bugs.core_4440
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1950
 TITLE:       JOIN on first record of ordered derived table returns wrong record
 DESCRIPTION:
 JIRA:        CORE-1533
+FBTEST:      bugs.core_1533
 """
 
 import pytest

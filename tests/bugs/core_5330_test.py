@@ -3,13 +3,15 @@
 """
 ID:          issue-5606
 ISSUE:       5606
-TITLE:       Trace session leads FB 4.0 to hang after 2nd launch of trivial .sql script. Neither attach to any database nor regular restart of FB service can be done.
+TITLE:       Trace session leads FB 4.0 to hang after 2nd launch of trivial .sql script.
+  Neither attach to any database nor regular restart of FB service can be done.
 DESCRIPTION:
   Ticket issue was reproduced on trivial trace config with single line ("enabled = true").
   We prepare such config, launch trace session in async mode and run THREE times isql with logging its output.
   Then we stop trace session and open isql log - it should contain three 'packets' of table records.
   If FB becomes unavaliable, this (and all subsequent) test will not finish at all.
 JIRA:        CORE-5330
+FBTEST:      bugs.core_5330
 """
 
 import pytest

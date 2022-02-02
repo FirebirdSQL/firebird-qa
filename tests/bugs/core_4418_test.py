@@ -6,6 +6,7 @@ ISSUE:       4740
 TITLE:       Regression: Can not run ALTER TABLE DROP CONSTRAINT <FK_name> after recent changes in svn
 DESCRIPTION: Added some extra DDL statements to be run within single Tx and then to be rollbacked.
 JIRA:        CORE-4418
+FBTEST:      bugs.core_4418
 """
 
 import pytest

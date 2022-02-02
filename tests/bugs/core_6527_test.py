@@ -3,9 +3,11 @@
 """
 ID:          issue-6754
 ISSUE:       6754
-TITLE:       Regression: inline comment of SP parameter with closing parenthesis leads to incorrect SQL when trying to extract metadata
+TITLE:       Regression: inline comment of SP parameter with closing parenthesis leads to
+  incorrect SQL when trying to extract metadata
 DESCRIPTION:
 JIRA:        CORE-6527
+FBTEST:      bugs.core_6527
 """
 
 import pytest

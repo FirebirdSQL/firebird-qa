@@ -6,6 +6,7 @@ ISSUE:       1306
 TITLE:       Server crash on violation of NOT NULL constraint
 DESCRIPTION:
 JIRA:        CORE-907
+FBTEST:      bugs.core_0907
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       19285
 TITLE:       Bad XSQLVAR [NULL flags] for (2*COALESCE(NULL,NULL))
 DESCRIPTION:
 JIRA:        CORE-1510
+FBTEST:      bugs.core_1510
 """
 
 import pytest

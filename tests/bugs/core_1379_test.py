@@ -6,6 +6,7 @@ ISSUE:       1797
 TITLE:       Invalid parameter type when using it in CHAR_LENGTH function
 DESCRIPTION:
 JIRA:        CORE-1379
+FBTEST:      bugs.core_1379
 """
 
 import pytest

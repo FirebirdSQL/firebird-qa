@@ -33,6 +33,7 @@ DESCRIPTION:
   It is crucial for this test to make .sql script run within SINGLE transaction otherwise performance will suffer.
   Also, we must inject 'SET BAIL ON;' at the start line of this script in order to make it stop when first error occurs.
 JIRA:        CORE-6279
+FBTEST:      bugs.core_6279
 """
 
 import pytest

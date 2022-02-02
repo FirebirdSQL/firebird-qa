@@ -6,6 +6,7 @@ ISSUE:       5834
 TITLE:       Direct system table modifications are not completely prohibited
 DESCRIPTION:
 JIRA:        CORE-5567
+FBTEST:      bugs.core_5567
 """
 
 import pytest

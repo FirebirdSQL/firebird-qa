@@ -6,6 +6,7 @@ ISSUE:       1564
 TITLE:       Cannot alter generator's comment to the same value
 DESCRIPTION:
 JIRA:        CORE-1142
+FBTEST:      bugs.core_1142
 """
 
 import pytest

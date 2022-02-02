@@ -6,6 +6,7 @@ ISSUE:       6358
 TITLE:       Changing FLOAT to a SQL standard compliant FLOAT datatype
 DESCRIPTION:
 JIRA:        CORE-6109
+FBTEST:      bugs.core_6109
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       414
 TITLE:       Wrong return from simple SQL
 DESCRIPTION:
 JIRA:        CORE-89
+FBTEST:      bugs.core_0089
 """
 
 import pytest

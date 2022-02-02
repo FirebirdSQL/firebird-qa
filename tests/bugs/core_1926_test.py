@@ -8,6 +8,7 @@ DESCRIPTION:
   Fields MON$NEXT_TRANSACTION etc contain incorrect (outdated) numbers on Classic if
   there are other active attachments.
 JIRA:        CORE-1926
+FBTEST:      bugs.core_1926
 """
 
 import pytest

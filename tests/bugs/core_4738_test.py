@@ -3,9 +3,11 @@
 """
 ID:          issue-5043
 ISSUE:       5043
-TITLE:       Command "Alter table <T> alter <C> type <domain_>" does not work: "BLR syntax error: expected valid BLR code at offset 15, encountered 255"
+TITLE:       Command "Alter table <T> alter <C> type <domain_>" does not work:
+  "BLR syntax error: expected valid BLR code at offset 15, encountered 255"
 DESCRIPTION:
 JIRA:        CORE-4738
+FBTEST:      bugs.core_4738
 """
 
 import pytest

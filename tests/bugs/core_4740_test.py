@@ -3,9 +3,11 @@
 """
 ID:          issue-5045
 ISSUE:       5045
-TITLE:       SIMILAR TO with quantifier {n,} in the pattern: 1) fails on 2.5 ("Invalid pattern"), 2) strange result in 3.0
+TITLE:       SIMILAR TO with quantifier {n,} in the pattern: 1) fails on 2.5
+  ("Invalid pattern"), 2) strange result in 3.0
 DESCRIPTION:
 JIRA:        CORE-4740
+FBTEST:      bugs.core_4740
 """
 
 import pytest

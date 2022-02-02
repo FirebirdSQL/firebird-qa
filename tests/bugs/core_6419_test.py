@@ -18,6 +18,7 @@ DESCRIPTION:
   In order to avoid Python-specific exception ('UnicodeDecodeError: utf8') we avoid to display second (utf8) variable.
   Rather, we just show its octet_length and char_length.
 JIRA:        CORE-6419
+FBTEST:      bugs.core_6419
 """
 
 import pytest

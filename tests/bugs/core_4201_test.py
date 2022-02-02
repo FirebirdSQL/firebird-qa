@@ -6,6 +6,7 @@ ISSUE:       4526
 TITLE:       Regression: Computed field returns null value inside BI trigger
 DESCRIPTION:
 JIRA:        CORE-4201
+FBTEST:      bugs.core_4201
 """
 
 import pytest

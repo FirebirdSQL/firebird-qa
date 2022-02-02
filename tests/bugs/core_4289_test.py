@@ -6,6 +6,7 @@ ISSUE:       4612
 TITLE:       Regression: NOT-null field from derived table became NULL when is referred outside DT
 DESCRIPTION:
 JIRA:        CORE-4289
+FBTEST:      bugs.core_4289
 """
 
 import pytest

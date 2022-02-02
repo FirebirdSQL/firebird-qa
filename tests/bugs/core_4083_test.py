@@ -6,6 +6,7 @@ ISSUE:       4411
 TITLE:       Full outer join in derived table with coalesce (iif)
 DESCRIPTION:
 JIRA:        CORE-4083
+FBTEST:      bugs.core_4083
 """
 
 import pytest

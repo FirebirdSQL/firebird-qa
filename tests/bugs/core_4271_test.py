@@ -6,6 +6,7 @@ ISSUE:       4595
 TITLE:       Engine crashs in case of re-creation of an erratic package body
 DESCRIPTION:
 JIRA:        CORE-4271
+FBTEST:      bugs.core_4271
 """
 
 import pytest

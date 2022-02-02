@@ -6,6 +6,7 @@ ISSUE:       4878
 TITLE:       BUGCHECK(183) when use cursor with "order by ID+0" and "for update with lock"
 DESCRIPTION:
 JIRA:        CORE-4561
+FBTEST:      bugs.core_4561
 """
 
 import pytest

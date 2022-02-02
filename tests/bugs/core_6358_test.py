@@ -3,9 +3,11 @@
 """
 ID:          issue-6599
 ISSUE:       6599
-TITLE:       Adding NOT NULL column with DEFAULT value may cause default values to update when selecting or have the wrong charset
+TITLE:       Adding NOT NULL column with DEFAULT value may cause default values to update
+  when selecting or have the wrong charset
 DESCRIPTION:
 JIRA:        CORE-6358
+FBTEST:      bugs.core_6358
 """
 
 import pytest

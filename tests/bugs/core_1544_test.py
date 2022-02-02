@@ -18,12 +18,25 @@ DESCRIPTION:
     -At trigger 'RDB$TRIGGER_28'
   (value of gen_id(rdb$procedures,0) is 32768 when this error raises)
 JIRA:        CORE-1544
+FBTEST:      bugs.core_1544
 """
 
 import pytest
 from firebird.qa import *
 
 db = db_factory()
+
+act = python_act('db')
+
+expected_stdout = """
+    GEN_RDB_PROC_CURR_VALUE         Expected.
+    R                               -9876543321
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script
 #---
@@ -131,17 +144,3 @@ db = db_factory()
 #  cleanup((f_isql_cmd, f_isql_log, f_isql_err))
 #
 #---
-
-act = python_act('db')
-
-expected_stdout = """
-    GEN_RDB_PROC_CURR_VALUE         Expected.
-    R                               -9876543321
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-

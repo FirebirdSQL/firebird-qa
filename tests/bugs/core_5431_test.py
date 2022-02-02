@@ -6,6 +6,7 @@ ISSUE:       57063
 TITLE:       Support for DROP IDENTITY clause
 DESCRIPTION:
 JIRA:        CORE-5431
+FBTEST:      bugs.core_5431
 """
 
 import pytest

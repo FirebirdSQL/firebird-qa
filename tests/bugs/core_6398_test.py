@@ -12,6 +12,7 @@ DESCRIPTION:
 
   It was decided to check here not only cast to smallint but also to other integer dadatypes.
 JIRA:        CORE-6398
+FBTEST:      bugs.core_6398
 """
 
 import pytest

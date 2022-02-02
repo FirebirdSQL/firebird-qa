@@ -6,6 +6,7 @@ ISSUE:       1731
 TITLE:       A remote attacker can check, if a file is present in the system, running firebird server
 DESCRIPTION: Check if password validation is done as soon as possible
 JIRA:        CORE-1312
+FBTEST:      bugs.core_1312
 """
 
 import pytest

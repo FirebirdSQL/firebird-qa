@@ -3,9 +3,11 @@
 """
 ID:          issue-3681
 ISSUE:       3681
-TITLE:       Dependencies are not removed after dropping the procedure and the table it depends on in the same transaction
+TITLE:       Dependencies are not removed after dropping the procedure and the table it
+  depends on in the same transaction
 DESCRIPTION:
 JIRA:        CORE-3314
+FBTEST:      bugs.core_3314
 """
 
 import pytest

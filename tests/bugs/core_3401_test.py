@@ -6,6 +6,7 @@ ISSUE:       3766
 TITLE:       Collation errors with [type of] <domain>, type of column
 DESCRIPTION:
 JIRA:        CORE-3401
+FBTEST:      bugs.core_3401
 """
 
 import pytest

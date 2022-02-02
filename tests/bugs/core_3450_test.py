@@ -12,6 +12,7 @@ NOTES:
   reminder about this issue.
   Currently this test should FAIL on 4.0!
 JIRA:        CORE-3450
+FBTEST:      bugs.core_3450
 """
 
 import pytest

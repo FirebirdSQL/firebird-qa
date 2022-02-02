@@ -6,6 +6,7 @@ ISSUE:       6102
 TITLE:       No permission for SELECT access to BLOB field if a TABLE is accessed using VIEW
 DESCRIPTION:
 JIRA:        CORE-5841
+FBTEST:      bugs.core_5841
 """
 
 import pytest

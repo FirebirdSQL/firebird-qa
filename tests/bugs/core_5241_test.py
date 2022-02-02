@@ -6,6 +6,7 @@ ISSUE:       5520
 TITLE:       Affected rows are not counted for some update operations with views
 DESCRIPTION:
 JIRA:        CORE-5241
+FBTEST:      bugs.core_5241
 """
 
 import pytest

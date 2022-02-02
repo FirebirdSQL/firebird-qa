@@ -10,6 +10,7 @@ DESCRIPTION:
   and in 2nd case we have to ensure that trace log does NOT contain text about this event.
   Both standalone and packaged functions are checked.
 JIRA:        CORE-4345
+FBTEST:      bugs.core_4345
 """
 
 import pytest

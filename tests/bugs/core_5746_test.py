@@ -15,6 +15,7 @@ DESCRIPTION:
 
   Restictions about create/alter/drop indexes on system tables that are checked by test for CORE-4731 should be removed.
 JIRA:        CORE-5746
+FBTEST:      bugs.core_5746
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-6598
 ISSUE:       6598
-TITLE:       LEAD() and LAG() do not allow to specify 3rd argument ("DEFAULT" value when pointer is out of scope) of INT128 datatype.
+TITLE:       LEAD() and LAG() do not allow to specify 3rd argument ("DEFAULT" value when
+  pointer is out of scope) of INT128 datatype.
 DESCRIPTION:
 JIRA:        CORE-6357
+FBTEST:      bugs.core_6357
 """
 
 import pytest

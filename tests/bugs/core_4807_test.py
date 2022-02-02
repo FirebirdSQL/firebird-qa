@@ -8,6 +8,7 @@ DESCRIPTION:
   Field inside subquery not present in GROUP BY clause and therefore can't be used in
   SELECT list as is (only as argument of some aggregation function).
 JIRA:        CORE-4807
+FBTEST:      bugs.core_4807
 """
 
 import pytest

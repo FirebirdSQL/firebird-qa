@@ -6,6 +6,7 @@ ISSUE:       3905
 TITLE:       Database corruption after end of session : page xxx is of wrong type expected 4 found 7
 DESCRIPTION:
 JIRA:        CORE-3549
+FBTEST:      bugs.core_3549
 """
 
 import pytest

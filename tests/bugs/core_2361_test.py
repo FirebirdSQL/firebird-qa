@@ -6,6 +6,7 @@ ISSUE:       2784
 TITLE:       String truncation reading 8859-1 Spanish column using isc_dsql_fetch with UTF-8 connection
 DESCRIPTION:
 JIRA:        CORE-2361
+FBTEST:      bugs.core_2361
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-5044
 ISSUE:       5044
-TITLE:       Accent insensitive comparison: diacritical letters with DIAGONAL crossing stroke pass only test on EQUALITY to their non-accented forms
+TITLE:       Accent insensitive comparison: diacritical letters with DIAGONAL crossing
+  stroke pass only test on EQUALITY to their non-accented forms
 DESCRIPTION:
 JIRA:        CORE-4739
+FBTEST:      bugs.core_4739
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5720
 TITLE:       Support DEFAULT context value in INSERT, UPDATE, MERGE and UPDATE OR INSERT statements
 DESCRIPTION:
 JIRA:        CORE-5449
+FBTEST:      bugs.core_5449
 """
 
 import pytest

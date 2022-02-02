@@ -8,6 +8,7 @@ DESCRIPTION:
   We try to write varchar value into blob field and vice-versa, using execute statement
   with parameters of corresp. types
 JIRA:        CORE-3446
+FBTEST:      bugs.core_3446
 """
 
 import pytest

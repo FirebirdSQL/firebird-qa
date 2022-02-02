@@ -28,6 +28,7 @@ NOTES:
 [25.1.2022] pcisar
   Required function _renderSizedIntegerForSPB() is not present in firebird-driver.
 JIRA:        CORE-5675
+FBTEST:      bugs.core_5675
 """
 
 import pytest

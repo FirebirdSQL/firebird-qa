@@ -6,6 +6,7 @@ ISSUE:       1430
 TITLE:       Make information available regading ODS Version and Dialect via SQL
 DESCRIPTION:
 JIRA:        CORE-1019
+FBTEST:      bugs.core_1019
 """
 
 import pytest

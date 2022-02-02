@@ -6,6 +6,7 @@ ISSUE:       425
 TITLE:       JOIN the same table - problem with alias names
 DESCRIPTION:
 JIRA:        CORE-101
+FBTEST:      bugs.core_0101
 """
 
 import pytest

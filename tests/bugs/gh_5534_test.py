@@ -18,6 +18,7 @@ DESCRIPTION:
   Bug was detected with BLOBs, see https://github.com/FirebirdSQL/firebird/issues/6858
   (fixed 17.06.2021)
 JIRA:        CORE-5255
+FBTEST:      bugs.gh_5534
 """
 
 import pytest

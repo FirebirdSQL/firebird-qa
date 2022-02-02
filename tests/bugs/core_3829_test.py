@@ -6,6 +6,7 @@ ISSUE:       4171
 TITLE:       Bad alias table choice joining CTE
 DESCRIPTION:
 JIRA:        CORE-3829
+FBTEST:      bugs.core_3829
 """
 
 import pytest

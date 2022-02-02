@@ -6,6 +6,7 @@ ISSUE:       5080
 TITLE:       Maximum string length (32765 bytes) is not validated
 DESCRIPTION:
 JIRA:        CORE-4781
+FBTEST:      bugs.core_4781
 """
 
 import pytest

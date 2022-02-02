@@ -13,6 +13,7 @@ DESCRIPTION:
     * in firebird.log (for all: 3.0.8, 4.0, 5.0):
         internal Firebird consistency check (page in use during flush (210), file: cch.cpp line: NNN)
   Checked on 3.0.8.33525
+FBTEST:      bugs.gh_7031
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       481
 TITLE:       Sqlsubtype incorrect on timestamp math, constant arithmetic
 DESCRIPTION:
 JIRA:        CORE-152
+FBTEST:      bugs.core_152
 """
 
 import pytest

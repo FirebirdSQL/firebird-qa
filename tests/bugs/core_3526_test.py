@@ -6,6 +6,7 @@ ISSUE:       3883
 TITLE:       Support for WHEN SQLSTATE
 DESCRIPTION:
 JIRA:        CORE-3526
+FBTEST:      bugs.core_3526
 """
 
 import pytest

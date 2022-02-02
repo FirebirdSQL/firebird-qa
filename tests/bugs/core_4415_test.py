@@ -6,6 +6,7 @@ ISSUE:       4737
 TITLE:       Useless extraction of generic DDL trigger
 DESCRIPTION:
 JIRA:        CORE-4415
+FBTEST:      bugs.core_4415
 """
 
 import pytest

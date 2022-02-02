@@ -9,6 +9,7 @@ DESCRIPTION:
   in a single command. The problems are different from version to version, and may be
   transliteration error, malformed string or just unexpected things.
 JIRA:        CORE-2607
+FBTEST:      bugs.core_2607
 """
 
 import pytest

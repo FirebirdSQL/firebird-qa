@@ -3,7 +3,9 @@
 """
 ID:          issue-1944
 ISSUE:       1944
-TITLE:       Increase maximum string literal length to 64K (bytes) while setting a lower limit (of characters) for multibyte charsets based on their max char. length (UTF-8 literals will be limited to 16383 characters)
+TITLE:       Increase maximum string literal length to 64K (bytes) while setting a lower
+  limit (of characters) for multibyte charsets based on their max char. length
+  (UTF-8 literals will be limited to 16383 characters)
 DESCRIPTION:
   Test verifies that one may to operate with string literals:
   1) containing only ascii characters (and limit for this case should be 65535 bytes (=chars))
@@ -12,6 +14,7 @@ DESCRIPTION:
   Before 3.0.0.31981 following statement raises:
   String literal with 65536 bytes exceeds the maximum length of 32767 bytes
 JIRA:        CORE-4881
+FBTEST:      bugs.core_4881
 """
 
 import pytest

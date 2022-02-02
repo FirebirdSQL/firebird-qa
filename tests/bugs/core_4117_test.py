@@ -8,6 +8,7 @@ DESCRIPTION:
   Exception with computed by field as parameter produces error message without this field
   value if this field is not a part of excpression
 JIRA:        CORE-4117
+FBTEST:      bugs.core_4117
 """
 
 import pytest

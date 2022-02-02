@@ -36,6 +36,7 @@ DESCRIPTION:
 
   Confirmed wrong results on: 4.0.0.1714 SC; 4.0.0.1715 CS;  3.0.5.33221 SC; 3.0.5.33225 CS
 JIRA:        CORE-2251
+FBTEST:      bugs.core_2251
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-1578
 ISSUE:       1578
-TITLE:       FB 3.0 crashes on EXIT (or QUIT) command if use UTF8-collation + create domain based on it + issue SHOW DOMAIN
+TITLE:       FB 3.0 crashes on EXIT (or QUIT) command if use UTF8-collation + create domain
+  based on it + issue SHOW DOMAIN
 DESCRIPTION:
 JIRA:        CORE-4557
+FBTEST:      bugs.core_4557
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1241
 TITLE:       substring(current_user from 4) fails
 DESCRIPTION:
 JIRA:        CORE-852
+FBTEST:      bugs.core_0852
 """
 
 import pytest

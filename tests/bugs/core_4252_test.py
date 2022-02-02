@@ -6,6 +6,7 @@ ISSUE:       4576
 TITLE:       Add table name to text of validation contraint error message, to help identify error context
 DESCRIPTION:
 JIRA:        CORE-4252
+FBTEST:      bugs.core_4252
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6559
 TITLE:       CAST('NOW' as TIME) raises exception
 DESCRIPTION:
 JIRA:        CORE-6318
+FBTEST:      bugs.core_6318
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       319
 JIRA:        CORE-1
 TITLE:       Server shutdown
 DESCRIPTION: Server shuts down when user password is attempted to be modified to a empty string
+FBTEST:      bugs.core_0001
 """
 
 import pytest

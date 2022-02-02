@@ -6,6 +6,7 @@ ISSUE:       5197
 TITLE:       Invalid internal BLR filter conversion
 DESCRIPTION:
 JIRA:        CORE-4905
+FBTEST:      bugs.core_4905
 """
 
 import pytest

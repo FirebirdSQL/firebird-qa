@@ -6,6 +6,7 @@ ISSUE:       5456
 TITLE:       Wrong sequence of savepoints may be produced by selectable procedure
 DESCRIPTION:
 JIRA:        CORE-5174
+FBTEST:      bugs.core_5174
 """
 
 import pytest

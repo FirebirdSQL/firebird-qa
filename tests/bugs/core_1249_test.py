@@ -6,6 +6,7 @@ ISSUE:       1673
 TITLE:       Full shutdown mode doesn't work on Classic if there are other connections to the database
 DESCRIPTION:
 JIRA:        CORE-1249
+FBTEST:      bugs.core_1249
 """
 
 import pytest

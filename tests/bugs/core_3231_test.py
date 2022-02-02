@@ -6,6 +6,7 @@ ISSUE:       3604
 TITLE:       OVERLAY() fails when used with text BLOBs containing multi-byte chars
 DESCRIPTION:
 JIRA:        CORE-3231
+FBTEST:      bugs.core_3231
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6716
 TITLE:       FETCH RELATIVE has an off by one error for the first row
 DESCRIPTION:
 JIRA:        CORE-6486
+FBTEST:      bugs.core_6486
 """
 
 import pytest

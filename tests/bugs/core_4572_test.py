@@ -3,9 +3,11 @@
 """
 ID:          issue-4889
 ISSUE:       4889
-TITLE:       Incorrect error for PSQL function when the number of actual arguments does not match the number of formal arguments
+TITLE:       Incorrect error for PSQL function when the number of actual arguments does
+  not match the number of formal arguments
 DESCRIPTION:
 JIRA:        CORE-4572
+FBTEST:      bugs.core_4572
 """
 
 import pytest

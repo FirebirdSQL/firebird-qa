@@ -8,6 +8,7 @@ DESCRIPTION:
   Could not find any interesting sample with this function. Decided to use string
   comparison with unicode_ci_ai collation.
 JIRA:        CORE-3617
+FBTEST:      bugs.core_3617
 """
 
 import pytest

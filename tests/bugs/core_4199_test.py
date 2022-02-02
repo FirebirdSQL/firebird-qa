@@ -14,6 +14,7 @@ DESCRIPTION:
   For this reason it was changed avoid check for concrete values.
   Rather, it is enough to verify only difference between max and min ID.
 JIRA:        CORE-4199
+FBTEST:      bugs.core_4199
 """
 
 import pytest

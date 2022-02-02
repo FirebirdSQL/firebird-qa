@@ -6,6 +6,7 @@ ISSUE:       4781
 TITLE:       nbackup prints error messages to stdout instead stderr
 DESCRIPTION:
 JIRA:        CORE-4461
+FBTEST:      bugs.core_4461
 """
 
 import pytest

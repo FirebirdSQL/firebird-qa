@@ -1,28 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.gh_6732
-# title:        Stored procedure isn't able to execute statement 'GRANT' [CORE6502]
-# decription:
-#                   https://github.com/FirebirdSQL/firebird/issues/6732
-#
-#                   Confirmed bug on 4.0.0.2453, got:
-#                       Statement failed, SQLSTATE = 27000
-#                       unsuccessful metadata update
-#                       -GRANT failed
-#                       -action cancelled by trigger (0) to preserve data integrity
-#                       -User cannot write to RDB$USER_PRIVILEGES
-#                       -At procedure 'SP_TEST' line: 3, col: 8
-#
-#                   ::: NB ::: 22.05.2021
-#                   This test initially had wrong value of min_version = 4.0
-#                   Bug was fixed on 4.1.0.2468, build timestamp: 06-may-2021 12:34 thus min_version should be 4.1
-#                   After several days this new FB branch was renamed to 5.0.
-#                   Because of this, min_version for this test is 5.0
-#
-# tracker_id:
-# min_versions: ['5.0']
-# versions:     5.0
-# qmid:         None
 
 """
 ID:          issue-6732
@@ -43,6 +19,7 @@ NOTES:
   After several days this new FB branch was renamed to 5.0.
   Because of this, min_version for this test is 5.0
 JIRA:        CORE-6502
+FBTEST:      bugs.gh_6732
 """
 
 import pytest

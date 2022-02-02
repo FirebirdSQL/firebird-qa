@@ -6,6 +6,7 @@ ISSUE:       1257
 TITLE:       Removing a NOT NULL constraint is not visible until reconnect
 DESCRIPTION:
 JIRA:        CORE-866
+FBTEST:      bugs.core_0866
 """
 
 import pytest

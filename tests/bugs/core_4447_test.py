@@ -6,6 +6,7 @@ ISSUE:       4767
 TITLE:       Positioned UPDATE statement prohibits index usage for the subsequent cursor field references
 DESCRIPTION:
 JIRA:        CORE-4447
+FBTEST:      bugs.core_4447
 """
 
 import pytest

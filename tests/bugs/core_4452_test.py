@@ -6,6 +6,7 @@ ISSUE:       4772
 TITLE:       Can`t create two collations with different names if autoddl OFF in FB 2.5.3
 DESCRIPTION:
 JIRA:        CORE-4452
+FBTEST:      bugs.core_4452
 """
 
 import pytest

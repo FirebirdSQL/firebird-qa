@@ -6,6 +6,7 @@ ISSUE:       6106
 TITLE:       ORDER BY on index can cause suboptimal index choices
 DESCRIPTION:
 JIRA:        CORE-5845
+FBTEST:      bugs.core_5845
 """
 
 import pytest

@@ -3,7 +3,8 @@
 """
 ID:          issue-6396
 ISSUE:       6396
-TITLE:       PLG$SRP table, PLG$SRP_VIEW View instructions are strangely added in the metadata script extracted when Windows trusted authentication is enabled
+TITLE:       PLG$SRP table, PLG$SRP_VIEW View instructions are strangely added in the metadata
+  script extracted when Windows trusted authentication is enabled
 DESCRIPTION:
     References to the table PLG$SRP and view PLG$SRP_VIEW *always* present in extracted metadata,
     regardless of using auth plugin (and this is NOT a bug!).
@@ -42,6 +43,7 @@ DESCRIPTION:
     * Windows: 4.0.0.2377 SS/CS (done for both win_sspi and Srp, but only win_sspi is used in this test for Windows)
     * Linux:   4.0.0.2377 SS/CS (done for Srp)
 JIRA:        CORE-6147
+FBTEST:      bugs.core_6147
 """
 
 import pytest

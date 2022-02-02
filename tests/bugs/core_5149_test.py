@@ -6,6 +6,7 @@ ISSUE:       5432
 TITLE:       Regression: LEFT JOIN incorrectly pushes COALESCE into the inner stream causing wrong results
 DESCRIPTION:
 JIRA:        CORE-5149
+FBTEST:      bugs.core_5149
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1990
 TITLE:       Multiple Rows in Singleton Select not reported in a View
 DESCRIPTION:
 JIRA:        CORE-1572
+FBTEST:      bugs.core_1572
 """
 
 import pytest

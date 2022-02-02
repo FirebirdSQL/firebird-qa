@@ -6,6 +6,7 @@ ISSUE:       2074
 TITLE:       Infinite row generation in "select gen_id(..) from rdb$database" with "group by"
 DESCRIPTION:
 JIRA:        CORE-1650
+FBTEST:      bugs.core_1650
 """
 
 import pytest

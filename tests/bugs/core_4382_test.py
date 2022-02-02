@@ -11,6 +11,7 @@ DESCRIPTION:
   !! It looks strange but if we put preparing statement in 'init_script' section than result of 'gstat -i' will be WRONG,
   even if we do db_conn.close() before runProgram('gstat' ...) !!
 JIRA:        CORE-4382
+FBTEST:      bugs.core_4382
 """
 
 import pytest

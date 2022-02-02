@@ -32,6 +32,7 @@ NOTES:
    -SQL role TMP$DB_CREATOR does not exist
    -in security database
 JIRA:        CORE-4821
+FBTEST:      bugs.core_4821
 """
 
 import pytest

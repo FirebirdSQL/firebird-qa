@@ -6,6 +6,7 @@ ISSUE:       4621
 TITLE:       fbsvcmgr doesn't recognise sts_record_versions and other sts switches
 DESCRIPTION:
 JIRA:        CORE-4298
+FBTEST:      bugs.core_4298
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3277
 TITLE:       Expression in a subquery may be treated as invariant and produce incorrect results
 DESCRIPTION:
 JIRA:        CORE-2893
+FBTEST:      bugs.core_2893
 """
 
 import pytest

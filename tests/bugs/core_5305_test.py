@@ -6,6 +6,7 @@ ISSUE:       5582
 TITLE:       CASCADE UPDATE fails for self-referencing FK
 DESCRIPTION:
 JIRA:        CORE-5305
+FBTEST:      bugs.core_5305
 """
 
 import pytest

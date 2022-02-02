@@ -3,7 +3,8 @@
 """
 ID:          issue-5547
 ISSUE:       5547
-TITLE:       FBTRACEMGR should understand 'role <name>' command switch (needed to explicitly connect with role with 'TRACE_ANY_ATTACHMENT' privilege)
+TITLE:       FBTRACEMGR should understand 'role <name>' command switch (needed to explicitly
+  connect with role with 'TRACE_ANY_ATTACHMENT' privilege)
 DESCRIPTION:
   We create two users and one of them is granted with role that allows him to watch other users activity.
   Than we start FBSVCMGR utility with specifying this user and his ROLE so that he can start wathing.
@@ -11,6 +12,7 @@ DESCRIPTION:
   Finally, we check trace log that was recived by watching user: this log must contain phrases about
   preprating, starting and executing statements.
 JIRA:        CORE-5269
+FBTEST:      bugs.core_5269
 """
 
 import pytest

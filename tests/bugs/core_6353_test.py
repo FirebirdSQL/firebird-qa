@@ -6,6 +6,7 @@ ISSUE:       6594
 TITLE:       INT128 has problems with some PSQL objects
 DESCRIPTION:
 JIRA:        CORE-6353
+FBTEST:      bugs.core_6353
 """
 
 import pytest

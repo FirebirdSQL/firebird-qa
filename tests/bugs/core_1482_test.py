@@ -6,6 +6,7 @@ ISSUE:       1898
 TITLE:       Make optimizer to consider ORDER BY optimization when making decision about join order
 DESCRIPTION:
 JIRA:        CORE-1482
+FBTEST:      bugs.core_1482
 """
 
 import pytest

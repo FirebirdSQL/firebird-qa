@@ -6,6 +6,7 @@ ISSUE:       523
 TITLE:       SYSDBA can grant non existent roles
 DESCRIPTION:
 JIRA:        CORE-196
+FBTEST:      bugs.core_0190
 """
 
 import pytest

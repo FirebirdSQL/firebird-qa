@@ -25,6 +25,7 @@ DESCRIPTION:
       2.1) LESS for 1 than value in the next line: "NEW NUMBER" for subsequent Tx..." - for all DML statements EXCEPT LAST;
       2.2) EQUALS to "NEW NUMBER" for subsequent Tx..." for LAST statement because it does not change anything (updates empty table);
 JIRA:        CORE-6095
+FBTEST:      bugs.core_6095
 """
 
 import pytest

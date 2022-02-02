@@ -9,6 +9,7 @@ DESCRIPTION:
   UPDATE statement is used in trivial form, then as 'update or insert' and as 'merge'.
   All cases should produce STDERR with specifying table name and R/O column after dot.
 JIRA:        CORE-5874
+FBTEST:      bugs.core_5874
 """
 
 import pytest

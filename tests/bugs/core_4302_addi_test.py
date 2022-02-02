@@ -28,6 +28,7 @@ NOTES:
   Because of this, it was decided to replace 'alter sequence restart...' with subtraction of two gen values:
   c = gen_id(<g>, -gen_id(<g>, 0)) -- see procedure sp_restart_sequences.
 JIRA:        CORE-4302
+FBTEST:      bugs.core_4302_addi
 """
 
 import pytest

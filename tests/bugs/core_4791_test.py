@@ -6,6 +6,7 @@ ISSUE:       1919
 TITLE:       Make INSERTING/UPDATING/DELETING reserved words to fix ambiguity with boolean expresions
 DESCRIPTION:
 JIRA:        CORE-4791
+FBTEST:      bugs.core_4791
 """
 
 import pytest

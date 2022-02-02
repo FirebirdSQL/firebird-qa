@@ -6,6 +6,7 @@ ISSUE:       4045
 TITLE:       String truncation error when selecting from a VIEW with UNION inside
 DESCRIPTION:
 JIRA:        CORE-3697
+FBTEST:      bugs.core_3697
 """
 
 import pytest

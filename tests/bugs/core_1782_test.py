@@ -6,6 +6,7 @@ ISSUE:       2209
 TITLE:       ISQL crashes when fetching data for a column having alias longer than 30 characters
 DESCRIPTION:
 JIRA:        CORE-1782
+FBTEST:      bugs.core_1782
 """
 
 import pytest

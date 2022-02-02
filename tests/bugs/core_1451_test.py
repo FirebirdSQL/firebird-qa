@@ -6,6 +6,7 @@ ISSUE:       1869
 TITLE:       Using RDB$DB_KEY in where section while selecting from a procedure crashes the server
 DESCRIPTION:
 JIRA:        CORE-1451
+FBTEST:      bugs.core_1451
 """
 
 import pytest

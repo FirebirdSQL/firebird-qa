@@ -6,6 +6,7 @@ ISSUE:       1979
 TITLE:       NULLIF crashes when first parameter is constant empty string
 DESCRIPTION:
 JIRA:        CORE-1560
+FBTEST:      bugs.core_1560
 """
 
 import pytest

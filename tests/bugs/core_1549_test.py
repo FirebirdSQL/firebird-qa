@@ -6,6 +6,7 @@ ISSUE:       1966
 TITLE:       Subquery-based predicates are not evaluated early in the join order
 DESCRIPTION:
 JIRA:        CORE-1549
+FBTEST:      bugs.core_1549
 """
 
 import pytest

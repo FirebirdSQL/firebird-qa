@@ -24,6 +24,7 @@ NOTES:
 
   See letter from Vlad, 31-mar-2020 14:29.
 JIRA:        CORE-5475
+FBTEST:      bugs.core_5475
 """
 
 import pytest

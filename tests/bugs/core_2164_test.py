@@ -6,6 +6,7 @@ ISSUE:       2595
 TITLE:       error in operator "and" in as clausule where
 DESCRIPTION:
 JIRA:        CORE-2164
+FBTEST:      bugs.core_2164
 """
 
 import pytest

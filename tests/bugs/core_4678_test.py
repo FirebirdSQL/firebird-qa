@@ -6,6 +6,7 @@ ISSUE:       4987
 TITLE:       BLOB not found in SuperClassic and Classic on Uncommitted Transactions
 DESCRIPTION:
 JIRA:        CORE-4678
+FBTEST:      bugs.core_4678
 """
 
 import pytest

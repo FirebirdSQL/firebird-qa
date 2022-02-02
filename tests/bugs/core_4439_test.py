@@ -27,6 +27,7 @@ DESCRIPTION:
   If current FB server mode  is 'Classic' then test actually does nothing and console output also remains empty.
   Test in such case looks as 'always successful' but actually it does not performed!
 JIRA:        CORE-4439
+FBTEST:      bugs.core_4439
 """
 
 import pytest

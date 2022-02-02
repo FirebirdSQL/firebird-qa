@@ -6,6 +6,7 @@ ISSUE:       3300
 TITLE:       Broken error handling in the case of a conversion error happened during index creation
 DESCRIPTION:
 JIRA:        CORE-2916
+FBTEST:      bugs.core_2916
 """
 
 import pytest

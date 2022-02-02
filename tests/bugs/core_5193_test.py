@@ -6,6 +6,7 @@ ISSUE:       5474
 TITLE:       Precedence problem with operator IS
 DESCRIPTION:
 JIRA:        CORE-5193
+FBTEST:      bugs.core_5193
 """
 
 import pytest

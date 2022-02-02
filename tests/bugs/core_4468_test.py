@@ -6,6 +6,7 @@ ISSUE:       4788
 TITLE:       FB3: CREATE USER GRANT ADMIN ROLE does not work
 DESCRIPTION:
 JIRA:        CORE-4468
+FBTEST:      bugs.core_4468
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1774
 TITLE:       TYPE OF COLUMN in PSQL
 DESCRIPTION:
 JIRA:        CORE-1356
+FBTEST:      bugs.core_1356
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1415
 TITLE:       Context already in use (BLR error)
 DESCRIPTION:
 JIRA:        CORE-1004
+FBTEST:      bugs.core_1004
 """
 
 import pytest

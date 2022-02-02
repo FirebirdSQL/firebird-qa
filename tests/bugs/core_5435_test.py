@@ -23,6 +23,7 @@ DESCRIPTION:
     21 ms, 115 read(s), 157 fetch(es)
 Value of fetches is compared with threshold (currently = 80) which was received after several runs.
 JIRA:        CORE-5435
+FBTEST:      bugs.core_5435
 """
 
 import pytest

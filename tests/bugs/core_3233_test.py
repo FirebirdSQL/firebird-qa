@@ -6,6 +6,7 @@ ISSUE:       3605
 TITLE:       LIKE, STARTING and CONTAINING fail if second operand >= 32K
 DESCRIPTION:
 JIRA:        CORE-3233
+FBTEST:      bugs.core_3233
 """
 
 import pytest

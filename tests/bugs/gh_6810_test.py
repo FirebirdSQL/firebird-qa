@@ -8,6 +8,7 @@ DESCRIPTION:
   With selected key lengh = 256 max len of SALT will very depending on algorithm!
   Test currently uses MAXIMAL allowed values, see 'declare v_salt_len smallint = ...'.
   Discussed with Alex, letters 17.05.2021
+FBTEST:      bugs.gh_6810
 """
 
 import pytest

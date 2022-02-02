@@ -15,6 +15,7 @@ DESCRIPTION:
   NB: I intentionally excluded  'similar to' from "OR"-list of predicates because it changes plan of execution.
   This will be investigated later.
 JIRA:        CORE-5638
+FBTEST:      bugs.core_5638
 """
 
 import pytest

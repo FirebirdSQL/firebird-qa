@@ -6,6 +6,7 @@ ISSUE:       1375
 TITLE:       Case insensitive collation for UTF-8
 DESCRIPTION:
 JIRA:        CORE-972
+FBTEST:      bugs.core_0972
 """
 
 import pytest

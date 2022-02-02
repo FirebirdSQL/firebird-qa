@@ -6,6 +6,7 @@ ISSUE:       4718
 TITLE:       incorrect result query if it is execute through "execute statement"
 DESCRIPTION:
 JIRA:        CORE-4396
+FBTEST:      bugs.core_4396
 """
 
 import pytest

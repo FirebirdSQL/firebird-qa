@@ -6,6 +6,7 @@ ISSUE:       4654
 TITLE:       LAG, LEAD and NTH_VALUE raise error when the second argument is NULL
 DESCRIPTION:
 JIRA:        CORE-4331
+FBTEST:      bugs.core_4331
 """
 
 import pytest

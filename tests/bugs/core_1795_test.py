@@ -6,6 +6,7 @@ ISSUE:       2221
 TITLE:       Server crashes on SQL script
 DESCRIPTION:
 JIRA:        CORE-1795
+FBTEST:      bugs.core_1795
 """
 
 import pytest

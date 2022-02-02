@@ -6,6 +6,7 @@ ISSUE:       1978
 TITLE:       Dropping NOT NULL contranint doesn'have the desired effect
 DESCRIPTION:
 JIRA:        CORE-1559
+FBTEST:      bugs.core_1559
 """
 
 import pytest

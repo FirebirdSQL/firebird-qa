@@ -6,6 +6,7 @@ ISSUE:       3315
 TITLE:       Wrong field position after ALTER POSITION
 DESCRIPTION:
 JIRA:        CORE-2932
+FBTEST:      bugs.core_2932
 """
 
 import pytest

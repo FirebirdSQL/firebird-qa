@@ -6,6 +6,7 @@ ISSUE:       3452
 TITLE:       Foreign key cascade with SET DEFAULT uses the default value of the moment of the FK creation
 DESCRIPTION:
 JIRA:        CORE-3073
+FBTEST:      bugs.core_3073
 """
 
 import pytest

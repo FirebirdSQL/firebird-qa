@@ -6,6 +6,7 @@ ISSUE:       5734
 TITLE:       AV in fbclient when reading blob stored in incompatible encoding
 DESCRIPTION:
 JIRA:        CORE-5464
+FBTEST:      bugs.core_5464
 """
 
 import pytest

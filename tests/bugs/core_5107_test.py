@@ -1,20 +1,13 @@
 #coding:utf-8
-#
-# id:           bugs.core_5107
-# title:        set autoddl off and sequence of: ( create view V as select * from T; alter view V as select 1 x from rdb$database; drop view V; ) leads to server crash
-# decription:
-#
-# tracker_id:   CORE-5107
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
 
 """
 ID:          issue-5391
 ISSUE:       5391
-TITLE:       et autoddl off and sequence of: ( create view V as select * from T; alter view V as select 1 x from rdb$database; drop view V; ) leads to server crash
+TITLE:       set autoddl off and sequence of: ( create view V as select * from T; alter
+  view V as select 1 x from rdb$database; drop view V; ) leads to server crash
 DESCRIPTION:
 JIRA:        CORE-5107
+FBTEST:      bugs.core_5107
 """
 
 import pytest

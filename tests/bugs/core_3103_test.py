@@ -7,6 +7,7 @@ TITLE:       BAD PLAN with using LEFT OUTER JOIN in SUBSELECT
 DESCRIPTION:
   Ticket subj: Select statement with more non indexed reads in version 2.5RC3 as in version 2.1.3
 JIRA:        CORE-3103
+FBTEST:      bugs.core_3103
 """
 
 import pytest

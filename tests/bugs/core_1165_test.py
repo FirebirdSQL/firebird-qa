@@ -6,6 +6,7 @@ ISSUE:       1588
 TITLE:       WHEN <list of exceptions> tracks only the dependency on the first exception in PSQL
 DESCRIPTION:
 JIRA:        CORE-1165
+FBTEST:      bugs.core_1165
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1353
 TITLE:       AV when blob is used in expression index
 DESCRIPTION:
 JIRA:        CORE-952
+FBTEST:      bugs.core_0952
 """
 
 import pytest

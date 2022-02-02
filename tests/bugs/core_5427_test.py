@@ -6,6 +6,7 @@ ISSUE:       5699
 TITLE:       Error on field concatenation of System tables
 DESCRIPTION:
 JIRA:        CORE-5427
+FBTEST:      bugs.core_5427
 """
 
 import pytest

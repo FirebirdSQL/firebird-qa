@@ -6,6 +6,7 @@ ISSUE:       4697
 TITLE:       Procedure executes infinitely if contains more than 32767 statements inside any BEGIN/END block
 DESCRIPTION:
 JIRA:        CORE-4375
+FBTEST:      bugs.core_4375
 """
 
 import pytest

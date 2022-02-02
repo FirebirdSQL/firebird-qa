@@ -7,6 +7,7 @@ TITLE:       Wrong line and column information after IF statement
 DESCRIPTION:
   DO NOT make indentation or excessive empty lines in the code that is executed by ISQL.
 JIRA:        CORE-6385
+FBTEST:      bugs.core_6385
 """
 
 import pytest

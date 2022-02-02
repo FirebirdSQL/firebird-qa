@@ -6,6 +6,7 @@ ISSUE:       1779
 TITLE:       Index operations for global temporary tables are not visible for the active connection
 DESCRIPTION:
 JIRA:        CORE-1361
+FBTEST:      bugs.core_1361
 """
 
 import pytest

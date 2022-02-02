@@ -7,6 +7,7 @@ TITLE:       Problem with view, computed field and functions
 DESCRIPTION:
   Original ticket name: 335544721 when selecting view with round
 JIRA:        CORE-1338
+FBTEST:      bugs.core_1338
 """
 
 import pytest

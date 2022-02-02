@@ -8,6 +8,7 @@ DESCRIPTION:
   Crashed on: WI-V3.0.0.32380, WI-T4.0.0.32399, found 16-mar-2016.
   Passed on:  WI-V3.0.0.32487, WI-T4.0.0.141 -- works fine.
 JIRA:        CORE-211
+FBTEST:      bugs.core_0211
 """
 
 import pytest

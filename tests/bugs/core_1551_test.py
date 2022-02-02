@@ -6,6 +6,7 @@ ISSUE:       1968
 TITLE:       AV when all statements are cancelled
 DESCRIPTION:
 JIRA:        CORE-1551
+FBTEST:      bugs.core_1551
 """
 
 import pytest

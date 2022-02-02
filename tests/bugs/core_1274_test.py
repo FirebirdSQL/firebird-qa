@@ -6,6 +6,7 @@ ISSUE:       1695
 TITLE:       Wrong results when PLAN MERGE is chosen and datatypes of the equality predicate arguments are different
 DESCRIPTION:
 JIRA:        CORE-1274
+FBTEST:      bugs.core_1274
 """
 
 import pytest

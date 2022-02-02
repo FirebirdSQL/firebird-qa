@@ -6,6 +6,7 @@ ISSUE:       4079
 TITLE:       GBAK fails to fix system generators while restoring
 DESCRIPTION:
 JIRA:        CORE-3733
+FBTEST:      bugs.core_3733
 """
 
 import pytest

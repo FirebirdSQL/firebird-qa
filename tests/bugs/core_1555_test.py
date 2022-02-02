@@ -6,6 +6,7 @@ ISSUE:       1972
 TITLE:       'select ...from...where...not in (select...from...)' no results
 DESCRIPTION:
 JIRA:        CORE-1555
+FBTEST:      bugs.core_1555
 """
 
 import pytest

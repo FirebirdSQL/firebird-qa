@@ -6,6 +6,7 @@ ISSUE:       4506
 TITLE:       CREATE COLLATION does not verify base collation charset
 DESCRIPTION:
 JIRA:        CORE-4180
+FBTEST:      bugs.core_4180
 """
 
 import pytest

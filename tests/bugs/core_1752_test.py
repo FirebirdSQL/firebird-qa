@@ -6,6 +6,7 @@ ISSUE:       2177
 TITLE:       Results of a join with different collations depend on the execution plan
 DESCRIPTION:
 JIRA:        CORE-1752
+FBTEST:      bugs.core_1752
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2424
 TITLE:       Altering domains name drops dependencies using the domain
 DESCRIPTION:
 JIRA:        CORE-1986
+FBTEST:      bugs.core_1986
 """
 
 import pytest

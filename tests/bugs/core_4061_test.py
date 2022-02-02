@@ -6,6 +6,7 @@ ISSUE:       4389
 TITLE:       isql does not insert boolean values correctly, always shown as False
 DESCRIPTION:
 JIRA:        CORE-4061
+FBTEST:      bugs.core_4061
 """
 
 import pytest

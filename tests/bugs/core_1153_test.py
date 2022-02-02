@@ -6,6 +6,7 @@ ISSUE:       1574
 TITLE:       Activating index change "STARTING" working as "LIKE" in join condition
 DESCRIPTION:
 JIRA:        CORE-1153
+FBTEST:      bugs.core_1153
 """
 
 import pytest

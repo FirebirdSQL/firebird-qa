@@ -6,6 +6,7 @@ ISSUE:       6336
 TITLE:       Creating of the large procedure crashes the server
 DESCRIPTION:
 JIRA:        CORE-6086
+FBTEST:      bugs.core_6086
 """
 
 import pytest

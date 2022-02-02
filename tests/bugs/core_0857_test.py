@@ -6,6 +6,7 @@ ISSUE:       1247
 TITLE:       Containing not working correctly
 DESCRIPTION:
 JIRA:        CORE-857
+FBTEST:      bugs.core_0857
 """
 
 import pytest

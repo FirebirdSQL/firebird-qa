@@ -9,6 +9,7 @@ DESCRIPTION:
   Instead, we have to create tables XTYPES and XFORMATS with data from RDB$-tables
   that were in any empty adtabase created on WI-T3.0.0.30566 Firebird 3.0 Alpha 1.
 JIRA:        CORE-4091
+FBTEST:      bugs.core_4091
 """
 
 import pytest

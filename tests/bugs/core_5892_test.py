@@ -13,6 +13,7 @@ DESCRIPTION:
   When second SP is called then this user should see only ONE connection (first from previous list).
   Also this test checks ability to work with new context variable 'EFFECTIVE_USER' from 'SYSTEM' namespace.
 JIRA:        CORE-5892
+FBTEST:      bugs.core_5892
 """
 
 import pytest

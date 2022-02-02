@@ -6,6 +6,7 @@ ISSUE:       2456
 TITLE:       UTF-8 conversion error (string truncation)
 DESCRIPTION:
 JIRA:        CORE-2019
+FBTEST:      bugs.core_2019
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-4720
 ISSUE:       4720
-TITLE:       Provide ability to specify extra-long name of log when doing gbak to avoid "attempt to store 256 bytes in a clumplet" message
+TITLE:       Provide ability to specify extra-long name of log when doing gbak to avoid
+  "attempt to store 256 bytes in a clumplet" message
 DESCRIPTION:
 JIRA:        CORE-4398
+FBTEST:      bugs.core_4398
 """
 
 import pytest

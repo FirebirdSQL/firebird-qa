@@ -13,6 +13,7 @@ NOTES:
   now it must be "-No SQLDA for input values provided" (was: "-Wrong number of parameters (expected 3, got 0)").
   Output became proper since CORE-6447 was fixed.
 JIRA:        CORE-501
+FBTEST:      bugs.core_0501
 """
 
 import pytest

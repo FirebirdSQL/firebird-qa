@@ -6,6 +6,7 @@ ISSUE:       965
 TITLE:       Tricky role defeats basic SQL security
 DESCRIPTION:
 JIRA:        CORE-606
+FBTEST:      bugs.core_0606
 """
 
 import pytest

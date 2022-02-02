@@ -6,6 +6,7 @@ ISSUE:       6750
 TITLE:       CAST of Infinity values to FLOAT doesn't work
 DESCRIPTION:
 JIRA:        CORE-6521
+FBTEST:      bugs.core_6521
 """
 
 import pytest

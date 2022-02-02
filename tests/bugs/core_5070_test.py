@@ -6,6 +6,7 @@ ISSUE:       5357
 TITLE:       Compound index cannot be used for filtering in some ORDER/GROUP BY queries
 DESCRIPTION:
 JIRA:        CORE-5070
+FBTEST:      bugs.core_5070
 """
 
 import pytest

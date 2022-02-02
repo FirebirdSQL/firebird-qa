@@ -10,6 +10,7 @@ NOTES:
 [21.12.2021] pcisar
   FAILs on v4.0.0.2496 and v3.0.8.33535 as database couldn't be reverted to online state
 JIRA:        CORE-4582
+FBTEST:      bugs.core_4582
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3213
 TITLE:       Join condition fails for UTF-8 databases
 DESCRIPTION:
 JIRA:        CORE-2826
+FBTEST:      bugs.core_2826
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6053
 TITLE:       User with DROP DATABASE privilege can't drop database
 DESCRIPTION:
 JIRA:        CORE-5790
+FBTEST:      bugs.core_5790
 """
 
 import pytest

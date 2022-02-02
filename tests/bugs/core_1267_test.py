@@ -6,6 +6,7 @@ ISSUE:       1689
 TITLE:       Small bug with default value for domains in PSQL
 DESCRIPTION:
 JIRA:        CORE-1267
+FBTEST:      bugs.core_1267
 """
 
 import pytest

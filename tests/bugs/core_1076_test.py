@@ -9,6 +9,7 @@ NOTES:
 [11.01.2016]
   refactored for 3.0: use FBSVCMGR instead of GSEC. This was agreed with Alex, see his reply 11.01.2015 17:57.
 JIRA:        CORE-1076
+FBTEST:      bugs.core_1076
 """
 
 import pytest

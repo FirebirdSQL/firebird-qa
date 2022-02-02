@@ -6,6 +6,7 @@ ISSUE:       2257
 TITLE:       Error with ABS in dialect 1
 DESCRIPTION:
 JIRA:        CORE-1828
+FBTEST:      bugs.core_1828
 """
 
 import pytest

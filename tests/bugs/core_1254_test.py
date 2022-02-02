@@ -6,6 +6,7 @@ ISSUE:       1678
 TITLE:       Problem with DISTINCT and insensitive collations
 DESCRIPTION:
 JIRA:        CORE-1254
+FBTEST:      bugs.core_1254
 """
 
 import pytest

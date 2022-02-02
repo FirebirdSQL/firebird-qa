@@ -6,6 +6,7 @@ ISSUE:       1419
 TITLE:       Restoring RDB$BASE_FIELD for expression
 DESCRIPTION: RDB$BASE_FIELD for expression have to be NULL
 JIRA:        CORE-1009
+FBTEST:      bugs.core_1009
 """
 
 import pytest

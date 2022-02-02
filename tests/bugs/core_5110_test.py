@@ -12,6 +12,7 @@ DESCRIPTION:
   text field of length = 50 characters. This test inserts 120'000 rows for ensuring that rollback will be
   done via TIP.
 JIRA:        CORE-5110
+FBTEST:      bugs.core_5110
 """
 
 import pytest

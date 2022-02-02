@@ -3,13 +3,15 @@
 """
 ID:          issue-6570
 ISSUE:       6570
-TITLE:       GBAK with service_mgr and WinSSPI authentication for Windows SYSTEM user producing error in clumplet API
+TITLE:       GBAK with service_mgr and WinSSPI authentication for Windows SYSTEM user
+  producing error in clumplet API
 DESCRIPTION:
   Confirmed bug on 4.0.0.2035 SS: got
   "gbak: ERROR:Internal error when using clumplet API: attempt to store 866 bytes in a clumplet with maximum size 255 bytes"
 
   Checked on 4.0.0.2066 SS/CS, 3.0.6.33212 SS/CS.
 JIRA:        CORE-6329
+FBTEST:      bugs.core_6329
 """
 
 import pytest

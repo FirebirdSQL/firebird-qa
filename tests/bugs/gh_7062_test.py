@@ -5,6 +5,7 @@ ID:          issue-7062
 ISSUE:       7062
 TITLE:       Creation of expression index does not release its statement correctly
 DESCRIPTION:
+FBTEST:      bugs.gh_7062
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1668
 TITLE:       Server crash on select * from <recursive CTE>
 DESCRIPTION: Simple select from recursive CTE crashes the server when query uses asterisk.
 JIRA:        CORE-1244
+FBTEST:      bugs.core_1244
 """
 
 import pytest

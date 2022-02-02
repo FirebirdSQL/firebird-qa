@@ -3,9 +3,11 @@
 """
 ID:          issue-6759
 ISSUE:       6759
-TITLE:       Results of concatenation with blob has no info about collation of source columns (which are declared with such info)
+TITLE:       Results of concatenation with blob has no info about collation of source
+  columns (which are declared with such info)
 DESCRIPTION:
 JIRA:        CORE-6532
+FBTEST:      bugs.core_6532
 """
 
 import pytest

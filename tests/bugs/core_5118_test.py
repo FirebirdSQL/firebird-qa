@@ -6,6 +6,7 @@ ISSUE:       5402
 TITLE:       Indices on computed fields are broken after restore (all keys are NULL)
 DESCRIPTION:
 JIRA:        CORE-5118
+FBTEST:      bugs.core_5118
 """
 
 import pytest

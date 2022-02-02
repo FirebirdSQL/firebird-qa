@@ -6,6 +6,7 @@ ISSUE:       3312
 TITLE:       "Invalid ESCAPE sequence" when connecting to the database
 DESCRIPTION:
 JIRA:        CORE-2929
+FBTEST:      bugs.core_2929
 """
 
 import pytest

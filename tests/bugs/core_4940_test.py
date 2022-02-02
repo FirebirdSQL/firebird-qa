@@ -6,6 +6,7 @@ ISSUE:       5231
 TITLE:       Add label about deterministic flag for stored function in SHOW and extract commands
 DESCRIPTION:
 JIRA:        CORE-4940
+FBTEST:      bugs.core_4940
 """
 
 import pytest

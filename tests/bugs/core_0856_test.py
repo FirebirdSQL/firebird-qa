@@ -6,6 +6,7 @@ ISSUE:       1246
 TITLE:       Unable to set FName, MName, LName fields in security to blank
 DESCRIPTION:
 JIRA:        CORE-856
+FBTEST:      bugs.core_0856
 """
 
 import pytest

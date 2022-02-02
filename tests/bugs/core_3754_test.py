@@ -6,6 +6,7 @@ ISSUE:       4098
 TITLE:       SIMILAR TO works wrongly
 DESCRIPTION:
 JIRA:        CORE-3754
+FBTEST:      bugs.core_3754
 """
 
 import pytest

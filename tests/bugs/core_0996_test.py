@@ -6,6 +6,7 @@ ISSUE:       1407
 TITLE:       Keyword AS not recognized in clause FROM
 DESCRIPTION: The sentence SELECT * FROM <table> AS <alias> is not recognized correct.
 JIRA:        CORE-996
+FBTEST:      bugs.core_0996
 """
 
 import pytest

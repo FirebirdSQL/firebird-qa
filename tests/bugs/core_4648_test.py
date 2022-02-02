@@ -6,6 +6,7 @@ ISSUE:       4962
 TITLE:       no permission for CREATE access to DATABASE (for RDB$ADMIN)
 DESCRIPTION:
 JIRA:        CORE-4648
+FBTEST:      bugs.core_4648
 """
 
 import pytest

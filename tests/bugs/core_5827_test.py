@@ -12,6 +12,7 @@ DESCRIPTION:
   Currently we check only ability to change TAGS list using 'ALTER CURRENT USER' statement.
   See also test for CORE-3365, but it checks only 'old' attributes which existed before FB 3.0.
 JIRA:        CORE-5827
+FBTEST:      bugs.core_5827
 """
 
 import pytest

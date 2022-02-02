@@ -3,9 +3,11 @@
 """
 ID:          issue-1602
 ISSUE:       1602
-TITLE:       Wrong result when use "where <field_C> STARTING WITH <:value> ORDER BY <field_N>" and field_C is leading part of compound index key: { field_C, field_N }
+TITLE:       Wrong result when use "where <field_C> STARTING WITH <:value> ORDER BY <field_N>"
+  and field_C is leading part of compound index key: { field_C, field_N }
 DESCRIPTION:
 JIRA:        CORE-4665
+FBTEST:      bugs.core_4665
 """
 
 import pytest

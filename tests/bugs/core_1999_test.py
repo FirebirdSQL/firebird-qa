@@ -14,6 +14,7 @@ DESCRIPTION:
   digits (with exception of "dot" and "comma" characters) is considered as VALUE related to some statistics.
   Backup log should contain only single (1st) line w/o statistics, restore - 1st and last lines.
 JIRA:        CORE-1999
+FBTEST:      bugs.core_1999
 """
 
 import pytest

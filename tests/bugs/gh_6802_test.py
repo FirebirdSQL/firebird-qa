@@ -3,11 +3,13 @@
 """
 ID:          issue-6802
 ISSUE:       6802
-TITLE:       When the statement timeout is set, it causes the lock manager to delay reporting deadlocks until timeout is expired
+TITLE:       When the statement timeout is set, it causes the lock manager to delay
+  reporting deadlocks until timeout is expired
 DESCRIPTION:
 NOTES:
 [20.05.2021]
   adjusted expected_stderr for case-2: non-suppressed exception raises instead of issuing gdscode.
+FBTEST:      bugs.gh_6802
 """
 
 import pytest

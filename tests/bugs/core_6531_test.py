@@ -3,9 +3,11 @@
 """
 ID:          issue-6758
 ISSUE:       6758
-TITLE:       COMPUTED BY column looses charset and collate of source field <F> when <F> is either of type BLOB or VARCHAR casted to BLOB
+TITLE:       COMPUTED BY column looses charset and collate of source field <F> when <F> is
+  either of type BLOB or VARCHAR casted to BLOB
 DESCRIPTION:
 JIRA:        CORE-6531
+FBTEST:      bugs.core_6531
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4487
 TITLE:       The parameterized exception does not accept not ASCII characters as parameter
 DESCRIPTION:
 JIRA:        CORE-4160
+FBTEST:      bugs.core_4160
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2724
 TITLE:       Unexpected error "arithmetic exception, numeric overflow, or string truncation" while evaluating SUBSTRING the second time
 DESCRIPTION:
 JIRA:        CORE-2300
+FBTEST:      bugs.core_2300
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-5220
 ISSUE:       5220
-TITLE:       Cannot compile source with "ELSE IF ( <expr> ) THEN" statement and commands to manupulate explicit cursor inside
+TITLE:       Cannot compile source with "ELSE IF ( <expr> ) THEN" statement and commands
+  to manupulate explicit cursor inside
 DESCRIPTION:
 JIRA:        CORE-4929
+FBTEST:      bugs.core_4929
 """
 
 import pytest

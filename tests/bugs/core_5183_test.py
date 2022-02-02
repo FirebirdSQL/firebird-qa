@@ -16,6 +16,7 @@ DESCRIPTION:
 
   Key point: length of this dictionary should be 1.
 JIRA:        CORE-5183
+FBTEST:      bugs.core_5183
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2778
 TITLE:       Incorrect handling of LOWER/UPPER when result string shrinks in terms of byte length
 DESCRIPTION:
 JIRA:        CORE-2355
+FBTEST:      bugs.core_2355
 """
 
 import pytest

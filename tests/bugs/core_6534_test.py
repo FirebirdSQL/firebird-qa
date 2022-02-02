@@ -6,6 +6,7 @@ ISSUE:       6761
 TITLE:       Hash join cannot match records using some TIME ZONE / DECFLOAT keys
 DESCRIPTION:
 JIRA:        CORE-6534
+FBTEST:      bugs.core_6534
 """
 
 import pytest

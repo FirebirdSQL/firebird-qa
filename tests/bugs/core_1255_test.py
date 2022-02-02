@@ -11,6 +11,7 @@ DESCRIPTION:
     Statement failed, SQLCODE = -802
     arithmetic exception, numeric overflow, or string truncation
 JIRA:        CORE-1255
+FBTEST:      bugs.core_1255
 """
 
 import pytest

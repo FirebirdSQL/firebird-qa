@@ -9,6 +9,7 @@ NOTES:
   Confirmed bug on 4.0.0.2353; 3.0.8.33401.
   Checked on 4.0.0.2365, 3.0.8.33415 -- all fine.
 JIRA:        CORE-2032
+FBTEST:      bugs.core_2032
 """
 
 import pytest

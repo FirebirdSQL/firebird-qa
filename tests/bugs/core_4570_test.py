@@ -6,6 +6,7 @@ ISSUE:       4887
 TITLE:       Wrong error at ALTER PACKAGE
 DESCRIPTION:
 JIRA:        CORE-4570
+FBTEST:      bugs.core_4570
 """
 
 import pytest

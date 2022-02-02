@@ -39,6 +39,7 @@ NOTES:
   Checked initially on 4.0.0.1712 SC: 11s, 4.0.0.1714 SS, CS (7s, 16s).
   Checked again 26.08.2020 on 4.0.0.2173 SS/CS/SC.
 JIRA:        CORE-6208
+FBTEST:      bugs.core_6208
 """
 
 import pytest

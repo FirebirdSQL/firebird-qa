@@ -16,6 +16,7 @@ DESCRIPTION:
   is limited to 512. With this limit single-line statement of begin-end blocks will have length less than 64K. For that
   reason these lines were removed from here to the test for CORE-4884.
 JIRA:        CORE-4882
+FBTEST:      bugs.core_4882
 """
 
 import pytest

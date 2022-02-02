@@ -26,6 +26,7 @@ DESCRIPTION:
     It is impossible to check ability to create new user in new database that was made by such way:
     plugin 'Srp' is required that currently is replaced before any test with 'Legacy' one.
 JIRA:        CORE-4864
+FBTEST:      bugs.core_4864
 """
 
 import pytest

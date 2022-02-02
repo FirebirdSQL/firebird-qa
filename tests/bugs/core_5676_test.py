@@ -6,6 +6,7 @@ ISSUE:       5942
 TITLE:       Consider equivalence classes for index navigation
 DESCRIPTION:
 JIRA:        CORE-5676
+FBTEST:      bugs.core_5676
 """
 
 import pytest

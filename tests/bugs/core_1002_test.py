@@ -7,6 +7,7 @@ TITLE:       Bad handling of /*/ comments in ISQL
 DESCRIPTION:
   Original title is: "set echo on" didn't work after /*////////////*/ comments in input file
 JIRA:        CORE-1002
+FBTEST:      bugs.core_1002
 """
 
 import pytest

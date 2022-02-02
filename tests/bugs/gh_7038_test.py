@@ -29,6 +29,7 @@ DESCRIPTION:
   21.11.2021. Checked on Linux (after installing pakage psutil):
     5.0.0.313 SS: 17.076s
     5.0.0.313 CS: median = 1.51163, data:  1.56, 1.40, 1.52, 1.50, 1.63, 1.53, 1.52, 1.28, 1.40, 1.75, 1.45, 1.43, 1.51, 1.48, 1.52.
+FBTEST:      bugs.gh_7038
 """
 
 import pytest

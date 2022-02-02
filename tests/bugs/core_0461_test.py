@@ -8,6 +8,7 @@ DESCRIPTION:
   NB: all versions of 2.1 and 2.5 fail on 2nd query (issue 2002-jul-12) with message about
   "too many contexts, max = 256" so this test checks only FB 3.0 and above.
 JIRA:        CORE-461
+FBTEST:      bugs.core_0461
 """
 
 import pytest

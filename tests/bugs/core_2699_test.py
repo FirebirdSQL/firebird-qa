@@ -6,6 +6,7 @@ ISSUE:       3099
 TITLE:       Common table expression context could be used with parameters
 DESCRIPTION:
 JIRA:        CORE-2699
+FBTEST:      bugs.core_2699
 """
 
 import pytest

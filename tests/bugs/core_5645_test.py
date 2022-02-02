@@ -7,6 +7,7 @@ TITLE:       Wrong transaction can be passed to external engine
 DESCRIPTION:
   Implemented according to notes given by Adriano in the ticket 27-oct-2017 02:41.
 JIRA:        CORE-5645
+FBTEST:      bugs.core_5645
 """
 
 import pytest

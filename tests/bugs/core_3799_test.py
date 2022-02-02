@@ -6,6 +6,7 @@ ISSUE:       4142
 TITLE:       with caller privileges option do not work with autonomous transaction option
 DESCRIPTION:
 JIRA:        CORE-3799
+FBTEST:      bugs.core_3799
 """
 
 import pytest

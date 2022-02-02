@@ -3,11 +3,13 @@
 """
 ID:          issue-6383
 ISSUE:       6383
-TITLE:       Win_Sspi in the list of auth plugins leads message about failed login to be changed (from 'Your user name and password are not defined...' to 'Missing security context ...')
+TITLE:       Win_Sspi in the list of auth plugins leads message about failed login to be
+  changed (from 'Your user name and password are not defined...' to 'Missing security context ...')
 DESCRIPTION:
   Test assumes that firebird.conf parameter AuthClient is: Legacy_Auth,Srp,Win_Sspi.
   This is done automaticaally by script that is launched daily on Firebird test machine.
 JIRA:        CORE-6134
+FBTEST:      bugs.core_6134
 """
 
 import pytest

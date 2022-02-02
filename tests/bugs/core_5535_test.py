@@ -6,6 +6,7 @@ ISSUE:       5803
 TITLE:       Garbage value in RDB$FIELD_SUB_TYPE in RDB$FUNCTION_ARGUMENTS after altering function
 DESCRIPTION:
 JIRA:        CORE-5535
+FBTEST:      bugs.core_5535
 """
 
 import pytest

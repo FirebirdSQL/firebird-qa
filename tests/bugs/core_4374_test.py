@@ -6,6 +6,7 @@ ISSUE:       4696
 TITLE:       Truncation error when using EXECUTE STATEMENT with a blob
 DESCRIPTION:
 JIRA:        CORE-4374
+FBTEST:      bugs.core_4374
 """
 
 import pytest

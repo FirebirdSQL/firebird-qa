@@ -5,6 +5,7 @@ ID:          issue-6808
 ISSUE:       6808
 TITLE:       Segfault in encrypt/decrypt functions when their first argument is NULL
 DESCRIPTION:
+FBTEST:      bugs.gh_6808
 """
 
 import pytest

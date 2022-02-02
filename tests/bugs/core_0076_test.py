@@ -6,6 +6,7 @@ ISSUE:       400
 TITLE:       Invalid ROW_COUNT variable value after DELETE
 DESCRIPTION:
 JIRA:        CORE-76
+FBTEST:      bugs.core_0076
 """
 
 import pytest

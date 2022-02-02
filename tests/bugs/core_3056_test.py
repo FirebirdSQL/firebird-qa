@@ -3,9 +3,11 @@
 """
 ID:          issue-3436
 ISSUE:       3436
-TITLE:       Problems may happen when issuing DDL commands in the same transaction after CREATE COLLATION was issued
+TITLE:       Problems may happen when issuing DDL commands in the same transaction after
+  CREATE COLLATION was issued
 DESCRIPTION:
 JIRA:        CORE-3056
+FBTEST:      bugs.core_3056
 """
 
 import pytest

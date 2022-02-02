@@ -24,6 +24,7 @@ NOTES:
   added command to obtain %FB_HOME% folder in order to make call of ISQL as fully qualified executable.
   Checked on 4.0.0.1935 SS/CS (both on Windows 8.1 (IMAGE-PC1) and Windows-2008 R2 (IBSurgeon-2008) hosts).
 JIRA:        CORE-5887
+FBTEST:      bugs.core_5887_trusted_role
 """
 
 import pytest

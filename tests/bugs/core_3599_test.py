@@ -6,6 +6,7 @@ ISSUE:       3953
 TITLE:       Possible drop role RDB$ADMIN
 DESCRIPTION:
 JIRA:        CORE-3599
+FBTEST:      bugs.core_3599
 """
 
 import pytest

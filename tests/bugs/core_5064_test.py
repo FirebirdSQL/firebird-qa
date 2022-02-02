@@ -6,6 +6,7 @@ ISSUE:       5351
 TITLE:       Add datatypes (VAR)BINARY(n) and BINARY VARYING(n) as alias for (VAR)CHAR(n) CHARACTER SET OCTETS
 DESCRIPTION:
 JIRA:        CORE-5064
+FBTEST:      bugs.core_5064
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3967
 TITLE:       Plan returned for query with recursive CTE return wrong count of parenthesis
 DESCRIPTION:
 JIRA:        CORE-3614
+FBTEST:      bugs.core_3614
 """
 
 import pytest

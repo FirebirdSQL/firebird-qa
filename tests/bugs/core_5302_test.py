@@ -73,6 +73,7 @@ DESCRIPTION:
     Fix for 3.0 was 27-jul-2016, see here:
     https://github.com/FirebirdSQL/firebird/commit/96a24228b61003e72c68596faf3c4c4ed0b95ea1
 JIRA:        CORE-5302
+FBTEST:      bugs.core_5302
 """
 
 import pytest

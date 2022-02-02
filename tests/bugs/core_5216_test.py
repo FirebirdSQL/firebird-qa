@@ -6,6 +6,7 @@ ISSUE:       5496
 TITLE:       Provide location context (line/column numbers) for runtime errors raised inside EXECUTE BLOCK
 DESCRIPTION:
 JIRA:        CORE-5216
+FBTEST:      bugs.core_5216
 """
 
 import pytest

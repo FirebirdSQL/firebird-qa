@@ -6,6 +6,7 @@ ISSUE:       3066
 TITLE:       COUNT(*) incorrectly returns 0 when a condition of an outer join doesn't match
 DESCRIPTION:
 JIRA:        CORE-2660
+FBTEST:      bugs.core_2660
 """
 
 import pytest

@@ -8,6 +8,7 @@ DESCRIPTION:
   Integral test for comparison latin-1 characters with diacritical marks and their
   ascii-equivalents, all kinds of string matching.
 JIRA:        CORE-4599
+FBTEST:      bugs.core_4599
 """
 
 import pytest

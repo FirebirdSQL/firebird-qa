@@ -6,6 +6,7 @@ ISSUE:       1852
 TITLE:       Incorrect result with EXECUTE STATEMENT and VARCHAR columns
 DESCRIPTION: Last two bytes of VARCHAR columns are lost.
 JIRA:        CORE-1434
+FBTEST:      bugs.core_1434
 """
 
 import pytest

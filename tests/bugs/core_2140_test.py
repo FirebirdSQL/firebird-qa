@@ -6,6 +6,7 @@ ISSUE:       2571
 TITLE:       Error messages after parameters substitution contains '\\n' characters instead of line break
 DESCRIPTION:
 JIRA:        CORE-2140
+FBTEST:      bugs.core_2140
 """
 
 import pytest

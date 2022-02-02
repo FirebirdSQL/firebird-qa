@@ -6,6 +6,7 @@ ISSUE:       5174
 TITLE:       Minor inconvenience in user management via services API
 DESCRIPTION:
 JIRA:        CORE-4879
+FBTEST:      bugs.core_4879
 """
 
 import pytest

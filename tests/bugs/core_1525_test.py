@@ -6,6 +6,7 @@ ISSUE:       1939
 TITLE:       Computed field + index not working in WHERE
 DESCRIPTION:
 JIRA:        CORE-1525
+FBTEST:      bugs.core_1525
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2040
 TITLE:       Some aggregate functions does NOT support NULL-constant in 3-d dialect
 DESCRIPTION:
 JIRA:        CORE-1619
+FBTEST:      bugs.core_1619
 """
 
 import pytest

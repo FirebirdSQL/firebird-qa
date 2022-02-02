@@ -6,6 +6,7 @@ ISSUE:       2185
 TITLE:       Support hex numeric and string literals
 DESCRIPTION: See doc\\sql.extensions\\README.hex_literals.txt
 JIRA:        CORE-1760
+FBTEST:      bugs.core_1760
 """
 
 import pytest

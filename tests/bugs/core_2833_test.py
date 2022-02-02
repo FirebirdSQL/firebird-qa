@@ -6,6 +6,7 @@ ISSUE:       3219
 TITLE:       Changing data that affects an expression index that contains references to null date fields fails
 DESCRIPTION:
 JIRA:        CORE-2833
+FBTEST:      bugs.core_2833
 """
 
 import pytest

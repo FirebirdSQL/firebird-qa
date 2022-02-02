@@ -6,6 +6,7 @@ ISSUE:       2438
 TITLE:       When trying to show "conversion error", "arithmetic exception/string truncation" may appear instead, misleading the user
 DESCRIPTION:
 JIRA:        CORE-2001
+FBTEST:      bugs.core_2001
 """
 
 import pytest

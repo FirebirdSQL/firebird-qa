@@ -6,6 +6,7 @@ ISSUE:       1827
 TITLE:       Support for autonomous transactions
 DESCRIPTION:
 JIRA:        CORE-1409
+FBTEST:      bugs.core_1409
 """
 
 import pytest

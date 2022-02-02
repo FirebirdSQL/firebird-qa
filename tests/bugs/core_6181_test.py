@@ -3,9 +3,11 @@
 """
 ID:          issue-6426
 ISSUE:       6426
-TITLE:       Operations when using "SET DECFLOAT BIND BIGINT,n" with result of 11+ digits, fail with "Decimal float invalid operation"
+TITLE:       Operations when using "SET DECFLOAT BIND BIGINT,n" with result of 11+ digits,
+  fail with "Decimal float invalid operation"
 DESCRIPTION:
 JIRA:        CORE-6181
+FBTEST:      bugs.core_6181
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5498
 TITLE:       Explicitly defined names for NOT NULL constraints are not exported into script by ISQL -x
 DESCRIPTION:
 JIRA:        CORE-5218
+FBTEST:      bugs.core_5218
 """
 
 import pytest

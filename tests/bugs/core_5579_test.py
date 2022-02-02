@@ -20,6 +20,7 @@ DESCRIPTION:
   We try to restore .fbk which was created from that DB on current FB snapshot and check that restore log
   does NOT contain phrase 'request synchronization' in any line.
 JIRA:        CORE-5579
+FBTEST:      bugs.core_5579
 """
 
 import pytest

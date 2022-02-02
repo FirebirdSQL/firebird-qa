@@ -3,9 +3,11 @@
 """
 ID:          issue-5137
 ISSUE:       5137
-TITLE:       Make message about missing password being always displayed as reply on attempt to issue CREATE new login without PASSWORD clause
+TITLE:       Make message about missing password being always displayed as reply on attempt
+  to issue CREATE new login without PASSWORD clause
 DESCRIPTION:
 JIRA:        CORE-4841
+FBTEST:      bugs.core_4841
 """
 
 import pytest

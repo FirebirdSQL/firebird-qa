@@ -6,6 +6,7 @@ ISSUE:       439
 TITLE:       Expression evaluation not supported on LEFT JOIN
 DESCRIPTION:
 JIRA:        CORE-117
+FBTEST:      bugs.core_0117
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3709
 TITLE:       RETURNING clause is not supported in positioned (WHERE CURRENT OF) UPDATE and DELETE statements
 DESCRIPTION:
 JIRA:        CORE-3343
+FBTEST:      bugs.core_3343
 """
 
 import pytest

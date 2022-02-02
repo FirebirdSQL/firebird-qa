@@ -6,6 +6,7 @@ ISSUE:       3385
 TITLE:       Procedure suspend check may cause restore to fail
 DESCRIPTION:
 JIRA:        CORE-3003
+FBTEST:      bugs.core_3003
 """
 
 import pytest

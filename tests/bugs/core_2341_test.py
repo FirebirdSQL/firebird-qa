@@ -6,6 +6,7 @@ ISSUE:       2765
 TITLE:       Hidden variables conflict with output parameters, causing assertions, unexpected errors or possibly incorrect results
 DESCRIPTION:
 JIRA:        CORE-2341
+FBTEST:      bugs.core_2341
 """
 
 import pytest

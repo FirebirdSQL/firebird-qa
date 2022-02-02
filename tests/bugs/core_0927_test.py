@@ -6,6 +6,7 @@ ISSUE:       1328
 TITLE:       Grants don't work for procedures used inside views
 DESCRIPTION:
 JIRA:        CORE-927
+FBTEST:      bugs.core_0927
 """
 
 import pytest

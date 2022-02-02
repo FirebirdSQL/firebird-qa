@@ -9,6 +9,7 @@ NOTES:
   Queries which do not use `WITH` clause now can be enclosed in parenthesis,
   but this leads to reduced number of max parts of UNIONed query, from 255 to 128.
 JIRA:        CORE-6511
+FBTEST:      bugs.gh_6740
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5015
 TITLE:       Implement ability to validate tables and indices online (without exclusive access to database)
 DESCRIPTION:
 JIRA:        CORE-4707
+FBTEST:      bugs.core_4707
 """
 
 import pytest

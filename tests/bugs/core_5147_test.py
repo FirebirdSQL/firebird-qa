@@ -6,6 +6,7 @@ ISSUE:       5430
 TITLE:       create trigger fails with ambiguous field name between table B and table A error
 DESCRIPTION:
 JIRA:        CORE-5147
+FBTEST:      bugs.core_5147
 """
 
 import pytest

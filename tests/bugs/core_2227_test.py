@@ -11,6 +11,7 @@ NOTES:
   correctly encoded in iso8859_1. Test changed to use script file writen in iso8859_1
   which works fine.
 JIRA:        CORE-2227
+FBTEST:      bugs.core_2227
 """
 
 import pytest

@@ -9,6 +9,7 @@ DESCRIPTION:
   This name should match to pattern: (\\{core_5907.[[:DIGIT:]]{2}\\}).tmp -- but we have to duplicate every "{" and "}".
   Also, we have to duplicate '' otherwise it will be escaped by fbtest framework.
 JIRA:        CORE-5907
+FBTEST:      bugs.core_5907
 """
 
 import pytest

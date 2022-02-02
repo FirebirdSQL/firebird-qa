@@ -6,6 +6,7 @@ ISSUE:       1716
 TITLE:       Bad optimization of queries with DB_KEY
 DESCRIPTION:
 JIRA:        CORE-1295
+FBTEST:      bugs.core_1295
 """
 
 import pytest

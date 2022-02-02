@@ -6,6 +6,7 @@ ISSUE:       5886
 TITLE:       Add builtin functions FIRST_DAY and LAST_DAY
 DESCRIPTION:
 JIRA:        CORE-5620
+FBTEST:      bugs.core_5620
 """
 
 import pytest

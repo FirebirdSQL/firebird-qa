@@ -52,6 +52,7 @@ DESCRIPTION:
     12 : end
   ==================
 JIRA:        CORE-6403
+FBTEST:      bugs.core_6403
 """
 
 import pytest

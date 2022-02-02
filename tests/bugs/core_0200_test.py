@@ -6,6 +6,7 @@ ISSUE:       527
 TITLE:       Empty column names with aggregate funcs
 DESCRIPTION:
 JIRA:        CORE-200
+FBTEST:      bugs.core_0200
 """
 
 import pytest

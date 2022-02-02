@@ -6,6 +6,7 @@ ISSUE:       4627
 TITLE:       Engine crashes when attempt to REcreate table with FK after syntax error before such recreating
 DESCRIPTION:
 JIRA:        CORE-4304
+FBTEST:      bugs.core_4304
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1926
 TITLE:       POSITION(string_exp1, string_exp2 [, start])
 DESCRIPTION:
 JIRA:        CORE-1511
+FBTEST:      bugs.core_1511
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2384
 TITLE:       Custom attribute for collation to sort numbers in numeric order
 DESCRIPTION:
 JIRA:        CORE-1945
+FBTEST:      bugs.core_1945
 """
 
 import pytest

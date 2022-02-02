@@ -27,6 +27,7 @@ NOTES:
   temporary changes to firebird.conf on run-time. It's questionable whether
   wire-compression should be tested at all.
 JIRA:        CORE-733
+FBTEST:      bugs.core_0733
 """
 
 import pytest
@@ -63,6 +64,17 @@ init_script = """
 """
 
 db = db_factory(init=init_script)
+
+act = python_act('db')
+
+expected_stdout = """
+    RESULT_OF_REQ_COMPARE_TO_ACTUAL EXPECTED: actual values were equal to required.
+"""
+
+@pytest.mark.skip("FIXME: Test fate to be determined")
+@pytest.mark.version('>=3.0')
+def test_1():
+    pytest.fail("Not IMPLEMENTED")
 
 # ORIGINAL fbtest test_script
 #---
@@ -334,14 +346,3 @@ db = db_factory(init=init_script)
 #
 #
 #---
-
-act = python_act('db')
-
-expected_stdout = """
-    RESULT_OF_REQ_COMPARE_TO_ACTUAL EXPECTED: actual values were equal to required.
-"""
-
-@pytest.mark.version('>=3.0')
-@pytest.mark.skip("FIXME: Test fate to be determined")
-def test_1():
-    pytest.fail("Not IMPLEMENTED")

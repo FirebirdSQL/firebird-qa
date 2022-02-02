@@ -6,6 +6,7 @@ ISSUE:       1712
 TITLE:       Can't transliterate character set when look at procedure text in database just created from script (and thus in ODS 11.1)
 DESCRIPTION:
 JIRA:        CORE-1291
+FBTEST:      bugs.core_1291
 """
 
 import pytest

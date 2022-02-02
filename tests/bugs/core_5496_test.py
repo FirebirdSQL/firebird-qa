@@ -3,7 +3,8 @@
 """
 ID:          issue-5765
 ISSUE:       5765
-TITLE:       Creating SRP SYSDBA with explicit admin (-admin yes in gsec or grant admin role in create user) creates two SYSDBA accounts
+TITLE:       Creating SRP SYSDBA with explicit admin (-admin yes in gsec or grant admin
+  role in create user) creates two SYSDBA accounts
 DESCRIPTION:
   Test script should display only ONE record.
 NOTES:
@@ -12,6 +13,7 @@ NOTES:
   Statement failed, SQLSTATE = 28000
   no permission for remote access to database security.db
 JIRA:        CORE-5496
+FBTEST:      bugs.core_5496
 """
 
 import pytest

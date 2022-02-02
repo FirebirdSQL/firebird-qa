@@ -6,6 +6,7 @@ ISSUE:       2426
 TITLE:       UTF8 UNICODE_CI collate can´t be used in foreing key constraint
 DESCRIPTION:
 JIRA:        CORE-1989
+FBTEST:      bugs.core_1989
 """
 
 import pytest

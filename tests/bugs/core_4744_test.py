@@ -3,9 +3,11 @@
 """
 ID:          issue-5049
 ISSUE:       5049
-TITLE:       ALTER DATABASE SET DEFAULT CHARACTER SET: 1) take effect only for once for current attachment; 2) does not check that new char set exists untill it will be used
+TITLE:       ALTER DATABASE SET DEFAULT CHARACTER SET: 1) take effect only for once for
+  current attachment; 2) does not check that new char set exists untill it will be used
 DESCRIPTION:
 JIRA:        CORE-4744
+FBTEST:      bugs.core_4744
 """
 
 import pytest

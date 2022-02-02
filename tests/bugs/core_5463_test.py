@@ -6,6 +6,7 @@ ISSUE:       5733
 TITLE:       Support GENERATED ALWAYS identity columns and OVERRIDE clause
 DESCRIPTION:
 JIRA:        CORE-5463
+FBTEST:      bugs.core_5463
 """
 
 import pytest

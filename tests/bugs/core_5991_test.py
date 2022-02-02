@@ -55,6 +55,7 @@ DESCRIPTION:
 
     Confirmed bug on 3.0.4.33054.
 JIRA:        CORE-5991
+FBTEST:      bugs.core_5991
 """
 
 import pytest

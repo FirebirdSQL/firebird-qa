@@ -7,6 +7,7 @@ TITLE:       Error on delete user "ADMIN"
 DESCRIPTION:
   Also added sample from #3488
 JIRA:        CORE-3000
+FBTEST:      bugs.core_3000
 """
 
 import pytest

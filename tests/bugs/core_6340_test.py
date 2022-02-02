@@ -7,6 +7,7 @@ TITLE:       Alternate quoting does not work on some particular cases
 DESCRIPTION:
   Test tries several cases + checks that string with maximum limit of length (65533) can be properly parsed.
 JIRA:        CORE-6340
+FBTEST:      bugs.core_6340
 """
 
 import pytest

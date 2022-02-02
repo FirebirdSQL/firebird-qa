@@ -6,6 +6,7 @@ ISSUE:       4467
 TITLE:       EXECUTE BLOCK's TYPE OF parameters with NONE charset may have be transformed to the connection charset
 DESCRIPTION:
 JIRA:        CORE-4140
+FBTEST:      bugs.core_4140
 """
 
 import pytest

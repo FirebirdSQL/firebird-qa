@@ -6,6 +6,7 @@ ISSUE:       1753
 TITLE:       Joins with NULL RDB$DB_KEY crash the server
 DESCRIPTION:
 JIRA:        CORE-1334
+FBTEST:      bugs.core_1334
 """
 
 import pytest

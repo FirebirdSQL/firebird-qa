@@ -6,6 +6,7 @@ ISSUE:       3850
 TITLE:       Altering of a TYPE OF COLUMN parameter affects the original column
 DESCRIPTION:
 JIRA:        CORE-3491
+FBTEST:      bugs.core_3491
 """
 
 import pytest

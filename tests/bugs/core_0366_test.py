@@ -15,6 +15,7 @@ DESCRIPTION:
   We expect that compilation of this test script finished OK, without any errors/warnings.
   2.5 issues "too many contexts / max allowed 255'; because of this, min_version=3.0
 JIRA:        CORE-366
+FBTEST:      bugs.core_0366
 """
 
 import pytest

@@ -13,6 +13,7 @@ DESCRIPTION:
           that we have no problem with non-ascii characters.
   NOTE-2: max length in 4.0 is 63 utf8 CHARACTERS (not bytes).
 JIRA:        CORE-479
+FBTEST:      bugs.core_0479
 """
 
 import pytest

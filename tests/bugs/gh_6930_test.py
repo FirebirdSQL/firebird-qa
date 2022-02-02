@@ -6,6 +6,7 @@ ISSUE:       6930
 TITLE:       Segfault when calling crypto functions
 DESCRIPTION:
   Using NULL or empty string as a KEY parameter in RSA-functions leads to segfault.
+FBTEST:      bugs.gh_6930
 """
 
 import pytest

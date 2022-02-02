@@ -6,6 +6,7 @@ ISSUE:       3514
 TITLE:       Partial rollback is possible for a selectable procedure modifying data
 DESCRIPTION:
 JIRA:        CORE-3137
+FBTEST:      bugs.core_3137
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       821
 TITLE:       ORDER BY has no effect
 DESCRIPTION:
 JIRA:        CORE-475
+FBTEST:      bugs.core_0475
 """
 
 import pytest

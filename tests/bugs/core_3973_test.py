@@ -6,6 +6,7 @@ ISSUE:       4306
 TITLE:       Original table name and column name and owner missing from SQLDA for aliased column in grouped query
 DESCRIPTION:
 JIRA:        CORE-3973
+FBTEST:      bugs.core_3973
 """
 
 import pytest

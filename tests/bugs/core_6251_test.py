@@ -3,9 +3,11 @@
 """
 ID:          issue-6494
 ISSUE:       6494
-TITLE:       Regression: crash when built-in function LEFT() or RIGHT() missed 2nd argument (number of characters to be taken)
+TITLE:       Regression: crash when built-in function LEFT() or RIGHT() missed 2nd argument
+  (number of characters to be taken)
 DESCRIPTION:
 JIRA:        CORE-6251
+FBTEST:      bugs.core_6251
 """
 
 import pytest

@@ -40,6 +40,7 @@ Checked on:
     3.0.5.33152 SC: 1.243s.
     3.0.5.33206 CS: 2.626s.
 JIRA:        CORE-6043
+FBTEST:      bugs.core_6043
 """
 
 import pytest

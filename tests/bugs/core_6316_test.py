@@ -9,6 +9,7 @@ NOTES:
   Issues remain for some kind of commands: parser should be more rigorous.
   Sent letter to Alex and Dmitry, 29.05.2020 12:28.
 JIRA:        CORE-6316
+FBTEST:      bugs.core_6316
 """
 
 import pytest

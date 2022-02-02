@@ -6,6 +6,7 @@ ISSUE:       6693
 TITLE:       Incorrect query result when using named window
 DESCRIPTION:
 JIRA:        CORE-6460
+FBTEST:      bugs.core_6460
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3781
 TITLE:       Database trigger created as INACTIVE is active
 DESCRIPTION:
 JIRA:        CORE-3418
+FBTEST:      bugs.core_3418
 """
 
 import pytest

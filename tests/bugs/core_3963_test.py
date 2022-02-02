@@ -16,6 +16,7 @@ DESCRIPTION:
   Functions div, frac, dow, sdow, getExactTimestampUTC and isLeapYear got safe replacement
   in UDR library "udf_compat", see it in folder: ../plugins/udr/
 JIRA:        CORE-3963
+FBTEST:      bugs.core_3963
 """
 
 import pytest

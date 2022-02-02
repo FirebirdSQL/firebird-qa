@@ -6,6 +6,7 @@ ISSUE:       1594
 TITLE:       ISQL exponential format of numbers has zero pad on windows
 DESCRIPTION:
 JIRA:        CORE-1171
+FBTEST:      bugs.core_1171
 """
 
 import pytest

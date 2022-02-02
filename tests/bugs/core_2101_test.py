@@ -17,6 +17,7 @@ NOTES:
   New code suggested by dimitr, letter 28.11.2021 17:48.
   Checked on 5.0.0.321, 4.0.1.2672
 JIRA:        CORE-2101
+FBTEST:      bugs.core_2101
 """
 
 import pytest

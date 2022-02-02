@@ -10,6 +10,7 @@ NOTES:
   For unknow reason, on v4.0.0.2496 the gstat -h does not report active shadow
   and test thus fail.
 JIRA:        CORE-4715
+FBTEST:      bugs.core_4715
 """
 
 import pytest

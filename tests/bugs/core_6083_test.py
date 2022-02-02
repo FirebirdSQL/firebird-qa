@@ -6,6 +6,7 @@ ISSUE:       6333
 TITLE:       USING PLUGIN clause does not work in RECREATE USER
 DESCRIPTION:
 JIRA:        CORE-6083
+FBTEST:      bugs.core_6083
 """
 
 import pytest

@@ -34,6 +34,7 @@ NOTES:
 [04.07.2020]
   Reduced PLANNED_ATTACH_CNT from 30 to 5 because 4.0 Classic remains fail.
 JIRA:        CORE-4135
+FBTEST:      bugs.core_4135
 """
 
 import pytest

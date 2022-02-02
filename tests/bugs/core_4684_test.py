@@ -6,6 +6,7 @@ ISSUE:       4992
 TITLE:       Error while preparing a complex query ("Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256")
 DESCRIPTION:
 JIRA:        CORE-4684
+FBTEST:      bugs.core_4684
 """
 
 import pytest

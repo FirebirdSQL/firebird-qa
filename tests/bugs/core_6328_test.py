@@ -6,6 +6,7 @@ ISSUE:       6569
 TITLE:       FB4 Beta 2 may still be using the current date for TIME WITH TIME ZONE and extended wire protocol
 DESCRIPTION:
 JIRA:        CORE-6328
+FBTEST:      bugs.core_6328
 """
 
 import pytest

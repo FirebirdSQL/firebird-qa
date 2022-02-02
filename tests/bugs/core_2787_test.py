@@ -6,6 +6,7 @@ ISSUE:       3178
 TITLE:       Make rdb$system_flag not null
 DESCRIPTION:
 JIRA:        CORE-2787
+FBTEST:      bugs.core_2787
 """
 
 import pytest

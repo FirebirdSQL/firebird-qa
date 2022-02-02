@@ -6,6 +6,7 @@ ISSUE:       3562
 TITLE:       page 0 is of wrong type (expected 6, found 1)
 DESCRIPTION:
 JIRA:        CORE-3188
+FBTEST:      bugs.core_3188
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       991
 TITLE:        Grouping on derived fields processing NULL data kills IB
 DESCRIPTION:
 JIRA:        CORE-629
+FBTEST:      bugs.core_0629
 """
 
 import pytest

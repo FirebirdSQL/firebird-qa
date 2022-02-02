@@ -10,6 +10,7 @@ NOTES:
   As of nowadays, it  is still possible to create sequence with name = single space character.
   See note in ticket, 26/Jun/18 07:58 AM.
 JIRA:        CORE-5855
+FBTEST:      bugs.core_5855
 """
 
 import pytest

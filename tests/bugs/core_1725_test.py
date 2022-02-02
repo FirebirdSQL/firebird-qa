@@ -6,6 +6,7 @@ ISSUE:       2149
 TITLE:       Unable to restore a database with inactive indices if any SP/trigger contains an explicit plan
 DESCRIPTION:
 JIRA:        CORE-1725
+FBTEST:      bugs.core_1725
 """
 
 import pytest

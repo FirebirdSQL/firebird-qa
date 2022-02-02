@@ -16,6 +16,7 @@ DESCRIPTION:
   All such actions are repeated several times in order to increase probability of failure if something
   in FB will be broken.
 JIRA:        CORE-5210
+FBTEST:      bugs.core_5210
 """
 
 import pytest

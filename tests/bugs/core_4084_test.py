@@ -6,6 +6,7 @@ ISSUE:       4412
 TITLE:       Regression: Group by fails if subselect-column is involved
 DESCRIPTION:
 JIRA:        CORE-4084
+FBTEST:      bugs.core_4084
 """
 
 import pytest

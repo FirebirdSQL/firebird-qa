@@ -6,6 +6,7 @@ ISSUE:       4603
 TITLE:       FB3: Stored function accepts duplicate input arguments
 DESCRIPTION:
 JIRA:        CORE-4280
+FBTEST:      bugs.core_4280
 """
 
 import pytest

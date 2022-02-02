@@ -23,6 +23,7 @@ DESCRIPTION:
     Records affected: 1
 
   Checked 4.0.1.2602, 5.0.0.215 -- all OK, no records foudn in mon$statements.
+FBTEST:      bugs.gh_6886
 """
 
 import pytest

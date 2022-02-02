@@ -13,6 +13,7 @@ DESCRIPTION:
     ( https://github.com/FirebirdSQL/firebird/commit/55704efd24b706272211f921d69db602e838ea38 )
   * state of 'set exec_path_display blr' command will not change after reconnect.
     ( https://github.com/FirebirdSQL/firebird/commit/32c3cf573bf36f576b6116983786107df5a2cb33 )
+FBTEST:      bugs.gh_6910
 """
 
 import pytest

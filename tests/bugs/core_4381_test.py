@@ -6,6 +6,7 @@ ISSUE:       4703
 TITLE:       Incorrect line/column information in runtime errors
 DESCRIPTION:
 JIRA:        CORE-4381
+FBTEST:      bugs.core_4381
 """
 
 import pytest

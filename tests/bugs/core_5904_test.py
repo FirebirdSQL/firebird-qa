@@ -6,6 +6,7 @@ ISSUE:       6162
 TITLE:       An attempt to create global mapping with long (greater than SQL identifier length) FROM field fails
 DESCRIPTION:
 JIRA:        CORE-5904
+FBTEST:      bugs.core_5904
 """
 
 import pytest

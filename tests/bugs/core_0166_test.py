@@ -6,6 +6,7 @@ ISSUE:       495
 TITLE:       Cannot specify PLAN in UPDATE statement
 DESCRIPTION:
 JIRA:        CORE-166
+FBTEST:      bugs.core_0166
 """
 
 import pytest

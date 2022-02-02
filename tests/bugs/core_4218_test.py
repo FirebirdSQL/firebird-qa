@@ -6,6 +6,7 @@ ISSUE:       4543
 TITLE:       Add database owner to mon$database
 DESCRIPTION:
 JIRA:        CORE-4218
+FBTEST:      bugs.core_4218
 """
 
 import pytest

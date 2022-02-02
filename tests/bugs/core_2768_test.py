@@ -6,6 +6,7 @@ ISSUE:       3160
 TITLE:       ALTERING OR DROPPING PROCEDURE which has type of domain parameter leads to attempt to delete that domain
 DESCRIPTION:
 JIRA:        CORE-2768
+FBTEST:      bugs.core_2768
 """
 
 import pytest

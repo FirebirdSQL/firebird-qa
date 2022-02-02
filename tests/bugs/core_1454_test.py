@@ -8,6 +8,7 @@ DESCRIPTION:
   Computed field had a lot of inconsistencies and problems
   It's possible to use a explicit type, but only together with a (new) computed expression.
 JIRA:        CORE-1454
+FBTEST:      bugs.core_1454
 """
 
 import pytest

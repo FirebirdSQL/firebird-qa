@@ -6,6 +6,7 @@ ISSUE:       3192
 TITLE:       Problems with COMMENT ON and strings using introducer (charset)
 DESCRIPTION:
 JIRA:        CORE-2804
+FBTEST:      bugs.core_2804
 """
 
 import pytest

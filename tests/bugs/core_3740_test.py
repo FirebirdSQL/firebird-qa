@@ -6,6 +6,7 @@ ISSUE:       4084
 TITLE:       SELECT using IN list with 153 or more elements causes crash
 DESCRIPTION:
 JIRA:        CORE-3740
+FBTEST:      bugs.core_3740
 """
 
 import pytest

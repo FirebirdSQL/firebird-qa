@@ -6,6 +6,7 @@ ISSUE:       3297
 TITLE:       COLLATE expressions are applied incorrectly
 DESCRIPTION:
 JIRA:        CORE-2913
+FBTEST:      bugs.core_2913
 """
 
 import pytest

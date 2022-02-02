@@ -6,6 +6,7 @@ ISSUE:       4485
 TITLE:       Regression: LIKE with escape does not work
 DESCRIPTION:
 JIRA:        CORE-4158
+FBTEST:      bugs.core_4158
 """
 
 import pytest

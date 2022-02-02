@@ -5,7 +5,8 @@ ID:          issue-6507
 ISSUE:       6507
 TITLE:       mapping rules destroyed by backup / restore
 DESCRIPTION:
-JIRA:        CORE-1000
+JIRA:        CORE-6265
+FBTEST:      bugs.core_6265
 """
 
 import pytest

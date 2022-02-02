@@ -42,6 +42,7 @@ DESCRIPTION:
        Because of this, we have to check only presence of lines with "SQLCODE: -104" and "Unexpected end of command"
        for FB of major versions 3.x and 4.x (gh-6966 was NOT fixed for them!).
 JIRA:        CORE-3884
+FBTEST:      bugs.core_3884
 """
 
 import pytest

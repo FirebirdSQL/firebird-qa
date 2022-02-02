@@ -6,6 +6,7 @@ ISSUE:       2684
 TITLE:       Internal error when select upper(<blob>) from union
 DESCRIPTION:
 JIRA:        CORE-2258
+FBTEST:      bugs.core_2258
 """
 
 import pytest

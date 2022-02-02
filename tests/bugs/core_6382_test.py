@@ -20,6 +20,7 @@ DESCRIPTION:
 
   AFTER fix this DROP TABLE statement must pass without any error.
 JIRA:        CORE-6382
+FBTEST:      bugs.core_6382
 """
 
 import pytest

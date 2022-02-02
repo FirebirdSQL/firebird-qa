@@ -6,6 +6,7 @@ ISSUE:       2865
 TITLE:       Query SELECT ... WHERE ... IN (SELECT DISTINCT ... ) returns a wrong result set
 DESCRIPTION:
 JIRA:        CORE-2451
+FBTEST:      bugs.core_2451
 """
 
 import pytest

@@ -11,6 +11,7 @@ DESCRIPTION:
 
     NB: backslash character must be duplicated when SQL script is launched from Python,
     in contrary to common usage (pass script to ISQL utility from OS command prompt).
+FBTEST:      bugs.gh_6887
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2026
 TITLE:       Bugcheck 232 (invalid operation) for an aggregated query
 DESCRIPTION:
 JIRA:        CORE-1605
+FBTEST:      bugs.core_1605
 """
 
 import pytest

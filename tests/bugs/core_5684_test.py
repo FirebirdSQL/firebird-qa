@@ -3,9 +3,11 @@
 """
 ID:          issue-5950
 ISSUE:       5950
-TITLE:       Error "no current record for fetch operation" is raised while deleting record from MON$ATTACHMENTS using ORDER BY clause
+TITLE:       Error "no current record for fetch operation" is raised while deleting record
+  from MON$ATTACHMENTS using ORDER BY clause
 DESCRIPTION:
 JIRA:        CORE-5684
+FBTEST:      bugs.core_5684
 """
 
 import pytest

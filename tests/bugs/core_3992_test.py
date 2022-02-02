@@ -6,6 +6,7 @@ ISSUE:       4324
 TITLE:       No records in the table rdb$dependencies for ddl trigger
 DESCRIPTION:
 JIRA:        CORE-3992
+FBTEST:      bugs.core_3992
 """
 
 import pytest

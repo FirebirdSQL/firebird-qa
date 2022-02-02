@@ -6,6 +6,7 @@ ISSUE:       1937
 TITLE:       Inconsistent DATEDIFF behaviour
 DESCRIPTION:
 JIRA:        CORE-1522
+FBTEST:      bugs.core_1522
 """
 
 import pytest

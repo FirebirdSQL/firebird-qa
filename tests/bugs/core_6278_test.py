@@ -18,6 +18,7 @@ DESCRIPTION:
 
   Before fix trace table statistics did not reflect scoped WHERE-expression on RDB$DB_KEY column.
 JIRA:        CORE-6278
+FBTEST:      bugs.core_6278
 """
 
 import pytest

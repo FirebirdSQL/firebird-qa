@@ -11,6 +11,7 @@ DESCRIPTION:
   Example queries are published here with kind permission of Sergey Moiseenko, 07.04.2020 11:46.
   This is INITIAL test of LATERAL-JOIN functional. Additional examples will be implemented later.
 JIRA:        CORE-3435
+FBTEST:      bugs.core_3435
 """
 
 import pytest

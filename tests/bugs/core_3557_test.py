@@ -6,6 +6,7 @@ ISSUE:       3913
 TITLE:       AV in engine when preparing query against dropping table
 DESCRIPTION:
 JIRA:        CORE-3557
+FBTEST:      bugs.core_3557
 """
 
 import pytest

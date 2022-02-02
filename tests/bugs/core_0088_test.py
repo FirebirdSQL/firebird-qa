@@ -6,6 +6,7 @@ ISSUE:       413
 TITLE:       Join on diffrent datatypes
 DESCRIPTION:
 JIRA:        CORE-88
+FBTEST:      bugs.core_0088
 """
 
 import pytest

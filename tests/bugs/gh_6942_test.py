@@ -5,6 +5,7 @@ ID:          issue-6942
 ISSUE:       6942
 TITLE:       Incorrect singleton error with MERGE and RETURNING
 DESCRIPTION:
+FBTEST:      bugs.gh_6942
 """
 
 import pytest

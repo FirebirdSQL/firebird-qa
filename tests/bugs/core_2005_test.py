@@ -6,6 +6,7 @@ ISSUE:       2442
 TITLE:       Support SQL 2008 syntax for MERGE statement with DELETE extension
 DESCRIPTION:
 JIRA:        CORE-2005
+FBTEST:      bugs.core_2005
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3808
 TITLE:       Collation is not installed with icu > 4.2
 DESCRIPTION:
 JIRA:        CORE-3447
+FBTEST:      bugs.core_3447
 """
 
 import pytest

@@ -10,6 +10,7 @@ DESCRIPTION:
   1) in case when NATURAL scan occured currently index T*_SINGLE_X is used;
   2) in case when it was only PARTIAL matching index Y*_COMPOUND_X is in use.
 JIRA:        CORE-4921
+FBTEST:      bugs.core_4921
 """
 
 import pytest

@@ -8,6 +8,7 @@ DESCRIPTION:
   Test checks only presence of not-null context variable in the 'SYSTEM' namespace,
   without verifying its value (obviously, it can vary on different machines).
   Name of context variable: 'SESSION_TIMEZONE'.
+FBTEST:      bugs.gh_6786
 """
 
 import pytest

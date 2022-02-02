@@ -14,6 +14,7 @@ DESCRIPTION:
   For that reason we detect FB architecture here and SKIP checking SS results by substitution of
   dummy "OK" instead.
 JIRA:        CORE-5433
+FBTEST:      bugs.core_5433
 """
 
 import pytest

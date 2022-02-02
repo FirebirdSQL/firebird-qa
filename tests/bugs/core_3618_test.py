@@ -6,6 +6,7 @@ ISSUE:       3971
 TITLE:       Window Function: ntile(num_buckets integer)
 DESCRIPTION:
 JIRA:        CORE-3618
+FBTEST:      bugs.core_3618
 """
 
 import pytest

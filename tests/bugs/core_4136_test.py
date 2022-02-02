@@ -6,6 +6,7 @@ ISSUE:       4463
 TITLE:       Sharp-S character treated incorrectly in UNICODE_CI_AI collation
 DESCRIPTION:
 JIRA:        CORE-4136
+FBTEST:      bugs.core_4136
 """
 
 import pytest

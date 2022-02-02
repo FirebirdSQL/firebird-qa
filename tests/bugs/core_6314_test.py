@@ -8,6 +8,7 @@ DESCRIPTION:
   In order to prevent receiving non-ascii characters in output we try to get only octet_length of this.
   Confirmed bug on 3.0.6.33289, 4.0.0.1954 (get result = 2 instead of raising error).
 JIRA:        CORE-6314
+FBTEST:      bugs.core_6314
 """
 
 import pytest

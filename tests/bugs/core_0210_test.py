@@ -6,6 +6,7 @@ ISSUE:       538
 TITLE:       CS server crash altering SP in 2 connect
 DESCRIPTION:
 JIRA:        CORE-210
+FBTEST:      bugs.core_0210
 """
 
 import pytest

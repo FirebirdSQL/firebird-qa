@@ -5,6 +5,7 @@ ID:          issue-7048
 ISSUE:       7048
 TITLE:       Incorrect releasing of user savepoint (older savepoints become inaccessible)
 DESCRIPTION:
+FBTEST:      bugs.gh_7048
 """
 
 import pytest

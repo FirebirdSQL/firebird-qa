@@ -6,6 +6,7 @@ ISSUE:       632
 TITLE:       Provide mechanism to get engine version without needing to call API function
 DESCRIPTION:
 JIRA:        CORE-1018
+FBTEST:      bugs.core_1018
 """
 
 import pytest

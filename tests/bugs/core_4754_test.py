@@ -3,9 +3,11 @@
 """
 ID:          issue-5058
 ISSUE:       5058
-TITLE:       Bugcheck 167 (invalid SEND request) while working with GTT from several attachments (using EXECUTE STATEMENT ... ON EXTERNAL and different roles)
+TITLE:       Bugcheck 167 (invalid SEND request) while working with GTT from several
+  attachments (using EXECUTE STATEMENT ... ON EXTERNAL and different roles)
 DESCRIPTION:
 JIRA:        CORE-4754
+FBTEST:      bugs.core_4754
 """
 
 import pytest

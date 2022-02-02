@@ -6,6 +6,7 @@ ISSUE:       1737
 TITLE:       Error "Identifier ... is too long using multiple (nested) derived tables
 DESCRIPTION:
 JIRA:        CORE-1318
+FBTEST:      bugs.core_1318
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4558
 TITLE:       Error with IF (subfunc()) when subfunc returns a boolean
 DESCRIPTION:
 JIRA:        CORE-4234
+FBTEST:      bugs.core_4234
 """
 
 import pytest

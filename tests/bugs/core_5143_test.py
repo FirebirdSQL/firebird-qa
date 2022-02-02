@@ -6,6 +6,7 @@ ISSUE:       5426
 TITLE:       GBAK restore failed when there is SQL function accessing table and switch -O(NE_AT_A_TIME) is used
 DESCRIPTION:
 JIRA:        CORE-5143
+FBTEST:      bugs.core_5143
 """
 
 import pytest

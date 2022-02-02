@@ -33,6 +33,7 @@ DESCRIPTION:
     * builds after fix:
         4.0.1.2668:  median = 1.70
         5.0.0.313:   median = 1.80
+FBTEST:      bugs.gh_6872
 """
 
 import pytest

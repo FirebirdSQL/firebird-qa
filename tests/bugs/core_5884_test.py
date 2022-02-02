@@ -6,6 +6,7 @@ ISSUE:       6142
 TITLE:       Initial global mapping from srp plugin does not work
 DESCRIPTION:
 JIRA:        CORE-5884
+FBTEST:      bugs.core_5884
 """
 
 import pytest

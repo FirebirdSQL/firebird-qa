@@ -22,6 +22,7 @@ DESCRIPTION:
 
   Confirmed bug on WI-V2.1.2.18118: db_into() received imcompleted data (i.e. not for all tables).
 JIRA:        CORE-2307
+FBTEST:      bugs.core_2307
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2755
 TITLE:       ALTER DOMAIN invalid RDB$FIELD_SUB_TYPE
 DESCRIPTION:
 JIRA:        CORE-2331
+FBTEST:      bugs.core_2331
 """
 
 import pytest

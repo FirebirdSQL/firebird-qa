@@ -8,6 +8,7 @@ DESCRIPTION:
   If a derived table (or a view) contains both a left/right join and an ORDER BY clause
   and the outer query also contains an ORDER BY clause, the latter one gets ignored.
 JIRA:        CORE-2871
+FBTEST:      bugs.core_2871
 """
 
 import pytest

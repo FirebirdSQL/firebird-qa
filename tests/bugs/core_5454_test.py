@@ -6,6 +6,7 @@ ISSUE:       5725
 TITLE:       INSERT into updatable view without explicit field list failed
 DESCRIPTION:
 JIRA:        CORE-5454
+FBTEST:      bugs.core_5454
 """
 
 import pytest

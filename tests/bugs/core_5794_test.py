@@ -12,6 +12,7 @@ DESCRIPTION:
   2) comment in this ticket (CORE-5794) by hvlad:
   "Since Firebird3 <..> cursor doesn't see the changes made by "inner" statements."
 JIRA:        CORE-5794
+FBTEST:      bugs.core_5794
 """
 
 import pytest

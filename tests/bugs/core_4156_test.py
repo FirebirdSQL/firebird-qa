@@ -3,9 +3,11 @@
 """
 ID:          issue-4483
 ISSUE:       4483
-TITLE:       RDB$GET_CONTEXT/RDB$SET_CONTEXT parameters incorrectly described as CHAR NOT NULL instead of VARCHAR NULLABLE
+TITLE:       RDB$GET_CONTEXT/RDB$SET_CONTEXT parameters incorrectly described as
+  CHAR NOT NULL instead of VARCHAR NULLABLE
 DESCRIPTION:
 JIRA:        CORE-4156
+FBTEST:      bugs.core_4156
 """
 
 import pytest

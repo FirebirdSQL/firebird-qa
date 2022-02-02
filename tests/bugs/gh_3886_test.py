@@ -3,9 +3,11 @@
 """
 ID:          issue-3386
 ISSUE:       3386
-TITLE:       recreate table T with PK or UK is impossible after duplicate typing w/o commit when ISQL is launched in AUTODDL=OFF mode
+TITLE:       recreate table T with PK or UK is impossible after duplicate typing w/o commit
+  when ISQL is launched in AUTODDL=OFF mode
 DESCRIPTION:
 JIRA:        CORE-3529
+FBTEST:      bugs.gh_3886
 """
 
 import pytest

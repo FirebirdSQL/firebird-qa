@@ -6,6 +6,7 @@ ISSUE:       2480
 TITLE:       Incorrect result with UPDATE OR INSERT ... RETURNING OLD and non-nullable columns
 DESCRIPTION:
 JIRA:        CORE-2044
+FBTEST:      bugs.core_2044
 """
 
 import pytest

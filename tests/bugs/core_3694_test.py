@@ -6,6 +6,7 @@ ISSUE:       4042
 TITLE:       internal Firebird consistency check in query with grouping by subquery+stored procedure+aggregate
 DESCRIPTION:
 JIRA:        CORE-3694
+FBTEST:      bugs.core_3694
 """
 
 import pytest

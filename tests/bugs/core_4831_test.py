@@ -6,6 +6,7 @@ ISSUE:       5128
 TITLE:       Revoke all on all from role <R> -- failed with "SQL role <R> does not exist in security database"
 DESCRIPTION:
 JIRA:        CORE-4831
+FBTEST:      bugs.core_4831
 """
 
 import pytest

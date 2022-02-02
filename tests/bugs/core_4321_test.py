@@ -6,6 +6,7 @@ ISSUE:       4644
 TITLE:       Regression: ISQL does not destroy the SQL statement
 DESCRIPTION:
 JIRA:        CORE-4321
+FBTEST:      bugs.core_4321
 """
 
 import pytest

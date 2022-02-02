@@ -6,6 +6,7 @@ ISSUE:       2372
 TITLE:       SIMILAR TO character classes are incorrectly recognized
 DESCRIPTION:
 JIRA:        CORE-1935
+FBTEST:      bugs.core_1935
 """
 
 import pytest

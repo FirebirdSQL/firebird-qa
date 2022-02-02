@@ -6,6 +6,7 @@ ISSUE:       3476
 TITLE:       Updating blob field cause server crash with ACCESS_VIOLATION exception
 DESCRIPTION:
 JIRA:        CORE-3097
+FBTEST:      bugs.core_3097
 """
 
 import pytest

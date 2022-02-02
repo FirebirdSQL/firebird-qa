@@ -6,6 +6,7 @@ ISSUE:       1846
 TITLE:       Incorrect timestamp substraction in 3 dialect when result is negative number
 DESCRIPTION:
 JIRA:        CORE-1428
+FBTEST:      bugs.core_1428
 """
 
 import pytest

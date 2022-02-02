@@ -6,6 +6,7 @@ ISSUE:       939
 TITLE:       Before triggers are firing after checks
 DESCRIPTION:
 JIRA:        CORE-583
+FBTEST:      bugs.core_0583
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5695
 TITLE:       Regression: "Invalid usage of boolean expression" when use "BETWEEN" and "IS" operators
 DESCRIPTION:
 JIRA:        CORE-5423
+FBTEST:      bugs.core_5423
 """
 
 import pytest

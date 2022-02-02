@@ -6,6 +6,7 @@ ISSUE:       1762
 TITLE:       Bug with a simple case and a subquery
 DESCRIPTION:
 JIRA:        CORE-1343
+FBTEST:      bugs.core_1343
 """
 
 import pytest

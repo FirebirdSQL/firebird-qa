@@ -15,6 +15,7 @@ NOTES:
     - object E:\\QA\\FBT-REPO\\TMP\\BUGS.CORE_3977.FDB is in use
   This is actual for 4.0+ SS/SC when ExtConnPoolLifeTime > 0.
 JIRA:        CORE-3977
+FBTEST:      bugs.core_3977
 """
 
 import pytest

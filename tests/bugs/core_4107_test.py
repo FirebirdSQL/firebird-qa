@@ -6,6 +6,7 @@ ISSUE:       4435
 TITLE:       wrong resultset (subquery + derived table + union)
 DESCRIPTION:
 JIRA:        CORE-4107
+FBTEST:      bugs.core_4107
 """
 
 import pytest

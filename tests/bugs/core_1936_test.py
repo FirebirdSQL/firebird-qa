@@ -6,6 +6,7 @@ ISSUE:       2373
 TITLE:       The log(base, number) built-in function doesn't check parameters and delivers NAN values instead
 DESCRIPTION:
 JIRA:        CORE-1936
+FBTEST:      bugs.core_1936
 """
 
 import pytest

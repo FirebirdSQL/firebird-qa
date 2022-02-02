@@ -6,6 +6,7 @@ ISSUE:       6419
 TITLE:       "No current record for fetch operation" with queries with aggregated subselect
 DESCRIPTION:
 JIRA:        CORE-6171
+FBTEST:      bugs.core_6171
 """
 
 import pytest

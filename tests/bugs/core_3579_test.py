@@ -6,6 +6,7 @@ ISSUE:       3933
 TITLE:       Can't drop table when computed field depends on later created another field
 DESCRIPTION:
 JIRA:        CORE-3579
+FBTEST:      bugs.core_3579
 """
 
 import pytest

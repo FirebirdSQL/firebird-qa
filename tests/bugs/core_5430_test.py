@@ -6,6 +6,7 @@ ISSUE:       5702
 TITLE:       Support for INCREMENT option in identity columns
 DESCRIPTION:
 JIRA:        CORE-5430
+FBTEST:      bugs.core_5430
 """
 
 import pytest

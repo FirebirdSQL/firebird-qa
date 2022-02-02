@@ -6,6 +6,7 @@ ISSUE:       1504
 TITLE:       User (not SYSDBA) what have privileges with grant option, can't revoke privileges, granted by other user or SYSDBA
 DESCRIPTION:
 JIRA:        CORE-1083
+FBTEST:      bugs.core_1083
 """
 
 import pytest

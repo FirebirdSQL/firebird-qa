@@ -22,6 +22,7 @@ DESCRIPTION:
   Confirmed bug on 4.0.0.2204: got crash when N=8065 (but still "new record size of 65536 bytes is too big" when N=8066).
   Checked on 3.0.7.33368, 4.0.0.2214 - all OK.
 JIRA:        CORE-6411
+FBTEST:      bugs.core_6411
 """
 
 import pytest

@@ -15,6 +15,7 @@ NOTES:
   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
   Because of this, it was decided create separate section for FB 4.x.
 JIRA:        CORE-5133
+FBTEST:      bugs.core_5133
 """
 
 import pytest

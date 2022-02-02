@@ -6,6 +6,7 @@ ISSUE:       384
 TITLE:       Automatic not null in PK columns incomplete
 DESCRIPTION:
 JIRA:        CORE-59
+FBTEST:      bugs.core_0059
 """
 
 import pytest

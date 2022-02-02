@@ -6,6 +6,7 @@ ISSUE:       3704
 TITLE:       Regression: Code changes disabled support for expression indexes with COALESCE, CASE and DECODE
 DESCRIPTION:
 JIRA:        CORE-3338
+FBTEST:      bugs.core_3338
 """
 
 import pytest

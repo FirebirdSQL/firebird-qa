@@ -6,6 +6,7 @@ ISSUE:       6734
 TITLE:       Provide same results for date arithmetics when date is changed by values near +/-max(bigint)
 DESCRIPTION:
 JIRA:        CORE-6504
+FBTEST:      bugs.core_6504
 """
 
 import pytest

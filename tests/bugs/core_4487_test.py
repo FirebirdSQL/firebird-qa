@@ -6,6 +6,7 @@ ISSUE:       4807
 TITLE:       Maintain package body after ALTER/RECREATE PACKAGE
 DESCRIPTION:
 JIRA:        CORE-4487
+FBTEST:      bugs.core_4487
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4410
 TITLE:       Wrong error message
 DESCRIPTION: Wrong value of expected length in the string right truncation error
 JIRA:        CORE-4082
+FBTEST:      bugs.core_4082
 """
 
 import pytest

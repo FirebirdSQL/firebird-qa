@@ -6,6 +6,7 @@ ISSUE:       2911
 TITLE:       Implementation limit of DISTINCT items are not enforced, causing generation of incorrect BLR
 DESCRIPTION:
 JIRA:        CORE-2499
+FBTEST:      bugs.core_2499
 """
 
 import pytest

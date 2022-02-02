@@ -3,9 +3,11 @@
 """
 ID:          issue-3624
 ISSUE:       3624
-TITLE:       Error "request depth exceeded" may appear while preparing a select query against a view with explicit plan
+TITLE:       Error "request depth exceeded" may appear while preparing a select query
+  against a view with explicit plan
 DESCRIPTION:
 JIRA:        CORE-3256
+FBTEST:      bugs.core_3256
 """
 
 import pytest

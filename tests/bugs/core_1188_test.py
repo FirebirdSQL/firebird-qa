@@ -6,6 +6,7 @@ ISSUE:       1613
 TITLE:       Select Starting with :Param (Empty string) doesn't work if using index with many fields
 DESCRIPTION:
 JIRA:        CORE-1188
+FBTEST:      bugs.core_1188
 """
 
 import pytest

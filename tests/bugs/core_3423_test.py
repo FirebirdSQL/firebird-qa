@@ -6,6 +6,7 @@ ISSUE:       3786
 TITLE:       [FB3] Wrong RDB$PARAMETER_MECHANISM
 DESCRIPTION:
 JIRA:        CORE-3423
+FBTEST:      bugs.core_3423
 """
 
 import pytest

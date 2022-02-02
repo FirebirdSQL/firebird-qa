@@ -6,6 +6,7 @@ ISSUE:       3325
 TITLE:       Parsing error recursive query with two recursive parts
 DESCRIPTION:
 JIRA:        CORE-2943
+FBTEST:      bugs.core_2943
 """
 
 import pytest

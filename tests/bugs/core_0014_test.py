@@ -6,6 +6,7 @@ ISSUE:       333
 JIRA:        CORE-14
 TITLE:       Trigger do it wrong
 DESCRIPTION: Computed by columns inside triggers always=NULL
+FBTEST:      bugs.core_0014
 """
 
 import pytest

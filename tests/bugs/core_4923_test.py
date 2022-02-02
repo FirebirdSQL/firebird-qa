@@ -6,6 +6,7 @@ ISSUE:       5214
 TITLE:       Add ability to track domains rename in DDL triggers
 DESCRIPTION:
 JIRA:        CORE-4923
+FBTEST:      bugs.core_4923
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4430
 TITLE:       Bad optimization of OR predicates applied to unions
 DESCRIPTION:
 JIRA:        CORE-4102
+FBTEST:      bugs.core_4102
 """
 
 import pytest

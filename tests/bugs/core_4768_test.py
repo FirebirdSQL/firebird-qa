@@ -3,9 +3,11 @@
 """
 ID:          issue-5068
 ISSUE:       5068
-TITLE:       CREATE USER ... TAGS ( argument_1 = 'value1', ..., argument_N = 'valueN' ) - wrong results of statement when there are many arguments
+TITLE:       CREATE USER ... TAGS ( argument_1 = 'value1', ..., argument_N = 'valueN' ) -
+  wrong results of statement when there are many arguments
 DESCRIPTION:
 JIRA:        CORE-4768
+FBTEST:      bugs.core_4768
 """
 
 import pytest

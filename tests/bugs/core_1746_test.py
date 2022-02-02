@@ -25,6 +25,7 @@ NOTES:
 [15.1.2022] pcisar
   This test may FAIL when run on slow machine (like VM)!
 JIRA:        CORE-1746
+FBTEST:      bugs.core_1746
 """
 
 import pytest

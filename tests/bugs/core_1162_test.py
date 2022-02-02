@@ -24,6 +24,7 @@ DESCRIPTION:
   and the engine is clever enough to convert data from stored format to requested one
   directly, not through all intermediate format versions.
 JIRA:        CORE-1162
+FBTEST:      bugs.core_1162
 """
 
 import pytest

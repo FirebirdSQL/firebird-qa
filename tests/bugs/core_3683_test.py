@@ -6,6 +6,7 @@ ISSUE:       4032
 TITLE:       Wrong results if the recursive query contains an embedded GROUP BY clause
 DESCRIPTION:
 JIRA:        CORE-3683
+FBTEST:      bugs.core_3683
 """
 
 import pytest

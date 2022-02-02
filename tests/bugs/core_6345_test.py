@@ -11,6 +11,7 @@ NOTES:
   ("Literal 65536 (interpreted as int) can not be multiplied by itself w/o cast if result more than 2^63-1"):
   no more error with SQLSTATE = 22003 after this fix.
 JIRA:        CORE-6345
+FBTEST:      bugs.core_6345
 """
 
 import pytest

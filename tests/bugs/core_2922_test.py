@@ -6,6 +6,7 @@ ISSUE:       3305
 TITLE:       Character set used in constants is not registered as dependency
 DESCRIPTION:
 JIRA:        CORE-2922
+FBTEST:      bugs.core_2922
 """
 
 import pytest

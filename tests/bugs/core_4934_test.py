@@ -6,6 +6,7 @@ ISSUE:       5225
 TITLE:       Different collation ID for altered computed column
 DESCRIPTION:
 JIRA:        CORE-4934
+FBTEST:      bugs.core_4934
 """
 
 import pytest

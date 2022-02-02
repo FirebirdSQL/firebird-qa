@@ -8,6 +8,7 @@ DESCRIPTION:
   Test was implemented on the basis of 7IWD2-02-Foundation-2011-12.pdf, page 322
   (as it was suggested by Mark Rotteveel in the ticket, see his note 17/Jan/19 03:13 PM).
 JIRA:        CORE-5986
+FBTEST:      bugs.core_5986
 """
 
 import pytest

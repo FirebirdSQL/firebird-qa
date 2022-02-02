@@ -6,6 +6,7 @@ ISSUE:       1330
 TITLE:       Bug in DSQL parameter
 DESCRIPTION:
 JIRA:        CORE-336
+FBTEST:      bugs.core_0929
 """
 
 import pytest

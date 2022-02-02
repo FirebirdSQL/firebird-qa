@@ -6,6 +6,7 @@ ISSUE:       1819
 TITLE:       Global temporary table instance may pick up not all indices
 DESCRIPTION:
 JIRA:        CORE-1401
+FBTEST:      bugs.core_1401
 """
 
 import pytest

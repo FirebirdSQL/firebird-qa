@@ -6,6 +6,7 @@ ISSUE:       1333
 TITLE:       Comment in create database
 DESCRIPTION: Accept comment in Create database
 JIRA:        CORE-932
+FBTEST:      bugs.core_0932
 """
 
 import pytest

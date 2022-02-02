@@ -28,6 +28,7 @@ DESCRIPTION:
         * WINDOWS: 335544344 : I/O error during "CreateFile (open)" operation ...
         * LINUX:   335544344 : I/O error during "open" operation ...
 JIRA:        CORE-6441
+FBTEST:      bugs.core_6441
 """
 
 import pytest

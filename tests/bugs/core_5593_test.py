@@ -30,6 +30,7 @@ DESCRIPTION:
   - is raised when non-ascii role contains only ~40 *characters* and connection charset = UTF8.
   Sent letter to Alex, 23.06.2018 09:21, waiting for reply.
 JIRA:        CORE-5593
+FBTEST:      bugs.core_5593
 """
 
 import pytest

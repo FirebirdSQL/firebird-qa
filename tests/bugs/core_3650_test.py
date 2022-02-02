@@ -6,6 +6,7 @@ ISSUE:       4001
 TITLE:       recreation of collation for utf8 from unicode with option NUMERIC-SORT=1 leads to FB death
 DESCRIPTION:
 JIRA:        CORE-3650
+FBTEST:      bugs.core_3650
 """
 
 import pytest

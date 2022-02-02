@@ -6,6 +6,7 @@ ISSUE:       4305
 TITLE:       Allow the selection of SQL_INT64, SQL_DATE and SQL_TIME in dialect 1
 DESCRIPTION:
 JIRA:        CORE-3972
+FBTEST:      bugs.core_3972
 """
 
 import pytest

@@ -21,6 +21,7 @@ NOTES:
 [20.1.2022] pcisar
   The number of fetches depends on page size. Test will fail if page_size is not 4096 !!!
 JIRA:        CORE-2017
+FBTEST:      bugs.core_2017
 """
 
 import pytest

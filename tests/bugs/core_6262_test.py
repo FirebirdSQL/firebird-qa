@@ -21,6 +21,7 @@ DESCRIPTION:
     rdb$character_set_id=1:
         RDB$SYSTEM_PRIVILEGES           BINARY(8) Nullable
 JIRA:        CORE-6262
+FBTEST:      bugs.core_6262
 """
 
 import pytest

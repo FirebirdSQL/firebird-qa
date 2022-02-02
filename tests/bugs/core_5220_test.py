@@ -3,7 +3,8 @@
 """
 ID:          issue-5500
 ISSUE:       5500
-TITLE:       ISQL -X: double quotes are missed for COLLATE <C> of CREATE DOMAIN statement when <C> is from any non-ascii charset
+TITLE:       ISQL -X: double quotes are missed for COLLATE <C> of CREATE DOMAIN statement
+  when <C> is from any non-ascii charset
 DESCRIPTION:
   We create in init_script two collations with non-ascii names and two varchar domains which use these collations.
   Then we extract metadata and save it to file as .sql script to be applied further.
@@ -12,6 +13,7 @@ DESCRIPTION:
   Then we extract metadata second time, store it to second .sql and COMPARE this file with result of first metadata extraction.
   These files should be equal, i.e. difference should be empty.
 JIRA:        CORE-5220
+FBTEST:      bugs.core_5220
 """
 
 import pytest

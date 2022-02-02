@@ -15,6 +15,7 @@ DESCRIPTION:
   was corrected in FB 3.0.6. Thus we check both major versions but use different
   length of columns: 32 and 64.
 JIRA:        CORE-5802
+FBTEST:      bugs.core_5802
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5238
 TITLE:       Compound ALTER TABLE statement with ADD and DROP the same check constraint fails
 DESCRIPTION:
 JIRA:        CORE-4947
+FBTEST:      bugs.core_4947
 """
 
 import pytest

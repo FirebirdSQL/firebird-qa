@@ -6,6 +6,7 @@ ISSUE:       4630
 TITLE:       Fields present only in WHERE clause of views WITH CHECK OPTION causes invalid CHECK CONSTRAINT violation
 DESCRIPTION:
 JIRA:        CORE-4307
+FBTEST:      bugs.core_4307
 """
 
 import pytest

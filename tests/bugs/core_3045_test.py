@@ -6,6 +6,7 @@ ISSUE:       3426
 TITLE:       "conversion error from string" after change of field type from BIGINT to VARCHAR(21)
 DESCRIPTION:
 JIRA:        CORE-3045
+FBTEST:      bugs.core_3045
 """
 
 import pytest

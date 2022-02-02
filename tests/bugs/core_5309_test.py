@@ -8,6 +8,7 @@ DESCRIPTION:
   Test does trivial attempt to restore database which was given by ticket starter as attached file.
   This is done by Database fixture on its setup. No further actions required.
 JIRA:        CORE-5309
+FBTEST:      bugs.core_5309
 """
 
 import pytest

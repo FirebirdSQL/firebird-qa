@@ -6,6 +6,7 @@ ISSUE:       6463
 TITLE:       Add support for special (inf/nan) values when sorting DECFLOAT values
 DESCRIPTION:
 JIRA:        CORE-6219
+FBTEST:      bugs.core_6219
 """
 
 import pytest

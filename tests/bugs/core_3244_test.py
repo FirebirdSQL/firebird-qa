@@ -6,6 +6,7 @@ ISSUE:       3614
 TITLE:       POSITION: Wrong result with '' if third argument present
 DESCRIPTION:
 JIRA:        CORE-3244
+FBTEST:      bugs.core_3244
 """
 
 import pytest

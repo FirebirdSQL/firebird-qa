@@ -6,6 +6,7 @@ ISSUE:       2489
 TITLE:       Computed expressions may be optimized badly if used inside the RETURNING clause of the INSERT statement
 DESCRIPTION:
 JIRA:        CORE-2053
+FBTEST:      bugs.core_2053
 """
 
 import pytest

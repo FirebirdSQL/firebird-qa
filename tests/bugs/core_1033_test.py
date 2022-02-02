@@ -6,6 +6,7 @@ ISSUE:       1450
 TITLE:       LIKE doesn't work for computed values (at least in a view)
 DESCRIPTION:
 JIRA:        CORE-1033
+FBTEST:      bugs.core_1033
 """
 
 import pytest

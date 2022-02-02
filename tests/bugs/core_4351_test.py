@@ -6,6 +6,7 @@ ISSUE:       4673
 TITLE:       Incorrect default value when adding a new column
 DESCRIPTION:
 JIRA:        CORE-4351
+FBTEST:      bugs.core_4351
 """
 
 import pytest

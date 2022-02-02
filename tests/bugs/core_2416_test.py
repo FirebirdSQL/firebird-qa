@@ -6,6 +6,7 @@ ISSUE:       2834
 TITLE:       AV preparing a query with aggregate over derived table
 DESCRIPTION:
 JIRA:        CORE-2416
+FBTEST:      bugs.core_2416
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4780
 TITLE:       Expressions containing some built-in functions may be badly optimized
 DESCRIPTION:
 JIRA:        CORE-4460
+FBTEST:      bugs.core_4460
 """
 
 import pytest

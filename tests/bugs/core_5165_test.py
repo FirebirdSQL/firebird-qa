@@ -3,9 +3,11 @@
 """
 ID:          issue-5448
 ISSUE:       5448
-TITLE:       HAVING COUNT(*) NOT IN ( <Q> ) prevent record from appearing in outer resultset when it should be there (<Q> = resultset without nulls)
+TITLE:       HAVING COUNT(*) NOT IN ( <Q> ) prevent record from appearing in outer resultset
+  when it should be there (<Q> = resultset without nulls)
 DESCRIPTION:
 JIRA:        CORE-5165
+FBTEST:      bugs.core_5165
 """
 
 import pytest

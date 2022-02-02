@@ -14,6 +14,7 @@ DESCRIPTION:
   We run this script for each widely-used FB binaries (executables and DLLs).
   Its output must contain only FILE name (w/o disk and path) and its 'File description' property value.
 JIRA:        CORE-5691
+FBTEST:      bugs.core_5691
 """
 
 import pytest

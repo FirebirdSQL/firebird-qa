@@ -12,6 +12,7 @@ DESCRIPTION:
   However, this rule is broken for selectable procedures that evaluate current date-time
   values at every invocation.
 JIRA:        CORE-1419
+FBTEST:      bugs.core_1419
 """
 
 import pytest

@@ -14,6 +14,7 @@ NOTES:
 [16.11.2021]
   This test fails as UPPER('ÿ') does not work properly
 JIRA:        CORE-2912
+FBTEST:      bugs.core_2912
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3256
 TITLE:       EVL_expr: invalid operation (232)
 DESCRIPTION:
 JIRA:        CORE-2872
+FBTEST:      bugs.core_2872
 """
 
 import pytest

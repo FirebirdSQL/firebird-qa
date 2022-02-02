@@ -1,12 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.core_3967
-# title:        subselect with reference to outer select fails
-# decription:
-# tracker_id:   CORE-3967
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         None
 
 """
 ID:          issue-4300
@@ -14,6 +6,7 @@ ISSUE:       4300
 TITLE:       subselect with reference to outer select fails
 DESCRIPTION:
 JIRA:        CORE-3967
+FBTEST:      bugs.core_3967
 """
 
 import pytest

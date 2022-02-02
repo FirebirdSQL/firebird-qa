@@ -3,9 +3,11 @@
 """
 ID:          issue-4803
 ISSUE:       4803
-TITLE:       Changed data not visible in WHEN-section if exception occured inside SP that has been called from this code
+TITLE:       Changed data not visible in WHEN-section if exception occured inside SP that
+  has been called from this code
 DESCRIPTION:
 JIRA:        CORE-4483
+FBTEST:      bugs.core_4483
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       363
 TITLE:       Cannot create procedure with long chain of else-if clauses
 DESCRIPTION:
 JIRA:        CORE-39
+FBTEST:      bugs.core_0039
 """
 
 import pytest

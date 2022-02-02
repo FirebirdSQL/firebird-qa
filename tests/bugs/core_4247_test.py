@@ -6,6 +6,7 @@ ISSUE:       4571
 TITLE:       Delete "where current of" cursor fails for tables with newly added fields
 DESCRIPTION: Scenario has been taken from attachment to this ticket
 JIRA:        CORE-4247
+FBTEST:      bugs.core_4247
 """
 
 import pytest

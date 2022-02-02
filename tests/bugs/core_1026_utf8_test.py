@@ -47,6 +47,7 @@ NOTES:
   See also:
   http://userguide.icu-project.org/collation/concepts
 JIRA:        CORE-1026
+FBTEST:      bugs.core_1026_utf8
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3088
 TITLE:       System triggers on view with check option are not removed
 DESCRIPTION:
 JIRA:        CORE-2685
+FBTEST:      bugs.core_2685
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1849
 TITLE:       Greek characters in cp1251 vs uppercasing
 DESCRIPTION:
 JIRA:        CORE-1431
+FBTEST:      bugs.core_1431
 """
 
 import pytest

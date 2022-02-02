@@ -1,34 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.core_6309
-# title:        fbsvcmgr can not decode information buffer returned by gfix list limbo service
-# decription:
-#                   Test creates two databases and uses fdb.ConnectionGroup() for working with them using two connections.
-#                   Then we add several rows in both databases (using autonomous transactions for one of them) and change state
-#                   of this DB to full shutdown (see 'dbname_a').
-#                   After this we return 'dbname_a' to online.
-#                   At this point this DB must contain dozen transaction in limbo state.
-#                   Both 'gfix -list' and 'fbsvcmgr action_repair rpr_list_limbo_trans' can display only 146 transactions because
-#                   of limited internal buffer size which is used.
-#                   We check that number of lines which are issued by these utilities is equal.
-#                   NB-1: concrete numbers of transactions will DIFFER on SS/SC/CS. We must check only *number* of lines.
-#                   NB-2: we can not use svc.get_limbo_transaction_ids( <dbname> ) because FDB raises exception:
-#                           File "build\\bdist.win-amd64\\egg\\fdb\\services.py", line 736, in get_limbo_transaction_ids
-#                           struct.error: unpack requires a string argument of length 4
-#                         Because of this, external child processes are called to obtain Tx list: gfix and fbcvmgr.
-#
-#                   Confirmed bug on 4.0.0.1633: fbsvcmgr issues 0 rows instead of expected 146.
-#                   Checked on:
-#                       4.0.0.2195 SS: 5.967s.
-#                       4.0.0.2000 SS: 5.506s.
-#                       4.0.0.2195 CS: 7.313s.
-#                       3.0.7.33358 SS: 4.973s.
-#                       3.0.7.33358 CS: 5.698s.
-#
-# tracker_id:   CORE-6309
-# min_versions: ['3.0.7']
-# versions:     3.0.7
-# qmid:         None
 
 """
 ID:          issue-6550
@@ -56,6 +26,7 @@ NOTES:
   Which makes the test fail
   See also: core_6141_test.py
 JIRA:        CORE-6309
+FBTEST:      bugs.core_6309
 """
 
 import pytest

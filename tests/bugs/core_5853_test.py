@@ -6,6 +6,7 @@ ISSUE:       6113
 TITLE:       Forward-compatible expressions LOCALTIME and LOCALTIMESTAMP
 DESCRIPTION:
 JIRA:        CORE-5853
+FBTEST:      bugs.core_5853
 """
 
 import pytest

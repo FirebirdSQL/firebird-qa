@@ -6,6 +6,7 @@ ISSUE:       6597
 TITLE:       ROUND() does not allow second argument >=1 when its first argument is more than MAX_BIGINT / 10
 DESCRIPTION:
 JIRA:        CORE-6356
+FBTEST:      bugs.core_6356
 """
 
 import pytest

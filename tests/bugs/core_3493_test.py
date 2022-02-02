@@ -6,6 +6,7 @@ ISSUE:       3852
 TITLE:       Adding a value to a timestamp below '16.11.1858 00:00:01' throws 'value exceeds the range for valid timestamp'
 DESCRIPTION:
 JIRA:        CORE-3493
+FBTEST:      bugs.core_3493
 """
 
 import pytest

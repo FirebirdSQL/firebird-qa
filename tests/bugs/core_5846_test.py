@@ -6,6 +6,7 @@ ISSUE:       6107
 TITLE:       CREATE VIEW issues "Implementation of text subtype 512 not located"
 DESCRIPTION:
 JIRA:        CORE-5846
+FBTEST:      bugs.core_5846
 """
 
 import pytest

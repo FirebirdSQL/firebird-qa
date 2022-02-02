@@ -6,6 +6,7 @@ ISSUE:       1570
 TITLE:       Every user can view server log using services API
 DESCRIPTION:
 JIRA:        CORE-1148
+FBTEST:      bugs.core_1148
 """
 
 import pytest

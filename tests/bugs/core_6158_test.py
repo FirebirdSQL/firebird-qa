@@ -6,6 +6,7 @@ ISSUE:       6407
 TITLE:       substring similar - extra characters in the result for non latin characters
 DESCRIPTION:
 JIRA:        CORE-6158
+FBTEST:      bugs.core_6158
 """
 
 import pytest

@@ -1,23 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.core_4350
-# title:        Support the SQL Standard ALTER SEQUENCE .. RESTART (without WITH clause)
-# decription:
-#                   :::::::::::::::::::::::::::::::::::::::: NB ::::::::::::::::::::::::::::::::::::
-#                   18.08.2020. FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-#                   statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-#                   gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
-#                   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-#                   ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-#                   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-#
-#                   Because of this, it was decided to make separate section for check results of FB 4.x
-#                   Checked on 4.0.0.2164, 3.0.7.33356
-#
-# tracker_id:   CORE-4350
-# min_versions: ['3.0']
-# versions:     3.0, 4.0
-# qmid:         None
 
 """
 ID:          issue-4672
@@ -34,6 +15,7 @@ NOTES:
 
   Because of this, it was decided to make separate section for check results of FB 4.x
 JIRA:        CORE-4350
+FBTEST:      bugs.core_4350
 """
 
 import pytest

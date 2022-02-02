@@ -6,6 +6,7 @@ ISSUE:       2584
 TITLE:       SIMILAR TO predicate hangs with "|" option
 DESCRIPTION:
 JIRA:        CORE-2153
+FBTEST:      bugs.core_2153
 """
 
 import pytest

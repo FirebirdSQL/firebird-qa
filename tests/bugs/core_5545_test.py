@@ -18,6 +18,7 @@ DESCRIPTION:
   Trigger 'trg_test_bi_sql2003_02' violates SQL:2003 but such form is maintained for backward compatibility.
   This trigger is compiled successfully since build 4.0.0.1767.
 JIRA:        CORE-5545
+FBTEST:      bugs.core_5545
 """
 
 import pytest

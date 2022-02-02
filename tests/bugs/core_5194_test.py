@@ -10,6 +10,7 @@ DESCRIPTION:
   Then we drop table and run ISQL again but for APPLYING extracted metadata.
   If "ISQL -x" will produce script with invalid syntax, compiler will raise error.
 JIRA:        CORE-5194
+FBTEST:      bugs.core_5194
 """
 
 import pytest

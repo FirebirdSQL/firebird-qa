@@ -6,6 +6,7 @@ ISSUE:       3814
 TITLE:       Added not null timestamp col with default causes error on select of old null records
 DESCRIPTION:
 JIRA:        CORE-3453
+FBTEST:      bugs.core_3453
 """
 
 import pytest

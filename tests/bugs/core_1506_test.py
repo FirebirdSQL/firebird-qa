@@ -6,6 +6,7 @@ ISSUE:       1921
 TITLE:       Server crash with isc_dsql_execute_immediate and zero length string
 DESCRIPTION:
 JIRA:        CORE-1506
+FBTEST:      bugs.core_1506
 """
 
 import pytest

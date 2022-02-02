@@ -6,6 +6,7 @@ ISSUE:       3124
 TITLE:       Current connection may be used by EXECUTE STATEMENT instead of creation of new attachment
 DESCRIPTION:
 JIRA:        CORE-2729
+FBTEST:      bugs.core_2729
 """
 
 import pytest

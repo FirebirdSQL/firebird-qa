@@ -19,6 +19,7 @@ NOTES:
   A new bug was found during this test implementation, affected 4.0 Classic only: CORE-6080.
 DESCRIPTION:
 JIRA:        CORE-6038
+FBTEST:      bugs.core_6038
 """
 
 import pytest

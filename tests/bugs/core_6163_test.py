@@ -77,6 +77,7 @@ DESCRIPTION:
 
    Checked on: 4.0.0.2372 SS/CS; 3.0.8.33420 SS/CS.
 JIRA:        CORE-6163
+FBTEST:      bugs.core_6163
 """
 
 import pytest

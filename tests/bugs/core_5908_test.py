@@ -10,6 +10,7 @@ DESCRIPTION:
   Current output should contain phrase: 'UDR module not loaded'.
   Filtering is used for prevent output of localized message about missed UDR library.
 JIRA:        CORE-5908
+FBTEST:      bugs.core_5908
 """
 
 import pytest

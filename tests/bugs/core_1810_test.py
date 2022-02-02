@@ -6,6 +6,7 @@ ISSUE:       2240
 TITLE:       Usernames with '.' character
 DESCRIPTION:
 JIRA:        CORE-1810
+FBTEST:      bugs.core_1810
 """
 
 import pytest

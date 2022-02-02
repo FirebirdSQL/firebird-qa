@@ -6,6 +6,7 @@ ISSUE:       412
 TITLE:       Index bug
 DESCRIPTION: Can not fetch the data when Index is in use
 JIRA:        CORE-86
+FBTEST:      bugs.core_0086
 """
 
 import pytest

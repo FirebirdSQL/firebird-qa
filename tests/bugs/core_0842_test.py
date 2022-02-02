@@ -13,6 +13,7 @@ DESCRIPTION:
     from
        rdb$database;
 JIRA:        CORE-842
+FBTEST:      bugs.core_0842
 """
 
 import pytest

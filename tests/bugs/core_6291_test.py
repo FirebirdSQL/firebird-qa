@@ -3,9 +3,11 @@
 """
 ID:          issue-6533
 ISSUE:       6533
-TITLE:       Statement "CREATE DOMAIN [dm_name] as BIGINT" raises "numeric value is out of range" if its default value is -9223372036854775808
+TITLE:       Statement "CREATE DOMAIN [dm_name] as BIGINT" raises "numeric value is out of range"
+  if its default value is -9223372036854775808
 DESCRIPTION:
 JIRA:        CORE-6291
+FBTEST:      bugs.core_6291
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2690
 TITLE:       ALTER DOMAIN with dependencies may leave a transaction handle in inconsistent state causing segmentation faults
 DESCRIPTION:
 JIRA:        CORE-2264
+FBTEST:      bugs.core_2264
 """
 
 import pytest

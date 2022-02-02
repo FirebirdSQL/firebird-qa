@@ -5,6 +5,7 @@ ID:          issue-6825
 ISSUE:       6825
 TITLE:       Correct error message for DROP VIEW
 DESCRIPTION:
+FBTEST:      bugs.gh_6825
 """
 
 import pytest

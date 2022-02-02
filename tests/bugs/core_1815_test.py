@@ -19,6 +19,7 @@ DESCRIPTION:
   After all, we IMPLICITLY revoke access from these tables and check again that user boss now has NO access
   on tables tacnt and tpdsk.
 JIRA:        CORE-1815
+FBTEST:      bugs.core_1815
 """
 
 import pytest

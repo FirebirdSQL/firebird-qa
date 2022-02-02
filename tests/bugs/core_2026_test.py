@@ -10,6 +10,7 @@ DESCRIPTION:
   To do this, temporary blob is created. Engine didn't support temporary blobs creation in
   read-only databases since read-only databases was introduced
 JIRA:        CORE-2026
+FBTEST:      bugs.core_2026
 """
 
 import pytest

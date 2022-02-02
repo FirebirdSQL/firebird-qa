@@ -6,6 +6,7 @@ ISSUE:       5961
 TITLE:       Position function does not consider the collation for blob
 DESCRIPTION:
 JIRA:        CORE-5695
+FBTEST:      bugs.core_5695
 """
 
 import pytest

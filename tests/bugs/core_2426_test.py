@@ -6,6 +6,7 @@ ISSUE:       2842
 TITLE:       Alter table not respecting collation
 DESCRIPTION:
 JIRA:        CORE-2426
+FBTEST:      bugs.core_2426
 """
 
 import pytest

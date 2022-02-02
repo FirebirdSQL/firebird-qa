@@ -10,6 +10,7 @@ DESCRIPTION:
   Lists of unicode characters and their codes:
     https://en.wikipedia.org/wiki/List_of_Unicode_characters
     https://gist.github.com/ngs/2782436
+FBTEST:      bugs.gh_6798
 """
 
 import pytest

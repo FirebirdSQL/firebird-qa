@@ -3,9 +3,11 @@
 """
 ID:          issue-5035
 ISSUE:       5035
-TITLE:       Add a flag to mon$database helping to decide what type of security database is used - default, self or other
+TITLE:       Add a flag to mon$database helping to decide what type of security database
+  is used - default, self or other
 DESCRIPTION:
 JIRA:        CORE-4729
+FBTEST:      bugs.core_4729
 """
 
 import pytest

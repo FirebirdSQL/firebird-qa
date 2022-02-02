@@ -20,6 +20,7 @@ NOTES:
 
   See also #5875 (CORE-5609)
 JIRA:        CORE-5648
+FBTEST:      bugs.core_5648
 """
 
 import pytest

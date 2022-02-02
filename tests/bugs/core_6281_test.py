@@ -11,6 +11,7 @@ DESCRIPTION:
     value exceeds the range for valid timestamps
     -At procedure 'RDB$TIME_ZONE_UTIL.TRANSITIONS'
 JIRA:        CORE-6281
+FBTEST:      bugs.core_6281
 """
 
 import pytest

@@ -19,6 +19,7 @@ NOTES:
   division -4611686018427387904/-0.5 does not issue error since this fix.
   Checked on 5.0.0.113, 4.0.1.2539.
 JIRA:        CORE-119
+FBTEST:      bugs.core_0119
 """
 
 import pytest

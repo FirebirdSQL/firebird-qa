@@ -6,6 +6,7 @@ ISSUE:       6108
 TITLE:       "Malformed string" instead of key value in PK violation error message
 DESCRIPTION:
 JIRA:        CORE-5847
+FBTEST:      bugs.core_5847
 """
 
 import pytest

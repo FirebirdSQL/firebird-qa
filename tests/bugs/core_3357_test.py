@@ -11,6 +11,7 @@ DESCRIPTION:
   See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
   This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
 JIRA:        CORE-3357
+FBTEST:      bugs.core_3357
 """
 
 import pytest
@@ -29,12 +30,14 @@ db = db_factory(init=init_script)
 act = python_act('db')
 
 # version: 3.0
+
 expected_stdout_3 = """
     Generator G1, current value: 9223372036854775807, initial value: 9223372036854775807, increment: -2147483647
     Generator G2, current value: -9223372036854775808, initial value: -9223372036854775808, increment: 2147483647
 """
 
 # version: 4.0
+
 expected_stdout_4 = """
     Generator G1, current value: -9223372034707292162, initial value: 9223372036854775807, increment: -2147483647
     Generator G2, current value: 9223372034707292161, initial value: -9223372036854775808, increment: 2147483647

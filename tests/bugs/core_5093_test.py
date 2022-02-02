@@ -11,6 +11,7 @@ DESCRIPTION:
   Expression for ALTER TABLE - see literal "alter_table_ddl", encoded in UTF8.
   NB: changing character set should NOT be reflected on SQLDA output (at least for current FB builds).
 JIRA:        CORE-5093
+FBTEST:      bugs.core_5093
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1296
 TITLE:       Problems with explicit cursors in unwanted states
 DESCRIPTION:
 JIRA:        CORE-899
+FBTEST:      bugs.core_0899
 """
 
 import pytest

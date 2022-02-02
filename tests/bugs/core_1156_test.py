@@ -11,6 +11,7 @@ NOTES:
   connection is closed. Otherwise pytest will report unhandled exceptions in __del__ calls
   as prepared statement objects are destructed at wrong time.
 JIRA:        CORE-1156
+FBTEST:      bugs.core_1156
 """
 
 import pytest

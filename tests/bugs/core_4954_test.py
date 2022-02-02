@@ -6,6 +6,7 @@ ISSUE:       5245
 TITLE:       The package procedure with value by default isn't called if this parameter isn't specified
 DESCRIPTION:
 JIRA:        CORE-4954
+FBTEST:      bugs.core_4954
 """
 
 import pytest

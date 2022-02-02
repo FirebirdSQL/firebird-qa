@@ -6,6 +6,7 @@ ISSUE:       1274
 TITLE:       Singleton isn't respected in COMPUTED BY expressions
 DESCRIPTION:
 JIRA:        CORE-881
+FBTEST:      bugs.core_0881
 """
 
 import pytest

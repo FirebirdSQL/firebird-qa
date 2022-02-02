@@ -6,6 +6,7 @@ ISSUE:       6034
 TITLE:       Restore (without replace) when database already exists crashes gbak or Firebird (when run through service manager)
 DESCRIPTION:
 JIRA:        CORE-5771
+FBTEST:      bugs.core_5771
 """
 
 import pytest

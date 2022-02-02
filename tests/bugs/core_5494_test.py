@@ -6,6 +6,7 @@ ISSUE:       5763
 TITLE:       Creating a column of type BLOB SUB_TYPE BINARY fails with a Token unknown
 DESCRIPTION:
 JIRA:        CORE-5494
+FBTEST:      bugs.core_5494
 """
 
 import pytest

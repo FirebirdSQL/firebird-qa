@@ -6,6 +6,7 @@ ISSUE:       2119
 TITLE:       Bug in create/alter Database trigger (with Russian comment)
 DESCRIPTION:
 JIRA:        CORE-1694
+FBTEST:      bugs.core_1694
 """
 
 import pytest

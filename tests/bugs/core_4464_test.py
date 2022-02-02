@@ -6,6 +6,7 @@ ISSUE:       4784
 TITLE:       Duplicate tags for CREATE/ALTER USER not handled correctly
 DESCRIPTION:
 JIRA:        CORE-4464
+FBTEST:      bugs.core_4464
 """
 
 import pytest

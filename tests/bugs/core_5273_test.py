@@ -3,7 +3,8 @@
 """
 ID:          issue-5551
 ISSUE:       5551
-TITLE:       Crash when attempt to create database with running trace ( internal Firebird consistency check (cannot find tip page (165), file: tra.cpp line: 2233) )
+TITLE:       Crash when attempt to create database with running trace ( internal Firebird
+  consistency check (cannot find tip page (165), file: tra.cpp line: 2233) )
 DESCRIPTION:
     1. Get the content of firebird.log before test.
     2. Make config file and launch trace session, with separate logging of its STDOUT and STDERR.
@@ -13,6 +14,7 @@ DESCRIPTION:
     6. Ensure that files which should store STDERR results are empty.
     7. Ensure that there is no difference in the content of firebird.log.
 JIRA:        CORE-5273
+FBTEST:      bugs.core_5273
 """
 
 import pytest

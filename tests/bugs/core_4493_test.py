@@ -6,6 +6,7 @@ ISSUE:       4812
 TITLE:       Index not found for RECREATE TRIGGER
 DESCRIPTION:
 JIRA:        CORE-4493
+FBTEST:      bugs.core_4493
 """
 
 import pytest

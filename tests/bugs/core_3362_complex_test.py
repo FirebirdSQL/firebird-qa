@@ -14,6 +14,7 @@ NOTES:
   in FB 4.x, so the record deletion will not undone and we can not see table data
   in expected_stdout for FB 4.x!
 JIRA:        CORE-3362
+FBTEST:      bugs.core_3362_complex
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4535
 TITLE:       Preserve comments for output parameters after altering procedures
 DESCRIPTION:
 JIRA:        CORE-4210
+FBTEST:      bugs.core_4210
 """
 
 import pytest

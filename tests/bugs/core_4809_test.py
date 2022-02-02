@@ -3,9 +3,11 @@
 """
 ID:          issue-5107
 ISSUE:       5107
-TITLE:       HASH/MERGE JOIN is not used for more than two streams if they are joined via USING/NATURAL clauses and join is based on DBKEY concatenations
+TITLE:       HASH/MERGE JOIN is not used for more than two streams if they are joined via
+  USING/NATURAL clauses and join is based on DBKEY concatenations
 DESCRIPTION:
 JIRA:        CORE-4809
+FBTEST:      bugs.core_4809
 """
 
 import pytest

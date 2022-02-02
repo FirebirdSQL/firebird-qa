@@ -6,6 +6,7 @@ ISSUE:       3719
 TITLE:       Predicate (blob_field LIKE ?) describes the parameter as VARCHAR(30) rather than as BLOB
 DESCRIPTION:
 JIRA:        CORE-3353
+FBTEST:      bugs.core_3353
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       6171
 TITLE:       Add context variables with compression and encryption status of current connection
 DESCRIPTION:
 JIRA:        CORE-5913
+FBTEST:      bugs.core_5913
 """
 
 import pytest

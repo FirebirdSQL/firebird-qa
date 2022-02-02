@@ -6,6 +6,7 @@ ISSUE:       2300
 TITLE:       Roles granting/revoking logic
 DESCRIPTION: Test for "grant ... to ... GRANTED BY ..." clause
 JIRA:        CORE-1869
+FBTEST:      bugs.core_1869
 """
 
 import pytest

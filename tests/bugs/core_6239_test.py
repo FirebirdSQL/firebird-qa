@@ -6,6 +6,7 @@ ISSUE:       6483
 TITLE:       Procedures and EXECUTE BLOCK without RETURNS should not be allowed to use SUSPEND
 DESCRIPTION:
 JIRA:        CORE-6239
+FBTEST:      bugs.core_6239
 """
 
 import pytest

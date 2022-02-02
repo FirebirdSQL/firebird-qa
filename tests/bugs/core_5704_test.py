@@ -13,6 +13,7 @@ DESCRIPTION:
 
   Confirmed lock of rdb$database record (which leads to inability to establish new connect) on WI-V3.0.3.32837.
 JIRA:        CORE-5704
+FBTEST:      bugs.core_5704
 """
 
 import pytest

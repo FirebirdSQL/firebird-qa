@@ -9,6 +9,7 @@ DESCRIPTION:
   FB *must* change collation of altered domain, see issue by dimitr in the ticket 06/Jun/20 08:04 AM:
   "character set is not a part of the domain itself, it's a part of its data type".
 JIRA:        CORE-6324
+FBTEST:      bugs.core_6324
 """
 
 import pytest

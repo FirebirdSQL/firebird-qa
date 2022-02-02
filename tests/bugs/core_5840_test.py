@@ -6,6 +6,7 @@ ISSUE:       6101
 TITLE:       Ignor of reference privilege
 DESCRIPTION:
 JIRA:        CORE-5840
+FBTEST:      bugs.core_5840
 """
 
 import pytest

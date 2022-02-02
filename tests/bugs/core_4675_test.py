@@ -6,6 +6,7 @@ ISSUE:       4984
 TITLE:       Conditions like WHERE <field> = <cursor>.<field> do not use existing index
 DESCRIPTION:
 JIRA:        CORE-4675
+FBTEST:      bugs.core_4675
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1325
 TITLE:       ALL predicate works incorrectly for some subqueries
 DESCRIPTION:
 JIRA:        CORE-925
+FBTEST:      bugs.core_0925
 """
 
 import pytest

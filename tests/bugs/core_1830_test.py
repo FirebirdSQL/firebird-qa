@@ -6,6 +6,7 @@ ISSUE:       2259
 TITLE:       Possible index corruption with multiply updates of the same record in the same transaction and using of savepoints
 DESCRIPTION:
 JIRA:        CORE-1830
+FBTEST:      bugs.core_1830
 """
 
 import pytest

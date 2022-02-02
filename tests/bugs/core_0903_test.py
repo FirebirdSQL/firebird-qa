@@ -6,6 +6,7 @@ ISSUE:       2608
 TITLE:       New value of column is accessable before update
 DESCRIPTION:
 JIRA:        CORE-2177
+FBTEST:      bugs.core_0903
 """
 
 import pytest

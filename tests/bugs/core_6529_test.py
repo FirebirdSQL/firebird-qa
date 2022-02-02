@@ -6,6 +6,7 @@ ISSUE:       6756
 TITLE:       Error "no current record for fetch operation" when sorting by a international string
 DESCRIPTION:
 JIRA:        CORE-6529
+FBTEST:      bugs.core_6529
 """
 
 import pytest

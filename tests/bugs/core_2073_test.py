@@ -6,6 +6,7 @@ ISSUE:       2508
 TITLE:       Expression indexes bug: incorrect result for the inverted boolean
 DESCRIPTION:
 JIRA:        CORE-1000
+FBTEST:      bugs.core_2073
 """
 
 import pytest

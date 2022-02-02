@@ -24,6 +24,7 @@ DESCRIPTION:
     Error writing data to the connection.
     -send_packet/send
 JIRA:        CORE-6379
+FBTEST:      bugs.core_6379
 """
 
 import pytest

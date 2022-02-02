@@ -6,6 +6,7 @@ ISSUE:       4797
 TITLE:       Field RDB$MAP_TO_TYPE is not present in RDB$TYPES
 DESCRIPTION:
 JIRA:        CORE-4477
+FBTEST:      bugs.core_4477
 """
 
 import pytest

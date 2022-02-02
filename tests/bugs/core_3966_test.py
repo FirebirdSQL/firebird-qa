@@ -6,6 +6,7 @@ ISSUE:       4299
 TITLE:       Creating a stored procedure with an "update or insert" statement with MATCHING fails
 DESCRIPTION:
 JIRA:        CORE-3966
+FBTEST:      bugs.core_3966
 """
 
 import pytest

@@ -5,6 +5,7 @@ ID:          issue-6788
 ISSUE:       6788
 TITLE:       Extend EXTRACT to extract time zone strings
 DESCRIPTION:
+FBTEST:      bugs.gh_6788
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       468
 TITLE:       Ambiguous statements return unpredictable results
 DESCRIPTION:
 JIRA:        CORE-517
+FBTEST:      bugs.core_0507
 """
 
 import pytest

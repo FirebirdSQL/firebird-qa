@@ -6,6 +6,7 @@ ISSUE:       2038
 TITLE:       Nested OR conditions may lead to incorrest results
 DESCRIPTION:
 JIRA:        CORE-5268
+FBTEST:      bugs.core_5268
 """
 
 import pytest

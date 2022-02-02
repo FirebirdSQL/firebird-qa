@@ -6,6 +6,7 @@ ISSUE:       2628
 TITLE:       Extremely slow executing a cross join of 3 tables in Firebird 2.X
 DESCRIPTION:
 JIRA:        CORE-2200
+FBTEST:      bugs.core_2200
 """
 
 import pytest

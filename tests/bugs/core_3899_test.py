@@ -6,6 +6,7 @@ ISSUE:       4235
 TITLE:       row_number(), rank() and dense_rank() return BIGINT datatype in dialect 1
 DESCRIPTION:
 JIRA:        CORE-3899
+FBTEST:      bugs.core_3899
 """
 
 import pytest
@@ -22,7 +23,8 @@ test_script = """
     -- sqltype: 580 INT64 ...
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype:|name:).)*$', ''), ('[ ]+', ' '), ('[\t]*', ' ')])
+act = isql_act('db', test_script, substitutions=[('^((?!sqltype:|name:).)*$', ''),
+                                                 ('[ ]+', ' '), ('[\t]*', ' ')])
 
 expected_stdout = """
     01: sqltype: 480 DOUBLE scale: 0 subtype: 0 len: 8

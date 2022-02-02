@@ -18,6 +18,7 @@ DESCRIPTION:
      <init_sqlda.log> vs <last_sqlda.log>
   8) Check that result of comparison is EMPTY (no rows).
 JIRA:        CORE-5092
+FBTEST:      bugs.core_5092
 """
 
 import pytest

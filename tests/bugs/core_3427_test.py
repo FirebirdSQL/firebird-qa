@@ -6,6 +6,7 @@ ISSUE:       3789
 TITLE:       Server crashing with UTF8 blobs
 DESCRIPTION:
 JIRA:        CORE-3427
+FBTEST:      bugs.core_3427
 """
 
 import pytest

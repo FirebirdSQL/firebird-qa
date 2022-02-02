@@ -37,6 +37,7 @@ NOTES:
   STATEMENT FAILED, SQLSTATE = HY008, OPERATION WAS CANCELLED
   Without commit this test PASSES, i.e. sweep is terminated with all outputs as expected
 JIRA:        CORE-4337
+FBTEST:      bugs.core_4337
 """
 
 import pytest

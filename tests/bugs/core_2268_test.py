@@ -6,6 +6,7 @@ ISSUE:       2694
 TITLE:       GFIX causes BUGCHECK errors with non valid transaction numbers
 DESCRIPTION:
 JIRA:        CORE-2268
+FBTEST:      bugs.core_2268
 """
 
 import pytest

@@ -7,6 +7,7 @@ TITLE:       Incorrect TEXT BLOB charset transliteration on VIEW with trigger
 DESCRIPTION:
   Test verifies that all OK when connection charset = UTF8
 JIRA:        CORE-3601
+FBTEST:      bugs.core_3601
 """
 
 import pytest

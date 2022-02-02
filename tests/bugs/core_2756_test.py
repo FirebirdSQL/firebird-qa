@@ -13,6 +13,7 @@ NOTES:
   we will get eception because current_timestamp string will have length more than expected.
   This is because DEFAULT time zone in FB 4.0 includes REGION NAME ('Moscow/Europe") instead of HH:MM shift.
 JIRA:        CORE-2756
+FBTEST:      bugs.core_2756
 """
 
 import pytest

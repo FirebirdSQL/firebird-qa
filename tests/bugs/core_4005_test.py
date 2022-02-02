@@ -6,6 +6,7 @@ ISSUE:       4337
 TITLE:       wrong error message with recursive CTE
 DESCRIPTION:
 JIRA:        CORE-4005
+FBTEST:      bugs.core_4005
 """
 
 import pytest

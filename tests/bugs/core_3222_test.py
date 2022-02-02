@@ -6,6 +6,7 @@ ISSUE:       3596
 TITLE:       View with "WITH CHECK OPTION" doesn't like TRIM function in WHERE
 DESCRIPTION:
 JIRA:        CORE-3222
+FBTEST:      bugs.core_3222
 """
 
 import pytest

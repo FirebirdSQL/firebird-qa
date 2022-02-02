@@ -6,6 +6,7 @@ ISSUE:       3779
 TITLE:       Inserting Käse into a CHARACTER SET ASCII column succeeds
 DESCRIPTION:
 JIRA:        CORE-3416
+FBTEST:      bugs.core_3416
 """
 
 import pytest

@@ -10,6 +10,7 @@ DESCRIPTION:
   Finally we check whether trace log contains every DDL or not.
   Expected result: text of every DDL should be FOUND in the trace log.
 JIRA:        CORE-5470
+FBTEST:      bugs.core_5470
 """
 
 import pytest

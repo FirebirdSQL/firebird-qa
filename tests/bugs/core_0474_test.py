@@ -6,6 +6,7 @@ ISSUE:       820
 TITLE:       Redundant evaluations in COALESCE
 DESCRIPTION:
 JIRA:        CORE-474
+FBTEST:      bugs.core_0474
 """
 
 import pytest

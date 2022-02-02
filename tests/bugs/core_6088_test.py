@@ -6,6 +6,7 @@ ISSUE:       6338
 TITLE:       "SIMILAR TO" hangs when processing parenthesis
 DESCRIPTION:
 JIRA:        CORE-6088
+FBTEST:      bugs.core_6088
 """
 
 import pytest

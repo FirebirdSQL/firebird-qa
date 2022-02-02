@@ -3,9 +3,11 @@
 """
 ID:          issue-6646
 ISSUE:       6646
-TITLE:       RETURNING clause in MERGE cannot reference column in aliased target table using qualified reference (alias.column) if DELETE action present
+TITLE:       RETURNING clause in MERGE cannot reference column in aliased target table
+  using qualified reference (alias.column) if DELETE action present
 DESCRIPTION:
 JIRA:        CORE-6408
+FBTEST:      bugs.core_6408
 """
 
 import pytest

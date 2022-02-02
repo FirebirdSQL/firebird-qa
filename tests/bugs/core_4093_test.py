@@ -6,6 +6,7 @@ ISSUE:       4421
 TITLE:       Server crashes while converting an overscaled numeric to a string
 DESCRIPTION:
 JIRA:        CORE-4093
+FBTEST:      bugs.core_4093
 """
 
 import pytest

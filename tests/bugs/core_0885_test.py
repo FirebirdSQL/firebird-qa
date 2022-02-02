@@ -6,6 +6,7 @@ ISSUE:       1278
 TITLE:       It is impossible to take away rights on update of a column
 DESCRIPTION:
 JIRA:        CORE-885
+FBTEST:      bugs.core_0885
 """
 
 import pytest

@@ -14,6 +14,7 @@ DESCRIPTION:
     ============== =====================
             2.7671                2.0729
 JIRA:        CORE-4216
+FBTEST:      bugs.core_4216
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-4292
 ISSUE:       4292
-TITLE:       Repeat Temporary Table access from ReadOnly Transaction and ReadWrite transaction causes Internal Firebird consistency check (cannot find record back version (291), file: vio.cpp line: 4905)
+TITLE:       Repeat Temporary Table access from ReadOnly Transaction and ReadWrite transaction
+  causes Internal Firebird consistency check (cannot find record back version (291), file: vio.cpp line: 4905)
 DESCRIPTION:
 JIRA:        CORE-3959
+FBTEST:      bugs.core_3959
 """
 
 import pytest

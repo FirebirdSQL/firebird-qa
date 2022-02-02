@@ -6,6 +6,7 @@ ISSUE:       6308
 TITLE:       Change behavior of skipped and repeated wall times within time zones
 DESCRIPTION:
 JIRA:        CORE-6058
+FBTEST:      bugs.core_6058
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2913
 TITLE:       Binary shift functions give wrong results with negative shift values
 DESCRIPTION:
 JIRA:        CORE-2501
+FBTEST:      bugs.core_2501
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3189
 TITLE:       Changing sort directon in delete statement cause deletion of all records in table
 DESCRIPTION:
 JIRA:        CORE-2799
+FBTEST:      bugs.core_2799
 """
 
 import pytest

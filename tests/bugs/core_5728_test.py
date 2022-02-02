@@ -13,6 +13,7 @@ NOTES:
 [25.06.2020]
   4.0.0.2076: changed types in SQLDA from numeric to int128 // after discuss with Alex about CORE-6342.
 JIRA:        CORE-5728
+FBTEST:      bugs.core_5728
 """
 
 import pytest

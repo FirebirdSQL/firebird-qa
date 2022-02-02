@@ -6,6 +6,7 @@ ISSUE:       5315
 TITLE:       Report the remote port number in MON$ATTACHMENTS
 DESCRIPTION:
 JIRA:        CORE-5028
+FBTEST:      bugs.core_5028
 """
 
 import pytest

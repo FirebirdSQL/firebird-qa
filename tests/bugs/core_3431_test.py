@@ -6,6 +6,7 @@ ISSUE:       3793
 TITLE:       ISQL pads UTF-8 data incorrectly
 DESCRIPTION:
 JIRA:        CORE-3431
+FBTEST:      bugs.core_3431
 """
 
 import pytest

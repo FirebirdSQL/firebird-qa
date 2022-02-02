@@ -6,6 +6,7 @@ ISSUE:       3464
 TITLE:       Add clause ALTER DOMAIN <name> {DROP | SET} NOT NULL
 DESCRIPTION:
 JIRA:        CORE-3085
+FBTEST:      bugs.core_3085
 """
 
 import pytest

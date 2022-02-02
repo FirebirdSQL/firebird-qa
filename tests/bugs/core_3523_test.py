@@ -6,6 +6,7 @@ ISSUE:       3880
 TITLE:       SIMILAR TO: False matches on descending ranges
 DESCRIPTION:
 JIRA:        CORE-3523
+FBTEST:      bugs.core_3523
 """
 
 import pytest

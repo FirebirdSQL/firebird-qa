@@ -6,6 +6,7 @@ ISSUE:       3554
 TITLE:       ALTER VIEW with not matched columns in declaration and selection crashs the server
 DESCRIPTION:
 JIRA:        CORE-3180
+FBTEST:      bugs.core_3180
 """
 
 import pytest

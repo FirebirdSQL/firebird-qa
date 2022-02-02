@@ -14,6 +14,7 @@ DESCRIPTION:
   Firebird never does any kind of implicit revoke if we use GRANT statement that contains "less" options that previously issued one.
   See additional explanations in the ticket 24/Apr/18 05:06 PM
 JIRA:        CORE-5804
+FBTEST:      bugs.core_5804
 """
 
 import pytest

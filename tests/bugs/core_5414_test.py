@@ -7,6 +7,7 @@ TITLE:       Error restoring on FB 3.0 from FB 2.5: bugcheck 221 (cannot remap)
 DESCRIPTION:
   Test verifies only issue 08/Dec/16 02:47 PM (pointed out by ASF).
 JIRA:        CORE-5414
+FBTEST:      bugs.core_5414
 """
 
 import pytest

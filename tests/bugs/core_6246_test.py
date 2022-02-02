@@ -13,6 +13,7 @@ DESCRIPTION:
   Confirmed bug on 3.0.6.33272: first 32108 fields are shown in SQLDA with 'charset: 0 NONE'.
   String 'charset: 3 UNICODE_FSS' appeared only since 32109-th column and up to the end.
 JIRA:        CORE-6246
+FBTEST:      bugs.core_6246
 """
 
 import pytest

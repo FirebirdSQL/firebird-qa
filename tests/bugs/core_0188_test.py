@@ -6,6 +6,7 @@ ISSUE:       515
 TITLE:       Trigger on view with union receive nulls
 DESCRIPTION:
 JIRA:        CORE-188
+FBTEST:      bugs.core_0188
 """
 
 import pytest

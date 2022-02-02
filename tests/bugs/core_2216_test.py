@@ -14,6 +14,7 @@ DESCRIPTION:
     1. Check that inserted record actually does exist in <nbk_level_0>;
     2. Run online validation of <nbk_level_0> - it sould NOT produce any errors.
 JIRA:        CORE-2216
+FBTEST:      bugs.core_2216
 """
 
 import pytest

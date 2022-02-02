@@ -6,6 +6,7 @@ ISSUE:       3272
 TITLE:       A memory corruption cause incorrect query evaluation and may crash the server
 DESCRIPTION:
 JIRA:        CORE-2888
+FBTEST:      bugs.core_2888
 """
 
 import pytest

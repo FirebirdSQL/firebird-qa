@@ -6,6 +6,7 @@ ISSUE:       3174
 TITLE:       AV using recursive query as subquery in SELECT list and ORDER'ing by them
 DESCRIPTION:
 JIRA:        CORE-2783
+FBTEST:      bugs.core_2783
 """
 
 import pytest

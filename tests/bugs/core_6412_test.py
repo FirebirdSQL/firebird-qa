@@ -20,6 +20,7 @@ DESCRIPTION:
    Database is shutdown.
   Sent report to Alex et al, 09.11.2020.
 JIRA:        CORE-6412
+FBTEST:      bugs.core_6412
 """
 
 import pytest

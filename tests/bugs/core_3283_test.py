@@ -6,6 +6,7 @@ ISSUE:       3651
 TITLE:       BAD PLAN with using LEFT OUTER JOIN in SUBSELECT
 DESCRIPTION:
 JIRA:        CORE-3283
+FBTEST:      bugs.core_3283
 """
 
 import pytest

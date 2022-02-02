@@ -6,6 +6,7 @@ ISSUE:       5656
 TITLE:       Dependencies in Package not recognised
 DESCRIPTION:
 JIRA:        CORE-5383
+FBTEST:      bugs.core_5383
 """
 
 import pytest

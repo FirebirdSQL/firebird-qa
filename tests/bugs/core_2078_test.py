@@ -54,6 +54,7 @@ NOTES:
   Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
   reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
 JIRA:        CORE-2078
+FBTEST:      bugs.core_2078
 """
 
 import pytest

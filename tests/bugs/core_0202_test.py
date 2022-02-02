@@ -6,6 +6,7 @@ ISSUE:       529
 TITLE:       ORDER BY works wrong with collate PT_PT
 DESCRIPTION:
 JIRA:        CORE-202
+FBTEST:      bugs.core_202
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4771
 TITLE:       Allow output to trace explain plan form.
 DESCRIPTION:
 JIRA:        CORE-4451
+FBTEST:      bugs.core_4451
 """
 
 import pytest

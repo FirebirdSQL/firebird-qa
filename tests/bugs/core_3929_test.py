@@ -3,9 +3,11 @@
 """
 ID:          issue-4264
 ISSUE:       4264
-TITLE:       Invalid "attempted update of read-only column" error when trying select minvalue from list with more than 255 elements
+TITLE:       Invalid "attempted update of read-only column" error when trying select minvalue
+  from list with more than 255 elements
 DESCRIPTION:
 JIRA:        CORE-3929
+FBTEST:      bugs.core_3929
 """
 
 import pytest

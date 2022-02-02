@@ -8,6 +8,7 @@ DESCRIPTION:
   Test uses EXECUTE BLOCK with dummy variable to store reuslt (w/o suspend in order to prevent any output).
   EXECUTE STATEMENT must be used here for reproducing problem (no error with static PSQL code).
 JIRA:        CORE-6397
+FBTEST:      bugs.core_6397
 """
 
 import pytest

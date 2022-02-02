@@ -6,6 +6,7 @@ ISSUE:       3623
 TITLE:       The server could crash using views with GROUP BY
 DESCRIPTION:
 JIRA:        CORE-3255
+FBTEST:      bugs.core_3255
 """
 
 import pytest

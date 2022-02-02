@@ -6,6 +6,7 @@ ISSUE:       2468
 TITLE:       Null in the first record in a condition on rdb$db_key
 DESCRIPTION:
 JIRA:        CORE-2031
+FBTEST:      bugs.core_2031
 """
 
 import pytest

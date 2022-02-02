@@ -6,6 +6,7 @@ ISSUE:       3965
 TITLE:       Wrong data while retrieving from CTEs (or derived tables) with same column names
 DESCRIPTION:
 JIRA:        CORE-3611
+FBTEST:      bugs.core_3611
 """
 
 import pytest

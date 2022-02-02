@@ -64,6 +64,7 @@ NOTES:
   Original Python test code moved to multiline strings, so they could be easily compared
   for differences via pytest asserts.
 JIRA:        CORE-6444
+FBTEST:      bugs.core_6444
 """
 
 import pytest

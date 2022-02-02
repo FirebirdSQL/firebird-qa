@@ -6,6 +6,7 @@ ISSUE:       1532
 TITLE:       Crash when dealing with a string literal longer than 32K
 DESCRIPTION:
 JIRA:        CORE-1112
+FBTEST:      bugs.core_1112
 """
 
 import pytest

@@ -3,7 +3,8 @@
 """
 ID:          issue-6250
 ISSUE:       6250
-TITLE:       gbak issues "Your user name and password are not defined" when command switch "-fe(tch_password) ..." is specified when run as service
+TITLE:       gbak issues "Your user name and password are not defined" when command switch
+  "-fe(tch_password) ..." is specified when run as service
 DESCRIPTION:
   Test creates two files, one with correct SYSDBA password and second with invalid (hope that such password: T0t@1lywr0ng - is not in use for SYSDBA).
   Also, test exports default SYSDBA password ('masterkey' ) to ISC_PASSWORD variable.
@@ -12,6 +13,7 @@ DESCRIPTION:
     despite that ISC_USER is not empty and contains valid password
   2) UNSET variable ISC_PASSWORD and run "gbak -fe <correct_password_file>" - this should PASS without any STDOUT or STDERR.
 JIRA:        CORE-6000
+FBTEST:      bugs.core_6000
 """
 
 import pytest

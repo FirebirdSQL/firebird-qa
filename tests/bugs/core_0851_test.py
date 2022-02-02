@@ -6,6 +6,7 @@ ISSUE:       1240
 TITLE:       Field can be used multiple times in multi-segment index definition
 DESCRIPTION:
 JIRA:        CORE-851
+FBTEST:      bugs.core_0851
 """
 
 import pytest

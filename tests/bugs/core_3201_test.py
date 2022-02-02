@@ -6,6 +6,7 @@ ISSUE:       3575
 TITLE:       ATAN2 returns incorrect value for (0, 0)
 DESCRIPTION:
 JIRA:        CORE-3201
+FBTEST:      bugs.core_3201
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5445
 TITLE:       SEC$ tables and tag/attributes
 DESCRIPTION:
 JIRA:        CORE-5162
+FBTEST:      bugs.core_5162
 """
 
 import pytest

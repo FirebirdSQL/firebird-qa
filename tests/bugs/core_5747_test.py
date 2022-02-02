@@ -7,6 +7,7 @@ TITLE:       User can grant usage privilege by himself
 DESCRIPTION:
   beside generator we also have to check the same issue about grant usage on exception.
 JIRA:        CORE-5747
+FBTEST:      bugs.core_5747
 """
 
 import pytest

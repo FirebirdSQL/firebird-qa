@@ -6,6 +6,7 @@ ISSUE:       4653
 TITLE:       not correct result function LAG, if OFFSET value are assigned from a table
 DESCRIPTION:
 JIRA:        CORE-4330
+FBTEST:      bugs.core_4330
 """
 
 import pytest

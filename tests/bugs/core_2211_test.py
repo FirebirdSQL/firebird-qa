@@ -6,6 +6,7 @@ ISSUE:       2639
 TITLE:       Offset value for SUBSTRING from BLOB more than 32767 makes exception
 DESCRIPTION:
 JIRA:        CORE-2211
+FBTEST:      bugs.core_2211
 """
 
 import pytest

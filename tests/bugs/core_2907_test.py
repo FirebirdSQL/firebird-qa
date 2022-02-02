@@ -7,6 +7,7 @@ TITLE:       Exception handling with EXECUTE STATEMENT
 DESCRIPTION:
   Unable to catch exceptions that are thrown inside a dynamic builded execute block.
 JIRA:        CORE-2907
+FBTEST:      bugs.core_2907
 """
 
 import pytest

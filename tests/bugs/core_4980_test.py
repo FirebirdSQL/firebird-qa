@@ -9,6 +9,7 @@ DESCRIPTION:
   Then try to connect with as user and query non-system table TEST and system tables.
   Query to table TEST should be denied, but queries to RDB-tables should run OK and display their data.
 JIRA:        CORE-4980
+FBTEST:      bugs.core_4980
 """
 
 import pytest

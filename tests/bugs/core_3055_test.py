@@ -3,9 +3,11 @@
 """
 ID:          issue-3435
 ISSUE:       3435
-TITLE:       Variable/argument name could be absent or be wrong in error messages when more than 256 variables are used
+TITLE:       Variable/argument name could be absent or be wrong in error messages when more
+ than 256 variables are used
 DESCRIPTION:
 JIRA:        CORE-3055
+FBTEST:      bugs.core_3055
 """
 
 import pytest

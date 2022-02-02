@@ -6,6 +6,7 @@ ISSUE:       1263
 TITLE:       Incorrect handling of null within view - returns 0
 DESCRIPTION:
 JIRA:        CORE-336
+FBTEST:      bugs.core_0871
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5001
 TITLE:       CTE Aliases
 DESCRIPTION: 'Column unknown' when recursive CTE contain join with *alias* rather than table name
 JIRA:        CORE-4693
+FBTEST:      bugs.core_4693
 """
 
 import pytest

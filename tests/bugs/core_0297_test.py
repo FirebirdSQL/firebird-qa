@@ -13,6 +13,7 @@ DESCRIPTION:
   Found in FB tracker as: http://tracker.firebirdsql.org/browse/CORE-297
   Fixed in 1.5.0
 JIRA:        CORE-297
+FBTEST:      bugs.core_0297
 """
 
 import pytest

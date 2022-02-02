@@ -6,6 +6,7 @@ ISSUE:       3322
 TITLE:       Trace output could contain garbage data left from filtered out statements
 DESCRIPTION:
 JIRA:        CORE-2940
+FBTEST:      bugs.core_2940
 """
 
 import pytest

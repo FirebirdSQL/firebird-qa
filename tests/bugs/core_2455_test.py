@@ -6,6 +6,7 @@ ISSUE:       2869
 TITLE:       Server fails when doing DROP DATABASE right after error in statistical fnction
 DESCRIPTION:
 JIRA:        CORE-2455
+FBTEST:      bugs.core_2455
 """
 
 import pytest

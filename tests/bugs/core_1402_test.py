@@ -6,6 +6,7 @@ ISSUE:       1820
 TITLE:       CREATE VIEW without column list when UNION is used
 DESCRIPTION:
 JIRA:        CORE-1402
+FBTEST:      bugs.core_1402
 """
 
 import pytest

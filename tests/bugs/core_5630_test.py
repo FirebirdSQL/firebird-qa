@@ -7,6 +7,7 @@ TITLE:       Can't create the shadow file
 DESCRIPTION:
   Shadow file is can not be created during restore when -use_all_space option is used
 JIRA:        CORE-5630
+FBTEST:      bugs.core_5630
 """
 
 import pytest

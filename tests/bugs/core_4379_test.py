@@ -6,6 +6,7 @@ ISSUE:       4701
 TITLE:       Poor performance of explicit cursors containing correlated subqueries in the select list
 DESCRIPTION:
 JIRA:        CORE-4379
+FBTEST:      bugs.core_4379
 """
 
 import pytest

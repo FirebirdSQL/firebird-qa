@@ -6,6 +6,7 @@ ISSUE:       4338
 TITLE:       using a result from a procedure in a substring expression leads to server crash
 DESCRIPTION:
 JIRA:        CORE-4006
+FBTEST:      bugs.core_4006
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1493
 TITLE:       Server crashes instead of reporting the error "key size exceeds implementation restriction"
 DESCRIPTION:
 JIRA:        CORE-4127
+FBTEST:      bugs.core_4127
 """
 
 import pytest

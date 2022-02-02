@@ -6,6 +6,7 @@ ISSUE:       2004
 TITLE:       Server crashed or bugcheck when inserting in monitoring tables.
 DESCRIPTION:
 JIRA:        CORE-1584
+FBTEST:      bugs.core_1584
 """
 
 import pytest

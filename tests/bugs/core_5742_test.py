@@ -9,6 +9,7 @@ DESCRIPTION:
   Result should contain text "SQLSTATE=28000"
   ("Your user name and password are not defined" or "install incomplete..." - no matter).
 JIRA:        CORE-5742
+FBTEST:      bugs.core_5742
 """
 
 import pytest

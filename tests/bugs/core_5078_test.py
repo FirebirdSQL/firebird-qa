@@ -6,6 +6,7 @@ ISSUE:       5365
 TITLE:       "Invalid BLOB ID" error
 DESCRIPTION:
 JIRA:        CORE-5078
+FBTEST:      bugs.core_5078
 """
 
 import pytest

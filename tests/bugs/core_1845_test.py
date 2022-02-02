@@ -6,6 +6,7 @@ ISSUE:       2274
 TITLE:       Some standard calls show server installation directory to regular users
 DESCRIPTION:
 JIRA:        CORE-1845
+FBTEST:      bugs.core_1845
 """
 
 import pytest

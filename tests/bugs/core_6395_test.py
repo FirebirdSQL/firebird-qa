@@ -30,6 +30,7 @@ DESCRIPTION:
     Confirmed improvement on 4.0.0.2185.
     Value of time did not differ on previous builds (checked 4..0.2170).
 JIRA:        CORE-6395
+FBTEST:      bugs.core_6395
 """
 
 import pytest

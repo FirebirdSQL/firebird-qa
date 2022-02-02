@@ -6,6 +6,7 @@ ISSUE:       2917
 TITLE:       Built-in trigonometric functions can produce NaN and Infinity
 DESCRIPTION:
 JIRA:        CORE-1000
+FBTEST:      bugs.core_2505
 """
 
 import pytest

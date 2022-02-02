@@ -6,6 +6,7 @@ ISSUE:       4792
 TITLE:       Message "Modifying function <F> which is currently in use" when running script with AUTODDL=OFF and <F> is called from INTERNAL function declared in other unit
 DESCRIPTION:
 JIRA:        CORE-4472
+FBTEST:      bugs.core_4472
 """
 
 import pytest

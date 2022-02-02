@@ -3,9 +3,11 @@
 """
 ID:          issue-6497
 ISSUE:       6497
-TITLE:       AV in engine when using SET TRANSACTION and ON TRANSACTION START trigger uses EXECUTE STATEMENT against current transaction
+TITLE:       AV in engine when using SET TRANSACTION and ON TRANSACTION START trigger
+  uses EXECUTE STATEMENT against current transaction
 DESCRIPTION:
 JIRA:        CORE-6254
+FBTEST:      bugs.core_6254
 """
 
 import pytest

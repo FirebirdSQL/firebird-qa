@@ -9,6 +9,7 @@ NOTES:
 [05.03.2021]
   added subst.: max. floating point precision on Linux is 15 rather than on Windows (16 digits).
 JIRA:        CORE-5973
+FBTEST:      bugs.core_5973
 """
 
 import pytest

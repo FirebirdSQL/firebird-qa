@@ -6,6 +6,7 @@ ISSUE:       5449
 TITLE:       Wrong error message with UNIQUE BOOLEAN field
 DESCRIPTION:
 JIRA:        CORE-5166
+FBTEST:      bugs.core_5166
 """
 
 import pytest

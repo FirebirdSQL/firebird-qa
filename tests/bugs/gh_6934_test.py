@@ -18,6 +18,7 @@ DESCRIPTION:
   But since 4.x SECURITY DEFINER set access rights of SP equal to its owner (i.e. SYSDBA).
   It means that WITH CALLER PRIVILEGES does the same, i.e. it is pointless in this case.
   Explained by dimitr, see letter 08-sep-2021 10:06.
+FBTEST:      bugs.gh_6934
 """
 
 import pytest

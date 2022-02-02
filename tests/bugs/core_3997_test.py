@@ -6,6 +6,7 @@ ISSUE:       4329
 TITLE:       Join using RDB$DB_KEY produce NATURAL plan
 DESCRIPTION:
 JIRA:        CORE-3997
+FBTEST:      bugs.core_3997
 """
 
 import pytest

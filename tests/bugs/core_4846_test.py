@@ -6,6 +6,7 @@ ISSUE:       5142
 TITLE:       Altering a trigger indicating other table than the original does not reflect the change
 DESCRIPTION:
 JIRA:        CORE-4846
+FBTEST:      bugs.core_4846
 """
 
 import pytest

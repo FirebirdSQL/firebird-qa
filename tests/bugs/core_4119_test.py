@@ -6,6 +6,7 @@ ISSUE:       4447
 TITLE:       Metadata source becomes wrong after twice transliteration to the metadata charset
 DESCRIPTION:
 JIRA:        CORE-4119
+FBTEST:      bugs.core_4119
 """
 
 import pytest

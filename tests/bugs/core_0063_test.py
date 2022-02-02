@@ -6,6 +6,7 @@ ISSUE:       388
 TITLE:       Sequence of commands crash server
 DESCRIPTION:
 JIRA:        CORE-63
+FBTEST:      bugs.core_0063
 """
 
 import pytest

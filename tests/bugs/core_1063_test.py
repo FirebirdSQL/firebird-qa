@@ -6,6 +6,7 @@ ISSUE:       1484
 TITLE:       Server hangs eating CPU and performs huge I/O copying different codepage fields
 DESCRIPTION:
 JIRA:        CORE-1063
+FBTEST:      bugs.core_1063
 """
 
 import pytest

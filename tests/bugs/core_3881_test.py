@@ -6,6 +6,7 @@ ISSUE:       4218
 TITLE:       Extend the error reported for index/constraint violations to include the problematic key value
 DESCRIPTION:
 JIRA:        CORE-3881
+FBTEST:      bugs.core_3881
 """
 
 import pytest

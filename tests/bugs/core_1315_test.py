@@ -6,6 +6,7 @@ ISSUE:       1734
 TITLE:       Data type unknown
 DESCRIPTION:
 JIRA:        CORE-1315
+FBTEST:      bugs.core_1315
 """
 
 import pytest

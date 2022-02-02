@@ -3,9 +3,11 @@
 """
 ID:          issue-4638
 ISSUE:       4638
-TITLE:       Usage of field(s) alias in view WITH CHECK OPTION leads to incorrect compile error or incorrect internal triggers
+TITLE:       Usage of field(s) alias in view WITH CHECK OPTION leads to incorrect compile
+  error or incorrect internal triggers
 DESCRIPTION:
 JIRA:        CORE-4315
+FBTEST:      bugs.core_4315
 """
 
 import pytest

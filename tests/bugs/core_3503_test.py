@@ -3,9 +3,11 @@
 """
 ID:          issue-3861
 ISSUE:       3861
-TITLE:        ALTER VIEW crashes the server if the new version has an artificial (aggregate or union) stream at the position of a regular context in the older version
+TITLE:        ALTER VIEW crashes the server if the new version has an artificial
+  (aggregate or union) stream at the position of a regular context in the older version
 DESCRIPTION:
 JIRA:        CORE-3503
+FBTEST:      bugs.core_3503
 """
 
 import pytest

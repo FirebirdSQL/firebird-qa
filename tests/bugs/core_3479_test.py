@@ -6,6 +6,7 @@ ISSUE:       3839
 TITLE:       ASCII_VAL raises error instead of return 0 for empty strings
 DESCRIPTION: Added two expressions with "non-typical" arguments
 JIRA:        CORE-3479
+FBTEST:      bugs.core_3479
 """
 
 import pytest

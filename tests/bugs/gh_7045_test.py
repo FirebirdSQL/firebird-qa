@@ -10,6 +10,7 @@ DESCRIPTION:
 
   Confirmed bug on 5.0.0.310.
   Checked on 5.0.0.311 - all fine.
+FBTEST:      bugs.gh_7045
 """
 
 import pytest

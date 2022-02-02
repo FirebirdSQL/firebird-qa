@@ -6,6 +6,7 @@ ISSUE:       828
 TITLE:       Foreign key relation VARCHAR <-> INT
 DESCRIPTION:
 JIRA:        CORE-480
+FBTEST:      bugs.core_0480
 """
 
 import pytest

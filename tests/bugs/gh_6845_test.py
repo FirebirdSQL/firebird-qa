@@ -5,6 +5,7 @@ ID:          issue-6845
 ISSUE:       6845
 TITLE:       Result type of AVG over BIGINT column results in type INT128
 DESCRIPTION:
+FBTEST:      bugs.gh_6845
 """
 
 import pytest

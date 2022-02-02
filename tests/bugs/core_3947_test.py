@@ -8,6 +8,7 @@ DESCRIPTION:
   Changing in 3.0, comment in tracker 05/Oct/12 04:52: NUMERIC-SORT UNIQUE indexes will
   not be usable for ORDER, only for lookups.
 JIRA:        CORE-3947
+FBTEST:      bugs.core_3947
 """
 
 import pytest

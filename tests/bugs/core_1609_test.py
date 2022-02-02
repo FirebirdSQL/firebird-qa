@@ -6,6 +6,7 @@ ISSUE:       2030
 TITLE:       PSQL output parameter size limited
 DESCRIPTION:
 JIRA:        CORE-1609
+FBTEST:      bugs.core_1609
 """
 
 import pytest

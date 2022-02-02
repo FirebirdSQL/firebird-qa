@@ -3,9 +3,11 @@
 """
 ID:          issue-2352
 ISSUE:       2352
-TITLE:       Using binary string literal to assign to user-defined blob sub-types yield conversion error "filter not found to convert type 1 to type -13"
+TITLE:       Using binary string literal to assign to user-defined blob sub-types yield
+  conversion error "filter not found to convert type 1 to type -13"
 DESCRIPTION:
 JIRA:        CORE-6389
+FBTEST:      bugs.core_6389
 """
 
 import pytest

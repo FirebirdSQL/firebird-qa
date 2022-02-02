@@ -6,6 +6,7 @@ ISSUE:       5590
 TITLE:       Data type unknown error with LIST
 DESCRIPTION:
 JIRA:        CORE-5313
+FBTEST:      bugs.core_5313
 """
 
 import pytest

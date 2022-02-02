@@ -3,7 +3,8 @@
 """
 ID:          issue-4888
 ISSUE:       4888
-TITLE:       Can't select from table with ICU column when database (.FDB) is created on LINUX with icu 4.2.1 and then copied to WINDOWS
+TITLE:       Can't select from table with ICU column when database (.FDB) is created on
+  LINUX with icu 4.2.1 and then copied to WINDOWS
 DESCRIPTION:
     Database for this test was created beforehand on Linux host.
     DDL:
@@ -53,6 +54,7 @@ DESCRIPTION:
     20.10.2016: checked on WI-T4.0.0.420
     22.04.2020: checked on WI-T4.0.0.1920 - updated .fdb because of new system tables.
 JIRA:        CORE-4571
+FBTEST:      bugs.core_4571
 """
 
 import pytest
@@ -82,7 +84,6 @@ expected_stdout = """
 @pytest.mark.platform('Windows')
 def test_1(act: Action):
     pytest.fail("Not IMPLEMENTED")
-
 
 # test_script_1
 #---

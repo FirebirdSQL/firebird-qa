@@ -6,6 +6,7 @@ ISSUE:       4857
 TITLE:       Server does not accept the right plan
 DESCRIPTION:
 JIRA:        CORE-4539
+FBTEST:      bugs.core_4539
 """
 
 import pytest

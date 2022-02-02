@@ -5,7 +5,8 @@ ID:          issue-3025
 ISSUE:       3025
 TITLE:       Silent truncation when using utf8 parameters and utf8 client character set encoding
 DESCRIPTION:
-JIRA:        CORE-1000
+JIRA:        CORE-2615
+FBTEST:      bugs.core_2615
 """
 
 import pytest

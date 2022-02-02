@@ -19,6 +19,7 @@ NOTES:
   Since build 4.0.0.2180 we have to use *new* function for cryptograpic hashes
   when addition argument for algorithm is used: crypt_hash().
 JIRA:        CORE-4436
+FBTEST:      bugs.core_4436
 """
 
 import pytest

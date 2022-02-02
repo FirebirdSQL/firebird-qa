@@ -6,6 +6,7 @@ ISSUE:       3187
 TITLE:       Problem with default value of SP parameter
 DESCRIPTION:
 JIRA:        CORE-2797
+FBTEST:      bugs.core_2797
 """
 
 import pytest

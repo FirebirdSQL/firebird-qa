@@ -6,6 +6,7 @@ ISSUE:       5100
 TITLE:       Regression: GRANT UPDATE(<some_column>) on <T> acts like grant update on ALL columns of <T>
 DESCRIPTION:
 JIRA:        CORE-4802
+FBTEST:      bugs.core_4802
 """
 
 import pytest

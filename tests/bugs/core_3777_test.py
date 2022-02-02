@@ -6,6 +6,7 @@ ISSUE:       4121
 TITLE:       Conversion error from string when using GROUP BY
 DESCRIPTION:
 JIRA:        CORE-3777
+FBTEST:      bugs.core_3777
 """
 
 import pytest

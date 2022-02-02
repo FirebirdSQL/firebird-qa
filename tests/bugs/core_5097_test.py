@@ -6,6 +6,7 @@ ISSUE:       5382
 TITLE:       COMPUTED-BY expressions are not converted to their field type inside the engine
 DESCRIPTION:
 JIRA:        CORE-5097
+FBTEST:      bugs.core_5097
 """
 
 import pytest

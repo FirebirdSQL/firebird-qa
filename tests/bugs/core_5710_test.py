@@ -6,6 +6,7 @@ ISSUE:       5976
 TITLE:       Datatype declaration DECFLOAT without precision should use a default precision
 DESCRIPTION:
 JIRA:        CORE-5710
+FBTEST:      bugs.core_5710
 """
 
 import pytest

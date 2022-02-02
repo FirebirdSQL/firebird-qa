@@ -41,6 +41,7 @@ NOTES: Related issues.
 [14.09.2021] https://github.com/FirebirdSQL/firebird/issues/6968
   ("On Windows, engine may hung when works with corrupted database and read after the end of file")
 JIRA:        CORE-2484
+FBTEST:      bugs.core_2484
 """
 
 import pytest
@@ -51,6 +52,20 @@ substitutions = [('SQLSTATE = 08004', 'SQLSTATE = 08001'),
                  ('STDERR: After line \\d+ in file.*', 'STDERR: After line in file')]
 
 db = db_factory(charset='UTF8')
+
+act = python_act('db', substitutions=substitutions)
+
+expected_stdout = """
+    STDERR: Statement failed, SQLSTATE = 08001
+    STDERR: I/O error during "ReadFile" operation for file "C:\\FBTESTING\\QA\\FBT-REPO\\TMP\\TMP_2484_FAKE.FDB"
+    STDERR: -Error while trying to read from file
+    STDERR: After line in file
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0')
+def test_1():
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
@@ -153,17 +168,3 @@ db = db_factory(charset='UTF8')
 #  #cleanup( ( f_fake_fdb, f_fake_sql, f_fake_log, f_fake_err )  )
 #
 #---
-
-act = python_act('db', substitutions=substitutions)
-
-expected_stdout = """
-    STDERR: Statement failed, SQLSTATE = 08001
-    STDERR: I/O error during "ReadFile" operation for file "C:\\FBTESTING\\QA\\FBT-REPO\\TMP\\TMP_2484_FAKE.FDB"
-    STDERR: -Error while trying to read from file
-    STDERR: After line in file
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0')
-def test_1():
-    pytest.fail("Not IMPLEMENTED")

@@ -14,6 +14,7 @@ DESCRIPTION:
   Comparison of two firebird.log versions should give only one difference related to warnings, and they count
   must be equal to 0.
 JIRA:        CORE-5618
+FBTEST:      bugs.core_5618
 """
 
 import pytest

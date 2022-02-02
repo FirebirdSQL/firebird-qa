@@ -6,6 +6,7 @@ ISSUE:       4557
 TITLE:       In PSQL modules with declared cursors engine could assign value to the wrong variable
 DESCRIPTION:
 JIRA:        CORE-4233
+FBTEST:      bugs.core_4233
 """
 
 import pytest

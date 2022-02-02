@@ -6,6 +6,7 @@ ISSUE:       320
 JIRA:        CORE-2
 TITLE:       Incorrect value returned with execute statement calculation
 DESCRIPTION:
+FBTEST:      bugs.core_0000
 """
 
 import pytest

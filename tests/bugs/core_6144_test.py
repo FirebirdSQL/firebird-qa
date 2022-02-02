@@ -6,6 +6,7 @@ ISSUE:       6393
 TITLE:       Inconsistent behaviour of the NEW context variable in AFTER UPDATE OR DELETE triggers
 DESCRIPTION:
 JIRA:        CORE-6144
+FBTEST:      bugs.core_6144
 """
 
 import pytest

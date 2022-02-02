@@ -6,6 +6,7 @@ ISSUE:       3221
 TITLE:       Natural is used to select instead of primary key index
 DESCRIPTION:
 JIRA:        CORE-2835
+FBTEST:      bugs.core_2835
 """
 
 import pytest

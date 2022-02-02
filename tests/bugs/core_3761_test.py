@@ -6,6 +6,7 @@ ISSUE:       4105
 TITLE:       Conversion error when using a blob as an argument for the EXCEPTION statement
 DESCRIPTION:
 JIRA:        CORE-3761
+FBTEST:      bugs.core_3761
 """
 
 import pytest

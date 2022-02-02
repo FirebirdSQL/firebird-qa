@@ -6,6 +6,7 @@ ISSUE:       4334
 TITLE:       Error message "index unexpectedly deleted" in database trigger on commit transaction
 DESCRIPTION:
 JIRA:        CORE-4002
+FBTEST:      bugs.core_4002
 """
 
 import pytest

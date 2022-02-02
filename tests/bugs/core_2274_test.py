@@ -6,6 +6,7 @@ ISSUE:       2700
 TITLE:       MERGE non-standard behaviour, accepts multiple matches
 DESCRIPTION:
 JIRA:        CORE-2274
+FBTEST:      bugs.core_2274
 """
 
 import pytest

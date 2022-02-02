@@ -6,6 +6,7 @@ ISSUE:       5096
 TITLE:       Regression: MIN/MAX with a join ignores possible index navigation
 DESCRIPTION:
 JIRA:        CORE-4798
+FBTEST:      bugs.core_4798
 """
 
 import pytest

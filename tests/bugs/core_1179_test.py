@@ -6,6 +6,7 @@ ISSUE:       1605
 TITLE:       "CH" and "LL" are not separate spanish alphabet letters since 1994
 DESCRIPTION:
 JIRA:        CORE-1179
+FBTEST:      bugs.core_1179
 """
 
 import pytest

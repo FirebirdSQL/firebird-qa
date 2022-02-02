@@ -5,6 +5,7 @@ ID:          issue-6963
 ISSUE:       6963
 TITLE:       grant references not working
 DESCRIPTION:
+FBTEST:      bugs.gh_6963
 """
 
 import pytest

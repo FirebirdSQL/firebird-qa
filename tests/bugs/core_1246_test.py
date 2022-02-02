@@ -6,6 +6,7 @@ ISSUE:       1670
 TITLE:       Incorrect column values with outer joins and derived tables
 DESCRIPTION:
 JIRA:        CORE-1246
+FBTEST:      bugs.core_1246
 """
 
 import pytest

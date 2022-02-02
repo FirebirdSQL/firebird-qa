@@ -13,6 +13,7 @@ DESCRIPTION:
   On PC-host with CPU 3.0 GHz and 2Gb RAM) in almost all cases difference was less than 1000 ms, so it was decided
   to set MAX_DETACH_TIME_THRESHOLD = 1200 ms.
 JIRA:        CORE-4977
+FBTEST:      bugs.core_4977
 """
 
 import pytest

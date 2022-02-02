@@ -6,6 +6,7 @@ ISSUE:       428
 TITLE:       Dropping and recreating a table in the same txn disables PK
 DESCRIPTION:
 JIRA:        CORE-104
+FBTEST:      bugs.core_0104
 """
 
 import pytest

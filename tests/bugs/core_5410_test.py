@@ -6,6 +6,7 @@ ISSUE:       5683
 TITLE:       Dependencies are not stored when using some type of contructions in subroutines
 DESCRIPTION:
 JIRA:        CORE-5410
+FBTEST:      bugs.core_5410
 """
 
 import pytest

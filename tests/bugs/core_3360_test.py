@@ -3,9 +3,11 @@
 """
 ID:          issue-3726
 ISSUE:       3726
-TITLE:       update ... returning ... raises -551 (no perm to update) for a column present only in the returning clause
+TITLE:       update ... returning ... raises -551 (no perm to update) for a column present
+  only in the returning clause
 DESCRIPTION:
 JIRA:        CORE-3360
+FBTEST:      bugs.core_3360
 """
 
 import pytest

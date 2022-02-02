@@ -6,6 +6,7 @@ ISSUE:       5276
 TITLE:       Non-privileged user can implicitly count records in a restricted table
 DESCRIPTION:
 JIRA:        CORE-4985
+FBTEST:      bugs.core_4985
 """
 
 import pytest

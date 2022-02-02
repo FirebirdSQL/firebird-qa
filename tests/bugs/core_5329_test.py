@@ -10,6 +10,7 @@ DESCRIPTION:
   Validation should not produce any output and new lines in firebird.log should contain
   only messages about start and finish of validation with zero errors and warnings.
 JIRA:        CORE-5329
+FBTEST:      bugs.core_5329
 """
 
 import pytest

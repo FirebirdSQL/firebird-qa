@@ -6,6 +6,7 @@ ISSUE:       6112
 TITLE:       There is no check of existance generator and exception when privileges are granted
 DESCRIPTION:
 JIRA:        CORE-5852
+FBTEST:      bugs.core_5852
 """
 
 import pytest

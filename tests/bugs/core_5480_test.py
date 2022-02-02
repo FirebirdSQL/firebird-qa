@@ -7,6 +7,7 @@ TITLE:       SUBSTRING startposition smaller than 1 should be allowed
 DESCRIPTION:
   Test is based on ticket samples, plus similar checks for non-ascii strings.
 JIRA:        CORE-5480
+FBTEST:      bugs.core_5480
 """
 
 import pytest

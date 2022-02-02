@@ -6,6 +6,7 @@ ISSUE:       1807
 TITLE:       Indexed MIN/MAX aggregates produce three index reads instead of the expected one indexed read
 DESCRIPTION:
 JIRA:        CORE-1389
+FBTEST:      bugs.core_1389
 """
 
 import pytest

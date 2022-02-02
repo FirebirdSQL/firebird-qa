@@ -3,9 +3,11 @@
 """
 ID:          issue-6753
 ISSUE:       6753
-TITLE:       AV in engine when StatementTimeout is active for user statement and some internal DSQL statement was executed as part of overall execution process
+TITLE:       AV in engine when StatementTimeout is active for user statement and some
+  internal DSQL statement was executed as part of overall execution process
 DESCRIPTION:
 JIRA:        CORE-6526
+FBTEST:      bugs.core_6526
 """
 
 import pytest

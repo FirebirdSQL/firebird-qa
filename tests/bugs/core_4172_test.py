@@ -16,6 +16,7 @@ DESCRIPTION:
 
   STDERR is ignored in this test because of localized message about missed library.
 JIRA:        CORE-4172
+FBTEST:      bugs.core_4172
 """
 
 import pytest

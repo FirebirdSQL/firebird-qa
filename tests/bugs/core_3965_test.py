@@ -6,6 +6,7 @@ ISSUE:       4298
 TITLE:       Creating a procedure containing "case when" expression leads to a server crash
 DESCRIPTION:
 JIRA:        CORE-3965
+FBTEST:      bugs.core_3965
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1924
 TITLE:       Conversion from double to varchar insert trailing spaces
 DESCRIPTION:
 JIRA:        CORE-1509
+FBTEST:      bugs.core_1509
 """
 
 import pytest

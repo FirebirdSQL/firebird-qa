@@ -26,6 +26,7 @@ DESCRIPTION:
 
   It was encountered that in FB 3.0.3 Classic lines 2..4 appear TWICE. See note in the ticket, 16/Jan/18 05:08 PM
 JIRA:        CORE-5706
+FBTEST:      bugs.core_5706
 """
 
 import pytest

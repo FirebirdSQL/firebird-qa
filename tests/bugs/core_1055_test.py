@@ -6,6 +6,7 @@ ISSUE:       1474
 TITLE:       Wrong parameter matching for self-referenced procedures
 DESCRIPTION:
 JIRA:        CORE-1055
+FBTEST:      bugs.core_1055
 """
 
 import pytest

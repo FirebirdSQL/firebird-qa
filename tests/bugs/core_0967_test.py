@@ -6,6 +6,7 @@ ISSUE:       1370
 TITLE:       SQL with incorrect characters (outside the ASCII range) may be processed wrongly
 DESCRIPTION:
 JIRA:        CORE-967
+FBTEST:      bugs.core_0967
 """
 
 import pytest

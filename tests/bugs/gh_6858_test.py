@@ -5,6 +5,7 @@ ID:          issue-6858
 ISSUE:       6858
 TITLE:       RSA_DECRYPT() can not decrypt data if it relates to BLOB type
 DESCRIPTION:
+FBTEST:      bugs.gh_6858
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       3782
 TITLE:       Recurse leads to hangs/crash server
 DESCRIPTION:
 JIRA:        CORE-3419
+FBTEST:      bugs.core_3419
 """
 
 import pytest

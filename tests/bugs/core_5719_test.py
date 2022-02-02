@@ -8,6 +8,7 @@ DESCRIPTION:
   This test also present in GTCS list, see it here:
     https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/SV_HIDDEN_VAR_2_5.script
 JIRA:        CORE-5719
+FBTEST:      bugs.core_5719
 """
 
 import pytest

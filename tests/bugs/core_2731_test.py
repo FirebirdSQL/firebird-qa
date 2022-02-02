@@ -6,6 +6,7 @@ ISSUE:       3126
 TITLE:       Recursive EXECUTE STATEMENT works wrong
 DESCRIPTION:
 JIRA:        CORE-2731
+FBTEST:      bugs.core_2731
 """
 
 import pytest

@@ -10,6 +10,7 @@ NOTES:
   Removed usage of generator because gen_id() result differs in FB 4.x vs previous versions
   since fixed core-6084. Use hard-coded value for ID that is written into table MACRO.
 JIRA:        CORE-2118
+FBTEST:      bugs.core_2118
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5654
 TITLE:       Regression: could not execute query (select from view with nested view)
 DESCRIPTION:
 JIRA:        CORE-5381
+FBTEST:      bugs.core_5381
 """
 
 import pytest

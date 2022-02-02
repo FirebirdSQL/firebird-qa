@@ -5,6 +5,7 @@ ID:          issue-6838
 ISSUE:       6838
 TITLE:       Deleting multiple rows from a view with triggers may cause triggers to fire just once
 DESCRIPTION:
+FBTEST:      bugs.gh_6838
 """
 
 import pytest

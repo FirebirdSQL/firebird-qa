@@ -44,6 +44,7 @@ DESCRIPTION:
     firebird.conf must contain following line:
         KeyHolderPlugin = KeyHolder
 JIRA:        CORE-6048
+FBTEST:      bugs.core_6048
 """
 
 import pytest

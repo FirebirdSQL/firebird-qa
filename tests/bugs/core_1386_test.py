@@ -6,6 +6,7 @@ ISSUE:       1804
 TITLE:       Generated columns
 DESCRIPTION:
 JIRA:        CORE-1386
+FBTEST:      bugs.core_1386
 """
 
 import pytest

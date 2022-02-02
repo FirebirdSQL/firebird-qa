@@ -6,6 +6,7 @@ ISSUE:       4466
 TITLE:       Error "invalid stream" can be raised in some cases while matching a computed index
 DESCRIPTION:
 JIRA:        CORE-4139
+FBTEST:      bugs.core_4139
 """
 
 import pytest

@@ -16,6 +16,7 @@ DESCRIPTION:
   It should perform without errors. Finally, we extract metadata again and do COMPARISON
   of their current content and those which are stored 'initial' file.
 JIRA:        CORE-2408
+FBTEST:      bugs.core_2408
 """
 
 import pytest

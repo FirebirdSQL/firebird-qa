@@ -6,6 +6,7 @@ ISSUE:       6719
 TITLE:       User without ALTER ANY ROLE privilege can use COMMENT ON ROLE
 DESCRIPTION:
 JIRA:        CORE-6489
+FBTEST:      bugs.core_6489
 """
 
 import pytest

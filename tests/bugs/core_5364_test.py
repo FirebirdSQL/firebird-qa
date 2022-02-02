@@ -3,13 +3,15 @@
 """
 ID:          issue-5637
 ISSUE:       5637
-TITLE:       gfix -online normal <db> (being issued in window #1) does not produce error when there is sysdba attachment in window #2
+TITLE:       gfix -online normal <db> (being issued in window #1) does not produce error
+  when there is sysdba attachment in window #2
 DESCRIPTION:
   We create new DB and immediately change its state to single-user maintanance.
   Then we attach to this DB ans run (in separate process) 'gfix -online normal <localhost:this_db>'.
   This command must produce in its STDERR error: "database ... shutdown" - and we check that this actually occurs.
   Also, we check that after reconnect to this DB value of mon$database.mon$shutdown_mode remains the same: 2.
 JIRA:        CORE-5364
+FBTEST:      bugs.core_5364
 """
 
 import pytest

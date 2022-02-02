@@ -6,6 +6,7 @@ ISSUE:       4800
 TITLE:       ISQL issues warning: "Bad debug info format" when connect to database with stored function after it`s restoring
 DESCRIPTION:
 JIRA:        CORE-4480
+FBTEST:      bugs.core_4480
 """
 
 import pytest

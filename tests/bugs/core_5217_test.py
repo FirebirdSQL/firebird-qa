@@ -6,6 +6,7 @@ ISSUE:       5497
 TITLE:       ISQL -x may crash while exporting an exception with message text length > 127 bytes
 DESCRIPTION:
 JIRA:        CORE-5217
+FBTEST:      bugs.core_5217
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5209
 TITLE:       ALTER DOMAIN ... TO <new_name> allows to specify <new_name> matching to 'RDB$[[:DIGIT:]]*'
 DESCRIPTION:
 JIRA:        CORE-4917
+FBTEST:      bugs.core_4917
 """
 
 import pytest

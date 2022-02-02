@@ -6,6 +6,7 @@ ISSUE:       4211
 TITLE:       Computed column appears in non-existant rows of left join
 DESCRIPTION:
 JIRA:        CORE-3874
+FBTEST:      bugs.core_3874
 """
 
 import pytest

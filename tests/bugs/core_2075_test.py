@@ -6,6 +6,7 @@ ISSUE:       2510
 TITLE:       Parts of RDB$DB_KEY of views may be inverted when using outer joins
 DESCRIPTION:
 JIRA:        CORE-2075
+FBTEST:      bugs.core_2075
 """
 
 import pytest

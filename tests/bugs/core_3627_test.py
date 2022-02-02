@@ -6,6 +6,7 @@ ISSUE:       3979
 TITLE:       Server crashes with access violation when inserting row into table with unique index
 DESCRIPTION:
 JIRA:        CORE-3627
+FBTEST:      bugs.core_3627
 """
 
 import pytest

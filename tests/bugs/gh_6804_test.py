@@ -5,6 +5,7 @@ ID:          issue-6804
 ISSUE:       6804
 TITLE:       assertion in tomcrypt when key length for rc4 too small
 DESCRIPTION:
+FBTEST:      bugs.gh_6804
 """
 
 import pytest

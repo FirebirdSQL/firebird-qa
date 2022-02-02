@@ -6,6 +6,7 @@ ISSUE:       1439
 TITLE:       Server crashes at runtime when an explicit MERGE plan is specified over a few JOIN ones
 DESCRIPTION:
 JIRA:        CORE-1025
+FBTEST:      bugs.core_1025
 """
 
 import pytest

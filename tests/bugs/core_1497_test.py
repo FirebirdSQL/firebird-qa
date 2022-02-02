@@ -6,6 +6,7 @@ ISSUE:       1912
 TITLE:       New builtin function DATEADD() implements wrong choice of keywords for expanded syntax
 DESCRIPTION:
 JIRA:        CORE-1497
+FBTEST:      bugs.core_1497
 """
 
 import pytest

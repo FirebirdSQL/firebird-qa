@@ -6,6 +6,7 @@ ISSUE:       4624
 TITLE:       Non-ASCII data in SEC$USERS is not read correctly
 DESCRIPTION:
 JIRA:        CORE-4301
+FBTEST:      bugs.core_4301
 """
 
 import pytest

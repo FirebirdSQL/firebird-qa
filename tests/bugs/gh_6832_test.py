@@ -5,6 +5,7 @@ ID:          issue-6832
 ISSUE:       6832
 TITLE:       Segfault using "commit retaining" with GTT
 DESCRIPTION:
+FBTEST:      bugs.gh_6832
 """
 
 import pytest

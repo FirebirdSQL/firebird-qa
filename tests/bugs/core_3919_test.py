@@ -12,6 +12,7 @@ DESCRIPTION:
   Performance of SIMILAR TO statement is extremely poor in comparison with LIKE operator:
   COUNT through the table of 102 records requires 27 seconds vs 16 ms (checked on WI-V6.3.6.33246).
 JIRA:        CORE-3919
+FBTEST:      bugs.core_3919
 """
 
 import pytest

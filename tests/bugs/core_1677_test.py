@@ -10,6 +10,7 @@ DESCRIPTION:
   select ceiling(cast(1500 as numeric(18,5))) from rdb$database -> -4826 (wrong)
   Actually, any precision higher than 6 gives a wrong result.
 JIRA:        CORE-1677
+FBTEST:      bugs.core_1677
 """
 
 import pytest

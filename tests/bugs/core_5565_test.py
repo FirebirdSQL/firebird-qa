@@ -6,6 +6,7 @@ ISSUE:       5832
 TITLE:       No integer division possible in dialect 1
 DESCRIPTION:
 JIRA:        CORE-5565
+FBTEST:      bugs.core_5565
 """
 
 import pytest

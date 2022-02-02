@@ -6,6 +6,7 @@ ISSUE:       1393
 TITLE:       Non-ASCII quoted identifiers are not converted to metadata (UNICODE_FSS) charset
 DESCRIPTION:
 JIRA:        CORE-986
+FBTEST:      bugs.core_0986
 """
 
 import pytest

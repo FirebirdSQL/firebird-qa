@@ -6,6 +6,7 @@ ISSUE:       5940
 TITLE:       Allow unused Common Table Expressions
 DESCRIPTION:
 JIRA:        CORE-5674
+FBTEST:      bugs.core_5674
 """
 
 import pytest

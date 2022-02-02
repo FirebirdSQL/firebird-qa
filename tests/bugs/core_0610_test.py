@@ -6,6 +6,7 @@ ISSUE:       969
 TITLE:       FIRST is applied before aggregation
 DESCRIPTION:
 JIRA:        CORE-610
+FBTEST:      bugs.core_0610
 """
 
 import pytest

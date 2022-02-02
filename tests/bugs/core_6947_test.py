@@ -18,6 +18,7 @@ DESCRIPTION:
 
   Confirmed bug on 5.0.0.219 (Windows), 5.0.0.236 (Linux).
   Checked on 5.0.0.240 (Windows; SS/Cs), 5.0.0.241 (Linux; SS/CS).
+FBTEST:      bugs.core_6947
 """
 
 import pytest

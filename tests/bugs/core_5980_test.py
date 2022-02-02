@@ -21,6 +21,7 @@ DESCRIPTION:
   Decided to add this test just for check that DB will not be corrupted.
   TICKET ISSUE REMAINS IRREPRODUCIBLE (checked on following SuperServer builds: 2.5.1, 2.5.6, 2.5.9, 3.0.6, 4.0.0).
 JIRA:        CORE-5980
+FBTEST:      bugs.core_5980
 """
 
 import pytest

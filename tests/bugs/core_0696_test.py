@@ -6,6 +6,7 @@ ISSUE:       1065
 TITLE:       User Account maintanance in SQL
 DESCRIPTION:
 JIRA:        CORE-696
+FBTEST:      bugs.core_0696
 """
 
 import pytest

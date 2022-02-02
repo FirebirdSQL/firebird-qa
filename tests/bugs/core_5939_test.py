@@ -6,6 +6,7 @@ ISSUE:       6195
 TITLE:       Crash for "gbak -se -b database nul"
 DESCRIPTION:
 JIRA:        CORE-5939
+FBTEST:      bugs.core_5939
 """
 
 import pytest

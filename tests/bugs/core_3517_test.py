@@ -6,6 +6,7 @@ ISSUE:       3875
 TITLE:       Server crash with built in function LPAD with string as second parameter
 DESCRIPTION:
 JIRA:        CORE-3517
+FBTEST:      bugs.core_3517
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       4741
 TITLE:       Server crashes while sorting records longer than 128KB
 DESCRIPTION:
 JIRA:        CORE-4419
+FBTEST:      bugs.core_4419
 """
 
 import pytest

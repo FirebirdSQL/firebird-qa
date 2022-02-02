@@ -6,6 +6,7 @@ ISSUE:       5811
 TITLE:       Restore of pre ODS 11.1 database can leave RDB$RELATION_TYPE null
 DESCRIPTION:
 JIRA:        CORE-5543
+FBTEST:      bugs.core_4473
 """
 
 import pytest

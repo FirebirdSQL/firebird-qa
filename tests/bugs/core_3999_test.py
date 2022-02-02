@@ -6,6 +6,7 @@ ISSUE:       4331
 TITLE:       Bug in unique constraints and / or NUMERIC-SORT collation
 DESCRIPTION:
 JIRA:        CORE-3999
+FBTEST:      bugs.core_3999
 """
 
 import pytest

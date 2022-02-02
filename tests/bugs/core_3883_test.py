@@ -1,12 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.core_3883
-# title:        Ambiguous field name in the trigger when it does a select from the table
-# decription:
-# tracker_id:   CORE-3883
-# min_versions: ['2.0.7']
-# versions:     2.0.7
-# qmid:         None
 
 """
 ID:          issue-4220
@@ -14,6 +6,7 @@ ISSUE:       4220
 TITLE:       Ambiguous field name in the trigger when it does a select from the table
 DESCRIPTION:
 JIRA:        CORE-3883
+FBTEST:      bugs.core_3883
 """
 
 import pytest

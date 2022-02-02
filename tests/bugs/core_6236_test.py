@@ -15,6 +15,7 @@ DESCRIPTION:
   ::: NB :::
   Command 'SHOW GRANTS' does not display privileges on system objects thus we do not use it here.
 JIRA:        CORE-6236
+FBTEST:      bugs.core_6236
 """
 
 import pytest

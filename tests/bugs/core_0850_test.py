@@ -6,6 +6,7 @@ ISSUE:       1239
 TITLE:       DateTime math imprecision
 DESCRIPTION:
 JIRA:        CORE-850
+FBTEST:      bugs.core_0850
 """
 
 import pytest

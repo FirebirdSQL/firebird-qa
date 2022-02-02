@@ -6,6 +6,7 @@ ISSUE:       3259
 TITLE:       String right truncation error when char column longer than 4096 bytes compared with string constant
 DESCRIPTION:
 JIRA:        CORE-2875
+FBTEST:      bugs.core_2875
 """
 
 import pytest

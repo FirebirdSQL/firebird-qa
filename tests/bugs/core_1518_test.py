@@ -6,6 +6,7 @@ ISSUE:       789
 TITLE:       Adding a non-null restricted column to a populated table renders the table inconsistent
 DESCRIPTION:
 JIRA:        CORE-1518
+FBTEST:      bugs.core_1518
 """
 
 import pytest

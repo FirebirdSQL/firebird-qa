@@ -6,6 +6,7 @@ ISSUE:       1904
 TITLE:       DATEADD wrong work with NULL arguments
 DESCRIPTION:
 JIRA:        CORE-1489
+FBTEST:      bugs.core_1489
 """
 
 import pytest

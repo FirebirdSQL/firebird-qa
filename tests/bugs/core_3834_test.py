@@ -6,6 +6,7 @@ ISSUE:       4176
 TITLE:       Usage of a NATURAL JOIN with a derived table crashes the server
 DESCRIPTION:
 JIRA:        CORE-3834
+FBTEST:      bugs.core_3834
 """
 
 import pytest

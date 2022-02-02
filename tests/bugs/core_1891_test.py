@@ -6,6 +6,7 @@ ISSUE:       2322
 TITLE:       SHOW VIEW shows non-sense information for view fields with expressions
 DESCRIPTION:
 JIRA:        CORE-1891
+FBTEST:      bugs.core_1891
 """
 
 import pytest

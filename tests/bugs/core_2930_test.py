@@ -6,6 +6,7 @@ ISSUE:       3313
 TITLE:       DROP VIEW drops output parameters of used stored procedures
 DESCRIPTION:
 JIRA:        CORE-2930
+FBTEST:      bugs.core_2930
 """
 
 import pytest

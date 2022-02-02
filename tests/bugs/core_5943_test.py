@@ -7,6 +7,7 @@ TITLE:       Server crashes preparing a query with both DISTINCT/ORDER BY and no
 DESCRIPTION:
   We run query from ticket and check that it does completed OK with issuing data and 'Records affected: 1'.
 JIRA:        CORE-5943
+FBTEST:      bugs.core_5943
 """
 
 import pytest

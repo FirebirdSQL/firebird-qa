@@ -6,6 +6,7 @@ ISSUE:       1069
 TITLE:       Server crashes on UPDATE OR INSERT statement
 DESCRIPTION:
 JIRA:        CORE-2441
+FBTEST:      bugs.core_2441
 """
 
 import pytest

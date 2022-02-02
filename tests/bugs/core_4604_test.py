@@ -6,6 +6,7 @@ ISSUE:       4919
 TITLE:       EXECUTE STATEMENT rise varchar char_length() size
 DESCRIPTION:
 JIRA:        CORE-4604
+FBTEST:      bugs.core_4604
 """
 
 import pytest

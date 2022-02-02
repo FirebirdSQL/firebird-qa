@@ -6,6 +6,7 @@ ISSUE:       4297
 TITLE:       It is not possible to create a ddl-trigger with "any DDL statement" clause
 DESCRIPTION:
 JIRA:        CORE-3964
+FBTEST:      bugs.core_3964
 """
 
 import pytest

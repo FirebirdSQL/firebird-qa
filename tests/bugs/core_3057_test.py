@@ -6,6 +6,7 @@ ISSUE:       3437
 TITLE:       Allow the usage of blobs in COMPUTED BY expressions
 DESCRIPTION:
 JIRA:        CORE-3057
+FBTEST:      bugs.core_3057
 """
 
 import pytest

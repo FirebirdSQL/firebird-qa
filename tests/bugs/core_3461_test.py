@@ -6,6 +6,7 @@ ISSUE:       3822
 TITLE:       DDL operations fail after backup/restore
 DESCRIPTION:
 JIRA:        CORE-3461
+FBTEST:      bugs.core_3461
 """
 
 import pytest

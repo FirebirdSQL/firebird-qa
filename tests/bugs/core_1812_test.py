@@ -10,6 +10,7 @@ NOTES:
   -- can not be used anymore (Statement failed, SQLSTATE = 22018 / conversion error from string "now").
   Details about timezone datatype see in: doc\\sql.extensions\\README.time_zone.md
 JIRA:        CORE-1812
+FBTEST:      bugs.core_1812
 """
 
 import pytest

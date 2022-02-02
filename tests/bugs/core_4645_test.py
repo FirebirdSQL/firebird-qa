@@ -6,6 +6,7 @@ ISSUE:       4959
 TITLE:       internal Firebird consistency check (cannot find tip page (165), file: tra.cpp line: 2375)
 DESCRIPTION:
 JIRA:        CORE-4645
+FBTEST:      bugs.core_4645
 """
 
 import pytest

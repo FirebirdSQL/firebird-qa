@@ -6,6 +6,7 @@ ISSUE:       4525
 TITLE:       An uncommitted select of the pseudo table sec$users blocks new database connections
 DESCRIPTION:
 JIRA:        CORE-4200
+FBTEST:      bugs.core_4200
 """
 
 import pytest

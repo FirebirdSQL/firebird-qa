@@ -6,6 +6,7 @@ ISSUE:       2516
 TITLE:       RDB$DB_KEY in subselect expression incorrectly returns NULL
 DESCRIPTION:
 JIRA:        CORE-2081
+FBTEST:      bugs.core_2081
 """
 
 import pytest

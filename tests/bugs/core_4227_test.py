@@ -6,6 +6,7 @@ ISSUE:       4551
 TITLE:       Regression: Wrong evaluation of BETWEEN and boolean expressions due to parser conflict
 DESCRIPTION:
 JIRA:        CORE-4227
+FBTEST:      bugs.core_4227
 """
 
 import pytest

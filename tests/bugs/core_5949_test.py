@@ -6,6 +6,7 @@ ISSUE:       6205
 TITLE:       Bugcheck could happen when read-only database with non-zero linger is set to read-write mode
 DESCRIPTION:
 JIRA:        CORE-5949
+FBTEST:      bugs.core_5949
 """
 
 import pytest

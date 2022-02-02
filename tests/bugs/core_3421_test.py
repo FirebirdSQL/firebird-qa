@@ -6,6 +6,7 @@ ISSUE:       3784
 TITLE:       [FB3] AV with "UPDATE OR INSERT"
 DESCRIPTION:
 JIRA:        CORE-3421
+FBTEST:      bugs.core_3421
 """
 
 import pytest

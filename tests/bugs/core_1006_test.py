@@ -6,6 +6,7 @@ ISSUE:       1417
 TITLE:       AV at rollback and \\ or garbage collection if updated table have expression index with SELECT in it
 DESCRIPTION:
 JIRA:        CORE-1006
+FBTEST:      bugs.core_1006
 """
 
 import pytest

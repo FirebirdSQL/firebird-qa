@@ -6,6 +6,7 @@ ISSUE:       2400
 TITLE:       Incorrect extraction of MILLISECONDs
 DESCRIPTION:
 JIRA:        CORE-1962
+FBTEST:      bugs.core_1962
 """
 
 import pytest

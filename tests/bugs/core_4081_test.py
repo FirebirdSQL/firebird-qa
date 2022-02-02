@@ -6,6 +6,7 @@ ISSUE:       4409
 TITLE:       Regression: Built-in functions and subselect no longer supported in "update or insert" value list
 DESCRIPTION:
 JIRA:        CORE-4081
+FBTEST:      bugs.core_4081
 """
 
 import pytest

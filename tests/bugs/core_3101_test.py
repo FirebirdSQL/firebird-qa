@@ -6,6 +6,7 @@ ISSUE:       3479
 TITLE:       Cannot alter the domain after migrating from older versions
 DESCRIPTION:
 JIRA:        CORE-3101
+FBTEST:      bugs.core_3101
 """
 
 import pytest

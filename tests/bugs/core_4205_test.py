@@ -6,6 +6,7 @@ ISSUE:       4530
 TITLE:       ISQL -x does not output the START WITH clause of generators/sequences
 DESCRIPTION:
 JIRA:        CORE-4205
+FBTEST:      bugs.core_4205
 """
 
 import pytest

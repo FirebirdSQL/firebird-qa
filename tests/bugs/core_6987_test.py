@@ -5,6 +5,7 @@ ID:          issue-6987
 ISSUE:       6987
 TITLE:       DATEDIFF does not support fractional value for MILLISECOND
 DESCRIPTION:
+FBTEST:      bugs.core_6987
 """
 
 import pytest

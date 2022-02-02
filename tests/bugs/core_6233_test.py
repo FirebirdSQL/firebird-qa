@@ -9,6 +9,7 @@ DESCRIPTION:
   in order to skip creation of unneeded .fbk file
   See: https://docs.python.org/2/library/subprocess.html#replacing-shell-pipeline
 JIRA:        CORE-6233
+FBTEST:      bugs.core_6233
 """
 
 import pytest

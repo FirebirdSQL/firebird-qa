@@ -6,6 +6,7 @@ ISSUE:       525
 TITLE:       Wrong order by in table join storedproc
 DESCRIPTION:
 JIRA:        CORE-198
+FBTEST:      bugs.core_0198
 """
 
 import pytest

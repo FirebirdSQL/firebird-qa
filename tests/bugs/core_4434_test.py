@@ -6,6 +6,7 @@ ISSUE:       4754
 TITLE:       Extend the use of colon prefix for read/assignment OLD/NEW fields and assignment to variables
 DESCRIPTION:
 JIRA:        CORE-4434
+FBTEST:      bugs.core_4434
 """
 
 import pytest

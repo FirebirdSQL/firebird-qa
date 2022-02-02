@@ -8,6 +8,7 @@ DESCRIPTION:
   We compare values in mon$attachment with those that can be obtained using pure Python calls (without FB).
   NB: on Windows remote_os_user contains value in lower case ('zotov'), exact value was: 'Zotov'.
 JIRA:        CORE-3779
+FBTEST:      bugs.core_3779
 """
 
 import pytest

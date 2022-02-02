@@ -6,6 +6,7 @@ ISSUE:       5801
 TITLE:       Crash on 3.0 and 4.0 when DB contains database-level trigger
 DESCRIPTION:
 JIRA:        CORE-5533
+FBTEST:      bugs.core_5533
 """
 
 import pytest

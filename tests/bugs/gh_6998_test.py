@@ -6,6 +6,7 @@ ISSUE:       6998
 TITLE:       Problems with access to RDB$CONFIG table for non-privileged user when he has
   grant on execution of SP which has necessary access rights (created by SYSDBA with SQL DEFINER clause)
 DESCRIPTION:
+FBTEST:      bugs.gh_6998
 """
 
 import pytest

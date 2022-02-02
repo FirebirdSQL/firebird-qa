@@ -6,6 +6,7 @@ ISSUE:       2816
 TITLE:       If you drop two different indexes within the same transaction, you get database corruption
 DESCRIPTION:
 JIRA:        CORE-2397
+FBTEST:      bugs.core_2397
 """
 
 import pytest

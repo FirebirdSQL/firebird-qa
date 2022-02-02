@@ -6,6 +6,7 @@ ISSUE:       3630
 TITLE:       LIST() may overwrite last part of output with zero characters
 DESCRIPTION:
 JIRA:        CORE-3262
+FBTEST:      bugs.core_3262
 """
 
 import pytest

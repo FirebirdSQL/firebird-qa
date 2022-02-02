@@ -6,6 +6,7 @@ ISSUE:       1862
 TITLE:       Execute statement 'select ....' into new....
 DESCRIPTION:
 JIRA:        CORE-1444
+FBTEST:      bugs.core_1444
 """
 
 import pytest

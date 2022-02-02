@@ -6,6 +6,7 @@ ISSUE:       3022
 TITLE:       Connection lost immediatelly after compiling procedure with RPAD system function
 DESCRIPTION:
 JIRA:        CORE-2612
+FBTEST:      bugs.core_2612
 """
 
 import pytest

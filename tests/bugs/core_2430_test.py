@@ -6,6 +6,7 @@ ISSUE:       2846
 TITLE:       Server adds "NOT" at the end of default value for the TIMESTAMP field
 DESCRIPTION:
 JIRA:        CORE-2430
+FBTEST:      bugs.core_2430
 """
 
 import pytest

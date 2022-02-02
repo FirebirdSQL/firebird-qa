@@ -6,6 +6,7 @@ ISSUE:       4040
 TITLE:       Cannot drop a NOT NULL constraint on a field participating in the UNIQUE constraint
 DESCRIPTION:
 JIRA:        CORE-3692
+FBTEST:      bugs.core_3692
 """
 
 import pytest

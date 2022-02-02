@@ -6,6 +6,7 @@ ISSUE:       2213
 TITLE:       Consistency check when subquery is ordered by aggregate function from other context
 DESCRIPTION:
 JIRA:        CORE-1787
+FBTEST:      bugs.core_1787
 """
 
 import pytest

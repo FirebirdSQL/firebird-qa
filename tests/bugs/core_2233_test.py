@@ -6,6 +6,7 @@ ISSUE:       2660
 TITLE:       Allow non-SYSDBA users to monitor not only their current attachment but other their attachments as well
 DESCRIPTION:
 JIRA:        CORE-2233
+FBTEST:      bugs.core_2233
 """
 
 import pytest

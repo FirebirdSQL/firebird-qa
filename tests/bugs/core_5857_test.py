@@ -12,6 +12,7 @@ DESCRIPTION:
   Because of this one of check statements was temp-ly disabled.
   See comment in the ticked 27/Jun/18 05:27 AM.
 JIRA:        CORE-5857
+FBTEST:      bugs.core_5857
 """
 
 import pytest

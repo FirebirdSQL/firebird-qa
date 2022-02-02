@@ -5,7 +5,8 @@ ID:          issue-2223
 ISSUE:       2223
 TITLE:       OLD/NEW.RDB$DB_KEY returns incorrect result in triggers
 DESCRIPTION:
-JIRA:        CORE-1000
+JIRA:        CORE-1797
+FBTEST:      bugs.core_1797
 """
 
 import pytest

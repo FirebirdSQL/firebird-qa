@@ -6,6 +6,7 @@ ISSUE:       6558
 TITLE:       Server is crashing on long GRANT statement
 DESCRIPTION:
 JIRA:        CORE-6317
+FBTEST:      bugs.core_6317
 """
 
 import pytest

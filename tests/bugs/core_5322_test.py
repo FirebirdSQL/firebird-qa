@@ -6,6 +6,7 @@ ISSUE:       5598
 TITLE:       Cascade deletion in self-referencing table could raise "no current record for fetch operation" error
 DESCRIPTION:
 JIRA:        CORE-5322
+FBTEST:      bugs.core_5322
 """
 
 import pytest

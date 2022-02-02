@@ -6,6 +6,7 @@ ISSUE:       5016
 TITLE:       Content of MON$EXPLAINED_PLAN in MON$STATEMENTS is truncated if exceeds the 32KB limit
 DESCRIPTION:
 JIRA:        CORE-4708
+FBTEST:      bugs.core_4708
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       5616
 TITLE:       User collate doesn't work with blobs
 DESCRIPTION:
 JIRA:        CORE-5341
+FBTEST:      bugs.core_5341
 """
 
 import pytest

@@ -3,7 +3,8 @@
 """
 ID:          issue-6391
 ISSUE:       6391
-TITLE:       Error "connection lost to database" could happen when application creates few local attachments (using XNET) simultaneously
+TITLE:       Error "connection lost to database" could happen when application creates few
+  local attachments (using XNET) simultaneously
 DESCRIPTION:
     Test uses 15 threads and each of them launches loop for 10 iterations with making attach/detach from DB.
     We use Python package with name "threading" here, but it should be declared as global inside class because of fbtest specific
@@ -25,6 +26,7 @@ DESCRIPTION:
         4.0 Classic: ~9"; 3.0.5 Classic: ~5";
         4.0 Super:   ~5"; 3.0.5 Super:   ~1".
 JIRA:        CORE-6142
+FBTEST:      bugs.core_6142
 """
 
 import pytest

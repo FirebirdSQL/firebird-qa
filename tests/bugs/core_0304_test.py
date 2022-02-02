@@ -15,6 +15,7 @@ NOTES:
     https://github.com/FirebirdSQL/firebird/pull/6825
     ("Correct error message for DROP VIEW")
 JIRA:        CORE-304
+FBTEST:      bugs.core_0304
 """
 
 import pytest

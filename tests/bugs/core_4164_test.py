@@ -6,6 +6,7 @@ ISSUE:       4491
 TITLE:       Owner name is missing for generators/exceptions restored from a backup
 DESCRIPTION:
 JIRA:        CORE-4164
+FBTEST:      bugs.core_4164
 """
 
 import pytest

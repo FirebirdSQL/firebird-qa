@@ -6,6 +6,7 @@ ISSUE:       2926
 TITLE:       Wrong processing a SP parameters with arrays
 DESCRIPTION:
 JIRA:        CORE-2516
+FBTEST:      bugs.core_2516
 """
 
 import pytest

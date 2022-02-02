@@ -14,6 +14,7 @@ NOTES:
   another user logins which could left in securitiN.fdb after some test failed.
 [29.03.2018] changed user names, replaced count of SYSDBA attachments with literal 1.
 JIRA:        CORE-4503
+FBTEST:      bugs.core_4503
 """
 
 import pytest

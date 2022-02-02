@@ -3,9 +3,11 @@
 """
 ID:          issue-4676
 ISSUE:       4676
-TITLE:       Parsing of recursive query returns error "Column does not belong to referenced table" for source that HAS such column
+TITLE:       Parsing of recursive query returns error "Column does not belong to referenced table"
+  for source that HAS such column
 DESCRIPTION:
 JIRA:        CORE-4354
+FBTEST:      bugs.core_4354
 """
 
 import pytest

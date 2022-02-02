@@ -30,6 +30,7 @@ DESCRIPTION:
     21.11.2021. Checked on Linux (after installing pakage psutil):
         5.0.0.313: 10.107s ; 4.0.1.2668: 8.519s ;
 JIRA:        CORE-5664
+FBTEST:      bugs.core_5664
 """
 
 import pytest

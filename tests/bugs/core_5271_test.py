@@ -6,6 +6,7 @@ ISSUE:       5549
 TITLE:       Regression: Can not create large index
 DESCRIPTION:
 JIRA:        CORE-5271
+FBTEST:      bugs.core_5271
 """
 
 import pytest

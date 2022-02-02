@@ -6,6 +6,7 @@ ISSUE:       1475
 TITLE:       A query could produce different results, depending on the presence of an index
 DESCRIPTION:
 JIRA:        CORE-1056
+FBTEST:      bugs.core_1056
 """
 
 import pytest

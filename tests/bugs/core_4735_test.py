@@ -3,13 +3,15 @@
 """
 ID:          issue-5041
 ISSUE:       5041
-TITLE:       Expression 'where bool_field IS true | false' should also use index as 'where bool_field = true | false' (if such index exists)
+TITLE:       Expression 'where bool_field IS true | false' should also use index as
+  'where bool_field = true | false' (if such index exists)
 DESCRIPTION:
 NOTES:
 [28.01.2019]
   Changed expected PLAN of execution after dimitr's letter 28.01.2019 17:28:
   'is NOT <bool>' and 'is distinct from <bool>' should use  PLAN NATURAL.
 JIRA:        CORE-4735
+FBTEST:      bugs.core_4735
 """
 
 import pytest

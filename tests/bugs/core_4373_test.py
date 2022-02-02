@@ -6,6 +6,7 @@ ISSUE:       4695
 TITLE:       Duplicate names in package are not checked
 DESCRIPTION:
 JIRA:        CORE-4373
+FBTEST:      bugs.core_4373
 """
 
 import pytest

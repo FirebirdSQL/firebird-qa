@@ -3,9 +3,11 @@
 """
 ID:          issue-3701
 ISSUE:       3701
-TITLE:       Wrong results (internal wrapping occured) for the multi-byte blob SUBSTRING function and its boundary arguments
+TITLE:       Wrong results (internal wrapping occured) for the multi-byte blob SUBSTRING
+  function and its boundary arguments
 DESCRIPTION:
 JIRA:        CORE-3335
+FBTEST:      bugs.core_3335
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2678
 TITLE:       EXECUTE STATEMENT on EXTERNAL SOURCE does not check the status of the transaction
 DESCRIPTION:
 JIRA:        CORE-2252
+FBTEST:      bugs.core_2252
 """
 
 import pytest

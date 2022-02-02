@@ -6,6 +6,7 @@ ISSUE:       5181
 TITLE:       AFTER CREATE/ALTER PACKAGE DDL triggers runs in incorrectly moment
 DESCRIPTION:
 JIRA:        CORE-4887
+FBTEST:      bugs.core_4887
 """
 
 import pytest

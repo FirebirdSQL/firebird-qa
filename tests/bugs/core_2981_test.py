@@ -6,6 +6,7 @@ ISSUE:       3363
 TITLE:       Error in Trace plugin (use local symbols in query)
 DESCRIPTION:
 JIRA:        CORE-2981
+FBTEST:      bugs.core_2981
 """
 
 import pytest

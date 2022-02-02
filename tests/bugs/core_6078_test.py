@@ -9,6 +9,7 @@ DESCRIPTION:
   Test creates non-privileged user and checks for all such objects that this user can NOT create any object because missing
   privilege to do this.
 JIRA:        CORE-6078
+FBTEST:      bugs.core_6078
 """
 
 import pytest

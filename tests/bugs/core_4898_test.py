@@ -6,6 +6,7 @@ ISSUE:       5191
 TITLE:       Speed up function creation and loading when there are many functions in the database
 DESCRIPTION:
 JIRA:        CORE-4898
+FBTEST:      bugs.core_4898
 """
 
 import pytest

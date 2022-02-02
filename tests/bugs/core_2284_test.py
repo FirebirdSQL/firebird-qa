@@ -6,6 +6,7 @@ ISSUE:       2710, 5943
 TITLE:       Records left in RDB$PAGES after rollback of CREATE TABLE statement
 DESCRIPTION:
 JIRA:        CORE-2284
+FBTEST:      bugs.core_2284
 """
 
 import pytest

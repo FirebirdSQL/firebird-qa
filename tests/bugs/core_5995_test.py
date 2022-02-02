@@ -10,6 +10,7 @@ DESCRIPTION:
   We search this by string using pattern matching: such line MUST contain at least two words
   (it was just 'user:' before this bug was fixed).
 JIRA:        CORE-5995
+FBTEST:      bugs.core_5995
 """
 
 import pytest

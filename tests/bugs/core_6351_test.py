@@ -6,6 +6,7 @@ ISSUE:       6592
 TITLE:       Computed field could be wrongly evaluated as NULL
 DESCRIPTION:
 JIRA:        CORE-6351
+FBTEST:      bugs.core_6351
 """
 
 import pytest

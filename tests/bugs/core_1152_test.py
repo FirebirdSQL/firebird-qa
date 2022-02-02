@@ -6,6 +6,7 @@ ISSUE:       1573
 TITLE:       Cannot erase a table with check constraints referencing more than a single columns
 DESCRIPTION:
 JIRA:        CORE-1152
+FBTEST:      bugs.core_1152
 """
 
 import pytest

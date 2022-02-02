@@ -6,6 +6,7 @@ ISSUE:       4693
 TITLE:       Create function/sp which references to non-existent exception <...>
 DESCRIPTION:
 JIRA:        CORE-4371
+FBTEST:      bugs.core_4371
 """
 
 import pytest

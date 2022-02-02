@@ -6,6 +6,7 @@ ISSUE:       2028
 TITLE:       Correlated subquery is optimized badly if it depends on the union stream
 DESCRIPTION:
 JIRA:        CORE-1607
+FBTEST:      bugs.core_1607
 """
 
 import pytest

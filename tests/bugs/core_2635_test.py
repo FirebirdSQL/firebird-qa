@@ -6,6 +6,7 @@ ISSUE:       3043
 TITLE:       Unique index with a lot of NULL keys can be corrupted at level 1
 DESCRIPTION:
 JIRA:        CORE-2635
+FBTEST:      bugs.core_2635
 """
 
 import pytest

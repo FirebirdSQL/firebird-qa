@@ -16,6 +16,7 @@ DESCRIPTION:
   Finally, we check that difference in max_memory* fields is ZERO, or (at least) there can be only one difference more
   than threshold. After lot of runs this threshold was set to 1.00 (percent) -- see query below.
 JIRA:        CORE-5646
+FBTEST:      bugs.core_5646
 """
 
 import pytest

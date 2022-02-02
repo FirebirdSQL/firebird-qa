@@ -6,6 +6,7 @@ ISSUE:       1672
 TITLE:       Incorrect timestamp arithmetic when one of operands is negative number
 DESCRIPTION:
 JIRA:        CORE-1248
+FBTEST:      bugs.core_1248
 """
 
 import pytest

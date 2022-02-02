@@ -40,6 +40,7 @@ DESCRIPTION:
   #2240 ("Usernames with '.' character"; login 'JOHN.SMITH' is used there).
   #3382 (Error on delete user "ADMIN").
 JIRA:        CORE-2861
+FBTEST:      bugs.core_2861
 """
 
 import pytest

@@ -9,6 +9,7 @@ DESCRIPTION:
   1) whether log_sweep = true actually lead to logging of sweep events
   2) whether log_sweep = fales actually prevents from logging of any sweep events (which is ticket issue).
 JIRA:        CORE-3934
+FBTEST:      bugs.core_3934
 """
 
 import pytest

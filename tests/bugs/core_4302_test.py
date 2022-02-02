@@ -15,6 +15,7 @@ DESCRIPTION:
      output one may achieve by trivial view (v_mon) that queries mon$io_stats and and table (t_mon) that
      serves as log.
 JIRA:        CORE-4302
+FBTEST:      bugs.core_4302
 """
 
 import pytest

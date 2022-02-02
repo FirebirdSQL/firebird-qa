@@ -6,6 +6,7 @@ ISSUE:       2275
 TITLE:       Allow index walk (ORDER plan) when there is a composite index {A, B} and the query looks like WHERE A = ? ORDER BY B
 DESCRIPTION:
 JIRA:        CORE-1846
+FBTEST:      bugs.core_1846
 """
 
 import pytest

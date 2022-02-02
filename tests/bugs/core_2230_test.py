@@ -1,12 +1,4 @@
 #coding:utf-8
-#
-# id:           bugs.core_2230
-# title:        Implement domain check of input parameters of execute block
-# decription:
-# tracker_id:   CORE-2230
-# min_versions: []
-# versions:     3.0
-# qmid:         None
 
 """
 ID:          issue-2658
@@ -14,6 +6,7 @@ ISSUE:       2658
 TITLE:       Implement domain check of input parameters of execute block
 DESCRIPTION:
 JIRA:        CORE-2230
+FBTEST:      bugs.core_2230
 """
 
 import pytest

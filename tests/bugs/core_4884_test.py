@@ -8,6 +8,7 @@ DESCRIPTION:
 NOTES:
   Batch file that generates .sql with arbitrary level of begin..end statements can be seen in the traker.
 JIRA:        CORE-4884
+FBTEST:      bugs.core_4884
 """
 
 import pytest

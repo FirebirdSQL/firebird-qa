@@ -6,6 +6,7 @@ ISSUE:       3776
 TITLE:       Improve diagnostics of internal trace errors
 DESCRIPTION:
 JIRA:        CORE-3413
+FBTEST:      bugs.core_3413
 """
 
 import pytest

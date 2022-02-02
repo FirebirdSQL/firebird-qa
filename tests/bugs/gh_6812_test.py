@@ -5,6 +5,7 @@ ID:          issue-6812
 ISSUE:       6812
 TITLE:       BASE64_ENCODE and HEX_ENCODE can exceed maximum widths for VARCHAR
 DESCRIPTION:
+FBTEST:      bugs.gh_6812
 """
 
 import pytest

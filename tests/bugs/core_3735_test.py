@@ -6,6 +6,7 @@ ISSUE:       4080
 TITLE:       Unprivileged user can delete from RDB$DATABASE, RDB$COLLATIONS, RDB$CHARACTER_SETS
 DESCRIPTION:
 JIRA:        CORE-3735
+FBTEST:      bugs.core_3735
 """
 
 import pytest

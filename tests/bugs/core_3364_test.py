@@ -6,6 +6,7 @@ ISSUE:       3730
 TITLE:       Blob filter to translate internal debug info into text representation
 DESCRIPTION:
 JIRA:        CORE-3364
+FBTEST:      bugs.core_3364
 """
 
 import pytest

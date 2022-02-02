@@ -6,6 +6,7 @@ ISSUE:       522
 TITLE:       Bugcheck 291
 DESCRIPTION:
 JIRA:        CORE-195
+FBTEST:      bugs.core_0195
 """
 
 import pytest

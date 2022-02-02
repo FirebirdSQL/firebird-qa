@@ -3,9 +3,11 @@
 """
 ID:          issue-4150
 ISSUE:       4150
-TITLE:       Error "Invalid expression in the select list" can be unexpectedly raised if a string literal is used inside a GROUP BY clause in a multi-byte connection
+TITLE:       Error "Invalid expression in the select list" can be unexpectedly raised if
+  a string literal is used inside a GROUP BY clause in a multi-byte connection
 DESCRIPTION:
 JIRA:        CORE-3807
+FBTEST:      bugs.core_3807
 """
 
 import pytest

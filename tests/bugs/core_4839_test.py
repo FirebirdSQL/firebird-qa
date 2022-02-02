@@ -6,6 +6,7 @@ ISSUE:       5135
 TITLE:       SHOW GRANTS does not display info about exceptions which were granted to user
 DESCRIPTION:
 JIRA:        CORE-4839
+FBTEST:      bugs.core_4839
 """
 
 import pytest

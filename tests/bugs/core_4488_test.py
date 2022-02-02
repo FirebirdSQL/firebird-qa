@@ -3,13 +3,15 @@
 """
 ID:          issue-4808
 ISSUE:       4808
-TITLE:       Wrong results of FOR SELECT <L> FROM <T> AS CURSOR <C> and table <T> is modified inside cursor's begin...end block
+TITLE:       Wrong results of FOR SELECT <L> FROM <T> AS CURSOR <C> and table <T> is
+  modified inside cursor's begin...end block
 DESCRIPTION:
   See doc\\sql.extensions\\README.cursor_variables.txt:
   7) Reading from a cursor variable returns the current field values. That means an UPDATE (with
      WHERE CURRENT OF) also updates the fields for subsequent reads. And DELETE (with WHERE
      CURRENT OF) makes subsequent reads to return NULL.
 JIRA:        CORE-4488
+FBTEST:      bugs.core_4488
 """
 
 import pytest

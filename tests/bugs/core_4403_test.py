@@ -6,6 +6,7 @@ ISSUE:       4725
 TITLE:       Allow referencing cursors as record variables in PSQL
 DESCRIPTION:
 JIRA:        CORE-4403
+FBTEST:      bugs.core_4403
 """
 
 import pytest

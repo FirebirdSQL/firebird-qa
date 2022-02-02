@@ -6,6 +6,7 @@ ISSUE:       3058
 TITLE:       Incorrect "string right truncation" error with NONE column and multibyte connection charset
 DESCRIPTION:
 JIRA:        CORE-2651
+FBTEST:      bugs.core_2651
 """
 
 import pytest

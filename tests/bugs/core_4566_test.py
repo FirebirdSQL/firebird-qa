@@ -3,9 +3,11 @@
 """
 ID:          issue-4883
 ISSUE:       4883
-TITLE:       Incorrect size of the output parameter/argument when execute block, procedure or function use system field in metadata charset
+TITLE:       Incorrect size of the output parameter/argument when execute block, procedure
+  or function use system field in metadata charset
 DESCRIPTION:
 JIRA:        CORE-4566
+FBTEST:      bugs.core_4566
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2325
 TITLE:       Circular dependencies between computed fields crashs the engine
 DESCRIPTION:
 JIRA:        CORE-1894
+FBTEST:      bugs.core_1894
 """
 
 import pytest

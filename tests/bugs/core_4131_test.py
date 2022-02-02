@@ -6,6 +6,7 @@ ISSUE:       4458
 TITLE:       Error when processing an empty data set by window function, if reading indexed
 DESCRIPTION:
 JIRA:        CORE-4131
+FBTEST:      bugs.core_4131
 """
 
 import pytest

@@ -10,6 +10,7 @@ DESCRIPTION:
   After finish backup we restore database and check that there is no records in 'log' table.
   (if option 'bkp_no_triggers' will be omitted then two records will be in that table).
 JIRA:        CORE-2197
+FBTEST:      bugs.core_2197
 """
 
 import pytest

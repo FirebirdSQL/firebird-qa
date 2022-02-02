@@ -44,6 +44,7 @@ DESCRIPTION:
     Increased threshold to 6000 ms instead of old 5000 ms -- see
     http://web.firebirdsql.org/download/prerelease/results/archive/3.0.2.32630/bugs.core_5034.html
 JIRA:        CORE-5034
+FBTEST:      bugs.core_5034
 """
 
 import pytest

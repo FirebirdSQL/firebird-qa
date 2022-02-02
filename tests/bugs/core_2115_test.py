@@ -6,6 +6,7 @@ ISSUE:       2548
 TITLE:       Query plan is missing for the long query
 DESCRIPTION:
 JIRA:        CORE-2115
+FBTEST:      bugs.core_2115
 """
 
 import pytest

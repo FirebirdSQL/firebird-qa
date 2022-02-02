@@ -6,6 +6,7 @@ ISSUE:       4894
 TITLE:       INPUT file not properly closed
 DESCRIPTION:
 JIRA:        CORE-4578
+FBTEST:      bugs.core_4578
 """
 
 import pytest
@@ -24,7 +25,6 @@ expected_stdout = """
 @pytest.mark.platform('Windows')
 def test_1(act: Action):
     pytest.fail("Not IMPLEMENTED")
-
 
 # test_script_1
 #---

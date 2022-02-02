@@ -6,6 +6,7 @@ ISSUE:       4450
 TITLE:       Metadata export with isql (option -ex) does not export functions properly
 DESCRIPTION:
 JIRA:        CORE-4122
+FBTEST:      bugs.core_4122
 """
 
 import pytest

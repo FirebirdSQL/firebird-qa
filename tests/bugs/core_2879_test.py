@@ -9,6 +9,7 @@ DESCRIPTION:
   Then we compare these two files.
   Difference between them should relate ONLY to sweep start and finish details, and NOT about page wrong type.
 JIRA:        CORE-2879
+FBTEST:      bugs.core_2879
 """
 
 import pytest

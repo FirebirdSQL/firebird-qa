@@ -6,6 +6,7 @@ ISSUE:       2716
 TITLE:       BUGCHECK 284
 DESCRIPTION:
 JIRA:        CORE-2291
+FBTEST:      bugs.core_2291
 """
 
 import pytest

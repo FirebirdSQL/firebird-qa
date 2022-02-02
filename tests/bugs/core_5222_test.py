@@ -28,6 +28,7 @@ NOTES:
   value of config parameter 'ReadConsistency'.
   For that reason it was decided to make new EMPTY section of test for 4.0.
 JIRA:        CORE-5222
+FBTEST:      bugs.core_5222
 """
 
 from __future__ import annotations

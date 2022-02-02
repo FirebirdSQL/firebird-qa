@@ -6,6 +6,7 @@ ISSUE:       554
 TITLE:       ALTER TABLE altering to VARCHAR
 DESCRIPTION:
 JIRA:        CORE-223
+FBTEST:      bugs.core_0223
 """
 
 import pytest

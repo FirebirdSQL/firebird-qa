@@ -15,6 +15,7 @@ NOTES:
   ** sum(<bigint>) - its type is "32752 numeric(38)";
   ** added new column: sum(<decfloat>) - it will have type "32762 decfloat(34)".
 JIRA:        CORE-2957
+FBTEST:      bugs.core_2957
 """
 
 import pytest

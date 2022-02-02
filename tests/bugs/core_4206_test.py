@@ -6,6 +6,7 @@ ISSUE:       4531
 TITLE:       Add RESTART [WITH] clause for alter identity columns
 DESCRIPTION:
 JIRA:        CORE-4206
+FBTEST:      bugs.core_4206
 """
 
 import pytest

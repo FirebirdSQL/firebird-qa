@@ -6,6 +6,7 @@ ISSUE:       1211
 TITLE:       Accent ignoring collation for unicode
 DESCRIPTION:
 JIRA:        CORE-824
+FBTEST:      bugs.core_0824
 """
 
 import pytest

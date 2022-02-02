@@ -6,6 +6,7 @@ ISSUE:       2843
 TITLE:       ALTER VIEW doesn't clear dependencies on old views
 DESCRIPTION:
 JIRA:        CORE-2427
+FBTEST:      bugs.core_2427
 """
 
 import pytest

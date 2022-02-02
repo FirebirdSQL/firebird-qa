@@ -6,6 +6,7 @@ ISSUE:       3948
 TITLE:       Include expected and actual string lenght into error message for sqlcode -802
 DESCRIPTION:
 JIRA:        CORE-3594
+FBTEST:      bugs.core_3594
 """
 
 import pytest

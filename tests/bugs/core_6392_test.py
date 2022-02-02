@@ -21,6 +21,7 @@ DESCRIPTION:
     Some problem still exists when DB file or folder has name which last character is '.' or ' ' (dot or space).
     Database will be created but attempt to backup raises: "gbak: ERROR:cannot open backup file ..."
 JIRA:        CORE-6392
+FBTEST:      bugs.core_6392
 """
 
 import pytest

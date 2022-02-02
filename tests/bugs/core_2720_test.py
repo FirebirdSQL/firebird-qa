@@ -6,6 +6,7 @@ ISSUE:       3116
 TITLE:       Wrong evaluation result with divide and unary plus\\minus operations
 DESCRIPTION:
 JIRA:        CORE-2720
+FBTEST:      bugs.core_2720
 """
 
 import pytest

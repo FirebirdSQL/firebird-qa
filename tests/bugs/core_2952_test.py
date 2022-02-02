@@ -6,6 +6,7 @@ ISSUE:       3334
 TITLE:       Case-sensitive character class names in SIMILAR TO
 DESCRIPTION:
 JIRA:        CORE-2952
+FBTEST:      bugs.core_2952
 """
 
 import pytest

@@ -3,9 +3,11 @@
 """
 ID:          issue-4082
 ISSUE:       4082
-TITLE:       EXECUTE BLOCK parameters definitions are not respected and may cause wrong behavior related to character sets
+TITLE:       EXECUTE BLOCK parameters definitions are not respected and may cause wrong
+  behavior related to character sets
 DESCRIPTION:
 JIRA:        CORE-3737
+FBTEST:      bugs.core_3737
 """
 
 import pytest

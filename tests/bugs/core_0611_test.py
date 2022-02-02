@@ -6,6 +6,7 @@ ISSUE:       970
 TITLE:       SKIP is off by one
 DESCRIPTION:
 JIRA:        CORE-611
+FBTEST:      bugs.core_0611
 """
 
 import pytest

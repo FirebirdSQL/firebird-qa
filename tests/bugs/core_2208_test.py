@@ -13,6 +13,7 @@ DESCRIPTION:
   All cases are checked by call 'fbsvcmgr ... bkp_skip_data <pattern>',
   where <pattern> string matches several tables (i.e. we use SIMILAR_TO ability).
 JIRA:        CORE-2208
+FBTEST:      bugs.core_2208
 """
 
 import pytest

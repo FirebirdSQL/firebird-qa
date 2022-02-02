@@ -9,6 +9,7 @@ DESCRIPTION:
   Confirmed overflow of decfloat34 when inserting values with exponent more than 385, i.e. >= 1e+385 or <= -1e385 (in WI-T4.0.0.1535, date of build: 24-JUN-2019)).
   Checked on 4.0.0.1556: OK, 1.710s.
 JIRA:        CORE-5697
+FBTEST:      bugs.core_5697
 """
 
 import pytest

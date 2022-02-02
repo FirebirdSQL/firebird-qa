@@ -6,6 +6,7 @@ ISSUE:       5109
 TITLE:       Make user names behave according to SQL identifiers rules
 DESCRIPTION:
 JIRA:        CORE-4811
+FBTEST:      bugs.core_4811
 """
 
 import pytest

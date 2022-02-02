@@ -11,6 +11,7 @@ NOTES:
   which is NOT by default. Otherwise it will FAIL with "Missing requested management plugin"
   Also, it does not use user_factory fixtures as it's the point to create/drop users in test script.
 JIRA:        CORE-4607
+FBTEST:      bugs.core_4607
 """
 
 import pytest

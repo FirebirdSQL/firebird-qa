@@ -6,6 +6,7 @@ ISSUE:       4983
 TITLE:       Regression: computed index based on a computed column stores NULL for all its keys
 DESCRIPTION:
 JIRA:        CORE-4673
+FBTEST:      bugs.core_4673
 """
 
 import pytest

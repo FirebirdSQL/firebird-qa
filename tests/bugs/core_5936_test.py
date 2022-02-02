@@ -23,6 +23,7 @@ DESCRIPTION: Firebird crashes, related to Bugcheck 165 (cannot find tip page)
   Bug was fixed by one-line change in FB source, see:
   https://github.com/FirebirdSQL/firebird/commit/676a52625c074ef15e197e7b7538755195a66905
 JIRA:        CORE-5936
+FBTEST:      bugs.core_5936
 """
 
 import pytest

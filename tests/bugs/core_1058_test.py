@@ -6,6 +6,7 @@ ISSUE:       1479
 TITLE:       ALTER DOMAIN and ALTER TABLE don't allow to change character set and/or collation
 DESCRIPTION:
 JIRA:        CORE-1058
+FBTEST:      bugs.core_1058
 """
 
 import pytest

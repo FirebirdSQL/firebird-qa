@@ -6,6 +6,7 @@ ISSUE:       5201
 TITLE:       MERGE / HASH JOINs produce incorrect results when VARCHAR join keys differ only by trailing spaces
 DESCRIPTION:
 JIRA:        CORE-4909
+FBTEST:      bugs.core_4909
 """
 
 import pytest

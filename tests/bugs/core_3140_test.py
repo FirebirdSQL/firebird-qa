@@ -6,6 +6,7 @@ ISSUE:       3517
 TITLE:       Preserve comments for parameters after altering procedures
 DESCRIPTION:
 JIRA:        CORE-3140
+FBTEST:      bugs.core_3140
 """
 
 import pytest

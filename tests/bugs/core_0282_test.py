@@ -6,6 +6,7 @@ ISSUE:       613
 TITLE:       DOMAINs don't register their dependency on other objects
 DESCRIPTION:
 JIRA:        CORE-282
+FBTEST:      bugs.core_0282
 """
 
 import pytest

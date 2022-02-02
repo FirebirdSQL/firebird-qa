@@ -6,6 +6,7 @@ ISSUE:       2840
 TITLE:       Make CREATE VIEW infer column names for views involving a GROUP BY clause or derived table
 DESCRIPTION:
 JIRA:        CORE-2424
+FBTEST:      bugs.core_2424
 """
 
 import pytest

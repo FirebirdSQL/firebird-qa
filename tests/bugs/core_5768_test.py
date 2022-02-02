@@ -3,9 +3,11 @@
 """
 ID:          issue-6031
 ISSUE:       6031
-TITLE:       Implement FILTER-clause for aggregate functions (introduced in SQL:2003). This syntax allows for filtering before aggregation.
+TITLE:       Implement FILTER-clause for aggregate functions (introduced in SQL:2003).
+  This syntax allows for filtering before aggregation.
 DESCRIPTION:
 JIRA:        CORE-5768
+FBTEST:      bugs.core_5768
 """
 
 import pytest

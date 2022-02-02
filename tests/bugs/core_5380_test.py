@@ -7,6 +7,7 @@ TITLE:       Allow subroutines to call others subroutines and themself recursive
 DESCRIPTION:
   We check not only ability of recursive calls but also max depth of them. It should be equal to 1000.
 JIRA:        CORE-5380
+FBTEST:      bugs.core_5380
 """
 
 import pytest

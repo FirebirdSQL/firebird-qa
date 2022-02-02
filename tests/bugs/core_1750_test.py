@@ -6,6 +6,7 @@ ISSUE:       2175
 TITLE:       Include information about context variables into the monitoring tables
 DESCRIPTION:
 JIRA:        CORE-1750
+FBTEST:      bugs.core_1750
 """
 
 import pytest

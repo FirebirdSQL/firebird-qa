@@ -6,6 +6,7 @@ ISSUE:       5983
 TITLE:       Reject non-constant date/time/timestamp literals
 DESCRIPTION:
 JIRA:        CORE-5717
+FBTEST:      bugs.core_5717
 """
 
 import pytest

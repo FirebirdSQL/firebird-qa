@@ -8,6 +8,7 @@ DESCRIPTION:
   There is no sense to check for Legacy_UserManarer: comment for user will not be stored
   in the sec$users for this plugin. Test verifies only Srp. Discussed with Alex, 12.03.2021
 JIRA:        CORE-6479
+FBTEST:      bugs.core_6479
 """
 
 import pytest

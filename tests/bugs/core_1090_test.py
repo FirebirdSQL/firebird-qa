@@ -6,6 +6,7 @@ ISSUE:       1511
 TITLE:       Error msg "Could not find UNIQUE INDEX" when in fact one is present
 DESCRIPTION:
 JIRA:        CORE-1090
+FBTEST:      bugs.core_1090
 """
 
 import pytest

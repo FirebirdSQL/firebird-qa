@@ -3,9 +3,11 @@
 """
 ID:          issue-5085
 ISSUE:       5085
-TITLE:       Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters
+TITLE:       Problematic key value (when attempt to insert duplicate in PK/UK) is not shown
+  where length of key >= 127 characters
 DESCRIPTION:
 JIRA:        CORE-4786
+FBTEST:      bugs.core_4786
 """
 
 import pytest

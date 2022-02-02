@@ -6,6 +6,7 @@ ISSUE:       3194
 TITLE:       Views based on procedures can't be created if the proc's output fields participate in an expression
 DESCRIPTION:
 JIRA:        CORE-2806
+FBTEST:      bugs.core_2806
 """
 
 import pytest

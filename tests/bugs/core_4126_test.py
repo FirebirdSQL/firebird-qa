@@ -14,6 +14,7 @@ DESCRIPTION:
   their result with previously stored one.
   Difference between them should be EMPTY with excluding name of databases.
 JIRA:        CORE-4126
+FBTEST:      bugs.core_4126
 """
 
 import pytest

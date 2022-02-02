@@ -6,6 +6,7 @@ ISSUE:       1271
 TITLE:       Problem when dropping column that is a primary key
 DESCRIPTION:
 JIRA:        CORE-878
+FBTEST:      bugs.core_0878
 """
 
 import pytest

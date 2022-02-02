@@ -6,6 +6,7 @@ ISSUE:       2013
 TITLE:       Altering procedure parameters can lead to unrestorable database
 DESCRIPTION:
 JIRA:        CORE-1592
+FBTEST:      bugs.core_1592
 """
 
 import pytest

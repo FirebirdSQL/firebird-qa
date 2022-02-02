@@ -3,9 +3,11 @@
 """
 ID:          issue-5026
 ISSUE:       5026
-TITLE:       Message "Statement failed, SQLSTATE = 00000 + unknown ISC error 0" appears when issuing REVOKE ALL ON ALL FROM <existing_user>
+TITLE:       Message "Statement failed, SQLSTATE = 00000 + unknown ISC error 0" appears when
+  issuing REVOKE ALL ON ALL FROM <existing_user>
 DESCRIPTION:
 JIRA:        CORE-4719
+FBTEST:      bugs.core_4719
 """
 
 import pytest

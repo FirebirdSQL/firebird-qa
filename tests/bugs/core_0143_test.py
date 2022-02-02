@@ -10,6 +10,7 @@ NOTES:
   It can lead to additional ident of values when we show them in form "SET LIST ON",
   so we have to ignore all internal spaces - see added 'substitution' section below.
 JIRA:        CORE-143
+FBTEST:      bugs.core_0143
 """
 
 import pytest

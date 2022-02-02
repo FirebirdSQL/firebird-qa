@@ -6,6 +6,7 @@ ISSUE:       4038
 TITLE:       Wrong warning message for ambiguous query
 DESCRIPTION: SQL dialect 1 allows such queries for backward compatibility reasons
 JIRA:        CORE-3690
+FBTEST:      bugs.core_3690
 """
 
 import pytest

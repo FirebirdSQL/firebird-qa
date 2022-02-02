@@ -30,6 +30,7 @@ DESCRIPTION:
 
      We also do additional check: all ISQL sessions should be disconnected with writing to logs appropriate messages about shutdown.
 JIRA:        CORE-5087
+FBTEST:      bugs.core_5087
 """
 
 from __future__ import annotations

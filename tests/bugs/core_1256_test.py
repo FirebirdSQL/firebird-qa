@@ -6,6 +6,7 @@ ISSUE:       703
 TITLE:       Table columns hide destination variables of RETURNING INTO
 DESCRIPTION:
 JIRA:        CORE-1256
+FBTEST:      bugs.core_1256
 """
 
 import pytest

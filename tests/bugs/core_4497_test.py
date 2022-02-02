@@ -3,9 +3,11 @@
 """
 ID:          issue-4816
 ISSUE:       4816
-TITLE:       Regression in 3.0.x: wrong handling in FOR-cursor when NOT EXISTS( select from <VIEW> ) statement is used to check results obtained from SP
+TITLE:       Regression in 3.0.x: wrong handling in FOR-cursor when NOT EXISTS( select from <VIEW> )
+  statement is used to check results obtained from SP
 DESCRIPTION:
 JIRA:        CORE-4497
+FBTEST:      bugs.core_4497
 """
 
 import pytest

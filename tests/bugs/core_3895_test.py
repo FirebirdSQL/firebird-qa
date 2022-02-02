@@ -14,6 +14,7 @@ DESCRIPTION:
   On current FB versions memory usage is incremented (after every call of SP, w/o commit) by:
   1) ~ 14500 bytes for 3.0
 JIRA:        CORE-3895
+FBTEST:      bugs.core_3895
 """
 
 import pytest

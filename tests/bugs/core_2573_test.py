@@ -6,6 +6,7 @@ ISSUE:       2983
 TITLE:       The server crashes when selecting from the MON$ tables in the ON DISCONNECT trigger
 DESCRIPTION:
 JIRA:        CORE-2573
+FBTEST:      bugs.core_2573
 """
 
 import pytest

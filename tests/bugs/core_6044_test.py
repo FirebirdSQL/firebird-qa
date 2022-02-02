@@ -6,6 +6,7 @@ ISSUE:       6294
 TITLE:       ISQL issues with increased identifier length
 DESCRIPTION:
 JIRA:        CORE-6044
+FBTEST:      bugs.core_6044
 """
 
 import pytest

@@ -52,6 +52,7 @@ NOTES:
   changed 'platform' attribute to Windows only. Content of firebird.log has no changes on Linux during this test run.
   Perhaps, this is temporary and another solution will be found/implemented. Sent letter to dimitr et al, 21.02.2021 08:20.
 JIRA:        CORE-2493
+FBTEST:      bugs.core_2493
 """
 
 import pytest
@@ -78,7 +79,6 @@ expected_stdout = """
 @pytest.mark.platform('Windows')
 def test_1(act: Action):
     pytest.fail("Not IMPLEMENTED")
-
 
 # test_script_1
 #---

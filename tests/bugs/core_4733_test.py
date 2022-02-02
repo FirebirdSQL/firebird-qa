@@ -3,9 +3,12 @@
 """
 ID:          issue-5039
 ISSUE:       5039
-TITLE:       Command "Alter table <T> alter TYPE <C> <DOMAIN_WITH_NOT_NULL" does not verifies data in column <C> and makes incorrect assignments in <C> to ZERO / JULIAN_DATE / ASCII(0) for types INT, TIMESTAMP and VARCHAR
+TITLE:       Command "Alter table <T> alter TYPE <C> <DOMAIN_WITH_NOT_NULL" does not verifies
+  data in column <C> and makes incorrect assignments in <C> to ZERO / JULIAN_DATE / ASCII(0)
+  for types INT, TIMESTAMP and VARCHAR
 DESCRIPTION:
 JIRA:        CORE-4733
+FBTEST:      bugs.core_4733
 """
 
 import pytest

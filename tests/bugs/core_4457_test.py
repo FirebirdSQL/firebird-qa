@@ -6,6 +6,7 @@ ISSUE:       4777
 TITLE:       DATEADD should support fractional value for MILLISECOND
 DESCRIPTION:
 JIRA:        CORE-4457
+FBTEST:      bugs.core_4457
 """
 
 import pytest

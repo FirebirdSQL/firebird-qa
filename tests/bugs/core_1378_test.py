@@ -6,6 +6,7 @@ ISSUE:       1796
 TITLE:       Domain names and charset issues
 DESCRIPTION:
 JIRA:        CORE-1378
+FBTEST:      bugs.core_1378
 """
 
 import pytest

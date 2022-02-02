@@ -6,6 +6,7 @@ ISSUE:       4664
 TITLE:       Non-privileged user can delete records from RDB$SECURITY_CLASSES table
 DESCRIPTION:
 JIRA:        CORE-4342
+FBTEST:      bugs.core_4342
 """
 
 import pytest

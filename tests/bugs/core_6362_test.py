@@ -18,6 +18,7 @@ DESCRIPTION:
   Because of this, we are interested only for at least one occurence of each message
   rather than for each of them (see 'found_patterns', type: set()).
 JIRA:        CORE-6362
+FBTEST:      bugs.core_6362
 """
 
 import pytest

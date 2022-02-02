@@ -6,6 +6,7 @@ ISSUE:       1732
 TITLE:       RDB$DB_KEY not supported in derived tables and merge command
 DESCRIPTION:
 JIRA:        CORE-1313
+FBTEST:      bugs.core_1313
 """
 
 import pytest

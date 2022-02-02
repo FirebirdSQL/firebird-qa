@@ -19,6 +19,7 @@ DESCRIPTION:
     This query should NOT raise any exception and must produce normal output (string 'foo').
     Thanks to hvlad for suggestions.
 JIRA:        CORE-5783
+FBTEST:      bugs.core_5783
 """
 
 import pytest

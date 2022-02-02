@@ -6,6 +6,7 @@ ISSUE:       6508
 TITLE:       Deleting records from MON$ATTACHMENTS using ORDER BY clause doesn't close the corresponding attachments
 DESCRIPTION:
 JIRA:        CORE-6266
+FBTEST:      bugs.core_6266
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1368
 TITLE:       Many aggregate functions within a single select list may cause a server crash
 DESCRIPTION:
 JIRA:        CORE-965
+FBTEST:      bugs.core_0965
 """
 
 import pytest

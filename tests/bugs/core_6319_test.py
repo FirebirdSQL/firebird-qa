@@ -27,6 +27,7 @@ DESCRIPTION:
     =====
     - and file <nbk_level_2> could not be deleted after this until restart of FB.
 JIRA:        CORE-6319
+FBTEST:      bugs.core_6319
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       2549
 TITLE:       Incorrect ROW_COUNT value with indexed retrieval and subquery
 DESCRIPTION:
 JIRA:        CORE-2117
+FBTEST:      bugs.core_2117
 """
 
 import pytest

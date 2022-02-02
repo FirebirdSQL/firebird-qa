@@ -6,6 +6,7 @@ ISSUE:       3157
 TITLE:       Use of RDB$ADMIN role does not provide SYSDBA rights in GRANT/REVOKE
 DESCRIPTION:
 JIRA:        CORE-2765
+FBTEST:      bugs.core_2765
 """
 
 import pytest
