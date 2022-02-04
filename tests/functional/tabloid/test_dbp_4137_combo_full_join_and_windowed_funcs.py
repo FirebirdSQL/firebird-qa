@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.dbp_4137_combo_full_join_and_windowed_funcs
-# title:        Common SQL. Check correctness of the results
-# decription:   
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          tabloid.dbp-4137-combo-full-join-and-windowed-funcs
+TITLE:       Common SQL. Check correctness of the results
+DESCRIPTION: 
+FBTEST:      functional.tabloid.dbp_4137_combo_full_join_and_windowed_funcs
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='tabloid-dbp-4137.fbk')
 
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='tabloid-dbp-4137.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     select x.ari ari_x, y.ari ari_y, z.ari ari_z
     from(
         select ari
@@ -71,9 +63,9 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
        ARI_X        ARI_Y        ARI_Z 
            2            2            2 
           53           53           53 
@@ -81,8 +73,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

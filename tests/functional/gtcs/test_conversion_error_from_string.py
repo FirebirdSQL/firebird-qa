@@ -1,38 +1,26 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.conversion_error_from_string
-# title:        GTCS/tests/CF_ISQL_31. Script issues conversion error from string ""
-# decription:   
-#               	::: NB ::: 
-#               	### Name of original test has no any relation with actual task of this test: ###
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_31.script
-#               
-#                   Source description of problem with script for reproducing:
-#                   https://sourceforge.net/p/firebird/mailman/message/17016915/
-#               
-#                   Issue in original test:
-#                   bug in devel-list / Reported by lobolo2000 18-May-2004
-#               
-#                   Checked on: 4.0.0.1804 SS; 3.0.6.33271 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.conversion-error-from-string
+FBTEST:      functional.gtcs.conversion_error_from_string
+TITLE:       Script issues conversion error from string
+DESCRIPTION:
+  ::: NB :::
+  ### Name of original test has no any relation with actual task of this test: ###
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_31.script
+
+  Source description of problem with script for reproducing:
+  https://sourceforge.net/p/firebird/mailman/message/17016915/
+
+  Issue in original test: bug in devel-list / Reported by lobolo2000 18-May-2004
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create domain dm_id as bigint
      not null;
 
@@ -252,9 +240,9 @@ test_script_1 = """
     select 'point-2' msg, m.qoh, m.qoh, m.qoh, m.qoh, m.qoh, m.qoh, m.qoh, m.qoh, m.qoh, m.qoh from items m;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             point-1
     UID                             1
     DESCRIPTION                     pa
@@ -430,9 +418,8 @@ expected_stdout_1 = """
     Records affected: 6
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

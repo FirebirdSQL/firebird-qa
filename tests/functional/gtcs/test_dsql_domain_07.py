@@ -1,56 +1,48 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.dsql_domain_07
-# title:        GTCS/tests/DSQL_DOMAIN_07. Test CREATE / ALTER domain statement with ADD/DROP CONSTRAINT clauses, together and separately.
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_07.script 
-#               
-#                   NB: avoid usage of ISQL command 'SHOW DOMAIN' because of unstable output.
-#                   We display info about domains using common VIEW based on RDB$FIELDS table.
-#                   Columns with rdb$validation_source and rdb$default_source contain BLOB data thus we have to skip from showing their blob ID - see substitution.
-#               
-#                   ::: NOTE :::
-#                   Added domains with datatype that did appear only in FB 4.0: DECFLOAT and TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
-#               
-#                   For each base datatype we:
-#                   * create domain and set initial CHECK constraint;
-#                   * alter domain in order to add new constraint. This must FAIL with message "Only one constraint allowed for a domain" (SQLSTATE = 42000)
-#                   * alter domain with requirement ADD CONSTRAINT and DROP it. 
-#               	  ##########
-#               	  ### NB ### Clause 'DROP CONSTRAINT' will be executed FIRST in this case, regardless where it is specified.
-#               	  ##########
-#               	  For this reason such statement must PASS.
-#                   * alter domain and try to add again new CHECK constraint. This thould fail again with SQLSTATE=42000.
-#               
-#                   Currently following datatypes are NOT checked:
-#                     blob sub_type text not null;
-#                     blob sub_type binary not null; // byt test *does* check BLOB without sub_type specified
-#                     long float not null;
-#                     nchar not null;
-#                     binary not null;
-#                     varbinary not null;
-#               
-#                   Checked on 4.0.0.1931.
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          gtcs.dsql-domain-07
+FBTEST:      functional.gtcs.dsql_domain_07
+TITLE:       Test CREATE / ALTER domain statement with ADD/DROP CONSTRAINT clauses, together and separately.
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_07.script
+
+  NB: avoid usage of ISQL command 'SHOW DOMAIN' because of unstable output.
+  We display info about domains using common VIEW based on RDB$FIELDS table.
+  Columns with rdb$validation_source and rdb$default_source contain BLOB data thus we have
+  to skip from showing their blob ID - see substitution.
+
+  ::: NOTE :::
+  Added domains with datatype that did appear only in FB 4.0: DECFLOAT and
+  TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
+
+  For each base datatype we:
+  * create domain and set initial CHECK constraint;
+  * alter domain in order to add new constraint. This must FAIL with message
+    "Only one constraint allowed for a domain" (SQLSTATE = 42000)
+  * alter domain with requirement ADD CONSTRAINT and DROP it.
+      ##########
+      ### NB ### Clause 'DROP CONSTRAINT' will be executed FIRST in this case, regardless where it is specified.
+      ##########
+      For this reason such statement must PASS.
+  * alter domain and try to add again new CHECK constraint. This thould fail again with SQLSTATE=42000.
+
+  Currently following datatypes are NOT checked:
+    blob sub_type text not null;
+    blob sub_type binary not null; // byt test *does* check BLOB without sub_type specified
+    long float not null;
+    nchar not null;
+    binary not null;
+    varbinary not null;
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' '), ('DM_FDEFAULT_BLOB_ID.*', ''), ('DM_FVALID_BLOB_ID.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     create view v_test as
     select
@@ -153,8 +145,8 @@ test_script_1 = """
     alter domain dom06_16 add constraint check( value >= 2e-308 ) drop constraint;
     alter domain dom06_16 add constraint check( value = 1.0000000000000002220446049250313080847263336181640625 );
 	-----------------------------------------------------------------------------------------------
-    create domain dom06_17 as blob check (value = 
-'	
+    create domain dom06_17 as blob check (value =
+'
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -321,13 +313,13 @@ test_script_1 = """
 '
 );
 
-    alter domain dom06_17 add constraint check( value = 
+    alter domain dom06_17 add constraint check( value =
 '
 
 
 '); -- several empty lines here
 
-    alter domain dom06_17 add constraint check( value = 
+    alter domain dom06_17 add constraint check( value =
 '
 
 
@@ -347,16 +339,17 @@ test_script_1 = """
     alter domain dom06_19 add constraint check( value is not null ) drop constraint;
     alter domain dom06_19 add constraint check( value >= -1.0E-6143 );
 ----------------------------------------------------------------------------------------------------
-    commit;	
+    commit;
     set count on;
 	select * from v_test;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('DM_FDEFAULT_BLOB_ID.*', ''),
+                                                 ('DM_FVALID_BLOB_ID.*', '')])
 
-expected_stdout_1 = """
-	DM_NAME                         DOM06_01                                                                                                                                                                                                                                                    
+expected_stdout = """
+	DM_NAME                         DOM06_01
 	DM_TYPE                         7
 	DM_SUBTYPE                      0
 	DM_FLEN                         2
@@ -370,7 +363,7 @@ expected_stdout_1 = """
 	check( value = 3 )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_02                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_02
 	DM_TYPE                         8
 	DM_SUBTYPE                      0
 	DM_FLEN                         4
@@ -384,7 +377,7 @@ expected_stdout_1 = """
 	check( value = 3 )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_03                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_03
 	DM_TYPE                         16
 	DM_SUBTYPE                      0
 	DM_FLEN                         8
@@ -398,7 +391,7 @@ expected_stdout_1 = """
 	check( value = 3 )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_04                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_04
 	DM_TYPE                         12
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         4
@@ -412,7 +405,7 @@ expected_stdout_1 = """
 	check( value < current_date )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_05                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_05
 	DM_TYPE                         13
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         4
@@ -426,7 +419,7 @@ expected_stdout_1 = """
 	check( value < current_time )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_06                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_06
 	DM_TYPE                         28
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         8
@@ -440,7 +433,7 @@ expected_stdout_1 = """
 	check( value < '23:34:45.678 Pacific/Galapagos' )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_07                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_07
 	DM_TYPE                         13
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         4
@@ -454,7 +447,7 @@ expected_stdout_1 = """
 	check( value < current_timestamp )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_08                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_08
 	DM_TYPE                         29
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         12
@@ -468,7 +461,7 @@ expected_stdout_1 = """
 	check( value < '27.03.2015 23:34:45.678 Pacific/Galapagos' )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_09                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_09
 	DM_TYPE                         14
 	DM_SUBTYPE                      0
 	DM_FLEN                         4
@@ -482,7 +475,7 @@ expected_stdout_1 = """
 	check( value = '¢' )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_10                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_10
 	DM_TYPE                         37
 	DM_SUBTYPE                      0
 	DM_FLEN                         4
@@ -496,7 +489,7 @@ expected_stdout_1 = """
 	check( value = '¢' )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_11                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_11
 	DM_TYPE                         14
 	DM_SUBTYPE                      0
 	DM_FLEN                         1
@@ -510,7 +503,7 @@ expected_stdout_1 = """
 	check( value = 'Ÿ' )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_12                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_12
 	DM_TYPE                         7
 	DM_SUBTYPE                      1
 	DM_FLEN                         2
@@ -524,7 +517,7 @@ expected_stdout_1 = """
 	check( value = -327.68 )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_13                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_13
 	DM_TYPE                         8
 	DM_SUBTYPE                      2
 	DM_FLEN                         4
@@ -538,7 +531,7 @@ expected_stdout_1 = """
 	check( value = -327.68 )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_14                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_14
 	DM_TYPE                         10
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         4
@@ -552,7 +545,7 @@ expected_stdout_1 = """
 	check( value = 1.40129846432481707092372958328991613128026194187651577175706828388979108268586060148663818836212158203125e-45 )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_15                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_15
 	DM_TYPE                         10
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         4
@@ -566,7 +559,7 @@ expected_stdout_1 = """
 	check( value = 1.40129846432481707092372958328991613128026194187651577175706828388979108268586060148663818836212158203125e-45 )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_16                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_16
 	DM_TYPE                         27
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         8
@@ -580,7 +573,7 @@ expected_stdout_1 = """
 	check( value >= 2e-308 )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_17                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_17
 	DM_TYPE                         261
 	DM_SUBTYPE                      0
 	DM_FLEN                         8
@@ -591,7 +584,7 @@ expected_stdout_1 = """
 	DM_FCHRLEN                      <null>
 	DM_FNULL                        <null>
 	DM_FVALID_BLOB_ID               2:226
-	check( value = 
+	check( value =
 	'
 
 
@@ -599,7 +592,7 @@ expected_stdout_1 = """
 	')
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_18                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_18
 	DM_TYPE                         23
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         1
@@ -613,7 +606,7 @@ expected_stdout_1 = """
 	check( value is not null )
 	DM_FDEFAULT_BLOB_ID             <null>
 
-	DM_NAME                         DOM06_19                                                                                                                                                                                                                                                    
+	DM_NAME                         DOM06_19
 	DM_TYPE                         25
 	DM_SUBTYPE                      <null>
 	DM_FLEN                         16
@@ -629,7 +622,8 @@ expected_stdout_1 = """
 
 	Records affected: 19
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -ALTER DOMAIN DOM06_01 failed
@@ -822,11 +816,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

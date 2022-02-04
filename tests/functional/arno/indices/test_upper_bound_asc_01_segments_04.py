@@ -4,6 +4,7 @@
 ID:          index.upper-bound-asc-1-segment-04
 TITLE:       ASC single segment index upper bound
 DESCRIPTION: Check if all 5 values are fetched with "lower than or equal" operator.
+FBTEST:      functional.arno.indices.upper_bound_asc_01_segments_04
 """
 
 import pytest

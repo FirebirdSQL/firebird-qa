@@ -1,38 +1,28 @@
 #coding:utf-8
-#
-# id:           functional.exception.create.03
-# title:        CREATE EXCEPTION - too long message
-# decription:   CREATE EXCEPTION - too long message
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               Basic SELECT
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.exception.create.create_exception_03
+
+"""
+ID:          exception.create-03
+FBTEST:      functional.exception.create.03
+TITLE:       CREATE EXCEPTION - too long message
+DESCRIPTION:
+NOTES:
+[23.10.2015]
+  try to create in the SAME transaction exceptions with too long message and correct message (reduce its length with 1)
+  after statement fails. Do that using both ascii and non-ascii characters in these exceptions messages.
+  Expected result: no errors should occur on commit, exceptions should work fine. Taken from eqc ticket #12062.
+[13.06.2016]
+  replaced 'show exception' with regular select from rdb$exception: output of SHOW commands
+ is volatile in unstable FB versions.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = [('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set autoddl off;
     commit;
-
-    -- Updated 23-oct-2015: try to create in the SAME transaction exceptions with too long message and correct message (reduce its length with 1)
-    -- after statement fails. Do that using both ascii and non-ascii characters in these exceptions messages.
-    -- Expected result: no errors should occur on commit, exceptions should work fine. Taken from eqc ticket #12062.
-    -- 13.06.2016: replaced 'show exception' with regular select from rdb$exception: output of SHOW commands
-    -- is volatile in unstable FB versions.
 
     create exception boo_ascii
     'FOO!BAR!abcdefghijklmnoprstu012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345'
@@ -68,19 +58,20 @@ test_script_1 = """
       exception boo_utf8;
     end
     ^
-    set term ;^  
+    set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
 
-expected_stdout_1 = """
-    RDB$EXCEPTION_NAME              BOO_ASCII                                                                                                                                                                                                                                                       
+expected_stdout = """
+    RDB$EXCEPTION_NAME              BOO_ASCII
     RDB$MESSAGE                     FOOBAR!abcdefghijklmnoprstu012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345
 
-    RDB$EXCEPTION_NAME              BOO_UTF8                                                                                                                                                                                                                                                        
+    RDB$EXCEPTION_NAME              BOO_UTF8
     RDB$MESSAGE                     3ηΣημείωσηΣημείωσηΣημεσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωση
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -CREATE EXCEPTION BOO_ASCII failed
@@ -105,11 +96,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

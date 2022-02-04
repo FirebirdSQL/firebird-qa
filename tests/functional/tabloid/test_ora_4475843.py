@@ -1,34 +1,25 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.ora_4475843
-# title:        Wrong (empty) result of query in Oracle 19
-# decription:   
-#                  Original issue:
-#                  https://community.oracle.com/tech/developers/discussion/4475843/wrong-result-on-a-simple-sql-statement
-#                  According to message, Oracle return no rows for the query that follows.
-#                  Could not check because of problems with install Oracle XE.
-#               
-#                  Checked on 4.0.0.2416, 3.0.8.33445 - results OK (one row).
-#                  Checked also on SQL Server XE and Postgres 13
-#                
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          tabloid.ora-4475843
+TITLE:       Wrong (empty) result of query in Oracle 19
+DESCRIPTION: 
+  Original issue:
+     https://community.oracle.com/tech/developers/discussion/4475843/wrong-result-on-a-simple-sql-statement
+     According to message, Oracle return no rows for the query that follows.
+     Could not check because of problems with install Oracle XE.
+  
+     Checked on 4.0.0.2416, 3.0.8.33445 - results OK (one row).
+     Checked also on SQL Server XE and Postgres 13
+FBTEST:      functional.tabloid.ora_4475843
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test(
         p_c_id   int,
         v_id     int,
@@ -79,9 +70,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     SUPPLIER                        1363
     R_M_S_ID                        1363
     M_C_ID                          10
@@ -90,8 +81,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

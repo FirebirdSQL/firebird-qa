@@ -4,6 +4,7 @@
 ID:          new-database-18
 TITLE:       New DB - RDB$DATABASE content
 DESCRIPTION: Check the correct content of RDB$DATABASE in new database.
+FBTEST:      functional.basic.db.18
 """
 
 import pytest

@@ -1,35 +1,26 @@
 #coding:utf-8
-#
-# id:           functional.domain.create.37
-# title:        CREATE DOMAIN - NOT NULL
-# decription:   Domain creation based on VARCHAR datatype with NOT NULL specification.
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.domain.create.create_domain_37
+
+"""
+ID:          domain.create-37
+FBTEST:      functional.domain.create.37
+TITLE:       CREATE DOMAIN - NOT NULL
+DESCRIPTION: Domain creation based on VARCHAR datatype with NOT NULL specification
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """CREATE DOMAIN test VARCHAR(32) NOT NULL;
+test_script = """CREATE DOMAIN test VARCHAR(32) NOT NULL;
 SHOW DOMAIN test;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """TEST                            VARCHAR(32) Not Null"""
+expected_stdout = """TEST                            VARCHAR(32) Not Null"""
 
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

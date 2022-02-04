@@ -6,6 +6,7 @@ TITLE:       Implicit derived table by IN predicate
 DESCRIPTION:
   IN predicate uses derived table internally and should ignore column-name checks
   (Aggregate functions are unnamed by default).
+FBTEST:      functional.arno.derived_tables.21
 """
 
 import pytest

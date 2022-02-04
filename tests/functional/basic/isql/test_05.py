@@ -13,6 +13,7 @@ DESCRIPTION:
 
   PS. Best place of this test in functional folder rather than in 'issues' one.
 JIRA:       CORE-5382
+FBTEST:      functional.basic.isql.05
 """
 
 import pytest

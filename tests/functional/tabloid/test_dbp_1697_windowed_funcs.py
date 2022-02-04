@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.dbp_1697_windowed_funcs
-# title:        Query for test SUM()OVER() and COUNT()OVER().
-# decription:   
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          tabloid.dbp-1697-windowed-funcs
+TITLE:       Query for test SUM()OVER() and COUNT()OVER().
+DESCRIPTION: 
+FBTEST:      functional.tabloid.dbp_1697_windowed_funcs
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='tabloid-dbp-1697.fbk')
 
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='tabloid-dbp-1697.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     delete from tresult;
     --------------------
     insert into tresult
@@ -99,10 +91,8 @@ test_script_1 = """
     select id,count(*) from tresult group by id having count(*)<>2;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    act.execute()

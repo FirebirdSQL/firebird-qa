@@ -1,38 +1,30 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.create_privileged_roles
-# title:        Check ability of non-sysdba user to CREATE privileged role (but NOT use it)
-# decription:   
-#                  Checked on WI-T4.0.0.267.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.create-privileged-roles
+TITLE:       Check ability of non-sysdba user to CREATE privileged role (but NOT use it)
+DESCRIPTION:
+FBTEST:      functional.syspriv.create_privileged_roles
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
+test_user = user_factory('db', name='u01', do_not_create=True)
+role_create = role_factory('db', name='role_for_CREATE_PRIVILEGED_ROLES', do_not_create=True)
+role_granted = role_factory('db', name='role_for_USE_GRANTED_BY_CLAUSE', do_not_create=True)
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set bail on;
     set list on;
-
 
     create or alter user u01 password '123' revoke admin role;
     revoke all on all from u01;
     grant create role to u01;
     commit;
-
+/*
     set term ^;
     execute block as
     begin
@@ -47,7 +39,7 @@ test_script_1 = """
     end^
     set term ;^
     commit;
-
+*/
     create role role_for_CREATE_PRIVILEGED_ROLES set system privileges to CREATE_PRIVILEGED_ROLES;
     commit;
     grant default role_for_CREATE_PRIVILEGED_ROLES to user u01;
@@ -62,17 +54,17 @@ test_script_1 = """
 
     select current_user as who_am_i,r.rdb$role_name,rdb$role_in_use(r.rdb$role_name),r.rdb$system_privileges
     from mon$database m cross join rdb$roles r;
-    
+
     commit;
 
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user u01;
-    commit;
+    --connect '$(DSN)' user sysdba password 'masterkey';
+    --drop user u01;
+    --commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
      WHO_AM_I                        U01
      RDB$ROLE_NAME                   RDB$ADMIN
      RDB$ROLE_IN_USE                 <false>
@@ -90,8 +82,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, test_user, role_create, role_granted):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

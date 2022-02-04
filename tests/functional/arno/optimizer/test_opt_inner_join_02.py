@@ -9,6 +9,7 @@ DESCRIPTION:
   should be the second smallest. Note that calculation is based on page-size. Thus for tables
   which use the same nr. of data-pages, but have in reality different nr. of records
   the table N could be bigger as table N+1 in the order.
+FBTEST:      functional.arno.optimizer.opt_inner_join_02
 """
 
 import pytest

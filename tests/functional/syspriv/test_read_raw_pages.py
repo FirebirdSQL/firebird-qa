@@ -1,29 +1,21 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.read_raw_pages
-# title:        Check ability to get binary content of DB page by non-sysdba user who is granted with necessary system privilege.
-# decription:   
-#                  Test uses ability to read binary content of DB page that is provided by FDB driver (see con.get_page_contents() call).
-#                  We obtain content of page with ID=1 (this is PIP) and get its type (it must be 2).
-#                  This action can be done by NON-dba user only if he has apropriate system privilege, otherwise FDB raises Python-related
-#                  error. We catch this error in order to prevent failing of test with 'E' outcome and print text of exception.
-#               
-#                  Checked on 5.0.0.139 SS/CS; 4.0.1.2568 SS/CS.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.read-raw-pages
+TITLE:       Check ability to get binary content of DB page by non-sysdba user who is
+  granted with necessary system privilege
+DESCRIPTION:
+  Test uses ability to read binary content of DB page that is provided by FDB driver (see con.get_page_contents() call).
+  We obtain content of page with ID=1 (this is PIP) and get its type (it must be 2).
+  This action can be done by NON-dba user only if he has apropriate system privilege, otherwise FDB raises Python-related
+  error. We catch this error in order to prevent failing of test with 'E' outcome and print text of exception.
+FBTEST:      functional.syspriv.read_raw_pages
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     set wng off;
     set bail on;
     set list on;
@@ -56,17 +48,33 @@ init_script_1 = """
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
+
+act = python_act('db')
+
+expected_stdout = """
+    User: mike_adams_bad_hacker
+    Exception occured:
+    Result code does not match request code.
+
+    User: john_smith_raw_reader
+    Successfully get content of page, its type: 2
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  from struct import unpack_from
-#  
+#
 #  db_file = db_conn.database_name
 #  db_conn.close()
-#  
+#
 #  for i in ( 'mike_adams_bad_hacker', 'john_smith_raw_reader'):
 #      print('User: %s' % i )
 #      con = fdb.connect(dsn = dsn, user = i, password = '123', role = 'role_for_read_raw_pages')
@@ -80,30 +88,13 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #              print(x)
 #      finally:
 #          con.close()
-#  
+#
 #  #------------------------
-#  
+#
 #  con = fdb.connect(dsn = dsn, user = user_name, password = user_password)
 #  con.execute_immediate('drop user mike_adams_bad_hacker using plugin Srp')
 #  con.execute_immediate('drop user john_smith_raw_reader using plugin Srp')
 #  con.commit()
 #  con.close()
-#  
+#
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    User: mike_adams_bad_hacker
-    Exception occured:
-    Result code does not match request code.
-
-    User: john_smith_raw_reader
-    Successfully get content of page, its type: 2
-"""
-
-@pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
-
-

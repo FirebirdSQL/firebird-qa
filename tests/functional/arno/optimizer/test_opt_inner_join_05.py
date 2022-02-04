@@ -4,6 +4,7 @@
 ID:          optimizer.inner-join-05
 TITLE:       INNER JOIN join order LIKE and STARTING WITH
 DESCRIPTION: LIKE and STARTING WITH should also be used for determing join order.
+FBTEST:      functional.arno.optimizer.opt_inner_join_05
 """
 
 import pytest

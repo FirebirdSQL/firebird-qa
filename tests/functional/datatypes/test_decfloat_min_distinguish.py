@@ -4,6 +4,7 @@
 ID:          decfloat.min-distinguish
 TITLE:       List of all values starting from 1.0 divided by 2, until previous and current become equal
 DESCRIPTION:
+FBTEST:      functional.datatypes.decfloat_min_distinguish
 """
 
 import pytest

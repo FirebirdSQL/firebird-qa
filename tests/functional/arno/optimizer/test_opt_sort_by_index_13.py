@@ -7,6 +7,7 @@ DESCRIPTION:
   WHERE X = 1 ORDER BY Y ASC
   WHERE clause and ORDER BY nodes can sometimes be merged to get optimal result from
   compound index.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_13
 """
 
 import pytest

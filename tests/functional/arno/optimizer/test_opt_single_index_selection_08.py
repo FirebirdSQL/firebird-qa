@@ -6,6 +6,7 @@ TITLE:       Best match index selection (single segment)
 DESCRIPTION:
   Check if it will select the index with the best selectivity.
   STARTING WITH can also use a index, but 1 index is enough and prefer ASC index.
+FBTEST:      functional.arno.optimizer.opt_single_index_selection_08
 """
 
 import pytest

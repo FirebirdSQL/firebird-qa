@@ -4,6 +4,7 @@
 ID:          isql-03
 TITLE:       ISQL - SHOW SYSTEM TABLES
 DESCRIPTION: Check for correct output of "SHOW SYSTEM;" command on empty database.
+FBTEST:      functional.basic.isql.02
 """
 
 import pytest

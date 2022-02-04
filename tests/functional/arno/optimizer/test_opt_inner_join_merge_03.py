@@ -7,6 +7,7 @@ DESCRIPTION:
   X JOIN Y ON (X.Field + (10 * 2) = Y.Field + 20)
   When no index can be used on a INNER JOIN and there's a relation setup between X and Y
   then a MERGE should be performed. Also when expressions are used.
+FBTEST:      functional.arno.optimizer.opt_inner_join_merge_03
 """
 
 import pytest

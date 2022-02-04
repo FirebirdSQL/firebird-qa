@@ -4,6 +4,7 @@
 ID:          isql-02
 TITLE:       ISQL - SHOW DATABASE
 DESCRIPTION: Check for correct output of SHOW DATABASE on empty database.
+FBTEST:      functional.basic.isql.01
 """
 
 import pytest

@@ -8,6 +8,7 @@ NOTES:
 [30.10.2015]
   field rdb$grantor now contain NULLs in all records for new empty database (since build ~32134).
   Confirmed by Alex that this is OK 30.10.2015 15:28.
+FBTEST:      functional.basic.db.31
 """
 
 import pytest

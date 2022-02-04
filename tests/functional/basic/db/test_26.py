@@ -8,6 +8,7 @@ NOTES:
 [28.10.2015]
   Updated expected_stdout, added block to subst-section in order to ignore differences
   in values like "SQL$****" of field RDB$SECURITY_CLASS.
+FBTEST:      functional.basic.db.26
 """
 
 import pytest

@@ -7,6 +7,7 @@ JIRA:        CORE-5535
 TITLE:       Check ability of misc. actions against table column for DECFLOAT datatype
 DESCRIPTION:
   See  doc/sql.extensions/README.data_types
+FBTEST:      functional.datatypes.decfloat_columns_handlng
 """
 
 import pytest

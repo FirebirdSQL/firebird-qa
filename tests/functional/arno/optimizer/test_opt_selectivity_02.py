@@ -5,6 +5,7 @@ ID:          optimizer.selectivity-02
 TITLE:       SELECTIVITY - CREATE INDEX
 DESCRIPTION:
   Check if selectivity is calculated correctly.
+FBTEST:      functional.arno.optimizer.opt_selectivity_02
 """
 
 import pytest

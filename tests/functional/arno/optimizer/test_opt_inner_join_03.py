@@ -9,6 +9,7 @@ DESCRIPTION:
   result based on previous relation and do on till last relation.
 
   Before 2.0, Firebird did stop checking order possibilties above 7 relations.
+FBTEST:      functional.arno.optimizer.opt_inner_join_03
 """
 
 import pytest

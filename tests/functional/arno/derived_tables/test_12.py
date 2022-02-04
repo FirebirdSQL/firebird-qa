@@ -4,6 +4,7 @@
 ID:          derived-table-12
 TITLE:       Outer reference to upper scope-level is allowed
 DESCRIPTION: Such as fields inside derived table part of sub-query (EXISTS).
+FBTEST:      functional.arno.derived_tables.12
 """
 
 import pytest

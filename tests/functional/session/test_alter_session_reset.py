@@ -1,38 +1,28 @@
 #coding:utf-8
-#
-# id:           functional.session.alter_session_reset
-# title:        
-#                  Test results of ALTER SESSION RESET
-#                
-# decription:   
-#                   Checked on FB40SS, build 4.0.0.1166: OK, 4.329s.
-#                   31.10.2019. Refactoring: 
-#                   * remove IDs of attachment/transaction from output. 
-#                   * replaced mon$isolation_mode with its describing text - take in account that in FB 4.0
-#                     READ CONSISTENCY is default isolation mode for READ COMMITTED Tx.
-#               
-#                   Checked on:
-#                       4.0.0.1635 SS: 2.049s.
-#                       4.0.0.1633 CS: 2.266s.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          session.alter-session-reset
+TITLE:       Test results of ALTER SESSION RESET
+DESCRIPTION:
+NOTES:
+[31.10.2019]
+  Refactoring:
+  * remove IDs of attachment/transaction from output.
+  * replaced mon$isolation_mode with its describing text - take in account that in FB 4.0
+    READ CONSISTENCY is default isolation mode for READ COMMITTED Tx.
+FBTEST:      functional.session.alter_session_reset
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+substitutions = [('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+', ''),
+                 ('line[:]{0,1}[\\s]+[\\d]+,[\\s]+col[:]{0,1}[\\s]+[\\d]+', ''),
+                 ('[-]{0,1}Effective user is.*', 'Effective user')]
 
-substitutions_1 = [('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+', ''), ('line[:]{0,1}[\\s]+[\\d]+,[\\s]+col[:]{0,1}[\\s]+[\\d]+', ''), ('[-]{0,1}Effective user is.*', 'Effective user')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     --set bail on;
     -- set wng off;
     set autoddl off;
@@ -104,7 +94,7 @@ test_script_1 = """
     commit;
 
     recreate view v_info as
-    select 
+    select
          current_user as my_name
         ,current_role as my_role
         ,t.mon$lock_timeout as tx_lock_timeout
@@ -114,7 +104,7 @@ test_script_1 = """
         -- 15.01.2019: removed detailed info about read committed TIL because of read consistency TIL that 4.0 introduces.
         -- Any record with t.mon$isolation_mode = 4 now is considered just as read committed, w/o any detalization (this not much needed here).
         ,decode( t.mon$isolation_mode, 0,'CONSISTENCY', 1,'SNAPSHOT', 2, 'READ_COMMITTED', 3, 'READ_COMMITTED', 4, 'READ_COMMITTED', '??' ) as isol_descr
-    from mon$transactions t 
+    from mon$transactions t
     where t.mon$attachment_id = current_connection;
     commit;
 
@@ -155,11 +145,11 @@ test_script_1 = """
 
     select 'Point before call sp_decfloat_test with trap settings: {Division_by_zero, Invalid_operation, Overflow}' as msg from rdb$database;
     select * from sp_decfloat_test;
-    
+
     -- this will CLEAR previous trap settings which were: {Division_by_zero, Invalid_operation, Overflow}
     set decfloat traps to Inexact;
 
-   
+
     select 'Point before call sp_decfloat_test with trap settings: {Inexact}' as msg from rdb$database;
     -- Should raise:
     --  Statement failed, SQLSTATE = 22000
@@ -212,9 +202,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             Point before call sp_decfloat_test with trap settings: {Division_by_zero, Invalid_operation, Overflow}
     RAISED_GDS                      335545142
     RAISED_SQLST                    22003
@@ -256,7 +246,8 @@ expected_stdout_1 = """
     CONTEXT_VAR_VALUE               <null>
 
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22003
     Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
     -At procedure 'SP_DECFLOAT_TEST' line: 17, col: 13
@@ -280,11 +271,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

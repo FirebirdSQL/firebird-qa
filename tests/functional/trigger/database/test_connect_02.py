@@ -1,22 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.trigger.database.connect_02
-# title:        Error handling in trigger on database connect
-# decription:   This test verifies the proper error handling. Uncaught exceptions in trigger roll back the transaction, disconnect the attachment and are returned to the client.
-# tracker_id:   CORE-745
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.trigger.database.connect_02
+
+"""
+ID:          trigger.database.connect-02
+TITLE:       Error handling in trigger on database connect
+DESCRIPTION:
+  This test verifies the proper error handling. Uncaught exceptions in trigger roll back
+  the transaction, disconnect the attachment and are returned to the client.
+FBTEST:      functional.trigger.database.connect_02
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = [('line:.*', '')]
-
-init_script_1 = """create table LOG (ID integer, MSG varchar(100));
+init_script = """create table LOG (ID integer, MSG varchar(100));
 create generator LOGID;
 create exception CONNECTERROR 'Exception in ON CONNECT trigger';
 create role TEST;
@@ -42,29 +38,29 @@ set term ;^
 commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# try:
-#    con = kdb.connect(dsn=dsn.encode(),user=user_name.encode(),password=user_password.encode(),role='TEST')
-#  except Exception,e:
-#    for msg in e: print (msg)
-#---
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act = python_act('db', substitutions=[('line:.*', '')])
 
-expected_stdout_1 = """Error while connecting to database:
+expected_stdout = """Error while connecting to database:
 - SQLCODE: -836
 - exception 1
 - CONNECTERROR
 - Exception in ON CONNECT trigger
 - At trigger 'ONCONNECT' line: 5, col: 29
 -836
-335544517"""
+335544517
+"""
 
-@pytest.mark.version('>=2.1')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
-
+# Original python code for this test:
+# -----------------------------------
+# try:
+#   con = kdb.connect(dsn=dsn.encode(),user=user_name.encode(),password=user_password.encode(),role='TEST')
+# except Exception,e:
+#   for msg in e: print (msg)
+# -----------------------------------

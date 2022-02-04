@@ -1,28 +1,16 @@
 #coding:utf-8
-#
-# id:           functional.trigger.alter.06
-# title:        ALTER TRIGGER - AFTER DELETE
-# decription:   ALTER TRIGGER - AFTER DELETE
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-#               CREATE TRIGGER
-#               SHOW TRIGGER
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.trigger.alter.alter_trigger_06
+
+"""
+ID:          trigger.alter-06
+TITLE:       ALTER TRIGGER - AFTER DELETE
+DESCRIPTION:
+FBTEST:      functional.trigger.alter.06
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = [('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')]
-
-init_script_1 = """
+init_script = """
     CREATE TABLE test( id INTEGER NOT NULL CONSTRAINT unq UNIQUE,
                    text VARCHAR(32));
     SET TERM ^;
@@ -32,18 +20,19 @@ init_script_1 = """
     END ^
     SET TERM ;^
     commit;
-  """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+"""
 
-test_script_1 = """
+db = db_factory(init=init_script)
+
+test_script = """
     ALTER TRIGGER tg AFTER DELETE;
     SHOW TRIGGER tg;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     Triggers on Table TEST:
     TG, Sequence: 0, Type: AFTER DELETE, Active
     AS
@@ -51,9 +40,8 @@ expected_stdout_1 = """
     END
 """
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

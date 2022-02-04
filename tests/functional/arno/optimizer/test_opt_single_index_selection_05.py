@@ -17,6 +17,7 @@ DESCRIPTION:
   The cost for index F1 and F2 together is the best total cost.
 
   Cost = (data-pages * totalSelectivity) + total index cost.
+FBTEST:      functional.arno.optimizer.opt_single_index_selection_05
 """
 
 import pytest

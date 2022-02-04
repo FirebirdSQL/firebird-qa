@@ -1,28 +1,16 @@
 #coding:utf-8
-#
-# id:           functional.trigger.alter.08
-# title:        ALTER TRIGGER - POSITION
-# decription:   ALTER TRIGGER - POSITION
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-#               CREATE TRIGGER
-#               SHOW TRIGGER
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.trigger.alter.alter_trigger_08
+
+"""
+ID:          trigger.alter-08
+TITLE:       ALTER TRIGGER - POSITION
+DESCRIPTION:
+FBTEST:      functional.trigger.alter.08
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
-
-substitutions_1 = [('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')]
-
-init_script_1 = """
+init_script = """
     CREATE TABLE test( id INTEGER NOT NULL CONSTRAINT unq UNIQUE, text VARCHAR(32));
     SET TERM ^;
     CREATE TRIGGER tg FOR test BEFORE UPDATE
@@ -32,18 +20,19 @@ init_script_1 = """
     END ^
     SET TERM ;^
     commit;
-  """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+"""
 
-test_script_1 = """
+db = db_factory(init=init_script)
+
+test_script = """
     ALTER TRIGGER tg POSITION 20;
     SHOW TRIGGER tg;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     Triggers on Table TEST:
     TG, Sequence: 20, Type: BEFORE UPDATE, Active
     AS
@@ -52,9 +41,8 @@ expected_stdout_1 = """
     END
 """
 
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

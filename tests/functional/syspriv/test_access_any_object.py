@@ -1,39 +1,29 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.access_any_object
-# title:        Check ability to query, modify and deleting data plus add/drop constraints on any table.
-# decription:   
-#                  We create two master-detail tables (under SYSDBA) and add some data to them.
-#                  Then we connect as U01 who has system privilege to query and change (including deletion) data from ANY table.
-#                  Under this user we first try to run DML statements (IUD) and after - to remove some old and create new
-#                  constraint.
-#               
-#                  Checked on WI-T4.0.0.267.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.access-any-object
+TITLE:       Check ability to query, modify and deleting data plus add/drop constraints on any table
+DESCRIPTION:
+  We create two master-detail tables (under SYSDBA) and add some data to them.
+  Then we connect as U01 who has system privilege to query and change (including deletion) data from ANY table.
+  Under this user we first try to run DML statements (IUD) and after - to remove some old and create new
+  constraint.
+FBTEST:      functional.syspriv.access_any_object
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
+test_user = user_factory('db', name='u01', do_not_create=True)
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set bail on;
     set list on;
 
     create or alter view v_check as
-    select 
+    select
          current_user as who_ami
         ,r.rdb$role_name
         ,rdb$role_in_use(r.rdb$role_name) as RDB_ROLE_IN_USE
@@ -43,11 +33,11 @@ test_script_1 = """
     grant select on v_check to public;
 
     recreate table tdetl(
-        id int, 
-        pid int, 
-        x int, 
-        y int, 
-        constraint tdetl_pk primary key(id), 
+        id int,
+        pid int,
+        x int,
+        y int,
+        constraint tdetl_pk primary key(id),
         constraint tdetl_x_unq unique(x),
         constraint tdetl_y_gz check(y>0)
     );
@@ -58,7 +48,7 @@ test_script_1 = """
     insert into tdetl(id, pid, x, y) values(10, 1, 111, 7);
     insert into tdetl(id, pid, x, y) values(20, 1, 222, 6);
     insert into tdetl(id, pid, x, y) values(30, 1, 333, 5);
-    commit;                                      
+    commit;
 
     create or alter user u01 password '123' revoke admin role;
     revoke all on all from u01;
@@ -74,10 +64,10 @@ test_script_1 = """
     commit;
 
     -- Add/change/delete non-system records in RDB$TYPES
-    create role role_for_ddl_dml_any_obj 
-        set system privileges to 
-            SELECT_ANY_OBJECT_IN_DATABASE, 
-            MODIFY_ANY_OBJECT_IN_DATABASE, 
+    create role role_for_ddl_dml_any_obj
+        set system privileges to
+            SELECT_ANY_OBJECT_IN_DATABASE,
+            MODIFY_ANY_OBJECT_IN_DATABASE,
             ACCESS_ANY_OBJECT_IN_DATABASE;
     commit;
     grant default role_for_ddl_dml_any_obj to user u01;
@@ -94,7 +84,7 @@ test_script_1 = """
     delete from tdetl order by id rows 1;
     commit;
 
-    alter table tdetl 
+    alter table tdetl
         add constraint tdetl_fk foreign key(pid) references tmain using index tdetl_fk_pid
         ,drop constraint tdetl_x_unq
         ,drop constraint tdetl_y_gz
@@ -108,14 +98,14 @@ test_script_1 = """
     insert into tdetl(id, pid, x, y) values(40, 1, 222, -777); -- should NOT issue error
     commit;
 
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user u01;
-    commit;
+    --connect '$(DSN)' user sysdba password 'masterkey';
+    --drop user u01;
+    --commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AMI                         U01
     RDB$ROLE_NAME                   RDB$ADMIN
     RDB_ROLE_IN_USE                 <false>
@@ -143,7 +133,8 @@ expected_stdout_1 = """
     Records affected: 1
     Records affected: 1
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 23000
     violation of FOREIGN KEY constraint "TDETL_FK" on table "TDETL"
     -Foreign key reference target does not exist
@@ -151,11 +142,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, test_user):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

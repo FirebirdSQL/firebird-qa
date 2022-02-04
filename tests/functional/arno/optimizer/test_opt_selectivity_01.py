@@ -5,6 +5,7 @@ ID:          optimizer.selectivity-01
 TITLE:       SELECTIVITY - SET STATISTICS
 DESCRIPTION:
   Check if selectivity is calculated correctly.
+FBTEST:      functional.arno.optimizer.opt_selectivity_01
 """
 
 import pytest

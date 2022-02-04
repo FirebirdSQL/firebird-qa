@@ -7,6 +7,7 @@ ISSUE:       5803
 JIRA:        CORE-5535
 DESCRIPTION:
   See  doc/sql.extensions/README.data_types
+FBTEST:      functional.datatypes.decfloat_ddl_indices
 """
 
 import pytest

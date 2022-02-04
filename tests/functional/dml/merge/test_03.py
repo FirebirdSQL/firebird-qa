@@ -1,28 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.dml.merge.03
-# title:        MERGE ... RETURNING must refer either ALIAS of the table (if it is defined) or context variables OLD and NEW
-# decription:   
-#                   Checked on 4.0.0.2240
-#                
-# tracker_id:   
-# min_versions: []
-# versions:     4.0
-# qmid:         
+
+"""
+ID:          dml.merge-03
+FBTEST:      functional.dml.merge.03
+TITLE:       MERGE ... RETURNING must refer either ALIAS of the table (if it is defined) or context variables OLD and NEW
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('-At line .*', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table test_a(id int primary key, x int);
@@ -41,7 +31,7 @@ test_script_1 = """
         delete returning test_b.id, test_b.x
     ;
 
-    rollback; 
+    rollback;
 
     -- [ 2 ] must PASS:
     merge into test_b t
@@ -64,9 +54,9 @@ test_script_1 = """
     rollback;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-At line .*', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     OLD_ID                          1
     OLD_T_X                         100
 
@@ -75,7 +65,8 @@ expected_stdout_1 = """
     NEW_ID                          -2
     NEW_X                           -101
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
@@ -84,11 +75,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

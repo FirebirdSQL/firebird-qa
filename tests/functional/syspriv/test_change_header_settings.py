@@ -1,32 +1,25 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.change_header_settings
-# title:        Check ability to change some database header attributes by non-sysdba user who is granted with necessary system privileges.
-# decription:   
-#                  Checked on 4.0.0.262.
-#                  NB: attributes should be changed one at a time, i.e. one fbsvcmgr call should change only ONE atribute.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.change-header-settings
+TITLE:       Check ability to change some database header attributes by non-sysdba user who
+  is granted with necessary system privileges
+DESCRIPTION:
+  NB: attributes should be changed one at a time, i.e. one fbsvcmgr call should change only ONE atribute.
+FBTEST:      functional.syspriv.change_header_settings
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     set wng off;
     set bail on;
     set list on;
     set count on;
 
     create or alter view v_check as
-    select 
+    select
          current_user as who_ami
         ,r.rdb$role_name
         ,rdb$role_in_use(r.rdb$role_name) as RDB_ROLE_IN_USE
@@ -84,123 +77,18 @@ init_script_1 = """
 
     -- NB: Privilege 'IGNORE_DB_TRIGGERS' is needed when we return database to ONLINE
     -- and this DB has DB-level trigger.
-    create role role_for_change_header_settings 
+    create role role_for_change_header_settings
         set system privileges to CHANGE_HEADER_SETTINGS, USE_GFIX_UTILITY, IGNORE_DB_TRIGGERS;
     commit;
     grant default role_for_change_header_settings to user u01;
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# 
-#  import os
-#  import subprocess
-#  
-#  db_file = db_conn.database_name
-#  db_conn.close()
-#  
-#  #--------------------------------------------
-#  
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#      
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#  
-#  #--------------------------------------------
-#  
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#  
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#      
-#  #--------------------------------------------
-#  
-#  
-#  # Check that current non-sysdba user:
-#  # 1) can SKIP db-level trigger firing:
-#  # 2) IS granted with role 'role_for_change_header_settings':
-#  
-#  runProgram('isql',[dsn,'-nod','-user','U01', '-pas', '123'], 'set list on; set count on; select * from att_log; select * from v_check;')
-#  
-#  f_hdr_props_log = open( os.path.join(context['temp_directory'],'tmp_syspriv_hdr_props.log'), 'w')
-#  subprocess.call( [context['fbsvcmgr_path'],"localhost:service_mgr",
-#                    "user","U01", "password", "123",
-#                    "action_properties",
-#                    "dbname", db_file,
-#                    "prp_sweep_interval", "54321",
-#                   ],
-#                   stdout=f_hdr_props_log,
-#                   stderr=subprocess.STDOUT
-#                 )
-#  
-#  subprocess.call( [context['fbsvcmgr_path'],"localhost:service_mgr",
-#                    "user","U01", "password", "123",
-#                    "action_properties",
-#                    "dbname", db_file,
-#                    "prp_set_sql_dialect", "1",
-#                   ],
-#                   stdout=f_hdr_props_log,
-#                   stderr=subprocess.STDOUT
-#                 )
-#  
-#  subprocess.call( [context['fbsvcmgr_path'],"localhost:service_mgr",
-#                    "user","U01", "password", "123",
-#                    "action_properties",
-#                    "dbname", db_file,
-#                    "prp_write_mode", "prp_wm_async"
-#                   ],
-#                   stdout=f_hdr_props_log,
-#                   stderr=subprocess.STDOUT
-#                 )
-#  
-#  flush_and_close( f_hdr_props_log )
-#  
-#  # Checks
-#  ########
-#  
-#  sql_chk='''
-#      set list on; 
-#      set count on; 
-#      select m.mon$sweep_interval, m.mon$sql_dialect, m.mon$forced_writes from mon$database m; 
-#  '''
-#  runProgram('isql',[dsn,'-nod','-user','U01', '-pas', '123'], sql_chk)
-#  
-#  
-#  # Must be EMPTY:
-#  ################
-#  with open( f_hdr_props_log.name,'r') as f:
-#      for line in f:
-#          print('DB SHUTDOWN LOG: '+line.upper())
-#  
-#  
-#  # Cleanup:
-#  ##########
-#  cleanup( (f_hdr_props_log,) )
-#  
-#---
-act_1 = python_act('db_1', substitutions=substitutions_1)
+act = python_act('db')
 
-expected_stdout_1 = """
+expected_stdout = """
     Records affected: 0
     WHO_AMI                         U01
     RDB$ROLE_NAME                   RDB$ADMIN
@@ -217,9 +105,113 @@ expected_stdout_1 = """
     Records affected: 1
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
-
+# test_script_1
+#---
+#
+#  import os
+#  import subprocess
+#
+#  db_file = db_conn.database_name
+#  db_conn.close()
+#
+#  #--------------------------------------------
+#
+#  def flush_and_close( file_handle ):
+#      # https://docs.python.org/2/library/os.html#os.fsync
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
+#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
+#      global os
+#
+#      file_handle.flush()
+#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
+#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
+#          os.fsync(file_handle.fileno())
+#      file_handle.close()
+#
+#  #--------------------------------------------
+#
+#  def cleanup( f_names_list ):
+#      global os
+#      for f in f_names_list:
+#         if type(f) == file:
+#            del_name = f.name
+#         elif type(f) == str:
+#            del_name = f
+#         else:
+#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
+#            del_name = None
+#
+#         if del_name and os.path.isfile( del_name ):
+#             os.remove( del_name )
+#
+#  #--------------------------------------------
+#
+#
+#  # Check that current non-sysdba user:
+#  # 1) can SKIP db-level trigger firing:
+#  # 2) IS granted with role 'role_for_change_header_settings':
+#
+#  runProgram('isql',[dsn,'-nod','-user','U01', '-pas', '123'], 'set list on; set count on; select * from att_log; select * from v_check;')
+#
+#  f_hdr_props_log = open( os.path.join(context['temp_directory'],'tmp_syspriv_hdr_props.log'), 'w')
+#  subprocess.call( [context['fbsvcmgr_path'],"localhost:service_mgr",
+#                    "user","U01", "password", "123",
+#                    "action_properties",
+#                    "dbname", db_file,
+#                    "prp_sweep_interval", "54321",
+#                   ],
+#                   stdout=f_hdr_props_log,
+#                   stderr=subprocess.STDOUT
+#                 )
+#
+#  subprocess.call( [context['fbsvcmgr_path'],"localhost:service_mgr",
+#                    "user","U01", "password", "123",
+#                    "action_properties",
+#                    "dbname", db_file,
+#                    "prp_set_sql_dialect", "1",
+#                   ],
+#                   stdout=f_hdr_props_log,
+#                   stderr=subprocess.STDOUT
+#                 )
+#
+#  subprocess.call( [context['fbsvcmgr_path'],"localhost:service_mgr",
+#                    "user","U01", "password", "123",
+#                    "action_properties",
+#                    "dbname", db_file,
+#                    "prp_write_mode", "prp_wm_async"
+#                   ],
+#                   stdout=f_hdr_props_log,
+#                   stderr=subprocess.STDOUT
+#                 )
+#
+#  flush_and_close( f_hdr_props_log )
+#
+#  # Checks
+#  ########
+#
+#  sql_chk='''
+#      set list on;
+#      set count on;
+#      select m.mon$sweep_interval, m.mon$sql_dialect, m.mon$forced_writes from mon$database m;
+#  '''
+#  runProgram('isql',[dsn,'-nod','-user','U01', '-pas', '123'], sql_chk)
+#
+#
+#  # Must be EMPTY:
+#  ################
+#  with open( f_hdr_props_log.name,'r') as f:
+#      for line in f:
+#          print('DB SHUTDOWN LOG: '+line.upper())
+#
+#
+#  # Cleanup:
+#  ##########
+#  cleanup( (f_hdr_props_log,) )
+#
+#---

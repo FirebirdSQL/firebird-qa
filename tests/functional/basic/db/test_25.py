@@ -4,6 +4,7 @@
 ID:          new-database-25
 TITLE:       New DB - RDB$ROLES content
 DESCRIPTION: Check the correct content of RDB$ROLES in new database.
+FBTEST:      functional.basic.db.25
 """
 
 import pytest

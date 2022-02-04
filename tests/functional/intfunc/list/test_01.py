@@ -1,22 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.list.01
-# title:        List with default options
-# decription:   
-# tracker_id:   CORE-964
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.intfunc.list.list_01
+
+"""
+ID:          intfunc.list-01
+ISSUE:       1367
+TITLE:       List with default options
+DESCRIPTION:
+JIRA:        CORE-964
+FBTEST:      functional.intfunc.list.01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = [('list_blob_id.*', '')]
-
-init_script_1 = """
+init_script = """
     recreate table test(
       rel_name char(31) character set unicode_fss
       ,idx_name char(31) character set unicode_fss
@@ -82,9 +78,9 @@ init_script_1 = """
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     set blob all;
     select x.rel_name, list(trim(x.idx_name)) "list_blob_id"
@@ -93,137 +89,136 @@ test_script_1 = """
     group by 1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('list_blob_id.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     REL_NAME                        RDB$AUTH_MAPPING
     list_blob_id                    0:1
     RDB$INDEX_52
-    
+
     REL_NAME                        RDB$BACKUP_HISTORY
     list_blob_id                    0:2
     RDB$INDEX_44
-    
+
     REL_NAME                        RDB$CHARACTER_SETS
     list_blob_id                    0:3
     RDB$INDEX_19,RDB$INDEX_25
-    
+
     REL_NAME                        RDB$CHECK_CONSTRAINTS
     list_blob_id                    0:4
     RDB$INDEX_14,RDB$INDEX_40
-    
+
     REL_NAME                        RDB$COLLATIONS
     list_blob_id                    0:5
     RDB$INDEX_20,RDB$INDEX_26
-    
+
     REL_NAME                        RDB$DEPENDENCIES
     list_blob_id                    0:6
     RDB$INDEX_27,RDB$INDEX_28
-    
+
     REL_NAME                        RDB$EXCEPTIONS
     list_blob_id                    0:7
     RDB$INDEX_23,RDB$INDEX_24
-    
+
     REL_NAME                        RDB$FIELDS
     list_blob_id                    0:8
     RDB$INDEX_2
-    
+
     REL_NAME                        RDB$FIELD_DIMENSIONS
     list_blob_id                    0:9
     RDB$INDEX_36
-    
+
     REL_NAME                        RDB$FILTERS
     list_blob_id                    0:a
     RDB$INDEX_17,RDB$INDEX_45
-    
+
     REL_NAME                        RDB$FORMATS
     list_blob_id                    0:b
     RDB$INDEX_16
-    
+
     REL_NAME                        RDB$FUNCTIONS
     list_blob_id                    0:c
     RDB$INDEX_9
-    
+
     REL_NAME                        RDB$FUNCTION_ARGUMENTS
     list_blob_id                    0:d
     RDB$INDEX_10,RDB$INDEX_49,RDB$INDEX_51
-    
+
     REL_NAME                        RDB$GENERATORS
     list_blob_id                    0:e
     RDB$INDEX_11,RDB$INDEX_46
-    
+
     REL_NAME                        RDB$INDEX_SEGMENTS
     list_blob_id                    0:f
     RDB$INDEX_6
-    
+
     REL_NAME                        RDB$INDICES
     list_blob_id                    0:10
     RDB$INDEX_5,RDB$INDEX_31,RDB$INDEX_41
-    
+
     REL_NAME                        RDB$PACKAGES
     list_blob_id                    0:11
     RDB$INDEX_47
-    
+
     REL_NAME                        RDB$PROCEDURES
     list_blob_id                    0:12
     RDB$INDEX_21,RDB$INDEX_22
-    
+
     REL_NAME                        RDB$PROCEDURE_PARAMETERS
     list_blob_id                    0:13
     RDB$INDEX_18,RDB$INDEX_48,RDB$INDEX_50
-    
+
     REL_NAME                        RDB$REF_CONSTRAINTS
     list_blob_id                    0:14
     RDB$INDEX_13
-    
+
     REL_NAME                        RDB$RELATIONS
     list_blob_id                    0:15
     RDB$INDEX_0,RDB$INDEX_1
-    
+
     REL_NAME                        RDB$RELATION_CONSTRAINTS
     list_blob_id                    0:16
     RDB$INDEX_12,RDB$INDEX_42,RDB$INDEX_43
-    
+
     REL_NAME                        RDB$RELATION_FIELDS
     list_blob_id                    0:17
     RDB$INDEX_3,RDB$INDEX_4,RDB$INDEX_15
-    
+
     REL_NAME                        RDB$ROLES
     list_blob_id                    0:18
     RDB$INDEX_39
-    
+
     REL_NAME                        RDB$SECURITY_CLASSES
     list_blob_id                    0:19
     RDB$INDEX_7
-    
+
     REL_NAME                        RDB$TRANSACTIONS
     list_blob_id                    0:1a
     RDB$INDEX_32
-    
+
     REL_NAME                        RDB$TRIGGERS
     list_blob_id                    0:1b
     RDB$INDEX_8,RDB$INDEX_38
-    
+
     REL_NAME                        RDB$TRIGGER_MESSAGES
     list_blob_id                    0:1c
     RDB$INDEX_35
-    
+
     REL_NAME                        RDB$TYPES
     list_blob_id                    0:1d
     RDB$INDEX_37
-    
+
     REL_NAME                        RDB$USER_PRIVILEGES
     list_blob_id                    0:1e
     RDB$INDEX_29,RDB$INDEX_30
-    
+
     REL_NAME                        RDB$VIEW_RELATIONS
     list_blob_id                    0:1f
     RDB$INDEX_33,RDB$INDEX_34
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

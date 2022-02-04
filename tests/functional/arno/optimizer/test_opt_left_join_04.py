@@ -7,6 +7,7 @@ DESCRIPTION:
   TableX LEFT OUTER JOIN TableY with full match. Every reference from TableY should have a value.
 
   This test also tests if not the ON clause is distributed to the outer context TableX.
+FBTEST:      functional.arno.optimizer.opt_left_join_04
 """
 
 import pytest

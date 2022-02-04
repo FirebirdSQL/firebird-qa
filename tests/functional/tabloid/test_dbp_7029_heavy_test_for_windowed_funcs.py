@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.dbp_7029_heavy_test_for_windowed_funcs
-# title:        Common SQL. Check correctness of the results
-# decription:   
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          tabloid.dbp-7029-heavy-test-for-windowed-funcs
+TITLE:       Common SQL. Check correctness of the results
+DESCRIPTION: 
+FBTEST:      functional.tabloid.dbp_7029_heavy_test_for_windowed_funcs
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='tabloid-dbp-7029.fbk')
 
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='tabloid-dbp-7029.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     with
     b as
@@ -137,9 +129,9 @@ test_script_1 = """
     order by 1,2,3;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     F01                             0,0,0
     F02                             9
     F03                             9,10,58,59,60,108,109,110,1158
@@ -386,8 +378,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

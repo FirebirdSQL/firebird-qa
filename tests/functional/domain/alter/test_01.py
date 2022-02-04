@@ -1,28 +1,22 @@
 #coding:utf-8
-#
-# id:           functional.domain.alter.01
-# title:        ALTER DOMAIN - SET DEFAULT
-# decription:   
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.domain.alter.alter_domain_01
+
+"""
+ID:          domain.alter-01
+FBTEST:      functional.domain.alter.01
+TITLE:       ALTER DOMAIN - SET DEFAULT
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = [('RDB\\$DEFAULT_SOURCE.*', '')]
-
-init_script_1 = """
+init_script = """
     create domain test varchar(63);
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     alter domain test set default 'test string';
     commit;
     set list on;
@@ -31,17 +25,16 @@ test_script_1 = """
     from rdb$fields where rdb$field_name=upper('test');
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('RDB\\$DEFAULT_SOURCE.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$FIELD_NAME                  TEST
     RDB$DEFAULT_SOURCE              2:1e1
     default 'test string'
 """
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

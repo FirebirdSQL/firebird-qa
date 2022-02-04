@@ -1,36 +1,24 @@
 #coding:utf-8
-#
-# id:           functional.index.alter.03
-# title:        ALTER INDEX - INACTIVE UNIQUE INDEX
-# decription:   ALTER INDEX - INACTIVE UNIQUE INDEX
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-#               CREATE INDEX
-#               Basic SELECT
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.index.alter.alter_index_03
+
+"""
+ID:          index.alter-03
+TITLE:       ALTER INDEX - INACTIVE UNIQUE INDEX
+DESCRIPTION:
+FBTEST:      functional.index.alter.03
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create table test( a integer);
     create unique index test_idx_unq on test(a);
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     alter index test_idx_unq inactive;
     commit;
     set list on;
@@ -42,17 +30,16 @@ test_script_1 = """
     where rdb$index_name=upper('test_idx_unq');
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
-    IDX_NAME                        TEST_IDX_UNQ                                                                                 
+expected_stdout = """
+    IDX_NAME                        TEST_IDX_UNQ
     IS_INACTIVE                     1
     IS_UNIQUE                       1
 """
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

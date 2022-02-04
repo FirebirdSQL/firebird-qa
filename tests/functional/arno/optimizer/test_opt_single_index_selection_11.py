@@ -6,6 +6,7 @@ TITLE:       Best match index selection (single segment)
 DESCRIPTION:
   Check if it will select the best index.
   IS NULL can return more records thus prefer equal.
+FBTEST:      functional.arno.optimizer.opt_single_index_selection_11
 """
 
 import pytest

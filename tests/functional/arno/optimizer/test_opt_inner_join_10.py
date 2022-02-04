@@ -10,6 +10,7 @@ DESCRIPTION:
 
   It is expected that a unique index gives fewer results then non-unique index.
   Thus non-unique indexes will be at the end by determing join order.
+FBTEST:      functional.arno.optimizer.opt_inner_join_10
 """
 
 import pytest

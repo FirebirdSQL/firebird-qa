@@ -1,12 +1,4 @@
 #coding:utf-8
-#
-# id:           functional.arno.optimizer.opt_aggregate_distribution_13
-# title:        Try to deliver HAVING CLAUSE conjunctions to the WHERE clause
-# decription:   Comparisons which doesn't contain (anywhere hiding in the expression) aggregate-functions should be delivered to the where clause. The underlying aggregate stream could possible use it for a index and speed it up.
-# tracker_id:
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.optimizer.opt_aggregate_distribution_13
 
 """
 ID:          optimizer.aggregate-distribution-13
@@ -15,6 +7,7 @@ DESCRIPTION:
   Comparisons which doesn't contain (anywhere hiding in the expression) aggregate-functions
   should be delivered to the where clause. The underlying aggregate stream could possible
   use it for a index and speed it up.
+FBTEST:      functional.arno.optimizer.opt_aggregate_distribution_13
 """
 
 import pytest

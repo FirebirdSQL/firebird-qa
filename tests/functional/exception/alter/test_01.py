@@ -1,34 +1,23 @@
 #coding:utf-8
-#
-# id:           functional.exception.alter.01
-# title:        ALTER EXCEPTION
-# decription:   ALTER EXCEPTION
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE EXCEPTION
-#               Basic SELECT
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.exception.alter.alter_exception_01
+
+"""
+ID:          exception.alter
+FBTEST:      functional.exception.alter.01
+TITLE:       ALTER EXCEPTION
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create exception test 'message to show';
     commit;
-  """
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     alter exception test 'new message';
     commit;
 
@@ -42,17 +31,16 @@ test_script_1 = """
     from rdb$exceptions e;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     EXC_NAME                        TEST
     EXC_NUMBER                      1
     EXC_MSG                         new message
 """
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

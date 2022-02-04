@@ -1,26 +1,16 @@
 #coding:utf-8
-#
-# id:           functional.procedure.create.07
-# title:        CREATE PROCEDURE - try create SP with same name
-# decription:   CREATE PROCEDURE - try create SP with same name
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE PROCEDURE
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.procedure.create.create_procedure_07
+
+"""
+ID:          procedure.create-07
+TITLE:       CREATE PROCEDURE - try create SP with same name
+DESCRIPTION:
+FBTEST:      functional.procedure.create.07
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """SET TERM ^;
+init_script = """SET TERM ^;
 CREATE PROCEDURE test RETURNS(id INT)AS
 BEGIN
   ID=4;
@@ -29,9 +19,9 @@ END ^
 SET TERM ;^
 commit;"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET TERM ^;
+test_script = """SET TERM ^;
 CREATE PROCEDURE test RETURNS(id INT)AS
 BEGIN
   ID=5;
@@ -39,16 +29,15 @@ BEGIN
 END ^
 SET TERM ;^"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """Statement failed, SQLSTATE = 42000
+expected_stderr = """Statement failed, SQLSTATE = 42000
 unsuccessful metadata update
 -CREATE PROCEDURE TEST failed
 -Procedure TEST already exists"""
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

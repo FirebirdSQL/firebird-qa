@@ -20,6 +20,7 @@ NOTES:
   Found a problem with interpreting values
   170141183460469231731687303715884105727 and -170141183460469231731687303715884105728
   Sent letter to Alex (01.07.2020 13:55), waiting for fix. Check of bind DECFLOAT to INT128 was deferred.
+FBTEST:      functional.datatypes.decfloat_parsing_scaled_integers_and_bigint_max_min
 """
 
 import pytest

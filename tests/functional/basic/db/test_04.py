@@ -4,6 +4,7 @@
 ID:          new-database-04
 TITLE:       New DB - RDB$EXCEPTIONS
 DESCRIPTION: Check for correct content of RDB$EXCEPTIONS in new database.
+FBTEST:      functional.basic.db.04
 """
 
 import pytest

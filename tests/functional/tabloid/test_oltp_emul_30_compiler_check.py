@@ -1,26 +1,20 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.oltp_emul_30_compiler_check
-# title:        Compiler check. Test ability to compile source code of OLTP-EMUL test.
-# decription:   
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          tabloid.oltp-emul-30-compiler-check
+TITLE:       Compiler check. Test ability to compile source code of OLTP-EMUL test.
+DESCRIPTION: 
+FBTEST:      functional.tabloid.oltp_emul_30_compiler_check
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+substitutions = [('start at .*', 'start at'), ('finish at .*', 'finish at')]
 
-substitutions_1 = [('start at .*', 'start at'), ('finish at .*', 'finish at')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 -- This test was created only for daily checking of FB compiler: there were several times
 -- in the past when DDL of OLTP-EMUL test could not be compiled because of regressions.
 -- Discuss with dimitr: letter for 11-apr-2016 15:34.
@@ -17527,9 +17521,9 @@ set list off;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG                             oltp30_DDL.sql start at 2016-04-11 15:50:59.5620
     MSG                             oltp30_DDL.sql finish at 2016-04-11 15:51:01.0780
     MSG                             oltp30_sp.sql start at 2016-04-11 15:51:01.0780
@@ -17551,8 +17545,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

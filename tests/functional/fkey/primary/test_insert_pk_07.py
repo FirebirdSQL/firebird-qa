@@ -1,28 +1,25 @@
 #coding:utf-8
-#
-# id:           functional.fkey.primary.insert_pk_07
-# title:        Check correct work fix with foreign key
-# decription:   Check foreign key work.
-#               Master table has primary key consisting of several fields.
-#               Master transaction modifies non key fields.
-#               Detail transaction inserts record in detail_table.
-#               Expected: no errors.
-#               Related to: CORE-1606. Ability to insert child record if parent record is locked but foreign key target unchanged.
-# tracker_id:
-# min_versions: []
-# versions:     2.5
-# qmid:         functional.fkey.primary.ins_07
+
+"""
+ID:          fkey.primary.insert-07
+FBTEST:      functional.fkey.primary.insert_pk_07
+ISSUE:       2027
+JIRA:        CORE-1606
+TITLE:       Check correct work fix with foreign key
+DESCRIPTION:
+  Check foreign key work.
+  Master table has primary key consisting of several fields.
+  Master transaction modifies non key fields.
+  Detail transaction inserts record in detail_table.
+  Expected: no errors.
+  Related to #2027. Ability to insert child record if parent record is locked but foreign key target unchanged.
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 from firebird.driver import tpb, Isolation
 
-# version: 2.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE MASTER_TABLE (
+init_script = """CREATE TABLE MASTER_TABLE (
     ID_1 INTEGER NOT NULL,
     ID_2 VARCHAR(20) NOT NULL,
     INT_F  INTEGER,
@@ -40,51 +37,19 @@ COMMIT;
 INSERT INTO MASTER_TABLE (ID_1, ID_2, INT_F) VALUES (1, 'one', 10);
 COMMIT;"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# TPB_master = (
-#        chr(kdb.isc_tpb_write)
-#      + chr(kdb.isc_tpb_read_committed) + chr(kdb.isc_tpb_rec_version)
-#      + chr(kdb.isc_tpb_nowait)
-#                    )
-#  TPB_detail = (
-#        chr(kdb.isc_tpb_write)
-#      + chr(kdb.isc_tpb_read_committed) + chr(kdb.isc_tpb_rec_version)
-#      + chr(kdb.isc_tpb_nowait)
-#                    )
-#  db_conn.begin(tpb=TPB_master)
-#  cm_1 = db_conn.cursor()
-#  cm_1.execute('UPDATE MASTER_TABLE SET INT_F=2')
-#
-#  #Create second connection for change detail table
-#  con_detail = kdb.connect(
-#       dsn=dsn.encode(),
-#       user=user_name.encode(),
-#       password=user_password.encode()
-#  )
-#
-#  try:
-#     con_detail.begin(tpb=TPB_detail)
-#     cd = con_detail.cursor()
-#     cd.execute("INSERT INTO DETAIL_TABLE (ID, FKEY_1, FKEY_2) VALUES (1, 1, 'one')")
-#     con_detail.commit()
-#  except Exception, e:
-#  print (e[0])
-#---
+act = python_act('db')
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    with act_1.db.connect() as con:
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    with act.db.connect() as con:
         cust_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
         con.begin(cust_tpb)
         with con.cursor() as c:
             c.execute('UPDATE MASTER_TABLE SET INT_F=2')
             #Create second connection for change detail table
-            with act_1.db.connect() as con_detail:
+            with act.db.connect() as con_detail:
                 con_detail.begin(cust_tpb)
                 with con_detail.cursor() as cd:
                     cd.execute("INSERT INTO DETAIL_TABLE (ID, FKEY_1, FKEY_2) VALUES (1, 1, 'one')")

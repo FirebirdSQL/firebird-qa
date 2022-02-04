@@ -4,6 +4,7 @@
 ID:          new-database-19
 TITLE:       New DB - RDB$PROCEDURE_PARAMETERS content
 DESCRIPTION: Check the correct content of RDB$PROCEDURE_PARAMETERS in new database.
+FBTEST:      functional.basic.db.19
 """
 
 import pytest

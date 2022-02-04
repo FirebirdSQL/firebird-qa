@@ -1,33 +1,22 @@
 #coding:utf-8
-#
-# id:           functional.procedure.create.05
-# title:        CREATE PROCEDURE - PSQL Stataments
-# decription:   CREATE PROCEDURE - PSQL Stataments
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE EXCEPTION
-#               CREATE TABLE
-# tracker_id:   
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.procedure.create.create_procedure_05
+
+"""
+ID:          procedure.create-05
+TITLE:       CREATE PROCEDURE - PSQL Stataments
+DESCRIPTION:
+FBTEST:      functional.procedure.create.05
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE EXCEPTION test 'test exception';
+init_script = """CREATE EXCEPTION test 'test exception';
 CREATE TABLE tb(id INT, text VARCHAR(32));
 commit;"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """SET TERM ^;
+test_script = """SET TERM ^;
 CREATE PROCEDURE dummy (id INT) AS
 BEGIN
   id=id;
@@ -77,9 +66,9 @@ SET TERM ;^
 commit;
 SHOW PROCEDURE test;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Procedure text:
+expected_stdout = """Procedure text:
 =============================================================================
 DECLARE VARIABLE p1 SMALLINT;
 BEGIN
@@ -116,9 +105,8 @@ BEGIN
 END
 ============================================================================="""
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

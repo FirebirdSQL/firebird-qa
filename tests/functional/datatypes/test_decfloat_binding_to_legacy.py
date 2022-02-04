@@ -29,6 +29,7 @@ DESCRIPTION:
    For this reason, special replacement will be done in 'substitution' section: we replace
    value of hours with '??' because it is no matter what's the time there, we have to ensure
    only the ability to work with such time using SET BIND clause.
+FBTEST:      functional.datatypes.decfloat_binding_to_legacy
 """
 
 import pytest

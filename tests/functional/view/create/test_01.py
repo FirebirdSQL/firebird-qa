@@ -1,43 +1,35 @@
 #coding:utf-8
-#
-# id:           functional.view.create.01
-# title:        CREATE VIEW
-# decription:   CREATE VIEW
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.view.create.create_view_01
+
+"""
+ID:          view.create-01
+TITLE:       CREATE VIEW
+DESCRIPTION:
+FBTEST:      functional.view.create.01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
+init_script = """CREATE TABLE tb(id INT);
+commit;
+"""
 
-substitutions_1 = []
+db = db_factory(init=init_script)
 
-init_script_1 = """CREATE TABLE tb(id INT);
-commit;"""
+test_script = """CREATE VIEW test AS SELECT * FROM tb;
+SHOW VIEW test;
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+act = isql_act('db', test_script)
 
-test_script_1 = """CREATE VIEW test AS SELECT * FROM tb;
-SHOW VIEW test;"""
-
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-expected_stdout_1 = """ID                              INTEGER Nullable
+expected_stdout = """ID                              INTEGER Nullable
 View Source:
 ==== ======
-SELECT * FROM tb"""
+SELECT * FROM tb
+"""
 
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,22 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.dml.merge.01
-# title:        Merge
-# decription:   
-# tracker_id:   CORE-815
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.dml.merge.merge_01
+
+"""
+ID:          dml.merge-01
+FBTEST:      functional.dml.merge.01
+ISSUE:       1201
+JIRA:        CORE-815
+TITLE:       MERGE statement
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE T1 (ID integer, NAME char(10), PRIMARY KEY(id));
+init_script = """CREATE TABLE T1 (ID integer, NAME char(10), PRIMARY KEY(id));
 CREATE TABLE T2 ( ID integer, NAME char(10), PRIMARY KEY(id));
 COMMIT;
 INSERT INTO T1 (ID,NAME) VALUES (1,'1NOMT1');
@@ -28,9 +24,9 @@ COMMIT;
 
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """MERGE
+test_script = """MERGE
  INTO T1
  USING (SELECT * FROM T2 WHERE id > 1) cd
 	ON (T1.id = cd.id)
@@ -41,11 +37,12 @@ test_script_1 = """MERGE
 	INSERT (id, name)
 	 VALUES (cd.id, cd.name);
 COMMIT;
-SELECT ID, NAME FROM T1;"""
+SELECT ID, NAME FROM T1;
+"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
           ID NAME
 ============ ==========
            1 1NOMT1
@@ -53,9 +50,8 @@ expected_stdout_1 = """
            3 3NOMT2
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

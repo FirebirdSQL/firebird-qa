@@ -4,6 +4,7 @@
 ID:          new-database-20
 TITLE:       New DB - RDB$PROCEDURES content
 DESCRIPTION: Check the correct content of RDB$PROCEDURES in new database.
+FBTEST:      functional.basic.db.20
 """
 
 import pytest

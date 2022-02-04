@@ -1,48 +1,38 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.time_zone
-# title:        GTCS/tests/FB_SQL_TIME_ZONE. Miscelaneous tests.
-# decription:   
-#               	Original test see in:
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/FB_SQL_TIME_ZONE.script
-#                   Checked on 4.0.0.1931.
-#                   05.05.2020: added block for CORE-6271 (from GTCS). Checked on 4.0.0.1954.
-#               
-#                   28.10.2020
-#                   Old code was completely replaced by source from GTCS.
-#                   It was changed to meet new requirements to format of timezone offset:
-#                   1) it must include SIGN, i.e. + or -;
-#                   2) in must contain BOTH hours and minutes delimited by colon.
-#               
-#                   This means that following (old) statements will fail with SQLSTATE = 22009:
-#                   * set time zone '00:00'
-#                     Invalid time zone region: 00:00
-#                     (because of missed sign "+")
-#               
-#                   *  ... datediff(hour from timestamp '... -03' to timestamp '... -03')
-#                     Invalid time zone offset: -03 - must use format +/-hours:minutes and be between -14:00 and +14:00
-#               
-#                   See: https://github.com/FirebirdSQL/firebird/commit/ff37d445ce844f991242b1e2c1f96b80a5d1636d
-#                   Checked on 4.0.0.2238
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          gtcs.time-zone
+TITLE:       Miscelaneous time zone tests
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/FB_SQL_TIME_ZONE.script
+  Checked on 4.0.0.1931.
+NOTES:
+[05.05.2020]  added block for CORE-6271 (from GTCS). Checked on 4.0.0.1954.
+[28.10.2020]
+  Old code was completely replaced by source from GTCS.
+  It was changed to meet new requirements to format of timezone offset:
+  1) it must include SIGN, i.e. + or -;
+  2) in must contain BOTH hours and minutes delimited by colon.
+
+  This means that following (old) statements will fail with SQLSTATE = 22009:
+  * set time zone '00:00'
+    Invalid time zone region: 00:00
+    (because of missed sign "+")
+
+  *  ... datediff(hour from timestamp '... -03' to timestamp '... -03')
+    Invalid time zone offset: -03 - must use format +/-hours:minutes and be between -14:00 and +14:00
+
+  See: https://github.com/FirebirdSQL/firebird/commit/ff37d445ce844f991242b1e2c1f96b80a5d1636d
+FBTEST:      functional.gtcs.time_zone
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     set time zone '+00:00';
@@ -173,7 +163,7 @@ test_script_1 = """
 
     ---
 
-    /* 
+    /*
       28.10.2020:
       ... datediff(hour from timestamp '... -03' to timestamp '... -03')
       Statement failed, SQLSTATE = 22009
@@ -687,9 +677,9 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     CAST 01:23:45.0000 +00:00
     CAST 2018-01-01 01:23:45.0000 +00:00
     EXTRACT 0
@@ -1292,7 +1282,8 @@ expected_stdout_1 = """
     END_TZH -8
     END_TZM 0
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22018
     conversion error from string "01:23:45.0000 -03:00"
     Statement failed, SQLSTATE = 22018
@@ -1321,11 +1312,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

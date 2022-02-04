@@ -1,35 +1,26 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.request_of_expr_index
-# title:        request of expression index could run outside of main request's snapshot.
-# decription:   
-#                   Test verifies fix that is described here:
-#                       https://github.com/FirebirdSQL/firebird/commit/26ee42e69d0a381c166877e3c2a17893d85317e0
-#                   Thanks Vlad for example of implementation and suggestions.
-#                   ::: NOTE :::
-#                   It is crusial that final SELECT must run in TIL = read committed read consistency.
-#               
-#                   Confirmed bug on 4.0.0.1810.
-#                   Checked on 4.0.0.1812 (SS/CS) - all OK.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          tabloid.request-of-expr-index
+TITLE:       request of expression index could run outside of main request's snapshot.
+DESCRIPTION: 
+  Test verifies fix that is described here:
+          https://github.com/FirebirdSQL/firebird/commit/26ee42e69d0a381c166877e3c2a17893d85317e0
+      Thanks Vlad for example of implementation and suggestions.
+      ::: NOTE :::
+      It is crusial that final SELECT must run in TIL = read committed read consistency.
+  
+      Confirmed bug on 4.0.0.1810.
+      Checked on 4.0.0.1812 (SS/CS) - all OK.
+FBTEST:      functional.tabloid.request_of_expr_index
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate global temporary table gtt_snap (id bigint) on commit delete rows;
 
     set term ^;
@@ -66,15 +57,14 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     RESULT                          Expected: values are equal.
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

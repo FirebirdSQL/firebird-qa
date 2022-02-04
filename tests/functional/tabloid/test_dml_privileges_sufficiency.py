@@ -1,37 +1,29 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.dml_privileges_sufficiency
-# title:        Verify sufficiency of privileges for performing DML actions. Verify that RETURNING clause can not be used without SELECT privilege.
-# decription:   
-#                  Test creates three users (for I/U/D) and gives them initial privileges for INSERT, UPDATE and DELETE (but without SELECT).
-#                  Then we check that each user:
-#                  1) can do "his" DML without using RETURNING clause and this action must pass;
-#                  2) can NOT do "his" DML with using RETURNING clause because of absense of SELETC privilege.
-#                  After this we add SELECT privilege for all of them and repeat. All actions must pased in this case.
-#               
-#                  Created by request of dimitr, letter 16.06.2020 13:54.
-#                  Checked on 4.0.0.2066.
-#                  ::: NB :::
-#                  Do NOT use this test on 4.0.0.2046 and 4.0.0.2048 - these snapshots have bug and will crash on this test.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          tabloid.dml-privileges-sufficiency
+TITLE:       Verify sufficiency of privileges for performing DML actions. Verify that
+  RETURNING clause can not be used without SELECT privilege.
+DESCRIPTION:
+  Test creates three users (for I/U/D) and gives them initial privileges for INSERT, UPDATE and DELETE (but without SELECT).
+     Then we check that each user:
+     1) can do "his" DML without using RETURNING clause and this action must pass;
+     2) can NOT do "his" DML with using RETURNING clause because of absense of SELETC privilege.
+     After this we add SELECT privilege for all of them and repeat. All actions must pased in this case.
+
+     Created by request of dimitr, letter 16.06.2020 13:54.
+     Checked on 4.0.0.2066.
+     ::: NB :::
+     Do NOT use this test on 4.0.0.2046 and 4.0.0.2048 - these snapshots have bug and will crash on this test.
+FBTEST:      functional.tabloid.dml_privileges_sufficiency
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set list on;
 
@@ -42,12 +34,12 @@ test_script_1 = """
             execute statement 'drop user tmp$modifier_ins' with autonomous transaction;
             when any do begin end
         end
-     
+
         begin
         execute statement 'drop user tmp$modifier_upd' with autonomous transaction;
             when any do begin end
         end
-     
+
         begin
         execute statement 'drop user tmp$modifier_del' with autonomous transaction;
             when any do begin end
@@ -112,7 +104,7 @@ test_script_1 = """
     rollback;
 
 
-    -- must PASS: we have privilege to add record and RETURNING clause 
+    -- must PASS: we have privilege to add record and RETURNING clause
     -- does NOT contain anything from *table*:
     insert into test(id,x) values(gen_id(g,1), 1234567) returning pi();
     rollback;
@@ -145,7 +137,7 @@ test_script_1 = """
     update test set x = 111 where id = 1;
     rollback;
 
-    -- must PASS: we have privilege to change column and RETURNING clause 
+    -- must PASS: we have privilege to change column and RETURNING clause
     -- does NOT contain anything from *table*:
     update test set x = 0 returning pi();
     rollback;
@@ -252,9 +244,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     WHOAMI                          TMP$MODIFIER_INS
     MSG                             Has only INSERT privilege
 
@@ -293,7 +285,8 @@ expected_stdout_1 = """
 
     ID                              1
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     no permission for SELECT access to TABLE TEST
     -Effective user is TMP$MODIFIER_INS
@@ -340,11 +333,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)

@@ -4,6 +4,7 @@
 ID:          new-database-24
 TITLE:       New DB - RDB$RELATION_FIELDS content
 DESCRIPTION: Check the correct content of RDB$RELATION_FIELDS in new database.
+FBTEST:      functional.basic.db.24
 """
 
 import pytest

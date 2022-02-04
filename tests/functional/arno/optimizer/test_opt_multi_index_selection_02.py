@@ -7,6 +7,7 @@ DESCRIPTION:
   Check if it will select the indexes which can be used.
   (Indexes with selectivity more than 10x the best are ignored)
   See SELECTIVITY_THRESHOLD_FACTOR in opt.cpp
+FBTEST:      functional.arno.optimizer.opt_multi_index_selection_02
 """
 
 import pytest

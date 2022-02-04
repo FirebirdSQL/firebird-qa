@@ -4,6 +4,7 @@
 ID:          derived-table-07
 TITLE:       Outer reference inside derived table to other relations in from clause is not allowed
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.07
 """
 
 import pytest

@@ -4,6 +4,7 @@
 ID:          new-database-27
 TITLE:       New DB - RDB$TRANSACTIONS content
 DESCRIPTION: Check the correct content of RDB$TRANSACTIONS in new database.
+FBTEST:      functional.basic.db.27
 """
 
 import pytest

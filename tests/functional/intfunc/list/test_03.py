@@ -1,41 +1,29 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.list.03
-# title:        List function with distinct option
-# decription:   
-# tracker_id:   CORE-964
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.intfunc.list.list_03
+
+"""
+ID:          intfunc.list-03
+ISSUE:       1367
+TITLE:       List function with distinct option
+DESCRIPTION:
+JIRA:        CORE-964
+FBTEST:      functional.intfunc.list.03
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+test_script = """
+SELECT RDB$SYSTEM_FLAG, LIST(DISTINCT TRIM(RDB$OWNER_NAME)) FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG=1 GROUP BY 1;
+"""
 
-init_script_1 = """"""
+act = python_act('db')
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-# c = db_conn.cursor()
-#  c.execute("SELECT RDB$SYSTEM_FLAG, LIST(DISTINCT TRIM(RDB$OWNER_NAME)) FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG=1 GROUP BY 1;")
-#  
-#  printData(c)
-#---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """RDB$SYSTEM_FLAG LIST
---------------- ----
-1               SYSDBA"""
-
-@pytest.mark.version('>=2.1')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
-
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    with act.db.connect() as con:
+        with con.cursor() as c:
+            c.execute("SELECT RDB$SYSTEM_FLAG, LIST(DISTINCT TRIM(RDB$OWNER_NAME)) FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG=1 GROUP BY 1")
+            result = c.fetchall()
+    assert result == [(1, 'SYSDBA')]

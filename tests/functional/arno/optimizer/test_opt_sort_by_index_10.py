@@ -6,6 +6,7 @@ TITLE:       ORDER BY ASC using index (multi)
 DESCRIPTION:
   ORDER BY X, Y
   When more fields are given in ORDER BY clause try to use a compound index.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_10
 """
 
 import pytest

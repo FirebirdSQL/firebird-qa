@@ -1,47 +1,35 @@
 #coding:utf-8
-#
-# id:           functional.generator.create.02
-# title:        CREATE GENERATOR - try create gen with same name
-# decription:   CREATE GENERATOR - try create gen with same name
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE GENERATOR
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.generator.create.create_generator_02
 
+"""
+ID:          generator.create-02
+FBTEST:      functional.generator.create.02
+TITLE:       CREATE GENERATOR - try create gen with same name
+DESCRIPTION:
+"""
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     CREATE GENERATOR test;
     commit;
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     CREATE GENERATOR test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stderr_1 = """Statement failed, SQLSTATE = 42000
+expected_stderr = """Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -CREATE SEQUENCE TEST failed
     -Sequence TEST already exists
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

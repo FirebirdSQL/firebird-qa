@@ -6,6 +6,7 @@ TITLE:       TIMESTAMP in index with values below julian date
 DESCRIPTION:
   Datetime values below the julian date (firebird base date '1858-11-17') should be stored
   in correct order.
+FBTEST:      functional.arno.indices.timestamps_01
 """
 
 import pytest

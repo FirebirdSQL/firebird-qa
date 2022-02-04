@@ -1,26 +1,21 @@
 #coding:utf-8
-#
-# id:           functional.fkey.primary.insert_pk_02
-# title:        Check correct work fix with foreign key
-# decription:   Check foreign key work.
-#               Master transaction modifies primary key.
-#               Detail transaction inserts record in detail_table.
-#               Expected: error - primary key in master table has been changed
-# tracker_id:
-# min_versions: []
-# versions:     2.5.3
-# qmid:         functional.fkey.primary.ins_02
+
+"""
+ID:          fkey.primary.insert-02
+FBTEST:      functional.fkey.primary.insert_pk_02
+TITLE:       Check correct work fix with foreign key
+DESCRIPTION:
+  Check foreign key work.
+  Master transaction modifies primary key.
+  Detail transaction inserts record in detail_table.
+  Expected: error - primary key in master table has been changed
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 from firebird.driver import DatabaseError, tpb, Isolation
 
-# version: 2.5.3
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE MASTER_TABLE (
+init_script = """CREATE TABLE MASTER_TABLE (
     ID     INTEGER PRIMARY KEY,
     INT_F  INTEGER
 );
@@ -35,52 +30,19 @@ COMMIT;
 INSERT INTO MASTER_TABLE (ID, INT_F) VALUES (1, 10);
 commit;"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-# test_script_1
-#---
-# TPB_master = (
-#        chr(kdb.isc_tpb_write)
-#      + chr(kdb.isc_tpb_read_committed) + chr(kdb.isc_tpb_rec_version)
-#      + chr(kdb.isc_tpb_nowait)
-#                    )
-#  TPB_detail = (
-#        chr(kdb.isc_tpb_write)
-#      + chr(kdb.isc_tpb_read_committed) + chr(kdb.isc_tpb_rec_version)
-#      + chr(kdb.isc_tpb_nowait)
-#                    )
-#
-#  db_conn.begin(tpb=TPB_master)
-#  c = db_conn.cursor()
-#  c.execute("uPDATE MASTER_TABLE SET ID = 2 WHERE ID=1")
-#
-#  #Create second connection - update detail table
-#  con_detail = kdb.connect(
-#       dsn=dsn.encode(),
-#       user=user_name.encode(),
-#       password=user_password.encode()
-#  )
-#
-#  try:
-#     con_detail.begin(tpb=TPB_detail)
-#     c = con_detail.cursor()
-#     c.execute("INSERT INTO DETAIL_TABLE (ID, FKEY) VALUES (1,1)")
-#     con_detail.commit()
-#  except Exception, e:
-#  print (e[0])
-#---
+act = python_act('db')
 
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-@pytest.mark.version('>=2.5.3')
-def test_1(act_1: Action):
+@pytest.mark.version('>3')
+def test_1(act: Action):
     cust_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
-    with act_1.db.connect() as con:
+    with act.db.connect() as con:
         con.begin(cust_tpb)
         with con.cursor() as c:
             c.execute("UPDATE MASTER_TABLE SET ID = 2 WHERE ID=1")
             #Create second connection for change detail table
-            with act_1.db.connect() as con_detail:
+            with act.db.connect() as con_detail:
                 con_detail.begin(cust_tpb)
                 with con_detail.cursor() as cd:
                     with pytest.raises(DatabaseError,

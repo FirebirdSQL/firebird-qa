@@ -4,6 +4,7 @@
 ID:          derived-table-14
 TITLE:       FIRST / SKIP inside derived table
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.14
 """
 
 import pytest

@@ -6,6 +6,7 @@ ISSUE:       1383
 TITLE:       ISQL - SHOW SYSTEM parameters
 DESCRIPTION: Extend ISQL SHOW SYSTEM command to accept parameters TABLES, COLLATIONS and FUNCTIONS
 JIRA:        CORE-978
+FBTEST:      functional.basic.isql.03
 """
 
 import pytest

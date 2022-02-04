@@ -1,35 +1,25 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.dsql_domain_02
-# title:        GTCS/tests/DSQL_DOMAIN_02. Test the level 0 syntax for SQL "CREATE DOMAIN" statement using datatype and DEFAULT clauses
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_02.script 
-#               
-#                   NB: avoid usage of ISQL command 'SHOW DOMAIN' because of unstable output.
-#                   We display info about domains using common VIEW based on RDB$FIELDS table.
-#                   Columns with rdb$validation_source and rdb$default_source contain BLOB data thus we have to skip from showing their blob ID - see substitution.
-#               
-#                   Checked on 4.0.0.1896; 3.0.6.33288; 2.5.9.27149
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.dsql-domain-02
+FBTEST:      functional.gtcs.dsql_domain_02
+TITLE:       Test the level 0 syntax for SQL "CREATE DOMAIN" statement using datatype and DEFAULT clauses
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_02.script
+
+  NB: avoid usage of ISQL command 'SHOW DOMAIN' because of unstable output.
+  We display info about domains using common VIEW based on RDB$FIELDS table.
+  Columns with rdb$validation_source and rdb$default_source contain BLOB data thus we have
+  to skip from showing their blob ID - see substitution.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' '), ('DM_FDEFAULT_BLOB_ID.*', ''), ('DM_FVALID_BLOB_ID.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create view v_test as
     select
         ff.rdb$field_name as dm_name
@@ -83,293 +73,293 @@ test_script_1 = """
     set list on;
     set count on;
     select * from v_test order by dm_name;
---('[ 	]+', ' '), 
+--('[ 	]+', ' '),
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('DM_FDEFAULT_BLOB_ID.*', ''),
+                                                 ('DM_FVALID_BLOB_ID.*', '')])
 
-expected_stdout_1 = """
-    DM_NAME                         DOM02A1 
-    DM_TYPE                         7 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         2 
-    DM_FSCALE                       0 
-    DM_FPREC                        0 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default 0 
-    DM_NAME                         DOM02B1 
-    DM_TYPE                         8 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        0 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default 0 
-    DM_NAME                         DOM02C3_1 
-    DM_TYPE                         12 
-    DM_SUBTYPE                      <null> 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default '27-JAN-1992' 
-    DM_NAME                         DOM02C3_2 
-    DM_TYPE                         12 
-    DM_SUBTYPE                      <null> 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default 'today' 
-    DM_NAME                         DOM02C3_3 
-    DM_TYPE                         12 
-    DM_SUBTYPE                      <null> 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default '01/27/92' 
-    DM_NAME                         DOM02D1 
-    DM_TYPE                         14 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         30 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      30 
-    DM_FNULL                        <null> 
-    default 0 
-    DM_NAME                         DOM02D2 
-    DM_TYPE                         14 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         30 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      30 
-    DM_FNULL                        <null> 
-    default 'def' 
-    DM_NAME                         DOM02D3 
-    DM_TYPE                         14 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         30 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      30 
-    DM_FNULL                        <null> 
-    default '28-OCT-1990' 
-    DM_NAME                         DOM02E1 
-    DM_TYPE                         37 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      4 
-    DM_FNULL                        <null> 
-    default 0 
-    DM_NAME                         DOM02E2 
-    DM_TYPE                         37 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      4 
-    DM_FNULL                        <null> 
-    default 'def' 
-    DM_NAME                         DOM02E3 
-    DM_TYPE                         37 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         8 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      8 
-    DM_FNULL                        <null> 
-    default '09/01/82' 
-    DM_NAME                         DOM02F1 
-    DM_TYPE                         16 
-    DM_SUBTYPE                      2 
-    DM_FLEN                         8 
-    DM_FSCALE                       -1 
-    DM_FPREC                        10 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default 0 
-    DM_NAME                         DOM02G1 
-    DM_TYPE                         10 
-    DM_SUBTYPE                      <null> 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default 0 
-    DM_NAME                         DOM02H1 
-    DM_TYPE                         27 
-    DM_SUBTYPE                      <null> 
-    DM_FLEN                         8 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default 0 
-    DM_NAME                         DOM02J 
-    DM_TYPE                         7 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         2 
-    DM_FSCALE                       0 
-    DM_FPREC                        0 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default null 
-    DM_NAME                         DOM02K 
-    DM_TYPE                         8 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        0 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default null 
-    DM_NAME                         DOM02L 
-    DM_TYPE                         12 
-    DM_SUBTYPE                      <null> 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default null 
-    DM_NAME                         DOM02M 
-    DM_TYPE                         14 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         2 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      2 
-    DM_FNULL                        <null> 
-    default null 
-    DM_NAME                         DOM02N 
-    DM_TYPE                         37 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         15 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      15 
-    DM_FNULL                        <null> 
-    default null 
-    DM_NAME                         DOM02O 
-    DM_TYPE                         8 
-    DM_SUBTYPE                      2 
-    DM_FLEN                         4 
-    DM_FSCALE                       -1 
-    DM_FPREC                        4 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default null 
-    DM_NAME                         DOM02P 
-    DM_TYPE                         10 
-    DM_SUBTYPE                      <null> 
-    DM_FLEN                         4 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default null 
-    DM_NAME                         DOM02Q 
-    DM_TYPE                         27 
-    DM_SUBTYPE                      <null> 
-    DM_FLEN                         8 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default null 
-    DM_NAME                         DOM02R 
-    DM_TYPE                         261 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         8 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        <null> 
-    DM_FCOLL                        <null> 
-    DM_FCHRLEN                      <null> 
-    DM_FNULL                        <null> 
-    default null 
-    DM_NAME                         DOM02V 
-    DM_TYPE                         14 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         15 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      15 
-    DM_FNULL                        <null> 
-    default user 
-    DM_NAME                         DOM02W 
-    DM_TYPE                         37 
-    DM_SUBTYPE                      0 
-    DM_FLEN                         60 
-    DM_FSCALE                       0 
-    DM_FPREC                        <null> 
-    DM_FCSET                        0 
-    DM_FCOLL                        0 
-    DM_FCHRLEN                      60 
-    DM_FNULL                        <null> 
-    default user 
-    Records affected: 25 
+expected_stdout = """
+    DM_NAME                         DOM02A1
+    DM_TYPE                         7
+    DM_SUBTYPE                      0
+    DM_FLEN                         2
+    DM_FSCALE                       0
+    DM_FPREC                        0
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default 0
+    DM_NAME                         DOM02B1
+    DM_TYPE                         8
+    DM_SUBTYPE                      0
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        0
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default 0
+    DM_NAME                         DOM02C3_1
+    DM_TYPE                         12
+    DM_SUBTYPE                      <null>
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default '27-JAN-1992'
+    DM_NAME                         DOM02C3_2
+    DM_TYPE                         12
+    DM_SUBTYPE                      <null>
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default 'today'
+    DM_NAME                         DOM02C3_3
+    DM_TYPE                         12
+    DM_SUBTYPE                      <null>
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default '01/27/92'
+    DM_NAME                         DOM02D1
+    DM_TYPE                         14
+    DM_SUBTYPE                      0
+    DM_FLEN                         30
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      30
+    DM_FNULL                        <null>
+    default 0
+    DM_NAME                         DOM02D2
+    DM_TYPE                         14
+    DM_SUBTYPE                      0
+    DM_FLEN                         30
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      30
+    DM_FNULL                        <null>
+    default 'def'
+    DM_NAME                         DOM02D3
+    DM_TYPE                         14
+    DM_SUBTYPE                      0
+    DM_FLEN                         30
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      30
+    DM_FNULL                        <null>
+    default '28-OCT-1990'
+    DM_NAME                         DOM02E1
+    DM_TYPE                         37
+    DM_SUBTYPE                      0
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      4
+    DM_FNULL                        <null>
+    default 0
+    DM_NAME                         DOM02E2
+    DM_TYPE                         37
+    DM_SUBTYPE                      0
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      4
+    DM_FNULL                        <null>
+    default 'def'
+    DM_NAME                         DOM02E3
+    DM_TYPE                         37
+    DM_SUBTYPE                      0
+    DM_FLEN                         8
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      8
+    DM_FNULL                        <null>
+    default '09/01/82'
+    DM_NAME                         DOM02F1
+    DM_TYPE                         16
+    DM_SUBTYPE                      2
+    DM_FLEN                         8
+    DM_FSCALE                       -1
+    DM_FPREC                        10
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default 0
+    DM_NAME                         DOM02G1
+    DM_TYPE                         10
+    DM_SUBTYPE                      <null>
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default 0
+    DM_NAME                         DOM02H1
+    DM_TYPE                         27
+    DM_SUBTYPE                      <null>
+    DM_FLEN                         8
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default 0
+    DM_NAME                         DOM02J
+    DM_TYPE                         7
+    DM_SUBTYPE                      0
+    DM_FLEN                         2
+    DM_FSCALE                       0
+    DM_FPREC                        0
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default null
+    DM_NAME                         DOM02K
+    DM_TYPE                         8
+    DM_SUBTYPE                      0
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        0
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default null
+    DM_NAME                         DOM02L
+    DM_TYPE                         12
+    DM_SUBTYPE                      <null>
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default null
+    DM_NAME                         DOM02M
+    DM_TYPE                         14
+    DM_SUBTYPE                      0
+    DM_FLEN                         2
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      2
+    DM_FNULL                        <null>
+    default null
+    DM_NAME                         DOM02N
+    DM_TYPE                         37
+    DM_SUBTYPE                      0
+    DM_FLEN                         15
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      15
+    DM_FNULL                        <null>
+    default null
+    DM_NAME                         DOM02O
+    DM_TYPE                         8
+    DM_SUBTYPE                      2
+    DM_FLEN                         4
+    DM_FSCALE                       -1
+    DM_FPREC                        4
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default null
+    DM_NAME                         DOM02P
+    DM_TYPE                         10
+    DM_SUBTYPE                      <null>
+    DM_FLEN                         4
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default null
+    DM_NAME                         DOM02Q
+    DM_TYPE                         27
+    DM_SUBTYPE                      <null>
+    DM_FLEN                         8
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default null
+    DM_NAME                         DOM02R
+    DM_TYPE                         261
+    DM_SUBTYPE                      0
+    DM_FLEN                         8
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        <null>
+    DM_FCOLL                        <null>
+    DM_FCHRLEN                      <null>
+    DM_FNULL                        <null>
+    default null
+    DM_NAME                         DOM02V
+    DM_TYPE                         14
+    DM_SUBTYPE                      0
+    DM_FLEN                         15
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      15
+    DM_FNULL                        <null>
+    default user
+    DM_NAME                         DOM02W
+    DM_TYPE                         37
+    DM_SUBTYPE                      0
+    DM_FLEN                         60
+    DM_FSCALE                       0
+    DM_FPREC                        <null>
+    DM_FCSET                        0
+    DM_FCOLL                        0
+    DM_FCHRLEN                      60
+    DM_FNULL                        <null>
+    default user
+    Records affected: 25
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

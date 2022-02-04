@@ -7,6 +7,7 @@ DESCRIPTION:
   TableX LEFT OUTER JOIN TableY with full match.
   ON clause contains (1 = 1) and WHERE clause contains relation between TableX and TableY.
   The WHERE comparison should be distributed to TableY. Thus TableY should use the index.
+FBTEST:      functional.arno.optimizer.opt_left_join_03
 """
 
 import pytest

@@ -4,6 +4,7 @@
 ID:          new-database-03
 TITLE:       New DB - RDB$COLLATIONS
 DESCRIPTION: Check the correct content of RDB$COLLATIONS on new DB.
+FBTEST:      functional.basic.db.03
 """
 
 import pytest

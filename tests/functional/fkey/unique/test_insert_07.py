@@ -1,26 +1,21 @@
 #coding:utf-8
-#
-# id:           functional.fkey.unique.insert_07
-# title:        Check correct work fix with foreign key
-# decription:   Check foreign key work.
-#               Master table has primary key consisting of several fields.
-#               Master transaction deletes record from master_table without commit.
-#               Detail transaction inserts record in detail_table.
-#               Expected: error - unique field in master_table has been changed.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.fkey.unique.ins_07
+
+"""
+ID:          fkey.unique.insert-07
+FBTEST:      functional.fkey.unique.insert_07
+TITLE:       Check correct work fix with foreign key
+DESCRIPTION:
+  Check foreign key work.
+  Master table has primary key consisting of several fields.
+  Master transaction deletes record from master_table without commit.
+  Detail transaction inserts record in detail_table.
+  Expected: error - unique field in master_table has been changed.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
-
-init_script_1 = """
+init_script = """
     recreate table t_detl(id int);
     commit;
     recreate table t_main(
@@ -33,14 +28,14 @@ init_script_1 = """
         master_uniq_ref int constraint t_detl_fk_mur references t_main(uniq_ref) using index t_detl_fk_mur
     );
     commit;
-    
+
     insert into t_main(id, uniq_ref) values(1, 1);
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     commit;
     set transaction read committed record_version no wait;
     set term ^;
@@ -54,9 +49,10 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-At block line: [\\d]+, col: [\\d]+',
+                                                  '-At block line')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 23000
     violation of FOREIGN KEY constraint "T_DETL_FK_MUR" on table "T_DETL"
     -Foreign key reference target does not exist
@@ -65,8 +61,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

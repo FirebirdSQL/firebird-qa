@@ -4,6 +4,7 @@
 ID:          new-database-11
 TITLE:       New DB - RDB$FUNCTION_ARGUMENTS
 DESCRIPTION: Check for correct content of RDB$FUNCTION_ARGUMENTS in a new database.
+FBTEST:      functional.basic.db.11
 """
 
 import pytest

@@ -1,35 +1,22 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.gtcs_proc_isql_15
-# title:        gtcs-proc-isql-15
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROC_ISQL_15.script
-#               	SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
-#                   Checked on:
-#                       4.0.0.1803 SS: 1.822s.
-#                       3.0.6.33265 SS: 0.849s.
-#                       2.5.9.27149 SC: 0.313s.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.proc-isql-15
+TITLE:       gtcs-proc-isql-15
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROC_ISQL_15.script
+  SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
+FBTEST:      functional.gtcs.gtcs_proc_isql_15
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(from_backup='gtcs_sp1.fbk')
 
-substitutions_1 = [('={3,}', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='gtcs_sp1.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^;
     create procedure proc_insert (a char(5), b char(20), c char(6), d smallint, e char(15)) as
     begin
@@ -42,9 +29,9 @@ test_script_1 = """
     select 'point-2' msg, p.* from p;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('={3,}', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG     PNO    PNAME                COLOR        WEIGHT CITY
     point-1 P1     Nut                  Red              12 London
     point-1 P2     Bolt                 Green            17 Paris
@@ -63,9 +50,8 @@ expected_stdout_1 = """
     point-2 P7     Widget               Pink             23 Hoboken
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,34 +1,23 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.parser_comments_in_sql
-# title:        GTCS/tests/CF_ISQL_19. Check for problems with comments (single-line and multi-line)
-# decription:   
-#               	::: NB ::: 
-#               	### Name of original test has no any relation with actual task of this test: ###
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_19.script
-#               
-#                   bug #781610 problems with one line comments (--)
-#               
-#                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.parser-comments-in-sql
+TITLE:       Check for problems with comments (single-line and multi-line)
+DESCRIPTION:
+  ::: NB :::
+  ### Name of original test has no any relation with actual task of this test: ###
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_19.script
+
+  bug #781610 problems with one line comments (--)
+FBTEST:      functional.gtcs.parser_comments_in_sql
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
 
     create table test (n integer);
@@ -66,11 +55,11 @@ test_script_1 = """
     */
     from test;
 
-    select * 
+    select *
     /* comment */
     from test;
 
-    select * 
+    select *
     -- comment
     from test;
 
@@ -88,7 +77,7 @@ test_script_1 = """
     -- single-line comment --*/
     select * from test;
 
-    /* * / / * q'{ 
+    /* * / / * q'{
        BEGIN multi-line comment-1
        '*/
     select * from test;
@@ -101,9 +90,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     1
     1
     1
@@ -119,9 +108,8 @@ expected_stdout_1 = """
     1
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

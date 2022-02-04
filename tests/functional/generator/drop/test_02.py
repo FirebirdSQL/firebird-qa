@@ -1,27 +1,16 @@
 #coding:utf-8
-#
-# id:           functional.generator.drop.02
-# title:        DROP GENERATOR - in use
-# decription:   DROP GENERATOR
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE GENERATOR
-#               CREATE PROCEDURE
-# tracker_id:   
-# min_versions: []
-# versions:     2.5.0
-# qmid:         functional.generator.drop.drop_generator_02
+
+"""
+ID:          generator.drop-02
+FBTEST:      functional.generator.drop.02
+TITLE:       DROP GENERATOR - in use
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE GENERATOR test;
+init_script = """CREATE GENERATOR test;
 SET TERM ^;
 CREATE PROCEDURE a AS
 DECLARE VARIABLE id INT;
@@ -31,22 +20,19 @@ END ^
 SET TERM ;^
 commit;"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """DROP GENERATOR test;"""
+act = isql_act('db', "DROP GENERATOR test;")
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-expected_stderr_1 = """Statement failed, SQLSTATE = 42000
+expected_stderr = """Statement failed, SQLSTATE = 42000
 
 unsuccessful metadata update
 -cannot delete
 -GENERATOR TEST
 -there are 1 dependencies"""
 
-@pytest.mark.version('>=2.5.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

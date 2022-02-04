@@ -7,6 +7,7 @@ DESCRIPTION:
   TableX LEFT OUTER JOIN TableY with full match, but TableY results limited in ON clause.
   Which should result in partial NULL results for TableY. Due the WHERE clause a index for
   TableX should be used.
+FBTEST:      functional.arno.optimizer.opt_left_join_08
 """
 
 import pytest

@@ -1,36 +1,25 @@
 #coding:utf-8
-#
-# id:           functional.trigger.create.10
-# title:        CREATE TRIGGER BEFORE INSERT DECLARE VARIABLE, block stataments
-# decription:   CREATE TRIGGER BEFORE INSERT DECLARE VARIABLE, block stataments
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-#               CREATE EXCEPTION
-#               CREATE PROCEDURE
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.trigger.create.create_trigger_10
+
+"""
+ID:          trigger.create-10
+TITLE:       CREATE TRIGGER BEFORE INSERT DECLARE VARIABLE, block stataments
+DESCRIPTION:
+FBTEST:      functional.trigger.create.10
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
-
-substitutions_1 = [('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')]
-
-init_script_1 = """
+init_script = """
     CREATE TABLE tb(id INT);
     CREATE EXCEPTION test 'test exception';
     commit;
-  """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+"""
 
-test_script_1 = """
+db = db_factory(init=init_script)
+
+test_script = """
     SET TERM ^;
     CREATE PROCEDURE test (id INT) RETURNS(d FLOAT)AS
     BEGIN
@@ -85,9 +74,9 @@ test_script_1 = """
     SHOW TRIGGER test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     Triggers on Table TB:
     TEST, Sequence: 0, Type: BEFORE INSERT, Active
     AS
@@ -136,9 +125,8 @@ expected_stdout_1 = """
     END
 """
 
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

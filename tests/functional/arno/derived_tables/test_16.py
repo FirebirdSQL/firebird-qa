@@ -4,6 +4,7 @@
 ID:          derived-table-16
 TITLE:       Simple derived table with aggregate inside
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.16
 """
 
 import pytest

@@ -4,6 +4,7 @@
 ID:          new-database-10
 TITLE:       New DB - RDB$FORMATS
 DESCRIPTION: Check for correct content of RDB$FORMATS in new database.
+FBTEST:      functional.basic.db.10
 """
 
 import pytest

@@ -1,34 +1,23 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.isql_show_command_collation
-# title:        GTCS/tests/CF_ISQL_20. Misplaced collation when extracting metadata with isql
-# decription:   
-#               	::: NB ::: 
-#               	### Name of original test has no any relation with actual task of this test: ###
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_20.script
-#               
-#                   bug #223126 Misplaced collation when extracting metadata with isql
-#               
-#                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.isql-show-command-collation
+TITLE:       Misplaced collation when extracting metadata with isql
+DESCRIPTION:
+  ::: NB :::
+  ### Name of original test has no any relation with actual task of this test: ###
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_20.script
+
+  bug #223126 Misplaced collation when extracting metadata with isql
+FBTEST:      functional.gtcs.isql_show_command_collation
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create domain domain_with_collate_clause as char(1)
         character set iso8859_1
         default 'v'
@@ -46,9 +35,9 @@ test_script_1 = """
     show table table_with_collated_field;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     DOMAIN_WITH_COLLATE_CLAUSE      CHAR(1) CHARACTER SET ISO8859_1 Nullable
     default 'v'
     check(value >='a' and value <='z')
@@ -60,9 +49,8 @@ expected_stdout_1 = """
     check( field_01 >= 'c' )
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

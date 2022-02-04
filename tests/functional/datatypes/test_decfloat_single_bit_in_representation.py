@@ -7,6 +7,7 @@ DESCRIPTION:
   Get minimal distinguish from zero value for DEFCFLOAT datatype using EXP() function.
   Check some trivial arithmetic results for this value and pair of other values which are closest to it.
   See also: https://en.wikipedia.org/wiki/Decimal_floating_point
+FBTEST:      functional.datatypes.decfloat_single_bit_in_representation
 """
 
 import pytest

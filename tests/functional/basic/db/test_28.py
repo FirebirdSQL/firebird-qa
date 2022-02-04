@@ -4,6 +4,7 @@
 ID:          new-database-28
 TITLE:       New DB - RDB$TRIGGER_MESSAGES content
 DESCRIPTION: Check the correct content of RDB$TRIGGER_MESSAGES in new database.
+FBTEST:      functional.basic.db.28
 """
 
 import pytest

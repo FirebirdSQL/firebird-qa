@@ -8,6 +8,7 @@ TITLE:       Basic test for binary functions against INT128 datatype
 DESCRIPTION:
   Test verifies https://github.com/FirebirdSQL/firebird/commit/137c3a96e51b8bc34cb74732687067e96c971226
   (Postfix for #6583: enable support of int128 in bin_* family of functions).
+FBTEST:      functional.datatypes.int128_binary_operations
 """
 
 import pytest

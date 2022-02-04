@@ -1,35 +1,24 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.division_by_zero_corrupts_db
-# title:        GTCS/tests/CF_ISQL_29. Zero divide in SP can crash database when call this SP several times.
-# decription:   
-#               	::: NB ::: 
-#               	### Name of original test has no any relation with actual task of this test: ###
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_29.script
-#               
-#                   Issue in original test:
-#                   Division by 0 corrupt database
-#               
-#                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.division-by-zero-corrupts-db
+FBTEST:      functional.gtcs.division_by_zero_corrupts_db
+TITLE:       Zero divide in SP can crash database when call this SP several times
+DESCRIPTION:
+  ::: NB :::
+  ### Name of original test has no any relation with actual task of this test: ###
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_29.script
+
+  Issue in original test:
+  Division by 0 corrupt database
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [("-At procedure 'SPX_AUX_TEST' line: .*", ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set term ^ ;
     create procedure spx_aux_test (par1 bigint) returns (ret1 bigint)
     as
@@ -73,9 +62,10 @@ test_script_1 = """
     execute procedure spx_aux_test (1);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[("-At procedure 'SPX_AUX_TEST' line: .*", ''),
+                                                 ('[ \t]+', ' ')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 22012
     arithmetic exception, numeric overflow, or string truncation
     -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
@@ -89,9 +79,8 @@ expected_stderr_1 = """
     -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

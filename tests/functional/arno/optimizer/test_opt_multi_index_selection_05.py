@@ -7,6 +7,7 @@ DESCRIPTION:
   Check if it will select the index with the best selectivity and with the biggest segment
   match. 2 equals operators and 1 greater or equal operator and every index combination is
   made (only ASC). The best here is using 1 index (F2_F3_F1 or F3_F2_F1).
+FBTEST:      functional.arno.optimizer.opt_multi_index_selection_05
 """
 
 import pytest

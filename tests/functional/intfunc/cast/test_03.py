@@ -1,47 +1,32 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.cast.03
-# title:        CAST Numeric -> DATE
-# decription:   Convert from number to date is not (yet) supported
-#               
-#               CAST Numeric -> DATE
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               Basic SELECT
-# tracker_id:   
-# min_versions: []
-# versions:     2.5
-# qmid:         functional.intfunc.cast.cast_03
+
+"""
+ID:          intfunc.cast-03
+TITLE:       CAST Numeric -> DATE
+DESCRIPTION: Convert from number to date is not (yet) supported
+FBTEST:      functional.intfunc.cast.03
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = isql_act('db', "SELECT CAST(CAST(1.25001 AS INT) AS DATE) FROM rdb$Database;")
 
-init_script_1 = """"""
+expected_stdout = """CAST
+===========
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+expected_stderr = """Statement failed, SQLSTATE = 22018
 
-test_script_1 = """SELECT CAST(CAST(1.25001 AS INT) AS DATE) FROM rdb$Database;"""
+conversion error from string "1"
+"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-expected_stdout_1 = """CAST
-==========="""
-expected_stderr_1 = '''Statement failed, SQLSTATE = 22018
-
-conversion error from string "1"'''
-
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

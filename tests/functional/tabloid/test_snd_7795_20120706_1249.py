@@ -1,34 +1,25 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.snd_7795_20120706_1249
-# title:        Common SQL. Check correctness of the results
-# decription:   
-#                   NB: new datatype in FB 4.0 was introduces: numeric(38,0).
-#                   It leads to additional ident of values when we show them in form "SET LIST ON",
-#                   so we have to ignore all internal spaces - see added 'substitution' section below.
-#               
-#                   Checked on:
-#                       4.0.0.1635 SS: 1.824s.
-#                       3.0.5.33182 SS: 1.387s.
-#                
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          tabloid.snd-7795-20120706-1249
+TITLE:       Common SQL. Check correctness of the results
+DESCRIPTION: 
+  NB: new datatype in FB 4.0 was introduces: numeric(38,0).
+      It leads to additional ident of values when we show them in form "SET LIST ON",
+      so we have to ignore all internal spaces - see added 'substitution' section below.
+  
+      Checked on:
+          4.0.0.1635 SS: 1.824s.
+          3.0.5.33182 SS: 1.387s.
+FBTEST:      functional.tabloid.snd_7795_20120706_1249
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='tabloid-snd-7795.fbk')
 
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='tabloid-snd-7795.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
       set list on;
     with recursive
     n as(select -1 i from rdb$database union all select n.i+1 from n where n.i<1),
@@ -215,9 +206,9 @@ test_script_1 = """
     order by 1,2;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     GATE                            1,1
     DTS                             2001-03-14
     RETAIL_SUM                      80778.08
@@ -260,8 +251,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,38 +1,30 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.grant_revoke_any_object
-# title:        Check ability to query, modify and deleting data plus add/drop constraints on any table.
-# decription:   
-#                  Two users are created, U01 and U02. 
-#                  User U01 is granted with system privilege grant_revoke_any_object.
-#                  User U02 has NO any privilege.
-#                  User U01 then creates table and issue GRANT SELECT statement for U02 (WITHOUT using 'granted by clause).
-#                  Then we 
-#                  1) check result (contrent of RDB$ tables) 
-#                  2) connect as U02 and query this table - this should work OK
-#                  3) connect as U01 and revoke grant on just queried table from U02
-#                  4) connect again as U02 and repeat select - this shoiuld fail.
-#               
-#                  Checked on WI-T4.0.0.267.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.grant-revoke-any-object
+TITLE:       Check ability to query, modify and deleting data plus add/drop constraints on any table
+DESCRIPTION:
+  Two users are created, U01 and U02.
+  User U01 is granted with system privilege grant_revoke_any_object.
+  User U02 has NO any privilege.
+  User U01 then creates table and issue GRANT SELECT statement for U02 (WITHOUT using 'granted by clause).
+  Then we
+  1) check result (contrent of RDB$ tables)
+  2) connect as U02 and query this table - this should work OK
+  3) connect as U01 and revoke grant on just queried table from U02
+  4) connect again as U02 and repeat select - this shoiuld fail.
+FBTEST:      functional.syspriv.grant_revoke_any_object
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
+user_01 = user_factory('db', name='u01', do_not_create=True)
+user_02 = user_factory('db', name='u02', do_not_create=True)
+role_revoke = role_factory('db', name='role_for_grant_revoke_any_object', do_not_create=True)
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set bail on;
     set list on;
@@ -44,7 +36,7 @@ test_script_1 = """
     revoke all on all from u02;
     grant create table to u01;
     commit;
-
+/*
     set term ^;
     execute block as
     begin
@@ -53,7 +45,7 @@ test_script_1 = """
     end^
     set term ;^
     commit;
-
+*/
     -- Add/change/delete non-system records in RDB$TYPES
     create role role_for_grant_revoke_any_object set system privileges to GRANT_REVOKE_ON_ANY_OBJECT;
     commit;
@@ -91,15 +83,15 @@ test_script_1 = """
     commit;
     set bail on;
 
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user u01;
-    drop user u02;
-    commit;
+    -- connect '$(DSN)' user sysdba password 'masterkey';
+    -- drop user u01;
+    -- drop user u02;
+    -- commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AM_I                        U01
     RDB$ROLE_NAME                   RDB$ADMIN
     RDB$ROLE_IN_USE                 <false>
@@ -118,23 +110,22 @@ expected_stdout_1 = """
     RDB$FIELD_NAME                  <null>
     RDB$USER_TYPE                   8
     RDB$OBJECT_TYPE                 0
-    
+
     WHO_AM_I                        U02
     ID                              1
     WHO_IS_AUTHOR                   U01
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     no permission for SELECT access to TABLE TEST_U01
     -Effective user is U02
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, user_01, user_02, role_revoke):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

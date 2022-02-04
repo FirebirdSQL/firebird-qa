@@ -4,6 +4,7 @@
 ID:          decfloat.nan-and-infinity-comparison
 TITLE:       DECFLOAT should not throw exceptions when +/-NaN, +/-sNaN and +/-Infinity is used in comparisons
 DESCRIPTION:
+FBTEST:      functional.datatypes.decfloat_nan_and_infinity_comparison
 """
 
 import pytest

@@ -4,6 +4,7 @@
 ID:          new-database-09
 TITLE:       New DB - RDB$FILTERS
 DESCRIPTION: Check for correct content of RDB$FILTERS in new database.
+FBTEST:      functional.basic.db.09
 """
 
 import pytest

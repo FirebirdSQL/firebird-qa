@@ -10,6 +10,7 @@ NOTES:
   2. Field rdb$description has been moved at the end of output (select) list.
   3. Added query to select FIELDS list of table because main check does not use asterisk
      and we have to know if DDL of table will have any changes in future.
+FBTEST:      functional.basic.db.13
 """
 
 import pytest

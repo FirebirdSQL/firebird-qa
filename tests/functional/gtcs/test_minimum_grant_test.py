@@ -1,32 +1,25 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.minimum_grant_test
-# title:        GTCS/tests/CF_ISQL_34. minimum-grant-test
-# decription:   
-#               	::: NB ::: 
-#               	### Name of original test has no any relation with actual task of this test: ###
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_34.script
-#               
-#                   Checked on: 4.0.0.1804 SS; 3.0.6.33271 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.minimum-grant
+TITLE:       Minimum grant test
+DESCRIPTION:
+  ::: NB :::
+  ### Name of original test has no any relation with actual task of this test: ###
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_34.script
+FBTEST:      functional.gtcs.minimum_grant_test
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+substitutions = [('no permission for (read/select|SELECT) access.*', 'no permission for read access'),
+                 ('no permission for (insert/write|INSERT) access.*', 'no permission for write access'),
+                 ('[ \t]+', ' '), ('-{0,1}[ ]{0,1}Effective user is.*', '')]
 
-substitutions_1 = [('[ \t]+', ' '), ('no permission for (read/select|SELECT) access.*', 'no permission for read access'), ('no permission for (insert/write|INSERT) access.*', 'no permission for write access'), ('-{0,1}[ ]{0,1}Effective user is.*', '')]
+db = db_factory()
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     set term ^;
@@ -41,11 +34,11 @@ test_script_1 = """
             execute statement 'drop user tmp$qa_user2' with autonomous transaction;
             when any do begin end
         end
-     
+
     end^
     set term ;^
     commit;
-     
+
     create user tmp$qa_user1 password '123';
     create user tmp$qa_user2 password '456';
     commit;
@@ -72,14 +65,15 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHOAMI                          TMP$QA_USER1
     WHOAMI                          TMP$QA_USER2
     C1                              1
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 28000
     no permission for read/select access to TABLE TEST
 
@@ -87,12 +81,10 @@ expected_stderr_1 = """
     no permission for insert/write access to TABLE TEST
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

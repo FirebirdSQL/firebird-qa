@@ -6,6 +6,7 @@ TITLE:       INNER JOIN join order
 DESCRIPTION:
   With a INNER JOIN the table with the smallest expected result should be the first one in
   process order.
+FBTEST:      functional.arno.optimizer.opt_inner_join_01
 """
 
 import pytest

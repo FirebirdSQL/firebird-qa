@@ -1,56 +1,47 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.dsql_domain_06
-# title:        GTCS/tests/DSQL_DOMAIN_06. Test the level 0 syntax for SQL "CREATE DOMAIN" statement using datatype and CHECK constraint clause.
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_06.script 
-#               
-#                   NB: avoid usage of ISQL command 'SHOW DOMAIN' because of unstable output.
-#                   We display info about domains using common VIEW based on RDB$FIELDS table.
-#                   Columns with rdb$validation_source and rdb$default_source contain BLOB data thus we have to skip from showing their blob ID - see substitution.
-#               
-#                   ::: NOTE :::
-#                   Added domains with datatype that did appear only in FB 4.0: DECFLOAT and TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
-#               
-#                   For each base datatype we:
-#                   * create domain and set default value;
-#                   * alter domain in order to drop default;
-#                   * alter domain in order to set new default;
-#                   * alter domain with doing TWO changes in ONE statement: set new default + drop default;
-#                   * alter domain with doing TWO changes in ONE statement: drop default + set new default.
-#               
-#                   For some datatypes (float, double precision) we also verify ability to use boundary values for datatype itself.
-#                   For character datatypes we use non-asci characters (currency signs: euro, cent, pound, yena).
-#               
-#                   Currently following datatypes are NOT checked:
-#                     blob sub_type text not null;
-#                     blob sub_type binary not null; // byt test *does* check BLOB without sub_type specified
-#                     long float not null;
-#                     nchar(20) not null;
-#                     binary(20) not null;
-#                     varbinary(20) not null;
-#               
-#                   Checked on 4.0.0.1926. 
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          gtcs.dsql-domain-06
+FBTEST:      functional.gtcs.dsql_domain_06
+TITLE:       Test the level 0 syntax for SQL "CREATE DOMAIN" statement using datatype and CHECK constraint clause.
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_06.script
+
+  NB: avoid usage of ISQL command 'SHOW DOMAIN' because of unstable output.
+  We display info about domains using common VIEW based on RDB$FIELDS table.
+  Columns with rdb$validation_source and rdb$default_source contain BLOB data thus we have
+  to skip from showing their blob ID - see substitution.
+
+  ::: NOTE :::
+  Added domains with datatype that did appear only in FB 4.0: DECFLOAT and
+  TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
+
+  For each base datatype we:
+  * create domain and set default value;
+  * alter domain in order to drop default;
+  * alter domain in order to set new default;
+  * alter domain with doing TWO changes in ONE statement: set new default + drop default;
+  * alter domain with doing TWO changes in ONE statement: drop default + set new default.
+
+  For some datatypes (float, double precision) we also verify ability to use boundary values for datatype itself.
+  For character datatypes we use non-asci characters (currency signs: euro, cent, pound, yena).
+
+  Currently following datatypes are NOT checked:
+    blob sub_type text not null;
+    blob sub_type binary not null; // byt test *does* check BLOB without sub_type specified
+    long float not null;
+    nchar(20) not null;
+    binary(20) not null;
+    varbinary(20) not null;
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' '), ('DM_FDEFAULT_BLOB_ID.*', ''), ('DM_FVALID_BLOB_ID.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
 	set list on;
 
@@ -156,7 +147,7 @@ test_script_1 = """
 	------------------------------------------------------------------------------------------------
 	-- https://en.wikipedia.org/wiki/Single-precision_floating-point_format, power(2,-149):
 	-- https://www.wolframalpha.com
-	
+
 	-- (largest normal number): (2-power(2,-23)) * power(2,127)
 	create domain dom06_14 as float default 340282346638528859811704183484516925440;
 	alter domain dom06_14 drop default;
@@ -175,7 +166,7 @@ test_script_1 = """
 	alter domain dom06_15 set default 1.40129846432481707092372958328991613128026194187651577175706828388979108268586060148663818836212158203125e-45;
 	alter domain dom06_15 set default 0.999999940395355224609375 drop default;
 	alter domain dom06_15 drop default set default 1.00000011920928955078125;
-	
+
 	------------------------------------------------------------------------------------------------
 
     -- https://en.wikipedia.org/wiki/Double-precision_floating-point_format
@@ -196,13 +187,13 @@ test_script_1 = """
 	-- 2.225073858507200889024586876085859887650423112240959... × 10^-308
 	-- alter domain dom06_16 set default 2.225073858507200889024586876085859887650423112240959e-308; -- 0.00000000
 	alter domain dom06_16 set default 2e-308;
-	-- 1 + power(2,-52)  = 1.0000000000000002, the smallest number > 1 
+	-- 1 + power(2,-52)  = 1.0000000000000002, the smallest number > 1
 	-- 1.0000000000000002220446049250313080847263336181640625
 	alter domain dom06_16 set default 1.0000000000000002220446049250313080847263336181640625 drop default;
 	alter domain dom06_16 drop default set default 1.0000000000000006;
 	-----------------------------------------------------------------------------------------------
     create domain dom06_17 as blob default
-'	
+'
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -370,7 +361,7 @@ test_script_1 = """
 	;
 
 	alter domain dom06_17 drop default;
-	alter domain dom06_17 set default 
+	alter domain dom06_17 set default
 '
 
 
@@ -378,7 +369,7 @@ test_script_1 = """
 
 	alter domain dom06_17 set default null drop default;
 	alter domain dom06_17 drop default set default
-'	
+'
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -543,7 +534,7 @@ test_script_1 = """
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 012345678901234567
 '
-	;	
+	;
 ----------------------------------------------------------------------------------------------------
     create domain dom06_18 as boolean default false;
     alter domain dom06_18 drop default;
@@ -557,15 +548,16 @@ test_script_1 = """
     alter domain dom06_19 set default null drop default;
     alter domain dom06_19 drop default set default -1.0E-6143;
 ----------------------------------------------------------------------------------------------------
-    commit;	
+    commit;
     set count on;
 	select * from v_test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('DM_FDEFAULT_BLOB_ID.*', ''),
+                                                 ('DM_FVALID_BLOB_ID.*', '')])
 
-expected_stdout_1 = """
-DM_NAME                         DOM06_01                                                                                                                                                                                                                                                    
+expected_stdout = """
+DM_NAME                         DOM06_01
 DM_TYPE                         7
 DM_SUBTYPE                      0
 DM_FLEN                         2
@@ -579,7 +571,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:1e8
 default 3333
 
-DM_NAME                         DOM06_02                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_02
 DM_TYPE                         8
 DM_SUBTYPE                      0
 DM_FLEN                         4
@@ -593,7 +585,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:1ec
 default 33333
 
-DM_NAME                         DOM06_03                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_03
 DM_TYPE                         16
 DM_SUBTYPE                      0
 DM_FLEN                         8
@@ -607,7 +599,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:1f0
 default 333333
 
-DM_NAME                         DOM06_04                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_04
 DM_TYPE                         12
 DM_SUBTYPE                      <null>
 DM_FLEN                         4
@@ -621,7 +613,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:1f4
 default 'YESTERDAY'
 
-DM_NAME                         DOM06_05                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_05
 DM_TYPE                         13
 DM_SUBTYPE                      <null>
 DM_FLEN                         4
@@ -635,7 +627,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:1f8
 default current_time
 
-DM_NAME                         DOM06_06                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_06
 DM_TYPE                         28
 DM_SUBTYPE                      <null>
 DM_FLEN                         8
@@ -649,7 +641,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:1fc
 default '01:02:03.456 Antarctica/South_Pole'
 
-DM_NAME                         DOM06_07                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_07
 DM_TYPE                         35
 DM_SUBTYPE                      <null>
 DM_FLEN                         8
@@ -663,7 +655,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:200
 default current_timestamp
 
-DM_NAME                         DOM06_08                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_08
 DM_TYPE                         29
 DM_SUBTYPE                      <null>
 DM_FLEN                         12
@@ -677,7 +669,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:204
 default '29.05.2017 01:02:03.456 Antarctica/South_Pole'
 
-DM_NAME                         DOM06_09                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_09
 DM_TYPE                         14
 DM_SUBTYPE                      0
 DM_FLEN                         4
@@ -691,7 +683,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:208
 default '¥'
 
-DM_NAME                         DOM06_10                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_10
 DM_TYPE                         37
 DM_SUBTYPE                      0
 DM_FLEN                         4
@@ -705,7 +697,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:20c
 default '¥'
 
-DM_NAME                         DOM06_11                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_11
 DM_TYPE                         14
 DM_SUBTYPE                      0
 DM_FLEN                         1
@@ -719,7 +711,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:210
 default '¡'
 
-DM_NAME                         DOM06_12                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_12
 DM_TYPE                         7
 DM_SUBTYPE                      1
 DM_FLEN                         2
@@ -733,7 +725,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:214
 default 327.67
 
-DM_NAME                         DOM06_13                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_13
 DM_TYPE                         26
 DM_SUBTYPE                      2
 DM_FLEN                         16
@@ -747,7 +739,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:218
 default 99999999999999999999999999999999
 
-DM_NAME                         DOM06_14                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_14
 DM_TYPE                         10
 DM_SUBTYPE                      <null>
 DM_FLEN                         4
@@ -761,7 +753,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:21c
 default 1.00000011920928955078125
 
-DM_NAME                         DOM06_15                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_15
 DM_TYPE                         10
 DM_SUBTYPE                      <null>
 DM_FLEN                         4
@@ -775,7 +767,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:220
 default 1.00000011920928955078125
 
-DM_NAME                         DOM06_16                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_16
 DM_TYPE                         27
 DM_SUBTYPE                      <null>
 DM_FLEN                         8
@@ -789,7 +781,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:224
 default 1.0000000000000006
 
-DM_NAME                         DOM06_17                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_17
 DM_TYPE                         261
 DM_SUBTYPE                      0
 DM_FLEN                         8
@@ -802,7 +794,7 @@ DM_FNULL                        <null>
 DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:228
 default
-'	
+'
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -968,7 +960,7 @@ default
 012345678901234567
 '
 
-DM_NAME                         DOM06_18                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_18
 DM_TYPE                         23
 DM_SUBTYPE                      <null>
 DM_FLEN                         1
@@ -982,7 +974,7 @@ DM_FVALID_BLOB_ID               <null>
 DM_FDEFAULT_BLOB_ID             2:22c
 default false
 
-DM_NAME                         DOM06_19                                                                                                                                                                                                                                                    
+DM_NAME                         DOM06_19
 DM_TYPE                         25
 DM_SUBTYPE                      <null>
 DM_FLEN                         16
@@ -1000,8 +992,7 @@ Records affected: 19
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

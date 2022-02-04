@@ -1,64 +1,55 @@
 #coding:utf-8
-#
-# id:           functional.exception.handling_name_and_message
-# title:        Context variables EXCEPTION and ERROR_MESSAGE for ability to log exception info (including call stack!) on server side
-# decription:   
-#                  Testing new built-in context variables for exception handling (appearance: 06-sep-2016 21:12, 4.0 only):
-#                  * 'exception' -- returns name of the active user-defined exception;
-#                  * 'error_message' -- returns interpreted text for the active exception.
-#                  See: https://github.com/FirebirdSQL/firebird/commit/ebd0d3c8133c62b5359100de5f1eec541e43da3b
-#                  Explanation: doc\\sql.extensions\\README.context_variables 
-#                  
-#                  GOOD NEWS: 
-#                  call stack now can be logged on database without calling of mon$ tables, 
-#                  simple by parsing 'error_message' content (part that follows by last newline character).
-#               
-#                  WARNING-1.
-#                  This test intentionally creates exception with non-ascii name and parametrized non-ascii message text.
-#                  Length of exception *NAME* can be up to 63 non-ascii characters, but upper bound for length of exception
-#                  *MESSAGE* is limited to 1023 *bytes* (NOT chars!) ==> it's max length for two-byte encoding (win1251 etc)
-#                  will be usually much less, about 500...600 characters. This limit can not be overpassed nowadays.
-#                  For database with default cset = utf8 table rdb$exception will have following DDL:
-#                     RDB$EXCEPTION_NAME              (RDB$EXCEPTION_NAME) CHAR(63) Nullable 
-#                     RDB$MESSAGE                     (RDB$MESSAGE) VARCHAR(1023) CHARACTER SET NONE Nullable 
-#                     Checked on 4.0.0.366
-#                  
-#                  WARNING-2.
-#                  It seems that handling of message with length = 1023 bytes (i.e. exactly upper limit) works wrong.
-#                  Waiting for reply from dimitr, letter 09-sep-2016 18:27.
-#                  
-#                  ### NOTE ### 07.12.2016
-#                  'exception' and 'error_message' context variables were replaced with calls RDB$ERROR(EXCEPTION) and RDB$ERROR(MESSAGE)
-#                  (letter from dimitr, 06.12.2016 21:44; seems that this was done in 4.0.0.461, between 02-dec-2016 and 04-dec-2016)
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          exception.handling-name-and-message
+FBTEST:      functional.exception.handling_name_and_message
+TITLE:       Context variables EXCEPTION and ERROR_MESSAGE for ability to log exception info (including call stack!) on server side
+DESCRIPTION:
+  Testing new built-in context variables for exception handling (appearance: 06-sep-2016 21:12, 4.0 only):
+  * 'exception' -- returns name of the active user-defined exception;
+  * 'error_message' -- returns interpreted text for the active exception.
+  See: https://github.com/FirebirdSQL/firebird/commit/ebd0d3c8133c62b5359100de5f1eec541e43da3b
+  Explanation: doc\\sql.extensions\\README.context_variables
+
+  GOOD NEWS:
+  call stack now can be logged on database without calling of mon$ tables,
+  simple by parsing 'error_message' content (part that follows by last newline character).
+
+  WARNING-1.
+  This test intentionally creates exception with non-ascii name and parametrized non-ascii message text.
+  Length of exception *NAME* can be up to 63 non-ascii characters, but upper bound for length of exception
+  *MESSAGE* is limited to 1023 *bytes* (NOT chars!) ==> it's max length for two-byte encoding (win1251 etc)
+  will be usually much less, about 500...600 characters. This limit can not be overpassed nowadays.
+  For database with default cset = utf8 table rdb$exception will have following DDL:
+    RDB$EXCEPTION_NAME              (RDB$EXCEPTION_NAME) CHAR(63) Nullable
+    RDB$MESSAGE                     (RDB$MESSAGE) VARCHAR(1023) CHARACTER SET NONE Nullable
+    Checked on 4.0.0.366
+
+  WARNING-2.
+  It seems that handling of message with length = 1023 bytes (i.e. exactly upper limit) works wrong.
+  Waiting for reply from dimitr, letter 09-sep-2016 18:27.
+NOTES:
+[07.12.2016]
+  'exception' and 'error_message' context variables were replaced with calls RDB$ERROR(EXCEPTION) and RDB$ERROR(MESSAGE)
+  (letter from dimitr, 06.12.2016 21:44; seems that this was done in 4.0.0.461, between 02-dec-2016 and 04-dec-2016)
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory(charset='UTF8')
 
-substitutions_1 = [('line:\\s[0-9]+,', 'line: x'), ('col:\\s[0-9]+', 'col: y')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='UTF8', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate exception  "Что-то неправильно со складом" 'Остаток стал отрицательным: @1';
 
     /*
-    
+
     This will be added after trouble with length = 1023 characters will be solved (TODO after):
-    
+
     recreate exception "ЙцуКенгШщзХъЭждЛорПавЫфЯчсмиТьбЮЪхЗщШШГнЕкУцЙФывААпрОолДжЭЭюБьТ"
     '*Лев Николаевич Толстой * *Анна Каренина * /Мне отмщение, и аз воздам/ *ЧАСТЬ ПЕРВАЯ* *I *
-    Все счастливые семьи похожи друг на друга, каждая несчастливая 
-    семья несчастлива по-своему. 
+    Все счастливые семьи похожи друг на друга, каждая несчастливая
+    семья несчастлива по-своему.
     Все смешалось в доме Облонских. Жена узнала, что муж был в связи
     с бывшею в их доме француженкою-гувернанткой, и объявила мужу, что
     не может жить с ним в одном доме. Положение это продолжалось уже
@@ -70,13 +61,13 @@ test_script_1 = """
     */
 
     recreate table log_user_trouble(
-        e_declared_name varchar(63) character set utf8, 
+        e_declared_name varchar(63) character set utf8,
         e_detailed_text varchar(2000) character set utf8
-    );    
+    );
 
     set term ^;
     create or alter procedure sp_log_user_trouble(
-        e_declared_name varchar(63) character set utf8, 
+        e_declared_name varchar(63) character set utf8,
         e_detailed_text varchar(2000) character set utf8
     ) as
     begin
@@ -91,7 +82,7 @@ test_script_1 = """
 
     /*
     show table rdb$exceptions;
-    select 
+    select
         rdb$exception_name,
         char_length(trim(rdb$exception_name)) exc_name_char_len,
         octet_length(trim(rdb$exception_name)) exc_name_octt_len,
@@ -108,7 +99,7 @@ test_script_1 = """
             if (a_new_qty < 0) then
                 exception "Что-то неправильно со складом" using( a_new_qty );
                 --exception "ЙцуКенгШщзХъЭждЛорПавЫфЯчсмиТьбЮЪхЗщШШГнЕкУцЙФывААпрОолДжЭЭюБьТ"; -- malformed string
-                
+
             when any do
                 if ( RDB$ERROR(EXCEPTION) is not null) then
                     -- before 4.0.0.462 (04.12.2016): execute procedure sp_log_user_trouble(exception, error_message);
@@ -116,8 +107,8 @@ test_script_1 = """
                 else
                     exception;
 
-        end          
-     
+        end
+
     end
     ^
 
@@ -151,9 +142,10 @@ test_script_1 = """
     select * from log_user_trouble;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('line:\\s[0-9]+,', 'line: x'),
+                                                 ('col:\\s[0-9]+', 'col: y')])
 
-expected_stdout_1 = """
+expected_stdout = """
     E_DECLARED_NAME                 Что-то неправильно со складом
     E_DETAILED_TEXT                 exception 1
     Что-то неправильно со складом
@@ -166,8 +158,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

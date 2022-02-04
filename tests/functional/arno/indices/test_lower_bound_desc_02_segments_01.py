@@ -7,6 +7,7 @@ DESCRIPTION:
   Check if all 5 values are fetched with "equals" operator over first segment and
   "lower than or equal" operator on second segment. 2 values are bound to the lower
   segments and 1 value is bound to the upper segment.
+FBTEST:      functional.arno.indices.lower_bound_desc_02_segments_01
 """
 
 import pytest

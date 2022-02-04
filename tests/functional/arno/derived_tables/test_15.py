@@ -4,6 +4,7 @@
 ID:          derived-table-15
 TITLE:       UNION inside derived table
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.15
 """
 
 import pytest

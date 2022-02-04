@@ -6,6 +6,7 @@ TITLE:       4 JOINed tables with 1 LEFT OUTER JOIN
 DESCRIPTION:
   A INNER JOINed TableD to a LEFT JOINed TableC should be able to access the outer TableB
   of TableC. Also TableB is INNER JOINed to TableA. Three indexes can and should be used here.
+FBTEST:      functional.arno.optimizer.opt_left_join_07
 """
 
 import pytest

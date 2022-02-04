@@ -4,6 +4,7 @@
 ID:          derived-table-01
 TITLE:       Simple derived table
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.01
 """
 
 import pytest

@@ -6,6 +6,7 @@ TITLE:       Create database: set names and default character set
 DESCRIPTION: Check ability to specify SET NAMES and DEFAULT CHARACTER SET within one statement.
 NOTES:
   name of client charset must be enclosed in apostrophes, i.e.: create database ... set names 'win1251' ...
+FBTEST:      functional.database.create.01
 """
 
 import pytest

@@ -12,6 +12,7 @@ NOTES:
   added 'rc.categoryid' to 'order by' list in order to have always stable sort result.
   Mismatch with expected result due to different position of records with the same 'rc.relationid'
   occured on 4.0.0.2298. CHecked on 4.0.0.2303.
+FBTEST:      functional.arno.optimizer.opt_full_join_02
 """
 
 import pytest

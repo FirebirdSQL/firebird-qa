@@ -6,6 +6,7 @@ TITLE:       LEFT OUTER JOIN with distribution CASE
 DESCRIPTION:
   TableX LEFT OUTER JOIN TableY with partial match. WHERE clause contains CASE expression
   based on TableY. The WHERE clause should not be distributed to the joined table.
+FBTEST:      functional.arno.optimizer.opt_left_join_12
 """
 
 import pytest

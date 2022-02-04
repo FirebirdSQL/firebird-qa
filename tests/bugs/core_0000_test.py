@@ -2,8 +2,10 @@
 
 """
 ID:          dummy
+ISSUE:
 TITLE:       Dummy test
 DESCRIPTION:
+JIRA:
 FBTEST:      bugs.core_0000
 """
 

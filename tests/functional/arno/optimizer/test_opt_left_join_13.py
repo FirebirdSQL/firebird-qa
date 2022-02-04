@@ -5,6 +5,7 @@ ID:          optimizer.left-join-13
 TITLE:       LEFT OUTER JOIN VIEW with full match
 DESCRIPTION:
   TableX LEFT OUTER JOIN ViewY with full match. Every reference from ViewY should have a value.
+FBTEST:      functional.arno.optimizer.opt_left_join_13
 """
 
 import pytest

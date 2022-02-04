@@ -8,6 +8,7 @@ DESCRIPTION:
   Also prefer ASC index above DESC unique index.
   Unique index isn't the only best to use here, because
   there's not a equals operator on it.
+FBTEST:      functional.arno.optimizer.opt_single_index_selection_03
 """
 
 import pytest

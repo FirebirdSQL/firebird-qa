@@ -7,6 +7,7 @@ DESCRIPTION:
   ORDER BY X ASC, Y DESC
   When more fields are given in ORDER BY clause try to use a compound index, but look out
   for mixed directions.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_12
 """
 
 import pytest

@@ -1,28 +1,21 @@
 #coding:utf-8
-#
-# id:           functional.domain.create.54
-# title:        Use of domains for Trigger/SP variable definition
-# decription:   Allow domains to be applied to variables and in/out
-#               parameters within a trigger or SP
-# tracker_id:   CORE-660
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.domain.create.create_domain_54
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """create domain d as integer;
+"""
+ID:          domain.create-43
+FBTEST:      functional.domain.create.54
+ISSUE:       1026
+JIRA:        CORE-660
+TITLE:       Use of domains for Trigger/SP variable definition
+DESCRIPTION:
+  Allow domains to be applied to variables and in/out parameters within a trigger or SP
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+import pytest
+from firebird.qa import *
 
-test_script_1 = """set term !!;
+db = db_factory(init="create domain d as integer;")
+
+test_script = """set term !!;
 create procedure sp (i type of d) returns (o type of d)
 as
   declare variable v type of d;
@@ -33,9 +26,9 @@ commit!!
 set term ;!!
 show procedure sp;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Procedure text:
+expected_stdout = """Procedure text:
 =============================================================================
   declare variable v type of d;
 begin
@@ -46,9 +39,8 @@ Parameters:
 I                                 INPUT (TYPE OF D) INTEGER
 O                                 OUTPUT (TYPE OF D) INTEGER"""
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

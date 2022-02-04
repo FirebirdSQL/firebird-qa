@@ -7,6 +7,7 @@ DESCRIPTION:
   Check if it will select the index with the best selectivity. Also prefer ASC index above
   DESC unique index. Unique index isn't the best to use here (as the only one), because
   there's not a equals operator on it.
+FBTEST:      functional.arno.optimizer.opt_single_index_selection_06
 """
 
 import pytest

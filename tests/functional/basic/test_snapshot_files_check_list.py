@@ -11,6 +11,7 @@ DESCRIPTION:
 
   Idea about this test originates to CORE-6424 (missed employee.fdb in some intermediate build),
   but it seems that there were several other tickets about the same (missing some of necessary files).
+FBTEST:      functional.basic.build.snapshot_files_check_list
 """
 
 from __future__ import annotations

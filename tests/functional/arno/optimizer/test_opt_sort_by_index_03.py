@@ -6,6 +6,7 @@ TITLE:       ORDER BY ASC using index (non-unique)
 DESCRIPTION:
   ORDER BY X
   When a index can be used for sorting, use it.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_03
 """
 
 import pytest

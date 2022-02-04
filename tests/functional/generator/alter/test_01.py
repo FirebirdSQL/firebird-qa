@@ -1,37 +1,33 @@
 #coding:utf-8
-#
-# id:           functional.generator.alter.01
-# title:        Run ALTER SEQUENCE
-# decription:   
-#                  Create sequence and try several cases of ALTER SEQUENCE statement.
-#                  Then check result that is stored in RDB$GENERATORS table and gen_id(<seq>, 0) value.
-#                  NB:  we have to issue 'COMMIT' after each ALTER SEQUENCE statement in order to see new values in RDB.
-#               
-#                  07-aug-2020: we have to separate test for 3.0 and 4.0 because INITIAL value of new sequence
-#                  in FB 4.x now differs from "old good zero" (this is so since CORE-6084 was fixed).
-#               
-#                  13-aug-2020: changed code for FB 4.x after introduction of fix for CORE-6386: value that was initially
-#                  written into RDB$GENERATORD.RDB$INITIAL_VALUE column must NOT changed on any kind of ALTER EQUENCE
-#                  statement, even when it contains 'RESTART WITH' clause. Checked on 4.0.0.2151.
-#               
-#                  See also: doc/README.incompatibilities.3to4.txt
-#                
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0, 4.0
-# qmid:         
+
+"""
+ID:          generator.alter-01
+FBTEST:      functional.generator.alter.01
+TITLE:       ALTER SEQUENCE
+DESCRIPTION:
+  Create sequence and try several cases of ALTER SEQUENCE statement.
+  Then check result that is stored in RDB$GENERATORS table and gen_id(<seq>, 0) value.
+  NB:  we have to issue 'COMMIT' after each ALTER SEQUENCE statement in order to see new values in RDB.
+NOTES:
+[07.08.2020]
+  we have to separate test for 3.0 and 4.0 because INITIAL value of new sequence
+  in FB 4.x now differs from "old good zero" (this is so since CORE-6084 was fixed).
+[13.08.2020]
+  changed code for FB 4.x after introduction of fix for CORE-6386: value that was initially
+  written into RDB$GENERATORD.RDB$INITIAL_VALUE column must NOT changed on any kind of ALTER EQUENCE
+  statement, even when it contains 'RESTART WITH' clause. Checked on 4.0.0.2151.
+
+  See also: doc/README.incompatibilities.3to4.txt
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
+
+substitutions = [('===.*', ''), ('[ \t]+', ' ')]
+
+db = db_factory()
 
 # version: 3.0
-# resources: None
-
-substitutions_1 = [('===.*', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
 
 test_script_1 = """
     recreate generator g;
@@ -68,7 +64,7 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act_1 = isql_act('db', test_script_1, substitutions=substitutions)
 
 expected_stdout_1 = """
     MSG                   RDB_INIT     RDB_INCR              GEN_ID_0
@@ -91,13 +87,6 @@ def test_1(act_1: Action):
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
-# resources: None
-
-substitutions_2 = [('===.*', ''), ('[ \t]+', ' ')]
-
-init_script_2 = """"""
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
 
 test_script_2 = """
     recreate generator g start with 7654321;
@@ -132,7 +121,7 @@ test_script_2 = """
     select 'point-02' as msg, p.* from sp_gen_info p;
     -----------------------------------------------------------------------
 
-    
+
     -- Test when only RESTART clause presents:
 
     recreate generator g start with 7654321; commit; alter sequence g restart with -1234567; commit;
@@ -145,7 +134,7 @@ test_script_2 = """
     -----------------------------------------------------------------------
 
     -- Test when both RESTART and INCREMENT BY clauses present:
-    
+
     recreate generator g start with 7654321; commit; alter sequence g restart with -1234567 increment by -23456789; commit;
     select 'point-05' as msg, p.* from sp_gen_info p;
 
@@ -162,20 +151,20 @@ test_script_2 = """
     select 'point-08' as msg, p.* from sp_gen_info p;
 """
 
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
+act_2 = isql_act('db', test_script_2, substitutions=substitutions)
 
 expected_stdout_2 = """
-    MSG                   RDB_INIT              RDB_INCR           GEN_ID_CURR           GEN_ID_NEXT 
-    ======== ===================== ===================== ===================== ===================== 
-    point-00               7654321                     1               7654320               7654321 
-    point-01               7654321             -23456789               7654320             -15802469 
-    point-02               7654321              23456789               7654320              31111109 
-    point-03               7654321                     1              -1234568              -1234567 
-    point-04               7654321                     1               1234566               1234567 
-    point-05               7654321             -23456789              22222222              -1234567 
-    point-06               7654321              23456789             -24691356              -1234567 
-    point-07               7654321             -23456789              24691356               1234567 
-    point-08               7654321              23456789             -22222222               1234567 
+    MSG                   RDB_INIT              RDB_INCR           GEN_ID_CURR           GEN_ID_NEXT
+    ======== ===================== ===================== ===================== =====================
+    point-00               7654321                     1               7654320               7654321
+    point-01               7654321             -23456789               7654320             -15802469
+    point-02               7654321              23456789               7654320              31111109
+    point-03               7654321                     1              -1234568              -1234567
+    point-04               7654321                     1               1234566               1234567
+    point-05               7654321             -23456789              22222222              -1234567
+    point-06               7654321              23456789             -24691356              -1234567
+    point-07               7654321             -23456789              24691356               1234567
+    point-08               7654321              23456789             -22222222               1234567
 """
 
 @pytest.mark.version('>=4.0')
@@ -183,4 +172,3 @@ def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
     act_2.execute()
     assert act_2.clean_stdout == act_2.clean_expected_stdout
-

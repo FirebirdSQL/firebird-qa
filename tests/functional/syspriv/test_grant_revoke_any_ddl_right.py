@@ -1,43 +1,34 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.grant_revoke_any_ddl_right
-# title:        Check ability to grant right for issuing CREATE/ALTER/DROP statements.
-# decription:   
-#                   Test creates user with name 'john_smith_ddl_grantor' and grants to him system privilege
-#                   to allow another user to run any DDL statement, and also to revoke all privileges from
-#                   this user. Name of another user (who will perform DDL): 'mike_adams_ddl_grantee'.
-#               
-#                   After this, we connect as 'john_smith_ddl_grantor' and give all kinds of DDL rights
-#                   for CREATE, ALTER and DROP objects to user 'mike_adams_ddl_grantee'.
-#               
-#                   We then connect to database as 'mike_adams_ddl_grantee' and try to create all kind of
-#                   database objects, then alter and drop them. No errors must occur here.
-#               
-#                   Finally, we make connect as 'john_smith_ddl_grantor' and revoke from 'mike_adams_ddl_grantee'
-#                   all grants. User'mike_adams_ddl_grantee' then makes connect and tries to CREATE any kind
-#                   of DB objects. All of them must NOT be created and exception SQLSTATE = 42000 must raise.
-#               
-#               
-#                   Checked on 5.0.0.139; 4.0.1.2568
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.grant-revoke-any-ddl-right
+TITLE:       Check ability to grant right for issuing CREATE/ALTER/DROP statements
+DESCRIPTION:
+  Test creates user with name 'john_smith_ddl_grantor' and grants to him system privilege
+  to allow another user to run any DDL statement, and also to revoke all privileges from
+  this user. Name of another user (who will perform DDL): 'mike_adams_ddl_grantee'.
+
+  After this, we connect as 'john_smith_ddl_grantor' and give all kinds of DDL rights
+  for CREATE, ALTER and DROP objects to user 'mike_adams_ddl_grantee'.
+
+  We then connect to database as 'mike_adams_ddl_grantee' and try to create all kind of
+  database objects, then alter and drop them. No errors must occur here.
+
+  Finally, we make connect as 'john_smith_ddl_grantor' and revoke from 'mike_adams_ddl_grantee'
+  all grants. User'mike_adams_ddl_grantee' then makes connect and tries to CREATE any kind
+  of DB objects. All of them must NOT be created and exception SQLSTATE = 42000 must raise.
+FBTEST:      functional.syspriv.grant_revoke_any_ddl_right
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
+user_grantor = user_factory('db', name='john_smith_ddl_grantor', do_not_create=True)
+user_grantee = user_factory('db', name='mike_adams_ddl_grantee', do_not_create=True)
+role_revoke = role_factory('db', name='r_for_grant_revoke_any_ddl_right', do_not_create=True)
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set bail on;
     set list on;
@@ -46,7 +37,7 @@ test_script_1 = """
     create or alter user john_smith_ddl_grantor password '123' revoke admin role;
     create or alter user mike_adams_ddl_grantee password '456' revoke admin role;
     commit;
-
+/*
     set term ^;
     execute block as
     begin
@@ -55,7 +46,7 @@ test_script_1 = """
     end^
     set term ;^
     commit;
-
+*/
     -- Add/change/delete non-system records in RDB$TYPES
     create role r_for_grant_revoke_any_ddl_right set system privileges to GRANT_REVOKE_ANY_DDL_RIGHT;
     commit;
@@ -74,7 +65,7 @@ test_script_1 = """
     grant create collation to mike_adams_ddl_grantee;
     grant alter any collation to mike_adams_ddl_grantee;
     grant drop any collation to mike_adams_ddl_grantee;
-    
+
     grant create exception to mike_adams_ddl_grantee;
     grant alter any exception to mike_adams_ddl_grantee;
     grant drop any exception to mike_adams_ddl_grantee;
@@ -108,7 +99,7 @@ test_script_1 = """
     grant create function to mike_adams_ddl_grantee;
     grant alter any function to mike_adams_ddl_grantee;
     grant drop any function to mike_adams_ddl_grantee;
-    
+
     grant create package to mike_adams_ddl_grantee;
     grant alter any package to mike_adams_ddl_grantee;
     grant drop any package to mike_adams_ddl_grantee;
@@ -171,7 +162,7 @@ test_script_1 = """
     alter exception exc_test 'You have to change value from @1 to @2';
     alter sequence gen_test restart with -9223372036854775808 increment by 2147483647;
     alter domain dm_test type bigint set default 2147483647 set not null add check(value > 0);
-    
+
     alter table table_test drop constraint m_test_fk;
     create descending index table_test_x_desc on table_test(x);
     comment on table table_test is 'New comment for this table.';
@@ -244,9 +235,9 @@ test_script_1 = """
     commit;
 
     set bail off;
-    
+
     connect '$(DSN)' user mike_adams_ddl_grantee password '456';
-    
+
     --###########################################################################
     --###   v e r i f y    t h a t     N O    r i g h t s    r e m a i n s    ###
     --###########################################################################
@@ -259,7 +250,7 @@ test_script_1 = """
     create role r_test2;
     create table table_test2(id int, pid int, x int, constraint mtest_pk primary key(id), constraint m_test_fk foreign key(pid) references table_test(id));
     create view v_table_test2 as select 1 from rdb$database;
-    
+
     set term ^;
     create procedure sp_test2 as begin end
     ^
@@ -278,15 +269,15 @@ test_script_1 = """
 
     set bail on;
 
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user john_smith_ddl_grantor;
-    drop user mike_adams_ddl_grantee;
-    commit;
+    -- connect '$(DSN)' user sysdba password 'masterkey';
+    -- drop user john_smith_ddl_grantor;
+    -- drop user mike_adams_ddl_grantee;
+    -- commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AM_I                        JOHN_SMITH_DDL_GRANTOR
     RDB$ROLE_NAME                   RDB$ADMIN
     RDB$ROLE_IN_USE                 <false>
@@ -296,7 +287,8 @@ expected_stdout_1 = """
     RDB$ROLE_IN_USE                 <true>
     RDB$SYSTEM_PRIVILEGES           0000400000000000
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -CREATE COLLATION COLL_TEST2 failed
@@ -354,11 +346,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, user_grantor, user_grantee, role_revoke):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

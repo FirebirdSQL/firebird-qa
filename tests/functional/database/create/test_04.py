@@ -4,6 +4,7 @@
 ID:          create-database-04
 TITLE:       Create database: with PAGE_SIZE=2048: check actual size of page in the created database.
 DESCRIPTION:
+FBTEST:      functional.database.create.04
 """
 
 import pytest

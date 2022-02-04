@@ -1,32 +1,24 @@
 #coding:utf-8
-#
-# id:           functional.dml.merge.02
-# title:        merge STATEMENT can have only one RETURNING which must be after all WHEN sub-statements.
-# decription:   
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          dml.merge-02
+FBTEST:      functional.dml.merge.02
+TITLE:       MERGE statement can have only one RETURNING which must be after all WHEN sub-statements
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('-Token unknown .*', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
 
     recreate table ta(id int primary key, x int, y int);
     recreate table tb(id int primary key, x int, y int);
     commit;
-    
+
     insert into ta(id, x, y) values(1, 10, 100);
     insert into tb(id, x, y) values(1, 10, 100);
     commit;
@@ -51,14 +43,15 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('-Token unknown .*', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     DELETED_ID                      1
     DELETED_X                       10
     DELETED_Y                       100
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -67,11 +60,9 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

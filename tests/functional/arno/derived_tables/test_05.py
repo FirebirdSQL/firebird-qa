@@ -4,6 +4,7 @@
 ID:          derived-table-05
 TITLE:       Derived table column names must be unique
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.05
 """
 
 import pytest

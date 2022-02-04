@@ -8,6 +8,7 @@ DESCRIPTION:
   should be delivered to the where clause. The underlying aggregate stream could possible
   use it for a index and speed it up. VIEWs that contain aggregate queries always (as expected)
   add WHERE clause (on that VIEW) inside the HAVING clause from the aggregate.
+FBTEST:      functional.arno.optimizer.opt_aggregate_distribution_06
 """
 
 import pytest

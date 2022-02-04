@@ -5,6 +5,7 @@ ID:          optimizer.mixed-joins-04
 TITLE:       Mixed JOINS
 DESCRIPTION:
   Tables without indexes should be merged (when inner join) and those who can use a index, should use it.
+FBTEST:      functional.arno.optimizer.opt_mixed_joins_04
 """
 
 import pytest

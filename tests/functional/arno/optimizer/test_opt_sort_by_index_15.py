@@ -6,6 +6,7 @@ TITLE:       ORDER BY ASC NULLS LAST using index
 DESCRIPTION:
   ORDER BY X ASC NULLS LAST
   When a index can be used for sorting, use it.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_15
 """
 
 import pytest

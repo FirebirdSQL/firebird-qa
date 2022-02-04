@@ -1,26 +1,19 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.date.datediff_07
-# title:        test de la fonction datediff pour avoir le resultat en minute
-# decription:   Returns an exact numeric value representing the interval of time from the first date/time/timestamp value to the second one.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.intfunc.date.datediff_07
+
+"""
+ID:          intfunc.date.datediff-07
+TITLE:       DATEDIFF
+DESCRIPTION:
+  Returns an exact numeric value representing the interval of time from the first date/time/timestamp value to the second one.
+FBTEST:      functional.intfunc.date.datediff_07
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set list on;
     select datediff( millisecond,
@@ -43,12 +36,12 @@ test_script_1 = """
                      from cast( '00:00:00.0001' as time)
                      to cast( '23:59:59.9999' as time)
                    ) as dd_02b from rdb$database;
-  
+
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     DD_01A                          315537897599999.8
     DD_01B                          86399999.8
     DD_02A                          315537897599999.8
@@ -56,8 +49,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

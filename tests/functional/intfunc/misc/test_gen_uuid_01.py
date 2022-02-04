@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.misc.gen_uuid_01
-# title:        test for GEN_UUID()
-# decription:     Returns a universal unique number.
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.intfunc.misc.gen_uuid_01
+
+"""
+ID:          intfunc.misc.gen_uuid
+TITLE:       GEN_UUID()
+DESCRIPTION: Returns a universal unique number.
+FBTEST:      functional.intfunc.misc.gen_uuid_01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 create table test( id char(30) );
 
 --on verrifie qu'il y en a pas deux identique
@@ -40,9 +32,10 @@ insert into test values(CAST(GEN_UUID() AS VARCHAR(255)) );
 
 select count(id)  from test group by id;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """                COUNT
+expected_stdout = """
+COUNT
 =====================
                     1
                     1
@@ -59,8 +52,7 @@ expected_stdout_1 = """                COUNT
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

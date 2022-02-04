@@ -4,6 +4,7 @@
 ID:          new-database-05
 TITLE:       New DB - RDB$DEPENDENCIES
 DESCRIPTION: Check for correct content of RDB$DEPENDENCIES in new database.
+FBTEST:      functional.basic.db.05
 """
 
 import pytest

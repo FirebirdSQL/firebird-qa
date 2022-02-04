@@ -4,6 +4,7 @@
 ID:          new-database-30
 TITLE:       New DB - RDB$TYPES content
 DESCRIPTION: Check the correct content of RDB$TYPES in new database.
+FBTEST:      functional.basic.db.30
 """
 
 import pytest

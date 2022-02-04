@@ -4,6 +4,7 @@
 ID:          optimizer.inner-join-04
 TITLE:       INNER JOIN join order LIKE and IS NULL
 DESCRIPTION: IS NULL should also be used for determing join order.
+FBTEST:      functional.arno.optimizer.opt_inner_join_04
 """
 
 import pytest

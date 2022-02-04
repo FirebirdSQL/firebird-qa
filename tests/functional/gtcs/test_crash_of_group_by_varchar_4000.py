@@ -1,40 +1,30 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.crash_of_group_by_varchar_4000
-# title:        GTCS/tests/CF_ISQL_33. Crash on attempt to GROUP BY on table with varchar(4000) field
-# decription:   
-#               	::: NB ::: 
-#               	### Name of original test has no any relation with actual task of this test: ###
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_33.script
-#               
-#                   Source description (dominikfaessler, message of 2004-05-27 13:11:09; FB 1.5.1.4443):
-#                   https://sourceforge.net/p/firebird/mailman/message/17071981/
-#               
-#                   Issue in original test:
-#                   bug #961543 Server Crash ISO8859_1 and DE_DE
-#               
-#                   Checked on: 4.0.0.1804 SS; 3.0.6.33271 SS; 2.5.9.27149 SC.
-#                   NB: it is enough in 'expected_stdout' to show only name of resulting field ('F01')
-#                   rather than the whole output.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.crash-of-group-by-varchar-4000
+FBTEST:      functional.gtcs.crash_of_group_by_varchar_4000
+TITLE:       Crash on attempt to GROUP BY on table with varchar(4000) field
+DESCRIPTION:
+  ::: NB :::
+  ### Name of original test has no any relation with actual task of this test: ###
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_33.script
+
+  Source description (dominikfaessler, message of 2004-05-27 13:11:09; FB 1.5.1.4443):
+  https://sourceforge.net/p/firebird/mailman/message/17071981/
+
+  Issue in original test:
+  bug #961543 Server Crash ISO8859_1 and DE_DE
+
+  NB: it is enough in 'expected_stdout' to show only name of resulting field ('F01')
+  rather than the whole output.
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(charset='ISO8859_1')
 
-substitutions_1 = [('[ \t]+', ' '), ('^((?!F01|Records affected).)*$', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(charset='ISO8859_1', sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     CREATE TABLE SNIPPETS (
     f01 VARCHAR(4000) COLLATE DE_DE
     );
@@ -86,16 +76,15 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('^((?!F01|Records affected).)*$', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     F01
     Records affected: 1
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

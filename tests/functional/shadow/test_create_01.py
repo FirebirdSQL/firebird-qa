@@ -1,31 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.shadow.create_01
-# title:        CREATE SHADOW
-# decription:   
-#                   CREATE SHADOW
-#               
-#                   Dependencies:
-#                   CREATE DATABASE
-#                 
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     3.0
-# qmid:         functional.shadow.create.create_shadow_01
+
+"""
+ID:          shadow.create-01
+TITLE:       CREATE SHADOW
+DESCRIPTION:
+FBTEST:      functional.shadow.create_01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create shadow 1 '$(DATABASE_LOCATION)test_defaults.shd';
     commit;
     -- SHOW DATABASE -- Removed from here because this test must verify only ability to create shadow.
@@ -34,7 +21,7 @@ test_script_1 = """
     select
         --right(trim(rdb$file_name), char_length('test_defaults.shd')) as file_name
         iif( replace(rdb$file_name,'\\','/') containing replace('$(DATABASE_LOCATION)','','/')
-             and 
+             and
              upper(right( trim(rdb$file_name), char_length('test_defaults.shd') )) = upper('test_defaults.shd')
             ,'OK'
             ,'BAD: ' || rdb$file_name
@@ -47,9 +34,9 @@ test_script_1 = """
     from rdb$files;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CHECK_SHD_FILE_NAME             OK
     FILE_SEQUENCE                   0
     FILE_START                      0
@@ -60,8 +47,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

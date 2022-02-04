@@ -1,29 +1,21 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.modify_ext_conn_pool
-# title:        Check ability to manage extyernal connections pool
-# decription:   
-#                  Verify ability to issue ALTER EXTERNAL CONNECTIONS POOL <...> by non-sysdba user.
-#                  Checked  on 5.0.0.133 SS/CS, 4.0.1.2563 SS/CS
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.modify-ext-conn-pool
+TITLE:       Check ability to manage external connections pool
+DESCRIPTION:
+  Verify ability to issue ALTER EXTERNAL CONNECTIONS POOL <...> by non-sysdba user.
+FBTEST:      functional.syspriv.modify_ext_conn_pool
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
+test_user = user_factory('db', name='john_smith_extpool_manager', do_not_create=True)
+test_role = role_factory('db', name='tmp_role_for_change_extpool', do_not_create=True)
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set list on;
 
@@ -31,7 +23,7 @@ test_script_1 = """
          user john_smith_extpool_manager
          password '123'
     ;
-
+/*
     set term ^;
     execute block as
     begin
@@ -39,7 +31,7 @@ test_script_1 = """
         when any do begin end
     end^
     set term ;^
-
+*/
     create role tmp_role_for_change_extpool set system privileges to MODIFY_EXT_CONN_POOL;
     commit;
 
@@ -52,28 +44,27 @@ test_script_1 = """
     alter external connections pool set lifetime 789 second;
     commit;
 
-    select 
+    select
         cast(rdb$get_context('SYSTEM', 'EXT_CONN_POOL_SIZE') as int) as pool_size,
         cast(rdb$get_context('SYSTEM', 'EXT_CONN_POOL_LIFETIME') as int) as pool_lifetime
     from rdb$database;
     rollback;
 
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user john_smith_extpool_manager;
-    drop role tmp_role_for_change_extpool;
-    commit;
+    -- connect '$(DSN)' user sysdba password 'masterkey';
+    -- drop user john_smith_extpool_manager;
+    -- drop role tmp_role_for_change_extpool;
+    -- commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     POOL_SIZE                       345
     POOL_LIFETIME                   789
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, test_user, test_role):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

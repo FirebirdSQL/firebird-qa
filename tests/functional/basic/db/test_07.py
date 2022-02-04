@@ -4,6 +4,7 @@
 ID:          new-database-07
 TITLE:       New DB - RDB$FIELDS
 DESCRIPTION: Check for correct content of RDB$FIELDS in new database.
+FBTEST:      functional.basic.db.07
 """
 
 import pytest

@@ -6,6 +6,7 @@ TITLE:       MAX() and ASC index (non-unique)
 DESCRIPTION:
   SELECT MAX(FieldX) FROM X
   ASC index cannot be used for MAX() aggregate function.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_06
 """
 
 import pytest

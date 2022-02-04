@@ -6,6 +6,7 @@ TITLE:       ORDER BY ASC using index (single) and WHERE clause
 DESCRIPTION:
   WHERE X = 1 ORDER BY Y
   Index for both X and Y should be used when available.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_18
 """
 
 import pytest

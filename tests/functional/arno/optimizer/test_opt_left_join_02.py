@@ -7,6 +7,7 @@ DESCRIPTION:
   TableX LEFT OUTER JOIN TableY with no match, thus result should contain all NULLs for TableY
   references. WHERE clause contains IS NULL on a field which is also in a single segment index.
   The WHERE clause shouldn't be distributed to the joined table..
+FBTEST:      functional.arno.optimizer.opt_left_join_02
 """
 
 import pytest

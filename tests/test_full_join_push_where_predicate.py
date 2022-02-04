@@ -1,17 +1,17 @@
 #coding:utf-8
 
 """
-ID:          full-join-push-where-predicate
+ID:          issue.full-join-push-where-predicate
 TITLE:       WHERE-filter must be applied after FULL JOIN result
 DESCRIPTION:
   See (rus): https://www.sql.ru/forum/1326682/dva-cte-ih-full-join-i-uslovie-daut-nekorrektnyy-rezultat
-  Confirmed bug on 2.5.9.27151.
-  Checked on 3.0.6.33322, 4.0.0.2073 -- all fine.
+      Confirmed bug on 2.5.9.27151.
+      Checked on 3.0.6.33322, 4.0.0.2073 -- all fine.
+FBTEST:      full_join_push_where_predicate
 """
 
 import pytest
 from firebird.qa import *
-
 
 db = db_factory()
 
@@ -51,7 +51,7 @@ expected_stdout = """
     T2_F1                           d
 """
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute()

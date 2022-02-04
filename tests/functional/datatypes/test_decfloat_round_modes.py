@@ -10,6 +10,7 @@ DESCRIPTION:
 
   Sample with results of diff. rounding modes: ibm.com/developerworks/ru/library/dm-0801chainani/
   Sample for round(1608.90*5/100, 2):  sql.ru/forum/actualutils.aspx?action=gotomsg&tid=729836&msg=8243077
+FBTEST:      functional.datatypes.decfloat_round_modes
 """
 
 import pytest

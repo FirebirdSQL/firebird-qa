@@ -4,6 +4,7 @@
 ID:          alter-database-03
 TITLE:       Alter database: add file with name of this database or previously added files must fail
 DESCRIPTION: Add same file twice must fail
+FBTEST:      functional.database.alter.03
 """
 
 import pytest

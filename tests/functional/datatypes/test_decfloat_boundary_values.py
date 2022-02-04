@@ -7,6 +7,7 @@ JIRA:        CORE-5535
 TITLE:       Check BOUNDARY values that are defined for DECFLOAT datatype
 DESCRIPTION:
   See  doc/sql.extensions/README.data_types
+FBTEST:      functional.datatypes.decfloat_boundary_values
 """
 
 import pytest

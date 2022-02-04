@@ -8,6 +8,7 @@ DESCRIPTION:
   Samples here are from #3431.
   Confirmed usage 'PLAN INDEX ...' in FB 2.0.0.12724
 JIRA:        CORE-3051
+FBTEST:      functional.arno.optimizer.opt_avoid_index_usage
 """
 
 import pytest

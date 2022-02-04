@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.comment_in_object_names
-# title:        All DB objects types must allow name COMMENT. Also, COMMENT ON ... must allow occurence of "comment" in it.
-# decription:   
-#                   Original issue: https://granicus.if.org/pgbugs/15555
-#                
-# tracker_id:   
-# min_versions: ['3.0.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          tabloid.comment-in-object-names
+TITLE:       All DB objects types must allow name COMMENT. Also, COMMENT ON ... must allow occurence of "comment" in it.
+DESCRIPTION: 
+  Original issue: https://granicus.if.org/pgbugs/15555
+FBTEST:      functional.tabloid.comment_in_object_names
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create or alter user comment password 'comment';
 
     create collation comment for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
@@ -112,10 +103,8 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.execute()
-
+def test_1(act: Action):
+    act.execute()

@@ -4,6 +4,7 @@
 ID:          derived-table-20
 TITLE:       Sub-select inside derived table
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.20
 """
 
 import pytest

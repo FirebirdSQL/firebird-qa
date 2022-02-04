@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.monitoring.02
-# title:        Monitoring: get data about active statements from current attachment (WHERE-filter: mon$statements.mon$state=1).
-# decription:   
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.monitoring.monitoring_02
+
+"""
+ID:          monitoring-tables-02
+TITLE:       Get data about active statements from current attachment (WHERE-filter: mon$statements.mon$state=1).
+DESCRIPTION:
+FBTEST:      functional.monitoring.02
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('SQL_TEXT.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set width usr 31;
     set list on;
     select a.mon$user usr, s.mon$sql_text sql_text
@@ -31,10 +23,10 @@ test_script_1 = """
         and s.mon$state = 1;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('SQL_TEXT.*', '')])
 
-expected_stdout_1 = """
-    USR                             SYSDBA                                                                                       
+expected_stdout = """
+    USR                             SYSDBA
     SQL_TEXT                        0:1
     select a.mon$user usr, s.mon$sql_text sql_text
     from mon$attachments a
@@ -45,8 +37,7 @@ expected_stdout_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

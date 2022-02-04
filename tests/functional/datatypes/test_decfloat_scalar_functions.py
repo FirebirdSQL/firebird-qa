@@ -18,6 +18,7 @@ NOTES:
 [21.08.2020]
   put literal numeric values into a table with DECFLOAT table; replaced UNIONED-code with
   separate statements. Checked on 4.0.0.2173
+FBTEST:      functional.datatypes.decfloat_scalar_functions
 """
 
 import pytest

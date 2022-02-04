@@ -1,12 +1,4 @@
 #coding:utf-8
-#
-# id:           functional.arno.indices.upper_lower_bounds_02
-# title:        upper and lower bounds
-# decription:   "Less or equal than" should be prefered above "less than" and "greater or equal than" above "greater than".
-# tracker_id:
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.arno.indexes.upper_lower_bounds_02
 
 """
 ID:          index.upper-lower-bounds-02
@@ -14,6 +6,7 @@ TITLE:       Upper and lower bounds
 DESCRIPTION:
   "Less or equal than" should be prefered above "less than" and "greater or equal than"
   above "greater than".
+FBTEST:      functional.arno.indices.upper_lower_bounds_02
 """
 
 import pytest

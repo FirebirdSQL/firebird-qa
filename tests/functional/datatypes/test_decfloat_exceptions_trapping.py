@@ -12,6 +12,7 @@ DESCRIPTION:
   exceptional conditions cause a trap. Valid traps are: Division_by_zero, Inexact,
   Invalid_operation, Overflow and Underflow. By default traps are set to:
   Division_by_zero, Invalid_operation, Overflow, Underflow.
+FBTEST:      functional.datatypes.decfloat_exceptions_trapping
 """
 
 import pytest

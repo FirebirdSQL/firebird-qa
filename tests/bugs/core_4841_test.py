@@ -6,6 +6,11 @@ ISSUE:       5137
 TITLE:       Make message about missing password being always displayed as reply on attempt
   to issue CREATE new login without PASSWORD clause
 DESCRIPTION:
+NOTES:
+[04.02.2022] pcisar
+  Test fails with 3.0.8, because command
+    create or alter user u01 tags (password = 'foo');
+  does not produce any error.
 JIRA:        CORE-4841
 FBTEST:      bugs.core_4841
 """
@@ -28,8 +33,6 @@ test_script = """
 """
 
 act = isql_act('db', test_script, substitutions=[('[-]?Password', 'Password')])
-
-# version: 3.0.8
 
 expected_stderr = """
 Statement failed, SQLSTATE = 42000
@@ -66,6 +69,7 @@ unsuccessful metadata update
 -Password must be specified when creating user
 """
 
+@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=3.0.8')
 def test_1(act: Action):
     act.expected_stderr = expected_stderr

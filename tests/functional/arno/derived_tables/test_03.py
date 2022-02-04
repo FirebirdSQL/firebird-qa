@@ -4,6 +4,7 @@
 ID:          derived-table-03
 TITLE:       Explicit column names for derived table
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.03
 """
 
 import pytest

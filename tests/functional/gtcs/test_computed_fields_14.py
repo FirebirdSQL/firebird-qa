@@ -1,32 +1,22 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.computed_fields_14
-# title:        GTCS/tests/CF_ISQL_14; computed-fields-14
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_14.script
-#               	SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
-#                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          computed-fields-14
+FBTEST:      functional.gtcs.computed_fields_14
+TITLE:       Computed fields
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_14.script
+  SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' '), ('attempted update of read-only column.*', 'attempted update of read-only column')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set heading off;
     /*---------------------------------------------*/
     /* Create a table with computed field.         */
@@ -59,13 +49,16 @@ test_script_1 = """
     insert into t6 values(10, 12);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' '),
+                                                 ('attempted update of read-only column.*',
+                                                  'attempted update of read-only column')])
 
-expected_stdout_1 = """
+expected_stdout = """
     point-1 10 30
     point-2 10 30
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE 42000
     attempted update of read-only column
 
@@ -83,12 +76,10 @@ expected_stderr_1 = """
     -Count of read-write columns does not equal count of values
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

@@ -4,6 +4,7 @@
 ID:          isql-01
 TITLE:       Check output of "HELP" and "HELP SET" commands
 DESCRIPTION: NB: this test can also cover issue of CORE-2432 ("Missing SHOW COLLATIONs in HELP")
+FBTEST:      functional.basic.isql.00
 """
 
 import pytest

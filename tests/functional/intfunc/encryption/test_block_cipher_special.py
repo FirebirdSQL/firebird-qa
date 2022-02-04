@@ -1,33 +1,21 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.encryption.block_cipher_special
-# title:        
-#                   Verify block crypto algorithms that are implemented in ENCRYPT/DECRYPT built-in functions.
-#                   Additional tests for key length = 192 and 256 bits.
-#                   See doc\\sql.extensions\\README.builtin_functions.txt for details.
-#               
-#                   Checked on 4.0.0.1691: OK, 1.343s.
-#                
-# decription:   
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          intfunc.encryption.block-cipher-special
+TITLE:       ENCRYPT/DECRYPT built-in functions
+DESCRIPTION:
+  Verify block crypto algorithms that are implemented in ENCRYPT/DECRYPT built-in functions.
+  Additional tests for key length = 192 and 256 bits.
+  See doc/sql.extensions/README.builtin_functions.txt for details.
+FBTEST:      functional.intfunc.encryption.block_cipher_special
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     create or alter procedure sp_char_block_test(a_alg varchar(30)) as begin end;
     commit;
@@ -43,7 +31,7 @@ test_script_1 = """
     ^
     set term ;^
 
-    
+
     --############################ AES mode OFB ##########################
     insert into test_char(
         crypto_alg,
@@ -56,7 +44,7 @@ test_script_1 = """
         'ofb',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         lpad('', 24, '01'), -- 192 bits
-        lpad('',16, uuid_to_char( gen_uuid() )) 
+        lpad('',16, uuid_to_char( gen_uuid() ))
     );
 
     insert into test_char(
@@ -70,7 +58,7 @@ test_script_1 = """
         'ofb',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         lpad('', 32, '01'), -- 256 bits
-        lpad('',16, uuid_to_char( gen_uuid() )) 
+        lpad('',16, uuid_to_char( gen_uuid() ))
     );
 
 
@@ -87,7 +75,7 @@ test_script_1 = """
         'cfb',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         lpad('', 24, '01'), -- 192 bits
-        lpad('',16, uuid_to_char( gen_uuid() )) 
+        lpad('',16, uuid_to_char( gen_uuid() ))
     );
 
     insert into test_char(
@@ -101,7 +89,7 @@ test_script_1 = """
         'cfb',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         lpad('', 32, '01'), -- 256 bits
-        lpad('',16, uuid_to_char( gen_uuid() )) 
+        lpad('',16, uuid_to_char( gen_uuid() ))
     );
 
 
@@ -117,7 +105,7 @@ test_script_1 = """
         'ctr',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         lpad('', 24, '01'), -- 192 bits
-        lpad('',16, uuid_to_char( gen_uuid() )) 
+        lpad('',16, uuid_to_char( gen_uuid() ))
     );
 
     insert into test_char(
@@ -131,7 +119,7 @@ test_script_1 = """
         'ctr',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         lpad('', 32, '01'), -- 256 bits
-        lpad('',16, uuid_to_char( gen_uuid() )) 
+        lpad('',16, uuid_to_char( gen_uuid() ))
     );
 
 
@@ -173,7 +161,7 @@ test_script_1 = """
         'cbc',
         lpad('', cast(rdb$get_context('USER_SESSION', 'DATA_LEN') as int),uuid_to_char(gen_uuid()) ),
         lpad('', 24, '01'), -- 192 bits
-        lpad('', 16, uuid_to_char( gen_uuid() )) 
+        lpad('', 16, uuid_to_char( gen_uuid() ))
     );
 
     insert into test_char(
@@ -230,7 +218,7 @@ select encrypt( lpad('', 16, 'A') using aes mode cbc key '1234567890123456789012
         do begin
             v_encrypt_sttm = 'select encrypt( q''{' || c.source_text || '}'' using ' || c.crypto_alg || coalesce( ' mode ' || c.mode , '' ) || ' key q''{' || c.crypto_key || '}''' || coalesce(' iv q''{' || c.crypto_iv || '}'' ', '') || ') from rdb$database';
             execute statement v_encrypt_sttm into v_encrypted;
-            
+
             v_decrypt_sttm = 'select decrypt( cast(? as varbinary(32700)) using ' || c.crypto_alg || coalesce( ' mode ' || c.mode , '' ) || ' key q''{' || c.crypto_key || '}''' || coalesce(' iv q''{' || c.crypto_iv || '}'' ', '') || ') from rdb$database';
             execute statement ( v_decrypt_sttm ) ( v_encrypted )  into v_decrypted;
 
@@ -249,77 +237,76 @@ select encrypt( lpad('', 16, 'A') using aes mode cbc key '1234567890123456789012
     set term ;^
     commit;
 
-    select * from sp_char_block_test; 
+    select * from sp_char_block_test;
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     CRYPTO_ALG                      AES
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            OFB
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            CFB
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            CTR
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            ECB
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            CBC
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 
     CRYPTO_ALG                      AES
     MODE                            CBC
-    RESULT_MSG                      Source and decrypted strings are identical.  
+    RESULT_MSG                      Source and decrypted strings are identical.
     SRC_TEXT                        <null>
     DECRYPTED_TEXT                  <null>
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

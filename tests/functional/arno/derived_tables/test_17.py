@@ -4,6 +4,7 @@
 ID:          derived-table-17
 TITLE:       Aggregate inside derived table
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.17
 """
 
 import pytest

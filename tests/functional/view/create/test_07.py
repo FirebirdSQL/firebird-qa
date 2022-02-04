@@ -1,44 +1,36 @@
 #coding:utf-8
-#
-# id:           functional.view.create.07
-# title:        CREATE VIEW - updateable WITH CHECK OPTION
-# decription:   CREATE VIEW - updateable WITH CHECK OPTION
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.view.create.create_view_07
+
+"""
+ID:          view.create-07
+TITLE:       CREATE VIEW - updateable WITH CHECK OPTION
+DESCRIPTION:
+FBTEST:      functional.view.create.07
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
+init_script = """CREATE TABLE tb(id INT);
+"""
 
-substitutions_1 = []
+db = db_factory(init=init_script)
 
-init_script_1 = """CREATE TABLE tb(id INT);"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """CREATE VIEW test (id) AS SELECT id FROM tb WHERE id<10 WITH CHECK OPTION;
+test_script = """CREATE VIEW test (id) AS SELECT id FROM tb WHERE id<10 WITH CHECK OPTION;
 INSERT INTO test VALUES(2);
 COMMIT;
-SELECT * FROM test;"""
+SELECT * FROM test;
+"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """          ID
+expected_stdout = """          ID
 ============
 
-2"""
+2
+"""
 
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

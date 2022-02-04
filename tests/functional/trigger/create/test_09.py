@@ -1,30 +1,21 @@
 #coding:utf-8
-#
-# id:           functional.trigger.create.09
-# title:        CREATE TRIGGER BEFORE INSERT DECLARE VARIABLE
-# decription:   CREATE TRIGGER BEFORE INSERT DECLARE VARIABLE
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.trigger.create.create_trigger_09
+
+"""
+ID:          trigger.create-09
+TITLE:       CREATE TRIGGER BEFORE INSERT DECLARE VARIABLE
+DESCRIPTION:
+FBTEST:      functional.trigger.create.09
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
+init_script = """CREATE TABLE tb(id INT);
+"""
 
-substitutions_1 = [('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')]
+db = db_factory(init=init_script)
 
-init_script_1 = """CREATE TABLE tb(id INT);"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SET TERM ^;
+test_script = """SET TERM ^;
 CREATE TRIGGER test FOR tb BEFORE INSERT AS
 DECLARE VARIABLE v1 SMALLINT;
 DECLARE VARIABLE v2 INTEGER;
@@ -51,11 +42,12 @@ BEGIN
   new.id=1;
 END^
 SET TERM ;^
-SHOW TRIGGER test;"""
+SHOW TRIGGER test;
+"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')])
 
-expected_stdout_1 = """Triggers on Table TB:
+expected_stdout = """Triggers on Table TB:
 TEST, Sequence: 0, Type: BEFORE INSERT, Active
 AS
 DECLARE VARIABLE v1 SMALLINT;
@@ -82,11 +74,11 @@ DECLARE VARIABLE v21 NATIONAL CHAR VARYING(30);
 BEGIN
   new.id=1;
 END
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"""
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+"""
 
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

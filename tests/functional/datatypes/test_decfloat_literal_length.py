@@ -9,6 +9,7 @@ DESCRIPTION:
   See  doc/sql.extensions/README.data_types
     Although length of DECFLOAT(34) literal can exceed 6000 bytes (0.000<6000 zeros>00123)
     implementation limit exists - length of such literal should not exceed 1024 bytes.
+FBTEST:      functional.datatypes.decfloat_literal_length
 """
 
 import pytest

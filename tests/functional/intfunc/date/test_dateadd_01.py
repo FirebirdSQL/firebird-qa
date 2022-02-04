@@ -1,31 +1,24 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.date.dateadd_01
-# title:        test de la fonction dateadd  pour l'ajout d'un jour
-# decription:   Returns a date/time/timestamp value increased (or decreased, when negative) by the specified amount of time.
-# tracker_id:   
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.intfunc.date.dateadd_01
+
+"""
+ID:          intfunc.date.dateadd-01
+TITLE:       DATEADD
+DESCRIPTION:
+  Returns a date/time/timestamp value increased (or decreased, when negative) by the specified amount of time.
+FBTEST:      functional.intfunc.date.dateadd_01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """select dateadd(-1 day TO date '2008-02-06' ) as yesterday from rdb$database;
+test_script = """select dateadd(-1 day TO date '2008-02-06' ) as yesterday from rdb$database;
 select dateadd(day,-1, date '2008-02-06' ) as yesterday from rdb$database;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
   YESTERDAY
 ===========
 2008-02-05
@@ -36,9 +29,8 @@ expected_stdout_1 = """
 2008-02-05
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -12,6 +12,7 @@ NOTES:
   2.2. Ignore values of IDs in lines like "trigger_name: RDB$TRIGGER_**".
   3. Added query to select FIELDS list of table because main check does not use asterisk
   and we have to know if DDL of table will have any changes in future.
+FBTEST:      functional.basic.db.23
 """
 
 import pytest

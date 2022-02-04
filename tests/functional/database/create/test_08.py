@@ -4,6 +4,7 @@
 ID:          create-database-08
 TITLE:       Create database: Multi file DB
 DESCRIPTION: Create database with two files.
+FBTEST:      functional.database.create.08
 """
 
 import pytest

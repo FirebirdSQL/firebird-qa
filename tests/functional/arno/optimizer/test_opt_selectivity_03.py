@@ -5,6 +5,7 @@ ID:          optimizer.selectivity-03
 TITLE:       SELECTIVITY - INDEX INACTIVE / ACTIVE
 DESCRIPTION:
   Check if selectivity is calculated correctly.
+FBTEST:      functional.arno.optimizer.opt_selectivity_03
 """
 
 import pytest

@@ -14,6 +14,7 @@ DESCRIPTION:
 
   Some expression still can not be evaluated and produce errors - they are commented (see "deferred" here).
   See notes in https://github.com/FirebirdSQL/firebird/issues/6585
+FBTEST:      functional.datatypes.int128_math_functions
 """
 
 import pytest

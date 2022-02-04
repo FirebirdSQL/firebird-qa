@@ -1,29 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.table.create.01
-# title:        CREATE TABLE - types
-# decription:   CREATE TABLE - types
-#               
-#               Dependencies:
-#               CREATE DATABASE
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.table.create.create_table_01
+
+"""
+ID:          table.create-01
+TITLE:       CREATE TABLE - types
+DESCRIPTION:
+FBTEST:      functional.table.create.01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """CREATE TABLE test(
+test_script = """CREATE TABLE test(
  c1 SMALLINT,
  c2 INTEGER,
  c3 FLOAT,
@@ -48,11 +37,12 @@ test_script_1 = """CREATE TABLE test(
  c22 BLOB SEGMENT SIZE 512,
  c23 BLOB (1024,1)
 );
-SHOW TABLE test;"""
+SHOW TABLE test;
+"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """C1                              SMALLINT Nullable
+expected_stdout = """C1                              SMALLINT Nullable
 C2                              INTEGER Nullable
 C3                              FLOAT Nullable
 C4                              DOUBLE PRECISION Nullable
@@ -74,11 +64,11 @@ C19                             VARCHAR(16000) CHARACTER SET ISO8859_1 Nullable
 C20                             BLOB segment 80, subtype BINARY Nullable
 C21                             BLOB segment 80, subtype TEXT Nullable
 C22                             BLOB segment 512, subtype BINARY Nullable
-C23                             BLOB segment 1024, subtype TEXT Nullable"""
+C23                             BLOB segment 1024, subtype TEXT Nullable
+"""
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

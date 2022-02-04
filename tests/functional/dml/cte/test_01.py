@@ -1,32 +1,26 @@
 #coding:utf-8
-#
-# id:           functional.dml.cte.01
-# title:        test for Non-Recursive CTEs
-# decription:   
-#               --Rules for Non-Recursive CTEs :
-#               --Multiple table expressions can be defined in one query
-#               --Any clause legal in a SELECT specification is legal in table expressions
-#               --Table expressions can reference one another
-#               --References between expressions should not have loops
-#               --Table expressions can be used within any part of the main query or another table expression
-#               --The same table expression can be used more than once in the main query
-#               --Table expressions (as subqueries) can be used in INSERT, UPDATE and DELETE statements
-#               --Table expressions are legal in PSQL code
-#               --WITH statements can not be nested
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.dml.cte.cte_01
+
+"""
+ID:          dml.cte-01
+TITLE:       Non-Recursive CTEs
+FBTEST:      functional.dml.cte.01
+DESCRIPTION:
+  Rules for Non-Recursive CTEs :
+  - Multiple table expressions can be defined in one query
+  - Any clause legal in a SELECT specification is legal in table expressions
+  - Table expressions can reference one another
+  - References between expressions should not have loops
+  - Table expressions can be used within any part of the main query or another table expression
+  - The same table expression can be used more than once in the main query
+  - Table expressions (as subqueries) can be used in INSERT, UPDATE and DELETE statements
+  - Table expressions are legal in PSQL code
+  - WITH statements can not be nested
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
 		CREATE TABLE employee( id_employee INTEGER , prenom VARCHAR(20) ,id_department INTEGER,age INTEGER ,  PRIMARY KEY(id_employee));
 
 		CREATE TABLE department(id_department INTEGER, name VARCHAR(20));
@@ -45,9 +39,9 @@ INSERT INTO employee(id_employee, prenom,id_department,age) VALUES (9,'noemie',2
 
 """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """WITH
+test_script = """WITH
   repartition_by_age AS (
 SELECT age/10 as trancheage , id_department,
         COUNT(1) AS nombre
@@ -68,9 +62,9 @@ and quarentenaire.trancheage = 4 ;
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 NAME                                 JEUNE           TRENTENAIRE           QUANTENAIRE
 ==================== ===================== ===================== =====================
 service compta                           1                     2                     1
@@ -78,8 +72,7 @@ production                               1                     3                
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

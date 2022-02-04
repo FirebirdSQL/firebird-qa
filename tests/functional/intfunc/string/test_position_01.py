@@ -1,39 +1,44 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.string.position_01
-# title:        test for POSITION function
-# decription:   POSITION( <string> IN <string> )
-#               
-#               POSITION(X IN Y) returns the position of the substring X in the string Y. Returns 0 if X is not found within Y.
-# tracker_id:   
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.intfunc.string.position_01
 
-import pytest
-from firebird.qa import db_factory, isql_act, Action
-
-# version: 2.1
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """ select position('beau' IN 'il fait beau dans le nord' ) from rdb$database;
+"""
+ID:          intfunc.string.position
+ISSUE:       1926
+TITLE:       POSITION( <string> IN <string> )
+DESCRIPTION:
+  POSITION(X IN Y) returns the position of the substring X in the string Y.
+  Returns 0 if X is not found within Y.
+NOTES:
+[03.02.2022] pcisar
+  Merged with "functional.intfunc.string.position_02" test to simplify the suite structure.
+  Now each string function has only one test file.
+FBTEST:      functional.intfunc.string.position_01
+JIRA:        CORE-1511
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+import pytest
+from firebird.qa import *
 
-expected_stdout_1 = """          POSITION
-      ============
-9"""
+db = db_factory()
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+test_script = """
+select position('beau' IN 'il fait beau dans le nord' ) from rdb$database;
+-- next is from functional.intfunc.string.position_02
+SELECT POSITION('beau','beau,il fait beau') C1,POSITION('beau','beau,il fait beau',2) C2 FROM RDB$DATABASE;
+"""
 
+act = isql_act('db', test_script)
+
+expected_stdout = """
+POSITION
+============
+9
+          C1           C2
+============ ============
+           1           14
+"""
+
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

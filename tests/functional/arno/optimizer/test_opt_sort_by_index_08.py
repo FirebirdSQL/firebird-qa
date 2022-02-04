@@ -6,6 +6,7 @@ TITLE:       MIN() and DESC index (non-unique)
 DESCRIPTION:
   SELECT MIN(FieldX) FROM X
   DESC index cannot be used for MIN() aggregate function.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_08
 """
 
 import pytest

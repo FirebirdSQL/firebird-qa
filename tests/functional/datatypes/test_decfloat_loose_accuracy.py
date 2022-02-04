@@ -7,6 +7,7 @@ DESCRIPTION:
     Wide range of terms can lead to wrong result of sum.
     https://en.wikipedia.org/wiki/Decimal_floating_point
     https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+FBTEST:      functional.datatypes.decfloat_loose_accuracy
 """
 
 import pytest

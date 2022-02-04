@@ -9,6 +9,7 @@ DESCRIPTION:
   result based on previous relation and do on till last relation.
 
   Distribution is tested if it's conjunctions are distributed from WHERE clause.
+FBTEST:      functional.arno.optimizer.opt_inner_join_09
 """
 
 import pytest

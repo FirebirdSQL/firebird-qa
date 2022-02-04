@@ -29,6 +29,7 @@ NOTES:
 [01.07.2020]
   adjusted expected output ('subtype' values). Added SET BIND from decfloat to INT128.
   Removed unnecessary lines from output and added substitution section for result to be properly filtered.
+FBTEST:      functional.datatypes.decfloat_binding_to_other_types
 """
 
 import pytest

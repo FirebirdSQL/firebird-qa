@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.eqc_200762
-# title:        Check results of CONTAINING when search pattern can span on one or several blob segments
-# decription:   
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          tabloid.eqc-200762
+TITLE:       Check results of CONTAINING when search pattern can span on one or several blob segments
+DESCRIPTION: 
+FBTEST:      functional.tabloid.eqc_200762
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(page_size=8192)
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=8192, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     set term ^;
     execute block as
@@ -105,9 +97,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     PTRN_LEN                        36
     BLOB_LEN                        1036
@@ -144,9 +136,8 @@ expected_stdout_1 = """
     PTRN_POS                        1007
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -11,6 +11,7 @@ DESCRIPTION:
   Test is based on letter to Alex, 02.05.2017, 9:38:
   For ISQL 'SET LIST ON' there was auxiliary ("wrong") space character between column name
   for decfloat(16) and its value comparing with decfloat(34).
+FBTEST:      functional.datatypes.decfloat_df16_alignment
 """
 
 import pytest

@@ -1,24 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.eqc_343715
-# title:        Checking PK index is used when table is joined as driven (right) source in LEFT OUTER join from VIEW
-# decription:   
-#                  Number of index reads per TABLE can be watched only in 3.0 by using mon$table_stats. 
-#                  We have to ensure that table TEST1 in following queries is accessed only by its PK index, i.e. NO natural reads for it can occur.
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         None
+
+"""
+ID:          tabloid.eqc-343715
+TITLE:       Checking PK index is used when table is joined as driven (right) source in LEFT OUTER join from VIEW
+DESCRIPTION: 
+  Number of index reads per TABLE can be watched only in 3.0 by using mon$table_stats. 
+     We have to ensure that table TEST1 in following queries is accessed only by its PK index, i.e. NO natural reads for it can occur.
+FBTEST:      functional.tabloid.eqc_343715
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create or alter view vlast_test1_for_test3_a as select 1 id from rdb$database;
     create or alter view vlast_test1_for_test3_b as select 1 id from rdb$database;
     create or alter procedure get_last_test1_for_test3 as begin end;
@@ -79,11 +73,12 @@ init_script_1 = """
     from test3 t3
     ;
     commit;
-  """
+  
+"""
 
-db_1 = db_factory(from_backup='mon-stat-gathering-3_0.fbk', init=init_script_1)
+db = db_factory(from_backup='mon-stat-gathering-3_0.fbk', init=init_script)
 
-test_script_1 = """
+test_script = """
     insert into test3(id) values(1);
     insert into test3(id) values(2);
     insert into test3(id) values(3);
@@ -151,17 +146,16 @@ test_script_1 = """
     where table_name = upper('TEST1');
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     TABLE_NAME                      TEST1                                                                                                                                                                                                                                                                                  
     NATURAL_READS                   0
     INDEXED_READS                   6
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

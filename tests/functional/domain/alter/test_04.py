@@ -1,29 +1,23 @@
 #coding:utf-8
-#
-# id:           functional.domain.alter.04
-# title:        ALTER DOMAIN - DROP CONSTRAINT
-# decription:   
-# tracker_id:   
-# min_versions: []
-# versions:     2.0
-# qmid:         functional.domain.alter.alter_domain_04
+
+"""
+ID:          domain.alter-04
+FBTEST:      functional.domain.alter.04
+TITLE:       ALTER DOMAIN - DROP CONSTRAINT
+DESCRIPTION:
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     create domain test varchar(63) check(value like 'te%');
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """
+test_script = """
     set list on;
     alter domain test drop constraint;
     commit;
@@ -32,16 +26,15 @@ test_script_1 = """
     where rdb$field_name = upper('test');
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RDB$FIELD_NAME                  TEST
     RDB$VALIDATION_SOURCE           <null>
 """
 
-@pytest.mark.version('>=2.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

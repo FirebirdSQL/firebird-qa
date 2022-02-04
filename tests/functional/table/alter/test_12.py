@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.table.alter.12
-# title:        Verify ability to create exactly 254 changes of format (increasing it by 1) after initial creating table
-# decription:   
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         
+
+"""
+ID:          table.alter-12
+TITLE:       Verify ability to create exactly 254 changes of format (increasing it by 1) after initial creating table
+DESCRIPTION: 
+FBTEST:      functional.table.alter.12
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table test1(f0 int); -- this also create "format #1"
     -- following shoudl run OK because of 254 changes:
     alter table test1 add f1 int;
@@ -541,9 +533,9 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     F0                              INTEGER Nullable 
     F1                              INTEGER Nullable 
     F2                              INTEGER Nullable 
@@ -800,19 +792,18 @@ expected_stdout_1 = """
     F253                            INTEGER Nullable 
     F254                            INTEGER Nullable 
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 54000
     unsuccessful metadata update
     -TABLE TEST2
     -too many versions
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)

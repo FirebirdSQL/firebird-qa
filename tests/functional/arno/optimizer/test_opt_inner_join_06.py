@@ -8,6 +8,7 @@ DESCRIPTION:
   process order. All inner joins are combined to 1 inner join, because then a order can be
   decided between them. Relations from a VIEW can also be "merged" to the 1 inner join
   (of course not with outer joins/unions/etc..)
+FBTEST:      functional.arno.optimizer.opt_inner_join_06
 """
 
 import pytest

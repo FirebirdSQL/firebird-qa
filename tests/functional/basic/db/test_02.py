@@ -4,6 +4,7 @@
 ID:          new-database-02
 TITLE:       New DB - RDB$CHARACTER_SETS
 DESCRIPTION: Check the correct content of RDB$CHARACTER_SETS for new database
+FBTEST:      functional.basic.db.02
 """
 
 import pytest

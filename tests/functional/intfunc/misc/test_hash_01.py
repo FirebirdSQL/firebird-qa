@@ -1,39 +1,27 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.misc.hash_01
-# title:        test for HASH
-# decription:    Returns a HASH of a value.
-#               
-#               HASH( <value> )
-#               
-# tracker_id:   
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.intfunc.misc.hash_01
+
+"""
+ID:          intfunc.misc.hash
+TITLE:       HASH( <value> )
+DESCRIPTION: Returns a HASH of a value.
+FBTEST:      functional.intfunc.misc.hash_01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = isql_act('db', "select hash('toto') from rdb$database;")
 
-init_script_1 = """"""
+expected_stdout = """
+HASH
+=====================
+505519
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """select hash('toto') from rdb$database;"""
-
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
-
-expected_stdout_1 = """                       HASH
-      =====================
-505519"""
-
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

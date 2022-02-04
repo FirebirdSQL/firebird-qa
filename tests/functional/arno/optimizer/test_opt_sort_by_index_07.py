@@ -6,6 +6,7 @@ TITLE:       MIN() and ASC index (non-unique)
 DESCRIPTION:
   SELECT MIN(FieldX) FROM X
   When a index can be used for sorting, use it.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_07
 """
 
 import pytest

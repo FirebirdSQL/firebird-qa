@@ -1,30 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.trigger.alter.09
-# title:        ALTER TRIGGER - POSITION
-# decription:   ALTER TRIGGER - POSITION
-#               Test by checking trigger seqeunce
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-#               CREATE TRIGGER
-#               INSERT
-#               Basic SELECT
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.trigger.alter.alter_trigger_09
+
+"""
+ID:          trigger.alter-09
+TITLE:       ALTER TRIGGER - POSITION
+DESCRIPTION:
+  Test by checking trigger seqeunce
+FBTEST:      functional.trigger.alter.09
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE test( id INTEGER NOT NULL CONSTRAINT unq UNIQUE,
+init_script = """CREATE TABLE test( id INTEGER NOT NULL CONSTRAINT unq UNIQUE,
                    text VARCHAR(32));
 SET TERM ^;
 CREATE TRIGGER tg1 FOR test BEFORE INSERT POSITION 1
@@ -39,25 +26,27 @@ BEGIN
   new.text=new.text||'tg2 ';
 END ^
 SET TERM ;^
-commit;"""
+commit;
+"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """ALTER TRIGGER tg2 POSITION 0;
+test_script = """ALTER TRIGGER tg2 POSITION 0;
 INSERT INTO test VALUES(0,'');
 COMMIT;
-SELECT text FROM test;"""
+SELECT text FROM test;
+"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """TEXT
+expected_stdout = """TEXT
 ================================
 
-tg2 tg1"""
+tg2 tg1
+"""
 
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

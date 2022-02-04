@@ -1,50 +1,39 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.dsql_domain_12
-# title:        GTCS/tests/DSQL_DOMAIN_12. Verify result of INSERT DEFAULT VALUES into a table with domain fields when domains are defined with DEFAULT value.
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_12.script 
-#               
-#                   ::: NOTE :::
-#                   Added domains with datatype that did appear only in FB 4.0: DECFLOAT and TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
-#               
-#               # Comment:     This script will run level 1 testing, checking syntax of create 
-#               #              domain using datatype and default clauses, then creating a table 
-#               #              using the domain fields and inserting data to those fields, 
-#               #              allowing missing data to be supplied by the default definitions 
-#               #              for the domain.
-#               
-#               
-#                   For some datatypes (float, double precision) we also verify ability to use boundary values for datatype itself.
-#                   For character datatypes we use non-asci characters (currency signs: euro, cent, pound, yena).
-#               
-#                   Currently following datatypes are NOT checked:
-#                     blob sub_type text|binary
-#                     long float;
-#                     binary(20);
-#                     varbinary(20);
-#               
-#                   Checked on 4.0.0.1935. 
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          gtcs.dsql-domain-12
+FBTEST:      functional.gtcs.dsql_domain_12
+TITLE:       Verify result of INSERT DEFAULT VALUES into a table with domain fields when domains are defined with DEFAULT value.
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_12.script
+
+  ::: NOTE :::
+  Added domains with datatype that did appear only in FB 4.0: DECFLOAT and
+  TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
+
+  This script will run level 1 testing, checking syntax of create
+  domain using datatype and default clauses, then creating a table
+  using the domain fields and inserting data to those fields,
+  allowing missing data to be supplied by the default definitions
+  for the domain.
+
+  For some datatypes (float, double precision) we also verify ability to use boundary values for datatype itself.
+  For character datatypes we use non-asci characters (currency signs: euro, cent, pound, yena).
+
+  Currently following datatypes are NOT checked:
+    blob sub_type text|binary
+    long float;
+    binary(20);
+    varbinary(20);
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' '), ('F16_BLOB_ID.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
 	set list on;
 	set blob all;
@@ -66,19 +55,19 @@ test_script_1 = """
 	create domain dom12_11 as nchar(1) default 'Ö' ;
     create domain dom12_12 as numeric(2,2) default -327.68;
 	create domain dom12_13 as decimal(20,2) default -999999999999999999;
-	
+
 	-- Online evaluation of expressions: https://www.wolframalpha.com
 
 	-- https://en.wikipedia.org/wiki/Single-precision_floating-point_format
 	-- (largest number less than one):  1 - power(2,-24)
 	create domain dom12_14 as float default 0.999999940395355224609375;
-	
+
 	-- https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 	-- Max Double: power(2,1023) * ( 1+(1-power(2,-52) )
 	create domain dom12_15 as double precision default 1.7976931348623157e308;
-	
-	
-    create domain dom12_16 as blob default 
+
+
+    create domain dom12_16 as blob default
 '
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -248,7 +237,7 @@ test_script_1 = """
     create domain dom12_17 as boolean default false;
     create domain dom12_18 as decfloat(16) default -9.999999999999999E+384;
     create domain dom12_19 as decfloat default -9.999999999999999999999999999999999E6144;
-    commit;	
+    commit;
 
     recreate table test(
          f01 dom12_01
@@ -277,9 +266,9 @@ test_script_1 = """
    select * from test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('F16_BLOB_ID.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
 F01                             -32768
 F02                             -2147483648
 F03                             -9223372036854775807
@@ -288,9 +277,9 @@ F05                             23:59:59.9990
 F06                             11:11:11.1110 Indian/Cocos
 F07                             0001-01-01 00:00:01.0010
 F08                             2013-12-21 11:11:11.1110 Indian/Cocos
-F09                             € 
+F09                             €
 F00                             €
-F11                             Ö  
+F11                             Ö
 F12                             -327.68
 F13                                                    -999999999999999999.00
 F14                             0.99999994
@@ -469,8 +458,7 @@ Records affected: 1
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

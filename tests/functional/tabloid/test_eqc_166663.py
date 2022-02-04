@@ -1,26 +1,20 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.eqc_166663
-# title:        Index(es) should not become corrupted after two updates and raising exception in one Tx, doing inside SP
-# decription:   
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          tabloid.eqc-166663
+TITLE:       Index(es) should not become corrupted after two updates and raising exception in one Tx, doing inside SP
+DESCRIPTION: 
+FBTEST:      functional.tabloid.eqc_166663
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+substitutions = [('exception .*', 'exception'), ('line: .*', 'line')]
 
-substitutions_1 = [('exception .*', 'exception'), ('line: .*', 'line')]
+db = db_factory(page_size=4096)
 
-init_script_1 = """"""
-
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     -- NB: changed expected value of SQLSTATE from 42000 to HY000, see:
     -- "Prevent stack trace (line/column info) from overriding the real error's SQLSTATE", 30-apr-2016 
     -- https://github.com/FirebirdSQL/firebird/commit/d1d8b36a07d4f11d98d2c8ec16fb8ec073da442b // FB 4.0
@@ -93,9 +87,9 @@ test_script_1 = """
     select * from tmain;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout_1 = """
+expected_stdout = """
     select * from tdetl where id >= 0;
     PLAN (TDETL INDEX (TDETL_PK))
     ID                              1
@@ -126,7 +120,8 @@ expected_stdout_1 = """
     NAME                            qwerty
     Records affected: 1
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = HY000
     exception 2
     -EX_FOO
@@ -134,12 +129,10 @@ expected_stderr_1 = """
     -At procedure 'SP_TEST' line: 6, col: 8
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)

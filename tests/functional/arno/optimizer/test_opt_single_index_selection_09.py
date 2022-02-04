@@ -6,6 +6,7 @@ TITLE:       Best match index selection (single segment) OR
 DESCRIPTION:
   Check if it will select the index with the best selectivity.
   UNIQUE index is the best and prefer ASC index. Only 1 index per conjunction is enough.
+FBTEST:      functional.arno.optimizer.opt_single_index_selection_09
 """
 
 import pytest

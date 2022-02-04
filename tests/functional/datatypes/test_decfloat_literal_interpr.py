@@ -12,6 +12,7 @@ DESCRIPTION:
 
   Currently only double precision form of literals is checked.
   Literals with value out bigint scope are not checked - waiting for reply from Alex, letter 24.05.2017 21:16
+FBTEST:      functional.datatypes.decfloat_literal_interpr
 """
 
 import pytest

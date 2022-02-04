@@ -9,6 +9,7 @@ DESCRIPTION:
   (up to two segments and only ASC) is made. The best here is using 2 indexes, except if
   the index for the "greater or equal" operator is much worser as the index used for
   the other two operators.
+FBTEST:      functional.arno.optimizer.opt_multi_index_selection_04
 """
 
 import pytest

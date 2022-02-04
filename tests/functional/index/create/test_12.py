@@ -1,30 +1,16 @@
 #coding:utf-8
-#
-# id:           functional.index.create.12
-# title:        CREATE UNIQUE INDEX - Null value in table
-# decription:   CREATE UNIQUE INDEX - Null value in table
-#               
-#               Note: Misinterpretable message (attempt to store duplicate value)
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-#               INSERT
-#               SHOW INDEX
-# tracker_id:   
-# min_versions: []
-# versions:     1.5
-# qmid:         functional.index.create.create_index_12
+
+"""
+ID:          index.create-12
+TITLE:       CREATE UNIQUE INDEX - Null value in table
+DESCRIPTION:
+FBTEST:      functional.index.create.12
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.5
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """CREATE TABLE t( a INTEGER);
+init_script = """CREATE TABLE t( a INTEGER);
 commit;
 INSERT INTO t VALUES(null);
 INSERT INTO t VALUES(0);
@@ -34,14 +20,12 @@ INSERT INTO t VALUES(3);
 INSERT INTO t VALUES(4);
 COMMIT;"""
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
 
-test_script_1 = """CREATE UNIQUE INDEX test ON t(a);"""
+test_script = """CREATE UNIQUE INDEX test ON t(a);"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-
-@pytest.mark.version('>=1.5')
-def test_1(act_1: Action):
-    act_1.execute()
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.execute()

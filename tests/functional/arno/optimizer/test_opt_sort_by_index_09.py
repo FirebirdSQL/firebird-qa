@@ -6,6 +6,7 @@ TITLE:       ORDER BY ASC using index (non-unique)
 DESCRIPTION:
   ORDER BY X
   If WHERE clause is present it should also use index if possible.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_09
 """
 
 import pytest

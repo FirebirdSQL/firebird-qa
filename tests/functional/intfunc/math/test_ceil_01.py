@@ -1,33 +1,26 @@
 #coding:utf-8
-#
-# id:           functional.intfunc.math.ceil_01
-# title:        New Built-in Functions, Firebird 2.1 : CEIL( <number>)
-# decription:   test of CEIL
-#               Returns a value representing the smallest integer that is greater than or equal to the input argument.
-# tracker_id:   
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.intfunc.math.ceil_01
+
+"""
+ID:          intfunc.math.ceil
+TITLE:       CEIL( <number>)
+DESCRIPTION:
+  Returns a value representing the smallest integer that is greater than or equal to the input argument.
+FBTEST:      functional.intfunc.math.ceil_01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """select CEIL( 2.1) from rdb$database;
+test_script = """select CEIL( 2.1) from rdb$database;
 select CEIL( -2.1) from rdb$database;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """   CEIL
+expected_stdout = """
+CEIL
 =====================
    3
    CEIL
@@ -38,9 +31,8 @@ expected_stdout_1 = """   CEIL
 
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

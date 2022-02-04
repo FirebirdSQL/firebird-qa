@@ -1,30 +1,24 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.eqc_344124
-# title:        Check ability to run selectable SP with input parameter which inserts into GTT (on commit DELETE rows) and then does suspend
-# decription:   NB: if either a_id, suspend or the insert is removed, or if gtt_test is changed to on commit preserve rows - no crash
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          tabloid.eqc-344124
+TITLE:       Check ability to run selectable SP with input parameter which inserts into GTT
+  (on commit DELETE rows) and then does suspend
+DESCRIPTION:
+  NB: if either a_id, suspend or the insert is removed, or if gtt_test is changed to on commit preserve rows - no crash
+FBTEST:      functional.tabloid.eqc_344124
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate global temporary table gtt_test (
         id  integer
     ) on commit delete rows;
-    
+
     set term  ^;
     create procedure test
     returns (
@@ -38,20 +32,19 @@ test_script_1 = """
     ^
     set term ;^
     commit;
-    
+
     set list on;
     select * from test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     O_ID                            1
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

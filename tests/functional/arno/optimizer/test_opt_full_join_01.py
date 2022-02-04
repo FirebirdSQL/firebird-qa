@@ -7,6 +7,7 @@ DESCRIPTION:
   TableX FULL OUTER JOIN TableY with relation in the ON clause.
   Three tables are used, where 1 table (RC) holds references to the two other tables (R and C).
   The two tables R and C contain both 1 value that isn't inside RC.
+FBTEST:      functional.arno.optimizer.opt_full_join_01
 """
 
 import pytest

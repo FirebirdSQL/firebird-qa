@@ -1,32 +1,22 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.sql_join_03
-# title:        GTCS/tests/C_SQL_JOIN_3. Ability to run query: ( A LEFT JOIN B ) INER JOIN C, plus ORDER BY with fields not from SELECT list.
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/C_SQL_JOIN_3.script 
-#                   Original backup file that is used for this test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/test-files/atlas.gbk 
-#                   Checked on 4.0.0.1896; 3.0.6.33288; 2.5.9.27149
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.sql-join-03
+TITLE:       Ability to run query: ( A LEFT JOIN B ) INER JOIN C, plus ORDER BY with fields not from SELECT list
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/C_SQL_JOIN_3.script
+  Original backup file that is used for this test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/test-files/atlas.gbk
+FBTEST:      functional.gtcs.sql_join_03
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(from_backup='gtcs_atlas.fbk')
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='gtcs_atlas.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
 
     select 'DSQL-test' as msg, b.team_name, c.city, s.state_name
     from (
@@ -68,9 +58,9 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG       TEAM_NAME       CITY                      STATE_NAME
     DSQL-test Astros          Houston                   Texas
     DSQL-test Braves          Atlanta                   Georgia
@@ -112,9 +102,8 @@ expected_stdout_1 = """
     PSQL-test  Yankees         New York                  New York
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

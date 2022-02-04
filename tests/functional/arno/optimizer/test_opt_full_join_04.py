@@ -9,6 +9,7 @@ DESCRIPTION:
   The two tables R and C contain both 1 value that isn't inside RC.
   =====
   NB: 'UNION ALL' is used here, so PLAN for 2.5 will be of TWO separate rows.
+FBTEST:      functional.arno.optimizer.opt_full_join_04
 """
 
 import pytest

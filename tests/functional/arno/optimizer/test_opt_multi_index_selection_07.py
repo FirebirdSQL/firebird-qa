@@ -6,6 +6,7 @@ TITLE:       Best match index selection (multi segment)
 DESCRIPTION:
   Check if it will select the index with the best selectivity and match.
   IS NULL should also be used in compound indexes.
+FBTEST:      functional.arno.optimizer.opt_multi_index_selection_07
 """
 
 import pytest

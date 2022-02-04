@@ -1,36 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.trigger.alter.07
-# title:        ALTER TRIGGER - AFTER INSERT
-# decription:   
-#                   ALTER TRIGGER - AFTER INSERT
-#               
-#                   Dependencies:
-#                   CREATE DATABASE
-#                   CREATE TABLE
-#                   CREATE TRIGGER
-#                   SHOW TRIGGER
-#               
-#                   Checked on:
-#                     2.5.9.27115: OK, 0.484s.
-#                     3.0.4.33021: OK, 1.000s.
-#                     4.0.0.1143: OK, 2.203s.
-#                   NB: phrase 'attempted update of read-only column' contains name of table and column ('TEST.ID') on 4.0.x
-#                 
-# tracker_id:   
-# min_versions: []
-# versions:     2.5.0, 4.0.0
-# qmid:         functional.trigger.alter.alter_trigger_07
+
+"""
+ID:          trigger.alter-07
+TITLE:       ALTER TRIGGER - AFTER INSERT
+DESCRIPTION:
+  NB: phrase 'attempted update of read-only column' contains name of table and column ('TEST.ID') on 4.0.x
+FBTEST:      functional.trigger.alter.07
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.0
-# resources: None
-
-substitutions_1 = [('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')]
-
-init_script_1 = """
+init_script = """
     CREATE TABLE test( id INTEGER NOT NULL CONSTRAINT unq UNIQUE, text VARCHAR(32));
     SET TERM ^;
     CREATE TRIGGER tg FOR test BEFORE UPDATE
@@ -40,16 +21,19 @@ init_script_1 = """
     END ^
     SET TERM ;^
     commit;
-  """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+"""
 
-test_script_1 = """
+db = db_factory(init=init_script)
+
+test_script = """
     ALTER TRIGGER tg AFTER INSERT;
     SHOW TRIGGER tg;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')])
+
+# version: 2.5.0
 
 expected_stdout_1 = """
     Triggers on Table TEST:
@@ -60,45 +44,21 @@ expected_stdout_1 = """
     END
     +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 """
+
 expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column
 """
 
-@pytest.mark.version('>=2.5.0,<4.0.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
+@pytest.mark.version('>=3.0,<4.0.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_1
+    act.expected_stderr = expected_stderr_1
+    act.execute()
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)
 
 # version: 4.0.0
-# resources: None
-
-substitutions_2 = [('\\+.*', ''), ('\\=.*', ''), ('Trigger text.*', '')]
-
-init_script_2 = """
-    CREATE TABLE test( id INTEGER NOT NULL CONSTRAINT unq UNIQUE, text VARCHAR(32));
-    SET TERM ^;
-    CREATE TRIGGER tg FOR test BEFORE UPDATE
-    AS
-    BEGIN
-      new.id=1;
-    END ^
-    SET TERM ;^
-    commit;
-  """
-
-db_2 = db_factory(sql_dialect=3, init=init_script_2)
-
-test_script_2 = """
-    ALTER TRIGGER tg AFTER INSERT;
-    SHOW TRIGGER tg;
-"""
-
-act_2 = isql_act('db_2', test_script_2, substitutions=substitutions_2)
 
 expected_stdout_2 = """
     Triggers on Table TEST:
@@ -109,17 +69,16 @@ expected_stdout_2 = """
     END
     +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 """
+
 expected_stderr_2 = """
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column TEST.ID
 """
 
 @pytest.mark.version('>=4.0.0')
-def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.expected_stderr = expected_stderr_2
-    act_2.execute()
-    assert act_2.clean_stderr == act_2.clean_expected_stderr
-
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
-
+def test_2(act: Action):
+    act.expected_stdout = expected_stdout_2
+    act.expected_stderr = expected_stderr_2
+    act.execute()
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)

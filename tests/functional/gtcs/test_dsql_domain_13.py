@@ -1,51 +1,41 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.dsql_domain_13
-# title:        GTCS/tests/DSQL_DOMAIN_13. Verify result of INSERT DEFAULT for domain-based fields which have their own default values.
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_13.script 
-#               
-#                   Comment in GTCS
-#                       This script will test level 1 syntax checking for create domain
-#                       statement using datatype and default clauses. The domains are then 
-#                       used to create a table where column defaults are also specified.
-#                       Data is then inserted into the table allowing the missing fields 
-#                       to be supplied by the column defaults (where specified) and the 
-#                       domain defaults (where no column default exists).
-#               
-#                   ::: NOTE :::
-#                   Added domains with datatype that did appear only in FB 4.0: DECFLOAT and TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
-#               
-#                   Fields without default values have names 'F1xx': f101, f102, ...
-#               	Fields with their own default values are 'F2xx': f201, f202, ...
-#               	
-#               	Currently following datatypes are NOT checked:
-#                     blob sub_type text|binary
-#                     long float;
-#                     binary(20);
-#                     varbinary(20);
-#               
-#                   Checked on 4.0.0.1954.
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          gtcs.dsql-domain-13
+FBTEST:      functional.gtcs.dsql_domain_13
+TITLE:       Verify result of INSERT DEFAULT for domain-based fields which have their own default values
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_13.script
+
+  Comment in GTCS
+    This script will test level 1 syntax checking for create domain
+    statement using datatype and default clauses. The domains are then
+    used to create a table where column defaults are also specified.
+    Data is then inserted into the table allowing the missing fields
+    to be supplied by the column defaults (where specified) and the
+    domain defaults (where no column default exists).
+
+  ::: NOTE :::
+  Added domains with datatype that did appear only in FB 4.0: DECFLOAT and
+  TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
+
+  Fields without default values have names 'F1xx': f101, f102, ...
+  Fields with their own default values are 'F2xx': f201, f202, ...
+
+  Currently following datatypes are NOT checked:
+    blob sub_type text|binary
+    long float;
+    binary(20);
+    varbinary(20);
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' '), ('F116_BLOB_ID.*', ''), ('F216_BLOB_ID.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
 	set list on;
 	set blob all;
@@ -67,23 +57,23 @@ test_script_1 = """
 	create domain dom13_11 as nchar(1) default 'Ö' ;
     create domain dom13_12 as numeric(2,2) default -327.68;
 	create domain dom13_13 as decimal(20,2) default -999999999999999999;
-	
+
 	-- Online evaluation of expressions: https://www.wolframalpha.com
 
 	-- https://en.wikipedia.org/wiki/Single-precision_floating-point_format
 	-- (largest number less than one):  1 - power(2,-24)
 	create domain dom13_14 as float default 0.999999940395355224609375;
-	
+
 	-- https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 	-- Max Double: power(2,1023) * ( 1+(1-power(2,-52) )
 	create domain dom13_15 as double precision default 1.7976931348623157e308;
-    
+
 	create domain dom13_16 as blob default 'Ø';
 
     create domain dom13_17 as boolean default false;
     create domain dom13_18 as decfloat(16) default -9.999999999999999E+384;
     create domain dom13_19 as decfloat default -9.999999999999999999999999999999999E6144;
-    commit;	
+    commit;
 
     recreate table test(
          f101 dom13_01
@@ -120,7 +110,7 @@ test_script_1 = """
         ,f211 dom13_11 default 'Ç'
         ,f212 dom13_12 default 327.67
         ,f213 dom13_13 default 999999999999999999
-        ,f214 dom13_14 default 1.0000001192 
+        ,f214 dom13_14 default 1.0000001192
         ,f215 dom13_15 default 1.4012984643e-45
         ,f216_blob_id dom13_16 default 'Ö'
         ,f217 dom13_17 default true
@@ -129,15 +119,15 @@ test_script_1 = """
 
    );
    commit;
-   
+
    insert into test default values;
    set count on;
    select * from test;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('F116_BLOB_ID.*', ''), ('F216_BLOB_ID.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	F101                            -32768
 	F102                            -2147483648
 	F103                            -9223372036854775807
@@ -146,9 +136,9 @@ expected_stdout_1 = """
 	F106                            11:11:11.1110 Indian/Cocos
 	F107                            0001-01-01 00:00:01.0010
 	F108                            2013-12-21 11:11:11.1110 Indian/Cocos
-	F109                            € 
+	F109                            €
 	F110                            ¢
-	F111                            Ö  
+	F111                            Ö
 	F112                            -327.68
 	F113                                                   -999999999999999999.00
 	F114                            0.99999994
@@ -166,9 +156,9 @@ expected_stdout_1 = """
 	F206                            22:22:22.2220 Pacific/Fiji
 	F207                            1234-12-15 12:34:56.7890
 	F208                            2222-12-22 22:22:22.2220 Pacific/Fiji
-	F209                            ¥  
+	F209                            ¥
 	F210                            £
-	F211                            Ç  
+	F211                            Ç
 	F212                            327.67
 	F213                                                    999999999999999999.00
 	F214                            1.0000001
@@ -179,12 +169,11 @@ expected_stdout_1 = """
 	F218                             9.999999999999999E+384
 	F219                             9.999999999999999999999999999999999E+6144
 
-	Records affected: 1  
+	Records affected: 1
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

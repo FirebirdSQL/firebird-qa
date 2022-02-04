@@ -8,6 +8,7 @@ TITLE:       Test functions that are designed specially for DECFLOAT handling
 DESCRIPTION:
   See  doc/sql.extensions/README.data_types
   COMPARE_DECFLOAT; NORMALIZE_DECFLOAT; QUANTIZE; TOTALORDER
+FBTEST:      functional.datatypes.decfloat_special_functions
 """
 
 import pytest

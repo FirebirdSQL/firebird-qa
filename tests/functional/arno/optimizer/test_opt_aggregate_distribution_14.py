@@ -9,6 +9,7 @@ DESCRIPTION:
   should be delivered to the where clause. The underlying aggregate stream could possible
   use it for a index and speed it up.
 JIRA:        CORE-2417
+FBTEST:      functional.arno.optimizer.opt_aggregate_distribution_14
 """
 
 import pytest

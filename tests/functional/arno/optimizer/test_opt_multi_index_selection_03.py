@@ -8,6 +8,7 @@ DESCRIPTION:
   Full-segment-matched indexes have higher priority as partial matched indexes.
   (Indexes with selectivity more than 10x the best are ignored)
   See SELECTIVITY_THRESHOLD_FACTOR in opt.cpp
+FBTEST:      functional.arno.optimizer.opt_multi_index_selection_03
 """
 
 import pytest

@@ -6,6 +6,7 @@ TITLE:       ORDER BY ASC NULLS FIRST using index
 DESCRIPTION:
   ORDER BY X ASC NULLS FIRST
   When a index can be used for sorting, use it.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_14
 """
 
 import pytest

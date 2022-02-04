@@ -7,6 +7,7 @@ DESCRIPTION:
   Check if it will select only the index with the unique index when equal operator is
   performed on all segments in index. Also prefer ASC index above DESC unique index.
   Unique index together with equals operator will always be the best index to choose.
+FBTEST:      functional.arno.optimizer.opt_multi_index_selection_01
 """
 
 import pytest

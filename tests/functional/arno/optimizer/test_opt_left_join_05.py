@@ -10,6 +10,7 @@ DESCRIPTION:
   This test also tests if not the ON clause is distributed to the outer context TableX.
   Also if not the extra created nodes (comparisons) from a equality node and a A # B
   node (# =, <, <=, >=, >) are distributed to the outer context.
+FBTEST:      functional.arno.optimizer.opt_left_join_05
 """
 
 import pytest

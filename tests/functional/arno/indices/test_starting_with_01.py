@@ -4,6 +4,7 @@
 ID:          index.starting-with-01
 TITLE:       STARTING WITH charset NONE
 DESCRIPTION: STARTING WITH - Select from table with 2 entries
+FBTEST:      functional.arno.indices.starting_with_01
 """
 
 import pytest

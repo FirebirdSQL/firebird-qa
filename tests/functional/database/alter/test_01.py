@@ -4,6 +4,7 @@
 ID:          alter-database-01
 TITLE:       Alter database: adding a secondary file
 DESCRIPTION: Adding a secondary file to the database
+FBTEST:      functional.database.alter.01
 """
 
 import pytest

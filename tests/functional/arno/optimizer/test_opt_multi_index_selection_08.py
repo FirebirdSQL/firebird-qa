@@ -7,6 +7,7 @@ DESCRIPTION:
   STARTING WITH can also use a index and it should in fact be possible to use a compound
   index. Of course the STARTING WITH conjunction can only be bound the end (of all possible
   matches, same as >, >=, <, <=).
+FBTEST:      functional.arno.optimizer.opt_multi_index_selection_08
 """
 
 import pytest

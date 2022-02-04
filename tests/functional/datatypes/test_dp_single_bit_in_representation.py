@@ -4,6 +4,7 @@
 ID:          dp-single-bit-in-representation
 TITLE:       Check result of EXP() which can be represented only by one ("last") significant bit
 DESCRIPTION:
+FBTEST:      functional.datatypes.dp_single_bit_in_representation
 """
 
 import pytest

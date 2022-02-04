@@ -1,32 +1,22 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.gtcs_select_delete_isql
-# title:        GTCS/tests/SELECT_DELETE_ISQL. Test for select from SP that deletes record after its output.
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/SELECT_DELETE_ISQL.script
-#               	SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
-#                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.select-delete-isql
+TITLE:       Test for select from SP that deletes record after its output
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/SELECT_DELETE_ISQL.script
+  SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
+FBTEST:      functional.gtcs.gtcs_select_delete_isql
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(from_backup='gtcs_sp1.fbk')
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='gtcs_sp1.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
     set term ^;
     create procedure proc returns (x varchar(5)) as
@@ -39,23 +29,23 @@ test_script_1 = """
     end
     ^
     create procedure proc1 returns (x varchar(5)) as
-    begin 
-        for select sno from sp into :x 
+    begin
+        for select sno from sp into :x
         do begin
-            suspend; 
-        end    
+            suspend;
+        end
         delete from s where sno = :x;
     end
-    ^ 
+    ^
     create procedure proc2 returns (x varchar(5)) as
-    begin  
-        for select sno from sp into :x  
+    begin
+        for select sno from sp into :x
         do begin
             delete from s where sno = :x;
-            suspend;  
-        end     
-    end  
-    ^  
+            suspend;
+        end
+    end
+    ^
     set term ;^
 
     set count on;
@@ -68,12 +58,11 @@ test_script_1 = """
     rollback;
     select 'point-5' msg, p.* from proc2 p;
     rollback;
-
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     MSG     X
     point-1 S1
     point-1 S1
@@ -114,9 +103,8 @@ expected_stdout_1 = """
     Records affected: 6
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

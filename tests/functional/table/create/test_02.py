@@ -1,31 +1,22 @@
 #coding:utf-8
-#
-# id:           functional.table.create.02
-# title:        CREATE TABLE - column properties
-# decription:   CREATE TABLE - column properties
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-# tracker_id:   
-# min_versions: []
-# versions:     2.1
-# qmid:         functional.table.create.create_table_02
+
+"""
+ID:          table.create-02
+TITLE:       CREATE TABLE - column properties
+DESCRIPTION:
+FBTEST:      functional.table.create.02
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
+init_script = """CREATE TABLE fk(id INT NOT NULL PRIMARY KEY);
+commit;
+"""
 
-substitutions_1 = []
+db = db_factory(init=init_script)
 
-init_script_1 = """CREATE TABLE fk(id INT NOT NULL PRIMARY KEY);
-commit;"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """CREATE TABLE test(
+test_script = """CREATE TABLE test(
  c1 SMALLINT NOT NULL,
  c2 INTEGER DEFAULT 0,
  c3 FLOAT NOT NULL UNIQUE,
@@ -36,11 +27,12 @@ test_script_1 = """CREATE TABLE test(
  c8 CHAR(31) DEFAULT USER,
  c9 VARCHAR(40) DEFAULT 'data'
 );
-SHOW TABLE test;"""
+SHOW TABLE test;
+"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """C1                              SMALLINT Not Null
+expected_stdout = """C1                              SMALLINT Not Null
 C2                              INTEGER Nullable DEFAULT 0
 C3                              FLOAT Not Null
 C4                              DOUBLE PRECISION Not Null
@@ -56,11 +48,11 @@ CONSTRAINT INTEG_7:
 CONSTRAINT INTEG_5:
   Unique key (C3)
 CONSTRAINT INTEG_9:
-CHECK (c6>c5)"""
+CHECK (c6>c5)
+"""
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

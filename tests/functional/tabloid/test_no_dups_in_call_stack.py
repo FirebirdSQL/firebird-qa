@@ -1,22 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.no_dups_in_call_stack
-# title:        Avoid info duplication when statements in call stack attached to different transactions (for example: monitoring snapshot is created in autonomous transaction)
-# decription:   Fixed in rev. 59971 for 3.0; rev. 59972 for 2.5 (backporting) -- 12-aug-2014
-# tracker_id:   
-# min_versions: ['2.5.4']
-# versions:     2.5.4
-# qmid:         None
+
+"""
+ID:          tabloid.no-dups-in-call-stack
+TITLE:       Avoid info duplication when statements in call stack attached to different
+  transactions (for example: monitoring snapshot is created in autonomous transaction)
+DESCRIPTION:
+  Fixed in rev. 59971 for 3.0; rev. 59972 for 2.5 (backporting) -- 12-aug-2014
+FBTEST:      functional.tabloid.no_dups_in_call_stack
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5.4
-# resources: None
-
-substitutions_1 = []
-
-init_script_1 = """
+init_script = """
     -- sql.ru/forum/actualutils.aspx?action=gotomsg&tid=1109867&msg=16438071
     -- run: fbt_run -b <path to isql> functional.tabloid.no-dups-in-call-stack -o localhost/<port>
     set term ^;
@@ -154,11 +150,12 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-  """
 
-db_1 = db_factory(page_size=4096, sql_dialect=3, init=init_script_1)
+"""
 
-test_script_1 = """
+db = db_factory(page_size=4096, init=init_script)
+
+test_script = """
     delete from dbg_stack;
     commit;
     execute procedure p_01;
@@ -169,9 +166,9 @@ test_script_1 = """
     from dbg_stack s;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
 WHOAMI   CALL_LEVEL OBJECT_NAME     OBJECT_TYPE  SOURCE_LINE
 ====== ============ =============== =========== ============
 p_04              1 P_01                      5            6
@@ -181,9 +178,8 @@ p_04              4 P_04                      5            8
 p_04              5 DBG_GET_STACK             5           13
 """
 
-@pytest.mark.version('>=2.5.4')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

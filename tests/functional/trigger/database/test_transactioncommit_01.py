@@ -1,22 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.trigger.database.transactioncommit_01
-# title:        Trigger on commit transaction. See also CORE-645
-# decription:   Test trigger on commit transaction
-# tracker_id:   
-# min_versions: []
-# versions:     2.1
-# qmid:         
+
+"""
+ID:          trigger.database.transaction-commit
+TITLE:       Trigger on commit transaction. See also CORE-645
+DESCRIPTION:
+  Test trigger on commit transaction
+FBTEST:      functional.trigger.database.transactioncommit_01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.1
-# resources: None
-
-substitutions_1 = [('[ \t]+', ' ')]
-
-init_script_1 = """
+init_script = """
 	SET AUTODDL OFF;
 	CREATE TABLE T1
 	(
@@ -39,14 +34,15 @@ init_script_1 = """
 	SET TERM ; ^
 
 	COMMIT;
-  """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+"""
 
-test_script_1 = """SET AUTODDL OFF;
-    
+db = db_factory(init=init_script)
+
+test_script = """SET AUTODDL OFF;
+
 	SET LIST ON;
-	
+
 	INSERT INTO T1 VALUES (1,'val1');
 	SELECT RDB$GET_CONTEXT('USER_SESSION', 'Trn_ID') AS CTX_VAR FROM RDB$DATABASE;
 	COMMIT;
@@ -59,18 +55,17 @@ test_script_1 = """SET AUTODDL OFF;
 	SELECT RDB$GET_CONTEXT('USER_SESSION', 'Trn_ID') AS CTX_VAR  FROM RDB$DATABASE;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	CTX_VAR                         <null>
 	CTX_VAR                         3
 	CTX_VAR                         3
-	CTX_VAR                         4  
+	CTX_VAR                         4
 """
 
-@pytest.mark.version('>=2.1')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

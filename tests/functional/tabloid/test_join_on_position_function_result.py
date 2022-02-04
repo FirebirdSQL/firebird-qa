@@ -1,28 +1,19 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.join_on_position_function_result
-# title:        Records with NULLs could be lost from resultset.
-# decription:   
-#                    http://www.sql.ru/forum/actualutils.aspx?action=gotomsg&tid=1009792&msg=14032086
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          tabloid.join-on-position-function-result
+TITLE:       Records with NULLs could be lost from resultset.
+DESCRIPTION: 
+  http://www.sql.ru/forum/actualutils.aspx?action=gotomsg&tid=1009792&msg=14032086
+FBTEST:      functional.tabloid.join_on_position_function_result
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table t(id int, s varchar(30));
     commit;
     insert into t values(1, 'aaa');
@@ -41,9 +32,9 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     ID                              1
     S                               aaa
     P                               <null>
@@ -70,9 +61,8 @@ expected_stdout_1 = """
     K                               <null>
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,34 +1,23 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.isql_show_command_ambiguity
-# title:        GTCS/tests/CF_ISQL_22. SHOW TABLE / VIEW: ambiguity between tables and views
-# decription:   
-#               	::: NB ::: 
-#               	### Name of original test has no any relation with actual task of this test: ###
-#                   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_22.script
-#               
-#                   bug #223513 ambiguity between tables and views
-#               
-#                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.isql-show-command-ambiguity
+TITLE:       SHOW TABLE / VIEW: ambiguity between tables and views
+DESCRIPTION:
+  ::: NB :::
+  ### Name of original test has no any relation with actual task of this test: ###
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_22.script
+
+  bug #223513 ambiguity between tables and views
+FBTEST:      functional.gtcs.isql_show_command_ambiguity
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     create table t(a int);
     create view v as select a from t;
     show tables;
@@ -39,9 +28,9 @@ test_script_1 = """
     show view t;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     T
     V
     A INTEGER Nullable
@@ -50,17 +39,16 @@ expected_stdout_1 = """
     View Source:
     select a from t
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     There is no table V in this database
     There is no view T in this database
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

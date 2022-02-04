@@ -4,6 +4,7 @@
 ID:          new-database-17
 TITLE:       New DB - RDB$LOG_FILES content
 DESCRIPTION: Check the correct content of RDB$LOG_FILES in new database.
+FBTEST:      functional.basic.db.17
 """
 
 import pytest

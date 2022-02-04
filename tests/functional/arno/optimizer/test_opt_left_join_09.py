@@ -7,6 +7,7 @@ DESCRIPTION:
   TableX LEFT OUTER JOIN TableY with full match, but TableY results limited in ON clause.
   Which should result in partial NULL results for TableY, but these are not visible because
   they are filtered in the WHERE clause by "greater or equal than" operator.
+FBTEST:      functional.arno.optimizer.opt_left_join_09
 """
 
 import pytest

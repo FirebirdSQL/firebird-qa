@@ -6,6 +6,7 @@ TITLE:       ORDER BY ASC using index (multi) and WHERE clause
 DESCRIPTION:
   WHERE X = 1 ORDER BY Y
   When multi-segment index is present with X as first and Y as second this index can be used.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_19
 """
 
 import pytest

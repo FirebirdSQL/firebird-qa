@@ -1,32 +1,26 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.create_user_types
-# title:        Check ability to update content of RDB$TYPES.
-# decription:   
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.create-user-types
+TITLE:       Check ability to update content of RDB$TYPES
+DESCRIPTION:
+FBTEST:      functional.syspriv.create_user_types
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('RDB\\$DESCRIPTION.*', 'RDB$DESCRIPTION')]
+test_user = user_factory('db', name='dba_helper_create_usr_types', do_not_create=True)
+test_role = role_factory('db', name='role_for_create_user_types', do_not_create=True)
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     set list on;
 
     create or alter view v_check as
-    select 
+    select
          current_user as who_ami
         ,r.rdb$role_name
         ,rdb$role_in_use(r.rdb$role_name) as RDB_ROLE_IN_USE
@@ -39,7 +33,7 @@ test_script_1 = """
     create or alter user dba_helper_create_usr_types password '123' revoke admin role;
     revoke all on all from dba_helper_create_usr_types;
     commit;
-
+/*
     set term ^;
     execute block as
     begin
@@ -48,7 +42,7 @@ test_script_1 = """
     end^
     set term ;^
     commit;
-
+*/
     -- Add/change/delete non-system records in RDB$TYPES
     create role role_for_create_user_types set system privileges to CREATE_USER_TYPES;
     commit;
@@ -62,65 +56,65 @@ test_script_1 = """
     --set echo on;
 
     insert into rdb$types(rdb$field_name, rdb$type, rdb$type_name, rdb$description, rdb$system_flag)
-      values( 'amount_avaliable', 
-              -32767, 
-              'stock_amount', 
-              'Total number of units that can be sold immediately to any customer', 
+      values( 'amount_avaliable',
+              -32767,
+              'stock_amount',
+              'Total number of units that can be sold immediately to any customer',
               0 -- rdb$system_flag
             )
     returning rdb$field_name, rdb$type, rdb$type_name, rdb$description, rdb$system_flag
     ;
 
     insert into rdb$types(rdb$field_name, rdb$type, rdb$type_name, rdb$description, rdb$system_flag)
-      values( 'amount_ion_reserve', 
-              -2, 
-              'stock_amount', 
-              'Total number of units that is to be sold for customers who previously did order them', 
+      values( 'amount_ion_reserve',
+              -2,
+              'stock_amount',
+              'Total number of units that is to be sold for customers who previously did order them',
               1 -- rdb$system_flag
             );
 
     update rdb$types set rdb$type = -32768, rdb$field_name = null
-    where rdb$type < 0 
-    order by rdb$type 
+    where rdb$type < 0
+    order by rdb$type
     rows 1
     returning rdb$field_name, rdb$type, rdb$type_name, rdb$description, rdb$system_flag;
 
     delete from rdb$types where rdb$type < 0
-    returning rdb$field_name, rdb$type, rdb$type_name, 
+    returning rdb$field_name, rdb$type, rdb$type_name,
     -- rdb$description, -- TODO: uncomment this after core-5287 will be fixed
     rdb$system_flag
     ;
     commit;
 
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user dba_helper_create_usr_types;
-    drop role role_for_create_user_types;
-    commit;
+    -- connect '$(DSN)' user sysdba password 'masterkey';
+    -- drop user dba_helper_create_usr_types;
+    -- drop role role_for_create_user_types;
+    -- commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('RDB\\$DESCRIPTION.*', 'RDB$DESCRIPTION')])
 
-expected_stdout_1 = """
+expected_stdout = """
     WHO_AMI                         DBA_HELPER_CREATE_USR_TYPES
-    RDB$ROLE_NAME                   RDB$ADMIN                                                                                                                                                                                                                                                   
+    RDB$ROLE_NAME                   RDB$ADMIN
     RDB_ROLE_IN_USE                 <false>
     RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
 
     WHO_AMI                         DBA_HELPER_CREATE_USR_TYPES
-    RDB$ROLE_NAME                   ROLE_FOR_CREATE_USER_TYPES                                                                                                                                                                                                                                  
+    RDB$ROLE_NAME                   ROLE_FOR_CREATE_USER_TYPES
     RDB_ROLE_IN_USE                 <true>
     RDB$SYSTEM_PRIVILEGES           0800000000000000
 
-    RDB$FIELD_NAME                  amount_avaliable                                                                                                                                                                                                                                            
+    RDB$FIELD_NAME                  amount_avaliable
     RDB$TYPE                        -32767
-    RDB$TYPE_NAME                   stock_amount                                                                                                                                                                                                                                                
+    RDB$TYPE_NAME                   stock_amount
     RDB$DESCRIPTION                 b:782
     Total number of units that can be sold immediately to any customer
     RDB$SYSTEM_FLAG                 0
 
     RDB$FIELD_NAME                  <null>
     RDB$TYPE                        -32768
-    RDB$TYPE_NAME                   stock_amount                                                                                                                                                                                                                                                
+    RDB$TYPE_NAME                   stock_amount
     RDB$DESCRIPTION                 b:782
     Total number of units that can be sold immediately to any customer
     RDB$SYSTEM_FLAG                 0
@@ -128,20 +122,19 @@ expected_stdout_1 = """
 
     RDB$FIELD_NAME                  <null>
     RDB$TYPE                        -32768
-    RDB$TYPE_NAME                   stock_amount                                                                                                                                                                                                                                                
+    RDB$TYPE_NAME                   stock_amount
     RDB$SYSTEM_FLAG                 0
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 42000
     INSERT operation is not allowed for system table RDB$TYPES
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, test_user, test_role):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

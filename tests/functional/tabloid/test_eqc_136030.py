@@ -1,101 +1,34 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.eqc_136030
-# title:        Check ability for preparing and then run query with parameters. Query should use ORDER-BY clause.
-# decription:   
-#                   02.02.2019: removed from DB metadata calls to UDFs - they are not used in this test but can not be used in FB 4.0 by default.
-#                   Removed triggers because they have no deal here.
-#                   Checked on:
-#                       3.0.5.33097: OK, 2.782s.
-#                       4.0.0.1421: OK, 3.642s.
-#                
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          tabloid.eqc-136030
+TITLE:       Check ability for preparing and then run query with parameters. Query should use ORDER-BY clause.
+DESCRIPTION:
+NOTES:
+[02.02.2019]
+  removed from DB metadata calls to UDFs - they are not used in this test but can not be used in FB 4.0 by default.
+  Removed triggers because they have no deal here.
+  Checked on:
+    3.0.5.33097: OK, 2.782s.
+    4.0.0.1421: OK, 3.642s.
+FBTEST:      functional.tabloid.eqc_136030
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
+act = python_act('db')
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-# test_script_1
-#---
-# import os
-#  import zipfile
-#  
-#  os.environ["ISC_USER"] = 'SYSDBA'
-#  os.environ["ISC_PASSWORD"] = 'masterkey'
-#  
-#  db_conn.close()
-#  zf = zipfile.ZipFile( os.path.join(context['files_location'],'eqc136030.zip') )
-#  zf.extractall( context['temp_directory'] )
-#  zf.close()
-#  
-#  fbk = os.path.join(context['temp_directory'],'eqc136030.fbk')
-#  
-#  runProgram('gbak',['-rep',fbk, dsn])
-#  
-#  script="""
-#      set list on;
-#      set sqlda_display on;
-#      set planonly;
-#      
-#      select
-#          a.csoc, a.nreserc ,  a.coddoc , a.codgio ,
-#          a.macchina, a.rec_upd, a.utente_upd, 
-#          cast(a.fblc as integer) fblc, 
-#          cast(a.fdel as integer) fdel,
-#          b.tipdoc, b.desdoc, b.fblc , c.tipgio, c.desgio , c.fblc
-#      from docgio a
-#      left join doctip (a.csoc, a.nreserc) b on ( a.coddoc = b.coddoc )
-#      left join giotip (a.csoc, a.nreserc) c on (a.codgio = c.codgio)
-#      where
-#          a.csoc = ?
-#          and a.nreserc = ?
-#      order by a.codgio, a.coddoc;
-#      
-#      set planonly;
-#      set plan off;
-#      set sqlda_display off;
-#      
-#      select
-#          a.csoc, a.nreserc ,  a.coddoc , a.codgio ,
-#          a.macchina, a.rec_upd, a.utente_upd, 
-#          cast(a.fblc as integer) fblc, 
-#          cast(a.fdel as integer) fdel,
-#          b.tipdoc, b.desdoc, b.fblc , c.tipgio, c.desgio , c.fblc
-#      from docgio a
-#      left join doctip (a.csoc, a.nreserc) b on ( a.coddoc = b.coddoc )
-#      left join giotip (a.csoc, a.nreserc) c on (a.codgio = c.codgio)
-#      where
-#          a.csoc = 'DEM1' -- :csoc
-#          and a.nreserc = '' -- :nreserc
-#      order by a.codgio, a.coddoc;
-#  """
-#  runProgram('isql',[dsn,'-q'],script)
-#  
-#  ###############################
-#  # Cleanup.
-#  os.remove(fbk)
-#---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
+expected_stdout = """
     INPUT message field count: 2
     01: sqltype: 448 VARYING scale: 0 subtype: 0 len: 4 charset: 0 NONE
-      :  name:   alias: 
-      : table:   owner: 
+      :  name:   alias:
+      : table:   owner:
     02: sqltype: 448 VARYING scale: 0 subtype: 0 len: 2 charset: 0 NONE
-      :  name:   alias: 
-      : table:   owner: 
+      :  name:   alias:
+      : table:   owner:
 
     PLAN JOIN (JOIN (A ORDER DOCGIO_PK, B NATURAL), C NATURAL)
 
@@ -123,10 +56,10 @@ expected_stdout_1 = """
       : table: DOCGIO  owner: SYSDBA
     08: sqltype: 496 LONG scale: 0 subtype: 0 len: 4
       :  name: CAST  alias: FBLC
-      : table:   owner: 
+      : table:   owner:
     09: sqltype: 496 LONG scale: 0 subtype: 0 len: 4
       :  name: CAST  alias: FDEL
-      : table:   owner: 
+      : table:   owner:
     10: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 3 charset: 0 NONE
       :  name: TIPDOC  alias: TIPDOC
       : table: DOCTIP  owner: SYSDBA
@@ -148,7 +81,7 @@ expected_stdout_1 = """
 
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          AUT
     CODGIO                          CGB
     MACCHINA                        VAIO-ADAL
@@ -164,7 +97,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          CGE
     CODGIO                          CGB
     MACCHINA                        VAIO-ADAL
@@ -180,7 +113,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          CTI
     CODGIO                          CGB
     MACCHINA                        VAIO-ADAL
@@ -196,7 +129,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          FAA
     CODGIO                          CGB
     MACCHINA                        VAIO-ADAL
@@ -212,7 +145,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          FAV
     CODGIO                          CGB
     MACCHINA                        VAIO-ADAL
@@ -228,7 +161,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          FTA
     CODGIO                          CGB
     MACCHINA                        VAIO-ADAL
@@ -244,7 +177,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          FTV
     CODGIO                          CGB
     MACCHINA                        VAIO-ADAL
@@ -260,7 +193,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          FAA
     CODGIO                          RAC
     MACCHINA                        VAIO-ADAL
@@ -276,7 +209,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          FTA
     CODGIO                          RAC
     MACCHINA                        VAIO-ADAL
@@ -292,7 +225,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          NCA
     CODGIO                          RAC
     MACCHINA                        VAIO-ADAL
@@ -308,7 +241,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          NDA
     CODGIO                          RAC
     MACCHINA                        VAIO-ADAL
@@ -324,7 +257,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          FAV
     CODGIO                          RFV
     MACCHINA                        VAIO-ADAL
@@ -340,7 +273,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          FTV
     CODGIO                          RFV
     MACCHINA                        VAIO-ADAL
@@ -356,7 +289,7 @@ expected_stdout_1 = """
     FBLC                            <null>
 
     CSOC                            DEM1
-    NRESERC                         
+    NRESERC
     CODDOC                          NCV
     CODGIO                          RFV
     MACCHINA                        VAIO-ADAL
@@ -372,9 +305,68 @@ expected_stdout_1 = """
     FBLC                            <null>
 """
 
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
-
+# Original python code for this test:
+# -----------------------------------
+# import os
+# import zipfile
+#
+# os.environ["ISC_USER"] = 'SYSDBA'
+# os.environ["ISC_PASSWORD"] = 'masterkey'
+#
+# db_conn.close()
+# zf = zipfile.ZipFile( os.path.join(context['files_location'],'eqc136030.zip') )
+# zf.extractall( context['temp_directory'] )
+# zf.close()
+#
+# fbk = os.path.join(context['temp_directory'],'eqc136030.fbk')
+#
+# runProgram('gbak',['-rep',fbk, dsn])
+#
+# script="""
+#     set list on;
+#     set sqlda_display on;
+#     set planonly;
+#
+#     select
+#         a.csoc, a.nreserc ,  a.coddoc , a.codgio ,
+#         a.macchina, a.rec_upd, a.utente_upd,
+#         cast(a.fblc as integer) fblc,
+#         cast(a.fdel as integer) fdel,
+#         b.tipdoc, b.desdoc, b.fblc , c.tipgio, c.desgio , c.fblc
+#     from docgio a
+#     left join doctip (a.csoc, a.nreserc) b on ( a.coddoc = b.coddoc )
+#     left join giotip (a.csoc, a.nreserc) c on (a.codgio = c.codgio)
+#     where
+#         a.csoc = ?
+#         and a.nreserc = ?
+#     order by a.codgio, a.coddoc;
+#
+#     set planonly;
+#     set plan off;
+#     set sqlda_display off;
+#
+#     select
+#         a.csoc, a.nreserc ,  a.coddoc , a.codgio ,
+#         a.macchina, a.rec_upd, a.utente_upd,
+#         cast(a.fblc as integer) fblc,
+#         cast(a.fdel as integer) fdel,
+#         b.tipdoc, b.desdoc, b.fblc , c.tipgio, c.desgio , c.fblc
+#     from docgio a
+#     left join doctip (a.csoc, a.nreserc) b on ( a.coddoc = b.coddoc )
+#     left join giotip (a.csoc, a.nreserc) c on (a.codgio = c.codgio)
+#     where
+#         a.csoc = 'DEM1' -- :csoc
+#         and a.nreserc = '' -- :nreserc
+#     order by a.codgio, a.coddoc;
+# """
+# runProgram('isql',[dsn,'-q'],script)
+#
+# ###############################
+# # Cleanup.
+# os.remove(fbk)
+# -----------------------------------

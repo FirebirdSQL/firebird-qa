@@ -1,29 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.procedure.create.06
-# title:        CREATE PROCEDURE - PSQL Stataments - SUSPEND
-# decription:   CREATE PROCEDURE - PSQL Stataments - SUSPEND
-#               
-#               Dependencies:
-#               CREATE DATABASE
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.procedure.create.create_procedure_06
+
+"""
+ID:          procedure.create-06
+TITLE:       CREATE PROCEDURE - PSQL Stataments - SUSPEND
+DESCRIPTION:
+FBTEST:      functional.procedure.create.06
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """SET TERM ^;
+test_script = """SET TERM ^;
 CREATE PROCEDURE test RETURNS(id INT)AS
 BEGIN
   ID=4;
@@ -35,9 +24,9 @@ SET TERM ;^
 commit;
 SHOW PROCEDURE test;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """Procedure text:
+expected_stdout = """Procedure text:
 =============================================================================
 
 BEGIN
@@ -50,9 +39,8 @@ END
 Parameters:
 ID                                OUTPUT INTEGER"""
 
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

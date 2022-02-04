@@ -4,6 +4,7 @@
 ID:          decimal-declared-scale
 TITLE:       Dummy test
 DESCRIPTION: Samples are from #3912 and  #5989.
+FBTEST:      functional.datatypes.decimal_declared_scale
 """
 
 import pytest

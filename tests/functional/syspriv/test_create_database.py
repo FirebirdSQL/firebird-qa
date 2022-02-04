@@ -1,24 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.create_database
-# title:        Check ability to CREATE database by non-sysdba user who is granted with necessary system privilege.
-# decription:   
-#                  Checked on 5.0.0.133 SS/CS; 4.0.1.2563 SS/CS.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.create-database
+TITLE:       Check ability to CREATE database by non-sysdba user who is granted with necessary system privilege
+DESCRIPTION:
+FBTEST:      functional.syspriv.create_database
+"""
 
 import pytest
-from firebird.qa import db_factory, python_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+substitutions = [('DB_NAME.*FUNCTIONAL.SYSPRIV.CREATE_DATABASE.TMP', 'DB_NAME FUNCTIONAL.SYSPRIV.DROP_DATABASE.TMP')]
 
-substitutions_1 = [('DB_NAME.*FUNCTIONAL.SYSPRIV.CREATE_DATABASE.TMP', 'DB_NAME FUNCTIONAL.SYSPRIV.DROP_DATABASE.TMP')]
-
-init_script_1 = """
+init_script = """
     set wng off;
     set bail on;
     set list on;
@@ -47,35 +41,50 @@ init_script_1 = """
     commit;
   """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+db = db_factory(init=init_script)
+
+act = python_act('db', substitutions=substitutions)
+
+expected_stdout = """
+    DB_NAME                         C:\\FBTESTING\\QA\\FBT-REPO\\TMP\\FUNCTIONAL.SYSPRIV.CREATE_DATABASE.TMP
+    WHO_AMI                         JOHN_SMITH_DB_CREATOR
+    RDB$ROLE_NAME                   RDB$ADMIN
+    RDB_ROLE_IN_USE                 <true>
+    RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
+"""
+
+@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+@pytest.mark.version('>=4.0')
+def test_1(act: Action):
+    pytest.fail("Not IMPLEMENTED")
 
 # test_script_1
 #---
-# 
+#
 #  import os
 #  import subprocess
 #  import time
-#  
+#
 #  db_pref = os.path.splitext(db_conn.database_name)[0]
 #  db_conn.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def flush_and_close( file_handle ):
 #      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f, 
-#      # first do f.flush(), and 
+#      # If you're starting with a Python file object f,
+#      # first do f.flush(), and
 #      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
 #      global os
-#      
+#
 #      file_handle.flush()
 #      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
 #          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
 #          os.fsync(file_handle.fileno())
 #      file_handle.close()
-#  
+#
 #  #--------------------------------------------
-#  
+#
 #  def cleanup( f_names_list ):
 #      global os
 #      for f in f_names_list:
@@ -86,63 +95,47 @@ db_1 = db_factory(sql_dialect=3, init=init_script_1)
 #         else:
 #            print('Unrecognized type of element:', f, ' - can not be treated as file.')
 #            del_name = None
-#  
+#
 #         if del_name and os.path.isfile( del_name ):
 #             os.remove( del_name )
-#      
+#
 #  #--------------------------------------------
-#  
+#
 #  fdb_test = db_pref+'.tmp'
-#  
+#
 #  cleanup( fdb_test, )
-#  
+#
 #  # Check that non-sysdba user can connect and DROP database <fdb_test>
 #  #######
 #  sql_chk='''
-#      set list on; 
-#  
+#      set list on;
+#
 #      create database 'localhost:%(fdb_test)s' user john_smith_db_creator password '123';
 #      commit;
-#  
-#      select 
+#
+#      select
 #          upper(mon$database_name) as db_name
 #          ,current_user as who_ami
 #          ,r.rdb$role_name
 #          ,rdb$role_in_use(r.rdb$role_name) as RDB_ROLE_IN_USE
 #          ,r.rdb$system_privileges
 #      from mon$database m cross join rdb$roles r;
-#     
+#
 #      commit;
-#  
+#
 #      connect 'localhost:%(fdb_test)s' user sysdba password 'masterkey';
 #      drop user john_smith_db_creator using plugin Srp;
 #      commit;
 #  ''' % locals()
-#  
+#
 #  runProgram('isql',['-q'], sql_chk)
-#  
+#
 #  if not os.path.isfile(fdb_test):
 #      print('ERROR WHILE CREATE DATABASE: FILE NOT FOUND.')
-#  
+#
 #  # Cleanup:
 #  ##########
 #  time.sleep(1)
 #  cleanup( (fdb_test,) )
-#  
+#
 #---
-act_1 = python_act('db_1', substitutions=substitutions_1)
-
-expected_stdout_1 = """
-    DB_NAME                         C:\\FBTESTING\\QA\\FBT-REPO\\TMP\\FUNCTIONAL.SYSPRIV.CREATE_DATABASE.TMP
-    WHO_AMI                         JOHN_SMITH_DB_CREATOR
-    RDB$ROLE_NAME                   RDB$ADMIN
-    RDB_ROLE_IN_USE                 <true>
-    RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
-"""
-
-@pytest.mark.version('>=4.0')
-@pytest.mark.xfail
-def test_1(act_1: Action):
-    pytest.fail("Test not IMPLEMENTED")
-
-

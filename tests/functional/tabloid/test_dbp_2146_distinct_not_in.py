@@ -1,26 +1,18 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.dbp_2146_distinct_not_in
-# title:        Common SQL. Check correctness of the results
-# decription:   
-# tracker_id:   
-# min_versions: ['2.5']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          tabloid.dbp-2146-distinct-not-in
+TITLE:       Common SQL. Check correctness of the results
+DESCRIPTION: 
+FBTEST:      functional.tabloid.dbp_2146_distinct_not_in
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(from_backup='tabloid-dbp-2146.fbk')
 
-substitutions_1 = [('=.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='tabloid-dbp-2146.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set list on;
     with
     eset
@@ -88,17 +80,16 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     ARI                             6
     TBI                             10
     CNT                             3  
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

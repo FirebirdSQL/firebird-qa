@@ -1,51 +1,42 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.pg_14105
-# title:        Check ability to compile query with combination of full and right join. Taken from PG bug library.
-# decription:   
-#                  Original issue ( http://www.postgresql.org/message-id/20160420194758.22924.80319@wrigleys.postgresql.org ):
-#                  ===
-#                     create table a as (select 1 as id);
-#                     select *
-#                     from ((
-#                            a as a1
-#                            full join (select 1 as id) as tt
-#                            on (a1.id = tt.id)
-#                           )
-#                           right join (select 1 as id) as tt2
-#                           on (coalesce(tt.id) = tt2.id)
-#                          )
-#                     ;
-#                     ERROR:  XX000: failed to build any 2-way joins
-#                     LOCATION:  standard_join_search, allpaths.c:1832
-#               
-#               
-#                     It works on PostgreSQL 9.2.13., returning:
-#                      id | id | id 
-#                     ----+----+----
-#                       1 |  1 |  1
-#                     (1 row)
-#                   ===
-#                   PS. NOTE on strange form of COALESCE: "coalesce(tt.id)" - it has only single argument.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          tabloid.pg-14105
+TITLE:       Check ability to compile query with combination of full and right join. Taken from PG bug library.
+DESCRIPTION: 
+  Original issue ( http://www.postgresql.org/message-id/20160420194758.22924.80319@wrigleys.postgresql.org ):
+     ===
+        create table a as (select 1 as id);
+        select *
+        from ((
+               a as a1
+               full join (select 1 as id) as tt
+               on (a1.id = tt.id)
+              )
+              right join (select 1 as id) as tt2
+              on (coalesce(tt.id) = tt2.id)
+             )
+        ;
+        ERROR:  XX000: failed to build any 2-way joins
+        LOCATION:  standard_join_search, allpaths.c:1832
+  
+  
+        It works on PostgreSQL 9.2.13., returning:
+         id | id | id 
+        ----+----+----
+          1 |  1 |  1
+        (1 row)
+      ===
+      PS. NOTE on strange form of COALESCE: "coalesce(tt.id)" - it has only single argument.
+FBTEST:      functional.tabloid.pg_14105
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     recreate table a(id int);
     commit;
 
@@ -72,17 +63,16 @@ test_script_1 = """
     ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     A1_ID                           1
     TT_ID                           1
     TT2_ID                          1
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

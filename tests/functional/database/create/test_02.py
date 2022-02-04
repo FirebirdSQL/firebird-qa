@@ -4,6 +4,7 @@
 ID:          create-database-02
 TITLE:       Create database: non sysdba user
 DESCRIPTION:
+FBTEST:      functional.database.create.02
 """
 
 import pytest

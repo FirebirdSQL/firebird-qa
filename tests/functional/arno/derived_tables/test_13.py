@@ -4,6 +4,7 @@
 ID:          derived-table-13
 TITLE:       DISTINCT inside derived table
 DESCRIPTION:
+FBTEST:      functional.arno.derived_tables.13
 """
 
 import pytest

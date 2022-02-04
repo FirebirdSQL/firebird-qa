@@ -7,6 +7,7 @@ DESCRIPTION:
   Check if it will select the index with the best selectivity.
   UNIQUE index is the best and prefer ASC index.
   Only the equals conjunctions should be bound to the index, because it's the most selective.
+FBTEST:      functional.arno.optimizer.opt_single_index_selection_02
 """
 
 import pytest

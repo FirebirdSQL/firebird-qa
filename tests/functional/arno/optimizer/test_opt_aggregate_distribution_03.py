@@ -7,6 +7,7 @@ DESCRIPTION:
   Comparisons which doesn't contain (anywhere hiding in the expression) aggregate-functions
   should be delivered to the where clause. The underlying aggregate stream could possible
   use it for a index and speed it up.
+FBTEST:      functional.arno.optimizer.opt_aggregate_distribution_03
 """
 
 import pytest

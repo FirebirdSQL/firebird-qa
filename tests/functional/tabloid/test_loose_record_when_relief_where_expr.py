@@ -1,29 +1,20 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.loose_record_when_relief_where_expr
-# title:        Uncomment of one part of OR'ed expression led to loose of record from resultset.
-# decription:   
-#                   "OR" could __reduce__ number of rows in resultset.
-#                   See leters to/from dimitr 23.09.2010 (probably this bug was due to occasional typo).
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          tabloid.loose-record-when-relief-where-expr
+TITLE:       Uncomment of one part of OR'ed expression led to loose of record from resultset.
+DESCRIPTION: 
+  "OR" could __reduce__ number of rows in resultset.
+      See leters to/from dimitr 23.09.2010 (probably this bug was due to occasional typo).
+FBTEST:      functional.tabloid.loose_record_when_relief_where_expr
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
      set list on;
      with
      tset_init as
@@ -60,9 +51,9 @@ test_script_1 = """
      ;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     SRVT_ID                         61844284
     ROW_ID                          1
     SELECTED_CASE                   A
@@ -71,9 +62,8 @@ expected_stdout_1 = """
     SELECTED_CASE                   A
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -1,63 +1,51 @@
 #coding:utf-8
-#
-# id:           functional.session.alter_session_reset_decfloat
-# title:        
-#                   ALTER SESSION RESET: DECFLOAT parameters must be returned to default values
-#                
-# decription:   
-#                  Test issue from CORE-5832 about ALTER SESSION RESET:
-#                  "DECFLOAT parameters (BIND, TRAP and ROUND) must be reset to default values".
-#               
-#                  We change all three specified parameters and evaluate some expressions.
-#                  Then we run RESET SESSION and evaluate the same expressions. 
-#                  Results must differ for all of them.
-#               
-#                  NOTE-1.
-#                      FDB driver 2.0.1 does not support DEFCFLOAT datatype (at least version 2.0.1),
-#                      so test type must be ISQL.
-#               
-#                  NOTE-2. *** SET AUTODDL OFF REQUIRED ***
-#                      Following is detailed explanation of this note:
-#                      ========
-#                          Default ISQL behaviour is to start always *TWO* transactions (for DML and second for DDL)
-#                          after previous commit / rollback and before *ANY* further satement is to be executed, except
-#                          those which control ISQL itself (e.g. 'SET TERM'; 'IN ...'; 'SET BAIL' etc).
-#                          So, even when statement <S> has nothing to change, ISQL will start TWO transactions
-#                          just before executing <S>.
-#                          This means that these transactions will start even if want to run 'ALTER SESSION RESET'.
-#                          This, in turn, makes one of them (which must perform DDL) be 'active and NOT current'
-#                          from ALTER SESSION point of view (which is run within DML transaction).
-#               
-#                          According to description given in CORE-5832, ALTER SESSION throws error isc_ses_reset_err
-#                          "if any open transaction exist in current conneciton, *except of current transaction* and
-#                          prepared 2PC transactions which is allowed and ignored by this check".
-#               
-#                          So, we have to prohibit 'autostart' of DDL-transaction because otherwise ALTER SESSION will
-#                          throw: "SQLSTATE = 01002 / Cannot reset user session / -There are open transactions (2 active)".
-#                          This is done by 'SET AUTODDL OFF' statement at the beginning of this test script.
-#                      ========
-#               
-#                  Thanks to Vlad for explanations (discussed 18.01.2021).
-#                  Checked on 4.0.0.2307 SS/CS.
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          session.alter-session-reset-decfloat
+ISSUE:       6093
+TITLE:       ALTER SESSION RESET: DECFLOAT parameters must be returned to default values
+DESCRIPTION:
+  Test issue about ALTER SESSION RESET:
+  "DECFLOAT parameters (BIND, TRAP and ROUND) must be reset to default values".
+
+  We change all three specified parameters and evaluate some expressions.
+  Then we run RESET SESSION and evaluate the same expressions.
+  Results must differ for all of them.
+
+  NOTE-1.
+  firebird-driver does support DEFCFLOAT datatype, so test does *not* need to use only ISQL.
+
+  NOTE-2. *** SET AUTODDL OFF REQUIRED ***
+  Following is detailed explanation of this note:
+
+    Default ISQL behaviour is to start always *TWO* transactions (for DML and second for DDL)
+    after previous commit / rollback and before *ANY* further satement is to be executed, except
+    those which control ISQL itself (e.g. 'SET TERM'; 'IN ...'; 'SET BAIL' etc).
+    So, even when statement <S> has nothing to change, ISQL will start TWO transactions
+    just before executing <S>.
+    This means that these transactions will start even if want to run 'ALTER SESSION RESET'.
+    This, in turn, makes one of them (which must perform DDL) be 'active and NOT current'
+    from ALTER SESSION point of view (which is run within DML transaction).
+
+    According to description given in #6093, ALTER SESSION throws error isc_ses_reset_err
+    "if any open transaction exist in current conneciton, *except of current transaction* and
+    prepared 2PC transactions which is allowed and ignored by this check".
+
+    So, we have to prohibit 'autostart' of DDL-transaction because otherwise ALTER SESSION will
+    throw: "SQLSTATE = 01002 / Cannot reset user session / -There are open transactions (2 active)".
+    This is done by 'SET AUTODDL OFF' statement at the beginning of this test script.
+
+  Thanks to Vlad for explanations (discussed 18.01.2021).
+FBTEST:      functional.session.alter_session_reset_decfloat
+JIRA:        CORE-5832
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('^((?!(sqltype|before_reset|after_reset)).)*$', ''), ('[ \t]+', ' '), ('.*alias.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
 
     recreate table test(a decfloat, b decfloat, c decfloat);
     insert into test(a,b,c) values(1608.90, 5.00, 100.00);
@@ -98,32 +86,32 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('^((?!(sqltype|before_reset|after_reset)).)*$', ''),
+                                                 ('[ \t]+', ' '), ('.*alias.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     01: sqltype: 500 SHORT scale: 0 subtype: 0 len: 2
     before_reset: check datatype    1235
-    
+
     before_reset: check division result 0
-    
+
     before_reset: check round result 81
-    
+
     01: sqltype: 32760 DECFLOAT(16) scale: 0 subtype: 0 len: 8
     after_reset: check datatype                   1234.5678
 
     after_reset: check round result                                     80.445
 """
-expected_stderr_1 = """
+
+expected_stderr = """
     Statement failed, SQLSTATE = 22012
     Decimal float divide by zero.  The code attempted to divide a DECFLOAT value by zero.
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)

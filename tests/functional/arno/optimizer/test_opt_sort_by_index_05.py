@@ -6,6 +6,7 @@ TITLE:       MAX() and DESC index (non-unique)
 DESCRIPTION:
  SELECT MAX(FieldX) FROM X
   When a index can be used for sorting, use it.
+FBTEST:      functional.arno.optimizer.opt_sort_by_index_05
 """
 
 import pytest

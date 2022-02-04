@@ -8,6 +8,7 @@ DESCRIPTION:
   in process order. The next relation should be the next relation with expected smallest
   result based on previous relation and do on till last relation.
   Old/Current limitation in Firebird does stop checking order possibilties above 7 relations.
+FBTEST:      functional.arno.optimizer.opt_inner_join_07
 """
 
 import pytest

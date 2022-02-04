@@ -1,28 +1,17 @@
 #coding:utf-8
-#
-# id:           functional.trigger.table.alter_12
-# title:        ALTER TRIGGER - AS
-# decription:   ALTER TRIGGER - AS
-#               Try use old prefix in INSERT trigger
-#               
-#               Dependencies:
-#               CREATE DATABASE
-#               CREATE TABLE
-#               CREATE TRIGGER
-# tracker_id:   
-# min_versions: []
-# versions:     3.0
-# qmid:         functional.trigger.alter.alter_trigger_12
+
+"""
+ID:          trigger.table.alter-01
+TITLE:       ALTER TRIGGER - AS
+DESCRIPTION:
+  Try use old prefix in INSERT trigger
+FBTEST:      functional.trigger.table.alter_12
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
-
-substitutions_1 = [('At line.*', '')]
-
-init_script_1 = """
+init_script = """
     create table test(id integer not null constraint unq unique, text varchar(32));
     commit;
     set term ^;
@@ -33,11 +22,12 @@ init_script_1 = """
     ^
     set term ;^
     commit;
-  """
 
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
+"""
 
-test_script_1 = """
+db = db_factory(init=init_script)
+
+test_script = """
     -- Since WI-T3.0.0.31733 content of STDERR has been changed: source position of
     -- problematic statement is displayed now on seperate line, like this:
     -- "-At line 4, column 1"
@@ -50,9 +40,9 @@ test_script_1 = """
     set term ;^
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('At line.*', '')])
 
-expected_stderr_1 = """
+expected_stderr = """
     Statement failed, SQLSTATE = 42S22
     unsuccessful metadata update
     -ALTER TRIGGER TG failed
@@ -64,8 +54,7 @@ expected_stderr_1 = """
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stderr = expected_stderr_1
-    act_1.execute()
-    assert act_1.clean_stderr == act_1.clean_expected_stderr
-
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr

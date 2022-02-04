@@ -1,32 +1,22 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.gtcs_proc_isql_01
-# title:        gtcs-proc-isql-01
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROC_ISQL_01.script
-#               	SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
-#                   Checked on: 4.0.0.1803 SS; 3.0.6.33265 SS; 2.5.9.27149 SC.
-#                
-# tracker_id:   
-# min_versions: ['2.5.0']
-# versions:     2.5
-# qmid:         None
+
+"""
+ID:          gtcs.proc-isql-01
+TITLE:       gtcs-proc-isql-01
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROC_ISQL_01.script
+  SQL script for creating test database ('gtcs_sp1.fbk') and fill it with some data:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROCS_QA_INIT_ISQL.script
+FBTEST:      functional.gtcs.gtcs_proc_isql_01
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 2.5
-# resources: None
+db = db_factory(from_backup='gtcs_sp1.fbk')
 
-substitutions_1 = [('=', ''), ('[ \t]+', ' ')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='gtcs_sp1.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
 
     set term ^;
@@ -54,9 +44,9 @@ test_script_1 = """
     select 'point-7' msg, p.a  from proc1 p where p.a = (select avg(x.a) from proc1 x);
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout_1 = """
+expected_stdout = """
     A
     400
 
@@ -89,9 +79,8 @@ expected_stdout_1 = """
     Records affected: 1
 """
 
-@pytest.mark.version('>=2.5')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -7,6 +7,7 @@ DESCRIPTION:
   X JOIN Y ON (X.Field = Y.Field)
   When no index can be used on a INNER JOIN and there's a relation setup between X and Y
   then a MERGE should be performed. An equality between NULLs should not be seen as true.
+FBTEST:      functional.arno.optimizer.opt_inner_join_merge_04
 """
 
 import pytest

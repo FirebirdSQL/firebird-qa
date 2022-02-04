@@ -1,35 +1,26 @@
 #coding:utf-8
-#
-# id:           functional.domain.create.30
-# title:        CREATE DOMAIN - BLOB SUB_TYPE CHARACTER SET
-# decription:   Domain creation based on BLOB datatype with SUBTYPE TEXT and CHARACTER SET specification.
-# tracker_id:   
-# min_versions: []
-# versions:     1.0
-# qmid:         functional.domain.create.create_domain_30
+
+"""
+ID:          domain.create-30
+FBTEST:      functional.domain.create.30
+TITLE:       CREATE DOMAIN - BLOB SUB_TYPE CHARACTER SET
+DESCRIPTION: Domain creation based on BLOB datatype with SUBTYPE TEXT and CHARACTER SET specification
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 1.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """CREATE DOMAIN test BLOB SUB_TYPE 1 CHARACTER SET BIG_5;
+test_script = """CREATE DOMAIN test BLOB SUB_TYPE 1 CHARACTER SET BIG_5;
 SHOW DOMAIN test;"""
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """TEST                            BLOB segment 80, subtype TEXT CHARACTER SET BIG_5 Nullable"""
+expected_stdout = """TEST                            BLOB segment 80, subtype TEXT CHARACTER SET BIG_5 Nullable"""
 
-@pytest.mark.version('>=1.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

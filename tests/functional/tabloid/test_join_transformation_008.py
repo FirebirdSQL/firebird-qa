@@ -1,40 +1,31 @@
 #coding:utf-8
-#
-# id:           functional.tabloid.join_transformation_008
-# title:        Check ability of outer join simplification.
-# decription:   
-#                  From join-transformation-008.fbt:
-#                  ===
-#                  For two sources, S and T, which:
-#                  1) are separated by at least one "intermediate" source G (e.g. which is just "after" S and is "before" T), and 
-#                  2) are involved into left join predicate P(S,T) which does not participate in disjunction ("OR"ed) expression
-#                  -- one may to replace all LEFT joins starting from G and up to T with INNER ones.
-#                  Join condition between S and its adjacent datasource (G) should be preserved as it is in original query.
-#                  ===
-#                  Additional case here: when a query has several predicates {P1, P2,..., Pn} that involves non-adjacent datasources 
-#                  and are null-rejected then we can replace left-outer joins with inner ones separately for each of {P1, P2,..., Pn}.
-#                  Moreover, if some pair of them (say, Px and Py) have common "affecting area" (affects on the same datasources) then
-#                  result of replacement for Px can be preserved even if some of aliases (affected by Px) are starting pair for Py
-#                  (which could NOT be replaced if query would have only one Py) - this effect looks like "bin_or".
-#                
-# tracker_id:   
-# min_versions: ['3.0']
-# versions:     3.0
-# qmid:         
+
+"""
+ID:          tabloid.join-transformation-08
+TITLE:       Check ability of outer join simplification.
+DESCRIPTION:
+  From join-transformation-008.fbt:
+     ===
+     For two sources, S and T, which:
+     1) are separated by at least one "intermediate" source G (e.g. which is just "after" S and is "before" T), and
+     2) are involved into left join predicate P(S,T) which does not participate in disjunction ("OR"ed) expression
+     -- one may to replace all LEFT joins starting from G and up to T with INNER ones.
+     Join condition between S and its adjacent datasource (G) should be preserved as it is in original query.
+     ===
+     Additional case here: when a query has several predicates {P1, P2,..., Pn} that involves non-adjacent datasources
+     and are null-rejected then we can replace left-outer joins with inner ones separately for each of {P1, P2,..., Pn}.
+     Moreover, if some pair of them (say, Px and Py) have common "affecting area" (affects on the same datasources) then
+     result of replacement for Px can be preserved even if some of aliases (affected by Px) are starting pair for Py
+     (which could NOT be replaced if query would have only one Py) - this effect looks like "bin_or".
+FBTEST:      functional.tabloid.join_transformation_008
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 3.0
-# resources: None
+db = db_factory(from_backup='join-transformations.fbk')
 
-substitutions_1 = []
-
-init_script_1 = """"""
-
-db_1 = db_factory(from_backup='join-transformations.fbk', init=init_script_1)
-
-test_script_1 = """
+test_script = """
     execute procedure sp_fill( 20, 20 );
     --                         ^    ^- probability of assign each field on each row to NULL (percent).
     --                         +- number of rows in each of tables t1...t6
@@ -42,7 +33,7 @@ test_script_1 = """
     commit;
     execute procedure sp_recalc_idx_stat;
     commit;
-    
+
     set list on;
     set term ^;
     execute block returns(result varchar(50)) as
@@ -56,7 +47,7 @@ test_script_1 = """
             -- Here we have two predicates that "jumps" over more than one datasource,
             -- i.e. they involve relations which are NOT adjacent in the query.
             -- Hereafter such predicates are called "jumpers".
-            -- First such predicate is "a.z = d.x" - it involve relations A & D and 
+            -- First such predicate is "a.z = d.x" - it involve relations A & D and
             -- its affecting area is marked below as "::::::::::::::".
             -- Second is "b.w = e.y" - it involve relations B &E and its affecting area
             -- is marked as "%%%%%%%%%%%%%".
@@ -80,14 +71,14 @@ test_script_1 = """
             from t1 a
                     LEFT
                     join t2 b
-                            left 
+                            left
                             join t3 c
                                     left
                                     join t4 d
                                             left         -- +-- this alias is NOT afffected by any of "jumpers"!
                                             join t5 e    -- |
                                                     left -- |
-                                                    join t6 F 
+                                                    join t6 F
                                                     on e.x = f.u
                                             on d.z = e.y
                                     on c.y = e.x
@@ -98,8 +89,8 @@ test_script_1 = """
             ,
             'select a.id, b.id, c.id, d.id, e.id, f.id
             from t1 a
-                    LEFT -- this should be preserved anyway; explanation see in "join-transformation-008.fbt" 
-                    join t2 b    
+                    LEFT -- this should be preserved anyway; explanation see in "join-transformation-008.fbt"
+                    join t2 b
                             INNER -- "BIN_OR" here! This could NOT be done if we have only 2nd "jumper" (`b.w = e.y`) which STARTS from `b`.
                             --                               --    --  can be replaced because of jumper-1 ("a.z = d.x"); and this result will be PRESERVED despite of jumper-2.
                             join t3 c
@@ -108,7 +99,7 @@ test_script_1 = """
                                             inner -- can be replaced because of jumper-2 ("b.w = e.y")
                                             join t5 e
                                                     LEFT -- <<< !! this should be preserved as OUTER join !!
-                                                    join t6 F 
+                                                    join t6 F
                                                     on e.x = f.u
                                             on d.z = e.y
                                     on c.y = e.x
@@ -120,9 +111,9 @@ test_script_1 = """
         suspend;
 
         if ( result not containing 'Passed' ) then
-            -- this context variable serves as 'flag' to show 
+            -- this context variable serves as 'flag' to show
             -- problematic data (see following EB):
-            rdb$set_context('USER_SESSION', 'FAULT', '1'); 
+            rdb$set_context('USER_SESSION', 'FAULT', '1');
     end
     ^
     execute block returns( failed_on varchar(255) ) as
@@ -131,8 +122,8 @@ test_script_1 = """
         -- rows from all tables in order to reproduce this trouble later:
         if ( rdb$get_context('USER_SESSION', 'FAULT') = '1' ) then
         begin
-          for 
-              select dml from sp_show_data 
+          for
+              select dml from sp_show_data
               into failed_on
           do
               suspend;
@@ -144,15 +135,14 @@ test_script_1 = """
 
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script)
 
-expected_stdout_1 = """
+expected_stdout = """
     RESULT                          Passed.
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

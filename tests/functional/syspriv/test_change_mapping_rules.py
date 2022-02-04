@@ -1,29 +1,22 @@
 #coding:utf-8
-#
-# id:           functional.syspriv.change_mapping_rules
-# title:        Check ability to manage auth mappings
-# decription:   
-#                  Verify ability to issue CREATE / ALTER / DROP MAPPING by non-sysdba user.
-#                  Checked  on 5.0.0.133 SS/CS, 4.0.1.2563 SS/CS
-#                
-# tracker_id:   
-# min_versions: ['4.0.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          syspriv.change-mapping-rules
+TITLE:       Check ability to manage auth mappings
+DESCRIPTION:
+  Verify ability to issue CREATE / ALTER / DROP MAPPING by non-sysdba user.
+FBTEST:      functional.syspriv.change_mapping_rules
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('.*Global mapping.*', '')]
+test_user = user_factory('db', name='john_smith_mapping_manager', do_not_create=True)
+test_role = role_factory('db', name='tmp_role_for_change_mapping', do_not_create=True)
 
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set wng off;
     -- set bail on;
     set list on;
@@ -58,28 +51,27 @@ test_script_1 = """
     commit;
 
     show mapping;
-    
+
     drop global mapping tmp_syspriv_global_map;
     drop mapping tmp_syspriv_local_map;
     commit;
 
-    connect '$(DSN)' user sysdba password 'masterkey';
-    drop user john_smith_mapping_manager;
-    drop role tmp_role_for_change_mapping;
-    commit;
+    --connect '$(DSN)' user sysdba password 'masterkey';
+    --drop user john_smith_mapping_manager;
+    --drop role tmp_role_for_change_mapping;
+    --commit;
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('.*Global mapping.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
     TMP_SYSPRIV_LOCAL_MAP USING PLUGIN SRP FROM ANY USER TO USER
     *** Global mapping ***
     TMP_SYSPRIV_GLOBAL_MAP USING PLUGIN SRP FROM ANY USER TO USER
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action, test_user, test_role):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

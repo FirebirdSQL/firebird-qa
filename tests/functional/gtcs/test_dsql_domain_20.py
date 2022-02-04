@@ -1,44 +1,34 @@
 #coding:utf-8
-#
-# id:           functional.gtcs.dsql_domain_20
-# title:        GTCS/tests/DSQL_DOMAIN_20. Verify result of ALTER DOMAIN SET/DROP DEFAULT when a table exists with field based on this domain.
-# decription:   
-#               	Original test see in:
-#                       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_20.script 
-#               
-#                   Comment in GTCS
-#                       This script will test using the alter domain statement on domains that are already in use in table definitions.
-#                       Related bugs: have to exit db for changes made to domains to affect data being entered into tables.
-#               
-#                   ::: NOTE :::
-#                   Added domains with datatype that did appear only in FB 4.0: DECFLOAT and TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
-#               
-#               	Currently following datatypes are NOT checked:
-#                     blob sub_type text|binary
-#                     long float;
-#                     binary(20);
-#                     varbinary(20);
-#               
-#                   Checked on 4.0.0.1954.
-#                
-# tracker_id:   
-# min_versions: ['4.0']
-# versions:     4.0
-# qmid:         None
+
+"""
+ID:          gtcs.dsql-domain-20
+FBTEST:      functional.gtcs.dsql_domain_20
+TITLE:       Verify result of ALTER DOMAIN SET/DROP DEFAULT when a table exists with field based on this domain
+DESCRIPTION:
+  Original test see in:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_20.script
+
+  Comment in GTCS
+    This script will test using the alter domain statement on domains that are already in use in table definitions.
+    Related bugs: have to exit db for changes made to domains to affect data being entered into tables.
+
+  ::: NOTE :::
+  Added domains with datatype that did appear only in FB 4.0: DECFLOAT and
+  TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
+
+  Currently following datatypes are NOT checked:
+    blob sub_type text|binary
+    long float;
+    binary(20);
+    varbinary(20);
+"""
 
 import pytest
-from firebird.qa import db_factory, isql_act, Action
+from firebird.qa import *
 
-# version: 4.0
-# resources: None
+db = db_factory()
 
-substitutions_1 = [('[ \t]+', ' '), ('F16_BLOB_ID.*', '')]
-
-init_script_1 = """"""
-
-db_1 = db_factory(sql_dialect=3, init=init_script_1)
-
-test_script_1 = """
+test_script = """
     set bail on;
 	set list on;
 	set blob all;
@@ -60,23 +50,23 @@ test_script_1 = """
 	create domain dom20_11 as nchar(1) default 'Ö' ;
     create domain dom20_12 as numeric(2,2) default -327.68;
 	create domain dom20_13 as decimal(20,2) default -999999999999999999;
-	
+
 	-- Online evaluation of expressions: https://www.wolframalpha.com
 
 	-- https://en.wikipedia.org/wiki/Single-precision_floating-point_format
 	-- (largest number less than one):  1 - power(2,-24)
 	create domain dom20_14 as float default 0.999999940395355224609375;
-	
+
 	-- https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 	-- Max Double: power(2,1023) * ( 1+(1-power(2,-52) )
 	create domain dom20_15 as double precision default 1.7976931348623157e308;
-    
+
 	create domain dom20_16 as blob default 'Ø';
 
     create domain dom20_17 as boolean default false;
     create domain dom20_18 as decfloat(16) default -9.999999999999999E+384;
     create domain dom20_19 as decfloat default -9.999999999999999999999999999999999E6144;
-    commit;	
+    commit;
 
     recreate table test(
          f01 dom20_01
@@ -100,7 +90,7 @@ test_script_1 = """
         ,f19 dom20_19
 	);
 	commit;
-   
+
 	insert into test default values;
 	select 'point-1' as msg, t.* from test t;
 	rollback;
@@ -153,12 +143,12 @@ test_script_1 = """
 	insert into test default values;
 	select 'point-3' as msg, t.* from test t;
 	rollback;
- 
+
 """
 
-act_1 = isql_act('db_1', test_script_1, substitutions=substitutions_1)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('F16_BLOB_ID.*', '')])
 
-expected_stdout_1 = """
+expected_stdout = """
 	MSG                             point-1
 	F01                             -32768
 	F02                             -2147483648
@@ -226,12 +216,11 @@ expected_stdout_1 = """
 	Ö
 	F17                             <true>
 	F18                              9.999999999999999E+384
-	F19                              9.999999999999999999999999999999999E+6144  
+	F19                              9.999999999999999999999999999999999E+6144
 """
 
 @pytest.mark.version('>=4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout

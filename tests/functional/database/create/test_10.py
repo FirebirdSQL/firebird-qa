@@ -4,6 +4,7 @@
 ID:          create-database-10
 TITLE:       Create database: Multi file DB - starting
 DESCRIPTION: Database with four files. Additional files specified by STARTING AT.
+FBTEST:      functional.database.create.10
 """
 
 import pytest
