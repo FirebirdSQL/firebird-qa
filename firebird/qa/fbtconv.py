@@ -70,6 +70,9 @@ tests = []
 
 slow_tests = ['bugs.core_1544', 'bugs.core_3058']
 
+v30: Version = parse('3.0')
+v40: Version = parse('4.0')
+
 def clean_last(txt: str) -> str:
     if not txt:
         return txt
@@ -113,8 +116,8 @@ class Test:
     def __init__(self,id,title='',description='',tracker_id='',min_versions=None,
                  versions=None,qmid=None):
         self.id: str = id
-        self.title: str = title
-        self.description: str = description
+        self.title: str = title.strip()
+        self.description: str = description.strip()
         self.tracker_id: str = tracker_id
         self.min_versions: List[str] = []
         if min_versions:
@@ -142,6 +145,29 @@ def multiline_comment(text: str, indent=15) -> str:
             result.append(f"#{' ' * indent}{line}")
     return '\n'.join(result)
 
+def multiline_text(text: str, indent=2) -> List[str]:
+    return [f"{' ' * indent}{line}" for line in text.splitlines()]
+
+def multiline_value(var: str, sep: str, text: str) -> List[str]:
+    result = []
+    first = True
+    for line in text.splitlines():
+        if first:
+            result.append(f'{var} = {sep}{escape(line)}')
+            first = False
+        else:
+            result.append(escape(line))
+    result.append(sep)
+    return result
+
+def make_id(test_id: str) -> str:
+    result = test_id.lower().replace('_', '-')
+    result = result.replace('functional.', '')
+    parts = result.split('.')
+    if len(parts) >= 2 and parts[-1].isdigit():
+        result = '.'.join(parts[:-1]) + '-' + parts[-1]
+    return result
+
 def make_dirs(root: Path, path: Path):
     a = root
     for part in path.relative_to(root).parts:
@@ -157,7 +183,6 @@ def escape(txt: str) -> str:
 def load_test(filename: Path, verbose: bool=False) -> Dict:
     if verbose:
         print(f"Loading {filename}...")
-    expr_b = filename.read_bytes()
     expr = filename.read_text(encoding='utf-8')
     try:
         d = eval(expr)
@@ -176,8 +201,6 @@ def load_tests(path: Path, verbose: bool=False):
         tests.append(load_test(Path(path) / testname, verbose=verbose))
 
 def clean_tests():
-    v30: Version = parse('3.0')
-    v40: Version = parse('4.0')
     for t in tests:
         new_versions = []
         last: Version = parse('0.1')
@@ -214,6 +237,18 @@ def list_tests(root_path: Path, verbose: bool=False):
         else:
             print(f"{t.id} [{t.versions[0].test_type} {', '.join([str(v.firebird_version) for v in t.versions])}] to {test_file}")
 
+def create_metadata(t: Test) -> List[str]:
+    result = ['"""',
+              f'ID:          {make_id(t.id)}',
+              f'TITLE:       {t.title}',
+              f'DESCRIPTION: ',
+              ]
+    if t.description:
+        result.extend(multiline_text(t.description.expandtabs(4)))
+    result.append(f'FBTEST:      {t.id}')
+    result.append('"""')
+    return result
+
 def write_tests(root_path: Path, verbose: bool=False):
     if not root_path.is_dir():
         root_path.mkdir(parents=True)
@@ -235,108 +270,141 @@ def write_tests(root_path: Path, verbose: bool=False):
                 test_file = test_file.with_name('test_' + test_file.name)
         if test_file.stem[0] in '0123456789':
             test_file = test_file.with_name('t' + test_file.name)
-        content = f"""#coding:utf-8
-#
-# id:           {t.id}
-# title:        {multiline_comment(escape(t.title))}
-# decription:   {multiline_comment(escape(t.description))}
-# tracker_id:   {t.tracker_id}
-# min_versions: {[str(i) for i in t.min_versions]}
-# versions:     {', '.join([str(v.firebird_version) for v in t.versions])}
-# qmid:         {t.qmid}
-
-import pytest
-from firebird.qa import db_factory, {'isql_act' if t.versions[0].test_type == TYPE_ISQL else 'python_act'}, Action
-
-"""
-        # verbose output
-        if verbose:
-            print(f"Writing {t.id} to {test_file} [{t.versions[0].test_type} {', '.join([str(v.firebird_version) for v in t.versions])}]")
+        # Conversion
+        content = ['#coding:utf-8', '']
+        content.extend(create_metadata(t))
+        content.append('')
+        content.append('import pytest')
+        content.append('from firebird.qa import *')
+        #content.append('')
         # Write test versions
-        seq = 0
-        for v in t.versions:
-            seq += 1
-            content += f"# version: {v.firebird_version}\n"
-            content += f"# resources: {v.resources}\n\n"
-            subs = v.substitutions
-            content += f'''substitutions_{seq} = {repr(subs)}\n\n'''
-            content += f'''init_script_{seq} = """{escape(v.init_script)}"""\n\n'''
+        for seq, v in enumerate(t.versions, 1):
+            subs = repr(v.substitutions)
+            var_suffix = f'_{seq}' if len(t.versions) > 1 else ''
+            act_var = f'act{var_suffix}'
+            subs_var = f'substitutions{var_suffix}' if len(subs) > 60 else ''
+            init_var = f'init_script{var_suffix}' if v.init_script else ''
+            db_var = f'db{var_suffix}'
+            test_var = f'test_script{var_suffix}' if len(v.test_script.splitlines()) > 1 or len(v.test_script) > 40 else ''
+            stdout_var = f'expected_stdout{var_suffix}' if v.expected_stdout else ''
+            stderr_var = f'expected_stderr{var_suffix}' if v.expected_stderr else ''
             #
-            par = ''
+            content.append('')
+            if var_suffix:
+                content.append(f'# version: {v.firebird_version}')
+                content.append('')
+            if subs_var:
+                content.append(f'{subs_var} = {subs}')
+                content.append('')
+            if init_var:
+                content.extend(multiline_value(init_var, '"""', v.init_script))
+                content.append('')
+            # db_factory()
+            par = []
             if v.database == 'New':
                 if v.page_size is not None:
-                    par = f"page_size={v.page_size}, "
+                    par.append(f"page_size={v.page_size}")
                 if v.database_character_set is not None:
-                    par += f"charset='{v.database_character_set}', "
-                if v.sql_dialect is not None:
-                    par += f"sql_dialect={v.sql_dialect}, "
+                    par.append(f"charset='{v.database_character_set}'")
+                if v.sql_dialect is not None and v.sql_dialect != 3:
+                    par.append(f"sql_dialect={v.sql_dialect}")
             elif v.database == 'Restore':
-                par = f"from_backup='{v.backup_file}', "
+                par.append(f"from_backup='{v.backup_file}'")
             elif v.database == 'Existing':
-                par = f"copy_of='{v.database_name}', "
+                par.append(f"copy_of='{v.database_name}'")
             if v.database_name is not None:
-                par += f"filename='{v.database_name}'"
-            content += f"db_{seq} = db_factory({par}init=init_script_{seq})\n\n"
+                par.append(f"filename='{v.database_name}'")
+            if init_var:
+                par.append(f'init={init_var}')
+            content.append(f"{db_var} = db_factory({', '.join(par)})")
+            content.append('')
+            #
             if v.test_type == TYPE_ISQL:
                 #
-                content += f'''test_script_{seq} = """{escape(v.test_script)}"""\n\n'''
-                content += f"act_{seq} = isql_act('db_{seq}', test_script_{seq}, substitutions=substitutions_{seq})\n\n"
-                if v.expected_stdout:
+                if test_var:
+                    content.extend(multiline_value(test_var, '"""', v.test_script))
+                    content.append('')
+                # isql_act()
+                par = [f"'{db_var}'"]
+                par.append(test_var if test_var else f'"""{v.test_script.strip()}"""')
+                if v.substitutions:
+                    par.append(f'substitutions={subs_var if subs_var else subs}')
+                content.append(f"{act_var} = isql_act({', '.join(par)})")
+                content.append('')
+                if stdout_var:
                     sep = "'''" if v.expected_stdout.startswith('"') or v.expected_stdout.endswith('"') else '"""'
-                    content += f'expected_stdout_{seq} = {sep}{escape(v.expected_stdout)}{sep}\n'
-                if v.expected_stderr:
+                    content.extend(multiline_value(stdout_var, sep, v.expected_stdout))
+                    content.append('')
+                if stderr_var:
                     sep = "'''" if v.expected_stderr.startswith('"') or v.expected_stderr.endswith('"') else '"""'
-                    content += f'expected_stderr_{seq} = {sep}{escape(v.expected_stderr)}{sep}\n'
+                    content.extend(multiline_value(stderr_var, sep, v.expected_stderr))
+                    content.append('')
                 # Version specification
+                min_version = '3.0' if v.firebird_version < v30 else str(v.firebird_version)
                 if seq < len(t.versions):
-                    ver_spec = f'>={str(v.firebird_version)},<{str(t.versions[seq].firebird_version)}'
+                    ver_spec = f'>={min_version},<{str(t.versions[seq].firebird_version)}'
                 else:
-                    ver_spec = f'>={str(v.firebird_version)}'
-                content += f"""\n@pytest.mark.version('{ver_spec}')\n"""
+                    ver_spec = f'>={min_version}'
+                content.append(f"""@pytest.mark.version('{ver_spec}')""")
                 if v.platform != 'All':
-                    content += f"""@pytest.mark.platform({", ".join([f"'{i}'" for i in v.platform.split(':')])})\n"""
-                if v.id in slow_tests:
-                    content += '@pytest.mark.slow\n'
-                content += f"""def test_{seq}(act_{seq}: Action):\n"""
-                if v.expected_stdout:
-                    content += f'    act_{seq}.expected_stdout = expected_stdout_{seq}\n'
-                if v.expected_stderr:
-                    sep = "'''" if v.expected_stderr.startswith('"') or v.expected_stderr.endswith('"') else '"""'
-                    content += f'    act_{seq}.expected_stderr = expected_stderr_{seq}\n'
-                content += f'    act_{seq}.execute()\n'
-                if v.expected_stderr:
-                    content += f'    assert act_{seq}.clean_stderr == act_{seq}.clean_expected_stderr\n'
-                if v.expected_stdout:
-                    if v.expected_stderr:
-                        content += '\n'
-                    content += f'    assert act_{seq}.clean_stdout == act_{seq}.clean_expected_stdout\n'
-                content += '\n'
+                    content.append(f"""@pytest.mark.platform({", ".join([f"'{i}'" for i in v.platform.split(':')])})""")
+                content.append(f"def test_{seq}({act_var}: Action):")
+                if stdout_var:
+                    content.append(f'    {act_var}.expected_stdout = {stdout_var}')
+                if stderr_var:
+                    content.append(f'    {act_var}.expected_stderr = {stderr_var}')
+                content.append(f'    {act_var}.execute()')
+                if stdout_var and stderr_var:
+                    content.append(f'    assert ({act_var}.clean_stdout == {act_var}.clean_expected_stdout and')
+                    content.append(f'            {act_var}.clean_stderr == {act_var}.clean_expected_stderr)')
+                elif v.expected_stderr:
+                    content.append(f'    assert {act_var}.clean_stderr == {act_var}.clean_expected_stderr')
+                elif v.expected_stdout:
+                    content.append(f'    assert {act_var}.clean_stdout == {act_var}.clean_expected_stdout')
             elif v.test_type == TYPE_PYTHON:
-                #
-                content += f'''# test_script_{seq}\n#---\n# {multiline_comment(escape(v.test_script), 2)}\n#---\n'''
-                content += f"act_{seq} = python_act('db_{seq}', substitutions=substitutions_{seq})\n\n"
-                if v.expected_stderr:
-                    sep = "'''" if v.expected_stderr.startswith('"') or v.expected_stderr.endswith('"') else '"""'
-                    content += f'expected_stderr_{seq} = {sep}{escape(v.expected_stderr)}{sep}\n'
-                if v.expected_stdout:
-                    if v.expected_stderr:
-                        content += '\n'
+                # python_act()
+                par = [f"'{db_var}'"]
+                if v.substitutions:
+                    par.append(f'substitutions={subs_var if subs_var else subs}')
+                content.append(f"{act_var} = python_act({', '.join(par)})")
+                content.append('')
+                if stdout_var:
                     sep = "'''" if v.expected_stdout.startswith('"') or v.expected_stdout.endswith('"') else '"""'
-                    content += f'expected_stdout_{seq} = {sep}{escape(v.expected_stdout)}{sep}\n'
+                    #content.append(f'{stdout_var} = {sep}')
+                    content.extend(multiline_value(stdout_var, sep, v.expected_stdout))
+                    #content.append(f'{sep}')
+                    content.append('')
+                if stderr_var:
+                    sep = "'''" if v.expected_stderr.startswith('"') or v.expected_stderr.endswith('"') else '"""'
+                    #content.append(f'{stderr_var} = {sep}')
+                    content.extend(multiline_value(stderr_var, sep, v.expected_stdout))
+                    #content.append(f'{sep}')
+                    content.append('')
+                # Not implemented
+                content.append("@pytest.mark.skip('FIXME: Not IMPLEMENTED')")
                 # Version specification
+                min_version = '3.0' if v.firebird_version < v30 else str(v.firebird_version)
                 if seq < len(t.versions):
-                    ver_spec = f'>={str(v.firebird_version)},<{str(t.versions[seq].firebird_version)}'
+                    ver_spec = f'>={min_version},<{str(t.versions[seq].firebird_version)}'
                 else:
-                    ver_spec = f'>={str(v.firebird_version)}'
-                content += f"""\n@pytest.mark.version('{ver_spec}')\n"""
+                    ver_spec = f'>={min_version}'
+                content.append(f"""@pytest.mark.version('{ver_spec}')""")
                 if v.platform != 'All':
-                    content += f"""@pytest.mark.platform({", ".join([f"'{i}'" for i in v.platform.split(':')])})\n"""
-                #content += "@pytest.mark.xfail\n"
-                content += f"""def test_{seq}(act_{seq}: Action):\n    pytest.fail("Test not IMPLEMENTED")\n\n"""
-                content += '\n'
+                    content.append(f"""@pytest.mark.platform({", ".join([f"'{i}'" for i in v.platform.split(':')])})""")
+                content.append(f"def test_{seq}({act_var}: Action):")
+                content.append('    pytest.fail("Not IMPLEMENTED")')
+                content.append('')
+                content.append('# Original python code for this test:')
+                content.append('# -----------------------------------')
+                for line in escape(v.test_script).splitlines():
+                    content.append(f'# {line}')
+                content.append('# -----------------------------------')
 
-        #
-        test_file.write_text(content)
+        content.append('')
+        # Write test
+        if verbose:
+            print(f"Writing {t.id} to {test_file} [{t.versions[0].test_type} {', '.join([str(v.firebird_version) for v in t.versions])}]")
+        test_file.write_text('\n'.join(content))
 
 def main():
     """Utility to convert test from fbtest to pytest format.
