@@ -3,11 +3,11 @@
 """
 ID:          tabloid.remote-access-to-security-db
 TITLE:       Verify ability to make REMOTE connect to security.db
-DESCRIPTION: 
-  This test verifies only ability to make REMOTE connect to security.db 
+DESCRIPTION:
+  This test verifies only ability to make REMOTE connect to security.db
      Line "RemoteAccess = false" in file $FB_HOME/databases.conf should be COMMENTED.
-     On the host that run tests this must is done BEFORE launch all testsby calling 
-     batch file "upd_databases_conf.bat" (see \FirebirdQA\qa3x.bat; qa4x.bat).
+     On the host that run tests this must is done BEFORE launch all testsby calling
+     batch file "upd_databases_conf.bat" (see /firebirdQA/qa3x.bat; qa4x.bat).
      Checked 28.06.2016 on 4.0.0.267
 FBTEST:      functional.tabloid.remote_access_to_security_db
 """
@@ -31,11 +31,11 @@ def test_1(act: Action):
 
 # Original python code for this test:
 # -----------------------------------
-# 
+#
 # import os
 # os.environ["ISC_USER"] = user_name
 # os.environ["ISC_PASSWORD"] = user_password
-# 
+#
 # db_conn.close()
 # sql_chk='''
 # connect 'localhost:security.db';
