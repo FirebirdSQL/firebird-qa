@@ -76,6 +76,18 @@ FIELD_TITLE = 'TITLE:'
 FIELD_DECRIPTION = 'DESCRIPTION:'
 FIELD_NOTES = 'NOTES:'
 FIELD_JIRA = 'JIRA:'
+FIELD_FBTEST = 'FBTEST:'
+
+SKIP_VERSION = 'version'
+SKIP_PLATFORM = 'platform'
+SKIP_ANY = 'any'
+
+@pytest.fixture(scope='session', autouse=True)
+def log_global_env_facts(record_testsuite_property):
+    if _vars_['extend-xml']:
+        record_testsuite_property('version', _vars_['version'])
+        record_testsuite_property('architecture', _vars_['arch'])
+        record_testsuite_property('mode', _vars_['server-arch'])
 
 class ExecutionError(Exception):
     pass
@@ -93,7 +105,9 @@ def pytest_addoption(parser, pluginmanager):
                   help="Network protocol used for database attachments")
     grp.addoption('--runslow', action='store_true', default=False, help="Run slow tests")
     grp.addoption('--save-output', action='store_true', default=False, help="Save test std[out|err] output to files")
-    grp.addoption('--skip-deselected', action='store_true', default=False, help="SKIP tests instead deselection")
+    grp.addoption('--skip-deselected', choices=[SKIP_PLATFORM, SKIP_VERSION, SKIP_ANY],
+                  help="SKIP tests instead deselection")
+    grp.addoption('--extend-xml', action='store_true', default=False, help="Extend XML JUnit report with additional information")
     grp.addoption('--install-terminal', action='store_true', default=False, help="Use our own terminal reporter")
 
 def pytest_report_header(config):
@@ -243,6 +257,7 @@ def pytest_configure(config):
     _vars_['protocol'] = config.getoption('protocol')
     _vars_['save-output'] = config.getoption('save_output')
     _vars_['skip-deselected'] = config.getoption('skip_deselected')
+    _vars_['extend-xml'] = config.getoption('extend_xml')
     srv_conf = driver_config.get_server(_vars_['server'])
     _vars_['host'] = srv_conf.host.value if srv_conf is not None else ''
     _vars_['port'] = srv_conf.port.value if srv_conf is not None else ''
@@ -322,44 +337,39 @@ def pytest_collection_modifyitems(session, config, items):
     for item in items:
         if 'slow' in item.keywords and not _vars_['runslow']:
             item.add_marker(skip_slow)
-    if _vars_['skip-deselected']:
-        skip_platform = pytest.mark.skip(reason=f"Not for {_platform}")
-        skip_version = pytest.mark.skip(reason=f"Not for {_version}")
-        # Skip tests not applicable to tested engine version and platform
-        for item in items:
-            platform_ok = True
-            for platforms in [mark.args for mark in item.iter_markers(name="platform")]:
-                platform_ok = _platform in platforms
-            if not platform_ok:
-                item.add_marker(skip_platform)
-                continue
-            versions = [mark.args for mark in item.iter_markers(name="version")]
-            if versions:
-                spec = SpecifierSet(','.join(list(versions[0])))
-                if not _version in spec:
-                    item.add_marker(skip_version)
-    else:
-        # Deselect tests not applicable to tested engine version and platform
-        selected = []
-        deselected = []
-        for item in items:
-            platform_ok = True
-            for platforms in [mark.args for mark in item.iter_markers(name="platform")]:
-                platform_ok = _platform in platforms
-            versions = [mark.args for mark in item.iter_markers(name="version")]
-            if versions:
-                spec = SpecifierSet(','.join(list(versions[0])))
-                if platform_ok and _version in spec:
+    #
+    skip = _vars_['skip-deselected']
+    selected = []
+    deselected = []
+    platform_skip = pytest.mark.skip(reason=f"Not for {_platform}")
+    version_skip = pytest.mark.skip(reason=f"Not for {_version}")
+    for item in items:
+        platform_ok = True
+        for platforms in [mark.args for mark in item.iter_markers(name="platform")]:
+            platform_ok = _platform in platforms
+        if not platform_ok and skip in [SKIP_PLATFORM, SKIP_ANY]:
+            selected.append(item)
+            item.add_marker(platform_skip)
+            continue
+        versions = [mark.args for mark in item.iter_markers(name="version")]
+        if versions:
+            spec = SpecifierSet(','.join(list(versions[0])))
+            if platform_ok and _version in spec:
+                selected.append(item)
+            else:
+                if skip in [SKIP_VERSION, SKIP_ANY]:
                     selected.append(item)
+                    item.add_marker(version_skip)
                 else:
                     deselected.append(item)
-        items[:] = selected
-        config.hook.pytest_deselected(items=deselected)
+    items[:] = selected
+    config.hook.pytest_deselected(items=deselected)
     # Add OUR OWN test metadata to Item
     for item in items:
         item._qa_id_ = item.nodeid
         item._qa_issue_ = None
         item._qa_jira_ = None
+        item._qa_pytest_ = None
         item._qa_title_ = ''
         item._qa_description_ = ''
         item._qa_notes_ = ''
@@ -373,6 +383,9 @@ def pytest_collection_modifyitems(session, config, items):
                 current_field = FIELD_ID
                 item._qa_id_ = line[len(FIELD_ID):].strip()
                 _nodemap[item.nodeid] = item._qa_id_
+            elif uline.startswith(FIELD_FBTEST):
+                current_field = FIELD_FBTEST
+                item._qa_pytest_ = line[len(FIELD_FBTEST):].strip()
             elif uline.startswith(FIELD_ISSUE):
                 current_field = FIELD_ISSUE
                 item._qa_issue_ = line[len(FIELD_ISSUE):].strip()
@@ -403,6 +416,11 @@ def pytest_collection_modifyitems(session, config, items):
             else:
                 # Unknown field
                 pass
+        # Add metadata to XML output
+        if _vars_['extend-xml']:
+            item.user_properties.append(("id", item._qa_id_))
+            item.user_properties.append(("fbtest", item._qa_pytest_))
+            item.user_properties.append(("issue", item._qa_issue_))
 
 def substitute_macros(text: str, macros: Dict[str, str]):
     """Helper function to substitute `$(name)` macros in text.
