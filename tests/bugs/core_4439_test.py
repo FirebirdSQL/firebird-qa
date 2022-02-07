@@ -40,7 +40,6 @@ act = python_act('db')
 
 @pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3')
-@pytest.mark.xfail
 def test_1(act: Action):
     pytest.fail("Not IMPLEMENTED")
 

@@ -103,7 +103,7 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     if act.is_version('>=4'):
-        pytest.xfail("See test NOTES")
+        pytest.skip("See test NOTES")
     act.expected_stdout = expected_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
