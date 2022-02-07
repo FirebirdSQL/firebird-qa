@@ -111,7 +111,9 @@ JOIN Table_1 t1 ON (t1.ID = t2K.ID);"""
 
 act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
-expected_stdout = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T5K INDEX (PK_TABLE_5K), T4K INDEX (PK_TABLE_4K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
+# version: 3.0
+
+expected_stdout_1 = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T5K INDEX (PK_TABLE_5K), T4K INDEX (PK_TABLE_4K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
 
        COUNT
 ============
@@ -119,8 +121,24 @@ expected_stdout = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (
 1
 """
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=3,<4')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_1
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
+
+# version: 4.0
+
+expected_stdout_2 = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T4K INDEX (PK_TABLE_4K), T5K INDEX (PK_TABLE_5K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
+
+       COUNT
+============
+
+1
+"""
+
+@pytest.mark.version('>=4')
+def test_2(act: Action):
+    act.expected_stdout = expected_stdout_2
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout

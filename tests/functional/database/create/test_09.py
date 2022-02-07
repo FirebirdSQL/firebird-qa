@@ -18,26 +18,26 @@ act = python_act('db', substitutions=[('^.*TMP_CREATE_DB_09.F0', 'TMP_CREATE_DB_
 expected_stdout = """
     TMP_CREATE_DB_09.F00
     RDB$FILE_SEQUENCE     1
-    RDB$FILE_START        201
-    RDB$FILE_LENGTH       200
+    RDB$FILE_START        301
+    RDB$FILE_LENGTH       300
     TMP_CREATE_DB_09.F01
     RDB$FILE_SEQUENCE     2
-    RDB$FILE_START        401
-    RDB$FILE_LENGTH       200
+    RDB$FILE_START        601
+    RDB$FILE_LENGTH       300
     TMP_CREATE_DB_09.F02
     RDB$FILE_SEQUENCE     3
-    RDB$FILE_START        601
-    RDB$FILE_LENGTH       200
+    RDB$FILE_START        901
+    RDB$FILE_LENGTH       300
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     script = f"""
     create database '{act.db.dsn}' user '{act.db.user}'
-      password '{act.db.password}' LENGTH 200
-      FILE '{act.db.db_path.with_name('TMP_CREATE_DB_09.F00')}' LENGTH 200
-      FILE '{act.db.db_path.with_name('TMP_CREATE_DB_09.F01')}' LENGTH 200
-      FILE '{act.db.db_path.with_name('TMP_CREATE_DB_09.F02')}' LENGTH 200
+      password '{act.db.password}' LENGTH 300
+      FILE '{act.db.db_path.with_name('TMP_CREATE_DB_09.F00')}' LENGTH 300
+      FILE '{act.db.db_path.with_name('TMP_CREATE_DB_09.F01')}' LENGTH 300
+      FILE '{act.db.db_path.with_name('TMP_CREATE_DB_09.F02')}' LENGTH 300
     ;
     set list on ;
     select

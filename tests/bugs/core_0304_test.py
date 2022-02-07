@@ -334,7 +334,7 @@ unsuccessful metadata update
 
 Statement failed, SQLSTATE = 28000
 unsuccessful metadata update
--DROP TABLE V_TEST failed
+-DROP VIEW V_TEST failed
 -no permission for DROP access to VIEW V_TEST
 -Effective user is TMP$C0304
 

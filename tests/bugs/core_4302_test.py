@@ -97,7 +97,7 @@ test_script = """
      order by measure;
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script, substitutions=[('[ ]+', ' ')])
 
 expected_stdout = """
     ID                              1

@@ -222,7 +222,7 @@ patterns_lin =  [re.compile('alter session reset', re.IGNORECASE),
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Linux')
-def test_2(act: Action, test_role_2: Role, capsys):
+def test_2(act: Action, test_role: Role, capsys):
     with act.trace(db_events=trace_lin):
         act.isql(switches=['-n'], input=test_script_lin)
     # process trace

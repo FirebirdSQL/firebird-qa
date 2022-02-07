@@ -33,7 +33,7 @@ DESCRIPTION:
 import pytest
 from firebird.qa import *
 
-db = db_factory()
+db = db_factory(charset='utf8')
 
 test_script = """
     set bail on;

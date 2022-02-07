@@ -70,7 +70,7 @@ db_2 = db_factory()
 act_2 = python_act('db_2', substitutions=substitutions)
 
 expected_stdout_2 = """
-    Root page: 203, depth: 1, leaf buckets: 1, nodes: 1
+    Root page: 203, depth: 1, leaf buckets: 1, nodes: 2
 """
 
 @pytest.mark.version('>=4.0')

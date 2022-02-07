@@ -20,7 +20,7 @@ user_leg = user_factory('db', name='tmp$c4200_leg', password='123', plugin='Lega
 
 act = python_act('db')
 
-expected_stdout = """
+expected_stdout_1 = """
 WHO_AM_I                        TMP$C4200_LEG
 AUTH_METHOD                     Legacy_Auth
 
@@ -28,9 +28,41 @@ WHO_AM_I                        TMP$C4200_SRP
 AUTH_METHOD                     Srp
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=3.0,<4')
 def test_1(act: Action, user_srp: User, user_leg: User, capsys):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_1
+    check_sql='select mon$user as who_am_i, mon$auth_method as auth_method from mon$attachments'
+    custom_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
+    #
+    with act.db.connect() as con1:
+        trn1 = con1.transaction_manager(custom_tpb)
+        cur1 = trn1.cursor()
+        cur1.execute('select sec$user_name from sec$users').fetchall()
+        with act.db.connect(user=user_leg.name, password=user_leg.password) as con2, \
+             act.db.connect(user=user_srp.name, password=user_srp.password) as con3:
+            trn2 = con2.transaction_manager(custom_tpb)
+            cur2 = trn2.cursor()
+            act.print_data_list(cur2.execute(check_sql))
+            #
+            trn3 = con3.transaction_manager(custom_tpb)
+            cur3 = trn3.cursor()
+            act.print_data_list(cur3.execute(check_sql))
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
+
+# Version: 4.0
+
+expected_stdout_2 = """
+WHO_AM_I                        TMP$C4200_LEG
+AUTH_METHOD                     Legacy_Auth
+
+WHO_AM_I                        TMP$C4200_SRP
+AUTH_METHOD                     Srp256
+"""
+
+@pytest.mark.version('>=4.0')
+def test_2(act: Action, user_srp: User, user_leg: User, capsys):
+    act.expected_stdout = expected_stdout_2
     check_sql='select mon$user as who_am_i, mon$auth_method as auth_method from mon$attachments'
     custom_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
     #

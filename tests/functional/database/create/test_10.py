@@ -17,8 +17,8 @@ act = python_act('db', substitutions=[('^.*TMP_CREATE_DB_10.F0', 'TMP_CREATE_DB_
 expected_stdout = """
     TMP_CREATE_DB_10.F00
     RDB$FILE_SEQUENCE     1
-    RDB$FILE_START        201
-    RDB$FILE_LENGTH       400
+    RDB$FILE_START        301
+    RDB$FILE_LENGTH       300
     TMP_CREATE_DB_10.F01
     RDB$FILE_SEQUENCE     2
     RDB$FILE_START        601
@@ -34,7 +34,7 @@ def test_1(act: Action):
     script = f"""
     create database '{act.db.dsn}' user '{act.db.user}'
       password '{act.db.password}'
-      FILE '{act.db.db_path.with_name('TMP_CREATE_DB_10.F00')}' STARTING AT PAGE 201
+      FILE '{act.db.db_path.with_name('TMP_CREATE_DB_10.F00')}' STARTING AT PAGE 301
       FILE '{act.db.db_path.with_name('TMP_CREATE_DB_10.F01')}' STARTING AT PAGE 601
       FILE '{act.db.db_path.with_name('TMP_CREATE_DB_10.F02')}' STARTING AT PAGE 1001
     ;
