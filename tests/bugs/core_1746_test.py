@@ -23,7 +23,7 @@ DESCRIPTION:
   though it helped to discover some other bug in engine which produced bugcheck - see CORE-5275.
 NOTES:
 [15.1.2022] pcisar
-  This test may FAIL when run on slow machine (like VM)!
+  This test may FAIL when run on slow machine (like VM), or fast one (Windows 10 with SSD)
 JIRA:        CORE-1746
 FBTEST:      bugs.core_1746
 """
@@ -125,6 +125,7 @@ expected_stdout = """
     2: CREATE INDEX LOG: -OBJECT TABLE "TEST" IS IN USE
 """
 
+@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=3')
 def test_1(act: Action, tmp_file_bi_in: Path, tmp_file_bi_out: Path, capsys):
     rows_to_add = 1000

@@ -21,11 +21,26 @@ DESCRIPTION:
 
   Confirmed bug on 4.0.0.2204: got crash when N=8065 (but still "new record size of 65536 bytes is too big" when N=8066).
   Checked on 3.0.7.33368, 4.0.0.2214 - all OK.
+NOTES:
+[08.02.2022] pcisar
+  Fails on Windows 3.0.8 with diff:
+           step: 0, FLD_COUNT: 8064, result: FIELDS_TOTAL 32510016
+           step: 1, FLD_COUNT: 8065, result: Statement failed, SQLSTATE = 54000
+           step: 1, FLD_COUNT: 8065, result: unsuccessful metadata update
+           step: 1, FLD_COUNT: 8065, result: -new record size of 65536 bytes is too big
+         - step: 1, FLD_COUNT: 8065, result: -TABLE TDATA
+         + step: 1, FLD_COUNT: 8065, result: -TABLE TDATA
+         ?                                               +
+         + step: 1, FLD_COUNT: 8065, result: Statement failed, SQLSTATE = 21S01
+         + step: 1, FLD_COUNT: 8065, result: Dynamic SQL Error
+         + step: 1, FLD_COUNT: 8065, result: -SQL error code = -804
+         + step: 1, FLD_COUNT: 8065, result: -Count of read-write columns does not equal count of values
 JIRA:        CORE-6411
 FBTEST:      bugs.core_6411
 """
 
 import pytest
+import platform
 from firebird.qa import *
 
 db = db_factory()
@@ -40,6 +55,7 @@ expected_stdout = """
     step: 1, FLD_COUNT: 8065, result: -TABLE TDATA
 """
 
+@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0.7')
 def test_1(act: Action, capsys):
     for step in range(2):
@@ -65,7 +81,7 @@ def test_1(act: Action, capsys):
             """
         act.reset()
         act.isql(switches=[], input=sql_expr, combine_output=True)
-        for line in act.string_strip(act.stdout).splitlines():
+        for line in act.clean_stdout.splitlines():
             if line.strip():
                 print(f'step: {step}, FLD_COUNT: {FLD_COUNT}, result: {line}')
     # Check

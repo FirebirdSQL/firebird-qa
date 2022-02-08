@@ -68,8 +68,9 @@ def test_1(act: Action, capsys):
             'current_auth_plugin': None,}
     for current_auth_plugin in ['Srp', 'Legacy_UserManager']:
         subs['current_auth_plugin'] = current_auth_plugin
+        act.reset()
         act.isql(switches=['-q'], input=sql_text % subs, combine_output=True)
-        for line in act.stdout.splitlines():
+        for line in act.clean_stdout.splitlines():
             if line.strip():
                 print(current_auth_plugin[:3] + ': ' + line)
     #
@@ -111,8 +112,9 @@ def test_2(act: Action, capsys):
             'current_auth_plugin': None,}
     for current_auth_plugin in ['Legacy_UserManager']:
         subs['current_auth_plugin'] = current_auth_plugin
+        act.reset()
         act.isql(switches=['-q'], input=sql_text % subs, combine_output=True)
-        for line in act.stdout.splitlines():
+        for line in act.clean_stdout.splitlines():
             if line.strip():
                 print(current_auth_plugin[:3] + ': ' + line)
     #

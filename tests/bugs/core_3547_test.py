@@ -74,7 +74,7 @@ expected_stderr_non_win = """
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr_win if act.platform == 'Wndows' else expected_stderr_non_win
+    act.expected_stderr = expected_stderr_win if act.platform == 'Windows' else expected_stderr_non_win
     act.execute()
     assert (act.clean_stderr == act.clean_expected_stderr and
             act.clean_stdout == act.clean_expected_stdout)

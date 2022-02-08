@@ -19,7 +19,7 @@ init_script = """
 
 db = db_factory(sql_dialect=3, init=init_script)
 
-act = python_act('db', substitutions=[('BULK>.*', '')])
+act = python_act('db', substitutions=[('BULK> ', '')])
 
 expected_stdout = """
     C                               ab

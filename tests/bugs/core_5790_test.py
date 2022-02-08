@@ -15,7 +15,7 @@ from firebird.qa import *
 
 db = db_factory()
 
-act = python_act('db')
+act = python_act('db', substitutions=[('Commit current transaction \\(y/n\\)\\?', '')])
 
 expected_stdout = """
     RDB$USER                        TMP$C5790

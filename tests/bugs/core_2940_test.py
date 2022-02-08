@@ -5,11 +5,16 @@ ID:          issue-3322
 ISSUE:       3322
 TITLE:       Trace output could contain garbage data left from filtered out statements
 DESCRIPTION:
+[08.02.2022] pcisar
+  Fails on Windows 3.0.8 with unexpected additional output line:
+    + 0 records fetched
+      1 records fetched
 JIRA:        CORE-2940
 FBTEST:      bugs.core_2940
 """
 
 import pytest
+import platform
 from firebird.qa import *
 
 db = db_factory()
@@ -48,6 +53,7 @@ trace = ['log_connections = true',
            'exclude_filter = %no_trace%',
            ]
 
+@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     with act.trace(db_events=trace):

@@ -11,6 +11,9 @@ DESCRIPTION:
 
   Idea about this test originates to CORE-6424 (missed employee.fdb in some intermediate build),
   but it seems that there were several other tickets about the same (missing some of necessary files).
+NOTES:
+[08.02.2022] pcisar
+  Manifest files are not actual. Also, they should not contain PDB files!
 FBTEST:      functional.basic.build.snapshot_files_check_list
 """
 
@@ -28,14 +31,14 @@ expected_stdout = """
     OK: found all files from check set.
 """
 
-def check_files(act: Action, expected: Set[str]) -> None:
+def check_files(act: Action, expected: Set[Path]) -> None:
     actual = set()
     p: Path = None
     for p in act.home_dir.rglob('*'):
-        p = str(p.relative_to(act.home_dir))
+        p = p.relative_to(act.home_dir)
         if not str(p).startswith('doc') and p in expected:
             actual.add(p)
-    if actual == expected:
+    if expected.issubset(actual):
         print('OK: found all files from check set.')
     else:
         print('ERROR! Missed some files from check set:')
@@ -46,11 +49,12 @@ def check_files(act: Action, expected: Set[str]) -> None:
 
 act = python_act('db')
 
+@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=3.0.7,<4.0')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, capsys):
     manifest = act.files_dir / 'build-files-30.txt'
-    expected_set = set([s for s in manifest.read_text().splitlines()])
+    expected_set = set([Path(s) for s in manifest.read_text().splitlines()])
     check_files(act, expected_set)
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
@@ -58,6 +62,7 @@ def test_1(act: Action, capsys):
 
 # version: 4.0
 
+@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=4.0,<5.0')
 @pytest.mark.platform('Windows')
 def test_2(act: Action, capsys):
@@ -70,6 +75,7 @@ def test_2(act: Action, capsys):
 
 # version: 5.0
 
+@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=5.0')
 @pytest.mark.platform('Windows')
 def test_3(act: Action, capsys):
