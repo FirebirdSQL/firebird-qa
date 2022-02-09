@@ -31,6 +31,7 @@ FBTEST:      bugs.core_4172
 import pytest
 import re
 import platform
+import locale
 from pathlib import Path
 from firebird.qa import *
 
@@ -160,6 +161,6 @@ Records affected: 0
 def test_2(act_2: Action):
     act_2.expected_stderr = 'We expect error, but ignore it'
     act_2.expected_stdout = expected_stdout_2
-    act_2.isql(switches=[], input=test_script_2)
+    act_2.isql(switches=[], input=test_script_2, io_enc=locale.getpreferredencoding())
     assert act_2.clean_stdout == act_2.clean_expected_stdout
 

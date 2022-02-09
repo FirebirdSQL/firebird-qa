@@ -55,7 +55,7 @@ def test_1(act: Action, capsys):
     act.isql(switches=[], input='\n'.join(chk_script))
     # Checks
     lines_with_charset = lines_without_charset = 0
-    for line in act.stdout.splitlines():
+    for line in act.clean_stdout.splitlines():
         if line.split():
             if 'CHARACTER SET' in line:
                 lines_with_charset += 1

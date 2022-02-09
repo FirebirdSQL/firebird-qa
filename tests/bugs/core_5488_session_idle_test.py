@@ -27,6 +27,10 @@ DESCRIPTION: Timeout for IDLE connection (SET SESSION IDLE TIMEOUT <N>)
 
     ::: NB:::
     No events related to SECOND statement should be in the trace log.
+NOTES:
+[09.02.2022] pcisar
+  Have to add ('quit;', '') to substitutions, because this command is echoed to stdout on Windows,
+  while it's not on Linux.
 JIRA:        CORE-5488
 FBTEST:      bugs.core_5488_session_idle
 """
@@ -36,7 +40,7 @@ import os
 import re
 from firebird.qa import *
 
-substitutions = [('timeout .* second', 'timeout second'),
+substitutions = [('timeout .* second', 'timeout second'), ('quit;', ''),
                  ('.*After line [\\d]+.*', ''), ('.*shell.*', '')]
 
 db = db_factory()

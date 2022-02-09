@@ -18,7 +18,7 @@ import zipfile
 from difflib import unified_diff
 from pathlib import Path
 from firebird.qa import *
-from firebird.driver import SrvRestoreFlag
+from firebird.driver import SrvRestoreFlag, ShutdownMode, ShutdownMethod
 
 db = db_factory()
 
@@ -42,6 +42,8 @@ def test_1(act: Action, sec_fbk: Path, sec_fdb: Path):
         #
         srv.database.validate(database=sec_fdb)
         validation_log = srv.readlines()
+        srv.database.shutdown(database=sec_fdb, mode=ShutdownMode.FULL, method=ShutdownMethod.FORCED, timeout=0)
+    #
     #
     assert [line for line in restore_log if 'ERROR' in line.upper()] == []
     assert [line for line in validation_log if 'ERROR' in line.upper()] == []

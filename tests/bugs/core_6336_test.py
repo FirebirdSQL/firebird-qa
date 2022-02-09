@@ -68,7 +68,8 @@ import pytest
 from firebird.qa import *
 
 substitutions = [('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
-                 ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
+                 ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222'),
+                 ('Commit current transaction \\(y/n\\)\\?', '')]
 
 db = db_factory()
 

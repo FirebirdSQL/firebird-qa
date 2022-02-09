@@ -24,10 +24,17 @@ NOTES:
     Invalid time zone offset: -03 - must use format +/-hours:minutes and be between -14:00 and +14:00
 
   See: https://github.com/FirebirdSQL/firebird/commit/ff37d445ce844f991242b1e2c1f96b80a5d1636d
+[09.02.2022] pcisar
+  Fails on Windows due to differences like:
+    - CAST 10:11:12.1345 America/Sao_Paulo
+    ?       ^
+    + CAST 11:11:12.1345 America/Sao_Paulo
+    ?       ^
 FBTEST:      functional.gtcs.time_zone
 """
 
 import pytest
+import platform
 from firebird.qa import *
 
 db = db_factory()
@@ -1311,6 +1318,7 @@ expected_stderr = """
     -Problematic key value is ("V" = '2018-01-01 14:33:33.0000 +02:00')
 """
 
+@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

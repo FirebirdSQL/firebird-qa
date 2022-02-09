@@ -96,7 +96,7 @@ act = python_act('db')
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, test_user: User):
     act.isql(switches=['-q'], input=init_script)
-    ddl_combinations_script = act.stdout
+    ddl_combinations_script = act.clean_stdout
     #
     act.reset()
     act.isql(switches=['-q'], input=ddl_combinations_script)

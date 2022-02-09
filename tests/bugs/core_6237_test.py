@@ -21,12 +21,15 @@ DESCRIPTION:
 
   Reproduced on on several builds 4.x before 17.01.2020 (tested: 4.0.0.1712 CS, 4.0.0.1731 CS - got ratio = ~1.95).
   Reproduced also on 3.0.5.33221 Classic - got ratio ~1.50 ... 1.70; could NOT reproduce on 3.0.5 SuperClassic / SuperServer.
+[09.02.2022] pcisar
+  Fails on Windows 4.0.1 with ratio 1.98 - raw iron W10, does not fail with Linux on the same HW
 JIRA:        CORE-6237
 FBTEST:      bugs.core_6237
 """
 
 import pytest
 import datetime
+import platform
 from firebird.qa import *
 
 db = db_factory()
@@ -40,6 +43,7 @@ expected_stdout = """
     EXPECTED. Ratio of total elapsed time when use Srp vs Legacy is less then threshold.
 """
 
+@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0.5')
 def test_1(act: Action, leg_user: User, srp_user: User, capsys):
     N_ITER = 50

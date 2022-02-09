@@ -5,6 +5,10 @@ ID:          issue-3903
 ISSUE:       3903
 TITLE:       Floating-point negative zero doesn't match positive zero in the index
 DESCRIPTION:
+NOTES:
+[09.02.2022] pcisar
+  Specific stdout is required on Windows for v3 up to 3.0.8 due to small difference
+  It's possible that this problem would be fixed in 3.0.9.
 JIRA:        CORE-3547
 FBTEST:      bugs.core_3547
 """
@@ -71,10 +75,18 @@ expected_stderr_non_win = """
     -Problematic key value is ("COL" = 0.000000000000000)
 """
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=3,<4')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.expected_stderr = expected_stderr_win if act.platform == 'Windows' else expected_stderr_non_win
+    act.execute()
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
+
+@pytest.mark.version('>=4')
+def test_2(act: Action):
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = expected_stderr_non_win
     act.execute()
     assert (act.clean_stderr == act.clean_expected_stderr and
             act.clean_stdout == act.clean_expected_stdout)

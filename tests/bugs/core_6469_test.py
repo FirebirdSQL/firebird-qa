@@ -39,6 +39,11 @@ DESCRIPTION:
     NO such trouble in the Classic.
     The reason currently (03-mar-2021) remains unknown.
     Sent letter to Alex et al, 03-mar-2021.
+NOTES:
+[09.02.2022] pcisar
+  Test fails on Windows as script execution fails with:
+   Statement failed, SQLSTATE = 0P000
+   Your attachment has no trusted role
 JIRA:        CORE-6469
 FBTEST:      bugs.core_6469
 """
@@ -70,20 +75,20 @@ expected_stdout_win = """
 """
 
 trace_win = ['log_initfini = false',
-           'log_statement_finish = true',
-           'log_errors = true',
-           'time_threshold = 0',
-           ]
+             'log_statement_finish = true',
+             'log_errors = true',
+             'time_threshold = 0',
+             ]
 
 patterns_win =  [re.compile('alter session reset', re.IGNORECASE),
-               re.compile('set session idle timeout', re.IGNORECASE),
-               re.compile('set statement timeout', re.IGNORECASE),
-               re.compile('set bind of decfloat to double precision', re.IGNORECASE),
-               re.compile('set decfloat round ceiling', re.IGNORECASE),
-               re.compile('set decfloat traps to Division_by_zero', re.IGNORECASE),
-               re.compile('set time zone', re.IGNORECASE),
-               re.compile('set role', re.IGNORECASE),
-               re.compile('set trusted role', re.IGNORECASE)]
+                 re.compile('set session idle timeout', re.IGNORECASE),
+                 re.compile('set statement timeout', re.IGNORECASE),
+                 re.compile('set bind of decfloat to double precision', re.IGNORECASE),
+                 re.compile('set decfloat round ceiling', re.IGNORECASE),
+                 re.compile('set decfloat traps to Division_by_zero', re.IGNORECASE),
+                 re.compile('set time zone', re.IGNORECASE),
+                 re.compile('set role', re.IGNORECASE),
+                 re.compile('set trusted role', re.IGNORECASE)]
 
 def run_script(act: Action):
     __tracebackhide__ = True
@@ -132,13 +137,13 @@ def run_script(act: Action):
     commit;
 
     connect '{THIS_COMPUTER_NAME}:{act.db.db_path}' role tmp$r6469;
-   #
+
     select mon$user,mon$role,mon$auth_method from mon$attachments where mon$attachment_id = current_connection;
     commit;
-   #
+
     set trusted role;
     commit;
-   #
+
     connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
     drop mapping trusted_auth;
     drop mapping win_admins;
@@ -146,11 +151,12 @@ def run_script(act: Action):
     """
     act.isql(switches=['-n'], input=script)
 
+@pytest.mark.skipif(reason='FIXME: see notes')
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, test_role: Role, capsys):
     with act.trace(db_events=trace_win):
-        run_script()
+        run_script(act)
     # process trace
     for line in act.trace_log:
         if line.split():
@@ -205,20 +211,20 @@ test_script_lin = """
 """
 
 trace_lin = ['log_initfini = false',
-           'log_connections = true',
-           'log_statement_finish = true',
-           'log_errors = true',
-           'time_threshold = 0',
-           ]
+             'log_connections = true',
+             'log_statement_finish = true',
+             'log_errors = true',
+             'time_threshold = 0',
+             ]
 
 patterns_lin =  [re.compile('alter session reset', re.IGNORECASE),
-               re.compile('set session idle timeout', re.IGNORECASE),
-               re.compile('set statement timeout', re.IGNORECASE),
-               re.compile('set bind of decfloat to double precision', re.IGNORECASE),
-               re.compile('set decfloat round ceiling', re.IGNORECASE),
-               re.compile('set decfloat traps to Division_by_zero', re.IGNORECASE),
-               re.compile('set time zone', re.IGNORECASE),
-               re.compile('set role', re.IGNORECASE)]
+                 re.compile('set session idle timeout', re.IGNORECASE),
+                 re.compile('set statement timeout', re.IGNORECASE),
+                 re.compile('set bind of decfloat to double precision', re.IGNORECASE),
+                 re.compile('set decfloat round ceiling', re.IGNORECASE),
+                 re.compile('set decfloat traps to Division_by_zero', re.IGNORECASE),
+                 re.compile('set time zone', re.IGNORECASE),
+                 re.compile('set role', re.IGNORECASE)]
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Linux')

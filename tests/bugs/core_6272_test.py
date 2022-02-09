@@ -18,12 +18,16 @@ NOTES:
   NOTE-2. Some messages can appear in the trace log ONE or TWO times (SS/CS ?).
   Because of this, we are interested only for at least one occurence of each message
   rather than for each of them (see 'found_patterns', type: set()).
+[09.02.2022] pcisar
+  Fails on Windows (with 4.0.1) - no patterns are found, because one can't use trace with embedded
+  version on this platform.
 JIRA:        CORE-6272
 FBTEST:      bugs.core_6272
 """
 
 import pytest
 import re
+import platform
 from pathlib import Path
 from firebird.qa import *
 from firebird.driver import DatabaseError
@@ -52,6 +56,7 @@ trace = """
 
 trace_conf = temp_file('trace.conf')
 
+@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, db_nonexistent: Database, trace_conf: Path, capsys):
     with ServerKeeper(act, None): # Use embedded server for trace

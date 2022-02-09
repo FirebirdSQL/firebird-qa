@@ -37,7 +37,8 @@ test_script = """
     commit;
 """
 
-act = isql_act('db', test_script, substitutions=[('TCPv.*', 'TCP')])
+act = isql_act('db', test_script, substitutions=[('TCPv.*', 'TCP'),
+                                                 ('Commit current transaction \\(y/n\\)\\?', '')])
 
 expected_stdout = """
      MON$USER                        TMP$C5495

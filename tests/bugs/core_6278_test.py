@@ -90,12 +90,12 @@ def test_1(act: Action, capsys):
     # For yet unknown reason, trace must be read as in 'cp1252' (neither ascii or utf8 works)
     with act.trace(db_events=trace, encoding='cp1252'):
         act.isql(switches=['-q'], input=test_script)
-        # Process isql output
-        for line in act.stdout.splitlines():
-            if elements := line.rstrip().split():
-                count_intermediate_rows = int(elements[0])
-                break
-        # Process trace
+    # Process isql output
+    for line in act.clean_stdout.splitlines():
+        if elements := line.rstrip().split():
+            count_intermediate_rows = int(elements[0])
+            break
+    # Process trace
     for line in act.trace_log:
         for p in allowed_patterns:
             if p.search(line):
@@ -107,6 +107,7 @@ def test_1(act: Action, capsys):
                 else:
                     print(line)
     # Check
+    act.reset() # necessary to reset 'clean_stdout' !!
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
