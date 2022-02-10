@@ -54,9 +54,8 @@ CREATE ASC INDEX I_F3_ASC ON SelectionTest (F3);
 CREATE ASC INDEX I_F1_F2_ASC ON SelectionTest (F1, F2);
 CREATE ASC INDEX I_F1_F3_ASC ON SelectionTest (F1, F3);
 CREATE ASC INDEX I_F2_F1_ASC ON SelectionTest (F2, F1);
-CREATE ASC INDEX I_F2_F3_ASC ON SelectionTest (F2, F3);
 CREATE ASC INDEX I_F3_F1_ASC ON SelectionTest (F3, F1);
-CREATE ASC INDEX I_F3_F2_ASC ON SelectionTest (F3, F2);
+CREATE ASC INDEX I_F2_F3_ASC ON SelectionTest (F2, F3);
 
 COMMIT;
 """
@@ -75,7 +74,7 @@ st.F3 = 100;"""
 
 act = isql_act('db', test_script)
 
-expected_stdout = """PLAN (ST INDEX (I_F3_F2_ASC))
+expected_stdout = """PLAN (ST INDEX (I_F2_F3_ASC))
 
           F1           F2           F3
 ============ ============ ============

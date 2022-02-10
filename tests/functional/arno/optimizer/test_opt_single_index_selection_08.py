@@ -43,7 +43,6 @@ EXECUTE PROCEDURE PR_SelectionTest;
 COMMIT;
 
 /* Create indexes */
-CREATE UNIQUE ASC INDEX I_F1_UNIQUE_ASC ON SelectionTest (F1);
 CREATE ASC INDEX I_F1_ASC ON SelectionTest (F1);
 CREATE DESC INDEX I_F1_DESC ON SelectionTest (F1);
 CREATE ASC INDEX I_F2_ASC ON SelectionTest (F2);

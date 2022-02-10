@@ -6,7 +6,7 @@ TITLE:       Best match index selection (multi segment)
 DESCRIPTION:
   Check if it will select the index with the best selectivity and with the biggest segment
   match. 2 equals operators and 1 greater or equal operator and every index combination is
-  made (only ASC). The best here is using 1 index (F2_F3_F1 or F3_F2_F1).
+  made (only ASC). The best here is using 1 index (F2_F3_F1).
 FBTEST:      functional.arno.optimizer.opt_multi_index_selection_05
 """
 
@@ -60,7 +60,6 @@ CREATE ASC INDEX I_F2_F3_F1_ASC ON SelectionTest (F2, F3, F1);
 CREATE ASC INDEX I_F3_F1_ASC ON SelectionTest (F3, F1);
 CREATE ASC INDEX I_F3_F2_ASC ON SelectionTest (F3, F2);
 CREATE ASC INDEX I_F3_F1_F2_ASC ON SelectionTest (F3, F1, F2);
-CREATE ASC INDEX I_F3_F2_F1_ASC ON SelectionTest (F3, F2, F1);
 
 COMMIT;
 """
@@ -79,7 +78,7 @@ st.F3 = 100;"""
 
 act = isql_act('db', test_script)
 
-expected_stdout = """PLAN (ST INDEX (I_F3_F2_F1_ASC))
+expected_stdout = """PLAN (ST INDEX (I_F2_F3_F1_ASC))
 
           F1           F2           F3
 ============ ============ ============
