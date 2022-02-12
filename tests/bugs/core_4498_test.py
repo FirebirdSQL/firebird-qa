@@ -15,7 +15,6 @@ from firebird.qa import *
 db = db_factory()
 
 test_script = """
-  out nul;
   set explain;
   select 1 from rdb$relations where rdb$db_key = cast('1234' as char(8) character set octets);
 """
