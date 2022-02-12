@@ -177,8 +177,7 @@ def test_1():
 #          ^
 #          set term ;^
 #
-#          --out %(db_path)s%(sql_dump)s;
-#          out nul;
+#          out %(NUL_DEVICE)s;
 #
 #          set term ^;
 #          execute block returns(b dm_dump) as
