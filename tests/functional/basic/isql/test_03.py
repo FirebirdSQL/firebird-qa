@@ -428,6 +428,7 @@ def test_2(act: Action):
 expected_stdout_3 = """
     MON$ATTACHMENTS
     MON$CALL_STACK
+    MON$COMPILED_STATEMENTS
     MON$CONTEXT_VARIABLES
     MON$DATABASE
     MON$IO_STATS
