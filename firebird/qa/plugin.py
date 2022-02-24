@@ -37,17 +37,16 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union, Optional, Tuple, Sequence
 import sys
 import locale
 import os
 import re
 import shutil
 import platform
+import weakref
 import pytest
-from _pytest.fixtures import FixtureRequest
 from _pytest.terminal import TerminalReporter, _get_raw_skip_reason, _format_trimmed
-from _pytest.reports import TestReport
 from subprocess import run, CompletedProcess, PIPE, STDOUT
 from pathlib import Path
 from configparser import ConfigParser, ExtendedInterpolation
@@ -60,6 +59,8 @@ from firebird.driver import connect, connect_server, create_database, driver_con
      DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope, DbInfoCode, \
      DbWriteMode, get_api
 from firebird.driver.core import _connect_helper
+
+Substitutions = List[Tuple[str, str]]
 
 _vars_ = {'server': None,
           'bin-dir': None,
@@ -83,13 +84,18 @@ SKIP_PLATFORM = 'platform'
 SKIP_ANY = 'any'
 
 @pytest.fixture(scope='session', autouse=True)
-def log_global_env_facts(record_testsuite_property):
+def log_session_context(record_testsuite_property):
+    """Autoused session fixture that records `version`,`architecture` and `mode`
+    XML propeties.
+    """
     if _vars_['extend-xml']:
         record_testsuite_property('version', _vars_['version'])
         record_testsuite_property('architecture', _vars_['arch'])
         record_testsuite_property('mode', _vars_['server-arch'])
 
 class ExecutionError(Exception):
+    """Exception used to indicate errors when external QA tools (like isql, gstat etc.) are executed.
+    """
     pass
 
 def pytest_addoption(parser, pluginmanager):
@@ -98,7 +104,7 @@ def pytest_addoption(parser, pluginmanager):
     .. seealso:: `pytest documentation <_pytest.hookspec.pytest_addoption>` for details.
     """
     grp = parser.getgroup('firebird', "Firebird QA", 'general')
-    grp.addoption('--server', help="Server configuration name", default='')
+    grp.addoption('--server', help="Server configuration name", default='', required=True)
     grp.addoption('--bin-dir', metavar='PATH', help="Path to directory with Firebird utilities")
     grp.addoption('--protocol',
                   choices=[i.name.lower() for i in NetProtocol],
@@ -134,6 +140,10 @@ def set_tool(tool: str):
     _vars_[tool] = path
 
 class QATerminalReporter(TerminalReporter):
+    """Custom `TerminalReporter` that prints our QA test IDs instead pytest node IDs.
+
+    The code was directly taken from pytest source and adapted to our needs.
+    """
     def _getfailureheadline(self, rep):
         head_line = rep.head_line
         if head_line:
@@ -150,12 +160,11 @@ class QATerminalReporter(TerminalReporter):
         elif self.showfspath:
             self.write_fspath_result(nodeid, "")
             self.flush()
-    def pytest_runtest_logreport(self, report: TestReport) -> None:
+    def pytest_runtest_logreport(self, report: pytest.TestReport) -> None:
         self._tests_ran = True
         rep = report
-        res: Tuple[
-            str, str, Union[str, Tuple[str, Mapping[str, bool]]]
-        ] = self.config.hook.pytest_report_teststatus(report=rep, config=self.config)
+        res: Tuple[str, str, Union[str, Tuple[str, Mapping[str, bool]]]] = \
+            self.config.hook.pytest_report_teststatus(report=rep, config=self.config)
         category, letter, word = res
         if not isinstance(word, tuple):
             markup = None
@@ -220,7 +229,14 @@ class QATerminalReporter(TerminalReporter):
 
 @pytest.mark.tryfirst
 def pytest_runtest_makereport(item, call):
-    result = TestReport.from_item_and_call(item, call)
+    """Our replacement for pytest hook that is called to create a `TestReport` for each of
+    the setup, call and teardown runtest phases of a test item.
+
+    Our version makes a copy of all `_qa_*` attributes from item to returned report instance.
+
+    .. seealso:: `pytest documentation <_pytest.hookspec.pytest_runtest_makereport>` for details.
+    """
+    result = pytest.TestReport.from_item_and_call(item, call)
     for attr in dir(item):
         if attr.startswith('_qa_'):
             setattr(result, attr, getattr(item, attr))
@@ -229,6 +245,14 @@ def pytest_runtest_makereport(item, call):
 @pytest.mark.trylast
 def pytest_configure(config):
     """Plugin configuration.
+
+    Whta it does:
+
+    - define `version`, `platform` and `slow` markers.
+    - sets values for our globals (accessible as `Action.vars`)
+    - if server section in driver-config contains client library specification,
+      it's copied to global driver config.
+    - installs our `QATerminalReporter`
 
     .. seealso:: `pytest documentation <_pytest.hookspec.pytest_configure>` for details.
     """
@@ -254,13 +278,15 @@ def pytest_configure(config):
     path = config.rootpath / 'files'
     _vars_['files'] = path if path.is_dir() else config.rootpath
     _vars_['server'] = config.getoption('server')
-    _vars_['protocol'] = config.getoption('protocol')
+    protocol = config.getoption('protocol')
+    _vars_['protocol'] = NetProtocol._member_map_[protocol.upper()] if protocol else protocol
     _vars_['save-output'] = config.getoption('save_output')
     _vars_['skip-deselected'] = config.getoption('skip_deselected')
     _vars_['extend-xml'] = config.getoption('extend_xml')
     srv_conf = driver_config.get_server(_vars_['server'])
     _vars_['host'] = srv_conf.host.value if srv_conf is not None else ''
     _vars_['port'] = srv_conf.port.value if srv_conf is not None else ''
+    _vars_['user'] = srv_conf.user.value
     _vars_['password'] = srv_conf.password.value
     #
     db_conf = driver_config.register_database('employee')
@@ -331,6 +357,14 @@ def pytest_configure(config):
         config.pluginmanager.register(pspec_reporter, 'terminalreporter')
 
 def pytest_collection_modifyitems(session, config, items):
+    """Post-processing of collected tests. deselects or mark for skip tests that are not
+    intended for currently tested Firebird version or platform.
+
+    Also parses doctring from test function or module to extract our metadata, and sets them
+    as `_qa_*` attributes on `Item <_pytest.nodes.Item>` instance.
+
+    .. seealso:: `pytest documentation <_pytest.hookspec.pytest_collection_modifyitems>` for details.
+    """
     _version = _vars_['version']
     skip_slow = pytest.mark.skip(reason="need --runslow option to run")
     # Apply skip markers
@@ -446,14 +480,19 @@ class Database:
             from server configuration.
         password: User password used to create/restore/connect the test database. Default
             is taken from server configuration.
-        charset: Character set for test database.
+        charset: Character set for test database, and also default charset for connections.
+        config_name: Name for database configuration.
 
     .. important::
 
         Do not create instances of this class directly! Use **only** fixtures created by `db_factory`.
     """
     def __init__(self, path: Path, filename: str, user: str=None, password: str=None,
-                 charset: str=None, debug: str=''):
+                 charset: str=None, debug: str='', config_name: str='pytest'):
+        #: firebird-driver database configuration name
+        self.config_name: str = config_name
+        if driver_config.get_database(config_name) is None:
+            driver_config.register_database(config_name)
         self._debug: str = debug
         #: Full path to test database.
         self.db_path: Path = path / filename
@@ -484,8 +523,8 @@ class Database:
     def _make_config(self, *, page_size: int=None, sql_dialect: int=None, charset: str=None,
                      user: str=None, password: str=None) -> None:
         """Helper method that sets `firebird-driver`_ configuration for `pytest` database
-        to work with this particular test database instance. Used before methods that
-        need to call `~firebird.driver.core.connect` or `~firebird.driver.core.create_database` methods.
+        to work with this particular test database instance. Used in methods that need to
+        call `~firebird.driver.core.connect` or `~firebird.driver.core.create_database`.
         """
         db_conf = self.get_config()
         db_conf.clear()
@@ -502,11 +541,11 @@ class Database:
             db_conf.db_charset.value = charset
             db_conf.charset.value = charset
         if _vars_['protocol'] is not None:
-            db_conf.protocol.value = NetProtocol._member_map_[_vars_['protocol'].upper()]
+            db_conf.protocol.value = _vars_['protocol']
     def get_config(self) -> DatabaseConfig:
-        """Returns `firebird-driver`_ configuration for test database (`pytest`).
+        """Returns `firebird-driver`_ configuration for test database.
         """
-        return driver_config.get_database('pytest')
+        return driver_config.get_database(self.config_name)
     def create(self, page_size: int=None, sql_dialect: int=None) -> None:
         """Create the test database.
 
@@ -524,7 +563,7 @@ class Database:
         self._make_config(page_size=page_size, sql_dialect=sql_dialect, charset=self.charset)
         charset = self.charset
         print(f"Creating db: {self.dsn} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
-        with create_database('pytest'):
+        with create_database(self.config_name):
             pass
     def restore(self, backup: str) -> None:
         """Create the test database from backup.
@@ -610,7 +649,7 @@ class Database:
         with connect_server(_vars_['server']) as srv:
             srv.database.no_linger(database=self.db_path)
         self._make_config()
-        with connect('pytest') as db:
+        with connect(self.config_name) as db:
             db._att._name = self._debug
             try:
                 db.execute_immediate('delete from mon$attachments where mon$attachment_id != current_connection')
@@ -651,9 +690,9 @@ class Database:
         """
         __tracebackhide__ = True
         self._make_config(user=user, password=password, charset=charset, sql_dialect=sql_dialect)
-        result = connect('pytest', role=role, no_gc=no_gc, no_db_triggers=no_db_triggers,
-                       dbkey_scope=dbkey_scope, session_time_zone=session_time_zone,
-                       auth_plugin_list=auth_plugin_list)
+        result = connect(self.config_name, role=role, no_gc=no_gc, no_db_triggers=no_db_triggers,
+                         dbkey_scope=dbkey_scope, session_time_zone=session_time_zone,
+                         auth_plugin_list=auth_plugin_list)
         result._att._name = self._debug
         return result
     def set_async_write(self) -> None:
@@ -670,8 +709,10 @@ class Database:
 def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=None,
                copy_of: str=None, page_size: int=None, sql_dialect: int=None,
                charset: str=None, user: str=None, password: str=None,
-               do_not_create: bool=False, do_not_drop: bool=False, async_write: bool=True):
-    """Factory function that returns :doc:`fixture <fixture>` providing the `Database` instance.
+               do_not_create: bool=False, do_not_drop: bool=False, async_write: bool=True,
+               config_name: str='pytest'):
+    """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
+    the `Database` instance.
 
     Arguments:
         filename: Test database filename (without path).
@@ -682,7 +723,7 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
             File must be located in `databases` directory.
         page_size: Test database page size.
         sql_dialect: SQL dialect for test database.
-        charset: Character set for test database.
+        charset: Character set for test database (and default charset for connections).
         user: User name used to create/restore/connect the test database. Default is taken
             from server configuration.
         password: User password used to create/restore/connect the test database. Default
@@ -692,11 +733,18 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
             removed.
         do_not_drop: When `True`, the ficture will not drop the test database. Use this
            option when test database is removed by test itself (as part of test routine).
-        async_write: When `True`, the database is set to async write before initialization.
+        async_write: When `True` [default], the database is set to async write before initialization.
+        config_name: Name for database configuration.
+
+    .. note::
+
+       The returned instance must be assigned to module-level variable. Name of this variable
+       is important, as it's used to reference the fixture in other fixture-factory functions
+       that use the database, and the test function itself.
     """
 
     @pytest.fixture
-    def database_fixture(request: FixtureRequest, db_path) -> Database:
+    def database_fixture(request: pytest.FixtureRequest, db_path) -> Database:
         db = Database(db_path, filename, user, password, charset, debug=str(request.module))
         if not do_not_create:
             if from_backup is None and copy_of is None:
@@ -717,7 +765,8 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
 
 @pytest.fixture
 def db_path(tmp_path) -> Path:
-    """:doc:`fixture <fixture>` function that returns path to temporary directory for database files.
+    """Internal :doc:`fixture <pytest:explanation/fixtures>` function that returns path to
+    temporary directory for database files.
 
     On non-Windows platforms makes sure that directory has permissions that user, group and
     other can write there.
@@ -933,7 +982,8 @@ def user_factory(db_fixture_name: str, *, name: str, password: str='', plugin: s
                  charset: str='utf8', active: bool=True, tags: Dict[str]=None,
                  first_name: str=None, middle_name: str=None, last_name: str=None,
                  admin: bool=False, do_not_create: bool=False):
-    """Factory function that returns :doc:`fixture <fixture>` providing the `User` instance.
+    """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
+    the `User` instance.
 
     Arguments:
         db_fixture_name: Name of database fixture.
@@ -959,11 +1009,11 @@ def user_factory(db_fixture_name: str, *, name: str, password: str='', plugin: s
     .. note::
 
        Database must exists before user is created by fixture, so you cannot use database
-       fixtures created with `do_not_create` option!
+       fixtures created with `do_not_create` option, unless also the user is created with it!
     """
 
     @pytest.fixture
-    def user_fixture(request: FixtureRequest) -> User:
+    def user_fixture(request: pytest.FixtureRequest) -> User:
         with User(request.getfixturevalue(db_fixture_name), name=name, password=password,
                   plugin=plugin, charset=charset, active=active, tags=tags,
                   first_name=first_name, middle_name=middle_name, last_name=last_name,
@@ -986,7 +1036,7 @@ def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], kee
     """
     with act.connect_server() as srv:
         srv.encoding = encoding
-        srv.trace.start(config='\n'.join(cfg))
+        output.append(srv.trace.start(config='\n'.join(cfg)))
         b.wait()
         for line in srv:
             if keep_log:
@@ -998,13 +1048,13 @@ class TraceSession:
     Arguments:
        act: Action instance.
        config: Trace session configuration.
-       keep_log: When `True`, the trace session output is discarded.
+       keep_log: When `False`, the trace session output is discarded.
        encoding: Encoding for trace session output.
 
     .. important::
 
-       Do not create instances of this class directly! Always use `Action.trace` method and the
-       :ref:`with <with>` statement.
+       Do not create instances of this class directly! Always use `Action.trace` method and
+       the :ref:`with <with>` statement.
 
        Example::
 
@@ -1015,11 +1065,6 @@ class TraceSession:
 
        The trace session is automatically stopped on exit from `with` context, and trace
        output is copied to `Action.trace_log` attribute.
-
-       .. note::
-
-          For simplicity, we stop **ALL** trace sessions and `Action` keeps only one session
-          log, so you should not run multiple trace session simultaneously!
     """
     def __init__(self, act: Action, config: List[str], keep_log: bool=True, encoding: str='ascii'):
         #: Action instance.
@@ -1044,9 +1089,9 @@ class TraceSession:
         return self
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         time.sleep(2)
+        session = self.output.pop(0)
         with self.act.connect_server() as srv:
-            for session in list(srv.trace.sessions.keys()):
-                srv.trace.stop(session_id=session)
+            srv.trace.stop(session_id=session)
             self.trace_thread.join(5.0)
             if self.trace_thread.is_alive():
                 pytest.fail('Trace thread still alive')
@@ -1056,7 +1101,7 @@ class ServerKeeper:
     """Helper context manager class to temporary change the server used by `Action`.
 
     Arguments:
-        atc: Action instance.
+        act: Action instance.
         server: New server specification.
 
     Example::
@@ -1117,7 +1162,8 @@ class Envar:
             del os.environ[self.name]
 
 def envar_factory(*, name: str, value: str):
-    """Factory function that returns :doc:`fixture <fixture>` providing the `Envar` instance.
+    """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
+    the `Envar` instance.
 
     Arguments:
         name: Variable name.
@@ -1210,9 +1256,29 @@ class Role:
         return cnt > 0
 
 def role_factory(db_fixture_name: str, *, name: str, charset: str='utf8', do_not_create: bool=False):
+    """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
+    the `Role` instance.
 
+    Arguments:
+        db_fixture_name: Name of database fixture.
+        name: User name.
+        charset: Firebird CHARACTER SET used for connections that manage this role.
+        do_not_create: When `True`, the role is not created when `with` context is entered.
+
+    .. important::
+
+       The `db_fixture_name` must be name of variable that holds the fixture created by
+       `db_factory` function.
+
+       **Test must use both, role and database fixtures!**
+
+    .. note::
+
+       Database must exists before role is created by fixture, so you cannot use database
+       fixtures created with `do_not_create` option, unless also the role is created with it!
+    """
     @pytest.fixture
-    def role_fixture(request: FixtureRequest) -> User:
+    def role_fixture(request: pytest.FixtureRequest) -> User:
         with Role(request.getfixturevalue(db_fixture_name), name, charset, do_not_create) as role:
             yield role
 
@@ -1226,24 +1292,28 @@ class Action:
       script: Test ISQL script.
       substitutions: REGEX substitutions to be applied on stdout/stderr on cleanup.
       outfile: Base path/filename for stdout/stderr protocols of external Firebird tool execution.
+      node: `pytest.Item` node that uses this action.
 
     .. important::
 
-        Do not create instances of this class directly! Use **only** fixtures created by
+        Do not create instances of this class directly! Use **ONLY** fixtures created by
         `isql_act` or `python_act`.
     """
-    def __init__(self, db: Database, script: str, substitutions: List[str], outfile: Path, node: pytest.Item):
-        self._node: pytest.Item = node
+    def __init__(self, db: Database, script: str, substitutions: Substitutions,
+                 outfile: Path, node: pytest.Item):
+        #: Weakref proxy to `pytest.Item` (i.e. test function) that uses this Action.
+        #: Used primarily to add information into test report via `add_report_section`.
+        self._node: pytest.Item = weakref.proxy(node)
         #: Primary test database.
         self.db: Database = db
-        #: Test script
-        self.script: str = substitute_macros(script, self.db.subs)
-        #: Return code from last external Firebird tool execution.
+        self._script: str = None
+        self.script = script
+        #: Return code from last execution of external Firebird tool.
         self.return_code: int = 0
-        #: Content of standard output from last external Firebird tool execution.
+        #: Content of standard output from last execution of external Firebird tool.
         self.stdout: str = ''
         self._clean_stdout: str = None
-        #: Content of error output from last external Firebird tool execution.
+        #: Content of error output from last execution of external Firebird tool.
         self.stderr: str = ''
         self._clean_stderr: str = None
         #: Expected standard output.
@@ -1253,31 +1323,44 @@ class Action:
         self.expected_stderr: str = ''
         self._clean_expected_stderr: str = None
         #: REGEX substitutions applied on stdout/stderr on cleanup.
-        self.substitutions: List[str] = [] if substitutions is None else [x for x in substitutions]
+        self.substitutions: Substitutions = [] if substitutions is None else [x for x in substitutions]
         #: Base path/filename for stdout/stderr protocols of external Firebird tool execution.
         self.outfile: Path = outfile
         #: Output from last executed trace session.
         self.trace_log: List[str] = []
-    def space_strip(self, value: str) -> str:
-        """Reduce spaces in value.
+    def strip_white(self, value: str) -> str:
+        """Remove all leading and trailing whitespace characters on ALL lines in value.
         """
-        value= re.sub("(?m)^\\s+", "", value)
-        return re.sub("(?m)\\s+$", "", value)
-    def string_strip(self, value: str, substitutions: List[str]=[], isql: bool=True,
-                     remove_space: bool=True) -> str:
-        """Remove unwanted isql noise strings and apply substitutions defined
-        in recipe to captured output value.
+        value= re.sub('(?m)^\\s+', '', value)
+        return re.sub('(?m)\\s+$', '', value)
+    def strip_isql(self, value: str) -> str:
+        """Remove all unwanted isql noise strings from value.
+        """
+        for regex in map(re.compile, ['(?m)Database:.*\\n?', 'SQL>[ \\t]*\\n?',
+                                      'CON>[ \\t]*\\n?', '-->[ \\t]*\\n?']):
+            value = re.sub(regex, '', value)
+        return value
+    def clean_string(self, value: str, substitutions: Substitutions=[], isql: bool=True,
+                     remove_white: bool=True) -> str:
+        """Returns string with removed isql noise strings and leading and trailing
+        whitespace, and after other substitutions.
+
+        Arguments:
+          value: Value for cleansing.
+          substitutions: List with substitution tuples (regex patern, replacement)
+          isql: When True [default], all isql "noise" strings are removed.
+          remove_white: When True [default], all leading and trailing whitespace characters
+            on each line are removed.
+
         """
         if not value:
             return value
         if isql:
-            for regex in map(re.compile,['(?m)Database:.*\\n?', 'SQL>[ \\t]*\\n?',
-                                       'CON>[ \\t]*\\n?', '-->[ \\t]*\\n?']):
-                value = re.sub(regex, "", value)
+            value = self.strip_isql(value)
         for pattern, replacement in substitutions:
             value= re.compile(pattern, re.M).sub(replacement, value)
-        if remove_space:
-            value = self.space_strip(value)
+        if remove_white:
+            value = self.strip_white(value)
         return value
     def execute(self, *, do_not_connect: bool=False, charset: str=None, io_enc: str=None,
                 combine_output: bool=False) -> None:
@@ -1290,17 +1373,18 @@ class Action:
               corresponds to used character set.
            combine_output: Combine stdout/stderr into stdout.
 
-        By default, script is executed on primary test database with NONE charset. ISQL
-        output is captured into `stdout` and `stderr`, and exit code is stored into
-        `return_code`. If pytest `--save-output` command-line option is used, the content
-        of stdout/stderr is also stored into test protocol files with `.out`/`.err` suffix.
+        By default, script is executed on primary test database with `Database` charset. ISQL
+        output is captured into `stdout` and `stderr`, and exit code is stored into `return_code`.
+
+        If pytest `--save-output` command-line option is used, the content of stdout/stderr
+        is also stored into test protocol files with `.out`/`.err` suffix.
 
         .. important::
 
            If `return_code` is not zero, and script execution failure is not expected (either
-           via defined `expected_stderr` value or using `combine_output` = True), it raises and
-           `Exception` with "ISQL script execution failed" message and prints content of stdout
-           and stderr.
+           via defined `expected_stderr` value or using `combine_output` = True), it raises
+           `ExecutionError` with "Test script execution failed" message, and adds content
+           of stdout and stderr into test run report.
         """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -1344,17 +1428,18 @@ class Action:
            io_enc: Python encoding to be used to decode text output instead encoding that
               corresponds to used character set.
 
-        By default, metadata are extracted from primary test database using NONE connection
+        By default, metadata are extracted from primary test database using `Database`
         charset. ISQL output is captured into `stdout` and `stderr`, and exit code is stored
-        into `return_code`. If pytest `--save-output` command-line option is used, the content
-        of stdout/stderr is also stored into test protocol files with `.out`/`.err` suffix.
+        into `return_code`.
+
+        If pytest `--save-output` command-line option is used, the content of stdout/stderr
+        is also stored into test protocol files with `.out`/`.err` suffix.
 
         .. important::
 
-           If `return_code` is not zero, and isql execution failure is not expected (either
-           via defined `expected_stderr` value or using `combine_output` = True), it raises
-           and `Exception` with "ISQL execution failed" message and prints content
-           of stdout and stderr.
+           If `return_code` is not zero, it raises `ExecutionError` with
+           "ISQL execution failed" message, and adds content of stdout and stderr into test
+           run report.
         """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -1392,25 +1477,28 @@ class Action:
            switches: List with command-line switches (passed to `subprocess.run`).
            charset: Decode output using encoding that corresponds to this charset instead
              charset of primary test database.
+           io_enc: Python encoding to be used to decode text output instead encoding that
+              corresponds to used character set.
            connect_db: When `True` adds primary test database DSN to switches.
            credentials: When `True` adds switches to connect as primary test database user.
 
         By default, GSTAT is executed on primary test database, and output is captured into
-        `stdout` and `stderr`, and exit code is stored to `return_code`. If pytest `--save-output`
-        command-line option is used, the content of stdout/stderr is also stored into test
-        protocol files with `.out`/`.err` suffix.
+        `stdout` and `stderr`, and exit code is stored to `return_code`.
+
+        If pytest `--save-output` command-line option is used, the content of stdout/stderr
+        is also stored into test protocol files with `.out`/`.err` suffix.
 
         Example::
 
-           act_1.gstat(switches=['-h'])
-           act_1.gstat(switches=['-h', str(test_db)], connect_db=False)
+           act.gstat(switches=['-h'])
+           act.gstat(switches=['-h', str(test_db)], connect_db=False)
 
         .. important::
 
-           If `return_code` is not zero, and script execution failure is not expected (either
-           via defined `expected_stderr` value or using `combine_output` = True), it raises and
-           `Exception` with "gstat execution failed" message and prints content of stdout
-           and stderr.
+           If `return_code` is not zero, and gstat execution failure is not expected
+           (`expected_stderr` value is not defined), it raises  `ExecutionError` with
+           "gstat execution failed" message, and adds content of stdout and stderr into
+           test run report.
         """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -1451,25 +1539,30 @@ class Action:
            switches: List with command-line switches (passed to `subprocess.run`).
            charset: Decode output using encoding that corresponds to this charset instead
              charset of primary test database.
-           connect_db: When `True` adds primary test database DSN to switches.
+           io_enc: Python encoding to be used to decode text output instead encoding that
+              corresponds to used character set.
+           input: Text to be passed to gsec via stdin.
            credentials: When `True` adds switches to connect as primary test database user.
 
-        By default, GSTAT is executed on primary test database, and output is captured into
-        `stdout` and `stderr`, and exit code is stored to `return_code`. If pytest `--save-output`
-        command-line option is used, the content of stdout/stderr is also stored into test
-        protocol files with `.out`/`.err` suffix.
+        By default, GSEC is executed on primary test database, and output is captured into
+        `stdout` and `stderr`, and exit code is stored to `return_code`.
+
+        If pytest `--save-output` command-line option is used, the content of stdout/stderr
+        is also stored into test protocol files with `.out`/`.err` suffix.
 
         Example::
 
-           act_1.gstat(switches=['-h'])
-           act_1.gstat(switches=['-h', str(test_db)], connect_db=False)
+           act.gsec(switches=['add', 'user_name', '-pw', 'password'])
+           act.gsec(switches=['add', 'user_name', '-pw', 'password',
+                              '-user', test_user.name, '-password', test_user.password],
+                    credentials=False)
 
         .. important::
 
-           If `return_code` is not zero, and script execution failure is not expected (either
-           via defined `expected_stderr` value or using `combine_output` = True), it raises and
-           `Exception` with "gstat execution failed" message and prints content of stdout
-           and stderr.
+           If `return_code` is not zero, and gsec execution failure is not expected
+           (`expected_stderr` value is not defiend), it raises `ExecutionError` with
+           "gsec execution failed" message, and adds content of stdout and stderr into
+           test run report.
         """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -1503,27 +1596,35 @@ class Action:
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
     def gbak(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
-             input: str=None, credentials: bool=True, combine_output: bool=False) -> None:
+             credentials: bool=True, combine_output: bool=False) -> None:
         """Run `gbak` utility.
 
         Arguments:
-           do_not_connect: Do not connect to primary test database on ISQL execution.
+           switches: List with command-line switches (passed to `subprocess.run`).
            charset: Firebird CHARACTER SET name.
+           io_enc: Python encoding to be used to decode text output instead encoding that
+              corresponds to used character set.
+           credentials: When `True` adds switches to connect as primary test database user.
            combine_output: Combine stdout/stderr into stdout.
 
-        By default, script is executed on primary test database with NONE charset, and
-        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
-        `return_code`.
+        By default, GBAK is executed on primary test database, and output is captured into
+        `stdout` and `stderr`, and exit code is stored to `return_code`.
 
         If pytest `--save-output` command-line option is used, the content of stdout/stderr
-        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+        is also stored into test protocol files with `.out`/`.err` suffix.
+
+        Example::
+
+           act.gbak(switches=['-b', act.db.dsn, fbk_filename])
+           act.gbak(switches=['-b', '-user', test_user.name, '-pas', test_user.password,
+                              act.db.dsn, fbk_filename], credentials=False)
 
         .. important::
 
            If `return_code` is not zero, and script execution failure is not expected (either
            via defined `expected_stderr` value or using `combine_output` = True), it raises and
-           `Exception` with "ISQL script execution failed" message and prints content of stdout
-           and stderr.
+           `ExecutionError` with "gbak execution failed" message, and adds content of stdout
+           and stderr into test run report.
         """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -1542,11 +1643,9 @@ class Action:
         if switches:
             params.extend(switches)
         if combine_output:
-            result: CompletedProcess = run(params, input=input,
-                                           encoding=io_enc, stdout=PIPE, stderr=STDOUT)
+            result: CompletedProcess = run(params, encoding=io_enc, stdout=PIPE, stderr=STDOUT)
         else:
-            result: CompletedProcess = run(params, input=input,
-                                           encoding=io_enc, capture_output=True)
+            result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
         if result.returncode and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'gbak stdout', result.stdout)
             self._node.add_report_section('call', 'gbak stderr', result.stderr)
@@ -1565,23 +1664,31 @@ class Action:
         """Run `nbackup` utility.
 
         Arguments:
-           do_not_connect: Do not connect to primary test database on ISQL execution.
+           switches: List with command-line switches (passed to `subprocess.run`).
            charset: Firebird CHARACTER SET name.
+           io_enc: Python encoding to be used to decode text output instead encoding that
+              corresponds to used character set.
+           credentials: When `True` adds switches to connect as primary test database user.
            combine_output: Combine stdout/stderr into stdout.
 
-        By default, script is executed on primary test database with NONE charset, and
-        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
-        `return_code`.
+        By default, NBACKUP is executed on primary test database, and output is captured into
+        `stdout` and `stderr`, and exit code is stored to `return_code`.
 
         If pytest `--save-output` command-line option is used, the content of stdout/stderr
-        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+        is also stored into protocol files with `.out`/`.err` suffix.
+
+        Example::
+
+           act.nbackup(switches=['-l', act.db.dsn])
+           act.nbackup(switches=['-l', act.db.dsn, '-u', test_user.name, '-p', test_user.password],
+                       credentials=False)
 
         .. important::
 
            If `return_code` is not zero, and script execution failure is not expected (either
            via defined `expected_stderr` value or using `combine_output` = True), it raises and
-           `Exception` with "ISQL script execution failed" message and prints content of stdout
-           and stderr.
+           `ExecutionError` with "nbackup execution failed" message, and adds content of stdout
+           and stderr into test run report.
         """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -1616,27 +1723,35 @@ class Action:
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
     def gfix(self, *, switches: List[str]=None, charset: str=None, io_enc: str=None,
-             input: str=None, credentials: bool=True) -> None:
+             credentials: bool=True, combine_output: bool=False) -> None:
         """Run `gfix` utility.
 
         Arguments:
-           do_not_connect: Do not connect to primary test database on ISQL execution.
+           switches: List with command-line switches (passed to `subprocess.run`).
            charset: Firebird CHARACTER SET name.
+           io_enc: Python encoding to be used to decode text output instead encoding that
+              corresponds to used character set.
+           credentials: When `True` adds switches to connect as primary test database user.
            combine_output: Combine stdout/stderr into stdout.
 
-        By default, script is executed on primary test database with NONE charset, and
-        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
-        `return_code`.
+        By default, GFIX is executed on primary test database, and output is captured into
+        `stdout` and `stderr`, and exit code is stored to `return_code`.
 
         If pytest `--save-output` command-line option is used, the content of stdout/stderr
-        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+        is also stored into protocol files with `.out`/`.err` suffix.
+
+        Example::
+
+           act.gfix(switches=['-sweep', act.db.dsn])
+           act.gfix(switches=['-user', test_user.name, '-password', test_user.password,
+                              '-sweep', act.db.dsn], credentials=False)
 
         .. important::
 
            If `return_code` is not zero, and script execution failure is not expected (either
            via defined `expected_stderr` value or using `combine_output` = True), it raises and
-           `Exception` with "ISQL script execution failed" message and prints content of stdout
-           and stderr.
+           `ExecutionError` with "gfix execution failed" message, and adds content of stdout
+           and stderr into test run report.
         """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -1654,9 +1769,11 @@ class Action:
             params.extend(switches)
         if credentials:
             params.extend(['-user', self.db.user, '-password', self.db.password])
-        result: CompletedProcess = run(params, input=input,
-                                       encoding=io_enc, capture_output=True)
-        if result.returncode and not bool(self.expected_stderr):
+        if combine_output:
+            result: CompletedProcess = run(params, encoding=io_enc, stdout=PIPE, stderr=STDOUT)
+        else:
+            result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
+        if result.returncode and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'gfix stdout', result.stdout)
             self._node.add_report_section('call', 'gfix stderr', result.stderr)
             raise ExecutionError("gfix execution failed")
@@ -1675,23 +1792,35 @@ class Action:
         """Run `isql` utility.
 
         Arguments:
-           do_not_connect: Do not connect to primary test database on ISQL execution.
+           switches: List with command-line switches (passed to `subprocess.run`).
            charset: Firebird CHARACTER SET name.
+           io_enc: Python encoding to be used to decode text output instead encoding that
+              corresponds to used character set.
+           input: String passed to isql via stdin.
+           input_file: Path to isql input file (passed with -i switch).
+           connect_db: When `True`, database DSN is added to isql switches.
+           credentials: When `True` adds switches to connect as primary test database user.
            combine_output: Combine stdout/stderr into stdout.
+           use_db: Database to be used instead primary test database.
 
-        By default, script is executed on primary test database with NONE charset, and
-        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
-        `return_code`.
+        By default, isql is executed on test database with `Database` charset, and output
+        is captured into `stdout` and `stderr`, and exit code is stored to `return_code`.
 
         If pytest `--save-output` command-line option is used, the content of stdout/stderr
-        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+        is also stored into protocol files with `.out`/`.err` suffix.
+
+        Example::
+
+           act.isql(switches=[], input="show version;")
+           act.isql(switches=['-u', test_user.name, '-p', test_user.password],
+                    credentials=False, use_db=another_db)
 
         .. important::
 
            If `return_code` is not zero, and script execution failure is not expected (either
            via defined `expected_stderr` value or using `combine_output` = True), it raises and
-           `Exception` with "ISQL script execution failed" message and prints content of stdout
-           and stderr.
+           `ExecutionError` with "ISQL execution failed" message, and adds content of stdout
+           and stderr into test run report.
         """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -1737,23 +1866,32 @@ class Action:
         """Run `fbsvcmgr` utility.
 
         Arguments:
-           do_not_connect: Do not connect to primary test database on ISQL execution.
-           charset: Charset for use by ISQL.
-           combine_output: Combine stdout/stderr into stdout.
+           switches: List with command-line switches (passed to `subprocess.run`).
+           charset: Firebird CHARACTER SET name.
+           io_enc: Python encoding to be used to decode text output instead encoding that
+              corresponds to used character set.
+           connect_mngr: When `True`, adds switches to connect service manager of tested server
+             using credentials for primary test database.
 
-        By default, script is executed on primary test database with NONE charset, and
-        ISQL output is captured into `stdout` and `stderr`, and exit code is stored to
+        By default, primary test database charset is used to determine the encoding for strings,
+        and output is captured into `stdout` and `stderr`, and exit code is stored to
         `return_code`.
 
         If pytest `--save-output` command-line option is used, the content of stdout/stderr
-        from ISQL is stored into protocol files with `.out`/`.err` suffix.
+        is also stored into protocol files with `.out`/`.err` suffix.
+
+        Example::
+
+           act.svcmgr(switches=['info_server_version'])
+           act.svcmgr(switches=['service_mgr', 'user', test_user.name, 'password', test_user.password,
+                                'info_server_version'], connect_mngr=False)
 
         .. important::
 
-           If `return_code` is not zero, and script execution failure is not expected (either
-           via defined `expected_stderr` value or using `combine_output` = True), it raises and
-           `Exception` with "ISQL script execution failed" message and prints content of stdout
-           and stderr.
+           If `return_code` is not zero, and script execution failure is not expected
+           (`expected_stderr` value is not defined), it raises and `ExecutionError` with
+           "fbsvcmgr execution failed" message, and adds content of stdout and stderr into
+           test run report.
         """
         __tracebackhide__ = True
         out_file: Path = self.outfile.with_suffix('.out')
@@ -1786,25 +1924,63 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def connect_server(self, *, user: str='SYSDBA', password: str=None, role: str=None) -> Server:
+    def connect_server(self, *, user: str=None, password: str=None, role: str=None) -> Server:
+        """Returns `~firebird.driver.Server` instance connected to service manager of tested
+        server.
+
+        Arguments:
+          user: User name [Default taken from server configuration].
+          password: User password [Default taken from server configuration].
+          role: User role.
+
+        .. tip::
+
+           It's highly recommended to use the :ref:`with <with>` statement to ensure that
+           the returned `~firebird.driver.core.Server` is properly closed even if test
+           fails or raises an error.
+        """
         __tracebackhide__ = True
-        return connect_server(_vars_['server'], user=user,
+        return connect_server(_vars_['server'],
+                              user=_vars_['user'] if user is None else user,
                               password=_vars_['password'] if password is None else password,
                               role=role)
     def get_firebird_log(self) -> List[str]:
+        """Returns content of Firebird server log.
+        """
         __tracebackhide__ = True
         with self.connect_server() as srv:
             srv.info.get_log()
             return srv.readlines()
     def is_version(self, version_spec: str) -> bool:
+        """Returns `True` if version of tested server matches the version specification.
+
+        Arguments:
+          version_spec: Version specification that conforms to :pep:`440`.
+        """
         spec = SpecifierSet(version_spec)
         return _vars_['version'] in spec
     def get_server_architecture(self) -> str:
+        """Returns server architecture: `SuperServer`, `Classic`, `SuperClassic` or `Embedded`.
+        """
         return _vars_['server-arch']
-    def get_dsn(self, filename: Union[str, Path], protocol: str=None) -> str:
+    def get_dsn(self, filename: Union[str, Path], protocol: NetProtocol=None) -> str:
+        """Returns DSN for connection to database.
+
+        Arguments:
+          filename: Database filename.
+          protocol: Network protocol to be used for connection.
+        """
         return _connect_helper('', self.host, self.port, str(filename),
-                               protocol if protocol else self.protocol)
+                               protocol if protocol is not None else self.protocol)
     def reset(self) -> None:
+        """Reset internal variables used to store output from execution of external tool.
+
+        .. important::
+
+           It's necessary to call this method between executions of external tools through
+           `.isql()`, `.execute()`, `.extract_meta()`, `.gstat()`, `.gfix()`, `.gsec()`,
+           `.gbak()`, `.nbackup` or `.svcmgr()`.
+        """
         self.return_code: int = 0
         self._clean_stdout = None
         self._clean_stderr = None
@@ -1816,6 +1992,8 @@ class Action:
         self.stdout = ''
         self.stderr = ''
     def print_data(self, cursor: Cursor) -> None:
+        """Print data from cursor in tabular format, like standard printout in ISQL.
+        """
         # Print a header.
         for fieldDesc in cursor.description:
             print (fieldDesc[DESCRIPTION_NAME].ljust(fieldDesc[DESCRIPTION_DISPLAY_SIZE]),end=' ')
@@ -1835,6 +2013,8 @@ class Action:
                 print (fieldValue.ljust(fieldMaxWidth), end=' ')
             print('')
     def print_data_list(self, cursor: Cursor, *, prefix: str='') -> None:
+        """Print data from cursor in list format, like list printout in ISQL.
+        """
         for row in cursor:
             i = 0
             for fieldDesc in cursor.description:
@@ -1844,6 +2024,37 @@ class Action:
     def trace(self, *, db_events: List[str]=None, svc_events: List[str]=None,
               config: List[str]=None, keep_log: bool=True, encoding: str='ascii',
               database: str=None) -> TraceSession:
+        """Run Firebird trace session.
+
+        Arguments:
+          db_events: List of database events to be traced.
+          svc_events: List of service events to be traced.
+          config: Full trace config.
+          keep_log: When `False`, the trace session output is discarded. Otherwise is stored
+            in `.trace_log`.
+          encoding: Encoding used to decode trace session output returned by server.
+          database: Traced database filename specification. If value is not specified, uses
+            primary test database.
+
+        .. note::
+
+           There are two (mutually exclusive) methods how to configure the trace session:
+
+           1. Using `db_events` and/or `svc_events` lists, and optional `database` specification.
+           2. Using `config`.
+
+        .. important::
+
+           It's absolutely necessary to use the :ref:`with <with>` statement to manage the
+           trace session!
+
+           Example::
+
+             with act.trace(db_events=['log_connections = true']):
+                 # Actions that would be traced
+                 act.execute()
+             # Actions that are not traced
+        """
         if config is not None:
             return TraceSession(self, config, keep_log=keep_log, encoding=encoding)
         else:
@@ -1859,53 +2070,139 @@ class Action:
                 config.append('}')
             return TraceSession(self, config, keep_log=keep_log, encoding=encoding)
     def trace_to_stdout(self, *, upper: bool=False) -> None:
+        """Copy trace session log to `.stdout`.
+
+        Arguments:
+          upper: Convert trace log to uppercase.
+        """
         log = ''.join(self.trace_log)
         self.stdout = log.upper() if upper else log
     def envar(self, name: str, value: str) -> Envar:
+        """Temporary set an environment variable.
+
+        Arguments:
+          name: Variable name.
+          value: Variable value.
+
+        .. important::
+
+           It's absolutely necessary to use the :ref:`with <with>` statement to manage the
+           environment variable!
+
+           Example::
+
+             with act.envar(name='ISC_PASSWORD', test_user.password):
+                 act.isql(switches=[], input='show database;', credentials=False)
+        """
         return Envar(name, value)
-    def match_any(self, line: str, patterns) -> bool:
+    def match_any(self, line: str, patterns: Sequence) -> bool:
+        """Helper function that `search` for patterns in string. Returns `True` is any pattern
+        is found.
+
+        Arguments:
+          line: String to be searched.
+          patterns: Sequence of compiled `re` patterns.
+        """
         for pattern in patterns:
             if pattern.search(line):
                 return True
         return False
     def print_callback(self, line: str) -> None:
+        """Helper function that could be passed as callback to Firebird services.
+
+        Example::
+
+            with act.connect_server() as srv:
+                srv.database.get_statistics(database=act.db.db_path, tables=['TEST_01'],
+                                            flags=SrvStatFlag.DATA_PAGES | SrvStatFlag.IDX_PAGES,
+                                            callback=act.print_callback)
+            act.stdout = capsys.readouterr().out
+
+        """
         print(line, end='')
-    def get_config(self, key: str) -> Optional[str]:
-        with connect('employee') as con:
+    def get_config(self, key: str, database: str='employee') -> Optional[str]:
+        """Returns value for specified key from RDB$CONFIG table.
+
+        Arguments:
+           key: Configuration option name.
+           database: Database name.
+
+        Database name is passed to `~firebird.driver.connect`. By default, it uses `employee`
+        database. To get database-specific configuration values, you should always specify
+        the `database` value using `Database.config_name`.
+
+        Example::
+
+          if 'Legacy_Auth' not in act.get_config('AuthServer',act.db.config_name):
+              pytest.skip('Legacy_Auth required')
+
+        .. important::
+
+           This function work only with Firebird 4+ !
+        """
+        with connect(database) as con:
             c = con.cursor()
             row = c.execute('select RDB$CONFIG_VALUE from rdb$config where upper(RDB$CONFIG_NAME) = ?', [key.upper()]).fetchone()
         return row[0] if row else None
     @property
+    def script(self) -> str:
+        """Test script that should be executed by `~Action.execute`.
+        """
+        return self._script
+    @script.setter
+    def script(self, value: str) -> None:
+        self._script = substitute_macros(value, self.db.subs)
+    @property
     def clean_stdout(self) -> str:
-        """Content of `stdout` with unwanted isql noise removed and applied `substitutions` [R/O].
+        """Content of `stdout` passed through `.clean_string()` [R/O].
+
+        .. important::
+
+           Value is cached once evaluated. Use `.reset()` before new `.stdout` value is assigned
+           to force re-evaluation.
         """
         if self._clean_stdout is None:
-            self._clean_stdout = self.string_strip(self.stdout, self.substitutions)
+            self._clean_stdout = self.clean_string(self.stdout, self.substitutions)
         return self._clean_stdout
     @property
     def clean_stderr(self) -> str:
-        """Content of `stderr` with unwanted isql noise removed and applied `substitutions` [R/O].
+        """Content of `stderr` passed through `.clean_string()` [R/O].
+
+        .. important::
+
+           Value is cached once evaluated. Use `.reset()` before new `.stderr` value is
+           assigned to force re-evaluation.
         """
         if self._clean_stderr is None:
-            self._clean_stderr = self.string_strip(self.stderr, self.substitutions)
+            self._clean_stderr = self.clean_string(self.stderr, self.substitutions)
         return self._clean_stderr
     @property
     def clean_expected_stdout(self) -> str:
-        """Content of `expected_stdout` with unwanted isql noise removed and applied `substitutions` [R/O].
+        """Content of `expected_stdout` passed through `.clean_string()` [R/O].
+
+        .. important::
+
+           Value is cached once evaluated. Use `.reset()` before new `.expected_stdout` value
+           is assigned to force re-evaluation.
         """
         if self._clean_expected_stdout is None:
-            self._clean_expected_stdout = self.string_strip(self.expected_stdout, self.substitutions)
+            self._clean_expected_stdout = self.clean_string(self.expected_stdout, self.substitutions)
         return self._clean_expected_stdout
     @property
     def clean_expected_stderr(self) -> str:
-        """Content of `expected_stderr` with unwanted isql noise removed and applied `substitutions` [R/O].
+        """Content of `expected_stderr` passed through `.clean_string()` [R/O].
+
+        .. important::
+
+           Value is cached once evaluated. Use `.reset()` before new `.expected_stderr` value
+           is assigned to force re-evaluation.
         """
         if self._clean_expected_stderr is None:
-            self._clean_expected_stderr = self.string_strip(self.expected_stderr, self.substitutions)
+            self._clean_expected_stderr = self.clean_string(self.expected_stderr, self.substitutions)
         return self._clean_expected_stderr
     @property
     def vars(self) -> Dict[str]:
-        "Directory with plugin various configuration parameters and variables."
+        "Dictionary with various configuration parameters and variables used by plugin."
         return _vars_
     @property
     def host(self) -> str:
@@ -1916,7 +2213,7 @@ class Action:
         "Port of tested Firebird server."
         return _vars_['port']
     @property
-    def protocol(self) -> str:
+    def protocol(self) -> Optional[NetProtocol]:
         "Default protocol for connections to databases."
         return _vars_['protocol']
     @property
@@ -1940,10 +2237,18 @@ class Action:
         "Current execution platform identifier."
         return _platform
 
-def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None):
+def isql_act(db_fixture_name: str, script: str='', *, substitutions: Substitutions=None):
+    """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
+    the `Action` instance.
+
+    Arguments:
+        db_fixture_name: Name of database fixture.
+        script: SQL script that tests the server.
+        substitutions: List of additional substitution for stdout/stderr.
+    """
 
     @pytest.fixture
-    def isql_act_fixture(request: FixtureRequest) -> Action:
+    def isql_act_fixture(request: pytest.FixtureRequest) -> Action:
         db: Database = request.getfixturevalue(db_fixture_name)
         f: Path = Path.cwd() / 'out' / request.module.__name__.replace('.', '/')
         if _vars_['save-output'] and not f.parent.exists():
@@ -1954,23 +2259,11 @@ def isql_act(db_fixture_name: str, script: str, *, substitutions: List[str]=None
 
     return isql_act_fixture
 
-def python_act(db_fixture_name: str, *, substitutions: List[str]=None):
-
-    @pytest.fixture
-    def python_act_fixture(request: FixtureRequest) -> Action:
-        db: Database = request.getfixturevalue(db_fixture_name)
-        f: Path = Path.cwd() / 'out' / request.module.__name__.replace('.', '/')
-        if _vars_['save-output'] and not f.parent.exists():
-            f.parent.mkdir(parents=True)
-        f = f.with_name(f'{f.stem}-{request.function.__name__}.out')
-        result: Action = Action(db, '', substitutions, f, request.node)
-        return result
-
-    return python_act_fixture
+python_act = isql_act
 
 def temp_file(filename: Union[str, Path]):
-    """Factory function that returns :doc:`fixture <fixture>` providing the `Path` to
-    temporary file.
+    """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
+    the `Path` to temporary file.
 
     Arguments:
         filename: File name.
@@ -1991,8 +2284,8 @@ def temp_file(filename: Union[str, Path]):
     return temp_file_fixture
 
 def temp_files(filenames: List[Union[str, Path]]):
-    """Factory function that returns :doc:`fixture <fixture>` providing the list of `Path`
-    instances to temporary files.
+    """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
+    the list of `Path` instances to temporary files.
 
     Arguments:
         filenames: List of file names.
