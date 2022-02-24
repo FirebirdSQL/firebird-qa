@@ -252,12 +252,12 @@ def test_1(act: Action, tmp_file_bi_in: Path, tmp_file_bi_out: Path, capsys):
         bulk_insert_log = tmp_file_bi_out.read_text()
         create_indx_log = act.stdout + act.stderr
 
-        log = act.string_strip(bulk_insert_log, act.substitutions)
+        log = act.clean_string(bulk_insert_log, act.substitutions)
         for line in log.splitlines():
             if line.strip():
                 print( str(i)+': BULK INSERTS LOG: '+line.strip().upper() )
 
-        log = act.string_strip(create_indx_log, act.substitutions)
+        log = act.clean_string(create_indx_log, act.substitutions)
         for line in log.splitlines():
             if line.strip():
                 print( str(i)+': CREATE INDEX LOG: '+line.strip().upper() )

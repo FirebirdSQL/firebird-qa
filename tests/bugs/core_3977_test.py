@@ -94,7 +94,7 @@ def test_1(act: Action, work_script_1: Path, capsys):
 """
     try:
         act.isql(switches=[], input=drop_sql)
-        delete_from_mon_sttm_log = act.string_strip(act.stdout)
+        delete_from_mon_sttm_log = act.clean_string(act.stdout)
     finally:
         p_work_sql.terminate()
     # Run checking query: what is resuling value of sequence 'g' ?
@@ -118,7 +118,7 @@ def test_1(act: Action, work_script_1: Path, capsys):
     for line in delete_from_mon_sttm_log.splitlines():
         if not 'EXECUTE STATEMENT' in line.upper():
             print('DEL FROM MON$STTM: ', ' '.join(line.upper().split()))
-    for line in act.string_strip(act.stdout).splitlines():
+    for line in act.clean_string(act.stdout).splitlines():
         print('CHECK RESULTS LOG: ', ' '.join(line.upper().split()))
     #
     act.expected_stdout = expected_stdout

@@ -67,7 +67,7 @@ def test_1(act: Action):
                 matched.append(' '.join(line.replace('%','[percent_sign]').split()))
     #
     actual = '\n'.join(matched)
-    actual = act.string_strip(actual, act.substitutions)
+    actual = act.clean_string(actual, act.substitutions)
     assert ('localhost' in act.db.dsn and act.clean_expected_stdout == actual)
 
 

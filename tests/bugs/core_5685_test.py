@@ -190,7 +190,7 @@ def test_1(act: Action, hang_script: Path, hang_stdout: Path, hang_stderr: Path,
                 msg = line
         output.append(f'HANGED ATTACH, STDERR: {msg}')
     for step in killer_output:
-        for line in act.string_strip(step).splitlines():
+        for line in act.clean_string(step).splitlines():
             if line.strip():
                 output.append(f"KILLER ATTACH, STDOUT: {' '.join(line.split())}")
     # Check

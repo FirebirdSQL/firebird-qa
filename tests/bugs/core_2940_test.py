@@ -45,13 +45,13 @@ test_script = """
 """
 
 trace = ['log_connections = true',
-           'log_transactions = true',
-           'log_statement_finish = true',
-           'print_plan = true',
-           'print_perf = true',
-           'time_threshold = 0',
-           'exclude_filter = %no_trace%',
-           ]
+         'log_transactions = true',
+         'log_statement_finish = true',
+         'print_plan = true',
+         'print_perf = true',
+         'time_threshold = 0',
+         'exclude_filter = %no_trace%',
+         ]
 
 @pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0')
