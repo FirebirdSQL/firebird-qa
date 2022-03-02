@@ -2061,11 +2061,12 @@ class Action:
             config = []
             if db_events:
                 database = self.db.db_path.name if database is None else database
-                config.extend([f'database=%[\\\\/]{database}', '{', 'enabled = true'])
+                config.extend([f'database=%[\\\\/]{database}', '{', 'enabled = true',
+                               'log_initfini = false'])
                 config.extend(db_events)
                 config.append('}')
             if svc_events:
-                config.extend(['services', '{', 'enabled = true'])
+                config.extend(['services', '{', 'enabled = true', 'log_initfini = false'])
                 config.extend(svc_events)
                 config.append('}')
             return TraceSession(self, config, keep_log=keep_log, encoding=encoding)
