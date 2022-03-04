@@ -31,6 +31,16 @@ DESCRIPTION:
       Found table statistics for GTT_SSN
       Statement statistics detected for COMMIT
       Statement statistics detected for ROLLBACK
+
+[04.03.2022] pzotov: RESOLVED.
+  Problem on Windows was caused by excessive query:
+      "select current_user, current_role from rdb$database"
+  -- which is done by ISQL 3.x when it gets commands from STDIN via PIPE mechanism.
+  Discussed with Alex et al, since 28-feb-2022 18:05 +0300.
+  Alex explanation: 28-feb-2022 19:52 +0300
+  subj: "Firebird new-QA: weird result for trivial test (outcome depends on presence of... running trace session!)"
+  
+
 JIRA:        CORE-3598
 FBTEST:      bugs.core_3598
 """
@@ -68,28 +78,39 @@ test_script = """
     rollback;
 """
 
-expected_stdout = """
-    Statement statistics detected for COMMIT
-    Statement statistics detected for COMMIT
-    Statement statistics detected for ROLLBACK
-    Found performance block header
-    Found table statistics for TFIX
-    Statement statistics detected for COMMIT
-    Statement statistics detected for ROLLBACK
-    Found performance block header
-    Found table statistics for GTT_SSN
-    Statement statistics detected for COMMIT
-    Statement statistics detected for ROLLBACK
-"""
-
 trace = ['log_transactions = true',
          'print_perf = true',
          'log_initfini = false',
          ]
 
-@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
+# @pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
+    expected_stdout = ''
+    if platform.system() == 'Windows' and act.is_version('<4.0'):
+        # FB 3.0.x, WINDOWS ONLY: 'excessive' query (select current_user,current_role from rdb$database)
+        # with further ROLLBACK is performed by ISQL in authentification purpose when commands are passed
+        # via PIPE mechanism.
+        # We can NOT ignore this query here because trace session is started without our explicit control
+        # (in contrary to FBT suite), thus we have to add one more line to expected_stdout here:
+        expected_stdout = """
+            Statement statistics detected for ROLLBACK
+        """
+
+    expected_stdout += """
+        Statement statistics detected for COMMIT
+        Statement statistics detected for COMMIT
+        Statement statistics detected for ROLLBACK
+        Found performance block header
+        Found table statistics for TFIX
+        Statement statistics detected for COMMIT
+        Statement statistics detected for ROLLBACK
+        Found performance block header
+        Found table statistics for GTT_SSN
+        Statement statistics detected for COMMIT
+        Statement statistics detected for ROLLBACK
+    """
+    
     with act.trace(db_events=trace):
         act.isql(switches=[], input=test_script)
     # Output log of trace session, with filtering only interested info:
