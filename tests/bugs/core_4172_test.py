@@ -24,6 +24,25 @@ NOTES:
       .* at offset
       -function DUMMY_EXT is not defined
       -module name or entrypoint could not be found)
+
+[04.03.2022] pzotov: RESOLVED.
+  Problem on Windows 3.0.8 caused by excessive query:
+      "select current_user, current_role from rdb$database"
+  -- which is done by ISQL 3.x when it gets commands from STDIN via PIPE mechanism.
+  Discussed with Alex et al, since 28-feb-2022 18:05 +0300.
+  Alex explanation: 28-feb-2022 19:52 +0300
+  subj: "Firebird new-QA: weird result for trivial test (outcome depends on presence of... running trace session!)"
+
+  NOTE-1: according to source issue from ticket, creation of temporary database not required here.
+  In old .fbt test this auto-created DB is immediately closed and script further makes two temp DBs.
+  In contrary to .fbt, here connection to auto-created temporary database ('C:\TEMP\PYTEST...\TEST_...\TEST.FDB')
+  is opened up to creation of first DB from SQL script  (create database '{str(temp_db_1_b)}';).
+  We can suppress 'Rolling back' message by trivial action: add COMMIT or ROLLBACK before this 'create database ...'
+
+  NOTE-2: I could not reproduce bugcheck on 32-bit snapshot WI-T3.0.0.30566 Alpha 1 (timestamp: 31-JUL-2013).
+  Tried both SS and CS, used forlder with space characters in name (as it was in the source example) - no matter.
+
+
 JIRA:        CORE-4172
 FBTEST:      bugs.core_4172
 """
@@ -46,7 +65,6 @@ expected_stdout_1 = """
 """
 
 expected_stderr_1 = """
-    Rolling back work.
     Statement failed, SQLSTATE = 39000
     invalid request BLR at offset
     -function DUMMY_EXT is not defined
@@ -56,10 +74,13 @@ expected_stderr_1 = """
 temp_db_1_a = temp_file('tmp_4172_1.fdb')
 temp_db_1_b = temp_file('tmp_4172_2.fdb')
 
-@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
+#@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
+# C:\TEMP\PYTEST-OF-ZOTOV\PYTEST-32\TEST_10\TEST.FDB
+
 @pytest.mark.version('>=3.0,<4')
 def test_1(act_1: Action, temp_db_1_a: Path, temp_db_1_b: Path):
     test_script = f"""
+    commit;
     create database '{str(temp_db_1_b)}';
     commit;
     create database '{str(temp_db_1_a)}';
@@ -95,6 +116,9 @@ def test_1(act_1: Action, temp_db_1_a: Path, temp_db_1_b: Path):
     act_1.isql(switches=['-q'], input=test_script)
     assert (act_1.clean_stderr == act_1.clean_expected_stderr and
             act_1.clean_stdout == act_1.clean_expected_stdout)
+
+
+#####################################################################################
 
 # version: 4.0
 
