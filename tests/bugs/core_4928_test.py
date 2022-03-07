@@ -22,6 +22,7 @@ init_script = """
         att_addr varchar(255),
         att_prot varchar(255),
         att_auth varchar(255),
+        att_proc varchar(255),
         att_dts timestamp default 'now'
     );
 
@@ -31,16 +32,20 @@ init_script = """
     create or alter trigger trg_connect active on connect as
     begin
       in autonomous transaction do
-      insert into att_log(att_id, att_name, att_user, att_addr, att_prot, att_auth)
+      insert into att_log(att_id, att_name, att_user, att_addr, att_prot, att_auth, att_proc)
       select
-           mon$attachment_id,
-           mon$attachment_name,
-           mon$user,
-           mon$remote_address,
-           mon$remote_protocol,
-           mon$auth_method
+           mon$attachment_id
+          ,mon$attachment_name
+          ,mon$user
+          ,mon$remote_address
+          ,mon$remote_protocol
+          ,mon$auth_method
+          ,mon$remote_process
       from mon$attachments
-      where mon$remote_protocol starting with upper('TCP') and mon$user = upper('SYSDBA')
+      where
+          mon$remote_protocol starting with upper('TCP')
+          and mon$user = upper('SYSDBA')
+          and lower(mon$remote_process) similar to '%[\\/]gbak(.exe)?'
       ;
     end
     ^
@@ -55,11 +60,10 @@ act = python_act('db')
 expected_stdout = """
     IS_ATT_ID_OK                    1
     IS_ATT_NAME_OK                  1
-    IS_ATT_USER_OK                  1
     IS_ATT_ADDR_OK                  1
-    IS_ATT_PROT_OK                  1
     IS_ATT_AUTH_OK                  1
     IS_ATT_DTS_OK                   1
+    IS_ATT_PROC_OK                  1
 """
 
 fbk_file = temp_file('tmp_core_4928.fbk')
@@ -77,16 +81,18 @@ def test_1(act: Action, fbk_file: Path):
     act.expected_stdout = expected_stdout
     act.script = """
     set list on;
-    select
-        iif(att_id > 0, 1, 0) is_att_id_ok,
-        iif(att_name containing 'test.fdb', 1, 0) is_att_name_ok,
-        iif(att_user = upper('SYSDBA'), 1, 0) is_att_user_ok,
-        iif(att_addr is not null, 1, 0) is_att_addr_ok,
-        iif(upper(att_prot) starting with upper('TCP'), 1, 0) is_att_prot_ok,
-        iif(att_auth is not null, 1, 0) is_att_auth_ok,
-        iif(att_dts is not null, 1, 0) is_att_dts_ok
-    from att_log
-    where att_id <> current_connection;
+    select 
+        --/*
+        iif( att_id > 0, 1, 0) is_att_id_ok
+       ,iif(att_name containing 'test.fdb', 1, 0) is_att_name_ok
+       ,iif( att_addr is not null, 1, 0) is_att_addr_ok
+       ,iif( att_auth is not null, 1, 0) is_att_auth_ok
+       ,iif( att_dts is not null, 1, 0) is_att_dts_ok
+       ,iif( att_proc similar to '%[\\/]gbak(.exe)?', 1, 0) is_att_proc_ok
+       -- */
+       -- a.*
+    from rdb$database
+    left join att_log a on  a.att_id <> current_connection;
     """
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
