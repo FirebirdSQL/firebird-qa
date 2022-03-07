@@ -488,12 +488,15 @@ class Database:
         Do not create instances of this class directly! Use **only** fixtures created by `db_factory`.
     """
     def __init__(self, path: Path, filename: str, user: str=None, password: str=None,
-                 charset: str=None, debug: str='', config_name: str='pytest'):
+                 charset: str=None, debug: str='', config_name: str='pytest',
+                 utf8filename: bool=False):
         #: firebird-driver database configuration name
         self.config_name: str = config_name
         if driver_config.get_database(config_name) is None:
             driver_config.register_database(config_name)
         self._debug: str = debug
+        #: Use utf8_filename DPB flag
+        self.utf8filename = utf8filename
         #: Full path to test database.
         self.db_path: Path = path / filename
         #: DSN to test database.
@@ -532,6 +535,7 @@ class Database:
         db_conf.database.value = str(self.db_path)
         db_conf.user.value = self.user if user is None else user
         db_conf.password.value = self.password if password is None else password
+        db_conf.utf8filename.value = self.utf8filename
         if sql_dialect is not None:
             db_conf.db_sql_dialect.value = sql_dialect
             db_conf.sql_dialect.value = sql_dialect
@@ -710,7 +714,7 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
                copy_of: str=None, page_size: int=None, sql_dialect: int=None,
                charset: str=None, user: str=None, password: str=None,
                do_not_create: bool=False, do_not_drop: bool=False, async_write: bool=True,
-               config_name: str='pytest'):
+               config_name: str='pytest', utf8filename: bool=False):
     """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
     the `Database` instance.
 
@@ -735,6 +739,7 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
            option when test database is removed by test itself (as part of test routine).
         async_write: When `True` [default], the database is set to async write before initialization.
         config_name: Name for database configuration.
+        utf8filename: Use utf8filename DPB flag.
 
     .. note::
 
@@ -745,7 +750,8 @@ def db_factory(*, filename: str='test.fdb', init: str=None, from_backup: str=Non
 
     @pytest.fixture
     def database_fixture(request: pytest.FixtureRequest, db_path) -> Database:
-        db = Database(db_path, filename, user, password, charset, debug=str(request.module))
+        db = Database(db_path, filename, user, password, charset, debug=str(request.module),
+                      config_name=config_name, utf8filename=utf8filename)
         if not do_not_create:
             if from_backup is None and copy_of is None:
                 db.create(page_size, sql_dialect)
