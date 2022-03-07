@@ -60,13 +60,7 @@ expected_stdout = """
 @pytest.mark.skip("Can't be implement with new Python driver")
 @pytest.mark.version('>=3')
 def test_1(act: Action, tmp_user: User):
-    # 1. Try to specifying 'force_write' flag: no errors and NO changes in 2.1.1; error in 2.1.2 and above
-    act.db._make_config(user=tmp_user.name, password=tmp_user.password)
-    db_conf = driver_config.get_database('pytest')
-    db_conf.forced_writes.value = True
-    with pytest.raises():
-        connect('pytest')
-    # 2. Try to specifying 'no_reserve' flag: no errors and NO changes in 2.1.1; error in 2.1.2 and above
+    pass
 
 # test_script_1
 #---

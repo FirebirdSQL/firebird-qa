@@ -912,6 +912,9 @@ How to use users
 How to use roles
 ----------------
 
+How to use temporary files
+--------------------------
+
 .. _Python: http://www.python.org
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 .. _virtualenvwrapper: https://virtualenvwrapper.rtfd.io
