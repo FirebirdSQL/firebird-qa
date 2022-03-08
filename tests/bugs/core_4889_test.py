@@ -7,6 +7,12 @@ TITLE:       FBSVCMGR with `action_trace_start` prevents in 3.0 SuperServer from
 DESCRIPTION:
 NOTES:
   This test fails on Windows with "FAILED to find text in trace related to EMBEDDED connect."
+
+[08.03.2022] pzotov
+  Fail on Windows caused by 'select current_user from rdb$database' which issues '0 records' (instead of expected '1 records')
+  But there is no much sence to search this line ('... records fetched') because it is enough to detect only lines with
+  ATTACH and DETACH that were performed by embedded connect. Replaced code which did trace log parsing.
+
 JIRA:        CORE-4889
 FBTEST:      bugs.core_4889
 """
@@ -33,7 +39,8 @@ commit;
 """
 
 expected_stdout = """
-     OK: found text in trace related to EMBEDDED connect.
+     Found embedded ATTACH
+     Found embedded DETACH
      CONNECTION_PROTOCOL             internal
      CONNECTION_PROCESS              internal
      CONNECTION_REMOTE_PID           internal
@@ -41,29 +48,29 @@ expected_stdout = """
      Records affected: 1
 """
 
-trace = ['time_threshold = 0',
+trace = [
+         'log_connections = true',
          'log_initfini = false',
          'log_errors = true',
-         'log_statement_finish = true',
          ]
 
-@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
+##@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
     with act.trace(db_events=trace):
         act.isql(switches=['-n', '-user', 'tmp$no$such$user$4889', str(act.db.db_path)],
                  connect_db=False, credentials=False, input=isq_script)
+    
     # Process trace log
-    i = 0
+    lprev = ''
     for line in act.trace_log:
-        if ') EXECUTE_STATEMENT_FINISH' in line:
-            i = 1
-        if i == 1 and '1 records fetched' in line:
-            i = 2
-            print("OK: found text in trace related to EMBEDDED connect.")
-            break
-    if not i == 2:
-        print("FAILED to find text in trace related to EMBEDDED connect.")
+        if 'TMP$NO$SUCH$USER$4889:' in line:
+            if ') ATTACH_DATABASE' in lprev:
+                print('Found embedded ATTACH')
+            elif ') DETACH_DATABASE' in lprev:
+                print('Found embedded DETACH')
+        lprev = line
+
     print(act.stdout if act.stdout else "FAILED to print log from EMBEDDED connect: log is EMPTY.")
     # Check
     act.expected_stdout = expected_stdout
