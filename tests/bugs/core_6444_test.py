@@ -1601,6 +1601,7 @@ expected_stdout_4 = """
     LockMemSize                                        30408704                                                         1048576                                                          <true>       databases.conf
     MaxIdentifierByteLength                            31                                                               252                                                              <true>       databases.conf
     MaxIdentifierCharLength                            31                                                               63                                                               <true>       databases.conf
+    MaxStatementCacheSize                              2097152                                                          2097152                                                          <false>      <null>
     MaxUnflushedWriteTime                              15                                                               5                                                                <true>       databases.conf
     MaxUnflushedWrites                                 111                                                              100                                                              <true>       databases.conf
     MaxUserTraceLogSize                                100                                                              10                                                               <true>       firebird.conf
