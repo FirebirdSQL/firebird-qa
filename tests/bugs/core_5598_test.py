@@ -15,9 +15,14 @@ DESCRIPTION:
   Finally, we launch query against this table and this query will use hash join because of missed indices.
   We have to check that NO errors occured during this query.
 
-  Discuss with dimitr: letters 08-jan-2018 .. 06-feb-2018.
+  Discussed with dimitr: letters 08-jan-2018 .. 06-feb-2018.
 JIRA:        CORE-5598
 FBTEST:      bugs.core_5598
+NOTES:
+    [07.04.2022] pzotov
+    FB 5.0.0.455 and later: data sources with equal cardinality now present in the HASH plan in order they are specified in the query.
+    Reversed order was used before this build. Because of this, two cases of expected stdout must be taken in account, see variables
+    'fb3x_checked_stdout' and 'fb5x_checked_stdout'.
 """
 
 import pytest
@@ -30,34 +35,21 @@ db = db_factory(charset='UTF8')
 
 act = python_act('db', substitutions=substitutions)
 
-expected_stdout = """
-    SELECT EXPRESSION
-     -> AGGREGATE
-     -> FILTER
-     -> HASH JOIN (INNER)
-     -> TABLE "TEST" AS "B" FULL SCAN
-     -> RECORD BUFFER (RECORD LENGTH: 32793)
-     -> TABLE "TEST" AS "A" FULL SCAN
-    COUNT 17000
+fb3x_checked_stdout = """
+    PLAN HASH (B NATURAL, A NATURAL)
+"""
+
+fb5x_checked_stdout = """
+    PLAN HASH (A NATURAL, B NATURAL)
 """
 
 MIN_RECS_TO_ADD = 17000
 
 test_script = """
-    set list on;
-    --show version;
-    set explain on;
+    set list on; 
+    set plan on;
     select count(*) from test a join test b using(id, s);
-    set explain off;
     quit;
-    select
-         m.MON$STAT_ID
-        ,m.MON$STAT_GROUP
-        ,m.MON$MEMORY_USED
-        ,m.MON$MEMORY_ALLOCATED
-        ,m.MON$MAX_MEMORY_USED
-        ,m.MON$MAX_MEMORY_ALLOCATED
-    from mon$database d join mon$memory_usage m using (MON$STAT_ID);
 """
 
 @pytest.mark.version('>=3.0.3')
@@ -68,8 +60,11 @@ def test_1(act: Action):
         c = con.cursor()
         c.execute(f"insert into test(id, s) select row_number()over(), lpad('', 8191, 'Алексей, Łukasz, Máté, François, Jørgen, Νικόλαος') from rdb$types,rdb$types rows {MIN_RECS_TO_ADD}")
         con.commit()
+        engine_major = int(con.info.engine_version)
     #
-    act.expected_stdout = expected_stdout
+    #act.expected_stdout = expected_stdout
+    act.expected_stdout = fb3x_checked_stdout if engine_major < 5 else fb5x_checked_stdout
+
     act.isql(switches=['-q'], input=test_script)
     act.stdout = act.stdout.upper()
     assert act.clean_stdout == act.clean_expected_stdout
