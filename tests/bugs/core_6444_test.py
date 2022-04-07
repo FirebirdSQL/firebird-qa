@@ -1209,6 +1209,7 @@ expected_stdout_3 = """
     MaxUnflushedWriteTime                              15                                                               -1                                                                <true>       databases.conf
     MaxUnflushedWrites                                 111                                                              -1                                                              <true>       databases.conf
     MaxUserTraceLogSize                                100                                                              10                                                               <true>       firebird.conf
+    OnDisconnectTriggerTimeout                         180                                                              180                                                              <false>      <null>
     OutputRedirectionFile                              /dev/null                                                        /dev/null                                                        <false>      <null>
     ProcessPriorityLevel                               0                                                                0                                                                <false>      <null>
     Providers                                          Engine13, Remote                                                 Remote, Engine13, Loopback                                       <true>       databases.conf
@@ -1243,7 +1244,7 @@ expected_stdout_3 = """
     WireCrypt                                          Required                                                         Required                                                         <true>       firebird.conf
     WireCryptPlugin                                    Arc4                                                             ChaCha64, ChaCha, Arc4                                           <true>       firebird.conf
 
-    Records affected: 71
+    Records affected: 72
     Records affected: 0
 """
 
@@ -1605,6 +1606,7 @@ expected_stdout_4 = """
     MaxUnflushedWriteTime                              15                                                               5                                                                <true>       databases.conf
     MaxUnflushedWrites                                 111                                                              100                                                              <true>       databases.conf
     MaxUserTraceLogSize                                100                                                              10                                                               <true>       firebird.conf
+    OnDisconnectTriggerTimeout                         180                                                              180                                                              <false>      <null>
     OutputRedirectionFile                              nul                                                              nul                                                              <false>      <null>
     ProcessPriorityLevel                               0                                                                0                                                                <false>      <null>
     Providers                                          Engine13, Remote                                                 Remote, Engine13, Loopback                                       <true>       databases.conf
@@ -1639,7 +1641,7 @@ expected_stdout_4 = """
     WireCrypt                                          Required                                                         Required                                                         <true>       firebird.conf
     WireCryptPlugin                                    Arc4                                                             ChaCha64, ChaCha, Arc4                                           <true>       firebird.conf
 
-    Records affected: 71
+    Records affected: 72
     Records affected: 0
 """
 
