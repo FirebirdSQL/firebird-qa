@@ -8,6 +8,11 @@ TITLE:       HASH/MERGE JOIN is not used for more than two streams if they are j
 DESCRIPTION:
 JIRA:        CORE-4809
 FBTEST:      bugs.core_4809
+NOTES:
+    [07.04.2022] pzotov
+    FB 5.0.0.455 and later: data sources with equal cardinality now present in the HASH plan in order they are specified in the query.
+    Reversed order was used before this build. Because of this, two cases of expected stdout must be taken in account, see variables
+    'fb3x_checked_stdout' and 'fb5x_checked_stdout'.
 """
 
 import pytest
@@ -153,7 +158,7 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
+fb3x_checked_stdout = """
     PLAN HASH (S TK NATURAL, R TK NATURAL)
     PLAN HASH (HASH (T TK NATURAL, S TK NATURAL), R TK NATURAL)
     PLAN HASH (HASH (HASH (U TK NATURAL, T TK NATURAL), S TK NATURAL), R TK NATURAL)
@@ -174,9 +179,35 @@ expected_stdout = """
     PLAN HASH (U TF NATURAL, HASH (T TF NATURAL, HASH (S TF NATURAL, R TF NATURAL)))
 """
 
+
+fb5x_checked_stdout = """
+    PLAN HASH (R TK NATURAL, S TK NATURAL)
+    PLAN HASH (R TK NATURAL, S TK NATURAL, T TK NATURAL)
+    PLAN HASH (R TK NATURAL, S TK NATURAL, T TK NATURAL, U TK NATURAL)
+    PLAN HASH (R TK NATURAL, S TK NATURAL)
+    PLAN HASH (HASH (R TK NATURAL, S TK NATURAL), T TK NATURAL)
+    PLAN HASH (HASH (HASH (R TK NATURAL, S TK NATURAL), T TK NATURAL), U TK NATURAL)
+    PLAN HASH (R TK NATURAL, S TK NATURAL)
+    PLAN HASH (HASH (R TK NATURAL, S TK NATURAL), T TK NATURAL)
+    PLAN HASH (HASH (HASH (R TK NATURAL, S TK NATURAL), T TK NATURAL), U TK NATURAL)
+    PLAN HASH (R TF NATURAL, S TF NATURAL)
+    PLAN HASH (R TF NATURAL, S TF NATURAL, T TF NATURAL)
+    PLAN HASH (R TF NATURAL, S TF NATURAL, T TF NATURAL, U TF NATURAL)
+    PLAN HASH (R TF NATURAL, S TF NATURAL)
+    PLAN HASH (HASH (R TF NATURAL, S TF NATURAL), T TF NATURAL)
+    PLAN HASH (HASH (HASH (R TF NATURAL, S TF NATURAL), T TF NATURAL), U TF NATURAL)
+    PLAN HASH (R TF NATURAL, S TF NATURAL)
+    PLAN HASH (HASH (R TF NATURAL, S TF NATURAL), T TF NATURAL)
+    PLAN HASH (HASH (HASH (R TF NATURAL, S TF NATURAL), T TF NATURAL), U TF NATURAL)
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    with act.connect_server() as srv:
+        engine_major = int(srv.info.engine_version)
+
+    act.expected_stdout = fb3x_checked_stdout if engine_major < 5 else fb5x_checked_stdout
+
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
 
