@@ -9,6 +9,11 @@ DESCRIPTION:
   See CORE-4809
 JIRA:        CORE-4528
 FBTEST:      bugs.core_4528
+NOTES:
+    [07.04.2022] pzotov
+    FB 5.0.0.455 and later: data sources with equal cardinality now present in the HASH plan in order they are specified in the query.
+    Reversed order was used before this build. Because of this, two cases of expected stdout must be taken in account, see variables
+    'fb3x_checked_stdout' and 'fb5x_checked_stdout'.
 """
 
 import pytest
@@ -99,7 +104,7 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
+fb3x_checked_stdout = """
     PLAN HASH (S TN NATURAL, R TN NATURAL)
     PLAN HASH (HASH (T TN NATURAL, S TN NATURAL), R TN NATURAL)
     PLAN HASH (S TN NATURAL, R TN NATURAL)
@@ -109,9 +114,23 @@ expected_stdout = """
     PLAN HASH (S TN NATURAL, R TN NATURAL)
 """
 
+
+fb5x_checked_stdout = """
+    PLAN HASH (R TN NATURAL, S TN NATURAL)
+    PLAN HASH (R TN NATURAL, S TN NATURAL, T TN NATURAL)
+    PLAN HASH (R TN NATURAL, S TN NATURAL)
+    PLAN HASH (R TN NATURAL, S TN NATURAL, T TN NATURAL)
+    PLAN HASH (R TN NATURAL, S TN NATURAL, T TN NATURAL, U TN NATURAL)
+    PLAN HASH (R TN NATURAL, S TN NATURAL)
+    PLAN HASH (R TN NATURAL, S TN NATURAL)
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    with act.connect_server() as srv:
+        engine_major = int(srv.info.engine_version)
+
+    act.expected_stdout = fb3x_checked_stdout if engine_major < 5 else fb5x_checked_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
 
