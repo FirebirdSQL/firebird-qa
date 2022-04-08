@@ -74,25 +74,29 @@ COMMIT;
 
 db = db_factory(init=init_script)
 
-test_script = """SET PLAN ON;
-SELECT
-  Count(*)
-FROM
-  Table_100 t100
-  JOIN Table_10 t10 ON (t10.ID = t100.ID)
-JOIN PR_List_1000 sp1000 ON (sp1000.ID = t10.ID);"""
+test_script = """
+    set planonly;
+    select count(*)
+    from table_100 t100
+    join table_10 t10 on (t10.id = t100.id)
+    join pr_list_1000 sp1000 on (sp1000.id = t10.id);
+"""
 
 act = isql_act('db', test_script)
 
-expected_stdout = """PLAN HASH (T100 NATURAL, T10 NATURAL, SP1000 NATURAL)
+fb3x_checked_stdout = """
+    PLAN HASH (T100 NATURAL, T10 NATURAL, SP1000 NATURAL)
+"""
 
-                COUNT
-=====================
-                    5
+fb5x_checked_stdout = """
+    PLAN HASH (SP1000 NATURAL, T10 NATURAL, T100 NATURAL)
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    with act.connect_server() as srv:
+        engine_major = int(srv.info.engine_version)
+
+    act.expected_stdout = fb3x_checked_stdout if engine_major < 5 else fb5x_checked_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
