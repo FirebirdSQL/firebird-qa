@@ -44,6 +44,23 @@ NOTES:
   Test fails on Windows as script execution fails with:
    Statement failed, SQLSTATE = 0P000
    Your attachment has no trusted role
+
+[08.04.2022] pzotov
+  [WINDOWS]
+  1. The 'CONNECT ...' operator, being specified without USER/PASSWORD clauses, will take in account parameters that werte specified in the command line
+     of ISQL (confirmed by Alex, letter 03.04.2022 20:31).
+     This means that it will use 'SYSDBA' / 'masterkey' rather than Windows trusted auth. This, in turn, leads that SYSDBA will be current user
+     when following is performed:
+         connect '{THIS_COMPUTER_NAME}:{act.db.db_path}' role tmp$r6469;
+     - and it causes 'set trusted role' to fail (SQLSTATE = 0P000 / Your attachment has no trusted role).
+     Because of this, we have to launch ISQL without using current credentials (which is True by default) - see 'credentials = False'.
+  2. One need to run ISQL with requirement do NOT establish connection to the test database because this will be done in the test script itself.
+     Otherwise we get 'Missing security context' *after* test finishes (the reason is unknown; instead, "Rolling back work." must be issued and redirected to STDERR).
+     To prevent such error, we have to specify 'connect_db = False' in db_factory() call.
+
+  Checked on 4.0.1 Release, 5.0.0.467.
+
+
 JIRA:        CORE-6469
 FBTEST:      bugs.core_6469
 """
@@ -52,6 +69,7 @@ import pytest
 import re
 import socket
 import getpass
+from pathlib import Path
 from firebird.qa import *
 
 db = db_factory()
@@ -59,6 +77,11 @@ db = db_factory()
 act = python_act('db')
 
 test_role = role_factory('db', name='TMP$R6469')
+tmp_file = temp_file('c6469_tmp.sql')
+
+################################
+###       W I N D O W S      ###
+################################
 
 # version: 4.0 - Windows
 
@@ -90,7 +113,7 @@ patterns_win =  [re.compile('alter session reset', re.IGNORECASE),
                  re.compile('set role', re.IGNORECASE),
                  re.compile('set trusted role', re.IGNORECASE)]
 
-def run_script(act: Action):
+def run_script(act: Action, tmp_file: Path):
     __tracebackhide__ = True
     THIS_COMPUTER_NAME = socket.gethostname()
     CURRENT_WIN_ADMIN = getpass.getuser()
@@ -98,6 +121,7 @@ def run_script(act: Action):
     set bail on;
     set list on;
     set echo on;
+    connect '{act.db.dsn}' user '{act.db.user}' password '{act.db.password}';
     grant tmp$r6469 to "{THIS_COMPUTER_NAME}\\{CURRENT_WIN_ADMIN}";
     commit;
 
@@ -149,14 +173,17 @@ def run_script(act: Action):
     drop mapping win_admins;
     commit;
     """
-    act.isql(switches=['-n'], input=script)
+    tmp_file.write_text(script)
 
-@pytest.mark.skipif(reason='FIXME: see notes')
+    act.isql(switches=['-n'], input_file = tmp_file, connect_db = False, credentials = False)
+
+#@pytest.mark.skipif(reason='FIXME: see notes')
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
-def test_1(act: Action, test_role: Role, capsys):
+def test_1(act: Action, test_role: Role, tmp_file: Path,  capsys):
     with act.trace(db_events=trace_win):
-        run_script(act)
+        run_script(act, tmp_file)
+
     # process trace
     for line in act.trace_log:
         if line.split():
@@ -167,6 +194,11 @@ def test_1(act: Action, test_role: Role, capsys):
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
 
+
+
+################################
+###         L I N U X        ###
+################################
 # version: 4.0 - Linux
 
 expected_stdout_lin = """
@@ -231,6 +263,7 @@ patterns_lin =  [re.compile('alter session reset', re.IGNORECASE),
 def test_2(act: Action, test_role: Role, capsys):
     with act.trace(db_events=trace_lin):
         act.isql(switches=['-n'], input=test_script_lin)
+
     # process trace
     for line in act.trace_log:
         if line.split():
@@ -240,3 +273,4 @@ def test_2(act: Action, test_role: Role, capsys):
     act.expected_stdout = expected_stdout_lin
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
+
