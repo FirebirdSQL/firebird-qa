@@ -6,6 +6,12 @@ TITLE:       Mixed JOINS
 DESCRIPTION:
   Tables without indexes should be merged (when inner join) and those who can use a index, should use it.
 FBTEST:      functional.arno.optimizer.opt_mixed_joins_06
+NOTES:
+    [08.04.2022] pzotov
+    FB 5.0.0.455 and later: data source with greatest cardinality will be specified at left-most position
+    in the plan when HASH JOIN is choosen. Because of this, two cases of expected stdout must be taken
+    in account, see variables 'fb3x_checked_stdout' and 'fb5x_checked_stdout'.
+    See letter from dimitr, 05.04.2022 17:38.
 """
 
 import pytest
@@ -95,28 +101,32 @@ COMMIT;
 
 db = db_factory(init=init_script)
 
-test_script = """SET PLAN ON;
-SELECT
-  Count(*)
-FROM
-  Table_500 t500
-  LEFT JOIN Table_1 t1 ON (t1.ID = t500.ID)
-  JOIN Table_1000 t1000 ON (t1000.ID = t500.ID)
-  JOIN Table_10 t10 ON (t10.ID = t1000.ID)
-  JOIN Table_50 t50 ON (t50.ID = t10.ID)
-JOIN Table_100 t100 ON (t100.ID = t500.ID);"""
+test_script = """
+set planonly;
+select count(*)
+from table_500 t500
+	left join table_1 t1 on (t1.id = t500.id)
+	join table_1000 t1000 on (t1000.id = t500.id)
+	join table_10 t10 on (t10.id = t1000.id)
+	join table_50 t50 on (t50.id = t10.id)
+	join table_100 t100 on (t100.id = t500.id);
+"""
 
 act = isql_act('db', test_script)
 
-expected_stdout = """PLAN HASH (T1000 NATURAL, T100 NATURAL, T10 NATURAL, JOIN (JOIN (T500 NATURAL, T1 INDEX (PK_TABLE_1)), T50 INDEX (PK_TABLE_50)))
+fb3x_checked_stdout = """
+    PLAN HASH (T1000 NATURAL, T100 NATURAL, T10 NATURAL, JOIN (JOIN (T500 NATURAL, T1 INDEX (PK_TABLE_1)), T50 INDEX (PK_TABLE_50)))
+"""
 
-                COUNT
-=====================
-                   10
+fb5x_checked_stdout = """
+    PLAN HASH (T1000 NATURAL, T10 NATURAL, T100 NATURAL, JOIN (JOIN (T500 NATURAL, T1 INDEX (PK_TABLE_1)), T50 INDEX (PK_TABLE_50)))
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    with act.connect_server() as srv:
+        engine_major = int(srv.info.engine_version)
+
+    act.expected_stdout = fb3x_checked_stdout if engine_major < 5 else fb5x_checked_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
