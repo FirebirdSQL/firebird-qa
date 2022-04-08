@@ -60,11 +60,8 @@ def test_1(act: Action):
         c = con.cursor()
         c.execute(f"insert into test(id, s) select row_number()over(), lpad('', 8191, 'Алексей, Łukasz, Máté, François, Jørgen, Νικόλαος') from rdb$types,rdb$types rows {MIN_RECS_TO_ADD}")
         con.commit()
-        engine_major = int(con.info.engine_version)
-    #
-    #act.expected_stdout = expected_stdout
-    act.expected_stdout = fb3x_checked_stdout if engine_major < 5 else fb5x_checked_stdout
 
+    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout
     act.isql(switches=['-q'], input=test_script)
     act.stdout = act.stdout.upper()
     assert act.clean_stdout == act.clean_expected_stdout

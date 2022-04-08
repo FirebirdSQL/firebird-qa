@@ -107,9 +107,6 @@ fb5x_checked_stdout = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    with act.connect_server() as srv:
-        engine_major = int(srv.info.engine_version)
-
-    act.expected_stdout = fb3x_checked_stdout if engine_major < 5 else fb5x_checked_stdout
+    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
