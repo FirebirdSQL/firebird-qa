@@ -30,6 +30,12 @@ NOTES:
     ?       ^
     + CAST 11:11:12.1345 America/Sao_Paulo
     ?       ^
+
+[08.04.2022] pzotov
+  CAN NOT reproduce fail, used dates before and after daylight saving threshold. Sent letter to pcisar, 03-apr-2022 14:28.
+  Checked on FB 4.0.1 Release, 5.0.0.467.
+
+
 FBTEST:      functional.gtcs.time_zone
 """
 
@@ -1318,7 +1324,7 @@ expected_stderr = """
     -Problematic key value is ("V" = '2018-01-01 14:33:33.0000 +02:00')
 """
 
-@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
+#@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
