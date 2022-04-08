@@ -27,7 +27,7 @@ DESCRIPTION:
 
   We expect appearing of this exception (see try/except block): check its class and content of message.
 NOTES:
-[08.02.2022] pcisar
+  [08.02.2022] pcisar
   Fails on Windows 3.0.8 due to malformed error message:
         Got exception: <class 'firebird.driver.types.DatabaseError'>
       + Execute statement error at isc_dsql_prepare :335544359 : attempted update of read-only column
@@ -37,6 +37,10 @@ NOTES:
       - Data source
        -At block line: 9, col: 5
         -At trigger 'PERSONS_REPLICATE'
+   [08.04.2022] pzotov
+   CAN NOT REPRODUCE FAIL!
+   Test PASSES on FB 3.0.8 Rls, 4.0.1 RLs and 5.0.0.467.
+
 JIRA:        CORE-5972
 FBTEST:      bugs.core_5972
 """
@@ -76,7 +80,7 @@ expected_stdout = """
     -At trigger 'PERSONS_REPLICATE'
 """
 
-@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
+##@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0.6')
 def test_1(act: Action, db_repl: Database, capsys):
     ddl_for_replication = f"""
