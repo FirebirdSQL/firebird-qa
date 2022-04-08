@@ -6,6 +6,13 @@ TITLE:       Mixed JOINS
 DESCRIPTION:
   Tables without indexes should be merged (when inner join) and those who can use a index, should use it.
 FBTEST:      functional.arno.optimizer.opt_mixed_joins_02
+
+NOTES:
+    [08.04.2022] pzotov
+    FB 5.0.0.455 and later: data source with greatest cardinality will be specified at left-most position
+    in the plan when HASH JOIN is choosen. Because of this, two cases of expected stdout must be taken
+    in account, see variables 'fb3x_checked_stdout' and 'fb5x_checked_stdout'.
+    See letter from dimitr, 05.04.2022 17:38.
 """
 
 import pytest

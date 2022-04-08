@@ -8,6 +8,13 @@ DESCRIPTION:
   When no index can be used on a INNER JOIN and there's a relation setup between X and Y
   then a MERGE should be performed. Test with selectable Stored Procedure.
 FBTEST:      functional.arno.optimizer.opt_inner_join_merge_06
+
+NOTES:
+    [08.04.2022] pzotov
+    FB 5.0.0.455 and later: data source with greatest cardinality will be specified at left-most position
+    in the plan when HASH JOIN is choosen. Because of this, two cases of expected stdout must be taken
+    in account, see variables 'fb3x_checked_stdout' and 'fb5x_checked_stdout'.
+    See letter from dimitr, 05.04.2022 17:38.
 """
 
 import pytest
