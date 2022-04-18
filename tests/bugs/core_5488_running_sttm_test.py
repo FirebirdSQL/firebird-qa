@@ -3,7 +3,7 @@
 """
 ID:          issue-5758-A
 ISSUE:       5758
-TITLE:       Incorrect results when left join on subquery with constant column
+TITLE:       Timeout for running SQL statement (SET STATEMENT TIMEOUT <N>)
 DESCRIPTION:
   This is _initial_ test with trivial checks:
   1) it hould be possible to cancel 'heavy query' executed on <this_test_DB>;
