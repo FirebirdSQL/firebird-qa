@@ -18,10 +18,6 @@ FBTEST:      functional.basic.db.23
 import pytest
 from firebird.qa import *
 
-#substitutions = [('VIEW_BLR_BLOB_ID.*', ''), ('VIEW_SRC_BLOB_ID.*', ''),
-#                 ('DESCR_BLOB_ID.*', ''), ('RUNTIME_BLOB_ID.*', ''),
-#                 ('EXT_DESCR_BLOB_ID.*', ''), ('RDB\\$TRIGGER_.*', '')]
-
 substitutions = [
                      ('BLOB_ID_VIEW_BLR.*',  'BLOB_ID_VIEW_BLR')
                     ,('BLOB_ID_VIEW_SRC.*',  'BLOB_ID_VIEW_SRC')
