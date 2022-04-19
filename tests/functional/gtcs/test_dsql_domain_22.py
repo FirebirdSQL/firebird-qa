@@ -35,10 +35,17 @@ DESCRIPTION:
   ::: NB-2 :::
   Domain CHECK constraint *can* be changed so that existing data will not satisfy new expression.
   Only NOT NULL is verified against data that were inserted in the table.
+
+NOTES:
+[19.04.2022] pzotov
+  Manipulations with domain 'dom22_08' were changed: removed usage of EXP() to get value that is minimal
+  distinguish from zero (used before: exp(-745.NNNNN)). Reason: result is hardware-dependent (Intel vs AMD).
+
 """
 
 import pytest
 from firebird.qa import *
+from pathlib import Path
 
 substitutions = [('After line.*', ''), ('X_BLOB_20.*', ''), ('X_BLOB_21.*', ''),
                  ('X_BLOB_22.*', ''), ('DM_FVALID.*', ''), ('DM_FDEFAULT.*', ''),
@@ -51,7 +58,7 @@ db = db_factory()
 
 act = python_act('db', substitutions=substitutions)
 
-expected_stderr = """
+test_expected_stderr = """
     Statement failed, SQLSTATE = 22006
     unsuccessful metadata update
     -Cannot make field X_SML of table TEST NOT NULL because there are NULLs present
@@ -278,7 +285,7 @@ expected_stderr = """
 
 """
 
-expected_stdout = """
+test_expected_stdout = """
     DM_NAME                         DOM22_01
     DM_TYPE                         7
     DM_SUBTYPE                      0
@@ -388,7 +395,7 @@ expected_stdout = """
     DM_FCHRLEN                      <null>
     DM_FNULL                        <null>
     DM_FVALID                       2:201
-    check (value is null or value is not distinct from exp(-745.1332192))
+    check (value is null or value = 0)
     DM_FDEFAULT                     2:203
     default 0
     DM_NAME                         DOM22_09
@@ -616,507 +623,463 @@ expected_stdout = """
     16
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
 
-# test_script_1
-#---
-#
-#
-#  import os
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  sql_init='''
-#      set list on;
-#      set blob all;
-#      set names utf8;
-#      connect '%(dsn)s' user '%(user_name)s' password '%(user_password)s';
-#
-#      create collation nm_coll for utf8 from unicode case insensitive accent insensitive;
-#      commit;
-#
-#      create domain dom20u as varchar(20) character set utf8 collate nm_coll;
-#      commit;
-#
-#
-#      create table rivers(
-#        id int
-#        ,river dom20u
-#      );
-#      insert into rivers(id, river) values(1, 'Волга');
-#      insert into rivers(id, river) values(2, 'Дніпро');
-#      insert into rivers(id, river) values(3, 'Wisła');
-#      insert into rivers(id, river) values(4, 'Dunărea');
-#      insert into rivers(id, river) values(5, 'Rhône');
-#      commit;
-#
-#      create domain dom22_01 as smallint         default 0           check (value >= 0 and value < 100);
-#      create domain dom22_02 as integer          default 500         check (value >= 500);
-#      create domain dom22_03 as date             default 'TODAY'     check (value >= 'today');
-#
-#      -- CHECK-expression of this domain will be changed to
-#      -- "check (value in (select river from rivers))" - see below:
-#      create domain dom22_04 as char(20)         default 'Wisła'     check ( value in ('Волга','Дніпро','Wisła','Dunărea','Rhône') );
-#
-#      -- CHECK-expression of this domain will be changed to
-#      -- "check (value NOT in (select river from rivers))" - see below:
-#      create domain dom22_05 as varchar(25)      default 'Norrström' check ( value NOT in ('Волга','Дніпро','Wisła','Dunărea','Rhône') );
-#
-#      create domain dom22_06 as numeric(2,2)     default -327.68      check (value < 0);
-#      create domain dom22_07 as decimal(6,2)     default -999.99      check (value < 0);
-#
-#      -- exp(-745.1332192) is max. double precision value that will be NOT distinguish from zero:
-#      create domain dom22_08 as double precision default 0 check (value is null or value is not distinct from exp(-745.1332192));
-#
-#      -----------------------------
-#
-#      -- Additional datataypes (they either not present in original test or did appear since FB 3.x):
-#      create domain dom22_09 as bigint         default 9223372036854775807 check (value > 0);
-#      create domain dom22_10 as nchar(1)       default 'Y' check( value in ('Y', 'y') ); -- alias for ISO8859_1
-#      create domain dom22_11 as binary(2)      default 'Ÿ' check( value in ('Ÿ', 'ÿ') ); -- this datatype is alias for char(N) character set octets
-#      create domain dom22_12 as varbinary(2)   default 'Ÿ' check( value in ('Ÿ', 'ÿ') );
-#      create domain dom22_13 as boolean        default false check ( value is not true );
-#
-#      create domain dom22_14 as decfloat(16)   default -9.999999999999999E+384 check( log10(abs(value)) >= 384 );
-#      create domain dom22_15 as decfloat       default -9.999999999999999999999999999999999E6144 check( log10(abs(value)) >= 6144 );
-#      create domain dom22_16 as int128         default 170141183460469231731687303715884105727 check( value in(-170141183460469231731687303715884105728, 170141183460469231731687303715884105727) );
-#
-#      create domain dom22_17 as time with time zone      default '11:11:11.111 Indian/Cocos'            check ( extract(hour from value) <=12 );
-#      create domain dom22_18 as timestamp                default '01.01.0001 00:00:01.001'              check ( extract(minute from value) = 0 );
-#      create domain dom22_19 as timestamp with time zone default '21.12.2013 11:11:11.111 Indian/Cocos' check ( extract(minute from value) <=30 );
-#
-#      create domain dom22_20 as blob                                  default 'Ÿ' check( value in ('Ÿ', 'ÿ') );
-#      create domain dom22_21 as blob sub_type text character set utf8 default 'Ätran' check (value is null or value NOT in (select river from rivers)) collate nm_coll;
-#      create domain dom22_22 as blob sub_type binary                  default 0x10 check (value > 0x01);
-#
-#      create or alter view v_test as
-#      select
-#          ff.rdb$field_name as dm_name
-#          ,ff.rdb$field_type as dm_type
-#          ,ff.rdb$field_sub_type as dm_subtype
-#          ,ff.rdb$field_length as dm_flen
-#          ,ff.rdb$field_scale as dm_fscale
-#          ,ff.rdb$field_precision as dm_fprec
-#          ,ff.rdb$character_set_id as dm_fcset
-#          ,ff.rdb$collation_id as dm_fcoll
-#          ,ff.rdb$character_length dm_fchrlen
-#          ,ff.rdb$null_flag as dm_fnull
-#          ,ff.rdb$validation_source as dm_fvalid
-#          ,ff.rdb$default_source as dm_fdefault
-#      from rdb$fields ff
-#      where
-#          ff.rdb$system_flag is distinct from 1
-#          and ff.rdb$field_name starting with upper( 'dom22_' )
-#      order by dm_name
-#      ;
-#      commit;
-#
-#      select * from v_test;
-#      -- ############################################################
-#
-#      set bail off;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_sml dom22_01); -- smallint         default 0           check (value >= 0 and value < 100);
-#
-#      insert into test default values returning x_sml;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_01 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
-#      alter domain dom22_01 drop constraint add constraint check(value < 0);
-#      commit;
-#
-#      insert into test default values returning x_sml; -- must fail with SQLSTATE = 23000 / validation error ... value "0"
-#      update test set x_sml = default where x_sml is null; -- must fail with SQLSTATE = 23000 / validation error ... value "0"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_int dom22_02); -- integer          default 500         check (value >= 500);
-#
-#      insert into test default values returning x_int;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_02 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
-#      alter domain dom22_02 drop constraint add constraint check(value < 0);
-#      commit;
-#
-#      insert into test default values returning x_int; -- must fail with SQLSTATE = 23000 / validation error ... value "500"
-#      update test set x_int = default where x_int is null; -- must fail with SQLSTATE = 23000 / validation error ... value "500"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_date dom22_03); -- date             default 'TODAY'     check (value >= 'today');
-#
-#      insert into test default values returning x_date;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_03 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
-#      alter domain dom22_03 drop constraint add constraint check(value < 'today');
-#      commit;
-#
-#      insert into test default values returning x_date; -- must fail with SQLSTATE = 23000 / validation error ... value <current_date>
-#      update test set x_date = default where x_date is null; -- must fail with SQLSTATE = 23000 / validation error ... value <current_date>
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_char dom22_04); -- char(20)         default 'Wisła'     check (value in (select river from rivers));
-#
-#      insert into test default values returning x_char;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_04 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
-#      alter domain dom22_04 drop constraint add constraint check(value NOT in (select river from rivers));
-#      commit;
-#
-#      insert into test default values returning x_char; -- must fail with SQLSTATE = 23000 / validation error ... value "Wisła              "
-#      update test set x_char = default where x_char is null; -- must fail with SQLSTATE = 23000 / validation error ... value "Wisła              "
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_vchr dom22_05); -- varchar(25)      default 'Norrström' check (value NOT in (select river from rivers));
-#
-#      insert into test default values returning x_vchr;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_05 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
-#      alter domain dom22_05 drop constraint add constraint check(value in (select river from rivers));
-#      commit;
-#
-#      insert into test default values returning x_vchr; -- must fail with SQLSTATE = 23000 / validation error ... value "Norrström"
-#      update test set x_vchr = default where x_vchr is null; -- must fail with SQLSTATE = 23000 / validation error ... value "Norrström"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_num dom22_06); -- numeric(2,2)     default -327.68      check (value < 0);
-#
-#      insert into test default values returning x_num;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_06 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
-#      alter domain dom22_06 drop constraint add constraint check(value >0);
-#      commit;
-#
-#      insert into test default values returning x_num; -- must fail with SQLSTATE = 23000 / validation error ... value "-327.68"
-#      update test set x_num = default where x_num is null; -- must fail with SQLSTATE = 23000 / validation error ... value "-327.68"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_dec dom22_07); -- decimal(6,2)     default -999.99      check (value < 0);
-#
-#      insert into test default values returning x_dec;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_07 set not null;
-#
-#      -- numeric(2,2) can hold values from the scope -327.68 to +327.68.
-#      -- cast of -999.99 to numeric(2,2) (being valid for decimal(2,2)) must fail with 'numeric value is out of range':
-#      alter domain dom22_07 drop constraint add constraint check(cast(value as numeric(2,2)) < 0 );
-#      commit;
-#
-#      insert into test default values returning x_dec; -- must fail with SQLSTATE = 23000 / numeric value is out of range
-#      update test set x_dec = default where x_dec is null returning x_dec; -- must fail with SQLSTATE = 23000 / numeric value is out of range
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_dp dom22_08); -- default 0 check (value is not distinct from exp(-745.1332192))
-#
-#      insert into test default values returning x_dp;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_08 set not null;
-#      alter domain dom22_08 drop constraint add constraint check(value is not distinct from exp(-745.1332191) ); -- minimal DP value that can be distinguished from zero
-#      commit;
-#
-#      insert into test default values returning x_dp; -- must fail with SQLSTATE = 23000 / validation error ... value "0.0000000000000000"
-#      update test set x_dp = default where x_dp is null returning x_dp; -- must fail with SQLSTATE = 23000 / validation error ... value "0.0000000000000000"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_big dom22_09); -- default 9223372036854775807 check (value > 0);
-#
-#      insert into test default values returning x_big;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_09 set not null;
-#      alter domain dom22_09 drop constraint add constraint check(value between bin_shr(-9223372036854775808,63) and bin_shr(9223372036854775807,63)); -- -1...0
-#      commit;
-#
-#      insert into test default values returning x_big; -- must fail with SQLSTATE = 23000 / validation error ... value "9223372036854775807"
-#      update test set x_big = default where x_big is null returning x_big; -- must fail with SQLSTATE = 23000 / validation error ... value "9223372036854775807"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_nc dom22_10); -- nchar(1) default 'Y' check( value in ('Y', 'y') );
-#      insert into test default values returning x_nc;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_10 set not null;
-#      alter domain dom22_10 drop constraint add constraint check( value similar to 'U');
-#      commit;
-#
-#      insert into test default values returning x_nc;
-#      update test set x_nc = default where x_nc is null returning x_nc;
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_bin dom22_11); -- binary(2) default 'Ÿ' check( value in ('Ÿ', 'ÿ') )
-#      insert into test default values returning x_bin;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_11 set not null;
-#      alter domain dom22_11 drop constraint add constraint check( value is not distinct from 'ł' or value is not distinct from 'ă' or value is not distinct from 'ô' );
-#      commit;
-#
-#      insert into test default values returning x_bin; -- must fail with SQLSTATE = 23000 / validation error ... value "Ÿ"
-#      update test set x_bin = default where x_bin is null returning x_bin; -- must fail with SQLSTATE = 23000 / validation error ... value "Ÿ"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_vb dom22_12); -- varbinary(2) default 'Ÿ' check( value in ('Ÿ', 'ÿ') )
-#      insert into test default values returning x_vb;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_12 set not null;
-#      alter domain dom22_12 drop constraint add constraint check( value = any(select 'ł' from rdb$database union all select 'ă' from rdb$database) );
-#      commit;
-#
-#      insert into test default values returning x_vb; -- must fail with SQLSTATE = 23000 / validation error ... value "Ÿ"
-#      update test set x_vb = default where x_vb is null returning x_vb; -- must fail with SQLSTATE = 23000 / validation error ... value "Ÿ"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_boo dom22_13); -- boolean        default false check ( value is not true );
-#      insert into test default values returning x_boo;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_13 set not null;
-#      alter domain dom22_13 drop constraint add constraint check( value NOT in (false) );
-#      commit;
-#
-#      insert into test default values returning x_boo;
-#      update test set x_boo = default where x_boo is null returning x_boo;
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_df16 dom22_14); -- decfloat(16)   default -9.999999999999999E+384 check( log10(abs(value)) >= 384 );
-#
-#      insert into test default values returning x_df16;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_14 set not null;
-#      alter domain dom22_14 drop constraint add constraint check( value = 0 );
-#      commit;
-#
-#      insert into test default values returning x_df16;
-#      update test set x_df16 = default where x_df16 is null returning x_df16;
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_df34 dom22_15); -- default -9.999999999999999999999999999999999E6144 check( log10(abs(value)) >= 6144 );
-#
-#      insert into test default values returning x_df34;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_15 set not null;
-#      alter domain dom22_15 set default 0;
-#      alter domain dom22_15 drop constraint add constraint check( log10(abs(value)) < 0 );
-#      commit;
-#
-#      insert into test default values returning x_df34; -- must fail with SQLSTATE = 42000 / -Argument for LOG10 must be positive
-#      update test set x_df34 = default where x_df34 is null returning x_df34; -- must fail with SQLSTATE = 42000 / -Argument for LOG10 must be positive
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_i128 dom22_16); -- int128  default 170141183460469231731687303715884105727 check( value in(-170141183460469231731687303715884105728, 170141183460469231731687303715884105727) );
-#
-#      insert into test default values returning x_i128;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_16 set not null;
-#      alter domain dom22_16 drop constraint add constraint check(value between bin_shr(-170141183460469231731687303715884105727,127) and bin_shr(170141183460469231731687303715884105727,127)); -- -1...0
-#      commit;
-#
-#      insert into test default values returning x_i128; -- must fail with SQLSTATE = 23000 / validation error ... value "170141183460469231731687303715884105727"
-#      update test set x_i128 = default where x_i128 is null returning x_i128; -- must fail with SQLSTATE = 23000 / validation error ... value "170141183460469231731687303715884105727"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_tmtz dom22_17); -- time with time zone default '11:11:11.111 Indian/Cocos' check ( extract(hour from value) <=12 );
-#
-#      insert into test default values returning x_tmtz;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_17 set not null;
-#      alter domain dom22_17 drop constraint add constraint check( extract(minute from value) < 10 );
-#      commit;
-#
-#      insert into test default values returning x_tmtz; -- must fail with SQLSTATE = 23000 / validation error ... value "11:11:11.1110 Indian/Cocos"
-#      update test set x_tmtz = default where x_tmtz is null returning x_tmtz; -- must fail with SQLSTATE = 23000 / validation error ... value "11:11:11.1110 Indian/Cocos"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_dts dom22_18); -- timestamp                default '01.01.0001 00:00:01.001'              check ( extract(minute from value) = 0 );
-#
-#      insert into test default values returning x_dts;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_18 set not null;
-#      alter domain dom22_18 drop constraint add constraint check( extract(hour from value) > 7 );
-#      commit;
-#
-#      insert into test default values returning x_dts; -- must fail with SQLSTATE = 23000 / validation error ... value "01-JAN-0001 0:00:01.0010"
-#      update test set x_dts = default where x_dts is null returning x_dts; -- must fail with SQLSTATE = 23000 / validation error ... value "01-JAN-0001 0:00:01.0010"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_tstz dom22_19); -- timestamp with time zone default '21.12.2013 11:11:11.111 Indian/Cocos' check ( extract(minute from value) <=30 );
-#      insert into test default values returning x_tstz;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_19 set not null;
-#      alter domain dom22_19 drop constraint add constraint check( value = '21.12.2013 11:11:11.111 Indian/Comoro' );
-#      commit;
-#
-#      insert into test default values returning x_tstz; -- must fail with SQLSTATE = 23000 / validation error ... value "01-JAN-0001 0:00:01.0010"
-#      update test set x_tstz = default where x_tstz is null returning x_tstz; -- must fail with SQLSTATE = 23000 / validation error ... value "01-JAN-0001 0:00:01.0010"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_blob_20 dom22_20); -- default 'Ÿ' check( value in ('Ÿ', 'ÿ') );
-#
-#      insert into test default values returning x_blob_20;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_20 set not null;
-#      alter domain dom22_20 drop constraint add constraint check( value in ('ă', 'ô') );
-#      commit;
-#
-#      insert into test default values returning x_blob_20; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
-#      update test set x_blob_20 = default where x_blob_20 is null returning x_blob_20; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_blob_21 dom22_21); -- blob sub_type text character set utf8 default 'Ätran' check (value is null or value NOT in (select river from rivers)) collate nm_coll;
-#
-#      insert into test default values returning x_blob_21;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_21 set not null;
-#      alter domain dom22_21 drop constraint add constraint check( value in (select river from rivers) );
-#      commit;
-#
-#      insert into test default values returning x_blob_21; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
-#      update test set x_blob_21 = default where x_blob_21 is null returning x_blob_21; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
-#      commit;
-#
-#      ------------------------------------------------
-#
-#      recreate table test(x_blob_22 dom22_22); -- blob sub_type binary default 0x10 check (value > 0x01);
-#
-#      insert into test default values returning x_blob_22;
-#      insert into test values(null);
-#      commit;
-#
-#      alter domain dom22_22 set not null;
-#      alter domain dom22_22 drop constraint add constraint check( value < 0x01 );
-#      commit;
-#
-#      insert into test default values returning x_blob_22; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
-#      update test set x_blob_22 = default where x_blob_22 is null returning x_blob_22; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
-#      commit;
-#  ''' % dict(globals(), **locals())
-#
-#  f_run_sql=open( os.path.join(context['temp_directory'],'tmp_gtcs_domain_22.sql'), 'w')
-#  f_run_sql.write(sql_init)
-#  flush_and_close(f_run_sql)
-#
-#
-#  #f_run_log = open( os.path.join(context['temp_directory'],'tmp_gtcs_domain_22.log'), 'w')
-#  #f_run_err = open( os.path.join(context['temp_directory'],'tmp_gtcs_domain_22.err'), 'w')
-#  #subprocess.call( [context['isql_path'], dsn, '-q', '-i', f_run_sql.name, '-ch', 'utf8'], stdout = f_run_log, stderr = f_run_err )
-#  #flush_and_close( f_run_log )
-#  #flush_and_close( f_run_err )
-#
-#  runProgram( 'isql', ['-q', '-i', f_run_sql.name] )
-#
-#---
+test_script_1 = """
+    set list on;
+    set blob all;
+    -- set names utf8;
+    -- connect '%(dsn)s' user '%(user_name)s' password '%(user_password)s';
+
+
+    create collation nm_coll for utf8 from unicode case insensitive accent insensitive;
+    commit;
+
+    create domain dom20u as varchar(20) character set utf8 collate nm_coll;
+    commit;
+
+
+    create table rivers(
+      id int
+      ,river dom20u
+    );
+    insert into rivers(id, river) values(1, 'Волга');
+    insert into rivers(id, river) values(2, 'Дніпро');
+    insert into rivers(id, river) values(3, 'Wisła');
+    insert into rivers(id, river) values(4, 'Dunărea');
+    insert into rivers(id, river) values(5, 'Rhône');
+    commit;
+
+    create domain dom22_01 as smallint         default 0           check (value >= 0 and value < 100);
+    create domain dom22_02 as integer          default 500         check (value >= 500);
+    create domain dom22_03 as date             default 'TODAY'     check (value >= 'today');
+
+    -- CHECK-expression of this domain will be changed to
+    -- "check (value in (select river from rivers))" - see below:
+    create domain dom22_04 as char(20)         default 'Wisła'     check ( value in ('Волга','Дніпро','Wisła','Dunărea','Rhône') );
+
+    -- CHECK-expression of this domain will be changed to
+    -- "check (value NOT in (select river from rivers))" - see below:
+    create domain dom22_05 as varchar(25)      default 'Norrström' check ( value NOT in ('Волга','Дніпро','Wisła','Dunărea','Rhône') );
+
+    create domain dom22_06 as numeric(2,2)     default -327.68      check (value < 0);
+    create domain dom22_07 as decimal(6,2)     default -999.99      check (value < 0);
+
+    -- exp(-745.1332192) is max. double precision value that will be NOT distinguish from zero:
+    -- create domain dom22_08 as double precision default 0 check (value is null or value is not distinct from exp(-745.1332192));
+    
+    -- 19.04.2022
+    create domain dom22_08 as double precision default 0 check (value is null or value = 0);
+
+    -----------------------------
+
+    -- Additional datataypes (they either not present in original test or did appear since FB 3.x):
+    create domain dom22_09 as bigint         default 9223372036854775807 check (value > 0);
+    create domain dom22_10 as nchar(1)       default 'Y' check( value in ('Y', 'y') ); -- alias for ISO8859_1
+    create domain dom22_11 as binary(2)      default 'Ÿ' check( value in ('Ÿ', 'ÿ') ); -- this datatype is alias for char(N) character set octets
+    create domain dom22_12 as varbinary(2)   default 'Ÿ' check( value in ('Ÿ', 'ÿ') );
+    create domain dom22_13 as boolean        default false check ( value is not true );
+
+    create domain dom22_14 as decfloat(16)   default -9.999999999999999E+384 check( log10(abs(value)) >= 384 );
+    create domain dom22_15 as decfloat       default -9.999999999999999999999999999999999E6144 check( log10(abs(value)) >= 6144 );
+    create domain dom22_16 as int128         default 170141183460469231731687303715884105727 check( value in(-170141183460469231731687303715884105728, 170141183460469231731687303715884105727) );
+
+    create domain dom22_17 as time with time zone      default '11:11:11.111 Indian/Cocos'            check ( extract(hour from value) <=12 );
+    create domain dom22_18 as timestamp                default '01.01.0001 00:00:01.001'              check ( extract(minute from value) = 0 );
+    create domain dom22_19 as timestamp with time zone default '21.12.2013 11:11:11.111 Indian/Cocos' check ( extract(minute from value) <=30 );
+
+    create domain dom22_20 as blob                                  default 'Ÿ' check( value in ('Ÿ', 'ÿ') );
+    create domain dom22_21 as blob sub_type text character set utf8 default 'Ätran' check (value is null or value NOT in (select river from rivers)) collate nm_coll;
+    create domain dom22_22 as blob sub_type binary                  default 0x10 check (value > 0x01);
+
+    create or alter view v_test as
+    select
+        ff.rdb$field_name as dm_name
+        ,ff.rdb$field_type as dm_type
+        ,ff.rdb$field_sub_type as dm_subtype
+        ,ff.rdb$field_length as dm_flen
+        ,ff.rdb$field_scale as dm_fscale
+        ,ff.rdb$field_precision as dm_fprec
+        ,ff.rdb$character_set_id as dm_fcset
+        ,ff.rdb$collation_id as dm_fcoll
+        ,ff.rdb$character_length dm_fchrlen
+        ,ff.rdb$null_flag as dm_fnull
+        ,ff.rdb$validation_source as dm_fvalid
+        ,ff.rdb$default_source as dm_fdefault
+    from rdb$fields ff
+    where
+        ff.rdb$system_flag is distinct from 1
+        and ff.rdb$field_name starting with upper( 'dom22_' )
+    order by dm_name
+    ;
+    commit;
+
+    select * from v_test;
+    -- ############################################################
+
+    set bail off;
+
+    ------------------------------------------------
+
+    recreate table test(x_sml dom22_01); -- smallint         default 0           check (value >= 0 and value < 100);
+
+    insert into test default values returning x_sml;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_01 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
+    alter domain dom22_01 drop constraint add constraint check(value < 0);
+    commit;
+
+    insert into test default values returning x_sml; -- must fail with SQLSTATE = 23000 / validation error ... value "0"
+    update test set x_sml = default where x_sml is null; -- must fail with SQLSTATE = 23000 / validation error ... value "0"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_int dom22_02); -- integer          default 500         check (value >= 500);
+
+    insert into test default values returning x_int;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_02 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
+    alter domain dom22_02 drop constraint add constraint check(value < 0);
+    commit;
+
+    insert into test default values returning x_int; -- must fail with SQLSTATE = 23000 / validation error ... value "500"
+    update test set x_int = default where x_int is null; -- must fail with SQLSTATE = 23000 / validation error ... value "500"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_date dom22_03); -- date             default 'TODAY'     check (value >= 'today');
+
+    insert into test default values returning x_date;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_03 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
+    alter domain dom22_03 drop constraint add constraint check(value < 'today');
+    commit;
+
+    insert into test default values returning x_date; -- must fail with SQLSTATE = 23000 / validation error ... value <current_date>
+    update test set x_date = default where x_date is null; -- must fail with SQLSTATE = 23000 / validation error ... value <current_date>
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_char dom22_04); -- char(20)         default 'Wisła'     check (value in (select river from rivers));
+
+    insert into test default values returning x_char;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_04 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
+    alter domain dom22_04 drop constraint add constraint check(value NOT in (select river from rivers));
+    commit;
+
+    insert into test default values returning x_char; -- must fail with SQLSTATE = 23000 / validation error ... value "Wisła              "
+    update test set x_char = default where x_char is null; -- must fail with SQLSTATE = 23000 / validation error ... value "Wisła              "
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_vchr dom22_05); -- varchar(25)      default 'Norrström' check (value NOT in (select river from rivers));
+
+    insert into test default values returning x_vchr;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_05 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
+    alter domain dom22_05 drop constraint add constraint check(value in (select river from rivers));
+    commit;
+
+    insert into test default values returning x_vchr; -- must fail with SQLSTATE = 23000 / validation error ... value "Norrström"
+    update test set x_vchr = default where x_vchr is null; -- must fail with SQLSTATE = 23000 / validation error ... value "Norrström"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_num dom22_06); -- numeric(2,2)     default -327.68      check (value < 0);
+
+    insert into test default values returning x_num;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_06 set not null; -- must fail with SQLSTATE = 22006 / -Cannot make field ... NOT NULL because there are NULLs
+    alter domain dom22_06 drop constraint add constraint check(value >0);
+    commit;
+
+    insert into test default values returning x_num; -- must fail with SQLSTATE = 23000 / validation error ... value "-327.68"
+    update test set x_num = default where x_num is null; -- must fail with SQLSTATE = 23000 / validation error ... value "-327.68"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_dec dom22_07); -- decimal(6,2)     default -999.99      check (value < 0);
+
+    insert into test default values returning x_dec;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_07 set not null;
+
+    -- numeric(2,2) can hold values from the scope -327.68 to +327.68.
+    -- cast of -999.99 to numeric(2,2) (being valid for decimal(2,2)) must fail with 'numeric value is out of range':
+    alter domain dom22_07 drop constraint add constraint check(cast(value as numeric(2,2)) < 0 );
+    commit;
+
+    insert into test default values returning x_dec; -- must fail with SQLSTATE = 23000 / numeric value is out of range
+    update test set x_dec = default where x_dec is null returning x_dec; -- must fail with SQLSTATE = 23000 / numeric value is out of range
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_dp dom22_08); -- default 0 check (value is null or value = 0)
+
+    insert into test default values returning x_dp;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_08 set not null;
+    -- alter domain dom22_08 drop constraint add constraint check(value is not distinct from exp(-745.1332191) ); -- minimal DP value that can be distinguished from zero
+    alter domain dom22_08 drop constraint add constraint check(value = 1);
+    commit;
+
+    insert into test default values returning x_dp; -- must fail with SQLSTATE = 23000 / validation error ... value "0.0000000000000000"
+    update test set x_dp = default where x_dp is null returning x_dp; -- must fail with SQLSTATE = 23000 / validation error ... value "0.0000000000000000"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_big dom22_09); -- default 9223372036854775807 check (value > 0);
+
+    insert into test default values returning x_big;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_09 set not null;
+    alter domain dom22_09 drop constraint add constraint check(value between bin_shr(-9223372036854775808,63) and bin_shr(9223372036854775807,63)); -- -1...0
+    commit;
+
+    insert into test default values returning x_big; -- must fail with SQLSTATE = 23000 / validation error ... value "9223372036854775807"
+    update test set x_big = default where x_big is null returning x_big; -- must fail with SQLSTATE = 23000 / validation error ... value "9223372036854775807"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_nc dom22_10); -- nchar(1) default 'Y' check( value in ('Y', 'y') );
+    insert into test default values returning x_nc;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_10 set not null;
+    alter domain dom22_10 drop constraint add constraint check( value similar to 'U');
+    commit;
+
+    insert into test default values returning x_nc;
+    update test set x_nc = default where x_nc is null returning x_nc;
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_bin dom22_11); -- binary(2) default 'Ÿ' check( value in ('Ÿ', 'ÿ') )
+    insert into test default values returning x_bin;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_11 set not null;
+    alter domain dom22_11 drop constraint add constraint check( value is not distinct from 'ł' or value is not distinct from 'ă' or value is not distinct from 'ô' );
+    commit;
+
+    insert into test default values returning x_bin; -- must fail with SQLSTATE = 23000 / validation error ... value "Ÿ"
+    update test set x_bin = default where x_bin is null returning x_bin; -- must fail with SQLSTATE = 23000 / validation error ... value "Ÿ"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_vb dom22_12); -- varbinary(2) default 'Ÿ' check( value in ('Ÿ', 'ÿ') )
+    insert into test default values returning x_vb;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_12 set not null;
+    alter domain dom22_12 drop constraint add constraint check( value = any(select 'ł' from rdb$database union all select 'ă' from rdb$database) );
+    commit;
+
+    insert into test default values returning x_vb; -- must fail with SQLSTATE = 23000 / validation error ... value "Ÿ"
+    update test set x_vb = default where x_vb is null returning x_vb; -- must fail with SQLSTATE = 23000 / validation error ... value "Ÿ"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_boo dom22_13); -- boolean        default false check ( value is not true );
+    insert into test default values returning x_boo;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_13 set not null;
+    alter domain dom22_13 drop constraint add constraint check( value NOT in (false) );
+    commit;
+
+    insert into test default values returning x_boo;
+    update test set x_boo = default where x_boo is null returning x_boo;
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_df16 dom22_14); -- decfloat(16)   default -9.999999999999999E+384 check( log10(abs(value)) >= 384 );
+
+    insert into test default values returning x_df16;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_14 set not null;
+    alter domain dom22_14 drop constraint add constraint check( value = 0 );
+    commit;
+
+    insert into test default values returning x_df16;
+    update test set x_df16 = default where x_df16 is null returning x_df16;
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_df34 dom22_15); -- default -9.999999999999999999999999999999999E6144 check( log10(abs(value)) >= 6144 );
+
+    insert into test default values returning x_df34;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_15 set not null;
+    alter domain dom22_15 set default 0;
+    alter domain dom22_15 drop constraint add constraint check( log10(abs(value)) < 0 );
+    commit;
+
+    insert into test default values returning x_df34; -- must fail with SQLSTATE = 42000 / -Argument for LOG10 must be positive
+    update test set x_df34 = default where x_df34 is null returning x_df34; -- must fail with SQLSTATE = 42000 / -Argument for LOG10 must be positive
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_i128 dom22_16); -- int128  default 170141183460469231731687303715884105727 check( value in(-170141183460469231731687303715884105728, 170141183460469231731687303715884105727) );
+
+    insert into test default values returning x_i128;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_16 set not null;
+    alter domain dom22_16 drop constraint add constraint check(value between bin_shr(-170141183460469231731687303715884105727,127) and bin_shr(170141183460469231731687303715884105727,127)); -- -1...0
+    commit;
+
+    insert into test default values returning x_i128; -- must fail with SQLSTATE = 23000 / validation error ... value "170141183460469231731687303715884105727"
+    update test set x_i128 = default where x_i128 is null returning x_i128; -- must fail with SQLSTATE = 23000 / validation error ... value "170141183460469231731687303715884105727"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_tmtz dom22_17); -- time with time zone default '11:11:11.111 Indian/Cocos' check ( extract(hour from value) <=12 );
+
+    insert into test default values returning x_tmtz;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_17 set not null;
+    alter domain dom22_17 drop constraint add constraint check( extract(minute from value) < 10 );
+    commit;
+
+    insert into test default values returning x_tmtz; -- must fail with SQLSTATE = 23000 / validation error ... value "11:11:11.1110 Indian/Cocos"
+    update test set x_tmtz = default where x_tmtz is null returning x_tmtz; -- must fail with SQLSTATE = 23000 / validation error ... value "11:11:11.1110 Indian/Cocos"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_dts dom22_18); -- timestamp                default '01.01.0001 00:00:01.001'              check ( extract(minute from value) = 0 );
+
+    insert into test default values returning x_dts;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_18 set not null;
+    alter domain dom22_18 drop constraint add constraint check( extract(hour from value) > 7 );
+    commit;
+
+    insert into test default values returning x_dts; -- must fail with SQLSTATE = 23000 / validation error ... value "01-JAN-0001 0:00:01.0010"
+    update test set x_dts = default where x_dts is null returning x_dts; -- must fail with SQLSTATE = 23000 / validation error ... value "01-JAN-0001 0:00:01.0010"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_tstz dom22_19); -- timestamp with time zone default '21.12.2013 11:11:11.111 Indian/Cocos' check ( extract(minute from value) <=30 );
+    insert into test default values returning x_tstz;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_19 set not null;
+    alter domain dom22_19 drop constraint add constraint check( value = '21.12.2013 11:11:11.111 Indian/Comoro' );
+    commit;
+
+    insert into test default values returning x_tstz; -- must fail with SQLSTATE = 23000 / validation error ... value "01-JAN-0001 0:00:01.0010"
+    update test set x_tstz = default where x_tstz is null returning x_tstz; -- must fail with SQLSTATE = 23000 / validation error ... value "01-JAN-0001 0:00:01.0010"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_blob_20 dom22_20); -- default 'Ÿ' check( value in ('Ÿ', 'ÿ') );
+
+    insert into test default values returning x_blob_20;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_20 set not null;
+    alter domain dom22_20 drop constraint add constraint check( value in ('ă', 'ô') );
+    commit;
+
+    insert into test default values returning x_blob_20; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
+    update test set x_blob_20 = default where x_blob_20 is null returning x_blob_20; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_blob_21 dom22_21); -- blob sub_type text character set utf8 default 'Ätran' check (value is null or value NOT in (select river from rivers)) collate nm_coll;
+
+    insert into test default values returning x_blob_21;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_21 set not null;
+    alter domain dom22_21 drop constraint add constraint check( value in (select river from rivers) );
+    commit;
+
+    insert into test default values returning x_blob_21; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
+    update test set x_blob_21 = default where x_blob_21 is null returning x_blob_21; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
+    commit;
+
+    ------------------------------------------------
+
+    recreate table test(x_blob_22 dom22_22); -- blob sub_type binary default 0x10 check (value > 0x01);
+
+    insert into test default values returning x_blob_22;
+    insert into test values(null);
+    commit;
+
+    alter domain dom22_22 set not null;
+    alter domain dom22_22 drop constraint add constraint check( value < 0x01 );
+    commit;
+
+    insert into test default values returning x_blob_22; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
+    update test set x_blob_22 = default where x_blob_22 is null returning x_blob_22; -- must fail with SQLSTATE = 22018 / conversion error ... value "BLOB"
+    commit;
+"""
+
+tmp_file = temp_file('functional_gtcs_dsql_domain_22.sql')
+
+@pytest.mark.version('>=4.0')
+def test_1(act: Action, tmp_file: Path):
+    tmp_file.write_bytes(test_script_1.encode('utf-8'))
+    act.expected_stdout = test_expected_stdout
+    act.expected_stderr = test_expected_stderr
+
+    act.isql(switches=['-q'], input_file=tmp_file, charset='utf-8')
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)
+
