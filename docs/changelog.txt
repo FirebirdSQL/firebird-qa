@@ -2,6 +2,13 @@
 Changelog
 #########
 
+Version 0.13.0
+==============
+
+* Explicit `Optional` typing.
+* Added support for both `encoding` and `encoding_errors` in `.Action.connect_server()`
+  and `.Action.trace()`.
+
 Version 0.12.1
 ==============
 
