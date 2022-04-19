@@ -2,7 +2,7 @@
 
 """
 ID:          issue-6514
-ISSUE:       6514
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6514
 TITLE:       Failed attach to database not traced
 DESCRIPTION:
   NB: connect to services must be done using LOCAL protocol rather than remote.
@@ -21,6 +21,12 @@ NOTES:
 [09.02.2022] pcisar
   Fails on Windows (with 4.0.1) - no patterns are found, because one can't use trace with embedded
   version on this platform.
+
+[19.04.2022] pzotov
+  act.trace() must be called with passing encoding=locale.getpreferredencoding(), otherwise we get
+  UnicodeDecodeError because trace log may contain localized messages about missed DB file/alias.
+  Checked on 4.0.1.2692, Windows and Linux.
+
 JIRA:        CORE-6272
 FBTEST:      bugs.core_6272
 """
@@ -30,11 +36,11 @@ import re
 import platform
 from pathlib import Path
 from firebird.qa import *
-from firebird.driver import DatabaseError
+from firebird.driver import DatabaseError, driver_config
+import locale
 
 db = db_factory()
 db_nonexistent = db_factory(filename='does_not_exists', do_not_create=True, do_not_drop=True)
-
 act = python_act('db')
 
 expected_stdout = """
@@ -43,6 +49,7 @@ expected_stdout = """
     FOUND pattern: ERROR\\s+AT\\s+JProvider(:){1,2}attachDatabase
     FOUND pattern: FAILED\\s+ATTACH_DATABASE
 """
+
 
 trace = """
     database
@@ -56,11 +63,11 @@ trace = """
 
 trace_conf = temp_file('trace.conf')
 
-@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
+#@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, db_nonexistent: Database, trace_conf: Path, capsys):
     with ServerKeeper(act, None): # Use embedded server for trace
-        with act.trace(config=trace):
+        with act.trace(config=trace, encoding=locale.getpreferredencoding()):
             try:
                 with db_nonexistent.connect():
                     pass
@@ -75,12 +82,15 @@ def test_1(act: Action, db_nonexistent: Database, trace_conf: Path, capsys):
                         re.compile('335544734\\s*(:)\\s+?Error\\s+while', re.IGNORECASE),
                         ]
     found_patterns = set()
+
     for line in act.trace_log:
         for p in allowed_patterns:
             if p.search(line):
                 found_patterns.add(p.pattern)
+    
     for p in sorted(found_patterns):
         print(f'FOUND pattern: {p}')
+
     # Check
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
