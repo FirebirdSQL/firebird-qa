@@ -6,49 +6,52 @@ TITLE:       Outcome must be SUCCESS if first we drop FK and after this PK const
 DESCRIPTION:
   Original test see in:
   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/REF_INT.1.ISQL.script
+
+  This test uses pre-created script ( <QA_ROOT>/files/gtcs-ref-integ.sql ) which creates two
+  tables with PK/FK referencing constraint(parent = department, child = employee).
+  We DROP constraints (first FK, then PK) and verify that one may to do DML with both tables
+  which had to be failed before with because of PK/FK violation.
+
+  Checked on 4.0.1.2692.
+
 FBTEST:      functional.gtcs.ref_integ_drop_fk_then_pk
 """
 
 import pytest
 from firebird.qa import *
+import os
 
 db = db_factory()
 
 act = python_act('db')
 
-expected_stdout = """
+test_expected_stdout = """
+    Records affected: 1
     Records affected: 1
     Records affected: 1
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+test_expected_stderr = """
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+    
+    sql_init = (act.files_dir / 'gtcs-ref-integ-init.sql').read_text()
+    sql_addi = '''
+        alter table employee drop constraint ref_key;
+        alter table department drop constraint dept_key;
+        set count on;
+        -- All folowing statements should PASS:
+        update department d set dept_no = -dept_no where exists(select * from employee e where e.dept_no = d.dept_no) rows 1;
+        insert into employee( emp_no, last_name, dept_no) values (12, 'e12', -(select max(dept_no)+1 from department) );
+        delete from department d where exists(select * from employee e where e.dept_no = d.dept_no) rows 1;
+    '''
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  with open( os.path.join(context['files_location'],'gtcs-ref-integ.sql'), 'r') as f:
-#      sql_init = f.read()
-#
-#  sql_addi='''
-#      alter table employee drop constraint ref_key;
-#      alter table department drop constraint dept_key;
-#      set count on;
-#      -- Folowing two statements should PASS:
-#      insert into department( dept_no, dept_name) values (1, 'k1');
-#      insert into employee( emp_no, last_name, dept_no) values (12, 'e12', -1); -- should FAIL
-#  '''
-#
-#  runProgram('isql', [ dsn], os.linesep.join( (sql_init, sql_addi) ) )
-#---
+    act.expected_stdout = test_expected_stdout
+    act.expected_stderr = test_expected_stderr
+   
+    act.isql(switches=['-q'], input = os.linesep.join( (sql_init, sql_addi) ) )
+
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)
