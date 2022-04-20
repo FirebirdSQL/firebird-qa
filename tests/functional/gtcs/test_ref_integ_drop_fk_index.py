@@ -6,17 +6,31 @@ TITLE:       Index that is used for FK should not be avail for DROP
 DESCRIPTION:
   Original test see in:
   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/REF_INT.4.ISQL.script
+
+  This test uses pre-created script ( <QA_ROOT>/files/gtcs-ref-integ.sql ) which creates two
+  tables with PK/FK referencing constraint(parent = department, child = employee).
+  FK-constraint uses index with name = 'ref_key', and here we try to:
+      * DROP this index;
+      * insert record in the child table which has no apropriate PK in the parent table.
+      (see 'sql_addi' variable which stores SQL statements for that).
+  Both actions should fail.
+
 FBTEST:      functional.gtcs.ref_integ_drop_fk_index
 """
 
 import pytest
+import os
 from firebird.qa import *
 
 db = db_factory()
 
 act = python_act('db')
 
-expected_stderr = """
+test_expected_stdout = """
+    Records affected: 0
+"""
+
+test_expected_stderr = """
     Statement failed, SQLSTATE = 27000
     unsuccessful metadata update
     -DROP INDEX REF_KEY failed
@@ -29,37 +43,22 @@ expected_stderr = """
     -Problematic key value is ("DEPT_NO" = '-1')
 """
 
-expected_stdout = """
-    Records affected: 0
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+    
+    sql_init = (act.files_dir / 'gtcs-ref-integ.sql').read_text()
+    sql_addi = '''
+        drop index ref_key;
+        commit;
+        insert into employee( emp_no, last_name, dept_no) values (12, 'e12', -1); -- should FAIL
+        set count on;
+        select * from employee e where e.dept_no < 0;
+    '''
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  with open( os.path.join(context['files_location'],'gtcs-ref-integ.sql'), 'r') as f:
-#      sql_init = f.read()
-#
-#  sql_addi='''
-#      drop index ref_key;
-#      commit;
-#      insert into employee( emp_no, last_name, dept_no) values (12, 'e12', -1); -- should FAIL
-#      set count on;
-#      select * from employee e where e.dept_no < 0;
-#  '''
-#
-#  runProgram('isql', [ dsn], os.linesep.join( (sql_init, sql_addi) ) )
-#---
+    act.expected_stdout = test_expected_stdout
+    act.expected_stderr = test_expected_stderr
+   
+    act.isql(switches=['-q'], input = os.linesep.join( (sql_init, sql_addi) ) )
+
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)
