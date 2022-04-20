@@ -2,7 +2,7 @@
 
 """
 ID:          gtcs.proc_cast_isql
-FBTEST:      functional.gtcs.gtcs_proc_cast_isql
+FBTEST:      functional.gtcs.cast-datatypes // old: functional.gtcs.gtcs_proc_cast_isql
 TITLE:       PROC_CAST1_ISQL.script ... PROC_CAST10_ISQL.script
 DESCRIPTION:
   Original tests see in:
@@ -10,16 +10,34 @@ DESCRIPTION:
   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROC_CAST2_ISQL.script
   ...
   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROC_CAST10_ISQL.script
+
+  This test uses pre-created script ( <QA_ROOT>/files/gtcs-cast-gen-ddl.sql ) which produces
+  syntactically correct SQL code for further applying against test DB. This auto-generated
+  SQL code contains of lot of 'CREATE PROCEDURE' statements which create stored procedures
+  with accepting single input parameter and making cast of this argument to other type and 
+  returning it to caller. All possible combinations of datatypes are covered in such manner.
+  Cast is performed mostly IMPLICITLY, with exception for DATE/TIME literals such as 'TODAY',
+  'TOMORROW' and 'YESTERDAY'.
+  Names of auto-generated stored procedures have form '<FromDatatype>_<ToDatatype>', e.g.:
+    create or alter procedure "bigint_char(10)" ( a bigint )
+    returns ( b char(10) ) as
+    begin
+        b = 1608.90*a/100.00;
+        suspend;
+    end^
+
+  Checked on 4.0.1.2692.
 """
 
 import pytest
 from firebird.qa import *
+from pathlib import Path
 
 db = db_factory()
 
 act = python_act('db', substitutions=[('BLOB_ID.*', ''), ('[ \t]+', ' ')])
 
-expected_stdout = """
+test_expected_stdout = """
     bigint_bigint                   80
     BLOB_ID                         0:1
     80.4450
@@ -281,90 +299,25 @@ expected_stdout = """
     varchar(30)_time                01:02:03.4560
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.6')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+test_expected_stderr = ""
+tmp_init_run = temp_file('tmp_cast_misc_datatypes_autogen.sql')
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import time
-#  import subprocess
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  sql_gen_ddl = os.path.join(context['files_location'],'gtcs-cast-gen-ddl.sql')
-#
-#  f_init_run=open( os.path.join(context['temp_directory'],'tmp_gtcs_cast_ddl.sql'), 'w', buffering = 0)
-#  f_init_err=open( os.path.join(context['temp_directory'],'tmp_gtcs_cast_ddl.err'), 'w', buffering = 0)
-#  subprocess.call( [context['isql_path'], dsn, '-q', '-i', sql_gen_ddl], stdout=f_init_run, stderr=f_init_err )
-#  flush_and_close( f_init_run )
-#  flush_and_close( f_init_err )
-#
-#
-#  f_cast_log=open( os.path.join(context['temp_directory'],'tmp_gtcs_cast_run.log'), 'w', buffering = 0)
-#  f_cast_err=open( os.path.join(context['temp_directory'],'tmp_gtcs_cast_run.err'), 'w', buffering = 0)
-#  subprocess.call( [context['isql_path'], dsn, '-q', '-i', f_init_run.name], stdout=f_cast_log, stderr=f_cast_err )
-#  flush_and_close( f_cast_log )
-#  flush_and_close( f_cast_err )
-#
-#  # CHECKS:
-#  #########
-#  for g in (f_init_err, f_cast_err):
-#      with open(g.name, 'r') as f:
-#          for line in f:
-#              if line.split():
-#                  print('UNEXPECTED OUTPUT in ' + os.path.split(g.name)[-1] + ': ' + line )
-#
-#  with open(f_cast_log.name, 'r') as f:
-#      for line in f:
-#          if line.split():
-#              print( line.strip() )
-#
-#  # CLEANUP:
-#  ##########
-#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with
-#  # Exception raised while executing Python test script. exception: WindowsError: 32
-#  time.sleep(1)
-#  cleanup( ( f_init_run, f_init_err, f_cast_log, f_cast_err ) )
-#---
+@pytest.mark.version('>=3.0.6')
+def test_1(act: Action, tmp_init_run: Path):
+
+    # Generate SQL code with DDL for all possible combinations of datatypes:
+    act.isql(switches=['-q'], input_file = act.files_dir / 'gtcs-cast-gen-ddl.sql')
+    assert act.clean_stderr == ""
+
+    tmp_init_run.write_text(act.clean_stdout)
+    #f = open(r'c:\temp\tmp-gtcs-cast.tmp','w')
+    #f.write(act.clean_stdout)
+    #f.close()
+
+  
+    # Apply auto-generated script:
+    act.reset()
+    act.isql(switches=['-q'], input_file=tmp_init_run)
+    
+    act.expected_stdout = test_expected_stdout
+    assert act.clean_stdout == act.clean_expected_stdout
