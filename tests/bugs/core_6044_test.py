@@ -12,9 +12,9 @@ FBTEST:      bugs.core_6044
 import pytest
 from firebird.qa import *
 
-substitutions = [('current value.*', 'current value'),
-                 ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
-                 ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
+substitutions = [  ('current value.*', 'current value')
+                  ,('COLL-VERSION=\d+.\d+(;ICU-VERSION=\d+.\d+)?.*', '<attr>')
+                ]
 
 db = db_factory(charset='UTF8')
 
