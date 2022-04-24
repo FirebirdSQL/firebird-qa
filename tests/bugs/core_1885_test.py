@@ -27,10 +27,6 @@ from firebird.qa import *
 
 db = db_factory()
 
-substitutions = [('SPECIFIC_ATTR_BLOB_ID.*', ''),
-                 ('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
-                 ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222')]
-
 # version: 3.0
 ##############
 test_script_1 = """
@@ -59,7 +55,7 @@ test_script_1 = """
     commit;
 """
 
-act_1 = isql_act('db', test_script_1, substitutions=substitutions)
+act_1 = isql_act('db', test_script_1)
 
 expected_stdout_1 = """
 """
@@ -74,6 +70,12 @@ def test_1(act_1: Action):
 
 # version: 4.0
 ##############
+
+subst_fb4x = [    
+                ('SPECIFIC_ATTR_BLOB_ID.*', 'SPECIFIC_ATTR_BLOB_ID')
+               ,('COLL-VERSION=\\d+.\\d+(;ICU-VERSION=\\d+.\\d+)?.*', 'COLL-VERSION=<attr>')
+             ]
+
 test_script_2 = """
     -- ::: NB ::: 31.01.2019
     -- Since builds 4.0.0.1410, 26.01.2019, FULL ICU library icudt63l.dat is included in snapshot,
@@ -100,7 +102,7 @@ test_script_2 = """
         and rc.rdb$collation_name = upper('unicode_enus_ci_4x');
 """
 
-act_2 = isql_act('db', test_script_2, substitutions=substitutions)
+act_2 = isql_act('db', test_script_2, substitutions = subst_fb4x)
 
 expected_stdout_2 = """
     RDB$COLLATION_NAME              UNICODE_ENUS_CI_4X
@@ -109,7 +111,7 @@ expected_stdout_2 = """
     RDB$BASE_COLLATION_NAME         UNICODE
 
     SPECIFIC_ATTR_BLOB_ID           1d:1e7
-    COLL-VERSION=153.88;LOCALE=en_US
+    COLL-VERSION=<attr>
     RDB$CHARACTER_SET_NAME          UTF8
 
     RDB$BYTES_PER_CHARACTER         4
