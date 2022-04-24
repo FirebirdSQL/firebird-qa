@@ -67,9 +67,7 @@ FBTEST:      bugs.core_6336
 import pytest
 from firebird.qa import *
 
-substitutions = [('COLL-VERSION=\\d{2,}.\\d{2,}', 'COLL-VERSION=111.222'),
-                 ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', 'COLL-VERSION=111.222'),
-                 ('Commit current transaction \\(y/n\\)\\?', '')]
+substitutions = [ ('COLL-VERSION=\\d+.\\d+(;ICU-VERSION=\\d+.\\d+)?.*', '<attr>') ]
 
 db = db_factory()
 
@@ -83,8 +81,7 @@ test_script = """
     set width cset_default_coll 20;
     set width domain_coll_name 20;
 
-    --set echo on;
-    --shell del c:	emp	mp4test.fdb 2>nul;
+    rollback;
     connect '$(DSN)';
     set autoddl off;
     SET KEEP_TRAN_PARAMS ON;
