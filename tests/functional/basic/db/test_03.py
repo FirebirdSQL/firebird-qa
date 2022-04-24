@@ -10,8 +10,12 @@ FBTEST:      functional.basic.db.03
 import pytest
 from firebird.qa import *
 
-substitutions = [('RDB\\$SPECIFIC_ATTRIBUTES.*', ''), ('COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', ''),
-                 ('COLL-VERSION=\\d+\\.\\d+', ''), ('RDB\\$SECURITY_CLASS[ ]+SQL\\$.*', '')]
+substitutions = \
+    [
+        ('RDB\\$SPECIFIC_ATTRIBUTES.*', '')
+        ,('COLL-VERSION=\\d+.\\d+(;ICU-VERSION=\\d+.\\d+)?.*', 'COLL-VERSION=<attr>')
+        ,('RDB\\$SECURITY_CLASS[ ]+SQL\\$.*', '')
+    ]
 
 db = db_factory()
 
