@@ -13,7 +13,7 @@ import pytest
 from firebird.qa import *
 
 substitutions = [  ('current value.*', 'current value')
-                  ,('COLL-VERSION=\d+.\d+(;ICU-VERSION=\d+.\d+)?.*', '<attr>')
+                  ,('COLL-VERSION=\\d+.\\d+(;ICU-VERSION=\\d+.\\d+)?.*', '<attr>')
                 ]
 
 db = db_factory(charset='UTF8')
