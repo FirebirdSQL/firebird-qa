@@ -7,6 +7,10 @@ TITLE:       ISQL - SHOW SYSTEM parameters
 DESCRIPTION: Extend ISQL SHOW SYSTEM command to accept parameters TABLES, COLLATIONS and FUNCTIONS
 JIRA:        CORE-978
 FBTEST:      functional.basic.isql.03
+
+NOTES:
+[28.04.2022] pzotov
+    Checked on 5.0.0.488, 4.0.1.2692, 3.0.8.33535.
 """
 
 import pytest
@@ -14,13 +18,22 @@ from firebird.qa import *
 
 db = db_factory()
 
-test_script = """SHOW SYSTEM TABLES;
-SHOW SYSTEM COLLATIONS;
-SHOW SYSTEM FUNCTIONS;
+test_script = """
+    SHOW SYSTEM TABLES;
+    SHOW SYSTEM COLLATIONS;
+    SHOW SYSTEM FUNCTIONS;
 """
 
-act = isql_act('db', test_script, substitutions=[("'COLL-VERSION=\\d+\\.\\d+\\.\\d+\\.\\d+', ", ''),
-                                                 ("'COLL-VERSION=\\d+\\.\\d+', ", '')])
+#E         - CP943C_UNICODE, CHARACTER SET CP943C, PAD SPACE, SYSTEM
+#E         + CP943C_UNICODE, CHARACTER SET CP943C, PAD SPACE, 'COLL-VERSION=58.0.6.50', SYSTEM
+
+substitutions = \
+    [
+        ("'COLL-VERSION=\\d+.\\d+(;ICU-VERSION=\\d+.\\d+)?.*'(, )?", '')
+    ]
+
+act = isql_act('db', test_script, substitutions = substitutions)
+
 
 # version: 3.0
 
