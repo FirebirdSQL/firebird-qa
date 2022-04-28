@@ -40,13 +40,13 @@ test_expected_stderr = """
     Statement failed, SQLSTATE = 23000
     violation of FOREIGN KEY constraint "REF_KEY" on table "EMPLOYEE"
     -Foreign key reference target does not exist
-    -Problematic key value is ("DEPT_NO" = '-1')
+    -Problematic key value is ("DEPT_NO" = -1)
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     
-    sql_init = (act.files_dir / 'gtcs-ref-integ.sql').read_text()
+    sql_init = (act.files_dir / 'gtcs-ref-integ-init.sql').read_text()
     sql_addi = '''
         drop index ref_key;
         commit;
