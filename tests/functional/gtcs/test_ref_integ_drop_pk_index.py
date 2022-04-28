@@ -51,29 +51,3 @@ def test_1(act: Action):
 
     assert (act.clean_stdout == act.clean_expected_stdout and
             act.clean_stderr == act.clean_expected_stderr)
-
-
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  with open( os.path.join(context['files_location'],'gtcs-ref-integ.sql'), 'r') as f:
-#      sql_init = f.read()
-#
-#  sql_addi='''
-#      drop index dept_key;
-#      -- Check that PK index still in use: following must FAIL:
-#      set count on;
-#      insert into department( dept_no, dept_name) values (1, 'k1');
-#  '''
-#
-#  runProgram('isql', [ dsn], os.linesep.join( (sql_init, sql_addi) ) )
-#---
