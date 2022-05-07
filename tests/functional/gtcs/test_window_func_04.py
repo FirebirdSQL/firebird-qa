@@ -10,6 +10,7 @@ DESCRIPTION:
 FBTEST:      functional.gtcs.window_func_04
 """
 
+import os
 import pytest
 from firebird.qa import *
 
@@ -17,7 +18,7 @@ db = db_factory()
 
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-expected_stdout = """
+test_expected_stdout = """
     MSG                             point-1
     ID                              1
     PERSON                          1
@@ -564,94 +565,80 @@ expected_stdout = """
     LEAD                            -1.00
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+    sql_init = (act.files_dir / 'gtcs-window-func.sql').read_text()
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  with open( os.path.join(context['files_location'],'gtcs-window-func.sql'), 'r') as f:
-#      sql_init = f.read()
-#
-#  sql_addi='''
-#      set list on;
-#
-#      select
-#          'point-1' as msg,
-#          e.*,
-#          first_value(val) over (order by val nulls first, id),
-#          first_value(val) over (order by val nulls last, id),
-#          first_value(val) over (partition by e.person order by val nulls last, id),
-#          nth_value(val, 1) over (order by val nulls first, id),
-#          nth_value(val, 1) over (order by val nulls last, id),
-#          nth_value(val, 1) over (partition by e.person order by val nulls last, id),
-#          nth_value(val, 2) over (order by val nulls first, id),
-#          nth_value(val, 2) over (order by val nulls last, id),
-#          nth_value(val, 2) over (partition by e.person order by val nulls last, id),
-#          last_value(val) over (order by val nulls first, id),
-#          last_value(val) over (order by val nulls last, id),
-#          last_value(val) over (partition by e.person order by val nulls last, id)
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-2' as msg,
-#          person,
-#          sum(val),
-#          first_value(sum(val)) over (order by person desc),
-#          nth_value(sum(val), 1) over (order by person desc),
-#          nth_value(sum(val), 2) over (order by person desc),
-#          last_value(sum(val)) over (order by person desc)
-#        from entries
-#        group by person
-#        order by person;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-3' as msg,
-#          e.*,
-#          lag(val) over (order by val nulls first, id),
-#          lead(val) over (order by val nulls first, id),
-#          lag(val, 2) over (order by val nulls first, id),
-#          lead(val, 3) over (order by val nulls first, id),
-#          lag(val, 1, -val) over (order by val nulls first, id),
-#          lag(val, 2, -val) over (order by val nulls first, id),
-#          lead(val, 3, -1.00) over (order by val nulls first, id)
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-4' as msg,
-#          person,
-#          sum(val),
-#          lag(sum(val)) over (order by person),
-#          lead(sum(val)) over (order by person),
-#          lag(sum(val), 2) over (order by person),
-#          lead(sum(val), 3) over (order by person),
-#          lag(sum(val), 2, -sum(val)) over (order by person),
-#          lead(sum(val), 3, -1.00) over (order by person)
-#        from entries
-#        group by person
-#        order by person;
-#
-#  '''
-#
-#  runProgram('isql', [ dsn], os.linesep.join( (sql_init, sql_addi) ) )
-#
-#---
+    sql_addi= \
+    """
+        set list on;
+
+        select
+            'point-1' as msg,
+            e.*,
+            first_value(val) over (order by val nulls first, id),
+            first_value(val) over (order by val nulls last, id),
+            first_value(val) over (partition by e.person order by val nulls last, id),
+            nth_value(val, 1) over (order by val nulls first, id),
+            nth_value(val, 1) over (order by val nulls last, id),
+            nth_value(val, 1) over (partition by e.person order by val nulls last, id),
+            nth_value(val, 2) over (order by val nulls first, id),
+            nth_value(val, 2) over (order by val nulls last, id),
+            nth_value(val, 2) over (partition by e.person order by val nulls last, id),
+            last_value(val) over (order by val nulls first, id),
+            last_value(val) over (order by val nulls last, id),
+            last_value(val) over (partition by e.person order by val nulls last, id)
+        from entries e
+        order by id;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-2' as msg,
+            person,
+            sum(val),
+            first_value(sum(val)) over (order by person desc),
+            nth_value(sum(val), 1) over (order by person desc),
+            nth_value(sum(val), 2) over (order by person desc),
+            last_value(sum(val)) over (order by person desc)
+        from entries
+        group by person
+        order by person;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-3' as msg,
+            e.*,
+            lag(val) over (order by val nulls first, id),
+            lead(val) over (order by val nulls first, id),
+            lag(val, 2) over (order by val nulls first, id),
+            lead(val, 3) over (order by val nulls first, id),
+            lag(val, 1, -val) over (order by val nulls first, id),
+            lag(val, 2, -val) over (order by val nulls first, id),
+            lead(val, 3, -1.00) over (order by val nulls first, id)
+        from entries e
+        order by id;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-4' as msg,
+            person,
+            sum(val),
+            lag(sum(val)) over (order by person),
+            lead(sum(val)) over (order by person),
+            lag(sum(val), 2) over (order by person),
+            lead(sum(val), 3) over (order by person),
+            lag(sum(val), 2, -sum(val)) over (order by person),
+            lead(sum(val), 3, -1.00) over (order by person)
+        from entries
+        group by person
+        order by person;
+    """
+
+    act.expected_stdout = test_expected_stdout
+
+    act.isql(switches=['-q'], input = os.linesep.join( (sql_init, sql_addi) ) )
+
+    assert act.clean_stdout == act.clean_expected_stdout
