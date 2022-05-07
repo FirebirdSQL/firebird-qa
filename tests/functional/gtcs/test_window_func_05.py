@@ -8,10 +8,13 @@ DESCRIPTION:
   Original test see in:
   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/FB_SQL_WINDOW_FUNC_05.script
 
-  This test used functionality that exists in FB 4.0+.
+NOTES:
+    This test used functionality that exists in FB 4.0+.
+
 FBTEST:      functional.gtcs.window_func_05
 """
 
+import os
 import pytest
 from firebird.qa import *
 
@@ -19,7 +22,7 @@ db = db_factory()
 
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-expected_stdout = """
+test_expected_stdout = """
     MSG                             point-01
     N1                              1
     N2                              1
@@ -1650,300 +1653,284 @@ expected_stdout = """
     X5                              100000
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+    sql_init = (act.files_dir / 'gtcs-window-func.sql').read_text()
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  # NOT NEEDED FOR THIS TEST:
-#  ###########################
-#  # with open( os.path.join(context['files_location'],'gtcs-window-func.sql'), 'r') as f:
-#  #    sql_init = f.read()
-#
-#  sql_init = ''
-#  sql_addi='''
-#      set list on;
-#
-#      recreate table t1 (
-#        n1 integer,
-#        n2 integer
-#      );
-#      commit;
-#
-#      insert into t1 values (null, 100000);
-#      insert into t1 values (null, 1000);
-#      insert into t1 values (1, 1);
-#      insert into t1 values (1, 10);
-#      insert into t1 values (1, 100);
-#      insert into t1 values (1, 10000);
-#      insert into t1 values (2, 20);
-#      insert into t1 values (3, 300);
-#      insert into t1 values (5, 500);
-#      insert into t1 values (null, 50);
-#      insert into t1 values (null, 60);
-#      commit;
-#
-#      select
-#             'point-01' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (partition by n1 order by n2 range between unbounded preceding and current row) x1,
-#             sum(n2) over (partition by n1 order by n2 range between current row and unbounded following) x2,
-#             sum(n2) over (partition by n1 order by n2 range between current row and current row) x3,
-#             sum(n2) over (partition by n1 order by n2 range between 2 following and 3 following) x4,
-#             sum(n2) over (partition by n1 order by n2 range between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (partition by n1 order by n2 range between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n2, n1;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-02' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (partition by n1 order by n2, n1 rows between unbounded preceding and current row) x1,
-#             sum(n2) over (partition by n1 order by n2, n1 rows between current row and unbounded following) x2,
-#             sum(n2) over (partition by n1 order by n2, n1 rows between current row and current row) x3,
-#             sum(n2) over (partition by n1 order by n2, n1 rows between 2 following and 3 following) x4,
-#             sum(n2) over (partition by n1 order by n2, n1 rows between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (partition by n1 order by n2, n1 rows between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n2, n1;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-03' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 range between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 range between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 range between current row and current row) x3,
-#             sum(n2) over (order by n1 range between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 range between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 range between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-04' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1, n2 rows between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1, n2 rows between current row and unbounded following) x2,
-#             sum(n2) over (order by n1, n2 rows between current row and current row) x3,
-#             sum(n2) over (order by n1, n2 rows between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1, n2 rows between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1, n2 rows between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-05' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 nulls first range between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 nulls first range between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 nulls first range between current row and current row) x3,
-#             sum(n2) over (order by n1 nulls first range between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 nulls first range between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 nulls first range between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 nulls first, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-06' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 nulls first, n2 rows between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 nulls first, n2 rows between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 nulls first, n2 rows between current row and current row) x3,
-#             sum(n2) over (order by n1 nulls first, n2 rows between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 nulls first, n2 rows between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 nulls first, n2 rows between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 nulls first, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-07' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 nulls last range between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 nulls last range between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 nulls last range between current row and current row) x3,
-#             sum(n2) over (order by n1 nulls last range between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 nulls last range between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 nulls last range between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 nulls last, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-08' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 nulls last, n2 rows between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 nulls last, n2 rows between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 nulls last, n2 rows between current row and current row) x3,
-#             sum(n2) over (order by n1 nulls last, n2 rows between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 nulls last, n2 rows between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 nulls last, n2 rows between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 nulls last, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-09' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 desc range between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 desc range between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 desc range between current row and current row) x3,
-#             sum(n2) over (order by n1 desc range between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 desc range between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 desc range between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 desc, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-10' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 desc, n2 rows between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 desc, n2 rows between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 desc, n2 rows between current row and current row) x3,
-#             sum(n2) over (order by n1 desc, n2 rows between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 desc, n2 rows between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 desc, n2 rows between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 desc, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-11' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 desc nulls first range between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 desc nulls first range between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 desc nulls first range between current row and current row) x3,
-#             sum(n2) over (order by n1 desc nulls first range between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 desc nulls first range between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 desc nulls first range between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 desc nulls first, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-12' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 desc nulls first, n2 rows between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 desc nulls first, n2 rows between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 desc nulls first, n2 rows between current row and current row) x3,
-#             sum(n2) over (order by n1 desc nulls first, n2 rows between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 desc nulls first, n2 rows between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 desc nulls first, n2 rows between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 desc nulls first, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-13' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 desc nulls last range between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 desc nulls last range between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 desc nulls last range between current row and current row) x3,
-#             sum(n2) over (order by n1 desc nulls last range between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 desc nulls last range between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 desc nulls last range between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 desc nulls last, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-14' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (order by n1 desc nulls last, n2 rows between unbounded preceding and current row) x1,
-#             sum(n2) over (order by n1 desc nulls last, n2 rows between current row and unbounded following) x2,
-#             sum(n2) over (order by n1 desc nulls last, n2 rows between current row and current row) x3,
-#             sum(n2) over (order by n1 desc nulls last, n2 rows between 2 following and 3 following) x4,
-#             sum(n2) over (order by n1 desc nulls last, n2 rows between 3 preceding and 2 preceding) x5,
-#             sum(n2) over (order by n1 desc nulls last, n2 rows between 3 preceding and unbounded following) x6
-#        from t1
-#        order by n1 desc nulls last, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-15' as msg,
-#             n1,
-#             n2,
-#             count(*) over (order by n1 nulls first range between coalesce(n1, 0) preceding and coalesce(n1, 0) preceding) x1,
-#             sum(n2) over (order by n1 nulls first range between coalesce(n1, 0) preceding and coalesce(n1, 0) preceding) x2,
-#             count(*) over (order by n1 nulls first range between coalesce(n1, 0) following and coalesce(n1, 0) following) x3,
-#             sum(n2) over (order by n1 nulls first range between coalesce(n1, 0) following and coalesce(n1, 0) following) x4
-#        from t1
-#        order by n1 nulls first, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-16' as msg,
-#             n1,
-#             n2,
-#             count(*) over (order by n1 nulls first, n2 rows between coalesce(n1, 0) preceding and coalesce(n1, 0) preceding) x1,
-#             sum(n2) over (order by n1 nulls first, n2 rows between coalesce(n1, 0) preceding and coalesce(n1, 0) preceding) x2,
-#             count(*) over (order by n1 nulls first, n2 rows between coalesce(n1, 0) following and coalesce(n1, 0) following) x3,
-#             sum(n2) over (order by n1 nulls first, n2 rows between coalesce(n1, 0) following and coalesce(n1, 0) following) x4
-#        from t1
-#        order by n1 nulls first, n2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#             'point-17' as msg,
-#             n1,
-#             n2,
-#             sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between unbounded preceding and current row) x1,
-#             sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between current row and unbounded following) x2,
-#             sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between current row and current row) x3,
-#             sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between 10 preceding and 10 following) x4,
-#             sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between 3 preceding and unbounded following) x5
-#        from t1
-#        order by n2, n1;
-#  '''
-#
-#  runProgram('isql', [ dsn], os.linesep.join( (sql_init, sql_addi) ) )
-#
-#---
+    sql_addi= \
+    """
+        set list on;
+
+        recreate table t1 (
+          n1 integer,
+          n2 integer
+        );
+        commit;
+
+        insert into t1 values (null, 100000);
+        insert into t1 values (null, 1000);
+        insert into t1 values (1, 1);
+        insert into t1 values (1, 10);
+        insert into t1 values (1, 100);
+        insert into t1 values (1, 10000);
+        insert into t1 values (2, 20);
+        insert into t1 values (3, 300);
+        insert into t1 values (5, 500);
+        insert into t1 values (null, 50);
+        insert into t1 values (null, 60);
+        commit;
+
+        select 
+               'point-01' as msg,
+               n1,
+               n2,
+               sum(n2) over (partition by n1 order by n2 range between unbounded preceding and current row) x1,
+               sum(n2) over (partition by n1 order by n2 range between current row and unbounded following) x2,
+               sum(n2) over (partition by n1 order by n2 range between current row and current row) x3,
+               sum(n2) over (partition by n1 order by n2 range between 2 following and 3 following) x4,
+               sum(n2) over (partition by n1 order by n2 range between 3 preceding and 2 preceding) x5,
+               sum(n2) over (partition by n1 order by n2 range between 3 preceding and unbounded following) x6
+        from t1
+        order by n2, n1;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-02' as msg,
+               n1,
+               n2,
+               sum(n2) over (partition by n1 order by n2, n1 rows between unbounded preceding and current row) x1,
+               sum(n2) over (partition by n1 order by n2, n1 rows between current row and unbounded following) x2,
+               sum(n2) over (partition by n1 order by n2, n1 rows between current row and current row) x3,
+               sum(n2) over (partition by n1 order by n2, n1 rows between 2 following and 3 following) x4,
+               sum(n2) over (partition by n1 order by n2, n1 rows between 3 preceding and 2 preceding) x5,
+               sum(n2) over (partition by n1 order by n2, n1 rows between 3 preceding and unbounded following) x6
+        from t1
+        order by n2, n1;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-03' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 range between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 range between current row and unbounded following) x2,
+               sum(n2) over (order by n1 range between current row and current row) x3,
+               sum(n2) over (order by n1 range between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 range between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 range between 3 preceding and unbounded following) x6
+        from t1
+        order by n1, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-04' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1, n2 rows between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1, n2 rows between current row and unbounded following) x2,
+               sum(n2) over (order by n1, n2 rows between current row and current row) x3,
+               sum(n2) over (order by n1, n2 rows between 2 following and 3 following) x4,
+               sum(n2) over (order by n1, n2 rows between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1, n2 rows between 3 preceding and unbounded following) x6
+        from t1
+        order by n1, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-05' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 nulls first range between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 nulls first range between current row and unbounded following) x2,
+               sum(n2) over (order by n1 nulls first range between current row and current row) x3,
+               sum(n2) over (order by n1 nulls first range between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 nulls first range between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 nulls first range between 3 preceding and unbounded following) x6
+          from t1
+          order by n1 nulls first, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-06' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 nulls first, n2 rows between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 nulls first, n2 rows between current row and unbounded following) x2,
+               sum(n2) over (order by n1 nulls first, n2 rows between current row and current row) x3,
+               sum(n2) over (order by n1 nulls first, n2 rows between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 nulls first, n2 rows between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 nulls first, n2 rows between 3 preceding and unbounded following) x6
+          from t1
+          order by n1 nulls first, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-07' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 nulls last range between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 nulls last range between current row and unbounded following) x2,
+               sum(n2) over (order by n1 nulls last range between current row and current row) x3,
+               sum(n2) over (order by n1 nulls last range between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 nulls last range between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 nulls last range between 3 preceding and unbounded following) x6
+          from t1
+          order by n1 nulls last, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-08' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 nulls last, n2 rows between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 nulls last, n2 rows between current row and unbounded following) x2,
+               sum(n2) over (order by n1 nulls last, n2 rows between current row and current row) x3,
+               sum(n2) over (order by n1 nulls last, n2 rows between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 nulls last, n2 rows between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 nulls last, n2 rows between 3 preceding and unbounded following) x6
+        from t1
+        order by n1 nulls last, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-09' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 desc range between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 desc range between current row and unbounded following) x2,
+               sum(n2) over (order by n1 desc range between current row and current row) x3,
+               sum(n2) over (order by n1 desc range between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 desc range between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 desc range between 3 preceding and unbounded following) x6
+        from t1
+        order by n1 desc, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select 
+               'point-10' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 desc, n2 rows between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 desc, n2 rows between current row and unbounded following) x2,
+               sum(n2) over (order by n1 desc, n2 rows between current row and current row) x3,
+               sum(n2) over (order by n1 desc, n2 rows between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 desc, n2 rows between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 desc, n2 rows between 3 preceding and unbounded following) x6
+        from t1
+        order by n1 desc, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-11' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 desc nulls first range between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 desc nulls first range between current row and unbounded following) x2,
+               sum(n2) over (order by n1 desc nulls first range between current row and current row) x3,
+               sum(n2) over (order by n1 desc nulls first range between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 desc nulls first range between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 desc nulls first range between 3 preceding and unbounded following) x6
+        from t1
+        order by n1 desc nulls first, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-12' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 desc nulls first, n2 rows between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 desc nulls first, n2 rows between current row and unbounded following) x2,
+               sum(n2) over (order by n1 desc nulls first, n2 rows between current row and current row) x3,
+               sum(n2) over (order by n1 desc nulls first, n2 rows between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 desc nulls first, n2 rows between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 desc nulls first, n2 rows between 3 preceding and unbounded following) x6
+        from t1
+        order by n1 desc nulls first, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-13' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 desc nulls last range between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 desc nulls last range between current row and unbounded following) x2,
+               sum(n2) over (order by n1 desc nulls last range between current row and current row) x3,
+               sum(n2) over (order by n1 desc nulls last range between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 desc nulls last range between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 desc nulls last range between 3 preceding and unbounded following) x6
+        from t1
+        order by n1 desc nulls last, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-14' as msg,
+               n1,
+               n2,
+               sum(n2) over (order by n1 desc nulls last, n2 rows between unbounded preceding and current row) x1,
+               sum(n2) over (order by n1 desc nulls last, n2 rows between current row and unbounded following) x2,
+               sum(n2) over (order by n1 desc nulls last, n2 rows between current row and current row) x3,
+               sum(n2) over (order by n1 desc nulls last, n2 rows between 2 following and 3 following) x4,
+               sum(n2) over (order by n1 desc nulls last, n2 rows between 3 preceding and 2 preceding) x5,
+               sum(n2) over (order by n1 desc nulls last, n2 rows between 3 preceding and unbounded following) x6
+        from t1
+        order by n1 desc nulls last, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-15' as msg,
+               n1,
+               n2,
+               count(*) over (order by n1 nulls first range between coalesce(n1, 0) preceding and coalesce(n1, 0) preceding) x1,
+               sum(n2) over (order by n1 nulls first range between coalesce(n1, 0) preceding and coalesce(n1, 0) preceding) x2,
+               count(*) over (order by n1 nulls first range between coalesce(n1, 0) following and coalesce(n1, 0) following) x3,
+               sum(n2) over (order by n1 nulls first range between coalesce(n1, 0) following and coalesce(n1, 0) following) x4
+        from t1
+        order by n1 nulls first, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-16' as msg,
+               n1,
+               n2,
+               count(*) over (order by n1 nulls first, n2 rows between coalesce(n1, 0) preceding and coalesce(n1, 0) preceding) x1,
+               sum(n2) over (order by n1 nulls first, n2 rows between coalesce(n1, 0) preceding and coalesce(n1, 0) preceding) x2,
+               count(*) over (order by n1 nulls first, n2 rows between coalesce(n1, 0) following and coalesce(n1, 0) following) x3,
+               sum(n2) over (order by n1 nulls first, n2 rows between coalesce(n1, 0) following and coalesce(n1, 0) following) x4
+        from t1
+        order by n1 nulls first, n2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select  
+               'point-17' as msg,
+               n1,
+               n2,
+               sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between unbounded preceding and current row) x1,
+               sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between current row and unbounded following) x2,
+               sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between current row and current row) x3,
+               sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between 10 preceding and 10 following) x4,
+               sum(n2) over (partition by n1 order by date '2000-01-01' + n2 range between 3 preceding and unbounded following) x5
+        from t1
+        order by n2, n1;
+    """
+
+    act.expected_stdout = test_expected_stdout
+
+    act.isql(switches=['-q'], input = os.linesep.join( (sql_init, sql_addi) ) )
+
+    assert act.clean_stdout == act.clean_expected_stdout
