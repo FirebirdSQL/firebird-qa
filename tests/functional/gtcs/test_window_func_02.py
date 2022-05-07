@@ -10,6 +10,7 @@ DESCRIPTION:
 FBTEST:      functional.gtcs.window_func_02
 """
 
+import os
 import pytest
 from firebird.qa import *
 
@@ -17,7 +18,7 @@ db = db_factory()
 
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-expected_stdout = """
+test_expected_stdout = """
     MSG                             point-01
     ID                              1
     NAME                            Person 1
@@ -1204,183 +1205,170 @@ expected_stdout = """
     MAX                             <null>
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+    sql_init = (act.files_dir / 'gtcs-window-func.sql').read_text()
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  with open( os.path.join(context['files_location'],'gtcs-window-func.sql'), 'r') as f:
-#      sql_init = f.read()
-#
-#  sql_addi='''
-#      set list on;
-#
-#      select
-#          'point-01' as msg,
-#          p.*,
-#          sum(1) over (order by id)
-#        from persons p
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-02' as msg,
-#          p.*,
-#          sum(1) over (order by id desc)
-#        from persons p
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-03' as msg,
-#          p.*,
-#          sum(1) over (order by id)
-#        from persons p
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-04' as msg,
-#          p.*,
-#          sum(1) over (order by id)
-#        from persons p
-#        order by id desc;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-05' as msg,
-#          p.*,
-#          sum(1) over (order by id desc)
-#        from persons p
-#        order by id desc;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-06' as msg,
-#          p.*,
-#          sum(1) over (order by id desc) s
-#        from persons p
-#        order by s;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-07' as msg,
-#          p.*,
-#          sum(id) over (order by id)
-#        from persons p;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-08' as msg,
-#          p.*,
-#          sum(mod(id, 2)) over (order by id)
-#        from persons p;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-09' as msg,
-#          e.*,
-#          avg(val) over (order by person nulls first),
-#          avg(val) over (order by dat nulls first)
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-10' as msg,
-#          e.*,
-#          avg(val) over (order by person nulls last),
-#          avg(val) over (order by dat nulls last)
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-11' as msg,
-#          e.*,
-#          count(val) over (order by person),
-#          count(*) over (order by person),
-#          count(null) over (order by person)
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-12' as msg,
-#          e.*,
-#          count(val) over (order by person),
-#          count(val) over (order by id),
-#          count(*) over (order by person),
-#          count(*) over (order by id),
-#          count(null) over (order by person),
-#          count(null) over (order by id)
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-13' as msg,
-#          e.*,
-#          sum(val) over (partition by id order by person),
-#          sum(val) over (partition by id order by id),
-#          count(*) over (partition by person order by person),
-#          count(*) over (partition by person order by id),
-#          sum(id) over (partition by dat order by person),
-#          sum(id) over (partition by dat order by id)
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-14' as msg,
-#          e.*,
-#          sum(val) over (partition by extract(month from dat)),
-#          sum(id) over (partition by extract(month from dat)),
-#          sum(val) over (partition by extract(year from dat)),
-#          sum(id) over (partition by extract(year from dat)),
-#          sum(val) over (partition by extract(day from dat)),
-#          sum(id) over (partition by extract(day from dat))
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-15' as msg,
-#          e.*,
-#          min(id) over (partition by extract(month from dat)),
-#          max(id) over (partition by extract(month from dat)),
-#          min(val) over (partition by extract(month from dat)),
-#          max(val) over (partition by extract(month from dat))
-#        from entries e
-#        order by id;
-#  '''
-#
-#  runProgram('isql', [ dsn], os.linesep.join( (sql_init, sql_addi) ) )
-#
-#---
+    sql_addi= \
+    """
+      set list on;
+
+      select
+          'point-01' as msg,
+          p.*,
+          sum(1) over (order by id)
+        from persons p
+        order by id;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-02' as msg,
+          p.*,
+          sum(1) over (order by id desc)
+        from persons p
+        order by id;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-03' as msg,
+          p.*,
+          sum(1) over (order by id)
+        from persons p
+        order by id;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-04' as msg,
+          p.*,
+          sum(1) over (order by id)
+        from persons p
+        order by id desc;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-05' as msg,
+          p.*,
+          sum(1) over (order by id desc)
+        from persons p
+        order by id desc;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-06' as msg,
+          p.*,
+          sum(1) over (order by id desc) s
+        from persons p
+        order by s;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-07' as msg,
+          p.*,
+          sum(id) over (order by id)
+        from persons p;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-08' as msg,
+          p.*,
+          sum(mod(id, 2)) over (order by id)
+        from persons p;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-09' as msg,
+          e.*,
+          avg(val) over (order by person nulls first),
+          avg(val) over (order by dat nulls first)
+        from entries e
+        order by id;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-10' as msg,
+          e.*,
+          avg(val) over (order by person nulls last),
+          avg(val) over (order by dat nulls last)
+        from entries e
+        order by id;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-11' as msg,
+          e.*,
+          count(val) over (order by person),
+          count(*) over (order by person),
+          count(null) over (order by person)
+        from entries e
+        order by id;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-12' as msg,
+          e.*,
+          count(val) over (order by person),
+          count(val) over (order by id),
+          count(*) over (order by person),
+          count(*) over (order by id),
+          count(null) over (order by person),
+          count(null) over (order by id)
+        from entries e
+        order by id;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-13' as msg,
+          e.*,
+          sum(val) over (partition by id order by person),
+          sum(val) over (partition by id order by id),
+          count(*) over (partition by person order by person),
+          count(*) over (partition by person order by id),
+          sum(id) over (partition by dat order by person),
+          sum(id) over (partition by dat order by id)
+        from entries e
+        order by id;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-14' as msg,
+          e.*,
+          sum(val) over (partition by extract(month from dat)),
+          sum(id) over (partition by extract(month from dat)),
+          sum(val) over (partition by extract(year from dat)),
+          sum(id) over (partition by extract(year from dat)),
+          sum(val) over (partition by extract(day from dat)),
+          sum(id) over (partition by extract(day from dat))
+        from entries e
+        order by id;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      select
+          'point-15' as msg,
+          e.*,
+          min(id) over (partition by extract(month from dat)),
+          max(id) over (partition by extract(month from dat)),
+          min(val) over (partition by extract(month from dat)),
+          max(val) over (partition by extract(month from dat))
+        from entries e
+        order by id;
+    """
+
+    act.expected_stdout = test_expected_stdout
+
+    act.isql(switches=['-q'], input = os.linesep.join( (sql_init, sql_addi) ) )
+
+    assert act.clean_stdout == act.clean_expected_stdout
