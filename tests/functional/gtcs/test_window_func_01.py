@@ -10,6 +10,7 @@ DESCRIPTION:
 FBTEST:      functional.gtcs.window_func_01
 """
 
+import os
 import pytest
 from firebird.qa import *
 
@@ -17,7 +18,7 @@ db = db_factory()
 
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-expected_stderr = """
+test_expected_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -34,7 +35,7 @@ expected_stderr = """
     -Cannot use an aggregate or window function in a WHERE clause, use HAVING (for aggregate only) instead
 """
 
-expected_stdout = """
+test_expected_stdout = """
     MSG                             point-01
     COUNT                           16
     COUNT                           15
@@ -2116,433 +2117,423 @@ expected_stdout = """
     COUNT                           2
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+    sql_init = (act.files_dir / 'gtcs-window-func.sql').read_text()
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  with open( os.path.join(context['files_location'],'gtcs-window-func.sql'), 'r') as f:
-#      sql_init = f.read()
-#
-#  sql_addi='''
-#      set list on;
-#      select
-#          'point-01' as msg,
-#          count(*), count(val), min(val), max(val),
-#          count(distinct val), min(distinct val), max(distinct val)
-#        from entries;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#
-#      select
-#          'point-02' as msg,
-#          count(*) over (), count(val) over (), min(val) over (), max(val) over (),
-#          count(distinct val) over (), min(distinct val) over (), max(distinct val) over (),
-#          id
-#        from entries
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-03' as msg,
-#          count(*) over (), count(val) over (), min(val) over (), max(val) over (),
-#          count(distinct val) over (), min(distinct val) over (), max(distinct val) over (),
-#          id
-#        from entries
-#        where 1 = 0
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-04' as msg,
-#          count(*), count(val), min(val), max(val),
-#          count(distinct val), min(distinct val), max(distinct val),
-#          person
-#        from entries
-#        group by person
-#        order by person;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-05' as msg,
-#          count(*) over (partition by person),
-#          count(val) over (partition by person),
-#          min(val) over (partition by person),
-#          max(val) over (partition by person),
-#          count(distinct val) over (partition by person),
-#          min(distinct val) over (partition by person),
-#          max(distinct val) over (partition by person),
-#          person
-#        from entries
-#        order by 1, 2, 3, 4, 5, 6, 7, 8, 9;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-06' as msg,
-#          count(*),
-#          count(e.val),
-#          min(e.val),
-#          max(e.val),
-#          count(distinct e.val),
-#          min(distinct e.val),
-#          max(distinct e.val),
-#          p.name
-#        from entries e
-#        join persons p on p.id = e.person
-#        group by p.name
-#        order by p.name;
-#
-#       --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-07' as msg,
-#          count(*) over (partition by p.id),
-#          count(e.val) over (partition by p.id),
-#          min(e.val) over (partition by p.id),
-#          max(e.val) over (partition by p.id),
-#          count(distinct e.val) over (partition by p.id),
-#          min(distinct e.val) over (partition by p.id),
-#          max(distinct e.val) over (partition by p.id),
-#          p.name
-#        from entries e
-#        join persons p on p.id = e.person
-#        order by e.id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-08' as msg,
-#          person,
-#          count(person) over (partition by person)
-#        from entries
-#        group by person
-#        order by person;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-09' as msg,
-#          person,
-#          count(*) over (partition by person)
-#        from entries
-#        group by person
-#        order by person;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#        'point-10' as msg,
-#        v1.*, p.id
-#        from persons p
-#        join v1 on v1.x8 = p.name;
-#
-#      select
-#        'point-11' as msg,
-#        v1.*, p.id
-#        from persons p
-#        full join v1 on right(v1.x8, 1) = p.id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#        'point-12' as msg,
-#        v1.*, p.id
-#        from persons p
-#        left join v1 on right(v1.x8, 1) = p.id
-#        where p.id in (1, 3);
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#        'point-13' as msg,
-#        x3, sum(x4)
-#        from v1
-#        group by x3;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#        'point-14' as msg,
-#        x3, sum(x4), count(*)over()
-#        from v1
-#        group by x3;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#        'point-15' as msg,
-#        x3, sum(x4), sum(sum(x4))over()
-#        from v1
-#        group by x3;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#        'point-17' as msg,
-#        v2.person, sum(v2.val), count (*) over ()
-#        from v2
-#        join persons p
-#          on p.id = v2.person
-#        group by person;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#        'point-18' as msg,
-#        v3.person, v3.name, sum(v3.val), count (*) over (), sum(sum(v3.val)) over ()
-#        from v3
-#        join persons p
-#          on p.id = v3.person
-#        group by person, name;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-19' as msg,
-#          person,
-#          count(*) over (),
-#          count(*) over (partition by person)
-#        from entries
-#        order by 1, 2, 3, 4;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-20' as msg,
-#          person,
-#          count(*) over (),
-#          count(*) over (partition by person)
-#        from entries
-#
-#      UNION ALL
-#
-#      select
-#          'point-20' as msg,
-#          person,
-#          count(*) over (),
-#          count(*) over (partition by person)
-#        from entries
-#        order by 1, 2, 3, 4;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-21' as msg,
-#          entries.*,
-#          count(*) over (partition by person || person)
-#        from entries
-#        order by 2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-22' as msg,
-#          entries.*,
-#          count(*) over (),
-#          count(val) over (),
-#          count(*) over (partition by person),
-#          count(val) over (partition by person),
-#          count(*) over (partition by dat),
-#          count(val) over (partition by dat)
-#        from entries
-#        order by 2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-23' as msg,
-#          entries.*,
-#          count(*) over (),
-#          count(val) over (),
-#          count(*) over (partition by person),
-#          count(val) over (partition by person),
-#          count(*) over (partition by extract(month from dat)),
-#          count(val) over (partition by extract(month from dat))
-#        from entries
-#        order by 2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-24' as msg,
-#          entries.*,
-#          min(dat) over (partition by person),
-#          max(dat) over (partition by person)
-#        from entries
-#        order by 2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select distinct
-#          'point-25' as msg,
-#          person,
-#          min(dat) over (partition by person),
-#          max(dat) over (partition by person)
-#        from entries;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select distinct
-#          'point-26' as msg,
-#          person,
-#          count(*) over (),
-#          count(*) over (partition by person)
-#        from entries
-#        order by 2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-27' as msg,
-#          person,
-#          count(*),
-#          count(*) over (),
-#          count(*) over (partition by person),
-#          count(*) over (partition by 1, 2, 3)
-#        from entries
-#        group by person
-#        order by 2;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-28' as msg,
-#          person,
-#          count(*),
-#          count(*) over (),
-#          count(*) over (partition by person),
-#          count(*) over (partition by 1, 2, 3)
-#        from entries
-#        group by person
-#        order by 2 desc;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select *
-#        from (
-#          select
-#              'point-29' as msg,
-#              person,
-#              count(*) c1,
-#              count(*) over () c2,
-#              count(*) over (partition by person) c3,
-#              count(*) over (partition by 1, 2, 3) c4
-#            from entries
-#            group by person
-#        )
-#        order by 2 desc;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-30' as msg,
-#          person,
-#          count(*),
-#          count(*) over (),
-#          count(*) over (partition by person),
-#          count(*) over (partition by 1, 2, 3)
-#        from entries
-#        group by person
-#        order by 2 desc;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-31' as msg,
-#          person,
-#          count(*),
-#          count(*) over (),
-#          count(*) over (partition by person),
-#          count(*) over (partition by 1, 2, 3),
-#          count(count(*)) over ()
-#        from entries
-#        group by person
-#        order by 4 desc, 2 desc;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-32' as msg,
-#          person,
-#          count(*),
-#          count(*) over (),
-#          count(*) over (partition by person),
-#          count(*) over (partition by 1, 2, 3),
-#          count(count(*)) over ()
-#        from entries
-#        group by person
-#        having count(*) = 3
-#        order by 4 desc, 2 desc;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-33' as msg,
-#          person,
-#          sum(val),
-#          count(*) over (),
-#          count(*) over (partition by person),
-#          count(*) over (partition by 1, 2, 3),
-#          count(count(*)) over ()
-#        from entries
-#        group by person
-#        order by 4 desc, 2 desc;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-34' as msg,
-#          person,
-#          sum(val),
-#          count(*) over (),
-#          count(*) over (partition by person),
-#          count(*) over (partition by 1, 2, 3),
-#          count(count(*)) over ()
-#        from entries
-#        group by person
-#        having sum(val) between 16 and 26
-#        order by 4 desc, 2 desc;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#      -- Test invalid usages. Following statements must raise error:
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-35' as msg,
-#          person,
-#          sum(val) over (partition by count(*))
-#        from entries;
-#
-#      select
-#          'point-36' as msg,
-#          person
-#        from entries
-#        where count(*) over () = 1;
-#
-#      select
-#          'point-37' as msg,
-#          person
-#        from entries
-#        group by person
-#        having count(*) over () = 1;
-#  '''
-#
-#  runProgram('isql', [ dsn], os.linesep.join( (sql_init, sql_addi) ) )
-#---
+    sql_addi= \
+    """
+        set list on;
+        select
+            'point-01' as msg,
+            count(*), count(val), min(val), max(val),
+            count(distinct val), min(distinct val), max(distinct val)
+          from entries;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+        select
+            'point-02' as msg,
+            count(*) over (), count(val) over (), min(val) over (), max(val) over (),
+            count(distinct val) over (), min(distinct val) over (), max(distinct val) over (),
+            id
+          from entries
+          order by id;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-03' as msg,
+            count(*) over (), count(val) over (), min(val) over (), max(val) over (),
+            count(distinct val) over (), min(distinct val) over (), max(distinct val) over (),
+            id
+          from entries
+          where 1 = 0
+          order by id;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-04' as msg,
+            count(*), count(val), min(val), max(val),
+            count(distinct val), min(distinct val), max(distinct val),
+            person
+          from entries
+          group by person
+          order by person;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-05' as msg,
+            count(*) over (partition by person),
+            count(val) over (partition by person),
+            min(val) over (partition by person),
+            max(val) over (partition by person),
+            count(distinct val) over (partition by person),
+            min(distinct val) over (partition by person),
+            max(distinct val) over (partition by person),
+            person
+          from entries
+          order by 1, 2, 3, 4, 5, 6, 7, 8, 9;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-06' as msg,
+            count(*),
+            count(e.val),
+            min(e.val),
+            max(e.val),
+            count(distinct e.val),
+            min(distinct e.val),
+            max(distinct e.val),
+            p.name
+          from entries e
+          join persons p on p.id = e.person
+          group by p.name
+          order by p.name;
+
+         --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-07' as msg,
+            count(*) over (partition by p.id),
+            count(e.val) over (partition by p.id),
+            min(e.val) over (partition by p.id),
+            max(e.val) over (partition by p.id),
+            count(distinct e.val) over (partition by p.id),
+            min(distinct e.val) over (partition by p.id),
+            max(distinct e.val) over (partition by p.id),
+            p.name
+          from entries e
+          join persons p on p.id = e.person
+          order by e.id;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-08' as msg,
+            person,
+            count(person) over (partition by person)
+          from entries
+          group by person
+          order by person;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-09' as msg,
+            person,
+            count(*) over (partition by person)
+          from entries
+          group by person
+          order by person;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+          'point-10' as msg,
+          v1.*, p.id
+          from persons p
+          join v1 on v1.x8 = p.name;
+
+        select
+          'point-11' as msg,
+          v1.*, p.id
+          from persons p
+          full join v1 on right(v1.x8, 1) = p.id;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+          'point-12' as msg,
+          v1.*, p.id
+          from persons p
+          left join v1 on right(v1.x8, 1) = p.id
+          where p.id in (1, 3);
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+          'point-13' as msg,
+          x3, sum(x4)
+          from v1
+          group by x3;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+          'point-14' as msg,
+          x3, sum(x4), count(*)over()
+          from v1
+          group by x3;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+          'point-15' as msg,
+          x3, sum(x4), sum(sum(x4))over()
+          from v1
+          group by x3;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+          'point-17' as msg,
+          v2.person, sum(v2.val), count (*) over ()
+          from v2
+          join persons p
+            on p.id = v2.person
+          group by person;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+          'point-18' as msg,
+          v3.person, v3.name, sum(v3.val), count (*) over (), sum(sum(v3.val)) over ()
+          from v3
+          join persons p
+            on p.id = v3.person
+          group by person, name;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-19' as msg,
+            person,
+            count(*) over (),
+            count(*) over (partition by person)
+          from entries
+          order by 1, 2, 3, 4;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-20' as msg,
+            person,
+            count(*) over (),
+            count(*) over (partition by person)
+          from entries
+
+        UNION ALL
+
+        select
+            'point-20' as msg,
+            person,
+            count(*) over (),
+            count(*) over (partition by person)
+          from entries
+          order by 1, 2, 3, 4;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-21' as msg,
+            entries.*,
+            count(*) over (partition by person || person)
+          from entries
+          order by 2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-22' as msg,
+            entries.*,
+            count(*) over (),
+            count(val) over (),
+            count(*) over (partition by person),
+            count(val) over (partition by person),
+            count(*) over (partition by dat),
+            count(val) over (partition by dat)
+          from entries
+          order by 2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-23' as msg,
+            entries.*,
+            count(*) over (),
+            count(val) over (),
+            count(*) over (partition by person),
+            count(val) over (partition by person),
+            count(*) over (partition by extract(month from dat)),
+            count(val) over (partition by extract(month from dat))
+          from entries
+          order by 2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-24' as msg,
+            entries.*,
+            min(dat) over (partition by person),
+            max(dat) over (partition by person)
+          from entries
+          order by 2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select distinct
+            'point-25' as msg,
+            person,
+            min(dat) over (partition by person),
+            max(dat) over (partition by person)
+          from entries;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select distinct
+            'point-26' as msg,
+            person,
+            count(*) over (),
+            count(*) over (partition by person)
+          from entries
+          order by 2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-27' as msg,
+            person,
+            count(*),
+            count(*) over (),
+            count(*) over (partition by person),
+            count(*) over (partition by 1, 2, 3)
+          from entries
+          group by person
+          order by 2;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-28' as msg,
+            person,
+            count(*),
+            count(*) over (),
+            count(*) over (partition by person),
+            count(*) over (partition by 1, 2, 3)
+          from entries
+          group by person
+          order by 2 desc;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select *
+          from (
+            select
+                'point-29' as msg,
+                person,
+                count(*) c1,
+                count(*) over () c2,
+                count(*) over (partition by person) c3,
+                count(*) over (partition by 1, 2, 3) c4
+              from entries
+              group by person
+          )
+          order by 2 desc;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-30' as msg,
+            person,
+            count(*),
+            count(*) over (),
+            count(*) over (partition by person),
+            count(*) over (partition by 1, 2, 3)
+          from entries
+          group by person
+          order by 2 desc;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-31' as msg,
+            person,
+            count(*),
+            count(*) over (),
+            count(*) over (partition by person),
+            count(*) over (partition by 1, 2, 3),
+            count(count(*)) over ()
+          from entries
+          group by person
+          order by 4 desc, 2 desc;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-32' as msg,
+            person,
+            count(*),
+            count(*) over (),
+            count(*) over (partition by person),
+            count(*) over (partition by 1, 2, 3),
+            count(count(*)) over ()
+          from entries
+          group by person
+          having count(*) = 3
+          order by 4 desc, 2 desc;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-33' as msg,
+            person,
+            sum(val),
+            count(*) over (),
+            count(*) over (partition by person),
+            count(*) over (partition by 1, 2, 3),
+            count(count(*)) over ()
+          from entries
+          group by person
+          order by 4 desc, 2 desc;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-34' as msg,
+            person,
+            sum(val),
+            count(*) over (),
+            count(*) over (partition by person),
+            count(*) over (partition by 1, 2, 3),
+            count(count(*)) over ()
+          from entries
+          group by person
+          having sum(val) between 16 and 26
+          order by 4 desc, 2 desc;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        -- Test invalid usages. Following statements must raise error:
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-35' as msg,
+            person,
+            sum(val) over (partition by count(*))
+          from entries;
+
+        select
+            'point-36' as msg,
+            person
+          from entries
+          where count(*) over () = 1;
+
+        select
+            'point-37' as msg,
+            person
+          from entries
+          group by person
+          having count(*) over () = 1;
+     """
+
+    act.expected_stdout = test_expected_stdout
+    act.expected_stderr = test_expected_stderr
+
+    act.isql(switches=['-q'], input = os.linesep.join( (sql_init, sql_addi) ) )
+
+    assert (act.clean_stdout == act.clean_expected_stdout and
+            act.clean_stderr == act.clean_expected_stderr)
