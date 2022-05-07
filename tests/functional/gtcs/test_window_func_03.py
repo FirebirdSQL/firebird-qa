@@ -10,6 +10,7 @@ DESCRIPTION:
 FBTEST:      functional.gtcs.window_func_03
 """
 
+import os
 import pytest
 from firebird.qa import *
 
@@ -17,7 +18,7 @@ db = db_factory()
 
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-expected_stdout = """
+test_expected_stdout = """
     MSG                             point-01
     ID                              1
     NAME                            Person 1
@@ -462,123 +463,110 @@ expected_stdout = """
     ROW_NUMBER                      16
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+    sql_init = (act.files_dir / 'gtcs-window-func.sql').read_text()
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import subprocess
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  with open( os.path.join(context['files_location'],'gtcs-window-func.sql'), 'r') as f:
-#      sql_init = f.read()
-#
-#  sql_addi='''
-#      set list on;
-#
-#      select
-#          'point-01' as msg,
-#          p.*,
-#          dense_rank() over (order by id),
-#          dense_rank() over (order by id desc),
-#          rank() over (order by id),
-#          rank() over (order by id desc),
-#          row_number() over (order by id),
-#          row_number() over (order by id desc)
-#        from persons p
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-02' as msg,
-#          e.*,
-#          dense_rank() over (order by val nulls first),
-#          rank() over (order by val nulls first),
-#          row_number() over (order by val nulls first)
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-03' as msg,
-#          e.*,
-#          dense_rank() over (partition by person order by val nulls first, dat nulls first),
-#          rank() over (partition by person order by val nulls first, dat nulls first),
-#          row_number() over (partition by person order by val nulls first, dat nulls first)
-#        from entries e
-#        order by id;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-04' as msg,
-#          person,
-#          sum(dr),
-#          sum(r),
-#          sum(rn)
-#        from (
-#          select
-#              e.*,
-#              dense_rank() over (partition by person) dr,
-#              rank() over (partition by person) r,
-#              row_number() over (partition by person) rn
-#            from entries e
-#        ) x
-#        group by
-#          person
-#        order by person;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-05' as msg,
-#          sum(dr),
-#          sum(r),
-#          sum(rn)
-#        from (
-#          select
-#              e.*,
-#              dense_rank() over (partition by person) dr,
-#              rank() over (partition by person) r,
-#              row_number() over (partition by person) rn
-#            from entries e
-#        ) x;
-#
-#      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#
-#      select
-#          'point-06' as msg,
-#          id,
-#          person,
-#          dat,
-#          val,
-#          sum(rn) srn,
-#          row_number() over (order by id)
-#        from (
-#          select
-#              e.*,
-#              row_number() over (partition by person order by id) rn
-#            from entries e
-#        ) x
-#        group by
-#          id,
-#          person,
-#          dat,
-#          val
-#        order by id;
-#  '''
-#
-#  runProgram('isql', [ dsn], os.linesep.join( (sql_init, sql_addi) ) )
-#
-#---
+    sql_addi= \
+    """
+        set list on;
+
+        select
+            'point-01' as msg,
+            p.*,
+            dense_rank() over (order by id),
+            dense_rank() over (order by id desc),
+            rank() over (order by id),
+            rank() over (order by id desc),
+            row_number() over (order by id),
+            row_number() over (order by id desc)
+        from persons p
+        order by id;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-02' as msg,
+            e.*,
+            dense_rank() over (order by val nulls first),
+            rank() over (order by val nulls first),
+            row_number() over (order by val nulls first)
+        from entries e
+        order by id;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-03' as msg,
+            e.*,
+            dense_rank() over (partition by person order by val nulls first, dat nulls first),
+            rank() over (partition by person order by val nulls first, dat nulls first),
+            row_number() over (partition by person order by val nulls first, dat nulls first)
+        from entries e
+        order by id;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-04' as msg,
+            person,
+            sum(dr),
+            sum(r),
+            sum(rn)
+        from (
+            select
+                e.*,
+                dense_rank() over (partition by person) dr,
+                rank() over (partition by person) r,
+                row_number() over (partition by person) rn
+              from entries e
+        ) x
+        group by
+            person
+        order by person;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-05' as msg,
+            sum(dr),
+            sum(r),
+            sum(rn)
+          from (
+            select
+                e.*,
+                dense_rank() over (partition by person) dr,
+                rank() over (partition by person) r,
+                row_number() over (partition by person) rn
+              from entries e
+          ) x;
+
+        --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        select
+            'point-06' as msg,
+            id,
+            person,
+            dat,
+            val,
+            sum(rn) srn,
+            row_number() over (order by id)
+        from (
+            select
+                e.*,
+                row_number() over (partition by person order by id) rn
+              from entries e
+        ) x
+        group by
+            id,
+            person,
+            dat,
+            val
+        order by id;
+    """
+
+    act.expected_stdout = test_expected_stdout
+
+    act.isql(switches=['-q'], input = os.linesep.join( (sql_init, sql_addi) ) )
+
+    assert act.clean_stdout == act.clean_expected_stdout
