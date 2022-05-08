@@ -844,10 +844,10 @@ class User:
         self.__first_name: Optional[str] = first_name
         self.__middle_name: Optional[str] = middle_name
         self.__last_name: Optional[str] = last_name
-        self.__tags: Dict[str] = list() if tags is None else list(tags)
+        self.__tags: Dict[str, str] = tags
         self.__admin: bool = admin
         self.__create: bool = not do_not_create
-    def __enter__(self) -> Role:
+    def __enter__(self) -> User:
         if self.__create:
             self.create()
         return self
