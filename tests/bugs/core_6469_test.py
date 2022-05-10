@@ -47,7 +47,7 @@ NOTES:
 
 [08.04.2022] pzotov
   [WINDOWS]
-  1. The 'CONNECT ...' operator, being specified without USER/PASSWORD clauses, will take in account parameters that werte specified in the command line
+  1. The 'CONNECT ...' operator, being specified without USER/PASSWORD clauses, will take in account parameters that were specified in the command line
      of ISQL (confirmed by Alex, letter 03.04.2022 20:31).
      This means that it will use 'SYSDBA' / 'masterkey' rather than Windows trusted auth. This, in turn, leads that SYSDBA will be current user
      when following is performed:
@@ -65,12 +65,19 @@ JIRA:        CORE-6469
 FBTEST:      bugs.core_6469
 """
 
+import os
 import pytest
 import re
 import socket
 import getpass
 from pathlib import Path
 from firebird.qa import *
+import time
+
+try:
+    del os.environ["ISC_USER"]
+except KeyError as e:
+    pass
 
 db = db_factory()
 
@@ -114,7 +121,7 @@ patterns_win =  [re.compile('alter session reset', re.IGNORECASE),
                  re.compile('set trusted role', re.IGNORECASE)]
 
 def run_script(act: Action, tmp_file: Path):
-    __tracebackhide__ = True
+    #__tracebackhide__ = True
     THIS_COMPUTER_NAME = socket.gethostname()
     CURRENT_WIN_ADMIN = getpass.getuser()
     script = f"""
@@ -177,7 +184,6 @@ def run_script(act: Action, tmp_file: Path):
 
     act.isql(switches=['-n'], input_file = tmp_file, connect_db = False, credentials = False)
 
-#@pytest.mark.skipif(reason='FIXME: see notes')
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, test_role: Role, tmp_file: Path,  capsys):
