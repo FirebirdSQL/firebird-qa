@@ -1045,8 +1045,7 @@ def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], kee
         encoding: Encoding for trace session output.
         encoding_errors: Error handler for trace session output encoding.
     """
-    with act.connect_server() as srv:
-        srv.encoding = encoding
+    with act.connect_server(encoding=encoding) as srv:
         output.append(srv.trace.start(config='\n'.join(cfg)))
         b.wait()
         for line in srv:
