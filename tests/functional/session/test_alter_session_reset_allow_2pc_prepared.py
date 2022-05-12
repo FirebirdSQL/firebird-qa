@@ -28,121 +28,81 @@ DESCRIPTION:
   Output of this test must remain EMPTY.
 FBTEST:      functional.session.alter_session_reset_allow_2pc_prepared
 JIRA:        CORE-5832
+
+NOTES:
+[12.05.2022] pzotov
+    Statement 'ALTER SESSION RESET' being issued in one of distributed transactions leads to WARNING that:
+    1. always will be seen in the trace log:
+        2022-05-12T20:45:47.8460 (5716:00000000011B19C0) WARNING AT JStatement::execute#
+            C:/TEMP/PYTEST.../TMP_2PC_A.FDB (ATT_10, SYSDBA:NONE, NONE, TCPv6:::1/54604)
+            C:/python3x/python.exe:3124
+        335545208 : Session was reset with warning(s)
+        335545209 : Transaction is rolled back due to session reset, all changes are lost
+
+    2. will appear on console:
+        C:/python3x/lib/site-packages/firebird/driver/interfaces.py:703: FirebirdWarning: Session was reset with warning(s)
+        -Transaction is rolled back due to session reset, all changes are lost
+
+    Because of this, 'with pytest.warns(FirebirdWarning, ...' is used to suppress appearance of this warning in the pytest output.
+
+    ::: NB :::
+    We have to create TWO DistributedTransactionManager instance for the SAME connections in order to start two transactions
+    within any of connections involved into distributed work. See letter from pcisar, 12.05.2022 11:28.
+
+    Checked on 4.0.2.2692, 5.0.0.489.
 """
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DistributedTransactionManager, tpb, Isolation, FirebirdWarning
 
-db = db_factory()
+init_script = """
+    create table test(id int, x int, s varchar(10), constraint test_pk primary key(id) using index test_pk);
+"""
+db_a = db_factory(filename='tmp_2pc_a.fdb', init = init_script)
+db_b = db_factory(filename='tmp_2pc_b.fdb', init = init_script)
 
-act = python_act('db')
+act = python_act('db_a')
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+test_expeted_stdout = ""
+test_expeted_stderr = ""
+
 @pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, db_a: Database, db_b: Database, capsys):
+    
+    til1 = tpb(Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout = 111)
+    til2 = tpb(Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout = 112)
+    til3 = tpb(Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout = 222)
+    
+    with act.db.connect() as con1, db_b.connect() as con2:
+        dt1 = DistributedTransactionManager((con1,con2))
+        dt2 = DistributedTransactionManager((con1,con2))
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import time
-#  import subprocess
-#  import re
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#
-#  #--------------------------------------------
-#
-#  db_conn.close()
-#  svc = services.connect(host='localhost', user=user_name, password=user_password)
-#  fb_home = svc.get_home_directory()
-#
-#
-#  DBNAME_A = os.path.join(context['temp_directory'],'tmp_2pc_a.fdb')
-#  DBNAME_B = os.path.join(context['temp_directory'],'tmp_2pc_b.fdb')
-#
-#  if os.path.isfile(DBNAME_A):
-#      os.remove(DBNAME_A)
-#  if os.path.isfile(DBNAME_B):
-#      os.remove(DBNAME_B)
-#
-#  con1 = fdb.create_database( dsn = 'localhost:' + DBNAME_A)
-#  con2 = fdb.create_database( dsn = 'localhost:' + DBNAME_B)
-#
-#  con1.execute_immediate( 'create table test(id int, x int, constraint test_pk primary key(id) using index test_pk)' )
-#  con1.commit()
-#
-#  con2.execute_immediate( 'create table test(id int, x int, constraint test_pk primary key(id) using index test_pk)' )
-#  con2.commit()
-#
-#  con1.close()
-#  con2.close()
-#
-#  cgr = fdb.ConnectionGroup()
-#
-#  con1 = fdb.connect( dsn = 'localhost:' + DBNAME_A)
-#  con2 = fdb.connect( dsn = 'localhost:' + DBNAME_B)
-#
-#  cgr.add(con1)
-#  cgr.add(con2)
-#
-#  # https://pythonhosted.org/fdb/reference.html#fdb.TPB
-#  # https://pythonhosted.org/fdb/reference.html#fdb.Connection.trans
-#
-#  tx1a = con1.trans()
-#  tx2 = con2.trans()
-#
-#  tx1b = con1.trans()
-#
-#  tx1a.begin()
-#  tx2.begin()
-#  tx1b.begin()
-#
-#  cur1a=tx1a.cursor()
-#  cur2=tx2.cursor()
-#  cur1b=tx1b.cursor()
-#
-#  cur1a.execute( "insert into test(id, x) values( ?, ? )", (1, 111) )
-#  cur2.execute( "insert into test(id, x) values( ?, ? )", (2, 222) )
-#  cur1b.execute( "insert into test(id, x) values( ?, ? )", (3, 333) )
-#
-#  # ::: NB ::: WITHOUT following prepare() exception will raise:
-#  # Error while executing SQL statement: / SQLCODE: -901 / Cannot reset user session / There are open transactions (2 active); -901; 335545206L
-#  tx1a.prepare()
-#
-#  cur1b.execute( "alter session reset" )
-#
-#  cur1a.close()
-#  cur1b.close()
-#  cur2.close()
-#  tx1a.rollback()
-#  tx1b.rollback()
-#  tx2.rollback()
-#
-#  # ::: NB :::
-#  # We can NOT ecplicitly close connections that participate in ConnectionGroup.
-#  # Exception will raise in that case: "Cannot close a connection that is a member of a ConnectionGroup."
-#  #con1.close()
-#  #con2.close()
-#
-#  cgr.clear()
-#
-#  # change state of test databases to full shutdown otherwise get "Object in use" (set linger = 0 does not help!)
-#  runProgram('gfix',['localhost:' + DBNAME_A,'-shut','full','-force','0'])
-#  runProgram('gfix',['localhost:' + DBNAME_B,'-shut','full','-force','0'])
-#
-#  cleanup( (DBNAME_A, DBNAME_B) )
-#
-#---
+        cur1a=dt1.cursor(con1)
+        cur1b=dt2.cursor(con1)
+        cur2=dt2.cursor(con2)
+
+        cur1a.execute( "insert into test(id, x, s) values( ?, ?, ? )", (1, 111, 'db_a') )
+        cur1b.execute( "insert into test(id, x,s ) values( ?, ?, ? )", (3, 333, 'db_a') )
+        cur2.execute(  "insert into test(id, x, s) values( ?, ?, ? )", (2, 222, 'db_b') )
+
+        # NOTE: following call of dt1.prepare() is necessary!
+        # Otherwise we get (on attempt to execute 'alter session reset'):
+        #  "cannot disconnect database with open transactions (2 active)"
+        # followed by: "connection shutdown / -Killed by database administrator"
+        #
+        dt1.prepare()
+
+        with pytest.warns(FirebirdWarning, match='.*due to session reset.*'):
+            # NB: argument match='.*Session was reset.*' - also can be used
+            cur1b.execute( "alter session reset" )
+
+        dt1.rollback()
+        dt2.rollback()
+
+    act.expected_stdout = test_expeted_stdout
+    act.expected_stderr = test_expeted_stderr
+    act.stdout = capsys.readouterr().out
+
+    assert (act.clean_stderr == act.clean_expected_stderr and
+            act.clean_stdout == act.clean_expected_stdout)
