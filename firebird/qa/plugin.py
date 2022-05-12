@@ -1033,7 +1033,8 @@ def user_factory(db_fixture_name: str, *, name: str, password: str='', plugin: O
     return user_fixture
 
 def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], keep_log: bool,
-                 encoding: Optional[str], encoding_errors: Optional[str]):
+                 encoding: str, encoding_errors: str, user: str, password: str,
+                 role: str):
     """Function used by `TraceSession` for execution in separate thread to run trace session.
 
     Arguments:
@@ -1045,7 +1046,7 @@ def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], kee
         encoding: Encoding for trace session output.
         encoding_errors: Error handler for trace session output encoding.
     """
-    with act.connect_server(encoding=encoding) as srv:
+    with act.connect_server(encoding=encoding, encoding_errors=encoding_errors) as srv:
         output.append(srv.trace.start(config='\n'.join(cfg)))
         b.wait()
         for line in srv:
@@ -1077,12 +1078,19 @@ class TraceSession:
        The trace session is automatically stopped on exit from `with` context, and trace
        output is copied to `Action.trace_log` attribute.
     """
-    def __init__(self, act: Action, config: List[str], keep_log: bool=True,
+    def __init__(self, act: Action, config: List[str], user: str, password: str,
+                 role: Optional[str]=None, keep_log: bool=True,
                  encoding: Optional[str]=None, encoding_errors: Optional[str]=None):
         #: Action instance.
         self.act: Action = act
         #: Trace session configuration.
         self.config: List[str] = config
+        #: User name
+        self.user: str = user
+        #: User password
+        self.password: str = password
+        #: User role
+        self.role: str = role
         #: List used to store trace session output.
         self.output: List[str] = []
         #: When `True`, the trace session output is discarded.
@@ -1098,7 +1106,9 @@ class TraceSession:
         self.trace_thread = Thread(target=trace_thread, args=[self.act, b, self.config,
                                                               self.output, self.keep_log,
                                                               self.encoding,
-                                                              self.encoding_errors])
+                                                              self.encoding_errors,
+                                                              self.user, self.password,
+                                                              self.role])
         self.trace_thread.start()
         b.wait()
         return self
@@ -1943,8 +1953,8 @@ class Action:
                 out_file.write_text(self.stdout, encoding=io_enc)
             if self.stderr:
                 err_file.write_text(self.stderr, encoding=io_enc)
-    def connect_server(self, *, user: Optional[str]=None, password: Optional[str]=None,
-                       role: Optional[str]=None, encoding: Optional[str]=None,
+    def connect_server(self, *, user: Optional[str | User]=None, password: Optional[str]=None,
+                       role: Optional[str | Role]=None, encoding: Optional[str]=None,
                        encoding_errors: Optional[str]=None) -> Server:
         """Returns `~firebird.driver.Server` instance connected to service manager of tested
         server.
@@ -1963,6 +1973,12 @@ class Action:
            fails or raises an error.
         """
         __tracebackhide__ = True
+        if isinstance(user, User):
+            user = user.name
+            if password is None:
+                password = user.password
+        if isinstance(role, Role):
+            role = role.name
         return connect_server(_vars_['server'],
                               user=_vars_['user'] if user is None else user,
                               password=_vars_['password'] if password is None else password,
@@ -2047,7 +2063,8 @@ class Action:
     def trace(self, *, db_events: Optional[List[str]]=None, svc_events: Optional[List[str]]=None,
               config: Optional[List[str]]=None, keep_log: bool=True,
               encoding: Optional[str]=None, encoding_errors: Optional[str]=None,
-              database: Optional[str]=None) -> TraceSession:
+              database: Optional[str]=None, user: Optional[str | User]=None,
+              password: Optional[str]=None, role: Optional[str | Role]=None) -> TraceSession:
         """Run Firebird trace session.
 
         Arguments:
@@ -2080,6 +2097,12 @@ class Action:
                  act.execute()
              # Actions that are not traced
         """
+        if isinstance(user, User):
+            user = user.name
+            if password is None:
+                password = user.password
+        if isinstance(role, Role):
+            role = role.name
         if config is not None:
             return TraceSession(self, config, keep_log=keep_log, encoding=encoding,
                                 encoding_errors=encoding_errors)
@@ -2095,7 +2118,9 @@ class Action:
                 config.extend(['services', '{', 'enabled = true', 'log_initfini = false'])
                 config.extend(svc_events)
                 config.append('}')
-            return TraceSession(self, config, keep_log=keep_log, encoding=encoding,
+            return TraceSession(self, config, user=_vars_['user'] if user is None else user,
+                                password=_vars_['password'] if password is None else password,
+                                role=role, keep_log=keep_log, encoding=encoding,
                                 encoding_errors=encoding_errors)
     def trace_to_stdout(self, *, upper: bool=False) -> None:
         """Copy trace session log to `.stdout`.
