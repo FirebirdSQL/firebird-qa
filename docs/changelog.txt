@@ -2,6 +2,18 @@
 Changelog
 #########
 
+Version 0.14.0
+==============
+
+* Added possibility to specify user, password and role in `.Action.connect_server()` and
+  `.Action.trace()`
+
+Version 0.13.1
+==============
+
+* Fixed problem with service encoding
+* Fixed problem with tags in User
+
 Version 0.13.0
 ==============
 
