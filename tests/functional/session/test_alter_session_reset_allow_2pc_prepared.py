@@ -45,9 +45,13 @@ NOTES:
 
     Because of this, 'with pytest.warns(FirebirdWarning, ...' is used to suppress appearance of this warning in the pytest output.
 
-    ::: NB :::
-    We have to create TWO DistributedTransactionManager instance for the SAME connections in order to start two transactions
-    within any of connections involved into distributed work. See letter from pcisar, 12.05.2022 11:28.
+    NB-1. We have to create TWO DistributedTransactionManager instance for the SAME connections in order to start two transactions
+          within any of connections involved into distributed work.
+    NB-2. DistributedTransactionManager has associated resources, so it's better to use "with" statement to ensure that resources
+          are always properly released.
+    NB-3. This test does not have any expected stdout & stderr (they are empty strings). It's better to remove them including
+          unnecessary assert - for clarity. The real test is the check for warning, not for stdout/stderr.
+    See letters from pcisar, 12.05.2022 11:28; 13.05.2022 20:59.
 
     Checked on 4.0.2.2692, 5.0.0.489.
 """
@@ -64,45 +68,33 @@ db_b = db_factory(filename='tmp_2pc_b.fdb', init = init_script)
 
 act = python_act('db_a')
 
-test_expeted_stdout = ""
-test_expeted_stderr = ""
-
 @pytest.mark.version('>=4.0')
-def test_1(act: Action, db_a: Database, db_b: Database, capsys):
+def test_1(act: Action, db_b: Database):
     
     til1 = tpb(Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout = 111)
     til2 = tpb(Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout = 112)
     til3 = tpb(Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout = 222)
     
     with act.db.connect() as con1, db_b.connect() as con2:
-        dt1 = DistributedTransactionManager((con1,con2))
-        dt2 = DistributedTransactionManager((con1,con2))
+        with DistributedTransactionManager((con1,con2)) as dt1, DistributedTransactionManager((con1,con2)) as dt2:
+            cur1a=dt1.cursor(con1)
+            cur1b=dt2.cursor(con1)
+            cur2=dt2.cursor(con2)
 
-        cur1a=dt1.cursor(con1)
-        cur1b=dt2.cursor(con1)
-        cur2=dt2.cursor(con2)
+            cur1a.execute( "insert into test(id, x, s) values( ?, ?, ? )", (1, 111, 'db_a') )
+            cur1b.execute( "insert into test(id, x,s ) values( ?, ?, ? )", (3, 333, 'db_a') )
+            cur2.execute(  "insert into test(id, x, s) values( ?, ?, ? )", (2, 222, 'db_b') )
 
-        cur1a.execute( "insert into test(id, x, s) values( ?, ?, ? )", (1, 111, 'db_a') )
-        cur1b.execute( "insert into test(id, x,s ) values( ?, ?, ? )", (3, 333, 'db_a') )
-        cur2.execute(  "insert into test(id, x, s) values( ?, ?, ? )", (2, 222, 'db_b') )
+            # NOTE: following call of dt1.prepare() is necessary!
+            # Otherwise we get (on attempt to execute 'alter session reset'):
+            #  "cannot disconnect database with open transactions (2 active)"
+            # followed by: "connection shutdown / -Killed by database administrator"
+            #
+            dt1.prepare()
 
-        # NOTE: following call of dt1.prepare() is necessary!
-        # Otherwise we get (on attempt to execute 'alter session reset'):
-        #  "cannot disconnect database with open transactions (2 active)"
-        # followed by: "connection shutdown / -Killed by database administrator"
-        #
-        dt1.prepare()
+            with pytest.warns(FirebirdWarning, match='.*due to session reset.*'):
+                # NB: argument match='.*Session was reset.*' also can be used
+                cur1b.execute( "alter session reset" )
 
-        with pytest.warns(FirebirdWarning, match='.*due to session reset.*'):
-            # NB: argument match='.*Session was reset.*' - also can be used
-            cur1b.execute( "alter session reset" )
-
-        dt1.rollback()
-        dt2.rollback()
-
-    act.expected_stdout = test_expeted_stdout
-    act.expected_stderr = test_expeted_stderr
-    act.stdout = capsys.readouterr().out
-
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+            dt1.rollback()
+            dt2.rollback()
