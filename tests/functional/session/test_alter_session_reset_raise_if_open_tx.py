@@ -16,51 +16,45 @@ DESCRIPTION:
   It checks only ERROR RAISING when there are several Tx opened within the same connection.
 FBTEST:      functional.session.alter_session_reset_raise_if_open_tx
 JIRA:        CORE-5832
+
+NOTES: checked on 4.0.1.2692, 5.0.0.489
 """
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 db = db_factory()
 
 act = python_act('db')
 
 expected_stdout = """
-    Error while executing SQL statement:
-    - SQLCODE: -901
-    - Cannot reset user session
-    - There are open transactions (3 active)
-    -901
-    335545206
+    Cannot reset user session
+    -There are open transactions (3 active)
+    gdscodes: (335545206, 335545207)
+    sqlcode: -901
+    sqlstate: 01002
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
+    with act.db.connect() as con:
+        with con.transaction_manager() as tx1, \
+             con.transaction_manager() as tx2, \
+             con.transaction_manager() as tx3:
+            tx1.begin()
+            tx2.begin()
+            tx3.begin()
 
-# test_script_1
-#---
-#
-#  tx1 = db_conn.trans()
-#  tx2 = db_conn.trans()
-#  tx3 = db_conn.trans()
-#
-#  tx1.begin()
-#  tx2.begin()
-#  tx3.begin()
-#
-#  cur1=tx1.cursor()
-#  try:
-#      cur1.execute('alter session reset')
-#  except Exception,e:
-#      for x in e:
-#          print(x)
-#  finally:
-#      tx1.commit()
-#      tx2.commit()
-#      tx3.commit()
-#
-#  db_conn.close()
-#
-#---
+            cur1=tx1.cursor()
+            try:
+                cur1.execute('alter session reset')
+            except DatabaseError as e:
+                print(e.__str__())
+                print('gdscodes:', e.gds_codes)
+                print('sqlcode:',  e.sqlcode)
+                print('sqlstate:', e.sqlstate)
+
+    act.stdout = capsys.readouterr().out
+    act.expected_stdout = expected_stdout
+    assert act.clean_stdout == act.clean_expected_stdout
