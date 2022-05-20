@@ -8,163 +8,77 @@ DESCRIPTION:
   Than we attach to DB 'functional.syspriv.drop_database.tmp' as user U01 and try to DROP it.
   This should NOT raise any error, database file should be deleted from disk.
 FBTEST:      functional.syspriv.drop_database
+
+NOTES:
+    [20.05.2022] pzotov
+    Test creates TEMPORARY database (beside of 'main' one) and uses SYSDBA for that.
+    Then it creates NON-dba user and role with system privilege DROP_DATABASE.
+    Finally, it grants role to non-dba user, makes connect to temporary DB and tries to DROP it using NON-dba user.
+    Checked on 4.0.1.2692, 5.0.0.497.
 """
 
 import pytest
 from firebird.qa import *
+from firebird.driver.types import DatabaseError
 
-substitutions = [('DB_NAME.*FUNCTIONAL.SYSPRIV.DROP_DATABASE.TMP', 'DB_NAME FUNCTIONAL.SYSPRIV.DROP_DATABASE.TMP')]
+substitutions = [('[ \\t]+', ' '), ('DB_NAME.*TMP4TEST.TMP', 'DB_NAME TMP4TEST.TMP')]
+db_main = db_factory()
+tmp_user = user_factory('db_main', name='tmp_syspriv_user', password='123')
+tmp_role = role_factory('db_main', name='tmp_role_for_drop_database')
+act = python_act('db_main', substitutions = substitutions)
 
-init_script = """
-    set wng off;
-    set bail on;
-    set list on;
-    set count on;
+db_temp = db_factory(filename = 'tmp4test.tmp', do_not_create=True, do_not_drop=True)
 
-    create or alter view v_check as
-    select
-        upper(mon$database_name) as db_name
-        ,current_user as who_ami
-        ,r.rdb$role_name
-        ,rdb$role_in_use(r.rdb$role_name) as RDB_ROLE_IN_USE
-        ,r.rdb$system_privileges
-    from mon$database m cross join rdb$roles r;
-    commit;
-
-    grant select on v_check to public;
-    commit;
-
-    create or alter user u01 password '123' revoke admin role;
-    revoke all on all from u01;
-    commit;
-
-    set term ^;
-    execute block as
-    begin
-      execute statement 'drop role role_for_drop_this_database';
-      when any do begin end
-    end^
-    set term ;^
-    commit;
-
-    create role role_for_drop_this_database set system privileges to DROP_DATABASE;
-    commit;
-    grant default role_for_drop_this_database to user u01;
-    commit;
-  """
-
-db = db_factory(init=init_script)
-
-act = python_act('db', substitutions=substitutions)
-
-expected_stdout = """
-    DB_NAME                         FUNCTIONAL.SYSPRIV.DROP_DATABASE.TMP
-    WHO_AMI                         U01
+expected_stdout_isql = """
+    DB_NAME                         TMP4TEST.TMP
+    WHO_AMI                         TMP_SYSPRIV_USER
     RDB$ROLE_NAME                   RDB$ADMIN
     RDB_ROLE_IN_USE                 <false>
     RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
-
-    DB_NAME                         FUNCTIONAL.SYSPRIV.DROP_DATABASE.TMP
-    WHO_AMI                         U01
-    RDB$ROLE_NAME                   ROLE_FOR_DROP_THIS_DATABASE
+    DB_NAME                         TMP4TEST.TMP
+    WHO_AMI                         TMP_SYSPRIV_USER
+    RDB$ROLE_NAME                   TMP_ROLE_FOR_DROP_DATABASE
     RDB_ROLE_IN_USE                 <true>
     RDB$SYSTEM_PRIVILEGES           0004000000000000
-    Records affected: 2
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, tmp_user: User, tmp_role:Role, db_temp: Database, capsys):
+    init_script = \
+    f"""
+        set wng off;
+        set list on;
+        set bail on;
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import time
-#
-#  db_pref = os.path.splitext(db_conn.database_name)[0]
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  fdb_this = db_pref+'.fdb'
-#  fbk_name = db_pref+'.fbk'
-#  fdb_test = db_pref+'.tmp'
-#
-#  f_backup_restore=open( os.path.join(context['temp_directory'],'tmp_drop_db_backup_restore.log'), 'w')
-#  subprocess.call([context['fbsvcmgr_path'],"localhost:service_mgr",
-#                   "user","SYSDBA","password","masterkey",
-#                   "action_backup",
-#                   "dbname",   fdb_this,
-#                   "bkp_file", fbk_name,
-#                   "verbose"],
-#                   stdout=f_backup_restore,
-#                   stderr=subprocess.STDOUT
-#                  )
-#
-#  subprocess.call([context['fbsvcmgr_path'],"localhost:service_mgr",
-#                   "user","SYSDBA","password","masterkey",
-#                   "action_restore", "res_replace",
-#                   "verbose",
-#                   "bkp_file", fbk_name,
-#                   "dbname", fdb_test],
-#                  stdout=f_backup_restore,
-#                  stderr=subprocess.STDOUT
-#                )
-#  flush_and_close( f_backup_restore )
-#
-#
-#  # Check that non-sysdba user can connect and DROP database <fdb_test>
-#  #######
-#  sql_chk='''
-#      set list on;
-#      set count on;
-#      select * from v_check;
-#      commit;
-#      drop database;
-#  '''
-#
-#  runProgram('isql',['localhost:'+fdb_test,'-user','U01', '-pas', '123'], sql_chk)
-#
-#  if os.path.isfile(fdb_test):
-#      print('ERROR WHILE DROP DATABASE: FILE REMAINS ON DISK!')
-#
-#  # Cleanup:
-#  ##########
-#  time.sleep(1)
-#  cleanup( (fbk_name, fdb_test, f_backup_restore) )
-#
-#---
+        create database '{db_temp.dsn}' user {act.db.user} password '{act.db.password}'; -- DB is created by ### SYSDBA ###
+
+        create or alter view v_check as
+        select
+            upper(mon$database_name) as db_name
+            ,current_user as who_ami
+            ,r.rdb$role_name
+            ,rdb$role_in_use(r.rdb$role_name) as RDB_ROLE_IN_USE
+            ,r.rdb$system_privileges
+        from mon$database m cross join rdb$roles r
+        order by r.rdb$role_name;
+        commit;
+        grant select on v_check to public;
+        commit;
+
+        alter user {tmp_user.name} revoke admin role;
+        revoke all on all from {tmp_user.name};
+        commit;
+        create role {tmp_role.name} set system privileges to DROP_DATABASE;
+        commit;
+        grant default {tmp_role.name} to user {tmp_user.name};
+        commit;
+        connect '{db_temp.dsn}' user {tmp_user.name} password '{tmp_user.password}';
+        select * from v_check;
+        commit;
+        drop database; -- DB is dropped by ### NON-DBA ### who has granted with apropriate role with system privilege.
+    """
+
+    act.isql(switches=['-q'], input=init_script, connect_db = False, credentials = False, combine_output=True)
+    act.expected_stdout = expected_stdout_isql
+    assert act.clean_stdout == act.clean_expected_stdout
+
