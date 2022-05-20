@@ -5,137 +5,57 @@ ID:          syspriv.create-database
 TITLE:       Check ability to CREATE database by non-sysdba user who is granted with necessary system privilege
 DESCRIPTION:
 FBTEST:      functional.syspriv.create_database
+NOTES:
+    [20.05.2022] pzotov
+    One need to specify do_not_create=True and do_not_drop=True for db_temp, otherwise this DB will be created
+    and init_script will fail to check ability of DB creation. If testing machine have localized OS then such
+    attempt will raise status-vector which will have localized message:
+        Statement failed, SQLSTATE = 08001
+        I/O error during "CreateFile (create)" operation for file "..."
+        -Error while trying to create file
+        -<LOCALIZED MESSAGE HERE> // ~ "file exists"
+    But we will see UnicodeDecodeError instead of full lines and/or SQLSTATE or gdscode.
+    Checked on 4.0.1.2692, 5.0.0.497.
 """
 
 import pytest
 from firebird.qa import *
+from firebird.driver.types import DatabaseError
 
-substitutions = [('DB_NAME.*FUNCTIONAL.SYSPRIV.CREATE_DATABASE.TMP', 'DB_NAME FUNCTIONAL.SYSPRIV.DROP_DATABASE.TMP')]
+substitutions = [('[ \\t]+', ' '), ('MON\\$DATABASE_NAME.*TMP4TEST.TMP', 'MON$DATABASE_NAME TMP4TEST.TMP')]
+db_main = db_factory()
+tmp_user = user_factory('db_main', name='tmp_syspriv_user', password='123')
+tmp_role = role_factory('db_main', name='tmp_role_for_create_database')
+act = python_act('db_main', substitutions = substitutions)
 
-init_script = """
-    set wng off;
-    set bail on;
-    set list on;
-    set count on;
+db_temp = db_factory(filename = 'tmp4test.tmp', do_not_create=True, do_not_drop=True)
 
-    create or alter
-        user john_smith_db_creator
-        password '123'
-        grant admin role -------------- [ !!! ] NB: this must be specified!
-        using plugin Srp
-    ;
-    commit;
 
-    set term ^;
-    execute block as
-    begin
-      execute statement 'drop role role_for_create_database';
-      when any do begin end
-    end^
-    set term ;^
-    commit;
-
-    create role role_for_create_database set system privileges to CREATE_DATABASE;
-    commit;
-    grant default role_for_create_database to user john_smith_db_creator;
-    commit;
-  """
-
-db = db_factory(init=init_script)
-
-act = python_act('db', substitutions=substitutions)
-
-expected_stdout = """
-    DB_NAME                         C:\\FBTESTING\\QA\\FBT-REPO\\TMP\\FUNCTIONAL.SYSPRIV.CREATE_DATABASE.TMP
-    WHO_AMI                         JOHN_SMITH_DB_CREATOR
-    RDB$ROLE_NAME                   RDB$ADMIN
-    RDB_ROLE_IN_USE                 <true>
-    RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
+expected_stdout_isql = """
+    MON$OWNER         TMP_SYSPRIV_USER
+    MON$DATABASE_NAME TMP4TEST.TMP
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, tmp_user: User, tmp_role:Role, db_temp: Database, capsys):
+    init_script = \
+    f"""
+        set wng off;
+        set bail on;
+        connect '{act.db.dsn}' user '{act.db.user}' password '{act.db.password}';
+        alter user {tmp_user.name} grant admin role; -- this must be specified!
+        commit;
+        alter role {tmp_role.name} set system privileges to CREATE_DATABASE;
+        commit;
+        grant default {tmp_role.name} to user {tmp_user.name};
+        commit;
+        create database '{db_temp.dsn}' user {tmp_user.name} password '{tmp_user.password}';
+        set list on;
+        select mon$owner, mon$database_name from mon$database;
+        commit;
+        drop database;
+    """
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import time
-#
-#  db_pref = os.path.splitext(db_conn.database_name)[0]
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  fdb_test = db_pref+'.tmp'
-#
-#  cleanup( fdb_test, )
-#
-#  # Check that non-sysdba user can connect and DROP database <fdb_test>
-#  #######
-#  sql_chk='''
-#      set list on;
-#
-#      create database 'localhost:%(fdb_test)s' user john_smith_db_creator password '123';
-#      commit;
-#
-#      select
-#          upper(mon$database_name) as db_name
-#          ,current_user as who_ami
-#          ,r.rdb$role_name
-#          ,rdb$role_in_use(r.rdb$role_name) as RDB_ROLE_IN_USE
-#          ,r.rdb$system_privileges
-#      from mon$database m cross join rdb$roles r;
-#
-#      commit;
-#
-#      connect 'localhost:%(fdb_test)s' user sysdba password 'masterkey';
-#      drop user john_smith_db_creator using plugin Srp;
-#      commit;
-#  ''' % locals()
-#
-#  runProgram('isql',['-q'], sql_chk)
-#
-#  if not os.path.isfile(fdb_test):
-#      print('ERROR WHILE CREATE DATABASE: FILE NOT FOUND.')
-#
-#  # Cleanup:
-#  ##########
-#  time.sleep(1)
-#  cleanup( (fdb_test,) )
-#
-#---
+    act.isql(switches=['-q'], input=init_script, connect_db = False, credentials = False, combine_output=True)
+    act.expected_stdout = expected_stdout_isql
+    assert act.clean_stdout == act.clean_expected_stdout
