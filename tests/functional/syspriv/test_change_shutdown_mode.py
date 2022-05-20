@@ -18,10 +18,10 @@ DESCRIPTION:
 FBTEST:      functional.syspriv.change_shutdown_mode
 NOTES:
     [20.05.2022] pzotov
-    Test currently veries only ONE of shutdown mode: FULL.
-    Neither 'single' nor 'multi' can not be checked because Services API issues error
-    message that should not appear. See: github.com/FirebirdSQL/firebird/issues/7189
-    Modes 'single' and 'multi' will be added after fix of this issue.
+    In order to verify ability to change DB state to SINGLE or MULTI, one need to grant system privilege
+    ACCESS_SHUTDOWN_DATABASE, oterwise attempt to change DB state to such mode will fail with error:
+    "database ... shutdown".
+    Explanation: https://github.com/FirebirdSQL/firebird/issues/7189#issuecomment-1132731509
 
     Checked on 4.0.1.2692, 5.0.0.497.
 """
@@ -45,7 +45,7 @@ expected_stdout_isql = "ATT_LOG_COUNT 0"
 def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
 
     #-----------------------------------------------
-    def return_tmp_db_online( srv, db_path ):
+    def bring_tmp_db_online( srv, db_path ):
         srv.database.bring_online(database=db_path)
     #-----------------------------------------------
 
@@ -111,7 +111,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
         -- NB: Privilege 'IGNORE_DB_TRIGGERS' is needed when we return database to ONLINE
         -- and this DB has DB-level trigger.
         alter role {tmp_role.name}
-            set system privileges to CHANGE_SHUTDOWN_MODE, USE_GFIX_UTILITY, IGNORE_DB_TRIGGERS;
+            set system privileges to CHANGE_SHUTDOWN_MODE, USE_GFIX_UTILITY, IGNORE_DB_TRIGGERS, ACCESS_SHUTDOWN_DATABASE;
         commit;
         grant default {tmp_role.name} to user {tmp_user.name};
         commit;
@@ -121,31 +121,14 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
     with act.connect_server(user = tmp_user.name, password = tmp_user.password, role = tmp_role.name) as srv_nondba:
         # All subsequent actions must not issue any output:
         try:
-            srv_nondba.database.shutdown(database=act.db.db_path
-                                  ,mode=ShutdownMode.FULL
-                                  ,method=ShutdownMethod.FORCED
-                                  ,timeout=0)
-            return_tmp_db_online(srv_nondba, act.db.db_path)
-
-
-            srv_nondba.database.shutdown(database=act.db.db_path
-                                  ,mode=ShutdownMode.FULL
-                                  ,method=ShutdownMethod.FORCED
-                                  ,timeout=1)
-            return_tmp_db_online(srv_nondba, act.db.db_path)
-
-            srv_nondba.database.shutdown(database=act.db.db_path
-                                  ,mode=ShutdownMode.FULL
-                                  ,method=ShutdownMethod.DENNY_ATTACHMENTS
-                                  ,timeout=1)
-            return_tmp_db_online(srv_nondba, act.db.db_path)
-
-
-            srv_nondba.database.shutdown(database=act.db.db_path
-                                  ,mode=ShutdownMode.FULL
-                                  ,method=ShutdownMethod.DENNY_TRANSACTIONS
-                                  ,timeout=1)
-            return_tmp_db_online(srv_nondba, act.db.db_path)
+            for checked_shut_mode in (ShutdownMode.FULL, ShutdownMode.MULTI, ShutdownMode.SINGLE):
+                for checked_shut_method in (ShutdownMethod.FORCED, ShutdownMethod.DENNY_ATTACHMENTS, ShutdownMethod.DENNY_TRANSACTIONS):
+                    for checked_timeout in (0,1):
+                        srv_nondba.database.shutdown(database=act.db.db_path
+                                              ,mode=checked_shut_mode
+                                              ,method=checked_shut_method
+                                              ,timeout=checked_timeout)
+                        bring_tmp_db_online(srv_nondba, act.db.db_path)
 
         except DatabaseError as e:
             print(e.__str__())
