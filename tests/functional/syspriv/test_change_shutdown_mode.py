@@ -122,7 +122,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
         # All subsequent actions must not issue any output:
         try:
             for checked_shut_mode in (ShutdownMode.FULL, ShutdownMode.MULTI, ShutdownMode.SINGLE):
-                for checked_shut_method in (ShutdownMethod.FORCED, ShutdownMethod.DENNY_ATTACHMENTS, ShutdownMethod.DENNY_TRANSACTIONS):
+                for checked_shut_method in (ShutdownMethod.FORCED, ShutdownMethod.DENY_ATTACHMENTS, ShutdownMethod.DENY_TRANSACTIONS):
                     for checked_timeout in (0,1):
                         srv_nondba.database.shutdown(database=act.db.db_path
                                               ,mode=checked_shut_mode
