@@ -11,133 +11,87 @@ DESCRIPTION:
       Then we get content of firebird.log before disconnect and after.
       Finally we compare these logs and search in the difference lines about error message.
 FBTEST:      functional.trigger.database.disconnect_01
+NOTES:
+[26.05.2022] pzotov
+  Re-implemented for work in firebird-qa suite. 
+  ACHTUNG: firebird.log may contain NON-ASCII characters if localized Windows is used!
+  Because of this, we have to add 'encoding=locale.getpreferredencoding()' to act.connect-server() call.
+  Checked on: 4.0.1.2692, 5.0.0.497
 """
 
 import pytest
 from firebird.qa import *
+import time
+from difflib import unified_diff
+import re
+import locale
 
-init_script = """
-    set term ^;
-    create trigger trg_disconnect on disconnect as
-        declare n int;
-    begin
-        n = 1/0;
-    end
-    ^
-    set term ;^
-    commit;
 
+tmp_worker = user_factory('db', name='tmp_worker', password='123')
+
+db = db_factory()
+
+act = python_act('db', substitutions=[('[ \t]+', ' '), ('line: \\d+, col: \\d+', '')])
+
+expected_stdout_test_sql = """
+    WHO_AM_I TMP_WORKER
 """
 
-db = db_factory(init=init_script)
-
-act = python_act('db', substitutions=[('[ \t]+', ' ')])
-
-expected_stdout = """
+expected_stdout_log_diff = """
     + Error at disconnect:
     + arithmetic exception, numeric overflow, or string truncation
-    + Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
-    + At trigger 'TRG_DISCONNECT' line: 4, col: 9
+    + Integer divide by zero. The code attempted to divide an integer value by an integer divisor of zero.
+    + At trigger 'TRG_DISCONNECT'
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, tmp_worker: User, capsys):
+    init_sql  = f"""
+        set term ^;
+        create trigger trg_disconnect on disconnect as
+            declare n int;
+        begin
+           if ( current_user = '{act.db.user}' ) then
+               exit;
+            n = 1/0;
+        end
+        ^
+        set term ;^
+        commit;
+    """
+    act.isql(switches=['-q'], input = init_sql)
 
-# Original python code for this test:
-# -----------------------------------
-#
-# import os
-# import subprocess
-# import difflib
-# import re
-# import time
-#
-# #--------------------------------------------
-#
-# def flush_and_close( file_handle ):
-#     # https://docs.python.org/2/library/os.html#os.fsync
-#     # If you're starting with a Python file object f,
-#     # first do f.flush(), and
-#     # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#     global os
-#
-#     file_handle.flush()
-#     if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#         # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#         os.fsync(file_handle.fileno())
-#     file_handle.close()
-#
-# #--------------------------------------------
-#
-# def cleanup( f_names_list ):
-#     global os
-#     for f in f_names_list:
-#        if type(f) == file:
-#           del_name = f.name
-#        elif type(f) == str:
-#           del_name = f
-#        else:
-#           print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#           del_name = None
-#
-#        if del_name and os.path.isfile( del_name ):
-#            os.remove( del_name )
-#
-# #--------------------------------------------
-#
-# def svc_get_fb_log( fb_home, f_fb_log ):
-#
-#   global subprocess
-#   subprocess.call( [ context['fbsvcmgr_path'],
-#                      "localhost:service_mgr",
-#                      "action_get_fb_log"
-#                    ],
-#                    stdout=f_fb_log, stderr=subprocess.STDOUT
-#                  )
-#   return
-#
-# #--------------------------------------------
-#
-# os.environ["ISC_USER"] = user_name
-# os.environ["ISC_PASSWORD"] = user_password
-#
-# f_init_log = open( os.path.join(context['temp_directory'],'tmp_fb_old.log'), 'w')
-# subprocess.call( [ context['fbsvcmgr_path'],"localhost:service_mgr",  "action_get_fb_log" ], stdout = f_init_log, stderr = subprocess.STDOUT)
-# flush_and_close( f_init_log )
-#
-# db_conn.close() # this leads to zero divide error in trg_disconnect which must be reflected in the firebird.log
-#
-# time.sleep(1)
-#
-# f_curr_log = open( os.path.join(context['temp_directory'],'tmp_fb_new.log'), 'w')
-# subprocess.call( [ context['fbsvcmgr_path'],"localhost:service_mgr",  "action_get_fb_log" ], stdout = f_curr_log, stderr = subprocess.STDOUT)
-# flush_and_close( f_curr_log )
-#
-# f_init_log=open(f_init_log.name, 'r')
-# f_curr_log=open(f_curr_log.name, 'r')
-# difftext = ''.join(difflib.unified_diff(
-#     f_init_log.readlines(),
-#     f_curr_log.readlines()
-#   ))
-# flush_and_close( f_init_log )
-# flush_and_close( f_curr_log )
-#
-# f_diff_txt=open( os.path.join(context['temp_directory'],'tmp_fb_diff.txt'), 'w')
-# f_diff_txt.write(difftext)
-# flush_and_close( f_diff_txt )
-#
-# p = re.compile('\\+\\s?((Error at disconnect)|(arithmetic exception)|(Integer divide by zero)|(At trigger))')
-# with open( f_diff_txt.name,'r') as f:
-#     for line in f:
-#         if line.startswith('+') and line.strip() != '+++' and p.search(line):
-#             print( line )
-#             # print( 'DIFF in firebird.log: %(line)s' % locals() )
-#
-# ###############################
-# # Cleanup.
-# time.sleep(1)
-# cleanup( (f_init_log,f_curr_log,f_diff_txt) )
-#
-# -----------------------------------
+    with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
+        srv.info.get_log()
+        fb_log_init = srv.readlines()
+
+    act.expected_stdout = expected_stdout_test_sql
+    check_sql="""
+        set list on;
+        select current_user who_am_i from rdb$database;
+    """
+    act.isql(switches=['-user', tmp_worker.name, '-password', tmp_worker.password, act.db.dsn], connect_db=False, credentials=False, input = check_sql, combine_output=True)
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
+    time.sleep(1)
+    with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
+        srv.info.get_log()
+        fb_log_curr = srv.readlines()
+
+    diff_patterns = [
+        "Error at disconnect:",
+        "arithmetic exception, numeric overflow, or string truncation",
+        "Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.",
+        "At trigger 'TRG_DISCONNECT' line: \\d+, col: \\d+",
+    ]
+    diff_patterns = [re.compile(s) for s in diff_patterns]
+
+    for line in unified_diff(fb_log_init, fb_log_curr):
+        if line.startswith('+'):
+            if act.match_any(line, diff_patterns):
+                print(line.strip())
+
+    act.expected_stdout = expected_stdout_log_diff
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
