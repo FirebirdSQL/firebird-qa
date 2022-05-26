@@ -5,17 +5,21 @@ ID:          tabloid.eqc-136030
 TITLE:       Check ability for preparing and then run query with parameters. Query should use ORDER-BY clause.
 DESCRIPTION:
 NOTES:
-[02.02.2019]
+[02.02.2019] pzotov
   removed from DB metadata calls to UDFs - they are not used in this test but can not be used in FB 4.0 by default.
   Removed triggers because they have no deal here.
-  Checked on:
-    3.0.5.33097: OK, 2.782s.
-    4.0.0.1421: OK, 3.642s.
+[26.05.2022] pzotov
+  Re-implemented for work in firebird-qa suite. 
+  Checked on: 3.0.8.33535, 4.0.1.2692, 5.0.0.497
 FBTEST:      functional.tabloid.eqc_136030
+
 """
 
 import pytest
+import zipfile
+from pathlib import Path
 from firebird.qa import *
+from firebird.driver import SrvRestoreFlag
 
 db = db_factory()
 
@@ -305,68 +309,55 @@ expected_stdout = """
     FBLC                            <null>
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+fbk_file = temp_file('tmp_eqc_136030.fbk')
 
-# Original python code for this test:
-# -----------------------------------
-# import os
-# import zipfile
-#
-# os.environ["ISC_USER"] = 'SYSDBA'
-# os.environ["ISC_PASSWORD"] = 'masterkey'
-#
-# db_conn.close()
-# zf = zipfile.ZipFile( os.path.join(context['files_location'],'eqc136030.zip') )
-# zf.extractall( context['temp_directory'] )
-# zf.close()
-#
-# fbk = os.path.join(context['temp_directory'],'eqc136030.fbk')
-#
-# runProgram('gbak',['-rep',fbk, dsn])
-#
-# script="""
-#     set list on;
-#     set sqlda_display on;
-#     set planonly;
-#
-#     select
-#         a.csoc, a.nreserc ,  a.coddoc , a.codgio ,
-#         a.macchina, a.rec_upd, a.utente_upd,
-#         cast(a.fblc as integer) fblc,
-#         cast(a.fdel as integer) fdel,
-#         b.tipdoc, b.desdoc, b.fblc , c.tipgio, c.desgio , c.fblc
-#     from docgio a
-#     left join doctip (a.csoc, a.nreserc) b on ( a.coddoc = b.coddoc )
-#     left join giotip (a.csoc, a.nreserc) c on (a.codgio = c.codgio)
-#     where
-#         a.csoc = ?
-#         and a.nreserc = ?
-#     order by a.codgio, a.coddoc;
-#
-#     set planonly;
-#     set plan off;
-#     set sqlda_display off;
-#
-#     select
-#         a.csoc, a.nreserc ,  a.coddoc , a.codgio ,
-#         a.macchina, a.rec_upd, a.utente_upd,
-#         cast(a.fblc as integer) fblc,
-#         cast(a.fdel as integer) fdel,
-#         b.tipdoc, b.desdoc, b.fblc , c.tipgio, c.desgio , c.fblc
-#     from docgio a
-#     left join doctip (a.csoc, a.nreserc) b on ( a.coddoc = b.coddoc )
-#     left join giotip (a.csoc, a.nreserc) c on (a.codgio = c.codgio)
-#     where
-#         a.csoc = 'DEM1' -- :csoc
-#         and a.nreserc = '' -- :nreserc
-#     order by a.codgio, a.coddoc;
-# """
-# runProgram('isql',[dsn,'-q'],script)
-#
-# ###############################
-# # Cleanup.
-# os.remove(fbk)
-# -----------------------------------
+@pytest.mark.version('>=3.0')
+def test_1(act: Action, fbk_file: Path, capsys):
+    zipped_fbk_file = zipfile.Path(act.files_dir / 'eqc136030.zip', at='eqc136030.fbk')
+    fbk_file.write_bytes(zipped_fbk_file.read_bytes())
+    with act.connect_server() as srv:
+        srv.database.restore(database=act.db.db_path, backup=fbk_file, flags=SrvRestoreFlag.REPLACE)
+        srv.wait()
+
+    script = """
+        set list on;
+        set sqlda_display on;
+        set planonly;
+
+        select
+            a.csoc, a.nreserc ,  a.coddoc , a.codgio ,
+            a.macchina, a.rec_upd, a.utente_upd,
+            cast(a.fblc as integer) fblc,
+            cast(a.fdel as integer) fdel,
+            b.tipdoc, b.desdoc, b.fblc , c.tipgio, c.desgio , c.fblc
+        from docgio a
+        left join doctip (a.csoc, a.nreserc) b on ( a.coddoc = b.coddoc )
+        left join giotip (a.csoc, a.nreserc) c on (a.codgio = c.codgio)
+        where
+            a.csoc = ?
+            and a.nreserc = ?
+        order by a.codgio, a.coddoc;
+
+        set planonly;
+        set plan off;
+        set sqlda_display off;
+
+        select
+            a.csoc, a.nreserc ,  a.coddoc , a.codgio ,
+            a.macchina, a.rec_upd, a.utente_upd,
+            cast(a.fblc as integer) fblc,
+            cast(a.fdel as integer) fdel,
+            b.tipdoc, b.desdoc, b.fblc , c.tipgio, c.desgio , c.fblc
+        from docgio a
+        left join doctip (a.csoc, a.nreserc) b on ( a.coddoc = b.coddoc )
+        left join giotip (a.csoc, a.nreserc) c on (a.codgio = c.codgio)
+        where
+            a.csoc = 'DEM1' -- :csoc
+            and a.nreserc = '' -- :nreserc
+        order by a.codgio, a.coddoc;
+    """
+    
+    act.expected_stdout = expected_stdout
+    act.isql(switches=[], input = script, combine_output=True)
+
+    assert act.clean_stdout == act.clean_expected_stdout
