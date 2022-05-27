@@ -33,39 +33,49 @@ DESCRIPTION:
        https://github.com/FirebirdSQL/firebird/commit/54a2d5a39407b9d65b3f2b7ad614c3fc49abaa88
     2) refs/heads/master: fixed 19.09.2021 17:24, commit:
        https://github.com/FirebirdSQL/firebird/commit/90e1da6956f1c5c16a34d2704fafb92383212f37
-NOTES: Related issues.
-[18.03.2021] https://github.com/FirebirdSQL/firebird/issues/6747
-  ("Wrong message when connecting to tiny trash database file", ex. CORE-6518)
-[31.03.2021] https://github.com/FirebirdSQL/firebird/issues/6755
-  ("Connect to database that contains broken pages can lead to FB crash", ex. CORE-6528)
-[14.09.2021] https://github.com/FirebirdSQL/firebird/issues/6968
-  ("On Windows, engine may hung when works with corrupted database and read after the end of file")
+NOTES:
+    Related issues:
+    [18.03.2021] https://github.com/FirebirdSQL/firebird/issues/6747
+                 "Wrong message when connecting to tiny trash database file", ex. CORE-6518
+    [31.03.2021] https://github.com/FirebirdSQL/firebird/issues/6755
+                 "Connect to database that contains broken pages can lead to FB crash", ex. CORE-6528
+    [14.09.2021] https://github.com/FirebirdSQL/firebird/issues/6968
+                 "On Windows, engine may hung when works with corrupted database and read after the end of file"
+
+    [27.05.2022] pzotov
+      Re-implemented for work in firebird-qa suite. 
+      Checked on: 3.0.8.33535, 4.0.1.2692, 5.0.0.497
+
 JIRA:        CORE-2484
 FBTEST:      bugs.core_2484
 """
 
 import pytest
 from firebird.qa import *
+from pathlib import Path
 
 substitutions = [('SQLSTATE = 08004', 'SQLSTATE = 08001'),
-                 ('operation for file .*', 'operation for file'),
-                 ('STDERR: After line \\d+ in file.*', 'STDERR: After line in file')]
+                 ('operation for file .*', 'operation for file'),]
 
 db = db_factory(charset='UTF8')
 
 act = python_act('db', substitutions=substitutions)
 
-expected_stdout = """
-    STDERR: Statement failed, SQLSTATE = 08001
-    STDERR: I/O error during "ReadFile" operation for file "C:\\FBTESTING\\QA\\FBT-REPO\\TMP\\TMP_2484_FAKE.FDB"
-    STDERR: -Error while trying to read from file
-    STDERR: After line in file
+expected_stderr = """
+    Statement failed, SQLSTATE = 08001
+    I/O error during "ReadFile" operation for file
+    -Error while trying to read from file
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+tmp_fdb = temp_file('tmp_gh_2484_trash.tmp')
+
 @pytest.mark.version('>=3.0')
-def test_1():
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, tmp_fdb: Path):
+    tmp_fdb.write_text( 'ŒåŁä', encoding='utf8' )
+
+    act.expected_stderr = expected_stderr
+    act.isql(switches=[ str(tmp_fdb), '-q' ], connect_db = False, input = 'select mon$database_name from mon$database;')
+    assert act.clean_stderr == act.clean_expected_stderr
 
 # test_script_1
 #---
