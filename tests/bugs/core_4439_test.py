@@ -6,18 +6,9 @@ ISSUE:       4759
 TITLE:       Raise the 1024 connections limit (FD_SETSIZE) on Windows SS/SC
 DESCRIPTION:
   Test tries to establish MAX_CONN_CNT = 2047 connections and then close all of them.
-  Connections are established with specifying 'buffers' parameter and its value if set to minimal allowed: 50
-  (this reduces server memory consumption when check SuperClassic).
-
-  Every result of establishing / closing connection is logged by writing messages:
-    * Connection # %d of %d was established
-    * Connection # %d of %d has been closed
-
-  After processing all <MAX_CONN_CNT> iterations, test closes log and count lines from this log which match to
-  apropriate pattern. Total number of lines must be equal 2*MAX_CONN_CNT.
-
-  If any other messages present in the log or number of lines differs from 2*MAX_CONN_CNT then error message
-  will be reported. Otherwise console output remains EMPTY.
+  When connection is establishes, its attachment_id is added to the Python set(),
+  and length of this set is compared with MAX_CONN_CNT when all we establish all connections.
+  Then test closes all connections.
 
   NOTE-1.
   if number of established connections is more than 2047 then 1st of them will not be served by network server
@@ -28,165 +19,53 @@ DESCRIPTION:
   Test in such case looks as 'always successful' but actually it does not performed!
 JIRA:        CORE-4439
 FBTEST:      bugs.core_4439
+NOTES:
+    [28.05.2022] pzotov
+    Checked on 5.0.0.501, 4.0.1.2692, 3.0.8.33535 (SS/SC/CS)
 """
 
 import pytest
 from firebird.qa import *
+from firebird.driver.types import DatabaseError
 
 db = db_factory()
 
 act = python_act('db')
 
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+@pytest.mark.platform('Windows')
+def test_1(act: Action, capsys):
+    if act.get_server_architecture() in ('SuperServer', 'SuperClassic'):
+        MAX_CONN_CNT=2047
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import re
-#  import subprocess
-#  import datetime as py_dt
-#  from datetime import datetime
-#
-#  from fdb import services
-#
-#  #-----------------------------
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  fb_home = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
-#  fb_bins = fb_home + ('bin' if db_conn.engine_version == 2.5 else '')
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#              if os.path.isfile( f_names_list[i]):
-#                  print('ERROR: can not remove file ' + f_names_list[i])
-#                  exit(1)
-#
-#  #-----------------------------------------------
-#
-#  def get_fb_arch(a_dsn):
-#     try:
-#        con1 = fdb.connect(dsn = a_dsn)
-#        con2 = fdb.connect(dsn = a_dsn)
-#
-#        cur1 = con1.cursor()
-#
-#        sql=(
-#               "select count(distinct a.mon$server_pid), min(a.mon$remote_protocol), max(iif(a.mon$remote_protocol is null,1,0))"
-#              +" from mon$attachments a"
-#              +" where a.mon$attachment_id in (%s, %s) or upper(a.mon$user) = upper('%s')"
-#              % (con1.attachment_id, con2.attachment_id, 'cache writer')
-#            )
-#
-#        cur1.execute(sql)
-#        for r in cur1.fetchall():
-#            server_cnt=r[0]
-#            server_pro=r[1]
-#            cache_wrtr=r[2]
-#
-#        if server_pro == None:
-#            fba='Embedded'
-#        elif cache_wrtr == 1:
-#            fba='SS'
-#        elif server_cnt == 2:
-#            fba='CS'
-#        else:
-#
-#            f1=con1.db_info(fdb.isc_info_fetches)
-#
-#            cur2=con2.cursor()
-#            cur2.execute('select 1 from rdb$database')
-#            for r in cur2.fetchall():
-#               pass
-#
-#            f2=con1.db_info(fdb.isc_info_fetches)
-#
-#            fba = 'SC' if f1 ==f2 else 'SS'
-#
-#        #print(fba, con1.engine_version, con1.version)
-#        return fba
-#
-#     finally:
-#        con1.close()
-#        con2.close()
-#
-#  #-------------------------------------------------
-#
-#  MAX_CONN_CNT=2047
-#
-#  DB_NAME=db_conn.database_name
-#  db_conn.close()
-#
-#  fb_arch= get_fb_arch(dsn)
-#
-#  if fb_arch in ('SS', 'SC'):
-#      f_this_log = open( os.path.join(context['temp_directory'],'tmp_c4439.log'), 'w')
-#      con_list=[]
-#      for i in range(0,MAX_CONN_CNT):
-#          con_list.append( fdb.connect( dsn = dsn, buffers = 50 ) )
-#          f_this_log.write('Connection # %d of %d was established\\n' % (i+1, MAX_CONN_CNT) )
-#
-#      # subprocess.call( [  os.path.join( fb_bins, 'fb_lock_print' ), '-c', '-d', DB_NAME ], stdout = f_this_log, stderr = subprocess.STDOUT )
-#
-#      for i, c in enumerate(con_list):
-#          c.close()
-#          f_this_log.write('Connection # %d of %d has been closed\\n' % (i+1, MAX_CONN_CNT) )
-#
-#      subprocess.call( [  os.path.join( fb_bins, 'gfix' ), '-shut', 'full', '-force', '0', dsn ], stdout = f_this_log, stderr = subprocess.STDOUT )
-#      subprocess.call( [  os.path.join( fb_bins, 'gfix' ), '-online', dsn ], stdout = f_this_log, stderr = subprocess.STDOUT )
-#
-#      flush_and_close( f_this_log )
-#
-#      # Parse log: we must find <MAX_CONN_CNT> lines in it with text like 'Connection ... was established'
-#      # and same number of lines with text like 'Connection ... closed'. All other messages must be considered
-#      # as unexpected.
-#      p = re.compile('Connection\\s+#\\s+\\d+\\s+of\\s+\\d+\\s+.*\\s+(established|closed)', re.IGNORECASE)
-#      n_matches = 0
-#      with open(f_this_log.name, 'r') as f:
-#          for line in f:
-#              if line:
-#                  if p.search(line):
-#                      n_matches += 1
-#                  else:
-#                      print('UNEXPECTED OUTPUT: '+line)
-#
-#      if n_matches == 2 * MAX_CONN_CNT:
-#          # do NOT print anything if all OK!
-#          pass
-#      else:
-#          print('Number of matches: %d - NOT EQUAL to expected: %d' % (n_matches, 2 * MAX_CONN_CNT) )
-#
-#      cleanup( (f_this_log.name,) )
-#
-#  else:
-#      # Classic server: we must NOT check this mode.
-#      pass
-#
-#
-#---
+        con_list=[]
+        con_set=set()
+        con_fail=0
+        for i in range(0,MAX_CONN_CNT):
+            try:
+                con_list.append( act.db.connect() )
+                con_set.add( con_list[-1].info.id )
+            except DatabaseError as e:
+                print(f'Error on attempt to establish connection N {i+1} of {MAX_CONN_CNT+1}:')
+                print(e.__str__())
+                con_fail=1
+            if con_fail:
+                break
+
+        ###################
+        print(len(con_set))
+        ###################
+        for c in con_list:
+            try:
+                c.close()
+            except DatabaseError as e:
+                print(f'Error on attempt to close connection:')
+                print(e.__str__())
+
+
+        act.expected_stdout = str(MAX_CONN_CNT)
+        act.stdout = capsys.readouterr().out
+        assert act.clean_stdout == act.clean_expected_stdout
+    else:
+        assert True
