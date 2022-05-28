@@ -40,6 +40,7 @@ import re
 import pytest
 from firebird.qa import *
 from firebird.driver import SrvStatFlag as stf
+from firebird.driver.types import DatabaseError
 
 substitutions = [('[ \t]+', ' ')]
 db = db_factory()
