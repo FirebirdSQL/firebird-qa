@@ -5,6 +5,10 @@ ID:          issue-5175
 ISSUE:       5175
 TITLE:       Better performance of creating packages containing many functions
 DESCRIPTION:
+    ###### ACHTUNG ######
+    Package 'psutil' must be installed before run this test!
+    #####################
+
     Test creates package with N_LIMIT functions and the same number of standalone PSQL functions.
     We measure separately N_MEASURES times duration of:
         1. PSQL object(s) compilation and
@@ -29,7 +33,7 @@ DESCRIPTION:
     time ot COMMIT was reduced  significantly.
 
     Test was fully re-implemented in order to take in account exactly *this* change rather than wrong way (when we
-    did analysis of ratio between *total* time of compilation + commit forpackage vs N_LIMIT standalone functions).
+    did analysis of ratio between *total* time of compilation + commit for package vs N_LIMIT standalone functions).
 
     Within each measure we create new database, make its FW equals to OFF and do following:
     * create poackage with N_LIMIT functions
@@ -40,15 +44,20 @@ DESCRIPTION:
     Values of CPU User Time before and after every action are taken. Difference between them can be consider as much more
     accurate time estimation. Then we calculate RATIO between these differences, and so we can evaluate how long COMMIT was
     in comparison to DML.
-    We perform this N_MEASURES times and get list of ratios for both cases (i.e. one list for package with 5'000 functions
-    and second for 5'000 standalone functions).
-    Then we evaluate MEDIAN of ratios for each list.
+    We perform this N_MEASURES times and get list of ratios for both cases (i.e. one list for package with N_LIMIT functions
+    and second for N_LIMIT standalone functions). Then we evaluate MEDIAN of ratios for each list.
     Finally, we compare these medians with THRESHOLDS, which values have been taken from the table that is shown above,
     with increasing by approx. 20%
 JIRA:        CORE-4880
 FBTEST:      bugs.core_4880
+NOTES:
+    [28.05.2022] pzotov
+    Checked on 5.0.0.501, 4.0.1.2692, 3.0.8.33535
+
 """
 
+import os
+import psutil
 import pytest
 from firebird.qa import *
 
@@ -56,143 +65,93 @@ db = db_factory()
 
 act = python_act('db')
 
-expected_stdout = """
-    Time ratio between COMMIT and COMPILE for packaged PSQL objects: acceptable
-    Time ratio between COMMIT and COMPILE for standalone PSQL objects: acceptable
-"""
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
+    
+    def median(lst):
+        n = len(lst)
+        s = sorted(lst)
+        return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+    #--------------------------------------------------------------------
 
-# test_script_1
-#---
-#
-#  import os
-#  import psutil
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  db_conn.close()
-#
-#  #------------------
-#  def median(lst):
-#      n = len(lst)
-#      s = sorted(lst)
-#      return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#  #------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            print('type(f_names_list[i])=',type(f_names_list[i]))
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #------------------
-#
-#  svc = services.connect(host='localhost', user='sysdba', password='masterkey')
-#
-#  ###########################
-#  ###   S E T T I N G S   ###
-#  ###########################
-#  # How many times we call PSQL code (two stored procedures:
-#  # one for performing comparisons based on LIKE, second based on SIMILAR TO statements):
-#  N_MEASURES = 15
-#
-#  # How many functions must be created on each iteration:
-#  N_LIMIT = 1100
-#
-#  ###############################
-#  ###   T H R E S H O L D S   ###
-#  ###############################
-#  if os.name == 'nt':
-#      MAX_TIME_RATIOS_COMMIT_TO_COMPILE = {'packaged' : 0.55, 'standalone' : 1.50}
-#  else:
-#      MAX_TIME_RATIOS_COMMIT_TO_COMPILE = {'packaged' : 0.55, 'standalone' : 0.50}
-#
-#
-#  func_headers_ddl = ''.join( [ '\\n  function fn_%d returns int;' % i for i in range(N_LIMIT) ] )
-#  func_bodies_ddl = ''.join( [ '\\n  function fn_%d returns int as begin return %d; end' % (i,i) for i in range(N_LIMIT) ] )
-#
-#  pkg_header_ddl = '\\n'.join( ('create or alter package huge as\\nbegin', func_headers_ddl, 'end') )
-#  pkg_body_ddl = '\\n'.join( ('recreate package body huge as\\nbegin', func_bodies_ddl, 'end') )
-#
-#
-#  temp_fdb = os.path.join( '$(DATABASE_LOCATION)', 'tmp_core_4880.tmp' )
-#
-#  sp_time = {}
-#  for i in range(0, N_MEASURES):
-#      for ftype in ('packaged', 'standalone'):
-#
-#          cleanup( (temp_fdb,) )
-#
-#          con=fdb.create_database(dsn = 'localhost:%s' % temp_fdb)
-#          con.close()
-#          svc.set_write_mode( temp_fdb, services.WRITE_BUFFERED)
-#          con=fdb.connect(dsn = 'localhost:%s' % temp_fdb)
-#
-#          cur=con.cursor()
-#          cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
-#          fb_pid = int(cur.fetchone()[0])
-#          cur.close()
-#
-#
-#          fb_info_a = psutil.Process(fb_pid).cpu_times()
-#          if ftype == 'packaged':
-#              con.execute_immediate(pkg_header_ddl)
-#              con.execute_immediate(pkg_body_ddl)
-#          else:
-#              for k in range(0,N_LIMIT):
-#                  con.execute_immediate( 'create or alter function sf_%d returns int as begin return %d; end' % (k,k)  )
-#
-#          fb_info_b = psutil.Process(fb_pid).cpu_times()
-#          con.commit()
-#          fb_info_c = psutil.Process(fb_pid).cpu_times()
-#
-#          cpu_time_for_compile = max(fb_info_b.user - fb_info_a.user, 0.000001)
-#          cpu_time_for_commit = fb_info_c.user - fb_info_b.user
-#
-#          sp_time[ ftype, i ]  = cpu_time_for_commit / cpu_time_for_compile
-#
-#          con.drop_database()
-#          cleanup( (temp_fdb,) )
-#
-#  svc.close()
-#
-#  commit_2_compile_ratio_for_package = [round(v,2) for k,v in sp_time.items() if k[0] == 'packaged']
-#  commit_2_compile_ratio_for_standal = [round(v,2) for k,v in sp_time.items() if k[0] == 'standalone']
-#
-#  #print('RATIOS:')
-#  #print('commit_2_compile_ratio_for_package=',commit_2_compile_ratio_for_package)
-#  #print('commit_2_compile_ratio_for_standal=',commit_2_compile_ratio_for_standal)
-#  #print('MEDIANS:')
-#  #print('median(commit_2_compile_ratio_for_package)=',median(commit_2_compile_ratio_for_package))
-#  #print('median(commit_2_compile_ratio_for_standal)=',median(commit_2_compile_ratio_for_standal))
-#
-#  actual_time_ratios_commit2compile = { 'packaged' : median(commit_2_compile_ratio_for_package), 'standalone': median(commit_2_compile_ratio_for_standal) }
-#
-#  msg_prefix = 'Time ratio between COMMIT and COMPILE '
-#  for ftype in ('packaged', 'standalone'):
-#      msg = msg_prefix + 'for ' + ftype + ' PSQL objects: '
-#      if actual_time_ratios_commit2compile[ ftype ] < MAX_TIME_RATIOS_COMMIT_TO_COMPILE[ ftype ]:
-#          print( msg + 'acceptable')
-#      else:
-#          print( msg + 'UNACCEPTABLE: greater than threshold = ', MAX_TIME_RATIOS_COMMIT_TO_COMPILE[ ftype ])
-#          print( 'Check result of %d measures:' % N_MEASURES )
-#          lst = commit_2_compile_ratio_for_package if ftype == 'packaged' else commit_2_compile_ratio_for_standal
-#          for i,p in enumerate(lst):
-#              print('%3d' %i, ':', '%12.2f' % p)
-#
-#
-#---
+    act.db.set_async_write() # just to be sure, although this is by default
+
+    with act.db.connect() as con:
+        cur = con.cursor()
+        cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
+        fb_pid = int(cur.fetchone()[0])
+
+    ###########################
+    ###   S E T T I N G S   ###
+    ###########################
+    # How many times we call PSQL code (two stored procedures:
+    # one for performing comparisons based on LIKE, second based on SIMILAR TO statements):
+    N_MEASURES = 21
+
+    # How many functions must be created on each iteration:
+    N_LIMIT = 1500
+
+    expected_stdout = f"""
+        Median value for {N_MEASURES} ratios of commit_time/compile_time when create {N_LIMIT} packaged PSQL objects: acceptable
+        Median value for {N_MEASURES} ratios of commit_time/compile_time when create {N_LIMIT} standalone PSQL objects: acceptable
+    """
+
+    ###############################
+    ###   T H R E S H O L D S   ###
+    ###############################
+    if os.name == 'nt':
+        MAX_TIME_RATIOS_COMMIT_TO_COMPILE = {'packaged' : 0.55, 'standalone' : 0.75}
+    else:
+        MAX_TIME_RATIOS_COMMIT_TO_COMPILE = {'packaged' : 0.55, 'standalone' : 0.50}
+
+
+    func_headers_ddl = ''.join( [ '\n  function fn_%d returns int;' % i for i in range(N_LIMIT) ] )
+    func_bodies_ddl = ''.join( [ '\n  function fn_%d returns int as begin return %d; end' % (i,i) for i in range(N_LIMIT) ] )
+
+    pkg_header_ddl = '\n'.join( ('create or alter package huge as\nbegin', func_headers_ddl, 'end') )
+    pkg_body_ddl = '\n'.join( ('recreate package body huge as\nbegin', func_bodies_ddl, 'end') )
+
+    sp_time = {}
+    with act.db.connect() as con:
+        for i in range(0, N_MEASURES):
+            for ftype in ('packaged', 'standalone'):
+
+                fb_info_a = psutil.Process(fb_pid).cpu_times()
+                if ftype == 'packaged':
+                    con.execute_immediate(pkg_header_ddl)
+                    con.execute_immediate(pkg_body_ddl)
+                else:
+                    for k in range(0,N_LIMIT):
+                        con.execute_immediate( 'create or alter function sf_%d returns int as begin return %d; end' % (k,k)  )
+
+                fb_info_b = psutil.Process(fb_pid).cpu_times()
+                con.commit()
+                fb_info_c = psutil.Process(fb_pid).cpu_times()
+
+                cpu_time_for_compile = max(fb_info_b.user - fb_info_a.user, 0.000001)
+                cpu_time_for_commit = fb_info_c.user - fb_info_b.user
+
+                sp_time[ ftype, i ]  = cpu_time_for_commit / cpu_time_for_compile
+
+    commit_2_compile_ratio_for_package = [round(v,2) for k,v in sp_time.items() if k[0] == 'packaged']
+    commit_2_compile_ratio_for_standal = [round(v,2) for k,v in sp_time.items() if k[0] == 'standalone']
+
+    actual_time_ratios_commit2compile = { 'packaged' : median(commit_2_compile_ratio_for_package), 'standalone': median(commit_2_compile_ratio_for_standal) }
+
+    for ftype in ('packaged', 'standalone'):
+        msg = f"Median value for {N_MEASURES} ratios of commit_time/compile_time when create {N_LIMIT} {ftype} PSQL objects: "
+        if actual_time_ratios_commit2compile[ ftype ] < MAX_TIME_RATIOS_COMMIT_TO_COMPILE[ ftype ]:
+            print( msg + 'acceptable')
+        else:
+            print( msg + 'UNACCEPTABLE: %12.2f -- greater than threshold = %12.2f' % (actual_time_ratios_commit2compile[ ftype ],  MAX_TIME_RATIOS_COMMIT_TO_COMPILE[ ftype ]) )
+            print( 'Check result of %d measures:' % N_MEASURES )
+
+            # List with concrete values (source for median evaluation):
+            lst = commit_2_compile_ratio_for_package if ftype == 'packaged' else commit_2_compile_ratio_for_standal
+            for i,p in enumerate(lst):
+                print('%3d' % i, ':', '%12.2f' % p)
+
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
