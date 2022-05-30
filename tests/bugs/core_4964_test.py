@@ -30,21 +30,25 @@ DESCRIPTION:
 
 NOTES:
     [30.05.2022] pzotov
-    Alias <tmp_alias> must NOT refer to test DB, otherwise test fails with duplicate(?) issuing DatabaseError.
+    
+    Added aux func 'copy_with_metadata()' which uses shutil.copy2 and os.chown (for Linux).
+    !! GOT STRANGE RESULTS FOR shutil.copy(), without "2" suffix !!
     To be discussed with pcisar, comments will be updated soon.
 
-    Checked on 5.0.0.501, 4.0.1.2692, 3.0.8.33535
+    Checked on 5.0.0.501, 4.0.1.2692, 3.0.8.33535 -- both on Windows and Linux
 """
 import os
-import pytest
-from firebird.qa import *
-import locale
-from pathlib import Path
+import platform
 import shutil
 import datetime
 import time
-from difflib import unified_diff
+import locale
 import re
+from pathlib import Path
+from difflib import unified_diff
+
+import pytest
+from firebird.qa import *
 
 substitutions = [('file .* is not a valid database', 'file is not a valid database'), ]
 
@@ -67,25 +71,34 @@ tmp_fdb = temp_file('tmp_4964_fdb.tmp')
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_user: User, dbconf_bak: Path, tmp_fdb: Path, capsys):
+
+    def copy_with_metadata(src, tgt):
+        global os, shutil, platform
+        #shutil.copy(src, tgt)
+        shutil.copy2(src, tgt)
+        if platform.system() == 'Linux':
+            st = os.stat(src)
+            os.chown(tgt, st.st_uid, st.st_gid)
+
     with act.connect_server() as srv:
         srv_home=str(srv.info.home_directory)
 
     dbconf_cur = Path(srv_home, 'databases.conf')
-    shutil.copyfile(dbconf_cur, Path(dbconf_bak))
+    copy_with_metadata(dbconf_cur, Path(dbconf_bak))
 
     with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
         srv.info.get_log()
         fb_log_init = srv.readlines()
-    
+
     try:
-        shutil.copyfile(act.db.db_path, tmp_fdb)
+        copy_with_metadata(act.db.db_path, tmp_fdb)
 
         tmp_alias = 'tmp_4964_' + datetime.datetime.now().strftime("%H%M%S")
         addi_lines = f"""
             # Temporary added by QA, test CORE-4964. Should be removed auto.
             ###########
-            {tmp_alias} = {str(tmp_fdb)} {{
-            # {tmp_alias} = {act.db.db_path} {{
+            #{tmp_alias} = {str(tmp_fdb)} {{
+            {tmp_alias} = {act.db.db_path} {{
                 # dir_msg - directory where messages file (firebird.msg) is located
                 SecurityDatabase = $(dir_msg)/firebird.msg
             }}
@@ -97,10 +110,10 @@ def test_1(act: Action, tmp_user: User, dbconf_bak: Path, tmp_fdb: Path, capsys)
         act.isql(switches=['-q', act.get_dsn(tmp_alias), '-user', tmp_user.name, '-password', tmp_user.password], input = 'select mon$database_name from mon$database;', credentials = False, connect_db = False, combine_output = True, io_enc=locale.getpreferredencoding())
 
     finally:
-        shutil.copyfile(Path(dbconf_bak), dbconf_cur)
+        copy_with_metadata(Path(dbconf_bak), dbconf_cur)
 
 
-    time.sleep(1)
+    time.sleep(1) # Let content of firebird.log be flushed on disk
     with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
         srv.info.get_log()
         fb_log_curr = srv.readlines()
