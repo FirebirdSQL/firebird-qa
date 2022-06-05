@@ -139,6 +139,15 @@ def set_tool(tool: str):
             pytest.exit(f"Can't find '{tool}' in {_vars_['bin-dir']}")
     _vars_[tool] = path
 
+def remove_dir(path: Path) -> None:
+    if path.exists():
+        for item in path.iterdir():
+            if item.is_file():
+                item.unlink()
+            elif item.is_dir():
+                remove_dir(item)
+        path.rmdir()
+
 class QATerminalReporter(TerminalReporter):
     """Custom `TerminalReporter` that prints our QA test IDs instead pytest node IDs.
 
@@ -349,6 +358,19 @@ def pytest_configure(config):
             f2 = con1.info.get_info(DbInfoCode.FETCHES)
             result = 'SuperClassic' if f1 == f2 else 'SuperServer'
     _vars_['server-arch'] = result
+    # get sampleDB directory
+    with connect('employee') as con, \
+         connect_server(_vars_['server'], user='SYSDBA', password=_vars_['password']) as srv:
+        for db in srv.info.attached_databases:
+            db_path = Path(db)
+            if db_path.name.lower() == 'employee.fdb':
+                _vars_['sample_dir'] = db_path.parent
+    # Create QA subdirectory in samle db directory
+    samle_qa = _vars_['sample_dir'] / 'qa'
+    remove_dir(samle_qa)
+    samle_qa.mkdir(exist_ok=True)
+    if platform.system != 'Windows':
+        samle_qa.chmod(16895)
     # Change terminal reporter
     if config.getoption('install_terminal'):
         standard_reporter = config.pluginmanager.getplugin('terminalreporter')
@@ -497,8 +519,8 @@ class Database:
         self._debug: str = debug
         #: Use utf8_filename DPB flag
         self.utf8filename = utf8filename
-        #: Full path to test database.
-        self.db_path: Path = path / filename
+        #: Full path to test database, or database alias
+        self.db_path: Path = filename[1:] if filename.startswith('#') else path / filename
         #: DSN to test database.
         self.dsn: str = None
         #: Firebird CHARACTER SET name for the database
@@ -666,7 +688,7 @@ class Database:
                 db.drop_database()
             except:
                 pass
-        if self.db_path.is_file():
+        if isinstance(self.db_path, Path) and self.db_path.is_file():
             self.db_path.unlink(missing_ok=True)
     def connect(self, *, user: Optional[str]=None, password: Optional[str]=None,
                 role: Optional[str]=None, no_gc: Optional[bool]=None,
@@ -723,7 +745,9 @@ def db_factory(*, filename: str='test.fdb', init: Optional[str]=None,
     the `Database` instance.
 
     Arguments:
-        filename: Test database filename (without path).
+        filename: Test database filename (without path). It's also possible to specify
+            database alias using '#' as prefix, for example `#employee` means alias `employee`.
+            The database with this alias must be defined in `databases.conf`.
         init:     Test database initialization script (isql format).
         from_backup: Backup filename (without path) from which the test database should be restored.
             File must be located in `backups` directory.
@@ -786,11 +810,11 @@ def db_path(tmp_path) -> Path:
     if platform.system != 'Windows':
         base = _vars_['basetemp']
         if base is None:
-            os.chmod(tmp_path.parent, 16895)
-            os.chmod(tmp_path.parent.parent, 16895)
+            tmp_path.parent.chmod(16895)
+            tmp_path.parent.parent.chmod(16895)
         else:
-            os.chmod(Path(base), 16895)
-        os.chmod(tmp_path, 16895)
+            Path(base).chmod(16895)
+        tmp_path.chmod(16895)
     return tmp_path
 
 class User:
