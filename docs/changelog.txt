@@ -2,6 +2,28 @@
 Changelog
 #########
 
+Version 0.15.0
+==============
+
+* To simplify portable use of databases with special configuration via `databases.conf`,
+  the plugin initialization now ensures empty subdirectory `QA` in Firebird sample directory.
+  To define your test databases in `databases.conf`, use next pattern::
+
+    my_db = $(dir_sampleDB)/QA/my-db.fdb
+    {
+    ...
+    }
+
+  On plugin initialization, the `QA` sub-directory is first emptied and removed, and then
+  newly created. On non-Windows, full privileges are granted.
+
+* Added possibility to use databases aliases. The `.db_factory()` parameter `filename` is
+  now handled as database alias if it starts with `#`, for example `#employee` means alias
+  `employee`. The alias must be defined in `databases.conf` file.
+
+  When filename is an alias, the `.Database.db_path` property does not contain
+  full `~pathlib.Path` to the database, but this database alias.
+
 Version 0.14.0
 ==============
 

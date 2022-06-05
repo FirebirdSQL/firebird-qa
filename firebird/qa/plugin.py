@@ -497,7 +497,7 @@ class Database:
 
     Arguments:
         path: Path to directory where test database should be located.
-        filename: Database filename.
+        filename: Database filename, or alias prefixed by `#`.
         user: User name used to create/restore/connect the test database. Default is taken
             from server configuration.
         password: User password used to create/restore/connect the test database. Default
@@ -520,7 +520,7 @@ class Database:
         #: Use utf8_filename DPB flag
         self.utf8filename = utf8filename
         #: Full path to test database, or database alias
-        self.db_path: Path = filename[1:] if filename.startswith('#') else path / filename
+        self.db_path: Union[Path, str] = filename[1:] if filename.startswith('#') else path / filename
         #: DSN to test database.
         self.dsn: str = None
         #: Firebird CHARACTER SET name for the database
