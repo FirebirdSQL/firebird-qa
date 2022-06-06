@@ -11,22 +11,18 @@ DESCRIPTION:
   async. start THREE child ISQLs sessions, one or two of them always raise exception after
   few seconds with text: 'deadlock / update conflicts' and could not finish its job.
 NOTES:
-[12.08.2018]
-  It is unclear now how this test can be implemented on 4.0 after introduction of READ CONSISTENCY
-  with default value ReadConsistency = 1. According to doc:
-  ===
-    If ReadConsistency set to 1 (by default) engine ignores
-    [NO] RECORD VERSION flags and makes all read-committed
-    transactions READ COMMITTED READ CONSISTENCY.
-  ===
+  [06.06.2022] pzotov
+  It was decided to set ReadConsistency = 0 in firebird.conf of FB 4.x+
+  There is ability to start Tx in ReadConsistency when this parameter has such (NON-default) value
+  by explicitly specifying such isolation level:
+  ======
+  If ReadConsistency is set to 0 - flags [NO] RECORD VERSION takes effect as in previous Firebird 
+  versions. READ COMMITTED READ CONSISTENCY isolation level should be specified explicitly by 
+  application - in TPB or using SQL syntax.
+  ======
+  See letter from pcisar 11-feb-2022 17:53, subj: "pytest + firebird-qa plugin with storing outcomes..."
+  Checked on 4.0.1.2692, 3.0.8.33535 - both on Linux and Windows.
 
-  Also, doc\\README.read_consistency.md  says that:
-  "Old read-committed isolation modes (**RECORD VERSION** and **NO RECORD VERSION**) are still
-  allowed but considered as legacy and not recommended to use."
-
-  This mean that one can NOT to check issues of this ticket under 4.0 using default (and recommended)
-  value of config parameter 'ReadConsistency'.
-  For that reason it was decided to make new EMPTY section of test for 4.0.
 JIRA:        CORE-5222
 FBTEST:      bugs.core_5222
 """
@@ -39,8 +35,6 @@ import time
 import re
 from pathlib import Path
 from firebird.qa import *
-
-# version: 3.0
 
 init_script = """
     create or alter procedure p_increment as begin end;
@@ -138,7 +132,7 @@ PLANNED_DML_ATTACHMENTS = 3
 run_sql = temp_file('core_5222_run.sql')
 dml_logs = temp_files([f'tmp_dml_5222_{i+1}' for i in range(PLANNED_DML_ATTACHMENTS)])
 
-@pytest.mark.version('>=3.0,<4')
+@pytest.mark.version('>=3.0')
 def test_1(act: Action, run_sql: Path, dml_logs: List[Path], capsys):
     pattern = re.compile("BEFORE_PROC*|PROC_START*|SELECTED_ID*|PROC_FINISH*|AFTER_PROC*")
     run_sql.write_text(test_script)
@@ -185,10 +179,3 @@ def test_1(act: Action, run_sql: Path, dml_logs: List[Path], capsys):
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
-
-# version: 4.0
-
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-def test_2(act: Action):
-    pytest.fail("Not IMPLEMENTED")
