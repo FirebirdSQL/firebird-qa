@@ -35,7 +35,7 @@ NOTES:
 
   NOTE-1: according to source issue from ticket, creation of temporary database not required here.
   In old .fbt test this auto-created DB is immediately closed and script further makes two temp DBs.
-  In contrary to .fbt, here connection to auto-created temporary database ('C:\TEMP\PYTEST...\TEST_...\TEST.FDB')
+  In contrary to .fbt, here connection to auto-created temporary database ('C:/TEMP/PYTEST.../TEST_.../TEST.FDB')
   is opened up to creation of first DB from SQL script  (create database '{str(temp_db_1_b)}';).
   We can suppress 'Rolling back' message by trivial action: add COMMIT or ROLLBACK before this 'create database ...'
 
