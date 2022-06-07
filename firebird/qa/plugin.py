@@ -269,6 +269,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "version(versions): Firebird version specifications")
     config.addinivalue_line("markers", "platform(platforms): Platform names")
     config.addinivalue_line("markers", "slow: Mark test as slow to run")
+    config.addinivalue_line("markers", "encryption: Mark test as requiring the encryption plugin")
     if config.getoption('help'):
         return
     config_path: Path = Path.cwd() / 'firebird-driver.conf'
