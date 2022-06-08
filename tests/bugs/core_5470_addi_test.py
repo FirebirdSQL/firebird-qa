@@ -33,8 +33,6 @@ NOTES:
     Adapted for firebird-qa plugin. Confirmed problem on 3.0.6.33273. Checked on 4.0.1.2692, 3.0.8.33535 - all OK.
 """
 
-import os
-import locale
 import pytest
 from firebird.qa import *
 
