@@ -734,10 +734,12 @@ output contains many "noise" parts). The `.Action` properties `~.Action.clean_st
 `~.Action.clean_stderr`, `~.Action.clean_expected_stdout` and `~.Action.clean_expected_stderr`
 provide such clean content.
 
-The tool execution may fail, which could be expected or unexpected by test. Expected
-fails must be indicated by assigning *ANY* string to `~.Action.expected_stderr` before
-tool is executed. In such case no error is reported and test may assert that execution
-failed in expected way. If failure is unexpected, an `.ExecutionError` exception is raised.
+.. important::
+
+   The tool execution may fail, which could be expected or unexpected by test. Expected
+   fails must be indicated by assigning *ANY* string to `~.Action.expected_stderr` before
+   tool is executed. In such case no error is reported and test may assert that execution
+   failed in expected way. If failure is unexpected, an `.ExecutionError` exception is raised.
 
 Example of test with expected failure::
 
