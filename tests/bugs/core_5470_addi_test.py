@@ -3,7 +3,7 @@
 """
 ID:          issue-5740-B
 ISSUE:       5740
-TITLE:       Trace INCLUDE_FILTER with [[:WHITESPACE:]]+ does not work when statement contains newline is issued
+TITLE:       Trace stops any writing to its log if client sends text that can not be transliterated between character sets
 DESCRIPTION:
     It was detected that trace can stop any writing to its log if client issues query with character
     that can NOT transliterated between character sets. Such statement and *any* other statements
@@ -17,177 +17,85 @@ DESCRIPTION:
     ::: NB :::
     Problem was found  only in FB 3.0; 4.x works OK because of new regexp mechanism in it.
 
-    Test uses SQL script with two correct statements ('point-1' and 'point-2') and invalid character literal between them.
-    This SQL can not be prepared in fbtest because of strict checks related to characters matching to unicode charsets.
-    Then we prepare tempopary BATCH file which does:
-        chcp 1251
-        run ISQL with applying this script.
-    After this, we launch trace with config that contains trivial include_filter and run this temp batch.
-    Expected result: trace must contain lines with ALL THREE executed statements.
-
-    Confirmed bug on 3.0.6.33273: only 'point-1' appears in the trace. No further statements at all.
+    Test launches trace with include_filter option, and then runs isql with executing three statements.
+    First and third statements contrain ascii-only text, second has a character which can not be transliterated from utf8
+    to narrow-byte encoding (see 'CHECKED_CHARACTER' and 'CAST_TO_CHARSET' variables).
+    We have to check that:
+    1. isql actually shows only 1st and 3rd statement, and issues STDERR with SQLSTATE = 22018 for second statement;
+    2. trace log contains all *three* statements that were executed by isql, including one that contains <CHECKED_CHARACTER>.
+    
+    Confirmed bug on 3.0.6.33273: only first statement appears in the trace.
     All fine on 3.0.6.33276: all three statements can be seen in the trace.
 JIRA:        CORE-5470
 FBTEST:      bugs.core_5470_addi
+NOTES:
+    [08.06.2022] pzotov
+    Adapted for firebird-qa plugin. Confirmed problem on 3.0.6.33273. Checked on 4.0.1.2692, 3.0.8.33535 - all OK.
 """
 
 import pytest
 from firebird.qa import *
 
-db = db_factory()
+#CHECKED_CHARACTER = 'Á'
+#CHECKED_CHARACTER = 'Ä'
+#CHECKED_CHARACTER = 'Ď'
+CHECKED_CHARACTER = 'Ð'
 
-act = python_act('db')
+CAST_TO_CHARSET = 'win1251'
 
-expected_stdout = """
-    select 'point-1' from rdb$database
-    select 'point-2' from rdb$database
+db = db_factory(utf8filename = True)
+
+substitutions = [('^((?!POINT|point).)*$', '')]
+act = python_act('db', substitutions = substitutions)
+
+trace = ['time_threshold = 0',
+         'log_initfini = false',
+         'log_errors = true',
+         'log_statement_finish = true',
+         'include_filter = "%(as point)%"',
+         ]
+
+cast_sttm = f"select cast('{CHECKED_CHARACTER}' as varchar(20) character set {CAST_TO_CHARSET}) as point from rdb$database"
+
+test_sql = f"""
+    set list on;
+    select 1 as point from rdb$database;
+    {cast_sttm};
+    select 3 as point from rdb$database;
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+expected_stdout_isql = f"""
+    POINT                           1
+    POINT                           3
+"""
+
+expected_stderr_isql = """
+    Statement failed, SQLSTATE = 22018
+    arithmetic exception, numeric overflow, or string truncation
+    -Cannot transliterate character between character sets
+"""
+
+expected_stdout_trace = test_sql.replace('set list on;', '').replace(';','')
+
 @pytest.mark.version('>=3.0.6')
 @pytest.mark.platform('Windows')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
+    
+    # 1. Check that ISQL actually shows only 1st and 3rd statement, and issues STDERR with SQLSTATE = 22018:
+    act.expected_stdout = expected_stdout_isql
+    act.expected_stderr = expected_stderr_isql
+    with act.trace(db_events=trace, encoding='utf8', encoding_errors='utf8'):
+        act.isql(switches=['-q'], charset = 'utf8', input=test_sql)
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import time
-#  from fdb import services
-#  from subprocess import Popen
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#
-#  #--------------------------------------------
-#
-#  # Obtain engine version:
-#  engine = str(db_conn.engine_version) # convert to text because 'float' object has no attribute 'startswith'
-#  db_conn.close()
-#
-#  # NB, 06.12.2016: as of  fdb 1.6.1 one need to EXPLICITLY specify user+password pair when doing connect
-#  # via to FB services API by services.connect() - see FB tracker, PYFB-69
-#  # ("Can not connect to FB services if set ISC_USER & ISC_PASSWORD by os.environ[ ... ]")
-#
-#  fb_home = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
-#  # fb_home = services.connect(host='localhost').get_home_directory()
-#
-#  fb_isql = fb_home+'isql'
-#  sql_chk = os.path.join(context['files_location'],'core_5470_addi.sql')
-#  tmp_log = os.path.join(context['temp_directory'],'core_5470_addi.log')
-#
-#  txt = '''@echo off
-#  chcp 1251>nul
-#  %(fb_isql)s %(dsn)s -ch win1251 -user %(user_name)s -pas %(user_password)s -i %(sql_chk)s 1>%(tmp_log)s 2>&1
-#  ''' % dict(globals(), **locals())
-#
-#  f_tmp_bat=open( os.path.join(context['temp_directory'],'tmp_run_5470.bat'), 'w', buffering = 0)
-#  f_tmp_bat.write(txt)
-#  f_tmp_bat.close()
-#
-#  #--------------------------------------------------
-#
-#  txt = '''# Generated auto, do not edit!
-#    database=%[\\\\\\\\/]security?.fdb
-#    {
-#        enabled = false
-#    }
-#    database=%[\\\\\\\\/]bugs.core_5470_addi.fdb
-#    {
-#        enabled         = true
-#        time_threshold  = 0
-#
-#        log_initfini    = false
-#        log_warnings    = false
-#        log_errors      = true
-#
-#        log_statement_finish = true
-#
-#        include_filter = "%"
-#
-#    }
-#  '''
-#
-#  f_trc_cfg=open( os.path.join(context['temp_directory'],'tmp_trace_5470.cfg'), 'w', buffering = 0)
-#  f_trc_cfg.write(txt)
-#  f_trc_cfg.close()
-#
-#  # ##############################################################
-#  # S T A R T   T R A C E   i n   S E P A R A T E    P R O C E S S
-#  # ##############################################################
-#
-#  f_trc_log=open( os.path.join(context['temp_directory'],'tmp_trace_5470.log'), "w", buffering = 0)
-#  f_trc_err=open( os.path.join(context['temp_directory'],'tmp_trace_5470.err'), "w", buffering = 0)
-#
-#  p_trace = Popen( [ fb_home+'fbsvcmgr', 'localhost:service_mgr', 'action_trace_start' , 'trc_cfg', f_trc_cfg.name],stdout=f_trc_log,stderr=f_trc_err)
-#
-#  time.sleep(1)
-#
-#  # ####################################################
-#  # G E T  A C T I V E   T R A C E   S E S S I O N   I D
-#  # ####################################################
-#  # Save active trace session info into file for further parsing it and obtain session_id back (for stop):
-#
-#  f_trc_lst = open( os.path.join(context['temp_directory'],'tmp_trace_5470.lst'), 'w', buffering = 0)
-#  subprocess.call([fb_home+'fbsvcmgr', 'localhost:service_mgr', 'action_trace_list'], stdout=f_trc_lst)
-#  f_trc_lst.close()
-#
-#  # !!! DO NOT REMOVE THIS LINE !!!
-#  time.sleep(1)
-#
-#  trcssn=0
-#  with open( f_trc_lst.name,'r') as f:
-#      for line in f:
-#          i=1
-#          if 'Session ID' in line:
-#              for word in line.split():
-#                  if i==3:
-#                      trcssn=word
-#                  i=i+1
-#              break
-#  f.close()
-#  # Result: `trcssn` is ID of active trace session. Now we have to terminate it:
-#
-#  #------------------------------------------------
-#  # Run auxiliary batch:
-#  subprocess.call( [ f_tmp_bat.name ] )
-#  #------------------------------------------------
-#
-#  # Let trace log to be entirely written on disk:
-#  time.sleep(1)
-#
-#  # ####################################################
-#  # S E N D   R E Q U E S T    T R A C E   T O   S T O P
-#  # ####################################################
-#  if trcssn>0:
-#      fn_nul = open(os.devnull, 'w')
-#      subprocess.call([fb_home+'fbsvcmgr', 'localhost:service_mgr', 'action_trace_stop','trc_id', trcssn], stdout=fn_nul)
-#      fn_nul.close()
-#      # DO NOT REMOVE THIS LINE:
-#      time.sleep(2)
-#
-#  p_trace.terminate()
-#  f_trc_log.close()
-#  f_trc_err.close()
-#
-#  time.sleep(1)
-#
-#  with open(f_trc_log.name, 'r') as f:
-#      for line in f:
-#          if line.startswith( "select 'point-" ):
-#              print(line)
-#
-#  cleanup( [ i.name for i in ( f_trc_log, f_trc_err, f_trc_cfg, f_trc_lst, f_tmp_bat ) ] + [tmp_log,] ) # DO NOT ADD 'sql_chk' here!
-#
-#
-#---
+    assert (act.clean_stdout == act.clean_expected_stdout and act.clean_stderr == act.clean_expected_stderr)
+    act.reset()
+
+    #------------------------------------------------------------
+
+    # 2. Check that trace log contains all three statements that were executed by isql:
+    for line in act.trace_log:
+        print(line)
+
+    act.expected_stdout = expected_stdout_trace
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
