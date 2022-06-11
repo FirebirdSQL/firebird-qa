@@ -5,124 +5,143 @@ ID:          issue-5939
 ISSUE:       5939
 TITLE:       Unique constraint not working in encrypted database on first command
 DESCRIPTION:
-    We create new database ('tmp_core_5673.fdb') and try to encrypt it using IBSurgeon Demo Encryption package
-    ( https://ib-aid.com/download-demo-firebird-encryption-plugin/ ; https://ib-aid.com/download/crypt/CryptTest.zip )
-    License file plugins\\dbcrypt.conf with unlimited expiration was provided by IBSurgeon to Firebird Foundation (FF).
-    This file was preliminary stored in FF Test machine.
-    Test assumes that this file and all neccessary libraries already were stored into FB_HOME and %FB_HOME%\\plugins.
 
-    We create table with UNIQUE constraint, add some data to it and try to encrypt database using 'alter database encrypt with <plugin_name> ...'
-    command (where <plugin_name> = dbcrypt - name of .dll in FB_HOME\\plugins\\  folder that implements encryption).
-    Then we allow engine to complete this job - take delay about 1..2 seconds BEFORE detach from database.
+    Test uses Firebird built-in encryption plugin wich actually does encryption using trivial algorithm.
+    Before running this test following prerequisites must be met:
+        1. Files fbSampleDbCrypt.conf and libfbSampleDbCrypt.so/fbSampleDbCrypt.dll must present in the $FB_HOME/plugins folder;
+        2. File fbSampleDbCrypt.conf must contain line: Auto = yes
+        3. File $QA_HOME/pytest.ini must contain line with 'encryption' marker declaration.
+    ### ACHTUNG ###
+    Unfortunately, there is no files fbSampleDbCrypt.* in FB 3.x snapshots (at least for June-2022).
+    One need to take both thiese files from any FB 4.x snapshot (they have backward compatibility).
+    On FB 4.x these files can be found here: $FB_HOME/examples/prebuilt/plugins/
+    ###############
+
+    We open connection to DB and run 'ALTER DATABASE ENCRYPT.../DECRYPT'.
+    One need to keep connection opened for several seconds in order to give encryption thread be fully completed.
+    Duration of this delay depends on concurrent workload, usually it is almost zero.
+    But in this test it can be tuned - see variable 'MAX_ENCRYPT_DECRYPT_MS'.
+    Immediately after launch encryption/decryption, we run isql and ask it to give result of 'SHOW DATABASE' command.
+    If this output contains text 'Database [not] encrypted' and *not* contains phrase 'not complete' then we can assume
+    that encryption/decryption thread completed. Otherwise we loop until such conditions will raise or timeout expired.
 
     After this we make TWO attempts to insert duplicates and catch exceptions for each of them and print exception details.
-    Expected result: TWO exception must occur here.
+    Expected result: TWO exception must occur here -- see 'expected_stdout_uniq_violation' variable.
 
-    ::: NB ::::
-    Could not check reproducing of bug on FB 3.0.2 because there is no encryption plugin for this (too old) version.
-    Decided only to ensure that exception will be catched on recent FB version for each attempt to insert duplicate.
-    Checked on:
-         4.0.0.1524: OK, 4.056s ;  4.0.0.1421: OK, 6.160s.
-        3.0.5.33139: OK, 2.895s ; 3.0.5.33118: OK, 2.837s.
-
-    15.04.2021. Adapted for run both on Windows and Linux. Checked on:
-      Windows: 4.0.0.2416
-      Linux:   4.0.0.2416
 JIRA:        CORE-5673
 FBTEST:      bugs.core_5673
+NOTES:
+    [06.06.2022] pzotov
+    Checked on 4.0.1.2692, 3.0.8.33535 - both on Linux and Windows.
 """
+
+import time
+import datetime as py_dt
+from datetime import timedelta
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
+from firebird.driver import TPB, Isolation
 
-db = db_factory()
+MAX_ENCRYPT_DECRYPT_MS = 5000
+
+init_script = """
+    recreate table test(db_state varchar(20), x int, constraint test_unq unique(db_state, x));
+    commit;
+"""
+
+db = db_factory(init = init_script)
 
 act = python_act('db')
 
-expected_stdout = """
-    Error while executing SQL statement:
-    - SQLCODE: -803
-    - violation of PRIMARY or UNIQUE KEY constraint "TEST_X_UNQ" on table "TEST"
-    - Problematic key value is ("X" = 1)
-    -803
-    335544665
+custom_tpb = TPB(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
 
-    Error while executing SQL statement:
-    - SQLCODE: -803
-    - violation of PRIMARY or UNIQUE KEY constraint "TEST_X_UNQ" on table "TEST"
-    - Problematic key value is ("X" = 2)
-    -803
-    335544665
-"""
-
-@pytest.mark.skip('FIXME: encryption plugin')
 @pytest.mark.version('>=3.0.3')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+@pytest.mark.encryption
+def test_1(act: Action, capsys):
+    for m in ('encryption', 'decryption'):
 
-# test_script_1
-#---
-#
-#  import os
-#  import time
-#  import subprocess
-#  import re
-#  import fdb
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  engine = db_conn.engine_version
-#  db_conn.close()
-#
-#  # 14.04.2021.
-#  # Name of encryption plugin depends on OS:
-#  # * for Windows we (currently) use plugin by IBSurgeon, its name is 'dbcrypt';
-#  # * for Linux we use:
-#  #   ** 'DbCrypt_example' for FB 3.x
-#  #   ** 'fbSampleDbCrypt' for FB 4.x+
-#  #
-#  PLUGIN_NAME = 'dbcrypt' if os.name == 'nt' else ( '"fbSampleDbCrypt"' if engine >= 4.0 else '"DbCrypt_example"')
-#  KHOLDER_NAME = 'KeyHolder' if os.name == 'nt' else "fbSampleKeyHolder"
-#
-#
-#  con = fdb.connect( dsn = dsn )
-#  con.execute_immediate( 'recreate table test(x int, constraint test_x_unq unique(x))' )
-#  con.commit()
-#
-#  cur = con.cursor()
-#  cur.execute( 'insert into test(x) select row_number()over() from rdb$types rows 10' )
-#  con.commit()
-#
-#  ##############################################
-#  # WARNING! Do NOT use 'connection_obj.execute_immediate()' for ALTER DATABASE ENCRYPT... command!
-#  # There is bug in FB driver which leads this command to fail with 'token unknown' message
-#  # The reason is that execute_immediate() silently set client dialect = 0 and any encryption statement
-#  # can not be used for such value of client dialect.
-#  # One need to to use only cursor_obj.execute() for encryption!
-#  # See letter from Pavel Cisar, 20.01.20 10:36
-#  ##############################################
-#  cur.execute('alter database encrypt with %(PLUGIN_NAME)s key Red' % locals())
-#  con.commit()
-#
-#  time.sleep(2)
-#  #          ^
-#  #          +-------- !! ALLOW BACKGROUND ENCRYPTION PROCESS TO COMPLETE ITS JOB !!
-#
-#  try:
-#      cur.execute( 'insert into test(x) values(1)' )
-#  except Exception as e:
-#      for x in e.args:
-#          print( x  )
-#
-#  try:
-#      cur.execute( 'insert into test(x) values(2)' )
-#  except Exception as e:
-#      for x in e.args:
-#          #print( x.replace(chr(92),"/") if type(x)=='str' else x  )
-#          print( x  )
-#
-#
-#  cur.close()
-#  con.close()
-#
-#---
+        expected_stdout_show_db = f"""
+            Expected: {m} status presents in the 'SHOW DATABASE' output.
+        """
+
+        with act.db.connect() as con:
+
+            tx1 = con.transaction_manager(default_tpb=custom_tpb.get_buffer())
+            tx1.begin()
+            cur1 = tx1.cursor()
+
+            cur1 = con.cursor()
+            cur1.execute( f"insert into test(db_state, x) values('{m}', 1)" )
+
+            t1=py_dt.datetime.now()
+            d1 = t1-t1
+            sttm = 'alter database '  + ('encrypt with "fbSampleDbCrypt" key "Red"' if m == 'encryption' else 'decrypt')
+            try:
+                con.execute_immediate(sttm)
+                con.commit()
+            except DatabaseError as e:
+                print( e.__str__() )
+
+            act.expected_stdout = ''
+            act.stdout = capsys.readouterr().out
+            assert act.clean_stdout == act.clean_expected_stdout
+            act.reset()
+
+            while True:
+                t2=py_dt.datetime.now()
+                d1=t2-t1
+                if d1.seconds*1000 + d1.microseconds//1000 > MAX_ENCRYPT_DECRYPT_MS:
+                    break
+
+                # Possible output:
+                #     Database not encrypted
+                #     Database encrypted, crypt thread not complete
+                act.isql(switches=['-q'], input = 'show database;', combine_output = True)
+                if m == 'encryption' and 'Database encrypted' in act.stdout or m == 'decryption' and 'Database not encrypted' in act.stdout:
+                    if 'not complete' in act.stdout:
+                        pass
+                    else:
+                        break
+                act.reset()
+
+            if d1.seconds*1000 + d1.microseconds//1000 <= MAX_ENCRYPT_DECRYPT_MS:
+                print(expected_stdout_show_db)
+            else:
+                print(f'BREAK ON TIMEOUT EXPIRATION: {m.upper()} took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.')
+
+            act.expected_stdout = expected_stdout_show_db
+            act.stdout = capsys.readouterr().out
+            assert act.clean_stdout == act.clean_expected_stdout
+            act.reset()
+
+
+            #------------------------------------------------------------------------------------------------------
+
+            expected_stdout_uniq_violation = f"""
+                violation of PRIMARY or UNIQUE KEY constraint "TEST_UNQ" on table "TEST"
+                -Problematic key value is ("DB_STATE" = '{m}', "X" = 1)
+                violation of PRIMARY or UNIQUE KEY constraint "TEST_UNQ" on table "TEST"
+                -Problematic key value is ("DB_STATE" = '{m}', "X" = 1)
+            """
+
+            tx2 = con.transaction_manager(default_tpb=custom_tpb.get_buffer())
+            tx2.begin()
+            cur2 = tx2.cursor()
+
+            try:
+                cur2.execute( f"insert into test(db_state, x) values( '{m}', 1)" )
+            except DatabaseError as e:
+                print( e.__str__() )
+
+            try:
+                cur2.execute( f"insert into test(db_state, x) values( '{m}', 1)" )
+            except DatabaseError as e:
+                print( e.__str__() )
+
+
+            act.expected_stdout = expected_stdout_uniq_violation
+            act.stdout = capsys.readouterr().out
+            assert act.clean_stdout == act.clean_expected_stdout
+            act.reset()
