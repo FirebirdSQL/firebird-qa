@@ -2,6 +2,12 @@
 Changelog
 #########
 
+Version 0.15.1
+==============
+
+* Package `psutil` is now a dependency, installed automatically with plugin.
+* Added `encryption` marker to mark test as requiring the encryption plugin
+
 Version 0.15.0
 ==============
 
