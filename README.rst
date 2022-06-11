@@ -133,6 +133,12 @@ Quickstart
          show database;
          quit;
 
+     3.2.4. IMPORTANT. 
+            Ensure that EMPLOYEE database was not encrypted before with key/value that is unknown currently!
+            Otherwise attempt to run ANY test will fail with:
+                INTERNALERROR> firebird.driver.types.DatabaseError: Missing database encryption key for your attachment
+                INTERNALERROR> -Plugin fbSampleKeyHolder:
+                INTERNALERROR> -Crypt key <HERE_SOME_UNKNOWN_KEY> not set
 
 3. Use pytest to run tests.
 
