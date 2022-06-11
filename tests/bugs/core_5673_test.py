@@ -26,7 +26,7 @@ DESCRIPTION:
     that encryption/decryption thread completed. Otherwise we loop until such conditions will raise or timeout expired.
 
     After this we make TWO attempts to insert duplicates and catch exceptions for each of them and print exception details.
-    Expected result: TWO exception must occur here -- see 'expected_stdout_uniq_violation' variable.
+    Expected result: two exception must occur here -- see 'expected_stdout_uniq_violation' variable.
 
 JIRA:        CORE-5673
 FBTEST:      bugs.core_5673
