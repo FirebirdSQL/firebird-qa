@@ -5,7 +5,6 @@ ID:          issue-6059
 ISSUE:       6059
 TITLE:       gstat may produce faulty report about presence of some none-encrypted pages in database
 DESCRIPTION:
-
     Test has been fully re-implemented because its initial version was based on old gstat that did not know '-e' command switch.
     We create two tables and add data into both of them. After this we DROP first table which must lead to deallocating some
     valuable number of pages (of all types: data, index and blobs).
@@ -42,6 +41,18 @@ init_script = f"""
     update test2 set b = (select list( (select gen_uuid() from rdb$database) ) from (select 1 i from rdb$types rows {N_ROWS}),(select 1 i from rdb$types rows {N_ROWS}));
     commit;
     drop table test1;
+    commit;
+    set term ^;
+    execute block as
+        declare n int = 16000;
+    begin
+        while (n > 0) do
+        begin
+            execute statement 'create sequence gen_' || n;
+            n = n - 1;
+        end
+    end ^
+    set term ;^
     commit;
 """
 
