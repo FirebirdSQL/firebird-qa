@@ -52,6 +52,7 @@ expected_stdout_gstat = """
 @pytest.mark.encryption
 @pytest.mark.version('>=3.0.4')
 def test_1(act: Action, capsys):
+    encryption_started = False
     encryption_finished = False
     with act.db.connect() as con:
 
@@ -61,14 +62,18 @@ def test_1(act: Action, capsys):
         try:
             con.execute_immediate(sttm)
             con.commit()
+            encryption_started = True
         except DatabaseError as e:
+            # -ALTER DATABASE failed
+            # -Crypt plugin fbSampleDbCrypt failed to load
+            #  ==> no sense to do anything else, encryption_started remains False.
             print( e.__str__() )
 
-        while True:
+        while encryption_started:
             t2=py_dt.datetime.now()
             d1=t2-t1
             if d1.seconds*1000 + d1.microseconds//1000 > MAX_ENCRYPT_DECRYPT_MS:
-                print('TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.')
+                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.')
                 break
 
             # Possible output:
