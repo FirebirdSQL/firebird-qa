@@ -113,8 +113,3 @@ def test_1(act: Action, tmp_role: Role, capsys):
     act.isql(switches=['-q'], input=test_script)
 
     # NB: no sense in assert if expected output is empty.
-
-
-
-
-
