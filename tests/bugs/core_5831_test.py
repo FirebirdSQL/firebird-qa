@@ -15,6 +15,7 @@ DESCRIPTION:
 
 JIRA:        CORE-5831
 FBTEST:      bugs.core_5831
+NOTES:
     [13.06.2022] pzotov
     Checked on 4.0.1.2692, 3.0.8.33535 - both on Linux and Windows.
 """
