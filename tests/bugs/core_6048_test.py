@@ -25,7 +25,7 @@ NOTES:
     ::: NB-2 :::
     Number of records that will be added into table must be sufficient big to force encryption thread work at least 3 seconds,
     but - at the same time - it must not be too large because we have time limit <MAX_ENCRYPT_DECRYPT_MS> which must not be exeeded.
-    Careful tuning required on each tesing box for this test!
+    Careful tuning required on each tesing box for this test.
 """
 
 import os
