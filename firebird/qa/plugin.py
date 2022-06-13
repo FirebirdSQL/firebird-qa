@@ -652,10 +652,16 @@ class Database:
 
         """
         __tracebackhide__ = True
-        result = run([_vars_['isql'], '-ch', 'UTF8', '-user', self.user,
-                      '-password', self.password, str(self.dsn)],
-                     input=substitute_macros(script, self.subs),
-                     encoding='utf8', capture_output=True)
+        params = [_vars_['isql'], '-user', self.user, '-password', self.password]
+        if self.charset != 'NONE':
+            params.extend(['-ch', self.charset])
+            io_enc = CHARSET_MAP[self.charset]
+        else:
+            params.extend(['-ch', 'utf8'])
+            io_enc = 'utf8'
+        params.append(str(self.dsn))
+        result = run(params, input=substitute_macros(script, self.subs), encoding=io_enc,
+                     capture_output=True)
         if result.returncode:
             print(f"-- stdout {'-' * 20}")
             print(result.stdout)
