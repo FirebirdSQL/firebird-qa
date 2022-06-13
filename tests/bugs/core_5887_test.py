@@ -22,106 +22,99 @@ NOTES:
   https://github.com/FirebirdSQL/firebird/commit/08096e3b879811d0e2e87b707b260c17d1542167 // 12-dec-19
 JIRA:        CORE-5887
 FBTEST:      bugs.core_5887
+NOTES:
+    [12.06.2022] pzotov
+    Checked on 4.0.1.2692 - both on Linux and Windows.
 """
 
 import pytest
 from firebird.qa import *
 
 db = db_factory()
-
-test_script = """
-    set bail on;
-
-    set term ^;
-    execute block as
-    begin
-        begin
-            execute statement 'drop role acnt';
-        when any do begin end
-        end
-    end
-    ^
-    set term ;^
-    commit;
-
-    create role acnt;
-    commit;
-
-    grant acnt to sysdba;
-    commit;
-
-    ----------------------------------------------
-
-    -- NO output should be produced by further PSQL blocks:
-
-    set term ^;
-    execute block as
-    begin
-        set decfloat round ceiling;
-    end^
-
-    execute block as
-    begin
-        set decfloat traps to Division_by_zero, Invalid_operation, Overflow;
-    end^
-
-    execute block as
-    begin
-        -- OLD SYNTAX: set decfloat bind native;
-        -- Syntax after 11-nov-2019:
-        -- https://github.com/FirebirdSQL/firebird/commit/a77295ba153e0c17061e2230d0ffdbaf08839114
-        -- See also: doc/sql.extensions/README.set_bind.md:
-        --     SET BIND OF type-from TO { type-to | LEGACY };
-        --     SET BIND OF type NATIVE;
-
-        set bind of decfloat to native;
-        --                   ^^
-        --                   +--- since 12-dec-2019
-    end^
-
-    execute block as
-    begin
-        set role acnt;
-    end^
-
-    execute block as
-    begin
-        set session idle timeout 5 minute;
-    end^
-
-    execute block as
-    begin
-        set statement timeout 1 minute;
-    end^
-
-    execute block as
-    begin
-        set time zone local;
-    end^
-
-
-    execute block as
-    begin
-        set bind of timestamp with time zone to legacy;
-        set bind of time with time zone to legacy;
-    end^
-    ^
-
-    execute block as
-    begin
-        set bind of timestamp with time zone to native;
-        set bind of time with time zone to native;
-    end^
-    ^
-    set term ;^
-    commit;
-
-    drop role acnt;
-    commit;
-"""
-
-act = isql_act('db', test_script)
+tmp_role = role_factory('db', name='tmp_role_5887')
+act = python_act('db')
 
 @pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    act.execute()
+def test_1(act: Action, tmp_role: Role, capsys):
+
+    test_script = f"""
+        set bail on;
+
+        grant {tmp_role.name} to sysdba;
+        commit;
+
+        ----------------------------------------------
+
+        -- NO output should be produced by further PSQL blocks:
+
+        set term ^;
+        execute block as
+        begin
+            set decfloat round ceiling;
+        end^
+
+        execute block as
+        begin
+            set decfloat traps to Division_by_zero, Invalid_operation, Overflow;
+        end^
+
+        execute block as
+        begin
+            -- OLD SYNTAX: set decfloat bind native;
+            -- Syntax after 11-nov-2019:
+            -- https://github.com/FirebirdSQL/firebird/commit/a77295ba153e0c17061e2230d0ffdbaf08839114
+            -- See also: doc/sql.extensions/README.set_bind.md:
+            --     SET BIND OF type-from TO type-to | LEGACY ;
+            --     SET BIND OF type NATIVE;
+
+            set bind of decfloat to native;
+            --                   ^^
+            --                   +--- since 12-dec-2019
+        end^
+
+        execute block as
+        begin
+            set role {tmp_role.name};
+        end^
+
+        execute block as
+        begin
+            set session idle timeout 5 minute;
+        end^
+
+        execute block as
+        begin
+            set statement timeout 1 minute;
+        end^
+
+        execute block as
+        begin
+            set time zone local;
+        end^
+
+
+        execute block as
+        begin
+            set bind of timestamp with time zone to legacy;
+            set bind of time with time zone to legacy;
+        end^
+        ^
+
+        execute block as
+        begin
+            set bind of timestamp with time zone to native;
+            set bind of time with time zone to native;
+        end^
+        ^
+        set term ;^
+        commit;
+    """
+
+    act.isql(switches=['-q'], input=test_script)
+
+    # NB: no sense in assert if expected output is empty.
+
+
+
+
+
