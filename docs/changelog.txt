@@ -2,6 +2,12 @@
 Changelog
 #########
 
+Version 0.15.2
+==============
+
+* Fix problem with database init script. Now it uses the database charset instead default
+  UTF8. The UTF8 is used only when database charset is not specified.
+
 Version 0.15.1
 ==============
 
