@@ -30,6 +30,7 @@ NOTES:
         gbak:Exiting before completion due to errors
 
     Until this weird error will be fixed, this test must be run only on WINDOWS.
+    Sent example with bug reproducing to Alex et al, 16-jun-2022 01:04. Waiting for reply.
     Checked on 4.0.1.2692, 5.0.0.509.
 """
 
