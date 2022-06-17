@@ -7,123 +7,102 @@ TITLE:       Connection does not see itself in the MON$ATTACHMENTS when Domain/U
 DESCRIPTION:
   Could not reproduce bug on WI-V3.0.4.33054, discussed this with dimitr and alex.
   Problem can appear randomly when some byte in memory contains value not equal to 0x0.
-  It was decided to implement test that
-  * adds user with name of 31 octets (15 non-ascii, plus 1 ascii character: "Ковалевский_Олег");
-  * launches ISQL utility as separate process with trying to connect do test DB using this non-ascii login;
-  * count record in mon$attachments table that belongs to current attachment. Result must be: 1.
-
-  ::: NB :::
-  As of fdb 2.0.1 and fbtest 1.0.7, there is NO ability to run macros runProgram() with specifying non-ascii user name
-  in its parameters list: errror 'invalid user/password' will raise in this case. The same error will be raised if we
-  try to launch isql directly in subprocess.call(). For this reason it was decided to create temporary BATCH file (.bat)
-  that contains necessary command to run isql.exe, i.e. we actually invoke new instance of cmd.exe.
-  The reason of why 'invalid user/password' raises (in other cases) remains unclear for me.
+  NB:
+  1. ISC_* variables must be removed from environtment for this test properly run.
+  2. Length of non-ascii user must be equal to maximal possible for tested FB: 31 for 3.x and 63 for 4.x+
 JIRA:        CORE-6097
 FBTEST:      bugs.core_6097
+NOTES:
+     [17.06.2022] pzotov
+     Checked on 4.0.1.2692, 3.0.8.33535.
 """
-
+import os
+import socket
+import getpass
 import pytest
 from firebird.qa import *
+import time
 
-db = db_factory()
+for v in ('ISC_USER','ISC_PASSWORD'):
+    try:
+        del os.environ[ v ]
+    except KeyError as e:
+        pass
 
-act = python_act('db')
 
-expected_stdout = """
-	SEC$USER_NAME                   Ковалевский_Олег
-	OCTETS_IN_NAME                  31
-	Records affected: 1
+#NON_ASCII_NAME = '"Ковалевский_Олег"'
 
-	WHO_AM_I                        Ковалевский_Олег
-	MON_PROTOCOL                    TCP
-	MON_AUTH_METHOD                 Srp
-	Records affected: 1
-"""
+#init_script = f"""
+#    create or alter mapping tmp_mapping_6097 using plugin win_sspi from user "{THIS_COMPUTER_NAME}\\{CURRENT_WIN_USER}" to user {NON_ASCII_NAME};
+#    commit;
+#"""
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+db = db_factory(utf8filename=True)
+#non_acii_user = user_factory('db', name = NON_ASCII_NAME, password = '123', plugin = 'Srp')
+act = python_act('db', substitutions=[('[\t ]+', ' ')])
+
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
+    
+    THIS_COMPUTER_NAME = socket.gethostname()
+    CURRENT_WIN_USER = getpass.getuser()
+    NON_ASCII_NAME = '"Ковалевский_Олег"' if act.is_version('<4') else '"Ковалевский_Олег_НектоПупкин_Вася"'
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import time
-#  import fdb
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  db_conn.close()
-#
-#  fb_home = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
-#
-#  sql_txt='''
-#      -- fb_home = %s
-#      set bail on;
-#      set count on;
-#      set list on;
-#      create or alter user "Ковалевский_Олег" password '123' using plugin Srp;
-#      commit;
-#      set list on;
-#      select sec$user_name, octet_length(trim(sec$user_name)) as octets_in_name from sec$users where sec$user_name = 'Ковалевский_Олег';
-#      commit;
-#  ''' % (fb_home,)
-#
-#  f_init_sql=open( os.path.join(context['temp_directory'],'tmp_6097_prepare.sql'), 'w')
-#  f_init_sql.write( sql_txt )
-#  f_init_sql.close()
-#
-#  f_init_log=open( os.path.join(context['temp_directory'],'tmp_6097_prepare.log'), 'w')
-#
-#  subprocess.call([ fb_home+"isql", dsn, "-q", "-ch", "utf8", "-i", f_init_sql.name], stdout=f_init_log, stderr=subprocess.STDOUT)
-#  f_init_log.close()
-#
-#  # does not work, raises 'invalid user/password':
-#  #runProgram( fb_home+'isql', [dsn, "-q", "-user", "Ковалевский_Олег", "-pas", "123" ], 'set list on; set count on; select * from mon$attachments where mon$attachment_id = current_connection;')
-#
-#  f_check_sql=open( os.path.join(context['temp_directory'],'tmp_6097_check.sql'), 'w')
-#  #f_check_sql.write( 'set list on; select count(*) as "Can_i_see_myself ?" from mon$attachments where mon$attachment_id = current_connection;' )
-#  f_check_sql.write( 'set count on; set list on; select mon$user as who_am_i, left(mon$remote_protocol,3) as mon_protocol, mon$auth_method as mon_auth_method from mon$attachments where mon$attachment_id = current_connection;' )
-#  f_check_sql.close()
-#
-#  f_bat_text='''
-#  @echo off
-#  chcp 65001 1>nul
-#  %s %s -user "Ковалевский_Олег" -pas 123 -ch utf8 -q -i %s
-#  ''' % ( fb_home+'isql.exe', dsn, f_check_sql.name )
-#  #''' % ( fb_home+'isql.exe', 'localhost:employee', f_check_sql.name )
-#
-#  f_check_bat=open( os.path.join(context['temp_directory'],'tmp_6097_check.bat'), 'w')
-#  f_check_bat.write( f_bat_text )
-#  f_check_bat.close()
-#
-#  f_check_log=open( os.path.join(context['temp_directory'],'tmp_6097_check.log'), 'w')
-#  # does not work, raises 'invalid user/password': subprocess.call(["isql", dsn, "-q", "-user", "Ковалевский_Олег", "-pas", "123", "-ch", "utf8", "-i", f_check_sql.name], stdout=f_run_log, stderr=subprocess.STDOUT)
-#  subprocess.call([f_check_bat.name], stdout=f_check_log, stderr=subprocess.STDOUT)
-#  f_check_log.close()
-#
-#  # Let redirected output of isql be flushed on disk:
-#  time.sleep(1)
-#
-#  with open( f_init_log.name,'r') as f:
-#      for line in f:
-#  	    print(line)
-#
-#  with open( f_check_log.name,'r') as f:
-#      for line in f:
-#  	    print(line)
-#
-#  # Cleanup.
-#  ##########
-#
-#  f_list = (f_init_sql, f_init_log, f_check_sql, f_check_bat, f_check_log)
-#  for i in range(len(f_list)):
-#     if os.path.isfile(f_list[i].name):
-#         os.remove(f_list[i].name)
-#
-#
-#---
+    map_sql = f"""
+        create or alter mapping tmp_mapping_6097 using plugin win_sspi from user "{THIS_COMPUTER_NAME}\\{CURRENT_WIN_USER}" to user {NON_ASCII_NAME};
+        commit;
+    """
+    act.isql(switches=['-q'], input=map_sql, combine_output = True)
+    print(act.stdout)
+    act.expected_stdout = ''
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
+    chk_sql = """
+        set bail on;
+        set count on;
+        set list on;
+        select 
+            rdb$map_name      as map_name, 
+            rdb$map_using     as map_using, 
+            rdb$map_plugin    as map_plugin, 
+            rdb$map_db        as map_db,
+            rdb$map_from_type as map_from_type,
+            rdb$map_from      as map_from, 
+            rdb$map_to_type   as map_to_type, 
+            rdb$map_to        as map_to
+        from rdb$auth_mapping
+        where rdb$map_name containing 'tmp_mapping_6097'
+        ;
+        select
+            mon$user as who_am_i,
+            -- octet_length(trim(mon$user)) as octets_in_trimmed_name, -- NB: 3.x = 31; 4.x = 78! ==> do not show it in this test; sent report to Alex et al, 17.06.2022
+            left(mon$remote_protocol,3) as mon_protocol,
+            left(mon$auth_method,3) as mon_auth_method
+        from mon$attachments where mon$attachment_id = current_connection;
+    """ 
+
+    expected_stdout = f"""
+        MAP_NAME          TMP_MAPPING_6097
+        MAP_USING         P
+        MAP_PLUGIN        WIN_SSPI
+        MAP_DB            <null>
+        MAP_FROM_TYPE     USER
+        MAP_FROM          {THIS_COMPUTER_NAME}\\{CURRENT_WIN_USER}
+        MAP_TO_TYPE       0
+        MAP_TO            {NON_ASCII_NAME.replace('"','')}
+        Records affected: 1
+
+    	WHO_AM_I                        {NON_ASCII_NAME.replace('"','')}
+    	MON_PROTOCOL                    TCP
+    	MON_AUTH_METHOD                 Map
+    	Records affected: 1
+    """
+
+    act.isql(switches=['-q'], input=chk_sql, combine_output = True, credentials = False)
+    print(act.stdout)
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
