@@ -29,16 +29,7 @@ for v in ('ISC_USER','ISC_PASSWORD'):
     except KeyError as e:
         pass
 
-
-#NON_ASCII_NAME = '"Ковалевский_Олег"'
-
-#init_script = f"""
-#    create or alter mapping tmp_mapping_6097 using plugin win_sspi from user "{THIS_COMPUTER_NAME}\\{CURRENT_WIN_USER}" to user {NON_ASCII_NAME};
-#    commit;
-#"""
-
 db = db_factory(utf8filename=True)
-#non_acii_user = user_factory('db', name = NON_ASCII_NAME, password = '123', plugin = 'Srp')
 act = python_act('db', substitutions=[('[\t ]+', ' ')])
 
 @pytest.mark.version('>=3.0.5')
