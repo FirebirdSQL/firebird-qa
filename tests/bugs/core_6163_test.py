@@ -41,6 +41,7 @@ import time
 import configparser
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 init_ddl = """
     create sequence gen_ba0bab start with 12192683;
