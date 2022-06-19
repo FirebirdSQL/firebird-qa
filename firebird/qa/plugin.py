@@ -46,6 +46,7 @@ import shutil
 import platform
 import weakref
 import pytest
+from configparser import ConfigParser, ExtendedInterpolation
 from _pytest.terminal import TerminalReporter, _get_raw_skip_reason, _format_trimmed
 from subprocess import run, CompletedProcess, PIPE, STDOUT
 from pathlib import Path
@@ -70,6 +71,9 @@ _vars_ = {'server': None,
 
 _platform = platform.system()
 _nodemap = {}
+
+#: Configuration for tests
+test_cfg: ConfigParser = ConfigParser(interpolation=ExtendedInterpolation())
 
 FIELD_ID = 'ID:'
 FIELD_ISSUE = 'ISSUE:'
@@ -332,6 +336,8 @@ def pytest_configure(config):
     # tools
     for tool in ['isql', 'gbak', 'nbackup', 'gstat', 'gfix', 'gsec', 'fbsvcmgr']:
         set_tool(tool)
+    # Load test_config.ini
+    test_cfg.read(_vars_['files'] / 'test_config.ini')
     # Driver encoding for NONE charset
     CHARSET_MAP['NONE'] = 'utf-8'
     CHARSET_MAP[None] = 'utf-8'
