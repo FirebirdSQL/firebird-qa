@@ -3,153 +3,55 @@
 """
 ID:          issue-6570
 ISSUE:       6570
-TITLE:       GBAK with service_mgr and WinSSPI authentication for Windows SYSTEM user
-  producing error in clumplet API
-DESCRIPTION:
-  Confirmed bug on 4.0.0.2035 SS: got
-  "gbak: ERROR:Internal error when using clumplet API: attempt to store 866 bytes in a clumplet with maximum size 255 bytes"
-
-  Checked on 4.0.0.2066 SS/CS, 3.0.6.33212 SS/CS.
+TITLE:       GBAK with service_mgr and WinSSPI authentication for Windows SYSTEM user producing error in clumplet API
+DESCRIPTION: Initially checked on 4.0.0.2066 SS/CS, 3.0.6.33212 SS/CS.
 JIRA:        CORE-6329
 FBTEST:      bugs.core_6329
+NOTES:
+    [19.06.2022] pzotov
+    Confirmed bug on: 3.0.6.33301, 4.0.0.2035
+    Got: "gbak: ERROR:Internal error when using clumplet API: attempt to store <NNN> bytes in a clumplet with maximum size 255 bytes"
+    NB: ISC_* variables must be removed from environtment for this test properly run.
+    Checked on 4.0.1.2692, 3.0.8.33535.
 """
+import os
+import socket
+import getpass
+from pathlib import Path
 
 import pytest
 from firebird.qa import *
 
-db = db_factory()
+for v in ('ISC_USER','ISC_PASSWORD'):
+    try:
+        del os.environ[ v ]
+    except KeyError as e:
+        pass
 
+db = db_factory()
 act = python_act('db')
 
-expected_stdout = """
-    EXPECTED output found in the backup log
-"""
+tmp_fbk = temp_file( filename = 'tmp_core_6329.fbk')
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0.6')
 @pytest.mark.platform('Windows')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, tmp_fbk: Path, capsys):
+    THIS_COMPUTER_NAME = socket.gethostname()
+    CURRENT_WIN_USER = getpass.getuser()
 
-# test_script_1
-#---
-#
-#  import sys
-#  import os
-#  import re
-#  import time
-#  import subprocess
-#  from fdb import services
-#  import socket
-#  import getpass
-#
-#  THIS_DBA_USER=user_name
-#  THIS_DBA_PSWD=user_password
-#
-#  THIS_COMPUTER_NAME = socket.gethostname()
-#  CURRENT_WIN_ADMIN = getpass.getuser()
-#
-#  ##########################################
-#  THIS_FDB = db_conn.database_name
-#  THIS_FBK=os.path.join(context['temp_directory'],'tmp_6329.fbk')
-#  ##########################################
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#              if os.path.isfile( f_names_list[i]):
-#                  print('ERROR: can not remove file ' + f_names_list[i])
-#
-#  #--------------------------------------------
-#
-#
-#  fb_home = services.connect(host='localhost', user= THIS_DBA_USER, password= THIS_DBA_PSWD).get_home_directory()
-#
-#  f_sql_make_map = open( os.path.join(context['temp_directory'],'tmp_6329.sql'), 'w', buffering=0)
-#  f_sql_txt='''
-#      set bail on;
-#      connect 'localhost:%(THIS_FDB)s' user %(THIS_DBA_USER)s password '%(THIS_DBA_PSWD)s';
-#
-#      create or alter global mapping win_system using plugin win_sspi from user "%(THIS_COMPUTER_NAME)s\\%(CURRENT_WIN_ADMIN)s" to user %(THIS_DBA_USER)s;
-#      commit;
-#  ''' % locals()
-#
-#  f_sql_make_map.write(f_sql_txt)
-#  f_sql_make_map.close()
-#
-#  # do NOT remove this delay otherwise can get 'Windows error 2: file not found'.
-#  time.sleep(1)
-#
-#  f_prepare_log=open( os.path.join(context['temp_directory'],'tmp_6329_prepare.log'), 'w', buffering=0)
-#  subprocess.call( [ fb_home + "isql", "-q", "-i", f_sql_make_map.name ], stdout=f_prepare_log, stderr=subprocess.STDOUT )
-#  f_prepare_log.close()
-#
-#  f_backup_log=open( os.path.join(context['temp_directory'],'tmp_6329_backup.log'), 'w', buffering=0)
-#  subprocess.call( [ fb_home + "gbak", "-v", "-b", "-se", "localhost:service_mgr", THIS_FDB, THIS_FBK], stdout=f_backup_log, stderr=subprocess.STDOUT )
-#  f_backup_log.close()
-#
-#
-#  # Remove global mapping:
-#  ########################
-#
-#  f_sql_drop_map = open( os.path.join(context['temp_directory'],'tmp_6329_cleanup.sql'), 'w', buffering=0)
-#  f_sql_txt='''
-#      set bail on;
-#      connect 'localhost:%(THIS_FDB)s' user %(THIS_DBA_USER)s password '%(THIS_DBA_PSWD)s';
-#
-#      drop global mapping win_system;
-#      commit;
-#  ''' % locals()
-#  f_sql_drop_map.write(f_sql_txt)
-#  f_sql_drop_map.close()
-#
-#  f_cleanup_log = open( os.path.join(context['temp_directory'],'tmp_6329_cleanup.log'), 'w', buffering=0)
-#  subprocess.call( [ fb_home + "isql", "-q", "-i", f_sql_drop_map.name ], stdout=f_cleanup_log, stderr=subprocess.STDOUT )
-#  f_cleanup_log.close()
-#
-#  # Checks:
-#  #########
-#
-#  with open( f_prepare_log.name,'r') as f:
-#    for line in f:
-#        if line.split():
-#          print('UNEXPECTED OUTPUT in '+f_prepare_log.name+': '+line)
-#
-#
-#  allowed_patterns = (
-#       re.compile('gbak:.*closing.*commit.*finish',re.IGNORECASE),
-#  )
-#
-#  with open( f_backup_log.name,'r') as f:
-#    for line in f:
-#        if 'ERROR' in line:
-#          print('UNEXPECTED STDERR in '+f_backup_log.name+': '+line)
-#        elif 'closing' in line:
-#          match2some = filter( None, [ p.search(line) for p in allowed_patterns ] )
-#          if match2some:
-#              print('EXPECTED output found in the backup log')
-#
-#  with open( f_cleanup_log.name,'r') as f:
-#    for line in f:
-#        if line.split():
-#          print('UNEXPECTED OUTPUT in '+f_cleanup_log.name+': '+line)
-#
-#  # Cleanup:
-#  ##########
-#
-#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with
-#  # Exception raised while executing Python test script. exception: WindowsError: 32
-#  time.sleep(1)
-#
-#  f_list=( f_sql_make_map, f_sql_drop_map, f_prepare_log, f_backup_log, f_cleanup_log )
-#  cleanup( [ i.name for i in f_list ] )
-#
-#  os.remove(THIS_FBK)
-#
-#
-#
-#---
+    map_sql = f"""
+        create or alter global mapping tmp_mapping_6329 using plugin win_sspi from user "{THIS_COMPUTER_NAME}\\{CURRENT_WIN_USER}" to user {act.db.user};
+        commit;
+    """
+
+    act.expected_stdout = ''
+    act.isql(switches=['-q'], input=map_sql, combine_output = True)
+    act_retcode = act.return_code
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
+    if act_retcode == 0:
+       try:
+            act.gbak(switches=['-b', '-se', 'localhost:service_mgr', str(act.db.db_path), str(tmp_fbk)], credentials=False)
+       finally:
+           act.isql(switches=['-q'], input='drop global mapping tmp_mapping_6329;', combine_output = True)
