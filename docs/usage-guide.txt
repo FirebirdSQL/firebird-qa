@@ -59,7 +59,7 @@ Installation
 
 2. Clone the firebird-qa repository::
 
-   > git clone git://github.com/FirebirdSQL/firebird-qa.git
+   > git clone https://github.com/FirebirdSQL/firebird-qa.git
 
 3. Activate the Python virtual environment you created for QA, or skip this step if you
    want to install everything into main site-packages.
