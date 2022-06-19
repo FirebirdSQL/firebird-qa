@@ -5,7 +5,14 @@
 Firebird-QA plugin Reference
 ############################
 
-functions and classes for use in tests
+Objects for use in tests
+========================
+
+test_cfg
+--------
+.. autodata:: test_cfg
+
+Functions and classes for use in tests
 ======================================
 
 db_factory

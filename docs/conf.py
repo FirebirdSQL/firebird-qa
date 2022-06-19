@@ -23,10 +23,10 @@ copyright = '2022, Pavel Cisar'
 author = 'Pavel Císař'
 
 # The short X.Y version
-version = '0.15.2'
+version = '0.16.0'
 
 # The full version, including alpha/beta/rc tags
-release = '0.15.2'
+release = '0.16.0'
 
 
 # -- General configuration ---------------------------------------------------
