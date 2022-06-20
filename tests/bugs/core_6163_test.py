@@ -108,6 +108,7 @@ expected_stdout = """
     GEN_DECADE   NOT FOUND.
 """
 
+@pytest.mark.encryption
 @pytest.mark.version('>=3.0.5')
 def test_1(act: Action, capsys):
 
