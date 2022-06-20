@@ -5,172 +5,73 @@ ID:          issue-2343
 ISSUE:       2343
 TITLE:       Better diagnostic when 'Missing security context'
 DESCRIPTION:
-  ::: NB :::
-  List of AuthClient plugins must contain Win_Sspi in order to reproduce this test expected results.
-  Otherwise firebird.log will not contain any message like "Available context(s): ..."
-
-  Checked on 3.0.7.33348, 4.0.0.2119 (SS/CS): OK.
-
-  01-mar-2021: attribute 'platform' was restricted to 'Windows'.
-  05-mar-2021: list of plugins specified in AuthServer *also* must contain Win_Sspi.
-
-  11-mar-2021. As of FB 3.x, messages appears in the firebird.log more than one time.
-  Because of this, we are interested only for at least one occurence of each message
-  rather than for each of them (see 'found_patterns', type: set()).
+    ::: NB :::
+    List of AuthClient plugins must contain Win_Sspi in order to reproduce this test expected results.
+    Otherwise firebird.log will not contain any message like "Available context(s): ..."
+    Because of this, test marked as to be performed on WINDOWS only.
 JIRA:        CORE-6362
 FBTEST:      bugs.core_6362
+NOTES:
+    [20.06.2022] pzotov
+    Message about missed sec. context will raise if we make undefined ISC_* variables and try to connect.
+    Confirmed missed info in FB 3.0.6.33301: firebird.log remains unchanged (though ISQL issues expected message).
+    Checked on 4.0.1.2692, 3.0.8.33535.
 """
 
+import os
+import locale
+from difflib import unified_diff
 import pytest
 from firebird.qa import *
 
+for v in ('ISC_USER','ISC_PASSWORD'):
+    try:
+        del os.environ[ v ]
+    except KeyError as e:
+        pass
+
 db = db_factory()
 
-act = python_act('db')
+substitutions = [ ( '^((?!context).)*$', ''),
+                  ( 'Missing security context(\\(s\\))?( required)? for .*', 'Missing security context'),
+                  ( 'Available context(\\(s\\))?(:)? .*', 'Available context'),
+                  ( '[\t ]+', ' '),
+                ]
 
-expected_stdout = """
-    Error message on attempt to get server version w/o user/password and ISC_USER/ISC_PASSWORD:
-    Missing security context for services manager
+act = python_act('db', substitutions = substitutions)
 
-    Found patterns in firebird.log diff file:
-    Available context\\.*
-    Missing\\s+security\\s+context\\.*
+expected_fb_log_diff = """
+    + Missing security context
+    + Available context
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+expected_stderr_isql = """
+    Statement failed, SQLSTATE = 28000
+    Missing security context for TEST.FDB
+"""
 @pytest.mark.version('>=3.0.7')
 @pytest.mark.platform('Windows')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
+    with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
+        srv.info.get_log()
+        fb_log_init = srv.readlines()
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import re
-#  import difflib
-#  from fdb import services
-#  import time
-#
-#  os.unsetenv("ISC_USER")
-#  os.unsetenv("ISC_PASSWORD")
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  def svc_get_fb_log( f_fb_log ):
-#
-#    global subprocess
-#    subprocess.call( [ context['fbsvcmgr_path'],
-#                       "localhost:service_mgr",
-#                       "user", user_name,
-#                       "password", user_password,
-#                       "action_get_fb_log"
-#                     ],
-#                     stdout=f_fb_log, stderr=subprocess.STDOUT
-#                   )
-#    return
-#
-#  #--------------------------------------------
-#
-#  # Get FB log *before* unsuccessful attempt to obtain server version:
-#  #####################
-#
-#  f_fblog_before=open( os.path.join(context['temp_directory'],'tmp_6362_fblog_before.txt'), 'w')
-#  svc_get_fb_log( f_fblog_before )
-#  flush_and_close( f_fblog_before )
-#
-#  f_svc_log=open( os.path.join(context['temp_directory'],'tmp_6362_info_server.log'), 'w')
-#  f_svc_err=open( os.path.join(context['temp_directory'],'tmp_6362_info_server.err'), 'w')
-#
-#  # This must FAIL because we do not specify user/password pair and there absent in OS env.:
-#  ################
-#  subprocess.call( [context['fbsvcmgr_path'], 'localhost:service_mgr', 'info_server_version'], stdout=f_svc_log, stderr=f_svc_err )
-#  flush_and_close( f_svc_log )
-#  flush_and_close( f_svc_err )
-#
-#  # Get FB log *after* unsuccessful attempt to obtain server version:
-#  ####################
-#  f_fblog_after=open( os.path.join(context['temp_directory'],'tmp_6362_fblog_after.txt'), 'w')
-#  svc_get_fb_log( f_fblog_after )
-#  flush_and_close( f_fblog_after )
-#
-#  old_fb_log=open(f_fblog_before.name, 'r')
-#  new_fb_log=open(f_fblog_after.name, 'r')
-#
-#  fb_log_diff = ''.join(difflib.unified_diff(
-#      old_fb_log.readlines(),
-#      new_fb_log.readlines()
-#    ))
-#  old_fb_log.close()
-#  new_fb_log.close()
-#
-#  f_diff=open( os.path.join(context['temp_directory'],'tmp_6362_fblog_diff.txt'), 'w')
-#  f_diff.write(fb_log_diff)
-#  flush_and_close( f_diff )
-#
-#  # Missing security context required for C:\\FB SS\\SECURITY4.FDB
-#  # Available context(s): USER IMAGE-PC1\\PASHAZ plugin Win_Sspi
-#
-#  allowed_patterns = (
-#       re.compile('Missing\\s+security\\s+context\\.*', re.IGNORECASE)
-#      ,re.compile('Available context\\.*', re.IGNORECASE)
-#  )
-#  found_patterns = set()
-#
-#  print('Error message on attempt to get server version w/o user/password and ISC_USER/ISC_PASSWORD:')
-#  with open( f_svc_err.name,'r') as f:
-#      for line in f:
-#          print(line)
-#
-#  with open( f_diff.name,'r') as f:
-#      for line in f:
-#          if line.startswith('+'):
-#              for p in allowed_patterns:
-#                  if p.search(line):
-#                      found_patterns.add( p.pattern )
-#
-#  print('Found patterns in firebird.log diff file:')
-#  for p in sorted(found_patterns):
-#      print(p)
-#
-#
-#  # Cleanup.
-#  ##########
-#  time.sleep(1)
-#  cleanup( (f_svc_log, f_svc_err, f_fblog_before, f_fblog_after, f_diff) )
-#
-#
-#---
+    act.expected_stderr = expected_stderr_isql
+    act.isql(switches=['-q'], input = 'quit;', credentials = False)
+    assert act.clean_stderr == act.clean_expected_stderr
+    act.reset()
+
+    with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
+        srv.info.get_log()
+        fb_log_curr = srv.readlines()
+ 
+
+    for line in unified_diff(fb_log_init, fb_log_curr):
+        if line.startswith('+'):
+            print(line.strip())
+
+    act.expected_stdout = expected_fb_log_diff
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
