@@ -9,7 +9,7 @@ DESCRIPTION:
    Then we obtain generator page ID and page size by querying RDB$PAGES and MON$DATABASE tables.
    After this, we check that values of sequences *PRESENT* in NON-encrypted database by opening DB file in 'rb' mode
    and reading content of its generator page.
-   Further, we encrypt database and wait for 1 second in order to give engine complete this job.
+   Further, we run 'ALTER DATABASE ENCRYPT ...' and wait for until engine complete encryption.
    Finally, we read generator page again. NO any value of secuences must be found at this point.
 
    Confirmed non-encrypted content of generators page on: 4.0.0.1627; 3.0.5.33178.
