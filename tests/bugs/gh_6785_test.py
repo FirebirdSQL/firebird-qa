@@ -5,166 +5,124 @@ ID:          issue-6785
 ISSUE:       6785
 TITLE:       Problem when restoring the database on FB 4.0 RC1 (gbak regression)
 DESCRIPTION:
-  Test used database backup that was provided in the ticket.
+    Test used database backup that was provided in the ticket.
 
-  Maximal allowed time is set here for restoring process and gbak will be
-  forcedly killed if it can not complete during this time.
-  Currently this time is 300 seconds (see 'MAX_THRESHOLD' variable).
+    Maximal allowed time is set here for restoring process and gbak will be
+    forcedly killed if it can not complete during this time.
+    Currently this time is 300 seconds (see 'MAX_THRESHOLD' variable).
 
-  Database is validated (using 'gfix -v -full') after successful restore finish.
-  Test checks that returned codes for both gbak and validation are zero.
+    Database is validated (using 'gfix -v -full') after successful restore finish.
+    Test checks that returned codes for both gbak and validation are zero.
 
-  Restore issues warnings:
-    gbak: WARNING:function F_DATETOSTR is not defined
-    gbak: WARNING:    module name or entrypoint could not be found
-    gbak: WARNING:function F_DATETOSTR is not defined
-    gbak: WARNING:    module name or entrypoint could not be found
-  All of them are ignored by this test when gbak output is parsed.
+    Restore issues warnings:
+      gbak: WARNING:function F_DATETOSTR is not defined
+      gbak: WARNING:    module name or entrypoint could not be found
+      gbak: WARNING:function F_DATETOSTR is not defined
+      gbak: WARNING:    module name or entrypoint could not be found
+    All of them are ignored by this test when gbak output is parsed.
 
-  Confirmed bug on 4.0.0.2452 SS: gbak infinitely hanged.
-  Checked on 4.0.0.2453 SS/CS (Linux and Windows): all OK, restore lasts near 200s.
+    Confirmed bug on 4.0.0.2452 SS: gbak infinitely hanged.
+    Checked on 4.0.0.2453 SS/CS (Linux and Windows): all OK, restore lasts near 200s.
 FBTEST:      bugs.gh_6785
+NOTES:
+    [30.06.2022] pzotov
+    Checked on 4.0.1.2692, 5.0.0.509. Re-check reproducing of problem on 4.0.0.2452.
+    ::: NB-1 :::
+    DO NOT forget to specify 'encoding=locale.getpreferredencoding()' otherwise attempt to get content
+    of firebird.log can fail if it contains non-ascii messages, e.g. "Невозможно создать файл ..." etc.
+    In this case act.get_firebird_log() will raise:
+    UnicodeDecodeError: 'ascii' codec can't decode byte 0x** in position ***: ordinal not in range(128)
+    ::: NB-2 :::
+    Currently one can NOT use 'act.get_firebird_log()' to get content of FB log with non-ascii messages.
+    We have to use 'with act.connect_server(encoding=locale.getpreferredencoding()) as srv' and then
+    work with it like this: 'srv.info.get_log(); fblog = srv.readlines()'.
+    This code may be changed / adjusted after.
 """
+
+import locale
+import zipfile
+import subprocess
+import re
 
 import pytest
 from firebird.qa import *
+from firebird.driver import SrvRepairFlag
+from pathlib import Path
+from difflib import unified_diff
+import time
 
 db = db_factory()
-
 act = python_act('db')
+
+tmp_log = temp_file('gh_6785.tmp.log')
+tmp_fbk = temp_file('gh_6785.tmp.fbk')
+tmp_fdb = temp_file('gh_6785.tmp.fdb')
+
+###################
+MAX_THRESHOLD = 300
+###################
 
 expected_stdout = """
     Restore retcode: 0
     Validation retcode: 0
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+restore_completed_msg = 'Restore COMPLETED.'
 
-# test_script_1
-#---
-#
-#  import os
-#  import re
-#  import time
-#  import zipfile
-#  import difflib
-#  import subprocess
-#  import datetime as py_dt
-#  from datetime import timedelta
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  zf = zipfile.ZipFile( os.path.join(context['files_location'],'gh_6785.zip') )
-#  tmpfbk = 'gh_6785.fbk'
-#  zf.extract( tmpfbk, '$(DATABASE_LOCATION)')
-#  zf.close()
-#
-#  tmpfbk = os.path.join( '$(DATABASE_LOCATION)', tmpfbk)
-#  tmpfdb = os.path.join( '$(DATABASE_LOCATION)', 'tmp_gh_6785.fdb')
-#
-#  #------------------------------ restore database -------------------------------
-#
-#  f_restore_log=open( os.path.join(context['temp_directory'],'tmp_gh_6785_restoring.log'), 'w')
-#  p_restore = subprocess.Popen([context['gbak_path'],"-rep", tmpfbk, tmpfdb], stdout=f_restore_log, stderr=subprocess.STDOUT)
-#
-#  t1=py_dt.datetime.now()
-#  restore_retcode = None
-#  i=0
-#
-#  # Maximal allowed time for restoring process, in seconds:
-#  ######################
-#
-#  ###################
-#  MAX_THRESHOLD = 300
-#  ###################
-#
-#  while 1:
-#      restore_retcode = p_restore.poll()
-#      if i > MAX_THRESHOLD:
-#          p_restore.terminate()
-#          restore_retcode = -1
-#      if restore_retcode is not None:
-#          break
-#      time.sleep(1)
-#      i += 1
-#
-#  t2=py_dt.datetime.now()
-#  d1=t2-t1
-#
-#  flush_and_close( f_restore_log )
-#
-#  #print('Restore retcode:', restore_retcode, ', total time, ms:', d1.seconds*1000 + d1.microseconds//1000)
-#  print('Restore retcode:', restore_retcode)
-#
-#  if restore_retcode == 0:
-#      #-------------------------- validate just restored database --------------------
-#
-#      f_valid_log = open( os.path.join(context['temp_directory'],'tmp_gh_6785_validation.log'), 'w')
-#      validation_retcode = subprocess.check_call( [ context['gfix_path'], 'localhost:'+tmpfdb, "-v", "-full" ],
-#                       stdout = f_valid_log,
-#                       stderr = subprocess.STDOUT
-#                     )
-#
-#      flush_and_close( f_valid_log )
-#      print('Validation retcode: %d' % validation_retcode)
-#      with open(f_valid_log.name,'r') as f:
-#          for line in f:
-#              print('UNEXPECTED VALIDATION OUTPUT: ' + line)
-#      cleanup( (f_valid_log,) )
-#  else:
-#      print('Restore duration: %ds - exceeded maximal time limit: %ds' % (d1.seconds, MAX_THRESHOLD) )
-#
-#  # check results:
-#  ################
-#
-#  ptn_gbak_warning = re.compile('gbak:\\s*WARNING:', re.IGNORECASE) # must be supressed for this .fbk
-#  with open(f_restore_log.name,'r') as f:
-#      for line in f:
-#          if not ptn_gbak_warning.search(line):
-#              print('UNEXPECTED RESTORE OUTPUT: ' + line)
-#
-#  # cleanup
-#  ##########
-#  time.sleep(1)
-#  cleanup( ( f_restore_log, tmpfdb, tmpfbk ) )
-#
-#---
+@pytest.mark.version('>=4.0')
+def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
+    zipped_fbk_file = zipfile.Path(act.files_dir / 'gh_6785.zip', at = 'gh_6785.fbk')
+    tmp_fbk.write_bytes(zipped_fbk_file.read_bytes())
+
+    restore_code = -1
+
+    # ...\gbak.exe -rep ...\gh_6785.tmp.fbk localhost:...\gh_6785.tmp.fdb -st tdrw -v -y ...\gh_6785.tmp.log
+    # If the timeout expires, the child process will be killed and waited for.
+    # The TimeoutExpired exception will be re-raised after the child process has terminated.
+    try:
+        p = subprocess.run([ act.vars['gbak'],
+                            '-user', act.db.user, '-password', act.db.password,
+                            '-rep', tmp_fbk, tmp_fdb,
+                            '-st', 'tdrw', 
+                            '-v', '-y', str(tmp_log)
+                          ]
+                          ,stderr = subprocess.STDOUT
+                          ,timeout = MAX_THRESHOLD
+                         )
+        print( restore_completed_msg )
+        restore_code = p.returncode
+
+    except Exception as e:
+        print(e.__str__())
+        tmp_fdb.unlink()
+
+    act.expected_stdout = restore_completed_msg
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
+    if restore_code == 0:
+        
+        # Get FB log before validation, run validation and get FB log after it:
+        with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
+
+            # CURRENTLY CAN NOT USE THIS: fblog_1 = act.get_firebird_log()
+            srv.info.get_log()
+            fblog_1 = srv.readlines()
+
+            srv.database.repair(database = str(tmp_fdb), flags=SrvRepairFlag.CORRUPTION_CHECK)
+
+            # CURRENTLY CAN NOT USE THIS: fblog_2 = act.get_firebird_log()
+            srv.info.get_log()
+            fblog_2 = srv.readlines()
+
+            p_diff = re.compile('Validation finished: \\d+ errors, \\d+ warnings, \\d+ fixed')
+            validation_result = ''
+            for line in unified_diff(fblog_1, fblog_2):
+                if line.startswith('+') and p_diff.search(line):
+                    validation_result =line.strip().replace('\t', ' ')
+                    break
+
+
+            assert validation_result == '+ Validation finished: 0 errors, 0 warnings, 0 fixed'
+            act.reset()
