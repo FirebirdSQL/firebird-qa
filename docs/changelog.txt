@@ -4,11 +4,17 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.17.0
+==============
+
+* Variable `test_cfg` renamed to `.QA_GLOBALS`.
+* Added `.Mapping` and `.mapping_factory`.
+
 Version 0.16.0
 ==============
 
 * Added support for configuration of tests. A `~configparser.ConfigParser` instance is
-  available as `.test_cfg`. This instance is initialized with values from file `test_config.ini`
+  available as `test_cfg`. This instance is initialized with values from file `test_config.ini`
   located in `files` subdirectory.
 
 Version 0.15.2

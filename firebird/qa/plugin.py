@@ -73,7 +73,7 @@ _platform = platform.system()
 _nodemap = {}
 
 #: Configuration for tests
-test_cfg: ConfigParser = ConfigParser(interpolation=ExtendedInterpolation())
+QA_GLOBALS: ConfigParser = ConfigParser(interpolation=ExtendedInterpolation())
 
 FIELD_ID = 'ID:'
 FIELD_ISSUE = 'ISSUE:'
@@ -337,7 +337,7 @@ def pytest_configure(config):
     for tool in ['isql', 'gbak', 'nbackup', 'gstat', 'gfix', 'gsec', 'fbsvcmgr']:
         set_tool(tool)
     # Load test_config.ini
-    test_cfg.read(_vars_['files'] / 'test_config.ini')
+    QA_GLOBALS.read(_vars_['files'] / 'test_config.ini')
     # Driver encoding for NONE charset
     CHARSET_MAP['NONE'] = 'utf-8'
     CHARSET_MAP[None] = 'utf-8'
@@ -1345,6 +1345,159 @@ def role_factory(db_fixture_name: str, *, name: str, charset: str='utf8', do_not
             yield role
 
     return role_fixture
+
+class Mapping:
+    """Object to access and manage Firebird mapping.
+
+    Arguments:
+        database: Database used to manage mapping.
+        name: Mapping name.
+        charset: Firebird CHARACTER SET used for connections that manage this mapping.
+        do_not_create: When `True`, the mapping is not created when `with` context is entered.
+        is_global: Whether mapping is global or not.
+        source: Authentication plugin name, `ANY` for any plugin, `-` for mapping or `*` for
+                any method.
+        source_db: Database where authentication succeeded.
+        serverwide: Work only with server-wide plugins or not.
+        from_name: The name of the object from which mapping is performed. Could be `None`
+                   for any value of given type.
+        from_type: The type of that name — user name, role or OS group—depending upon the
+                   plug-in that added that name during authentication.
+        to_name: The name of the object TO which mapping is performed.
+        to_type: The type, for which only `USER` or `ROLE` is valid.
+
+    .. note::
+
+       Mappings are managed through SQL commands executed on connection to specified test
+       database.
+
+    .. important::
+
+       It's NOT RECOMMENDED to create instances of this class directly! The preffered way
+       is to use fixtures created by `mapping_factory`.
+
+       As test databases are managed by fixtures, it's necessary to ensure that mappings are
+       created after database initialization, and removed before test database is removed.
+       So, mapping `setup` and `teardown` is managed via context manager protocol and the
+       :ref:`with <with>` statement that must be executed within scope of used database.
+       Fixture created by `mapping_factory` does this automatically.
+    """
+    def __init__(self, database: Database, name: str, charset: str, do_not_create: bool,
+                 is_global: bool, source: Database, source_db: str, serverwide: bool,
+                 from_name: str, from_type: str, to_name: Optional[str], to_type: str):
+        #: Database used to manage mapping.
+        self.db: Database = database
+        #: Mapping name.
+        self.name: str = name if name.startswith('"') else name.upper()
+        #: Firebird CHARACTER SET used for connections that manage this mapping.
+        self.charset = charset
+        #: When `True`, the mapping is not created when `with` context is entered.
+        self.do_not_create: bool = do_not_create
+        #: Whether mapping is global or not.
+        self.is_global = is_global
+        #: Authentication plugin name, `ANY` for any plugin, `-` for mapping or `*` for any method.
+        self.source: str = source
+        #: Database where authentication succeeded.
+        self.source_db: Database = source_db
+        #: Work only with server-wide plugins or not.
+        self.serverwide: bool = serverwide
+        #: The name of the object from which mapping is performed. Could be `None` for any value of given type.
+        self.from_name: str = from_name
+        #: The type of that name — user name, role or OS group—depending upon the plug-in that added that name during authentication.
+        self.from_type: str = from_type
+        #: The name of the object TO which mapping is performed.
+        self.to_name: str = to_name if to_name.startswith('"') else to_name.upper()
+        #: Target type, for which only `USER` or `ROLE` is valid.
+        self.to_type: str = to_type
+    def __enter__(self) -> Role:
+        if not self.do_not_create:
+            self.create()
+        return self
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.drop()
+    def create(self) -> None:
+        """Creates mapping. Called automatically when `with` context is entered.
+        """
+        __tracebackhide__ = True
+        with self.db.connect(charset=self.charset) as con:
+            if self.source == '*':
+                using = "'*'"
+            elif self.source == '-':
+                using = 'MAPPING'
+            elif self.source == 'ANY':
+                using = 'ANY PLUGIN'
+                if self.serverwide:
+                    using += ' SERVERWIDE'
+            else:
+                using = f'PLUGIN {self.source}'
+            if self.source_db is not None:
+                using += f' IN "{self.source_db.db_path}"'
+            if self.from_name is None:
+                from_spec = f'ANY {self.from_type}'
+            else:
+                from_spec = f'{self.from_type} {self.from_name}'
+            cmd = f'''CREATE {"GLOBAL " if self.is_global else " "}MAPPING {self.name}
+            USING {using}
+            FROM {from_spec}
+            TO {self.to_type} {self.to_name}
+            '''
+            con.execute_immediate(cmd)
+            con.commit()
+            print(f"CREATE mapping: {self.name}")
+    def drop(self) -> None:
+        """Drop role in defined test database. Called automatically on `with` context exit.
+        """
+        __tracebackhide__ = True
+        with self.db.connect(charset=self.charset) as con:
+            con.execute_immediate(f'DROP {"GLOBAL " if self.is_global else " "}MAPPING {self.name}')
+            con.commit()
+            print(f"DROP mapping: {self.name}")
+
+def mapping_factory(db_fixture_name: str, *, name: str, is_global: bool, source: str,
+                    from_name: str, from_type: str, to_name: Optional[str], to_type: str,
+                    source_db_fixture_name: str=None, serverwide: bool=False,
+                    charset: str='utf8', do_not_create: bool=False):
+    """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
+    the `Mapping` instance.
+
+    Arguments:
+        db_fixture_name: Name of database fixture used to manage mapping.
+        name: Mapping name.
+        is_global: Whether mapping is global or not.
+        source: Authentication plugin name, `ANY` for any plugin, `-` for mapping or `*` for
+                any method.
+        from_name: The name of the object from which mapping is performed. Could be `None`
+                   for any value of given type.
+        from_type: The type of that name — user name, role or OS group—depending upon the
+                   plug-in that added that name during authentication.
+        to_name: The name of the object TO which mapping is performed.
+        to_type: The type, for which only `USER` or `ROLE` is valid.
+        source_db_fixture_name: Name of database fixture for database where authentication succeeded.
+        serverwide: Work only with server-wide plugins or not.
+        charset: Firebird CHARACTER SET used for connections that manage this mapping.
+        do_not_create: When `True`, the mapping is not created when `with` context is entered.
+
+    .. important::
+
+       The `db_fixture_name` and `source_db_fixture_name` must be names of variable that
+       holds the fixture created by `db_factory` function.
+
+       **Test must use both, mapping and database fixtures!**
+
+    .. note::
+
+       Database must exists before mapping is created by fixture, so you cannot use database
+       fixtures created with `do_not_create` option, unless also the mapping is created with it!
+    """
+    @pytest.fixture
+    def mapping_fixture(request: pytest.FixtureRequest) -> Mapping:
+        source_db = request.getfixturevalue(source_db_fixture_name)
+        with Mapping(request.getfixturevalue(db_fixture_name), name, charset, do_not_create,
+                     is_global, source, source_db, serverwide, from_name, from_type,
+                     to_name, to_type) as mapping:
+            yield mapping
+
+    return mapping_fixture
 
 class Action:
     """Class to manage and execute Firebird tests.

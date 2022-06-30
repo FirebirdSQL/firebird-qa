@@ -8,9 +8,9 @@ Firebird-QA plugin Reference
 Objects for use in tests
 ========================
 
-test_cfg
---------
-.. autodata:: test_cfg
+QA_GLOBALS
+----------
+.. autodata:: QA_GLOBALS
 
 Functions and classes for use in tests
 ======================================
@@ -30,6 +30,10 @@ role_factory
 envar_factory
 -------------
 .. autofunction:: envar_factory
+
+mapping_factory
+---------------
+.. autofunction:: mapping_factory
 
 temp_file
 ---------
@@ -62,6 +66,10 @@ Role
 Envar
 -----
 .. autoclass:: Envar
+
+Mapping
+-------
+.. autoclass:: Mapping
 
 ServerKeeper
 ------------
