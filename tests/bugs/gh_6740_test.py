@@ -5,53 +5,45 @@ ID:          issue-6740
 ISSUE:       6740
 TITLE:       Allow parenthesized query expression for standard-compliance
 DESCRIPTION:
-NOTES:
-  Queries which do not use `WITH` clause now can be enclosed in parenthesis,
-  but this leads to reduced number of max parts of UNIONed query, from 255 to 128.
+    Queries which do not use `WITH` clause now can be enclosed in parenthesis,
+    but this leads to reduced number of max parts of UNIONed query, from 255 to 128.
 JIRA:        CORE-6511
 FBTEST:      bugs.gh_6740
+NOTES:
+    [30.06.2022] pzotov
+    Error message in case when NUM_OF_UNIONED_PARTS >= 129 can obfuscate:
+    "Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256"
+    Max limit of unioned-parts is 128, it was explained by Adriano in the ticket.
+    Checked on 5.0.0.509.
 """
 
 import pytest
 from firebird.qa import *
 
 db = db_factory()
-
 act = python_act('db')
 
-expected_stdout = """
-    8256
-"""
+NUM_OF_UNIONED_PARTS = 128
+unioned_query = '('
+for i in range(0,NUM_OF_UNIONED_PARTS):
+  unioned_query = ''.join( (unioned_query, 'select %d ' % (i+1) + ('as i ' if i==0 else '') + 'from rdb$database') )
+  if i < NUM_OF_UNIONED_PARTS-1:
+      unioned_query = ''.join( (unioned_query, ' union all (') )
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+unioned_query = ''.join( (unioned_query, ')' * NUM_OF_UNIONED_PARTS) )
+
+
+expected_stdout = "8256"
+
 @pytest.mark.version('>=5.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
 
-# test_script_1
-#---
-#
-#  # NB! Max limit of unioned-parts is 128 rather than 255!
-#  ########################
-#  NUM_OF_UNIONED_PARTS=128
-#  ########################
-#
-#  unioned_query = '('
-#  for i in range(0,NUM_OF_UNIONED_PARTS):
-#    unioned_query = ''.join( (unioned_query, 'select %d ' % (i+1) + ('as i ' if i==0 else '') + 'from rdb$database') )
-#    if i < NUM_OF_UNIONED_PARTS-1:
-#        unioned_query = ''.join( (unioned_query, ' union all (') )
-#
-#  unioned_query = ''.join( (unioned_query, ')' * NUM_OF_UNIONED_PARTS) )
-#  unioned_query += ';'
-#
-#  #print(unioned_query)
-#
-#  cur = db_conn.cursor()
-#  cur.execute(unioned_query)
-#  total = 0
-#  for r in cur:
-#      total += r[0]
-#  cur.close()
-#  print(total)
-#---
+
+    with act.db.connect() as con:
+        cur = con.cursor()
+        cur.execute(unioned_query)
+        print( sum([x[0] for x in cur.fetchall()]) )
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
