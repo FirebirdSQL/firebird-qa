@@ -13,6 +13,8 @@ DESCRIPTION:
 
     Database is validated (using 'gfix -v -full') after successful restore finish.
     Test checks that returned codes for both gbak and validation are zero.
+    Also, it checks that firebird.log contains message with 'all-zeroes' values
+    for validation outcome ("Validation finished: 0 errors, 0 warnings, 0 fixed").
 
     Restore issues warnings:
       gbak: WARNING:function F_DATETOSTR is not defined
@@ -26,17 +28,18 @@ DESCRIPTION:
 FBTEST:      bugs.gh_6785
 NOTES:
     [30.06.2022] pzotov
-    Checked on 4.0.1.2692, 5.0.0.509. Re-check reproducing of problem on 4.0.0.2452.
-    ::: NB-1 :::
-    DO NOT forget to specify 'encoding=locale.getpreferredencoding()' otherwise attempt to get content
-    of firebird.log can fail if it contains non-ascii messages, e.g. "Невозможно создать файл ..." etc.
-    In this case act.get_firebird_log() will raise:
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0x** in position ***: ordinal not in range(128)
-    ::: NB-2 :::
-    Currently one can NOT use 'act.get_firebird_log()' to get content of FB log with non-ascii messages.
-    We have to use 'with act.connect_server(encoding=locale.getpreferredencoding()) as srv' and then
-    work with it like this: 'srv.info.get_log(); fblog = srv.readlines()'.
-    This code may be changed / adjusted after.
+    Checked again on 4.0.1.2692, 5.0.0.509. Confirmed reproducing of problem on 4.0.0.2452.
+
+    [20.07.2022] pzotov
+    firebird.log may contain messages encoded in different code pages (say, in cp1251 and in utf8).
+    Because of this, one need to IGNORE any decoding errors when obtain content of log.
+    In this case call of act.get_firebird_log() will raise:
+        UnicodeDecodeError: 'ascii' codec can't decode byte 0x** ... ordinal not in range(128)
+
+    We have either to specify this using somewhat like "act.connect_server(encoding_errors = 'ignore')",
+    or to change firebid-driver.conf - and this will be more proper way.
+    This file (firebid-driver.conf) must have section with name [DEFAULT] with encoding_errors = ignore.
+    Test assumes exactly THIS, i.e. we do NOT specify "encoding_errors = 'ignore'" in acty.connect_server()
 """
 
 import locale
@@ -76,7 +79,6 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
 
     restore_code = -1
 
-    # ...\gbak.exe -rep ...\gh_6785.tmp.fbk localhost:...\gh_6785.tmp.fdb -st tdrw -v -y ...\gh_6785.tmp.log
     # If the timeout expires, the child process will be killed and waited for.
     # The TimeoutExpired exception will be re-raised after the child process has terminated.
     try:
@@ -104,17 +106,11 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
     if restore_code == 0:
         
         # Get FB log before validation, run validation and get FB log after it:
-        with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
+        with act.connect_server() as srv:
 
-            # CURRENTLY CAN NOT USE THIS: fblog_1 = act.get_firebird_log()
-            srv.info.get_log()
-            fblog_1 = srv.readlines()
-
+            fblog_1 = act.get_firebird_log()
             srv.database.repair(database = str(tmp_fdb), flags=SrvRepairFlag.CORRUPTION_CHECK)
-
-            # CURRENTLY CAN NOT USE THIS: fblog_2 = act.get_firebird_log()
-            srv.info.get_log()
-            fblog_2 = srv.readlines()
+            fblog_2 = act.get_firebird_log()
 
             p_diff = re.compile('Validation finished: \\d+ errors, \\d+ warnings, \\d+ fixed')
             validation_result = ''
