@@ -10,147 +10,174 @@ DESCRIPTION:
   We have to start cut off last N pages and verisy that every time engine will instantly
   detect damage of database (i.e. not waiting for ~110 seconds as it was before fix).
   It is useless to cut off *last* 2..3 pages because engine makes reserving of space.
+
   Test settings for 'starting' page to be cuted off and number of pages are:
     SKIP_BACK_FROM_LAST_PAGE;
     NUM_OF_CUTED_LAST_PAGES
-  Average time to wait exception with expected gdscode = 335544344 must be low: about 300...500 ms.
   Test used THRESHOLD_FOR_MAKE_CONNECT_MS to alert if alert time is more than this time.
 
   Confirmed on WI-V4.0.1.2606: needed to wait for exactly 110s after each page starting from N-3.
   Checked on 3.0.8.33501, 4.0.1.2613.
 FBTEST:      bugs.gh_6976
+
+NOTES:
+    [20.07.2022] pzotov
+
+    Bug reproduced on 4.0.1.2606 but only when it is tested just after 5.0.0.591.
+    In that case firebird.log will have following messages:
+
+        HOME-AUX2	Thu Jul 21 01:25:17 2022
+        I/O error during "ReadFile" operation for file "C:/TEMP/.../TMP_GH_6976.CUTED_OFF.FDB"
+        Error while trying to read from file
+        [localized message can be here]: "end of file encountered"
+
+
+        HOME-AUX2	Thu Jul 21 01:25:17 2022 ------------------------------------ [ 1 ]
+        TPC: Cannot initialize the shared memory region (header)
+        I/O error during "ReadFile" operation for file "C:/TEMP/.../TMP_GH_6976.CUTED_OFF.FDB"
+        Error while trying to read from file
+        [localized message can be here]: "end of file encountered"
+
+
+        HOME-AUX2	Thu Jul 21 01:27:07 2022 ------------------------------------ [ 2 ] diff: 110 sec.
+        Operating system call WaitForSingleObject failed. Error code 0
+
+
+        HOME-AUX2	Thu Jul 21 01:27:07 2022
+        TPC: Cannot initialize the shared memory region (header)
+        operating system directive WaitForSingleObject failed
+        [localized message can be here]: "operation completed successfully"
+
+    NB: time interval betwee 01:25:17 and 01:27:07 is exactly 110 seconds.
+
+    On recent FB 4.x and 5.x median duration for delivering error to client must be about 80 ms.
+    On 4.0.1.2606 this was about 640 ms (in case when it was tested without previous 5.x test).
+
+    Each attempt to connect top broken DB must bring stack with TWO gdscodes:
+        isc_io_error = 335544344;
+        isc_io_read_err = 335544736;
+
+    Checked on 4.0.1.2692, 5.0.0.591
 """
+
+import os
+import subprocess
+import codecs
+import re
+import time
+from datetime import datetime as dt
+from datetime import timedelta
+from pathlib import Path
 
 import pytest
 from firebird.qa import *
 
+
+SKIP_BACK_FROM_LAST_PAGE = 15
+NUM_OF_CUTED_LAST_PAGES = 20
+THRESHOLD_FOR_MAKE_CONNECT_MS = 100 # 1000
+
 db = db_factory()
+tmp_fdb = db_factory(filename = 'tmp_gh_6976.cuted_off.fdb', async_write = True)
 
-act = python_act('db')
+act_source = python_act('db')
+act_broken = python_act('tmp_fdb')
 
-expected_stdout = """
-    Average time acceptable.
-"""
+#--------------------------------------------
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+def median(lst):
+    n = len(lst)
+    s = sorted(lst)
+    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+
+#--------------------------------------------
+
+def try_cuted_off_db(act_source, act_broken, db_page_size, db_pages_cnt, cut_off_pages_cnt):
+
+    dbsrc = act_source.db.db_path
+    dbtgt = act_broken.db.db_path
+    with open(dbsrc, 'rb') as f:
+        fdb_binary_content = f.read( db_page_size * (db_pages_cnt - cut_off_pages_cnt) )
+
+    with open(dbtgt, 'wb') as w:
+        w.write(fdb_binary_content)
+
+    #msg_suffix = 'on attempt to connect to DB with missed last %d pages' % cut_off_pages_cnt
+
+    da = dt.now()
+    diff_ms = -1
+
+    # isc_io_error = 335544344;
+    # isc_io_read_err = 335544736;
+    expected_gds_list = (335544344, 335544736)
+    try:
+        #########################
+        ###   c o n n e c t   ###
+        #########################
+        with act_broken.db.connect():
+           #with act_broken.db.connect(user = 'John', password = '123'):
+           # NOTE: this *can occur.
+           # In that case one need to increase SKIP_BACK_FROM_LAST_PAGE setting.
+           print('UNEXPECTED: can connect to DB with missed last %d pages' % cut_off_pages_cnt)
+
+    except Exception as e:
+        db = dt.now()
+        diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
+        if set( expected_gds_list ).issubset( set(e.gds_codes) ):
+            pass
+        else:
+            print('Actual list of gdscodes:')
+            print(e.gds_codes)
+            print('- does not contain at least one element from following list:')
+            print(expected_gds_list)
+    finally:
+        # We have to restore VALID content of target database
+        # otherwise problem on test teardown will raise:
+        with open(dbsrc, 'rb') as f:
+            fdb_origin_content = f.read( db_page_size * db_pages_cnt )
+        with open(dbtgt, 'wb') as w:
+            w.write(fdb_origin_content)
+
+
+    return diff_ms
+
+#--------------------------------------------
+
 @pytest.mark.version('>=3.0.8')
 @pytest.mark.platform('Windows')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act_source: Action, act_broken: Action, capsys):
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import codecs
-#  import re
-#  import time
-#  from datetime import datetime as dt
-#  from datetime import timedelta
-#
-#  SKIP_BACK_FROM_LAST_PAGE = 3
-#  NUM_OF_CUTED_LAST_PAGES = 20
-#  THRESHOLD_FOR_MAKE_CONNECT_MS = 1000
-#
-#  db_source = db_conn.database_name
-#
-#  cur = db_conn.cursor()
-#  cur.execute('select m.mon$page_size,m.mon$pages from mon$database m')
-#  for r in cur:
-#      db_page_size = r[0]
-#      db_pages_cnt = r[1]
-#
-#  cur.close()
-#  db_conn.close()
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  def try_cuted_off_db(dbsrc, dbtgt, db_page_size, db_pages_cnt, cut_off_pages_cnt):
-#
-#      global dt, cleanup
-#
-#      cleanup( (dbtgt,) )
-#
-#      with open(dbsrc, 'rb') as f:
-#          fdb_binary_content = f.read( db_page_size * (db_pages_cnt - cut_off_pages_cnt) )
-#
-#      w = open(dbtgt, 'wb')
-#      w.write(fdb_binary_content)
-#      w.close()
-#
-#      msg_suffix = 'on attempt to connect to DB with missed last %d pages' % cut_off_pages_cnt
-#
-#      da = dt.now()
-#      diff_ms = -1
-#      try:
-#          dsn_cutoff = 'localhost:' + dbtgt
-#          #########################
-#          ###   c o n n e c t   ###
-#          #########################
-#          con = fdb.connect(dsn = dsn_cutoff)
-#          # print('UNEXPECTED SUCCESS ' + msg_suffix )
-#          con.close()
-#      except Exception,e:
-#          db = dt.now()
-#          diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
-#          gds = e[2]
-#          if gds <> 335544344:
-#              print( 'Expected fail ' + msg_suffix + ' with unexpected gdscode: ' + str(e[2]) )
-#
-#      cleanup( (dbtgt,) )
-#
-#      return diff_ms
-#
-#  #-----------------------
-#
-#  def median(lst):
-#      n = len(lst)
-#      s = sorted(lst)
-#      return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#
-#  #-----------------------
-#
-#  db_target = os.path.join(context['temp_directory'],'tmp_6976.cuted_off.fdb')
-#
-#  ##################
-#  ###   L O O P  ###
-#  ##################
-#  connect_establishing_ms = []
-#  for i in range(SKIP_BACK_FROM_LAST_PAGE, SKIP_BACK_FROM_LAST_PAGE + NUM_OF_CUTED_LAST_PAGES, 1):
-#      ms = try_cuted_off_db( db_source, db_target, db_page_size, db_pages_cnt, i)
-#      if ms >= 0:
-#          connect_establishing_ms.append( ms )
-#
-#  failed_connections_count = len(connect_establishing_ms)
-#
-#  if failed_connections_count > 0:
-#      avg_ms = sum(connect_establishing_ms) / failed_connections_count
-#
-#      print( 'Average time acceptable.' if avg_ms < THRESHOLD_FOR_MAKE_CONNECT_MS
-#             else 'Average time to get error because of broken DB is too long: %d ms, evaluated after get %d results. Threshold is %d ms.'
-#                  % (avg_ms, failed_connections_count, THRESHOLD_FOR_MAKE_CONNECT_MS )
-#           )
-#  else:
-#      print('UNEXPECTED FINAL: ENGINE COULD NOT DETECT DAMAGE OF DATABASE.')
-#
-#---
+    with act_source.db.connect() as con:
+        db_page_size = con.info.page_size
+        db_pages_all = con.info.pages_allocated
+        db_pages_cnt = con.info.size_in_pages
+
+    ##################
+    ###   L O O P  ###
+    ##################
+    connect_establishing_ms = []
+    for i in range(SKIP_BACK_FROM_LAST_PAGE, SKIP_BACK_FROM_LAST_PAGE + NUM_OF_CUTED_LAST_PAGES, 1):
+        ms = try_cuted_off_db( act_source, act_broken, db_page_size, db_pages_cnt, i)
+        if ms >= 0:
+            connect_establishing_ms.append( ms )
+
+    if len(connect_establishing_ms) > 0:
+        median_connect_ms = median(connect_establishing_ms)
+        msg_prefix = 'Median duration of receiving an error by the client: '
+        if median_connect_ms <= THRESHOLD_FOR_MAKE_CONNECT_MS:
+            print(msg_prefix + 'acceptable.')
+        else:
+            print(msg_prefix + 'POOR: %s - more than threshold: %s' % ( '{:9g}'.format(median_connect_ms), '{:9g}'.format(THRESHOLD_FOR_MAKE_CONNECT_MS)  ))
+            print("Check values:" )
+            for p in connect_establishing_ms:
+                print(p)
+
+    else:
+        print('UNEXPECTED FINAL: ENGINE COULD NOT DETECT DAMAGE OF DATABASE.')
+
+
+    expected_stdout = msg_prefix + 'acceptable.'
+    act_source.expected_stdout = expected_stdout
+    act_source.stdout = capsys.readouterr().out
+    assert act_source.clean_stdout == act_source.clean_expected_stdout
+
