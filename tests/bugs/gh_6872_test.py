@@ -34,10 +34,37 @@ DESCRIPTION:
         4.0.1.2668:  median = 1.70
         5.0.0.313:   median = 1.80
 FBTEST:      bugs.gh_6872
+
+NOTES:
+    [20.07.2022] pzotov
+    Checked on 4.0.1.2692, 5.0.0.591
+
 """
 
+import psutil
 import pytest
 from firebird.qa import *
+
+#--------------------------------------------------------------------
+def median(lst):
+    n = len(lst)
+    s = sorted(lst)
+    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+#--------------------------------------------------------------------
+
+###########################
+###   S E T T I N G S   ###
+###########################
+# Number of PSQL calls:
+N_MEASURES = 30
+
+# How many iterations must be done in each of stored procedures when they work:
+N_COUNT_PER_MEASURE = 100000
+
+# Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
+#
+ADDED_COLL_TIME_MAX_RATIO = 2.0
+###############################
 
 init_script = """
     recreate table test_utf8_miss_coll (c1 varchar(10) character set utf8);
@@ -55,102 +82,74 @@ expected_stdout = """
     Duration ratio: acceptable.
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0.1')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
 
-# test_script_1
-#---
-#
-#  import os
-#  import psutil
-#  import time
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  #------------------
-#  def median(lst):
-#      n = len(lst)
-#      s = sorted(lst)
-#      return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#  #------------------
-#
-#  ###########################
-#  ###   S E T T I N G S   ###
-#  ###########################
-#  # Number of PSQL calls:
-#  N_MEASURES = 30
-#
-#  # How many iterations must be done in each of stored procedures when they work:
-#  N_COUNT_PER_MEASURE = 100000
-#
-#  # Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
-#  #
-#  ADDED_COLL_TIME_MAX_RATIO = 2.0
-#  ###############################
-#
-#
-#  sp_make_proc_ddl='''    -- x_name = 'with_coll' | 'miss_col'
-#      create or alter procedure sp_%(x_name)s ( n_count int = 1000000 ) as
-#          declare v smallint;
-#      begin
-#          while (n_count > 0) do
-#          begin
-#              select 1 from test_utf8_%(x_name)s where c1 starting with 'x' into v;
-#              n_count = n_count - 1;
-#          end
-#      end
-#  '''
-#
-#
-#  name_suffixes = ( 'with_coll', 'miss_coll' )
-#  for x_name in name_suffixes:
-#      db_conn.execute_immediate( sp_make_proc_ddl % locals() )
-#
-#  db_conn.commit()
-#
-#  cur=db_conn.cursor()
-#  cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
-#  fb_pid = int(cur.fetchone()[0])
-#
-#  # --------------------------------------
-#  sp_time = {}
-#
-#  for i in range(0, N_MEASURES):
-#      for x_name in name_suffixes:
-#
-#          fb_info_init = psutil.Process(fb_pid).cpu_times()
-#          cur.callproc( 'sp_%(x_name)s' % locals(), (N_COUNT_PER_MEASURE,) )
-#          fb_info_curr = psutil.Process(fb_pid).cpu_times()
-#
-#          sp_time[ x_name, i ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
-#
-#  #---------------------------------------
-#  cur.close()
-#
-#  ratio_lst = []
-#  for i in range(0, N_MEASURES):
-#      ratio_lst.append( sp_time['with_coll',i]  / sp_time['miss_coll',i]  )
-#
-#  median_ratio = median(ratio_lst)
-#
-#
-#  # print( 'Duration ratio: ' + ('acceptable' if median_ratio < UTF8_TO_PTBR_MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(UTF8_TO_PTBR_MAX_RATIO) ) ) )
-#
-#  if median(ratio_lst) <= ADDED_COLL_TIME_MAX_RATIO:
-#      print('Duration ratio: acceptable.')
-#  else:
-#      print('Duration ratio: POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(ADDED_COLL_TIME_MAX_RATIO) ) )
-#
-#      print("\\nCheck sp_time values:" )
-#      for k,v in sorted(sp_time.items()):
-#          print('k=',k,';  v=',v)
-#
-#      print('\\nCheck ratio values:')
-#      for i,p in enumerate(ratio_lst):
-#          print( "%d : %12.2f" % (i,p) )
-#      print('\\nMedian value: %12.2f' % median_ratio)
-#
-#---
+    sp_make_proc_ddl='''
+        -- x_name = 'with_coll' | 'miss_col'
+        create or alter procedure sp_%(x_name)s ( n_count int = 1000000 ) as
+            declare v smallint;
+        begin
+            while (n_count > 0) do
+            begin
+                select 1 from test_utf8_%(x_name)s where c1 starting with 'x' into v;
+                n_count = n_count - 1;
+            end
+        end
+    '''
+    
+    with act.db.connect() as con:
+
+        name_suffixes = ( 'with_coll', 'miss_coll' )
+        for x_name in name_suffixes:
+            con.execute_immediate( sp_make_proc_ddl % locals() )
+
+        con.commit()
+
+
+        cur=con.cursor()
+        cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
+        fb_pid = int(cur.fetchone()[0])
+        # --------------------------------------
+        sp_time = {}
+
+        for i in range(0, N_MEASURES):
+            for x_name in name_suffixes:
+
+                fb_info_init = psutil.Process(fb_pid).cpu_times()
+                cur.callproc( 'sp_%(x_name)s' % locals(), (N_COUNT_PER_MEASURE,) )
+                fb_info_curr = psutil.Process(fb_pid).cpu_times()
+
+                sp_time[ x_name, i ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
+
+        #---------------------------------------
+        cur.close()
+
+        ratio_lst = []
+        for i in range(0, N_MEASURES):
+            ratio_lst.append( sp_time['with_coll',i]  / sp_time['miss_coll',i]  )
+
+        median_ratio = median(ratio_lst)
+
+
+    # print( 'Duration ratio: ' + ('acceptable' if median_ratio < UTF8_TO_PTBR_MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(UTF8_TO_PTBR_MAX_RATIO) ) ) )
+
+    if median(ratio_lst) <= ADDED_COLL_TIME_MAX_RATIO:
+        print('Duration ratio: acceptable.')
+    else:
+        print('Duration ratio: POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(ADDED_COLL_TIME_MAX_RATIO) ) )
+
+        print("\\nCheck sp_time values:" )
+        for k,v in sorted(sp_time.items()):
+            print('k=',k,';  v=',v)
+
+        print('\\nCheck ratio values:')
+        for i,p in enumerate(ratio_lst):
+            print( "%d : %12.2f" % (i,p) )
+        print('\\nMedian value: %12.2f' % median_ratio)
+
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
+
