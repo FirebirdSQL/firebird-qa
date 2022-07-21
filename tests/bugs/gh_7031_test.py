@@ -14,160 +14,110 @@ DESCRIPTION:
         internal Firebird consistency check (page in use during flush (210), file: cch.cpp line: NNN)
   Checked on 3.0.8.33525
 FBTEST:      bugs.gh_7031
+
+NOTES:
+    [21.07.2022] pzotov
+    Confirmed problem:
+    1) on WI-V3.0.7.33374 gbak fails with
+       "ERROR:invalid transaction handle (expecting explicit transaction start) / Exiting before completion due to errors";
+       BUGCHECK message will be added to the firebird.log:
+       internal Firebird consistency check (page in use during flush (210), file: cch.cpp line: 2750)
+    2) on WI-V3.0.8.33520 gbak hangs but BUGCHECK message appears in the firebird.log:
+       internal Firebird consistency check (page in use during flush (210), file: cch.cpp line: 2761)
+    3) firebird.log may contain (in common case) non-ascii messages, they even can be encoded in different codepages.
+       Moreover, this log can rarely be broken and some binary fragments can be met there.
+       Attempt to read such log can fail with UnicodeDecode. To prevent this, one need either to specify encoding_errors = ignore
+       on every call of act.connect_server(), or (MUCH MORE PRERERABLE) we must create section with name = [DEFAULT] in the
+       firebird-driver.conf and add there parameter "encoding_errors = ignore".
+       This test assumes that firebird-driver.conf was adjusted in this way, so calls for obtaining content of firebird.log
+       (i.e. "with act.connect_server() as srv") are used WITHOUT any additional parameters.
+
+    Checked on 3.0.8.33501, 4.0.1.2613, 5.0.0.591
 """
 
 import pytest
 from firebird.qa import *
 
-db = db_factory()
+from pathlib import Path
+from firebird.driver import TPB
+from difflib import unified_diff
+import subprocess
+import time
+
+MAX_TIME_FOR_BACKUP = 30
+
+db = db_factory(page_size = 4096)
 
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.8')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+test_fbk = temp_file('tmp_gh_7031-tmp.fbk')
+bkup_log = temp_file('tmp_gh_7031-bkp.log')
+bkup_msg = 'Backup COMPLETED.'
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import time
-#  import difflib
-#  import re
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  this_fdb=db_conn.database_name
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            print('type(f_names_list[i])=',type(f_names_list[i]))
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  def svc_get_fb_log( f_fb_log ):
-#
-#    global subprocess
-#
-#    subprocess.call([ context['fbsvcmgr_path'],
-#                      "localhost:service_mgr",
-#                      'action_get_fb_log'
-#                    ],
-#                     stdout=f_fb_log, stderr=subprocess.STDOUT
-#                   )
-#    return
-#
-#  #--------------------------------------------
-#
-#  test_fdb=os.path.join(context['temp_directory'],'tmp_gh_7031.source.fdb')
-#  test_fbk=os.path.join(context['temp_directory'],'tmp_gh_7031.fbk')
-#  test_res=os.path.join(context['temp_directory'],'tmp_gh_7031.restored')
-#
-#  cleanup( (test_fdb, test_fbk, test_res) )
-#  con = fdb.create_database( dsn = test_fdb, page_size = 4096)
-#  con.close()
-#
-#  subprocess.call( [ context['gfix_path'], test_fdb, '-w','async' ] )
-#
-#  ######################
-#  con = fdb.connect( dsn = test_fdb )
-#  tx0 = con.trans()
-#  tx0.begin()
-#
-#  tx_init = tx0.transaction_id
-#  tx_per_TIP = (con.page_size - 20) * 4
-#
-#  tx_last = (tx_init/tx_per_TIP + 1) * tx_per_TIP - 1;
-#
-#  for i in range(tx_init, tx_last):
-#      txi = con.trans()
-#      txi.begin()
-#      txi.commit()
-#
-#  tx0.rollback()
-#  con.close()
-#
-#  ######################
-#
-#  f_fblog_before=open( os.path.join(context['temp_directory'],'tmp_7031_fblog_before.txt'), 'w')
-#  svc_get_fb_log( f_fblog_before )
-#  flush_and_close( f_fblog_before )
-#
-#
-#  f_gbak_log=open( os.path.join(context['temp_directory'],'tmp_gbak_7031.log'), 'w')
-#  f_gbak_err=open( os.path.join(context['temp_directory'],'tmp_gbak_7031.err'), 'w')
-#  subprocess.call( [context['gbak_path'], "-b", test_fdb, test_fbk],
-#                    stdout = f_gbak_log,
-#                    stderr = f_gbak_err
-#                  )
-#  flush_and_close( f_gbak_log )
-#  flush_and_close( f_gbak_err )
-#
-#
-#  f_fblog_after=open( os.path.join(context['temp_directory'],'tmp_7031_fblog_after.txt'), 'w')
-#  svc_get_fb_log( f_fblog_after )
-#  flush_and_close( f_fblog_after )
-#
-#  # Compare firebird.log versions BEFORE and AFTER this test:
-#  ######################
-#
-#  oldfb=open(f_fblog_before.name, 'r')
-#  newfb=open(f_fblog_after.name, 'r')
-#
-#  difftext = ''.join(difflib.unified_diff(
-#      oldfb.readlines(),
-#      newfb.readlines()
-#    ))
-#  oldfb.close()
-#  newfb.close()
-#
-#  f_diff_txt=open( os.path.join(context['temp_directory'],'tmp_7031_fblog_diff.txt'), 'w')
-#  f_diff_txt.write(difftext)
-#  flush_and_close( f_diff_txt )
-#
-#  with open( f_gbak_err.name,'r') as f:
-#      for line in f:
-#          if line:
-#              print('UNEXPECTED BACKUP STDERR: ' +  (' '.join(line.split()).upper()) )
-#
-#  with open( f_diff_txt.name,'r') as f:
-#      for line in f:
-#          if line.startswith('+'):
-#              print('UNEXPECTED FIREBIRD.LOG: ' +  (' '.join(line.split()).upper()) )
-#
-#  cleanup( (test_fdb, test_fbk, test_res, f_gbak_log, f_gbak_err, f_diff_txt, f_fblog_before, f_fblog_after ) )
-#
-#---
+@pytest.mark.version('>=3.0.7')
+def test_1(act: Action, test_fbk: Path, bkup_log: Path, capsys):
+    
+    # 1. Start 'initial' Tx and perform start + commit lot of subsequent transactions:
+    with act.db.connect() as con:
+        tx_list = []
+        tx0 = con.transaction_manager()
+
+        # start 1st Tx:
+        tx_list.append( tx0.begin() )
+        tx_init = con.info.get_active_transaction_ids()[0]  # get just started Tx ID
+        tx_per_TIP = (con.info.page_size - 20) * 4
+        tx_last = (tx_init//tx_per_TIP + 1) * tx_per_TIP - 1;
+      
+        # Start and commit all subsequent transactions, in order to make DB with
+        # OIT = 1 and Next_Tx = 16303 (but _not_ 16304!!)
+        # NOTE. It is crucial to make loop on the scope tx_init ... (tx_last-1),
+        # but NOT up to tx_last! Otherwise problem will not be reproduced.
+        #
+        for i in range(tx_init, tx_last-1):
+            txi = con.transaction_manager()
+            txi.begin()
+            txi.commit()
+
+        tx0.rollback()
+
+    with act.connect_server() as srv:
+        srv.info.get_log()
+        fb_log_init = srv.readlines()
+    
+
+    bkp_retcode = -1
+
+    # 2. Run gbak with MAX ALLOWED TIMEOUT.
+    # If the timeout expires, the child process will be killed and waited for.
+    # The TimeoutExpired exception will be re-raised after the child process has terminated.
+    try:
+        p = subprocess.run([ act.vars['gbak'],
+                            '-user', act.db.user, '-password', act.db.password,
+                            '-b', act.db.db_path, str(test_fbk),
+                            '-v', '-y', str(bkup_log)
+                          ]
+                          ,stderr = subprocess.STDOUT
+                          ,timeout = MAX_TIME_FOR_BACKUP
+                         )
+        if p.returncode == 0:
+            print( bkup_msg )
+        else:
+            with open(bkup_log, 'r') as f:
+                print(f.read())
+    except Exception as e:
+        print(e.__str__())
+
+    with act.connect_server() as srv:
+        srv.info.get_log()
+        fb_log_curr = srv.readlines()
+ 
+
+    # 3. Compare old and new content of firebird.log:
+    for line in unified_diff(fb_log_init, fb_log_curr):
+        if line.startswith('+'):
+            print(line.strip())
+
+    
+    act.expected_stdout = bkup_msg
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
