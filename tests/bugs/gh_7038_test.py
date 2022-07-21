@@ -30,125 +30,111 @@ DESCRIPTION:
     5.0.0.313 SS: 17.076s
     5.0.0.313 CS: median = 1.51163, data:  1.56, 1.40, 1.52, 1.50, 1.63, 1.53, 1.52, 1.28, 1.40, 1.75, 1.45, 1.43, 1.51, 1.48, 1.52.
 FBTEST:      bugs.gh_7038
+NOTES:
+    [21.07.2022] pzotov
+    Checked on 5.0.0.591
 """
-
+import os
+import psutil
 import pytest
 from firebird.qa import *
 
-db = db_factory()
+#--------------------------------------------------------------------
+def median(lst):
+    n = len(lst)
+    s = sorted(lst)
+    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+#--------------------------------------------------------------------
 
+###########################
+###   S E T T I N G S   ###
+###########################
+# How many times we call PSQL code (two stored procedures:
+# one for performing comparisons based on LIKE, second based on SIMILAR TO statements):
+N_MEASURES = 21
+
+# How many iterations must be done in each of stored procedures when they work:
+N_COUNT_PER_MEASURE = 1000000
+
+# Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
+#
+
+UTF8_TO_PTBR_MAX_RATIO = 1.45 if os.name == 'nt' else 1.85
+#############################
+
+init_script = \
+'''
+set term ^;
+create or alter procedure sp_ptbr_test (
+        n_count int
+    ) as
+        declare p varchar(1) character set win1252 collate win_ptbr = 'x';
+        declare s varchar(60) character set win1252 collate win_ptbr = 'x12345678901234567890123456789012345678901234567890123456789';
+        declare b boolean;
+    begin
+        while (n_count > 0)
+        do
+        begin
+            b = s starting with p;
+            n_count = n_count - 1;
+        end
+    end
+^
+create or alter procedure sp_utf8_test (
+    n_count int
+) as
+    declare p varchar(1) character set utf8 collate unicode_ci = 'x';
+    declare s varchar(60) character set utf8 collate unicode_ci = 'x12345678901234567890123456789012345678901234567890123456789';
+    declare b boolean;
+begin
+    while (n_count > 0)
+    do
+    begin
+        b = s starting with p;
+        n_count = n_count - 1;
+    end
+end
+^
+commit
+^
+'''
+
+db = db_factory( init = init_script )
 act = python_act('db')
 
 expected_stdout = """
     Duration ratio: acceptable
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=5.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
+    
+    with act.db.connect() as con:
+        cur=con.cursor()
+        cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
 
-# test_script_1
-#---
-#
-#
-#  import os
-#  import psutil
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  #------------------
-#  def median(lst):
-#      n = len(lst)
-#      s = sorted(lst)
-#      return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#  #------------------
-#
-#  ###########################
-#  ###   S E T T I N G S   ###
-#  ###########################
-#  # How many times we call PSQL code (two stored procedures:
-#  # one for performing comparisons based on LIKE, second based on SIMILAR TO statements):
-#  N_MEASURES = 15
-#
-#  # How many iterations must be done in each of stored procedures when they work:
-#  N_COUNT_PER_MEASURE = 1000000
-#
-#  # Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
-#  #
-#
-#  UTF8_TO_PTBR_MAX_RATIO = 1.45 if os.name == 'nt' else 1.85
-#  #############################
-#
-#
-#  sp_ptbr_ddl = '''    create or alter procedure sp_ptbr_test (
-#          n_count int
-#      ) as
-#          declare p varchar(1) character set win1252 collate win_ptbr = 'x';
-#          declare s varchar(60) character set win1252 collate win_ptbr = 'x12345678901234567890123456789012345678901234567890123456789';
-#          declare b boolean;
-#      begin
-#          while (n_count > 0)
-#          do
-#          begin
-#              b = s starting with p;
-#              n_count = n_count - 1;
-#          end
-#      end
-#  '''
-#
-#
-#  sp_utf8_ddl = '''    create or alter procedure sp_utf8_test (
-#          n_count int
-#      ) as
-#          declare p varchar(1) character set utf8 collate unicode_ci = 'x';
-#          declare s varchar(60) character set utf8 collate unicode_ci = 'x12345678901234567890123456789012345678901234567890123456789';
-#          declare b boolean;
-#      begin
-#          while (n_count > 0)
-#          do
-#          begin
-#              b = s starting with p;
-#              n_count = n_count - 1;
-#          end
-#      end
-#  '''
-#
-#
-#  db_conn.execute_immediate( sp_ptbr_ddl )
-#  db_conn.execute_immediate( sp_utf8_ddl )
-#  db_conn.commit()
-#
-#  cur=db_conn.cursor()
-#  cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
-#
-#  fb_pid = int(cur.fetchone()[0])
-#  sp_time = {}
-#  for i in range(0, N_MEASURES):
-#      for x_charset in ('ptbr', 'utf8'):
-#
-#          fb_info_init = psutil.Process(fb_pid).cpu_times()
-#          cur.callproc('sp_' + x_charset + '_test', (N_COUNT_PER_MEASURE,) )
-#          fb_info_curr = psutil.Process(fb_pid).cpu_times()
-#
-#          sp_time[ x_charset, i ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
-#
-#      # print( 'String form: "%s", median ratio: %s' % ( x_charset, 'acceptable' if median(ratio_list) <= UTF8_TO_PTBR_MAX_RATIO else 'TOO BIG: ' + str(median(ratio_list))  ) )
-#
-#  cur.close()
-#
-#  ratio_lst = []
-#  for i in range(0, N_MEASURES):
-#      ratio_lst.append( sp_time['utf8',i]  / sp_time['ptbr',i]  )
-#
-#
-#  median_ratio = median(ratio_lst)
-#  print( 'Duration ratio: ' + ('acceptable' if median_ratio < UTF8_TO_PTBR_MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(UTF8_TO_PTBR_MAX_RATIO) ) ) )
-#
-#  if median_ratio >= UTF8_TO_PTBR_MAX_RATIO:
-#      print('Ratio statistics for %d measurements' % N_MEASURES)
-#      for p in ratio_lst:
-#          print( '%12.2f' % p )
-#
-#---
+        fb_pid = int(cur.fetchone()[0])
+        sp_time = {}
+        for i in range(0, N_MEASURES):
+            for x_charset in ('ptbr', 'utf8'):
+                fb_info_init = psutil.Process(fb_pid).cpu_times()
+                cur.callproc('sp_' + x_charset + '_test', (N_COUNT_PER_MEASURE,) )
+                fb_info_curr = psutil.Process(fb_pid).cpu_times()
+                sp_time[ x_charset, i ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
+             #print( 'String form: "%s", median ratio: %s' % ( x_charset, 'acceptable' if median(ratio_list) <= UTF8_TO_PTBR_MAX_RATIO else 'TOO BIG: ' + str(median(ratio_list))  ) )
+
+    ratio_lst = []
+    for i in range(0, N_MEASURES):
+        ratio_lst.append( sp_time['utf8',i]  / sp_time['ptbr',i]  )
+    median_ratio = median(ratio_lst)
+    print( 'Duration ratio: ' + ('acceptable' if median_ratio < UTF8_TO_PTBR_MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(UTF8_TO_PTBR_MAX_RATIO) ) ) )
+
+    if median_ratio >= UTF8_TO_PTBR_MAX_RATIO:
+        print('Ratio statistics for %d measurements' % N_MEASURES)
+        for p in ratio_lst:
+            print( '%12.2f' % p )
+
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
