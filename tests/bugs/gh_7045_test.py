@@ -8,9 +8,14 @@ DESCRIPTION:
   Blob column mon$explained_plan seems to be source of problem, but only for mon$statements table.
   Other blob columns (e.g. rdb$exceptions.rdb$description or sec$users.sec$description) not affected.
 
-  Confirmed bug on 5.0.0.310.
+  Confirmed bug on 5.0.0.310, got:
+  firebird.driver.types.DatabaseError: Cannot transliterate character between character sets
+
   Checked on 5.0.0.311 - all fine.
 FBTEST:      bugs.gh_7045
+NOTES:
+    [24.07.2022] pzotov
+    Reproduced problem on 5.0.0.310. Checked on 5.0.0.591 - all OK.
 """
 
 import pytest
@@ -20,86 +25,24 @@ db = db_factory()
 
 act = python_act('db')
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=5.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
+    with act.db.connect(charset='iso8859_1') as con:
+        cur=con.cursor()
+        chk_list = list('ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ')
+        # for every non-ascii character from chk_list its usage
+        # as column alias must NOT issue any problem:
+        for non_ascii_char in chk_list:
+            column_alias = non_ascii_char * 63
+            stm = f"""
+                select mon$explained_plan -- BLOB SUB_TYPE 1 SEGMENT SIZE 80 CHARACTER SET UTF8
+                from mon$statements as "{column_alias}" where mon$attachment_id = current_connection
+                ;
+            """
+            cur.execute(stm)
+            for r in cur:
+                pass
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import time
-#  import codecs
-#
-#  db_conn.close()
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  non_ascii_char = 'á'
-#  conn_charset = 'iso8859_1'
-#  sql_cmd='''    set list on;
-#      set blob all;
-#      set names %(conn_charset)s;
-#      connect '%(dsn)s';
-#
-#      select mon$explained_plan -- BLOB SUB_TYPE 1 SEGMENT SIZE 80 CHARACTER SET UTF8
-#      from mon$statements as "%(non_ascii_char)s" where mon$attachment_id = current_connection
-#      ;
-#  ''' % dict(globals(), **locals())
-#
-#  # >>> do not (ordinal not in range(128)" >>> f_sql_chk = codecs.open( os.path.join(context['temp_directory'],'tmp_7045_run.sql'), 'w', encoding = 'latin-1')
-#  f_sql_chk = open( os.path.join(context['temp_directory'],'tmp_7045_run.sql'), 'w')
-#  f_sql_chk.write(sql_cmd.decode('utf8').encode('latin-1'))
-#  flush_and_close( f_sql_chk )
-#
-#
-#  f_sql_log = open( ''.join( (os.path.splitext(f_sql_chk.name)[0], '.log' ) ), 'w')
-#  f_sql_err = open( ''.join( (os.path.splitext(f_sql_chk.name)[0], '.err' ) ), 'w')
-#  subprocess.call( [ context['isql_path'], '-q', '-i', f_sql_chk.name ], stdout = f_sql_log, stderr = f_sql_err)
-#  flush_and_close( f_sql_log )
-#  flush_and_close( f_sql_err )
-#
-#  if os.path.getsize(f_sql_err.name):
-#      print('UNEXPECTED STDERR:')
-#      with open(f_sql_err.name, 'r') as f:
-#          print(f.read())
-#
-#  cleanup((f_sql_chk, f_sql_log, f_sql_err))
-#
-#---
+    act.expected_stdout = ''
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
