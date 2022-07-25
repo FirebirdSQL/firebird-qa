@@ -55,255 +55,207 @@ DESCRIPTION:
     Performance of 4.0 significantly _WORSE_ than of 3.0.2, sent letter to dimitr, 11.11.2016 13:47.
 JIRA:        CORE-5393
 FBTEST:      bugs.core_5393
+[25.07.2022] pzotov
+  Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.591
 """
 
+import psutil
 import pytest
 from firebird.qa import *
 
-db = db_factory()
+#--------------------------------------------
+def median(lst):
+    n = len(lst)
+    s = sorted(lst)
+    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+#--------------------------------------------
+
+###########################
+###   S E T T I N G S   ###
+###########################
+
+# Number of PSQL calls
+#
+N_MEASURES = 21
+
+# How many rows must be inserted in the table.
+# DO NOT set this value less then 20'000, otherwise ratios will be unreal.
+#
+N_COUNT_PER_MEASURE = 50000
+
+# Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
+# Results of 25.07.2022: 3.0.8.33535: ~0.73;  4.0.1.2692: ~0.73; 5.0.0.591: ~0.84
+#
+MEDIAN_TIME_MAX_RATIO = 1.10
+############################
+
+init_script = '''
+    set bail on;
+    set echo on;
+    set term ^;
+    recreate global temporary table test (id int primary key using index test_pk, col int) on commit delete rows
+    --recreate table test (id int primary key using index test_pk, col int)
+    ^
+    -- view1, must contain a subquery:
+    create or alter view v_test1 (id1, id2, col1, col2, dummy) as
+    select t1.id, t2.id, t1.col, t2.col, (select 1 from rdb$database)
+    from test t1
+    join test t2 on t1.col = t2.id
+    ^
+
+    -- view2, must contain a subquery:
+    create or alter view v_test2 (id1, id2, col1, col2, dummy) as
+    select ta.id, tb.id, ta.col, tb.col, (select 1 from rdb$database)
+    from test ta
+    join test tb on ta.col = tb.id
+    ^
+
+    -- empty triggers to make both views updatable:
+    create or alter trigger trg_vtest1_bu for v_test1 before update as
+    begin
+    end
+    ^
+    create or alter trigger trg_vtest2_bu for v_test2 before update as
+    begin
+    end
+    ^
+
+    create procedure sp_insert_rows( a_rows_cnt int ) as
+        declare i int = 0;
+    begin
+        while ( i < a_rows_cnt ) do
+        begin
+            insert into test(id, col) values(:i, :i);
+            i = i + 1;
+        end
+    end
+    ^
+
+    create procedure sp_upd_using_primary_key_field as
+    begin
+
+        for select id1 from v_test1 as cursor c do
+        begin
+            -- ####################################
+            -- "Both updates utilize the primary key index for table T1. So far so good."
+            -- ####################################
+            update v_test1 x set x.col1 = 1
+            where x.id1 = c.id1; ------------------ u s i n g   t a b l e s    P K
+
+            update v_test2 y set y.col1 = 1
+            where y.id1 = c.id1;
+
+            -- execute statement ('update v_test2 set col1 = 1 where id1 = ?') (c.id1);
+
+        end
+    end
+    ^
+
+    create procedure sp_upd_using_current_of_cursor as
+    begin
+      for select id1 from v_test1 as cursor c do
+      begin
+
+        -- first update is not reported in the plan because it's based on the same cursor as the select itself
+        update v_test1 u set u.col1 = 1
+        where current of c; ------------------ u s i n g    c u r r e n t   o f
+
+        -- ######################################################
+        -- "... second update is unable to utilize the primary key index for table T1 anymore"
+        -- ######################################################
+        -- In the production database, this issue is causing 100x degradation in execution time.
+        update v_test2 v set v.col1 = 1
+        where v.id1 = c.id1;
+
+        -- execute statement ('update v_test2 set col1 = 1 where id1 = ?') (c.id1);
+
+      end
+    end
+    ^
+    set term ;^
+    commit;
+'''
+
+db = db_factory(init = init_script)
 
 act = python_act('db')
 
-expected_stdout = """
-    Median value of elapsed time ratios: acceptable.
+MSG_PREFIX = 'Median value of elapsed time ratios: '
+expected_stdout = f"""
+    {MSG_PREFIX}acceptable.
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.2')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import psutil
-#  import time
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  engine = db_conn.engine_version
-#
-#  #--------------------------------------------
-#
-#  def median(lst):
-#      n = len(lst)
-#      s = sorted(lst)
-#      return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            print('type(f_names_list[i])=',type(f_names_list[i]))
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#
-#  ###########################
-#  ###   S E T T I N G S   ###
-#  ###########################
-#  # Number of PSQL calls:
-#  N_MEASURES = 20
-#
-#  # How many rows must be inserted in the table:
-#  N_COUNT_PER_MEASURE = 1000
-#
-#  # Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
-#  #
-#  MEDIAN_TIME_MAX_RATIO = 1.10
-#  ############################
-#
-#  sql_init = '''
-#      set bail on;
-#      set echo on;
-#      set term ^;
-#      recreate global temporary table test (id int primary key using index test_pk, col int) on commit delete rows
-#      --recreate table test (id int primary key using index test_pk, col int)
-#      ^
-#      -- view1, must contain a subquery:
-#      create or alter view v_test1 (id1, id2, col1, col2, dummy) as
-#      select t1.id, t2.id, t1.col, t2.col, (select 1 from rdb$database)
-#      from test t1
-#      join test t2 on t1.col = t2.id
-#      ^
-#
-#      -- view2, must contain a subquery:
-#      create or alter view v_test2 (id1, id2, col1, col2, dummy) as
-#      select ta.id, tb.id, ta.col, tb.col, (select 1 from rdb$database)
-#      from test ta
-#      join test tb on ta.col = tb.id
-#      ^
-#
-#      -- empty triggers to make both views updatable:
-#      create or alter trigger trg_vtest1_bu for v_test1 before update as
-#      begin
-#      end
-#      ^
-#      create or alter trigger trg_vtest2_bu for v_test2 before update as
-#      begin
-#      end
-#      ^
-#
-#      create procedure sp_insert_rows( a_rows_cnt int ) as
-#          declare i int = 0;
-#      begin
-#          while ( i < a_rows_cnt ) do
-#          begin
-#              insert into test(id, col) values(:i, :i);
-#              i = i + 1;
-#          end
-#      end
-#      ^
-#
-#      create procedure sp_upd_using_primary_key_field as
-#      begin
-#
-#          for select id1 from v_test1 as cursor c do
-#          begin
-#              -- ####################################
-#              -- "Both updates utilize the primary key index for table T1. So far so good."
-#              -- ####################################
-#              update v_test1 x set x.col1 = 1
-#              where x.id1 = c.id1; ------------------ u s i n g   t a b l e s    P K
-#
-#              update v_test2 y set y.col1 = 1
-#              where y.id1 = c.id1;
-#
-#              -- execute statement ('update v_test2 set col1 = 1 where id1 = ?') (c.id1);
-#
-#          end
-#      end
-#      ^
-#
-#      create procedure sp_upd_using_current_of_cursor as
-#      begin
-#        for select id1 from v_test1 as cursor c do
-#        begin
-#
-#          -- first update is not reported in the plan because it's based on the same cursor as the select itself
-#          update v_test1 u set u.col1 = 1
-#          where current of c; ------------------ u s i n g    c u r r e n t   o f
-#
-#          -- ######################################################
-#          -- "... second update is unable to utilize the primary key index for table T1 anymore"
-#          -- ######################################################
-#          -- In the production database, this issue is causing 100x degradation in execution time.
-#          update v_test2 v set v.col1 = 1
-#          where v.id1 = c.id1;
-#
-#          -- execute statement ('update v_test2 set col1 = 1 where id1 = ?') (c.id1);
-#
-#        end
-#      end
-#      ^
-#      set term ;^
-#      commit;
-#  '''
-#
-#
-#  f_init_sql=open( os.path.join(context['temp_directory'],'tmp_5393_init.sql'), 'w')
-#  f_init_sql.write(sql_init)
-#  flush_and_close( f_init_sql )
-#
-#  f_init_log=open( os.path.join(context['temp_directory'],'tmp_5393_init.log'), 'w')
-#  f_init_err=open( os.path.join(context['temp_directory'],'tmp_5393_init.err'), 'w')
-#  subprocess.call( [ context['isql_path'], dsn, '-q', '-i', f_init_sql.name], stdout=f_init_log, stderr=f_init_err )
-#  flush_and_close( f_init_log )
-#  flush_and_close( f_init_err )
-#
-#  cur=db_conn.cursor()
-#
-#  cur.execute("select rdb$relation_id from rdb$relations where rdb$relation_name = upper('test')")
-#  test_rel_id = int(cur.fetchone()[0])
-#
-#  cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
-#  fb_pid = int(cur.fetchone()[0])
-#
-#  name_suffixes = ( 'using_primary_key_field', 'using_current_of_cursor' )
-#  sp_time = {}
-#
-#  for i in range(0, N_MEASURES):
-#      cur.callproc( 'sp_insert_rows', (N_COUNT_PER_MEASURE,) )
-#      for x_name in name_suffixes:
-#
-#          tabstat1 = [ p for p in db_conn.get_table_access_stats() if p.table_id == test_rel_id ]
-#
-#          fb_info_init = psutil.Process(fb_pid).cpu_times()
-#          cur.callproc( 'sp_upd_%(x_name)s' % locals() )
-#          fb_info_curr = psutil.Process(fb_pid).cpu_times()
-#
-#          tabstat2 = [ p for p in db_conn.get_table_access_stats() if p.table_id == test_rel_id ]
-#
-#          # [ ... 'backouts', 'deletes', 'expunges', 'indexed', 'inserts', 'purges', 'sequential', 'table_id', 'table_name', 'updates']
-#          #print('mode:',x_name)
-#          #print('stat before:')
-#          #for t in tabstat1:
-#          #   print( t.table_id, t.sequential, t.indexed )
-#          #print('stat after:')
-#          #for t in tabstat2:
-#          #   print( t.table_id, t.sequential, t.indexed )
-#
-#          sp_time[ x_name, i ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
-#
-#      # commit will truncate GTT, so we can insert again into empty table on next iteration:
-#      db_conn.commit()
-#
-#
-#  ratio_lst = []
-#  for i in range(0, N_MEASURES):
-#      ratio_lst.append( sp_time['using_current_of_cursor',i]  / sp_time['using_primary_key_field',i]  )
-#
-#  median_ratio = median(ratio_lst)
-#
-#  #for k,v in sorted(sp_time.items()):
-#  #    print(k,':::',v)
-#  #print('ratio_lst:', [round(p,2) for p in ratio_lst] )
-#  #print('median_ratio=',median_ratio)
-#  msg = 'Median value of elapsed time ratios: '
-#  if median_ratio < MEDIAN_TIME_MAX_RATIO:
-#      msg += 'acceptable.'
-#      print(msg)
-#  else:
-#      msg += 'INACCEPTABLE, more than threshold = %5.2f' % MEDIAN_TIME_MAX_RATIO
-#      print(msg)
-#
-#      print('Check values for %d measurements:' % N_MEASURES)
-#      for i,p in enumerate(ratio_lst):
-#          print( '%3d : %12.2f' % (i,p) )
-#
-#      print('Check values of elapsed time:')
-#      for k,v in sorted(sp_time.items()):
-#          print('proc_name, measure: ',k,' - elapsed time, ms: ',v)
-#
-#
-#  cleanup( (f_init_sql, f_init_log,f_init_err) )
-#
-#---
+@pytest.mark.version('>=3.0.2')
+def test_1(act: Action, capsys):
+
+    with act.db.connect() as con:
+
+        cur=con.cursor()
+
+        cur.execute("select rdb$relation_id from rdb$relations where rdb$relation_name = upper('test')")
+        test_rel_id = int(cur.fetchone()[0])
+
+        cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
+        fb_pid = int(cur.fetchone()[0])
+
+        name_suffixes = ( 'using_primary_key_field', 'using_current_of_cursor' )
+        sp_time = {}
+
+        for i in range(0, N_MEASURES):
+            cur.callproc( 'sp_insert_rows', (N_COUNT_PER_MEASURE,) )
+            for x_name in name_suffixes:
+
+                tabstat1 = [ p for p in con.info.get_table_access_stats() if p.table_id == test_rel_id ]
+
+                fb_info_init = psutil.Process(fb_pid).cpu_times()
+                cur.callproc( 'sp_upd_%(x_name)s' % locals() )
+                fb_info_curr = psutil.Process(fb_pid).cpu_times()
+
+                tabstat2 = [ p for p in con.info.get_table_access_stats() if p.table_id == test_rel_id ]
+
+                # [ ... 'backouts', 'deletes', 'expunges', 'indexed', 'inserts', 'purges', 'sequential', 'table_id', 'table_name', 'updates']
+                #print('mode:',x_name)
+                #print('stat before:')
+                #for t in tabstat1:
+                #   print( t.table_id, t.sequential, t.indexed )
+                #print('stat after:')
+                #for t in tabstat2:
+                #   print( t.table_id, t.sequential, t.indexed )
+
+                sp_time[ x_name, i ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
+
+            # commit will truncate GTT, so we can insert again into empty table on next iteration:
+            con.commit()
+
+
+    ratio_lst = []
+    for i in range(0, N_MEASURES):
+        ratio_lst.append( sp_time['using_current_of_cursor',i]  / sp_time['using_primary_key_field',i]  )
+
+    median_ratio = median(ratio_lst)
+
+    #for k,v in sorted(sp_time.items()):
+    #    print(k,':::',v)
+    #print('ratio_lst:', [round(p,2) for p in ratio_lst] )
+    #print('median_ratio=',median_ratio)
+
+    msg = MSG_PREFIX
+    if median_ratio < MEDIAN_TIME_MAX_RATIO:
+        msg += 'acceptable.'
+        print(msg)
+    else:
+        msg += 'INACCEPTABLE: %12.2f -- more than threshold = %5.2f' % (median_ratio, MEDIAN_TIME_MAX_RATIO)
+        print(msg)
+
+        print('Check values for %d measurements:' % N_MEASURES)
+        for i,p in enumerate(ratio_lst):
+            print( '%3d : %12.2f' % (i,p) )
+
+        #print('Check values of elapsed time:')
+        #for k,v in sorted(sp_time.items()):
+        #    print('proc_name, measure: ',k,' - elapsed time, ms: ',v)
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
