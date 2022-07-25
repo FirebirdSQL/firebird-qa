@@ -74,132 +74,128 @@ DESCRIPTION:
     https://github.com/FirebirdSQL/firebird/commit/96a24228b61003e72c68596faf3c4c4ed0b95ea1
 JIRA:        CORE-5302
 FBTEST:      bugs.core_5302
+[25.07.2022] pzotov
+  Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.591
+
 """
 
+import psutil
 import pytest
 from firebird.qa import *
+
+#--------------------------------------------------------------------
+def median(lst):
+    n = len(lst)
+    s = sorted(lst)
+    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+#--------------------------------------------------------------------
+
+###########################
+###   S E T T I N G S   ###
+###########################
+
+# Number of PSQL calls:
+#
+N_MEASURES = 21
+
+# How many iterations must be done in each of stored procedures when they work.
+# DO NOT set this value less then 20'000, otherwise ratios will be unreal.
+#
+N_COUNT_PER_MEASURE = 50000
+
+# Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
+# Results of 25.07.2022: 3.0.8.33535: ~12;  4.0.1.2692: ~9.5; 5.0.0.591: ~13
+#
+INSERTS_TIME_MAX_RATIO = 20
+#############################
 
 db = db_factory()
 
 act = python_act('db')
 
-expected_stdout = """
-    CPU time ratio for Indexed vs NON-indexed inserts: acceptable
+MSG_PREFIX = 'CPU time ratio for Indexed vs NON-indexed inserts: '
+expected_stdout = f"""
+{MSG_PREFIX}acceptable.
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
 
-# test_script_1
-#---
-#
-#  import os
-#  import psutil
-#  import time
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  #------------------
-#  def median(lst):
-#      n = len(lst)
-#      s = sorted(lst)
-#      return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#  #------------------
-#
-#  ###########################
-#  ###   S E T T I N G S   ###
-#  ###########################
-#  # Number of PSQL calls:
-#  N_MEASURES = 30
-#
-#  # How many iterations must be done in each of stored procedures when they work:
-#  N_COUNT_PER_MEASURE = 10000
-#
-#  # Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
-#  #
-#  INSERTS_TIME_MAX_RATIO = 20
-#  #############################
-#
-#  sp_make_proc_ddl='''    create or alter procedure sp_%(x_name)s ( n_count int = 50000) as
-#      begin
-#          while (n_count > 0) do
-#          begin
-#              insert into test_%(x_name)s (x, y, z) values(:n_count, :n_count, :n_count);
-#              n_count = n_count - 1;
-#          end
-#      end
-#  '''
-#
-#  sp_drop_proc_ddl='''    create or alter procedure sp_%(x_name)s ( n_count int = 50000) as begin end
-#  '''
-#
-#  sel_tables_ddl='''    recreate table test_non_idx(x int, y int, z int)^
-#      recreate table test_indexed(x int, y int, z int)^
-#      create index test_indexed_x on test_indexed(x)^
-#      create index test_indexed_y on test_indexed(y)^
-#      create index test_indexed_z on test_indexed(z)^
-#      create index test_indexed_xy on test_indexed(x, y)^
-#      create index test_indexed_xz on test_indexed(x, z)^
-#      create index test_indexed_xyz on test_indexed(x, y, z)^
-#  '''
-#
-#  for x in sel_tables_ddl.split('^'):
-#      if x.strip():
-#          db_conn.execute_immediate( x.strip() )
-#  db_conn.commit()
-#
-#  name_suffixes = ( 'non_idx', 'indexed' )
-#  for x_name in name_suffixes:
-#      db_conn.execute_immediate( sp_make_proc_ddl % locals() )
-#
-#  db_conn.commit()
-#
-#  cur=db_conn.cursor()
-#  cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
-#  fb_pid = int(cur.fetchone()[0])
-#
-#  # --------------------------------------
-#  sp_time = {}
-#  for i in range(0, N_MEASURES):
-#      for x_name in name_suffixes:
-#
-#          fb_info_init = psutil.Process(fb_pid).cpu_times()
-#          cur.callproc( 'sp_%(x_name)s' % locals(), (N_COUNT_PER_MEASURE,) )
-#          fb_info_curr = psutil.Process(fb_pid).cpu_times()
-#
-#          sp_time[ x_name, i ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
-#
-#      for x_name in name_suffixes:
-#          #--- recreate procs with empty bodies ---
-#          db_conn.execute_immediate( sp_drop_proc_ddl % locals() )
-#          db_conn.commit()
-#
-#      for x in sel_tables_ddl.split('^'):
-#          #--- recreate tables ---
-#          if x.strip():
-#              db_conn.execute_immediate( x.strip() )
-#      db_conn.commit()
-#
-#      for x_name in name_suffixes:
-#          #--- recreate procs with normal bodies ---
-#          db_conn.execute_immediate( sp_make_proc_ddl % locals() )
-#      db_conn.commit()
-#  # --------------------------------------
-#  cur.close()
-#
-#  ratio_lst = []
-#  for i in range(0, N_MEASURES):
-#      ratio_lst.append( sp_time['indexed',i]  / sp_time['non_idx',i]  )
-#
-#  median_ratio = median(ratio_lst)
-#
-#  print( 'CPU time ratio for Indexed vs NON-indexed inserts: ' + ('acceptable' if median_ratio < INSERTS_TIME_MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(INSERTS_TIME_MAX_RATIO) ) ) )
-#  if median_ratio >= INSERTS_TIME_MAX_RATIO:
-#      print('Ratio statistics for %d measurements' % N_MEASURES)
-#      for p in ratio_lst:
-#          print( '%12.2f' % p )
-#
-#---
+    sel_tables_ddl='''
+        recreate table test_non_idx(x int, y int, z int)^
+        recreate table test_indexed(x int, y int, z int)^
+        create index test_indexed_x on test_indexed(x)^
+        create index test_indexed_y on test_indexed(y)^
+        create index test_indexed_z on test_indexed(z)^
+        create index test_indexed_xy on test_indexed(x, y)^
+        create index test_indexed_xz on test_indexed(x, z)^
+        create index test_indexed_xyz on test_indexed(x, y, z)^
+    '''
+
+    sp_make_proc_ddl='''
+        create or alter procedure sp_%(x_name)s ( n_count int = 50000) as
+        begin
+            while (n_count > 0) do
+            begin
+                insert into test_%(x_name)s (x, y, z) values(:n_count, :n_count, :n_count);
+                n_count = n_count - 1;
+            end
+        end
+    '''
+
+    sp_drop_proc_ddl='''
+        create or alter procedure sp_%(x_name)s ( n_count int = 50000) as begin end
+    '''
+   
+    name_suffixes = ( 'non_idx', 'indexed' )
+
+    # --------------------------------------
+
+    sp_time = {}
+    with act.db.connect() as con:
+        cur = con.cursor()
+        cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
+        fb_pid = int(cur.fetchone()[0])
+        for i in range(0, N_MEASURES):
+            
+            for x_name in name_suffixes:
+                #--- recreate procs with empty bodies ---
+                cur.execute( sp_drop_proc_ddl % locals() )
+
+            for x in sel_tables_ddl.split('^'):
+                #--- recreate tables ---
+                if x.strip():
+                    cur.execute( x.strip() )
+
+            for x_name in name_suffixes:
+                #--- recreate procs with normal bodies ---
+                cur.execute( sp_make_proc_ddl % locals() )
+            con.commit()
+            
+            for x_name in name_suffixes:
+                fb_info_init = psutil.Process(fb_pid).cpu_times()
+                cur.callproc( 'sp_%(x_name)s' % locals(), (N_COUNT_PER_MEASURE,) )
+                fb_info_curr = psutil.Process(fb_pid).cpu_times()
+
+                sp_time[ x_name, i ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
+            con.commit()
+
+
+        # --------------------------------------
+
+    ratio_lst = []
+    for i in range(0, N_MEASURES):
+        ratio_lst.append( sp_time['indexed',i]  / sp_time['non_idx',i]  )
+
+    median_ratio = median(ratio_lst)
+
+    print( MSG_PREFIX + ('acceptable.' if median_ratio < INSERTS_TIME_MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(INSERTS_TIME_MAX_RATIO) ) ) )
+    if median_ratio >= INSERTS_TIME_MAX_RATIO:
+        print('Ratio statistics for %d measurements' % N_MEASURES)
+        for p in ratio_lst:
+            print( '%12.2f' % p )
+
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
