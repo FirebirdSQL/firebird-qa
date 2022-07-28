@@ -129,6 +129,7 @@ DESCRIPTION:
 
       Checked on 4.0.0.2144
 FBTEST:      functional.transactions.read_consist_sttm_restart_on_delete_01
+NOTES:
 [28.07.2022] pzotov
     Checked on 4.0.1.2692, 5.0.0.591
 """
