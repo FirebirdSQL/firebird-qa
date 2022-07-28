@@ -117,17 +117,26 @@ DESCRIPTION:
 
       ################
 
-
       Checked on 4.0.0.2144 SS/CS
 FBTEST:      functional.transactions.read_consist_sttm_restart_on_delete_02
+NOTES:
+[28.07.2022] pzotov
+    Checked on 4.0.1.2692, 5.0.0.591
 """
 
+import subprocess
 import pytest
 from firebird.qa import *
+from pathlib import Path
+import time
 
 db = db_factory()
 
 act = python_act('db', substitutions=[('=', ''), ('[ \t]+', ' ')])
+
+fn_worker_sql = temp_file('tmp_worker.sql')
+fn_worker_log = temp_file('tmp_worker.log')
+fn_worker_err = temp_file('tmp_worker.err')
 
 expected_stdout = """
     checked_mode: table, STDLOG: Records affected: 6
@@ -150,7 +159,6 @@ expected_stdout = """
     checked_mode: table, STDLOG:       5 DEL                        2
     checked_mode: table, STDLOG: Records affected: 8
 
-
     checked_mode: view, STDLOG: Records affected: 6
 
     checked_mode: view, STDLOG:      ID
@@ -172,220 +180,147 @@ expected_stdout = """
     checked_mode: view, STDLOG: Records affected: 8
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
 
-# Original python code for this test:
-# -----------------------------------
-#
-# import os
-# import sys
-# import subprocess
-# from subprocess import Popen
-# from fdb import services
-# import time
-#
-# os.environ["ISC_USER"] = user_name
-# os.environ["ISC_PASSWORD"] = user_password
-#
-# db_conn.close()
-#
-# #--------------------------------------------
-#
-# def flush_and_close( file_handle ):
-#     # https://docs.python.org/2/library/os.html#os.fsync
-#     # If you're starting with a Python file object f,
-#     # first do f.flush(), and
-#     # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#     global os
-#
-#     file_handle.flush()
-#     if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#         # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#         os.fsync(file_handle.fileno())
-#     file_handle.close()
-#
-# #--------------------------------------------
-#
-# def cleanup( f_names_list ):
-#     global os
-#     for f in f_names_list:
-#        if type(f) == file:
-#           del_name = f.name
-#        elif type(f) == str:
-#           del_name = f
-#        else:
-#           print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#           del_name = None
-#
-#        if del_name and os.path.isfile( del_name ):
-#            os.remove( del_name )
-#
-# #--------------------------------------------
-#
-# sql_init_ddl = os.path.join(context['files_location'],'read-consist-sttm-restart-DDL.sql')
-#
-# for checked_mode in('table', 'view'):
-#
-#     target_obj = 'test' if checked_mode == 'table' else 'v_test'
-#
-#     f_init_log=open( os.path.join(context['temp_directory'],'read-consist-sttm-restart-DDL.log'), 'w')
-#     f_init_err=open( ''.join( ( os.path.splitext(f_init_log.name)[0], '.err') ), 'w')
-#
-#     subprocess.call( [context['isql_path'], dsn, '-q', '-i', sql_init_ddl], stdout=f_init_log, stderr=f_init_err )
-#     flush_and_close(f_init_log)
-#     flush_and_close(f_init_err)
-#
-#     # add rows with ID = 1,2,3,4,5:
-#     sql_addi='''
-#         set term ^;
-#         execute block as
-#         begin
-#             rdb$set_context('USER_SESSION', 'WHO', 'INIT_DATA');
-#         end
-#         ^
-#         set term ;^
-#         insert into %(target_obj)s(id, x)
-#         select row_number()over(),row_number()over()
-#         from rdb$types rows 5;
-#         commit;
-#     ''' % locals()
-#     runProgram('isql', [ dsn, '-q' ], sql_addi)
-#
-#     con_lock_1 = fdb.connect( dsn = dsn )
-#     con_lock_2 = fdb.connect( dsn = dsn )
-#     con_lock_1.execute_immediate( "execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #1'); end" )
-#     con_lock_2.execute_immediate( "execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #2'); end" )
-#
-#     #########################
-#     ###  L O C K E R - 1  ###
-#     #########################
-#
-#     con_lock_1.execute_immediate( 'update %(target_obj)s set id=id where id = 5' % locals() )
-#
-#     sql_text='''
-#         connect '%(dsn)s';
-#         set list on;
-#         set autoddl off;
-#         set term ^;
-#         execute block returns (whoami varchar(30)) as
-#         begin
-#             whoami = 'WORKER'; -- , ATT#' || current_connection;
-#             rdb$set_context('USER_SESSION','WHO', whoami);
-#             -- suspend;
-#         end
-#         ^
-#         set term ;^
-#         commit;
-#         --set echo on;
-#         SET KEEP_TRAN_PARAMS ON;
-#         set transaction read committed read consistency;
-#         --select current_connection, current_transaction from rdb$database;
-#         set list off;
-#         set wng off;
-#         --set plan on;
-#         set count on;
-#
-#         delete from %(target_obj)s where id < 0 or id >= 3 order by id; -- THIS MUST BE LOCKED
-#
-#         -- check results:
-#         -- ###############
-#
-#         select id from %(target_obj)s order by id; -- this will produce output only after all lockers do their commit/rollback
-#
-#         select v.old_id, v.op, v.snap_no_rank
-#         from v_worker_log v
-#         where v.op = 'del';
-#
-#         set width who 10;
-#         -- DO NOT check this! Values can differ here from one run to another!
-#         -- select id, trn, who, old_id, new_id, op, rec_vers, global_cn, snap_no from tlog_done order by id;
-#
-#         rollback;
-#
-#     '''  % dict(globals(), **locals())
-#
-#     f_worker_sql=open( os.path.join(context['temp_directory'],'tmp_sttm_restart_on_delete_02.sql'), 'w')
-#     f_worker_sql.write(sql_text)
-#     flush_and_close(f_worker_sql)
-#
-#
-#     f_worker_log=open( ''.join( ( os.path.splitext(f_worker_sql.name)[0], '.log') ), 'w')
-#     f_worker_err=open( ''.join( ( os.path.splitext(f_worker_log.name)[0], '.err') ), 'w')
-#
-#     ############################################################################
-#     ###  L A U N C H     W O R K E R    U S I N G     I S Q L,   A S Y N C.  ###
-#     ############################################################################
-#
-#     p_worker = Popen( [ context['isql_path'], '-pag', '999999', '-q', '-i', f_worker_sql.name ],stdout=f_worker_log, stderr=f_worker_err)
-#     time.sleep(1)
-#
-#
-#     #########################
-#     ###  L O C K E R - 2  ###
-#     #########################
-#     # Insert ID value that is less than previous min(id).
-#     # Session-worker is executing its statement using PLAN ORDER,
-#     # and it should see this new value and restart its statement:
-#     con_lock_2.execute_immediate( 'insert into %(target_obj)s(id) values(-1)' % locals() )
-#     con_lock_2.commit()
-#     con_lock_2.execute_immediate( 'update %(target_obj)s set id=id where id = -1' % locals() )
-#
-#     #########################
-#     ###  L O C K E R - 1  ###
-#     #########################
-#     con_lock_1.commit()
-#     con_lock_1.execute_immediate( 'insert into %(target_obj)s(id) values(-2)' % locals() )
-#     con_lock_1.commit()
-#     con_lock_1.execute_immediate( 'update %(target_obj)s set id=id where id = -2' % locals() )
-#
-#
-#     #########################
-#     ###  L O C K E R - 2  ###
-#     #########################
-#     # Insert ID value that is less than previous min(id).
-#     # Session-worker is executing its statement using PLAN ORDER,
-#     # and it should see this new value and restart its statement:
-#     con_lock_2.commit()
-#     con_lock_2.execute_immediate( 'insert into %(target_obj)s(id) values(-3)' % locals() )
-#     con_lock_2.commit()
-#     con_lock_2.execute_immediate( 'update %(target_obj)s set id=id where id = -3' % locals() )
-#
-#     con_lock_1.commit()
-#     con_lock_2.commit()
-#
-#     # Here we wait for ISQL complete its mission:
-#     p_worker.wait()
-#
-#     flush_and_close(f_worker_log)
-#     flush_and_close(f_worker_err)
-#
-#     # Close lockers:
-#     ################
-#     for c in (con_lock_1, con_lock_2):
-#         c.close()
-#
-#
-#     # CHECK RESULTS
-#     ###############
-#     with open(f_worker_log.name,'r') as f:
-#         for line in f:
-#             if line.strip():
-#                 print('checked_mode: %(checked_mode)s, STDLOG: %(line)s' % locals())
-#
-#     for f in (f_init_err, f_worker_err):
-#         with open(f.name,'r') as g:
-#             for line in g:
-#                 if line.strip():
-#                     print( 'checked_mode: ', checked_mode, ' UNEXPECTED STDERR IN ' + g.name + ':', line)
-#
-#
-# #<for checked mode in(...)
-#
-# # Cleanup.
-# ##########
-# time.sleep(1)
-# cleanup( (f_init_log, f_init_err, f_worker_sql, f_worker_log, f_worker_err) )
-# -----------------------------------
+@pytest.mark.version('>=4.0')
+def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
+    sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()
+
+    for checked_mode in('table', 'view'):
+        target_obj = 'test' if checked_mode == 'table' else 'v_test'
+
+        # add rows with ID = 1,2,3,4,5:
+        sql_addi = f'''
+            set term ^;
+            execute block as
+            begin
+                rdb$set_context('USER_SESSION', 'WHO', 'INIT_DATA');
+            end
+            ^
+            set term ;^
+            insert into {target_obj}(id, x)
+            select row_number()over(),row_number()over()
+            from rdb$types rows 5;
+            commit;
+        '''
+
+        act.isql(switches=['-q'], input = ''.join( (sql_init, sql_addi) ) )
+
+        with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2:
+            for i,c in enumerate((con_lock_1,con_lock_2)):
+                sttm = f"execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #{i+1}'); end"
+                c.execute_immediate(sttm)
+
+            #########################
+            ###  L O C K E R - 1  ###
+            #########################
+
+            con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = 5' % locals() )
+
+            worker_sql = f'''
+                 set list on;
+                 set autoddl off;
+                 set term ^;
+                 execute block returns (whoami varchar(30)) as
+                 begin
+                     whoami = 'WORKER'; -- , ATT#' || current_connection;
+                     rdb$set_context('USER_SESSION','WHO', whoami);
+                     -- suspend;
+                 end
+                 ^
+                 set term ;^
+                 commit;
+                 --set echo on;
+                 SET KEEP_TRAN_PARAMS ON;
+                 set transaction read committed read consistency;
+                 --select current_connection, current_transaction from rdb$database;
+                 set list off;
+                 set wng off;
+                 --set plan on;
+                 set count on;
+
+                 delete from {target_obj} where id < 0 or id >= 3 order by id; -- THIS MUST BE LOCKED
+
+                 -- check results:
+                 -- ###############
+
+                 select id from {target_obj} order by id; -- this will produce output only after all lockers do their commit/rollback
+
+                 select v.old_id, v.op, v.snap_no_rank
+                 from v_worker_log v
+                 where v.op = 'del';
+
+                 set width who 10;
+                 -- DO NOT check this! Values can differ here from one run to another!
+                 -- select id, trn, who, old_id, new_id, op, rec_vers, global_cn, snap_no from tlog_done order by id;
+
+                 rollback;
+
+            '''
+
+            fn_worker_sql.write_text(worker_sql)
+
+            with fn_worker_log.open(mode='w') as hang_out, fn_worker_err.open(mode='w') as hang_err:
+
+                ############################################################################
+                ###  L A U N C H     W O R K E R    U S I N G     I S Q L,   A S Y N C.  ###
+                ############################################################################
+                p_worker = subprocess.Popen([act.vars['isql'], '-i', str(fn_worker_sql),
+                                               '-user', act.db.user,
+                                               '-password', act.db.password,
+                                               act.db.dsn
+                                            ],
+                                              stdout = hang_out,
+                                              stderr = hang_err
+                                           )
+                time.sleep(1)
+
+
+                #########################
+                ###  L O C K E R - 2  ###
+                #########################
+                # Insert ID value that is less than previous min(id).
+                # Session-worker is executing its statement using PLAN ORDER,
+                # and it should see this new value and restart its statement:
+                con_lock_2.execute_immediate( f'insert into {target_obj}(id) values(-1)' % locals() )
+                con_lock_2.commit()
+                con_lock_2.execute_immediate( f'update {target_obj} set id=id where id = -1' % locals() )
+
+                #########################
+                ###  L O C K E R - 1  ###
+                #########################
+                con_lock_1.commit()
+                con_lock_1.execute_immediate( f'insert into {target_obj}(id) values(-2)' % locals() )
+                con_lock_1.commit()
+                con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = -2' % locals() )
+
+
+                #########################
+                ###  L O C K E R - 2  ###
+                #########################
+                # Insert ID value that is less than previous min(id).
+                # Session-worker is executing its statement using PLAN ORDER,
+                # and it should see this new value and restart its statement:
+                con_lock_2.commit()
+                con_lock_2.execute_immediate( f'insert into {target_obj}(id) values(-3)' % locals() )
+                con_lock_2.commit()
+                con_lock_2.execute_immediate( f'update {target_obj} set id=id where id = -3' % locals() )
+
+                con_lock_1.commit()
+                con_lock_2.commit()
+
+                # Here we wait for ISQL complete its mission:
+                p_worker.wait()
+
+
+        for g in (fn_worker_log, fn_worker_err):
+            with g.open() as f:
+                for line in f:
+                    if line.split():
+                        if g == fn_worker_log:
+                            print(f'checked_mode: {checked_mode}, STDLOG: {line}')
+                        else:
+                            print(f'UNEXPECTED STDERR {line}')
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
