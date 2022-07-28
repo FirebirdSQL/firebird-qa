@@ -102,6 +102,7 @@ import subprocess
 import pytest
 from firebird.qa import *
 from pathlib import Path
+import time
 
 db = db_factory()
 
