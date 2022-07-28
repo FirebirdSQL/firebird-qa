@@ -109,14 +109,13 @@ DESCRIPTION:
 FBTEST:      functional.transactions.read_consist_statement_delete_undone_01
 NOTES:
 [28.07.2022] pzotov
-  Checked on 4.0.1.2692, 5.0.0.591
+    Checked on 4.0.1.2692, 5.0.0.591
 """
 
 import subprocess
 import pytest
 from firebird.qa import *
 from pathlib import Path
-import time
 
 db = db_factory()
 
@@ -179,6 +178,9 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
             sttm = f"execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #{i+1}'); end"
             c.execute_immediate(sttm)
 
+        #########################
+        ###  L O C K E R - 1  ###
+        #########################
         con_lock_1.execute_immediate( 'update test set id=id where id = 1' )
 
         worker_sql = '''
