@@ -48,1012 +48,904 @@ DESCRIPTION:
       Checked on 4.0.0.2195 SS/CS.
       29.09.2020: added for-loop in order to check different target objects: TABLE ('test') and VIEW ('v_test'), see 'target_object_type'.
 FBTEST:      functional.transactions.read_consist_sttm_restart_max_limit
+NOTES:
+[29.07.2022] pzotov
+    Checked on 4.0.1.2692 (SS/SC), 5.0.0.591 (SS/SC)
 """
 
+import subprocess
 import pytest
 from firebird.qa import *
+from pathlib import Path
+import time
 
 substitutions = [('=', ''), ('[ \t]+', ' '), ('.*After line \\d+.*', ''), ('.*[\\-]?concurrent transaction number is \\d+', 'concurrent transaction number is'), ('.*At\\s+block\\s+line(:)?\\s+\\d+(,)?\\s+col(:)?\\s+\\d+', ''), ('.After\\s+line\\s+\\d+\\s+.*', '')]
 
-db = db_factory()
 
+db = db_factory()
 act = python_act('db', substitutions=substitutions)
 
+fn_worker_sql = temp_file('tmp_worker.sql')
+fn_worker_log = temp_file('tmp_worker.log')
+fn_worker_err = temp_file('tmp_worker.err')
+
+
 expected_stdout = """
-    target_object_type: table, checked_DML = upd, iter = 0, restarts number to be tested: 10
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:      ID
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG: =======
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:   -1200
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:   -1100
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:   -1000
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:    -900
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:    -800
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:    -700
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:    -600
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:    -500
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:    -400
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:    -300
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:     100
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:     200
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG: ======= ====== =====================
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        1
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        2
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        2
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        3
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        3
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        4
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        4
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        5
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        5
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        6
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        6
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        7
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        7
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        8
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        8
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        9
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        9
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                       10
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                       10
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:      -3 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:      -4 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:      -5 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:      -6 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:      -7 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:      -8 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:      -9 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:     -10 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:     -11 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:     -12 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 31
+    checked_mode: table, checked_DML = upd, iter = 0, restarts number to be tested: 10
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:      ID
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG: =======
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:   -1200
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:   -1100
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:   -1000
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:    -900
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:    -800
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:    -700
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:    -600
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:    -500
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:    -400
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:    -300
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:     100
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:     200
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG: ======= ====== =====================
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        1
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        2
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        2
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        3
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        3
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        4
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        4
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        5
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        5
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        6
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        6
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        7
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        7
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        8
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        8
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        9
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        9
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                       10
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                       10
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:      -3 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:      -4 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:      -5 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:      -6 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:      -7 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:      -8 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:      -9 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:     -10 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:     -11 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:     -12 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 31
 
-    target_object_type: table, checked_DML = upd, iter = 1, restarts number to be tested: 12
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 2
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:      ID
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG: =======
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:     -14
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:     -13
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:     -12
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:     -11
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:     -10
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:      -9
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:      -8
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:      -7
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:      -6
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:      -5
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:      -4
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:      -3
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 14
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG: ======= ====== =====================
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        1
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        2
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        2
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        3
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        3
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        4
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        4
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        5
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        5
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        6
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        6
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        7
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        7
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        8
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        8
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        9
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        9
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                       10
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                       10
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                       11
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 21
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: deadlock
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: -update conflicts with concurrent update
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: -concurrent transaction number is 343
-    target_object_type: table, checked_DML = upd, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
-bt-repo	mp	mp_sttm_restart_max_limit.sql
+    checked_mode: table, checked_DML = upd, iter = 1, restarts number to be tested: 12
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 2
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:      ID
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG: =======
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:     -14
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:     -13
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:     -12
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:     -11
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:     -10
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:      -9
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:      -8
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:      -7
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:      -6
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:      -5
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:      -4
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:      -3
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 14
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG: ======= ====== =====================
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        1
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        2
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        2
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        3
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        3
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        4
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        4
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        5
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        5
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        6
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        6
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        7
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        7
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        8
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        8
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        9
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        9
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                       10
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                       10
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                       11
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 21
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDERR: deadlock
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDERR: -update conflicts with concurrent update
+    checked_mode: table, checked_DML = upd, iter = 1, worker STDERR: -concurrent transaction number is 343
 
-    target_object_type: table, checked_DML = mer, iter = 0, restarts number to be tested: 10
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:      ID
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG: =======
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:   -1200
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:   -1100
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:   -1000
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:    -900
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:    -800
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:    -700
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:    -600
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:    -500
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:    -400
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:    -300
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:     100
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:     200
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG: ======= ====== =====================
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        1
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        2
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        2
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        3
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        3
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        4
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        4
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        5
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        5
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        6
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        6
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        7
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        7
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        8
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        8
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        9
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        9
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                       10
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                       10
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:      -3 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:      -4 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:      -5 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:      -6 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:      -7 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:      -8 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:      -9 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:     -10 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:     -11 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:     -12 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 31
+    checked_mode: table, checked_DML = mer, iter = 0, restarts number to be tested: 10
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:      ID
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG: =======
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:   -1200
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:   -1100
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:   -1000
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:    -900
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:    -800
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:    -700
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:    -600
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:    -500
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:    -400
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:    -300
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:     100
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:     200
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG: ======= ====== =====================
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        1
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        2
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        2
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        3
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        3
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        4
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        4
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        5
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        5
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        6
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        6
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        7
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        7
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        8
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        8
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        9
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        9
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                       10
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                       10
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:      -3 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:      -4 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:      -5 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:      -6 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:      -7 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:      -8 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:      -9 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:     -10 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:     -11 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:     -12 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 31
 
-    target_object_type: table, checked_DML = mer, iter = 1, restarts number to be tested: 12
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 2
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:      ID
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG: =======
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:     -14
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:     -13
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:     -12
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:     -11
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:     -10
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:      -9
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:      -8
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:      -7
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:      -6
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:      -5
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:      -4
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:      -3
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 14
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG: ======= ====== =====================
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        1
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        2
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        2
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        3
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        3
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        4
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        4
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        5
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        5
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        6
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        6
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        7
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        7
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        8
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        8
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        9
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        9
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                       10
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                       10
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                       11
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 21
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: deadlock
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: -update conflicts with concurrent update
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: -concurrent transaction number is 696
-    target_object_type: table, checked_DML = mer, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
-bt-repo	mp	mp_sttm_restart_max_limit.sql
+    checked_mode: table, checked_DML = mer, iter = 1, restarts number to be tested: 12
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 2
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:      ID
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG: =======
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:     -14
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:     -13
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:     -12
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:     -11
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:     -10
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:      -9
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:      -8
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:      -7
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:      -6
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:      -5
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:      -4
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:      -3
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 14
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG: ======= ====== =====================
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        1
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        2
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        2
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        3
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        3
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        4
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        4
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        5
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        5
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        6
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        6
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        7
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        7
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        8
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        8
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        9
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        9
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                       10
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                       10
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                       11
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 21
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDERR: deadlock
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDERR: -update conflicts with concurrent update
+    checked_mode: table, checked_DML = mer, iter = 1, worker STDERR: -concurrent transaction number is 696
 
-    target_object_type: table, checked_DML = del, iter = 0, restarts number to be tested: 10
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG: Records affected: 0
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG: ======= ====== =====================
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        1
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        2
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        2
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        3
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        3
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        4
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        4
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        5
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        5
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        6
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        6
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        7
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        7
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        8
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        8
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        9
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        9
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                       10
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                       10
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:      -3 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:      -4 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:      -5 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:      -6 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:      -7 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:      -8 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:      -9 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:     -10 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:     -11 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:     -12 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = del, iter = 0, worker STDLOG: Records affected: 31
+    checked_mode: table, checked_DML = del, iter = 0, restarts number to be tested: 10
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG: Records affected: 0
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG: ======= ====== =====================
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        1
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        2
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        2
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        3
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        3
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        4
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        4
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        5
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        5
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        6
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        6
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        7
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        7
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        8
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        8
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        9
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        9
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                       10
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                       10
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:      -3 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:      -4 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:      -5 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:      -6 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:      -7 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:      -8 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:      -9 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:     -10 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:     -11 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:     -12 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = del, iter = 0, worker STDLOG: Records affected: 31
 
-    target_object_type: table, checked_DML = del, iter = 1, restarts number to be tested: 12
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG: Records affected: 2
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:      ID
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG: =======
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:     -14
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:     -13
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:     -12
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:     -11
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:     -10
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:      -9
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:      -8
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:      -7
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:      -6
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:      -5
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:      -4
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:      -3
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG: Records affected: 14
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG: ======= ====== =====================
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        1
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        2
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        2
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        3
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        3
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        4
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        4
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        5
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        5
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        6
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        6
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        7
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        7
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        8
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        8
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        9
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        9
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                       10
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                       10
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                       11
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = del, iter = 1, worker STDLOG: Records affected: 21
-    target_object_type: table, checked_DML = del, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
-    target_object_type: table, checked_DML = del, iter = 1, worker STDERR: deadlock
-    target_object_type: table, checked_DML = del, iter = 1, worker STDERR: -update conflicts with concurrent update
-    target_object_type: table, checked_DML = del, iter = 1, worker STDERR: -concurrent transaction number is 1049
-    target_object_type: table, checked_DML = del, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
-bt-repo	mp	mp_sttm_restart_max_limit.sql
+    checked_mode: table, checked_DML = del, iter = 1, restarts number to be tested: 12
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG: Records affected: 2
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:      ID
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG: =======
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:     -14
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:     -13
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:     -12
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:     -11
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:     -10
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:      -9
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:      -8
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:      -7
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:      -6
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:      -5
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:      -4
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:      -3
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG: Records affected: 14
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG: ======= ====== =====================
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        1
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        2
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        2
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        3
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        3
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        4
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        4
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        5
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        5
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        6
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        6
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        7
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        7
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        8
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        8
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        9
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        9
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                       10
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                       10
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                       11
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = del, iter = 1, worker STDLOG: Records affected: 21
+    checked_mode: table, checked_DML = del, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
+    checked_mode: table, checked_DML = del, iter = 1, worker STDERR: deadlock
+    checked_mode: table, checked_DML = del, iter = 1, worker STDERR: -update conflicts with concurrent update
+    checked_mode: table, checked_DML = del, iter = 1, worker STDERR: -concurrent transaction number is 1049
 
-    target_object_type: table, checked_DML = lok, iter = 0, restarts number to be tested: 10
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:      ID
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG: =======
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:     -12
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:     -11
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:     -10
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:      -9
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:      -8
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:      -7
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:      -6
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:      -5
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:      -4
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:      -3
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:       1
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:       2
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG:
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: table, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 0
+    checked_mode: table, checked_DML = lok, iter = 0, restarts number to be tested: 10
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:      ID
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG: =======
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:     -12
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:     -11
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:     -10
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:      -9
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:      -8
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:      -7
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:      -6
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:      -5
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:      -4
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:      -3
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:       1
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:       2
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG:
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: table, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 0
 
-    target_object_type: table, checked_DML = lok, iter = 1, restarts number to be tested: 12
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:      ID
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG: =======
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:     -14
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:     -13
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:     -12
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:     -11
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:     -10
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:      -9
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:      -8
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:      -7
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:      -6
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:      -5
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:      -4
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:      -3
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:       1
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:       2
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG:
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 14
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 0
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: deadlock
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: -update conflicts with concurrent update
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: -concurrent transaction number is 1282
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: -At block line: 1, col: 39
-    target_object_type: table, checked_DML = lok, iter = 1, worker STDERR: After line 19 in file C:\\FBTESTING\\qa
-bt-repo	mp	mp_sttm_restart_max_limit.sql
+    checked_mode: table, checked_DML = lok, iter = 1, restarts number to be tested: 12
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:      ID
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG: =======
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:     -14
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:     -13
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:     -12
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:     -11
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:     -10
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:      -9
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:      -8
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:      -7
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:      -6
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:      -5
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:      -4
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:      -3
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:       1
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:       2
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG:
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 14
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 0
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDERR: deadlock
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDERR: -update conflicts with concurrent update
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDERR: -concurrent transaction number is 1282
+    checked_mode: table, checked_DML = lok, iter = 1, worker STDERR: -At block line: 1, col: 39
 
-    target_object_type: view, checked_DML = upd, iter = 0, restarts number to be tested: 10
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:      ID
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG: =======
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:   -1200
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:   -1100
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:   -1000
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:    -900
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:    -800
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:    -700
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:    -600
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:    -500
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:    -400
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:    -300
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:     100
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:     200
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG: ======= ====== =====================
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        1
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        2
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        2
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        3
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        3
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        4
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        4
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        5
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        5
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        6
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        6
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        7
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        7
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        8
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        8
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        9
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        9
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                       10
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                       10
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:      -3 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:      -4 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:      -5 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:      -6 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:      -7 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:      -8 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:      -9 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:     -10 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:     -11 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:     -12 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 31
+    checked_mode: view, checked_DML = upd, iter = 0, restarts number to be tested: 10
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:      ID
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG: =======
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:   -1200
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:   -1100
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:   -1000
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:    -900
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:    -800
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:    -700
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:    -600
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:    -500
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:    -400
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:    -300
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:     100
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:     200
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG: ======= ====== =====================
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        1
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        2
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        2
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        3
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        3
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        4
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        4
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        5
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        5
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        6
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        6
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        7
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        7
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        8
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        8
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                        9
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                        9
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                       10
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                       10
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       2 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:       1 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:      -3 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:      -4 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:      -5 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:      -6 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:      -7 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:      -8 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:      -9 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:     -10 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:     -11 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:     -12 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = upd, iter = 0, worker STDLOG: Records affected: 31
 
-    target_object_type: view, checked_DML = upd, iter = 1, restarts number to be tested: 12
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 2
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:      ID
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG: =======
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:     -14
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:     -13
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:     -12
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:     -11
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:     -10
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:      -9
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:      -8
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:      -7
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:      -6
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:      -5
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:      -4
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:      -3
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 14
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG: ======= ====== =====================
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        1
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        2
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        2
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        3
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        3
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        4
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        4
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        5
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        5
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        6
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        6
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        7
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        7
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        8
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        8
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        9
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        9
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                       10
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                       10
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                       11
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 21
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: deadlock
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: -update conflicts with concurrent update
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: -concurrent transaction number is 1630
-    target_object_type: view, checked_DML = upd, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
-bt-repo	mp	mp_sttm_restart_max_limit.sql
+    checked_mode: view, checked_DML = upd, iter = 1, restarts number to be tested: 12
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 2
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:      ID
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG: =======
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:     -14
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:     -13
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:     -12
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:     -11
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:     -10
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:      -9
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:      -8
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:      -7
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:      -6
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:      -5
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:      -4
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:      -3
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 14
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG: ======= ====== =====================
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        1
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        2
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        2
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        3
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        3
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        4
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        4
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        5
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        5
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        6
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        6
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        7
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        7
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        8
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        8
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                        9
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                        9
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                       10
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                       10
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       2 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:       1 UPD                       11
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDLOG: Records affected: 21
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDERR: deadlock
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDERR: -update conflicts with concurrent update
+    checked_mode: view, checked_DML = upd, iter = 1, worker STDERR: -concurrent transaction number is 1630
 
-    target_object_type: view, checked_DML = mer, iter = 0, restarts number to be tested: 10
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:      ID
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG: =======
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:   -1200
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:   -1100
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:   -1000
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:    -900
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:    -800
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:    -700
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:    -600
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:    -500
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:    -400
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:    -300
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:     100
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:     200
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG: ======= ====== =====================
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        1
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        2
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        2
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        3
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        3
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        4
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        4
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        5
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        5
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        6
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        6
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        7
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        7
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        8
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        8
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        9
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        9
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                       10
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                       10
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:      -3 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:      -4 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:      -5 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:      -6 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:      -7 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:      -8 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:      -9 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:     -10 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:     -11 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:     -12 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 31
+    checked_mode: view, checked_DML = mer, iter = 0, restarts number to be tested: 10
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:      ID
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG: =======
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:   -1200
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:   -1100
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:   -1000
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:    -900
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:    -800
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:    -700
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:    -600
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:    -500
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:    -400
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:    -300
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:     100
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:     200
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG: ======= ====== =====================
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        1
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        2
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        2
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        3
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        3
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        4
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        4
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        5
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        5
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        6
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        6
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        7
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        7
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        8
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        8
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                        9
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                        9
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                       10
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                       10
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       2 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:       1 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:      -3 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:      -4 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:      -5 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:      -6 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:      -7 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:      -8 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:      -9 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:     -10 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:     -11 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:     -12 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = mer, iter = 0, worker STDLOG: Records affected: 31
 
-    target_object_type: view, checked_DML = mer, iter = 1, restarts number to be tested: 12
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 2
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:      ID
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG: =======
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:     -14
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:     -13
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:     -12
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:     -11
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:     -10
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:      -9
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:      -8
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:      -7
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:      -6
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:      -5
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:      -4
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:      -3
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 14
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG: ======= ====== =====================
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        1
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        2
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        2
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        3
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        3
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        4
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        4
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        5
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        5
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        6
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        6
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        7
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        7
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        8
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        8
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        9
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        9
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                       10
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                       10
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                       11
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 21
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: deadlock
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: -update conflicts with concurrent update
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: -concurrent transaction number is 1983
-    target_object_type: view, checked_DML = mer, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
-bt-repo	mp	mp_sttm_restart_max_limit.sql
+    checked_mode: view, checked_DML = mer, iter = 1, restarts number to be tested: 12
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 2
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:      ID
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG: =======
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:     -14
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:     -13
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:     -12
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:     -11
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:     -10
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:      -9
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:      -8
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:      -7
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:      -6
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:      -5
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:      -4
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:      -3
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 14
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG: ======= ====== =====================
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        1
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        2
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        2
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        3
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        3
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        4
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        4
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        5
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        5
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        6
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        6
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        7
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        7
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        8
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        8
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                        9
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                        9
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                       10
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                       10
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       2 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:       1 UPD                       11
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDLOG: Records affected: 21
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDERR: deadlock
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDERR: -update conflicts with concurrent update
+    checked_mode: view, checked_DML = mer, iter = 1, worker STDERR: -concurrent transaction number is 1983
 
-    target_object_type: view, checked_DML = del, iter = 0, restarts number to be tested: 10
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG: Records affected: 0
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG: ======= ====== =====================
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        1
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        2
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        2
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        3
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        3
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        4
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        4
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        5
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        5
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        6
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        6
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        7
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        7
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        8
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        8
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        9
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        9
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                       10
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                       10
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:      -3 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:      -4 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:      -5 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:      -6 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:      -7 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:      -8 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:      -9 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:     -10 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:     -11 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:     -12 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = del, iter = 0, worker STDLOG: Records affected: 31
+    checked_mode: view, checked_DML = del, iter = 0, restarts number to be tested: 10
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG: Records affected: 0
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG: ======= ====== =====================
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        1
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        2
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        2
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        3
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        3
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        4
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        4
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        5
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        5
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        6
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        6
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        7
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        7
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        8
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        8
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                        9
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                        9
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                       10
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                       10
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       2 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:       1 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:      -3 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:      -4 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:      -5 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:      -6 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:      -7 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:      -8 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:      -9 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:     -10 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:     -11 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:     -12 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = del, iter = 0, worker STDLOG: Records affected: 31
 
-    target_object_type: view, checked_DML = del, iter = 1, restarts number to be tested: 12
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG: Records affected: 2
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:      ID
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG: =======
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:     -14
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:     -13
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:     -12
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:     -11
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:     -10
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:      -9
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:      -8
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:      -7
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:      -6
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:      -5
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:      -4
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:      -3
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG: Records affected: 14
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG: ======= ====== =====================
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        1
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        2
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        2
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        3
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        3
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        4
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        4
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        5
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        5
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        6
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        6
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        7
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        7
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        8
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        8
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        9
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        9
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                       10
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                       10
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                       11
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = del, iter = 1, worker STDLOG: Records affected: 21
-    target_object_type: view, checked_DML = del, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
-    target_object_type: view, checked_DML = del, iter = 1, worker STDERR: deadlock
-    target_object_type: view, checked_DML = del, iter = 1, worker STDERR: -update conflicts with concurrent update
-    target_object_type: view, checked_DML = del, iter = 1, worker STDERR: -concurrent transaction number is 2336
-    target_object_type: view, checked_DML = del, iter = 1, worker STDERR: After line 18 in file C:\\FBTESTING\\qa
-bt-repo	mp	mp_sttm_restart_max_limit.sql
+    checked_mode: view, checked_DML = del, iter = 1, restarts number to be tested: 12
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG: Records affected: 2
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:      ID
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG: =======
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:     -14
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:     -13
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:     -12
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:     -11
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:     -10
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:      -9
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:      -8
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:      -7
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:      -6
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:      -5
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:      -4
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:      -3
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG: Records affected: 14
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:  OLD_ID OP              SNAP_NO_RANK
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG: ======= ====== =====================
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        1
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        2
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        2
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        3
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        3
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        4
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        4
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        5
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        5
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        6
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        6
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        7
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        7
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        8
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        8
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                        9
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                        9
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                       10
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                       10
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       2 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:       1 DEL                       11
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = del, iter = 1, worker STDLOG: Records affected: 21
+    checked_mode: view, checked_DML = del, iter = 1, worker STDERR: Statement failed, SQLSTATE = 40001
+    checked_mode: view, checked_DML = del, iter = 1, worker STDERR: deadlock
+    checked_mode: view, checked_DML = del, iter = 1, worker STDERR: -update conflicts with concurrent update
+    checked_mode: view, checked_DML = del, iter = 1, worker STDERR: -concurrent transaction number is 2336
 
-    target_object_type: view, checked_DML = lok, iter = 0, restarts number to be tested: 10
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:      ID
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG: =======
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:       1
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:       2
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:       3
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:       4
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:       5
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:       6
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:       7
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:       8
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:       9
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:      10
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:      11
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:      12
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG:
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 12
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 0
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: Statement failed, SQLSTATE = 42000
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: Dynamic SQL Error
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: -SQL error code = -104
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: -WITH LOCK can be used only with a single physical table
-    target_object_type: view, checked_DML = lok, iter = 0, worker STDERR: After line 19 in file C:\\FBTESTING\\qa
-bt-repo	mp	mp_sttm_restart_max_limit.sql
+    checked_mode: view, checked_DML = lok, iter = 0, restarts number to be tested: 10
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:      ID
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG: =======
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       1
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       2
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       3
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       4
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       5
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       6
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       7
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       8
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       9
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:      10
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:      11
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:      12
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 12
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 0
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDERR: Statement failed, SQLSTATE = 42000
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDERR: Dynamic SQL Error
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDERR: -SQL error code = -104
+    checked_mode: view, checked_DML = lok, iter = 0, worker STDERR: -WITH LOCK can be used only with a single physical table
 
-    target_object_type: view, checked_DML = lok, iter = 1, restarts number to be tested: 12
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:      ID
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG: =======
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:       1
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:       2
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:       3
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:       4
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:       5
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:       6
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:       7
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:       8
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:       9
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:      10
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:      11
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:      12
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:      13
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:      14
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG:
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 14
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 0
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: Statement failed, SQLSTATE = 42000
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: Dynamic SQL Error
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: -SQL error code = -104
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: -WITH LOCK can be used only with a single physical table
-    target_object_type: view, checked_DML = lok, iter = 1, worker STDERR: After line 19 in file C:\\FBTESTING\\qa
-bt-repo	mp	mp_sttm_restart_max_limit.sql
+    checked_mode: view, checked_DML = lok, iter = 1, restarts number to be tested: 12
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      ID
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG: =======
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       1
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       2
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       3
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       4
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       5
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       6
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       7
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       8
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       9
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      10
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      11
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      12
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      13
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      14
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 14
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 0
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDERR: Statement failed, SQLSTATE = 42000
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDERR: Dynamic SQL Error
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDERR: -SQL error code = -104
+    checked_mode: view, checked_DML = lok, iter = 1, worker STDERR: -WITH LOCK can be used only with a single physical table
+
 """
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
 @pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
 
-# Original python code for this test:
-# -----------------------------------
-#
-# import os
-# import sys
-# import subprocess
-# from subprocess import Popen
-# import shutil
-# from fdb import services
-# import time
-#
-# os.environ["ISC_USER"] = user_name
-# os.environ["ISC_PASSWORD"] = user_password
-#
-# # How long LOCKER must wait before raise update-conflict error
-# # (useful for debug in case os some error in this test algorithm):
-# LOCKER_LOCK_TIMEOUT = 5
-#
-# ##############################
-# # Temply, for debug obly:
-# this_fdb=db_conn.database_name
-# this_dbg=os.path.splitext(this_fdb)[0] + '.4debug.fdb'
-# ##############################
-#
-# db_conn.close()
-# fb_home = services.connect(host='localhost').get_home_directory()
-#
-# #--------------------------------------------
-#
-# def flush_and_close( file_handle ):
-#     # https://docs.python.org/2/library/os.html#os.fsync
-#     # If you're starting with a Python file object f,
-#     # first do f.flush(), and
-#     # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#     global os
-#
-#     file_handle.flush()
-#     if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#         # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#         os.fsync(file_handle.fileno())
-#     file_handle.close()
-#
-# #--------------------------------------------
-#
-# def cleanup( f_names_list ):
-#     global os
-#     for f in f_names_list:
-#        if type(f) == file:
-#           del_name = f.name
-#        elif type(f) == str:
-#           del_name = f
-#        else:
-#           print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#           del_name = None
-#
-#        if del_name and os.path.isfile( del_name ):
-#            os.remove( del_name )
-#
-# #--------------------------------------------
-#
-# sql_init_ddl = os.path.join(context['files_location'],'read-consist-sttm-restart-DDL.sql')
-#
-# for target_object_type in('table', 'view'):
-#
-#     target_obj = 'test' if target_object_type == 'table' else 'v_test'
-#
-#     for checked_DML in('upd', 'mer', 'del', 'lok'):
-#     #for checked_DML in('lok',):
-#         worker_dml = "select 'UNKNOWN MODE' as msg from rdb$database"
-#         if checked_DML == 'upd':
-#             worker_dml = 'update %(target_obj)s set id = id * 100 where id <= 2 order by id DESC;' % locals()
-#         elif checked_DML == 'mer':
-#             worker_dml = 'merge into %(target_obj)s t using (select x.id from %(target_obj)s x where x.id <= 2 order by id DESC) s on t.id = s.id when matched then update set t.id = s.id * 100;' % locals()
-#         elif checked_DML == 'del':
-#             worker_dml = 'delete from %(target_obj)s where id <= 2 order by id DESC;' % locals()
-#         elif checked_DML == 'lok':
-#             # ::: NB :::
-#             # We must SUPRESS sending record to client for SELECT WITH LOCK, otherwise error
-#             # deadlock/update conflist will raise immediately! Because of this, we  enclose
-#             # such select into execute block which returns nothing:
-#             worker_dml = 'set term ^; execute block as declare c int; begin for select id from %(target_obj)s where id<=2 order by id desc with lock into c do begin end end^ set term ;^' % locals()
-#
-#         for main_iter in (0,1):
-#         #for main_iter in (1,):
-#
-#             ###################################################################################
-#             ###  H O W    M A N Y    R E S T A R T S    W E    W A N T    T O    C H E C K  ###
-#             ###################################################################################
-#             ROWS_TO_ADD = 10 + 2 * main_iter
-#
-#
-#             f_init_log=open( os.path.join(context['temp_directory'],'read-consist-sttm-restart-DDL.log'), 'w')
-#             f_init_err=open( ''.join( ( os.path.splitext(f_init_log.name)[0], '.err') ), 'w')
-#
-#             # RECREATION OF ALL DB OBJECTS:
-#             # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#             subprocess.call( [context['isql_path'], dsn, '-q', '-i', sql_init_ddl], stdout=f_init_log, stderr=f_init_err )
-#
-#             flush_and_close(f_init_log)
-#             flush_and_close(f_init_err)
-#
-#             sql_addi='''
-#                 set term ^;
-#                 execute block as
-#                 begin
-#                     rdb$set_context('USER_SESSION', 'WHO', 'INIT_DATA');
-#                 end
-#                 ^
-#                 set term ;^
-#                 insert into %(target_obj)s(id, x) select row_number()over(),row_number()over() from rdb$types rows (2 + %(ROWS_TO_ADD)s); -- <<< INITIAL DATA
-#                 commit;
-#             ''' % locals()
-#
-#             runProgram('isql', [ dsn, '-q' ], sql_addi)
-#
-#             locker_tpb = fdb.TPB()
-#             locker_tpb.lock_timeout = LOCKER_LOCK_TIMEOUT
-#             locker_tpb.lock_resolution = fdb.isc_tpb_wait
-#
-#             con_lock_1 = fdb.connect( dsn = dsn, isolation_level=locker_tpb )
-#             con_lock_2 = fdb.connect( dsn = dsn, isolation_level=locker_tpb )
-#
-#             con_lock_1.execute_immediate( "execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #1'); end" )
-#             con_lock_2.execute_immediate( "execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #2'); end" )
-#
-#             #########################
-#             ###  L O C K E R - 1  ###
-#             #########################
-#
-#             con_lock_1.execute_immediate( 'update %(target_obj)s set id=id where id = 1' % locals() )
-#
-#             sql_text='''
-#                 connect '%(dsn)s';
-#                 set list on;
-#                 set autoddl off;
-#                 set term ^;
-#                 execute block as
-#                 begin
-#                     rdb$set_context('USER_SESSION','WHO', 'WORKER');
-#                 end
-#                 ^
-#                 set term ;^
-#                 commit;
-#                 SET KEEP_TRAN_PARAMS ON;
-#                 set transaction read committed read consistency;
-#                 set list off;
-#                 set wng off;
-#
-#                 set count on;
-#                 %(worker_dml)s -- UPDATE or DELETE or SELECT WITH LOCK; all ORDER BY ID DESC; MUST HANG BECAUSE OF LOCKERs
-#
-#                 -- check results:
-#                 -- ###############
-#
-#                 select id from %(target_obj)s order by id;
-#
-#                 select v.old_id, v.op, v.snap_no_rank
-#                 from v_worker_log v
-#                 where v.op = iif( '%(checked_DML)s' = 'mer', 'upd', '%(checked_DML)s'); -- 'UPD' or 'DEL'; for 'SELECT WITH LOCK' no records will be in v_worker_log.
-#
-#
-#                 --set width who 10;
-#                 -- DO NOT check this! Values can differ here from one run to another!
-#                 -- select id, trn, who, old_id, new_id, op, rec_vers, global_cn, snap_no from tlog_done order by id;
-#                 rollback;
-#
-#             '''  % dict(globals(), **locals())
-#
-#             f_worker_sql=open( os.path.join(context['temp_directory'],'tmp_sttm_restart_max_limit.sql'), 'w')
-#             f_worker_sql.write(sql_text)
-#             flush_and_close(f_worker_sql)
-#
-#
-#             f_worker_log=open( ''.join( ( os.path.splitext(f_worker_sql.name)[0], '.log') ), 'w')
-#             f_worker_err=open( ''.join( ( os.path.splitext(f_worker_log.name)[0], '.err') ), 'w')
-#
-#             ############################################################################
-#             ###  L A U N C H     W O R K E R    U S I N G     I S Q L,   A S Y N C.  ###
-#             ############################################################################
-#
-#             p_worker = Popen( [ context['isql_path'], '-pag', '9999999', '-q', '-i', f_worker_sql.name ],stdout=f_worker_log, stderr=f_worker_err)
-#             time.sleep(1)
-#
-#             cur_lock_1 = con_lock_1.cursor()
-#             cur_lock_2 = con_lock_2.cursor()
-#             sttm = 'update %(target_obj)s set id = ? where abs( id ) = ?' % locals()
-#
-#
-#             for i in range(0,ROWS_TO_ADD):
-#                 v_id = 2 + ROWS_TO_ADD-i
-#                 if i % 2 == 0:
-#                     cur_lock_2.execute( sttm, ( -abs( v_id ), v_id, ) )
-#                     con_lock_2.commit()
-#                     cur_lock_2.execute( sttm, ( -abs( v_id ), v_id, ) )
-#                     con_lock_1.commit()
-#                 else:
-#                     cur_lock_1.execute( sttm, ( -abs( v_id ), v_id, ) )
-#                     con_lock_1.commit()
-#                     cur_lock_1.execute( sttm, ( -abs( v_id ), v_id, ) )
-#                     con_lock_2.commit()
-#
-#             cur_lock_1.close()
-#             cur_lock_2.close()
-#
-#             if ROWS_TO_ADD % 2 == 0:
-#                 con_lock_2.commit()
-#                 con_lock_1.commit()
-#             else:
-#                 con_lock_1.commit()
-#                 con_lock_2.commit()
-#
-#             # Close lockers:
-#             ################
-#             for c in (con_lock_1, con_lock_2):
-#                 c.close()
-#
-#             # Here we wait for ISQL complete its mission:
-#             p_worker.wait()
-#
-#             flush_and_close(f_worker_log)
-#             flush_and_close(f_worker_err)
-#
-#             # CHECK RESULTS
-#             ###############
-#
-#             print( 'target_object_type: %(target_object_type)s, checked_DML = %(checked_DML)s, iter = %(main_iter)s, restarts number to be tested: %(ROWS_TO_ADD)s' % locals() )
-#
-#             with open(f_init_err.name,'r') as f:
-#                 for line in f:
-#                     if line:
-#                         print( 'target_object_type: %(target_object_type)s, checked_DML = %(checked_DML)s, iter = %(main_iter)s, UNEXPECTED STDERR for initial SQL: %(line)s'  % locals() )
-#
-#             for f in (f_worker_log, f_worker_err):
-#                 with open(f.name,'r') as g:
-#                     for line in g:
-#                         if line:
-#                             logname = 'STDLOG' if f.name == f_worker_log.name else 'STDERR'
-#                             print( 'target_object_type: %(target_object_type)s, checked_DML = %(checked_DML)s, iter = %(main_iter)s, worker %(logname)s: %(line)s'  % locals() )
-#
-#
-#         #< for main_iter in (0,1)
-#     # < for checked_DML in ('upd', 'mer', 'del', 'lok')
-# # < for target_object_type in ('table', 'view')
-# # Cleanup.
-# ##########
-# time.sleep(1)
-# cleanup( (f_init_log, f_init_err, f_worker_sql, f_worker_log, f_worker_err) )
-#
-# '''
-#   'substitutions':[
-#       ('=','')
-#      ,('[ 	]+',' ')
-#      ,('.*After line \\d+.*', '')
-#      ,('.*[\\-]?concurrent transaction number is \\d+', 'concurrent transaction number is')
-#      ,('.*At\\s+block\\s+line(:)?\\s+\\d+(,)?\\s+col(:)?\\s+\\d+', '')
-#    ]
-#
-# '''
-#
-# -----------------------------------
+    sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()
+
+    for checked_mode in('table', 'view'):
+        target_obj = 'test' if checked_mode == 'table' else 'v_test'
+
+        for checked_DML in('upd', 'mer', 'del', 'lok'):
+            worker_dml = "select 'UNKNOWN MODE' as msg from rdb$database"
+            if checked_DML == 'upd':
+                worker_dml = f'update {target_obj} set id = id * 100 where id <= 2 order by id DESC;'
+            elif checked_DML == 'mer':
+                worker_dml = f'merge into {target_obj} t using (select x.id from {target_obj} x where x.id <= 2 order by id DESC) s on t.id = s.id when matched then update set t.id = s.id * 100;'
+            elif checked_DML == 'del':
+                worker_dml = f'delete from {target_obj} where id <= 2 order by id DESC;'
+            elif checked_DML == 'lok':
+                # ::: NB :::
+                # We must SUPRESS sending record to client for SELECT WITH LOCK, otherwise error
+                # deadlock/update conflist will raise immediately! Because of this, we  enclose
+                # such select into execute block which returns nothing:
+                worker_dml = f'set term ^; execute block as declare c int; begin for select id from {target_obj} where id<=2 order by id desc with lock into c do begin end end^ set term ;^'
+
+            for main_iter in (0,1):
+
+                ###################################################################################
+                ###  H O W    M A N Y    R E S T A R T S    W E    W A N T    T O    C H E C K  ###
+                ###################################################################################
+                ROWS_TO_ADD = 10 + 2 * main_iter
+
+                sql_addi = f'''
+                    set term ^;
+                    execute block as
+                    begin
+                        rdb$set_context('USER_SESSION', 'WHO', 'INIT_DATA');
+                    end
+                    ^
+                    set term ;^
+                    insert into {target_obj}(id, x) select row_number()over(),row_number()over() from rdb$types rows (2 + {ROWS_TO_ADD}); -- <<< INITIAL DATA
+                    commit;
+                '''
+
+                act.isql(switches=['-q'], input = ''.join( (sql_init, sql_addi) ) )
+
+                with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2:
+                    for i,c in enumerate((con_lock_1,con_lock_2)):
+                        sttm = f"execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #{i+1}'); end"
+                        c.execute_immediate(sttm)
+
+                    #########################
+                    ###  L O C K E R - 1  ###
+                    #########################
+
+                    con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = 1' )
+
+                    worker_sql = f'''
+                        set list on;
+                        set autoddl off;
+                        set term ^;
+                        execute block as
+                        begin
+                            rdb$set_context('USER_SESSION','WHO', 'WORKER');
+                        end
+                        ^
+                        set term ;^
+                        commit;
+                        SET KEEP_TRAN_PARAMS ON;
+                        set transaction read committed read consistency;
+                        set list off;
+                        set wng off;
+
+                        set count on;
+
+                        -- Run UPDATE | DELETE | MERGE | SELECT WITH LOCK.
+                        -- EVery statement ends with 'ORDER BY ID DESC' and must hang because of lockes:
+                        {worker_dml} 
+
+                        -- check results:
+                        -- ###############
+
+                        select id from {target_obj} order by id;
+
+                        select v.old_id, v.op, v.snap_no_rank
+                        from v_worker_log v
+                        where v.op = iif( '{checked_DML}' = 'mer', 'upd', '{checked_DML}'); -- 'UPD' or 'DEL'; for 'SELECT WITH LOCK' no records will be in v_worker_log.
+
+
+                        --set width who 10;
+                        -- DO NOT check this! Values can differ here from one run to another!
+                        -- select id, trn, who, old_id, new_id, op, rec_vers, global_cn, snap_no from tlog_done order by id;
+                        rollback;
+
+                    '''
+
+                    fn_worker_sql.write_text(worker_sql)
+
+                    with fn_worker_log.open(mode='w') as hang_out, fn_worker_err.open(mode='w') as hang_err:
+
+                        ############################################################################
+                        ###  L A U N C H     W O R K E R    U S I N G     I S Q L,   A S Y N C.  ###
+                        ############################################################################
+                        p_worker = subprocess.Popen([act.vars['isql'], '-i', str(fn_worker_sql),
+                                                       '-user', act.db.user,
+                                                       '-password', act.db.password,
+                                                       '-pag', '999999',
+                                                       act.db.dsn
+                                                    ],
+                                                      stdout = hang_out,
+                                                      stderr = hang_err
+                                                   )
+                        time.sleep(1)
+
+                        cur_lock_1 = con_lock_1.cursor()
+                        cur_lock_2 = con_lock_2.cursor()
+                        sttm = f'update {target_obj} set id = ? where abs( id ) = ?'
+
+
+                        for i in range(0,ROWS_TO_ADD):
+                            v_id = 2 + ROWS_TO_ADD-i
+                            if i % 2 == 0:
+                                cur_lock_2.execute( sttm, ( -abs( v_id ), v_id, ) )
+                                con_lock_2.commit()
+                                cur_lock_2.execute( sttm, ( -abs( v_id ), v_id, ) )
+                                con_lock_1.commit()
+                            else:
+                                cur_lock_1.execute( sttm, ( -abs( v_id ), v_id, ) )
+                                con_lock_1.commit()
+                                cur_lock_1.execute( sttm, ( -abs( v_id ), v_id, ) )
+                                con_lock_2.commit()
+
+                        if ROWS_TO_ADD % 2 == 0:
+                            if con_lock_2.is_active():
+                                con_lock_2.commit()
+                            con_lock_1.commit()
+                        else:
+                            if con_lock_1.is_active():
+                                con_lock_1.commit()
+                            con_lock_2.commit()
+
+
+                        # Here we wait for ISQL complete its mission:
+                        p_worker.wait()
+
+                #< with ... con_lock_1, ... con_lock_2
+
+                # CHECK RESULTS
+                ###############
+                print( f'checked_mode: {checked_mode}, checked_DML = {checked_DML}, iter = {main_iter}, restarts number to be tested: {ROWS_TO_ADD}' )
+
+                for g in (fn_worker_log, fn_worker_err):
+                    logname = 'STDLOG' if g == fn_worker_log else 'STDERR'
+                    with g.open() as f:
+                        for line in f:
+                            if line:
+                                print( f'checked_mode: {checked_mode}, checked_DML = {checked_DML}, iter = {main_iter}, worker {logname}: {line}'  )
+
+            #< for main_iter in (0,1)
+        # < for checked_DML in ('upd', 'mer', 'del', 'lok')
+    # < for checked_mode in ('table', 'view')
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
