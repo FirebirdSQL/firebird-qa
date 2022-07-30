@@ -199,6 +199,10 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
         '''
 
         act.isql(switches=['-q'], input = ''.join( (sql_init, sql_addi) ) )
+        # ::: NOTE ::: We have to immediately quit if any error raised in prepare phase.
+        # See also letter from dimitr, 01-feb-2022 14:46
+        assert act.stderr == ''
+        act.reset()
 
         with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2:
             for i,c in enumerate((con_lock_1,con_lock_2)):
