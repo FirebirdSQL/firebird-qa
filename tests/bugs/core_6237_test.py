@@ -25,6 +25,9 @@ DESCRIPTION:
   Fails on Windows 4.0.1 with ratio 1.98 - raw iron W10, does not fail with Linux on the same HW
 JIRA:        CORE-6237
 FBTEST:      bugs.core_6237
+NOTES:
+    [30.07.2022] pzotov
+    Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 (windows only; pisix will be checked later).
 """
 
 import pytest
@@ -39,32 +42,47 @@ srp_user = user_factory('db', name='tmp_c6237_srp', password='123', plugin='Srp'
 
 act = python_act('db')
 
+#------------------
+def median(lst):
+    n = len(lst)
+    s = sorted(lst)
+    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+#------------------
+
+
 expected_stdout = """
     EXPECTED. Ratio of total elapsed time when use Srp vs Legacy is less then threshold.
 """
 
-@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0.5')
 def test_1(act: Action, leg_user: User, srp_user: User, capsys):
-    N_ITER = 50
+    N_COUNT = 100
     MIN_RATIO_THRESHOLD = 1.41
-    elapsed = {leg_user.name: 0, srp_user.name: 0}
-    #
+    sp_time = {}
+
+
     for user in [leg_user, srp_user]:
-        start = datetime.datetime.now()
-        for i in range(N_ITER):
-            with act.db.connect(user=user.name, password=user.password):
-                pass
-        stop = datetime.datetime.now()
-        diff = stop - start
-        elapsed[user.name] = int(diff.seconds) * 1000 + diff.microseconds / 1000
-    #
-    elapsed_time_ratio = 1.00 * elapsed[srp_user.name] / elapsed[leg_user.name]
-    if  elapsed_time_ratio < MIN_RATIO_THRESHOLD:
+        for i in range(N_COUNT):
+             start = datetime.datetime.now()
+             stop = start
+             with act.db.connect(user=user.name, password=user.password):
+                stop = datetime.datetime.now()
+
+             diff = stop - start
+             sp_time[user.name, i] = int(diff.seconds) * 1000 + diff.microseconds / 1000
+
+    leg_user_conn_time = [round(v,2) for k,v in sp_time.items() if k[0] == leg_user.name]
+    srp_user_conn_time = [round(v,2) for k,v in sp_time.items() if k[0] == srp_user.name]
+
+
+    conn_time_ratio = median(srp_user_conn_time) / median(leg_user_conn_time)
+    if conn_time_ratio < MIN_RATIO_THRESHOLD:
         print('EXPECTED. Ratio of total elapsed time when use Srp vs Legacy is less then threshold.')
     else:
-        print(f'Ratio Srp/Legacy: {elapsed_time_ratio} - is GREATER than threshold = {MIN_RATIO_THRESHOLD}. Total time spent for Srp: {elapsed[srp_user.name]} ms; for Legacy: {elapsed[leg_user.name]} ms.')
-    #
+        print(f'Ratio Srp/Legacy: {conn_time_ratio} - is GREATER than threshold = {MIN_RATIO_THRESHOLD}.')
+        print(f'    Median for Srp: {median(srp_user_conn_time)}')
+        print(f'    Median for Legacy: {median(leg_user_conn_time)}')
+
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
