@@ -109,8 +109,16 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
         with act.connect_server() as srv:
 
             fblog_1 = act.get_firebird_log()
+            #with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
+            #    srv.info.get_log()
+            #    fblog_1 = srv.readlines()
+
             srv.database.repair(database = str(tmp_fdb), flags=SrvRepairFlag.CORRUPTION_CHECK)
+            
             fblog_2 = act.get_firebird_log()
+            #with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
+            #    srv.info.get_log()
+            #    fblog_2 = srv.readlines()
 
             p_diff = re.compile('Validation finished: \\d+ errors, \\d+ warnings, \\d+ fixed')
             validation_result = ''
