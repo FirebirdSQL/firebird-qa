@@ -23,9 +23,26 @@ NOTES:
     FB 5.0.0.455 and later: data sources with equal cardinality now present in the HASH plan in order they are specified in the query.
     Reversed order was used before this build. Because of this, two cases of expected stdout must be taken in account, see variables
     'fb3x_checked_stdout' and 'fb5x_checked_stdout'.
+
+    [02.05.202] pzotov
+    Test requires that presense of FIREBIRD_TMP pointing to accessible directory.
+    If this directory missed then execution fails with messsage that can be LOCALIZED:
+    ========
+        (Captured ISQL stderr call):
+        Statement failed, SQLSTATE = 08001
+        I/O error during "CreateFile (create)" operation for file "R:\RAMDISK\fb_recbuf_py6oyh"
+        -Error while trying to create file
+        -[ The system cannot find the path specified ] -- CAN BE LOCALIZED.
+    ========
+    One need to specify 'io_enc=locale.getpreferredencoding()' when invoke ISQL
+    if we want this message to appear at console in readable view:
+        act.isql(switches = ..., input = ..., charset = ..., io_enc=locale.getpreferredencoding())
+    NOTE: specifying 'encoding_errors = ignore' in the DEFAULT section of firebird-driver.conf
+    does not prevent from UnicodeDecode error in this case.
 """
 
 import pytest
+import locale
 from firebird.qa import *
 
 substitutions = [('[ \t]+', ' '), ('.*RECORD LENGTH:[ \t]+[\\d]+[ \t]*\\)', ''),
@@ -48,6 +65,7 @@ MIN_RECS_TO_ADD = 17000
 test_script = """
     set list on; 
     set plan on;
+    --set planonly;
     select count(*) from test a join test b using(id, s);
     quit;
 """
@@ -62,6 +80,8 @@ def test_1(act: Action):
         con.commit()
 
     act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout
-    act.isql(switches=['-q'], input=test_script)
+
+    # NB: FIREBIRD_TMP must point do accessible directory here!
+    act.isql(switches=['-q'], input=test_script, charset='UTF8', io_enc=locale.getpreferredencoding())
     act.stdout = act.stdout.upper()
     assert act.clean_stdout == act.clean_expected_stdout
