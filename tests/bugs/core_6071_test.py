@@ -53,15 +53,20 @@ tmp_fbk = temp_file( filename = 'tmp_core_6071_encrypted.fbk')
 tmp_res = temp_file( filename = 'tmp_core_6071_restored.fdb')
 tmp_log = temp_file( filename = 'tmp_core_6071_bkup_rest.log')
 
-MAX_ENCRYPT_DECRYPT_MS = 5000
-ENCRYPTION_PLUGIN = 'fbSampleDbCrypt'
-ENCRYPTION_HOLDER = 'fbSampleKeyHolder'
-ENCRYPTION_KEY = 'Red'
-
 @pytest.mark.encryption
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, tmp_fbk: Path, tmp_res: Path, tmp_log: Path, capsys):
+
+    # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+    # from act.files_dir/'test_config.ini':
+    enc_settings = QA_GLOBALS['encryption']
+
+    MAX_ENCRYPT_DECRYPT_MS = int(enc_settings['max_encrypt_decrypt_ms']) # 5000
+    ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
+    ENCRYPTION_HOLDER = enc_settings['encryption_holder'] # fbSampleKeyHolder
+    ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
+
     encryption_started = False
     encryption_finished = False
     with act.db.connect() as con:
