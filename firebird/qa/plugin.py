@@ -366,6 +366,7 @@ def pytest_configure(config):
             result = 'SuperClassic' if f1 == f2 else 'SuperServer'
     _vars_['server-arch'] = result
     # get sampleDB directory
+    _vars_['sample_dir'] = None
     with connect('employee') as con, \
          connect_server(_vars_['server'], user='SYSDBA', password=_vars_['password']) as srv:
         for db in srv.info.attached_databases:
@@ -373,6 +374,8 @@ def pytest_configure(config):
             if db_path.name.lower() == 'employee.fdb':
                 _vars_['sample_dir'] = db_path.parent
     # Create QA subdirectory in samle db directory
+    if _vars_['sample_dir'] is None:
+        raise Exception("Cannot determine the 'sample_dir'")
     samle_qa = _vars_['sample_dir'] / 'qa'
     remove_dir(samle_qa)
     samle_qa.mkdir(exist_ok=True)
