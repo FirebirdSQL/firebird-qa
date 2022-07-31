@@ -22,7 +22,7 @@ db = db_factory()
 
 act = python_act('db', substitutions=[('[ \t]+', ' '), ('(INPUT|OUTPUT)\\s+message .*', ''), (':\\s+(name:|table:)\\s+.*', '') ])
 
-tmp_ext_file = temp_file('tmp_gtcs_external_file_03_4.dat')
+tmp_ext_file = temp_file('tmp_gtcs_external_file_04_d.dat')
 
 expected_stderr = """
     Statement failed, SQLSTATE = 22003
