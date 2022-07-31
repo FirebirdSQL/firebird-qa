@@ -66,10 +66,6 @@ init_script = f"""
 db = db_factory(init = init_script, utf8filename = False, charset='none')
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-MAX_ENCRYPT_DECRYPT_MS = 60000
-ENCRYPTION_PLUGIN = 'fbSampleDbCrypt'
-ENCRYPTION_KEY = 'Red'
-
 expected_stdout = """
     Number of distinct values of mon$crypt_page: EXPECTED
     Last measured values of mon$crypt_page and mon$crypt_state: EXPECTED
@@ -79,6 +75,14 @@ expected_stdout = """
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 
+    # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+    # from act.files_dir/'test_config.ini':
+    enc_settings = QA_GLOBALS['encryption']
+
+    MAX_ENCRYPT_DECRYPT_MS = int(enc_settings['max_encrypt_decrypt_ms']) # 5000 // was: 60'000
+    ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
+    ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
+   
     with act.connect_server() as srv:
         srv.database.set_write_mode(database=act.db.db_path, mode=DbWriteMode.SYNC)
 
