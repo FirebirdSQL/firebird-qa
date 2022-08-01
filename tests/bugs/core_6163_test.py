@@ -113,10 +113,10 @@ expected_stdout = """
 def test_1(act: Action, capsys):
 
    
-    cfp = configparser.ConfigParser()
-    cfp.read( (act.files_dir / 'test_config.ini') )
+    # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+    # from act.files_dir/'test_config.ini':
+    enc_settings = QA_GLOBALS['encryption']
 
-    enc_settings = cfp['encryption']
     max_encrypt_decrypt_ms = int(enc_settings['max_encrypt_decrypt_ms']) # 5000
     encryption_plugin = enc_settings['encryption_plugin'] # fbSampleDbCrypt
     encryption_holder  = enc_settings['encryption_holder'] # fbSampleKeyHolder

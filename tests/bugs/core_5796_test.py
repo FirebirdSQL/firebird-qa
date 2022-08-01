@@ -59,73 +59,78 @@ init_script = f"""
 db = db_factory(init = init_script)
 act = python_act('db')
 
-MAX_ENCRYPT_DECRYPT_MS = 5000
-ENCRYPTION_PLUGIN = 'fbSampleDbCrypt'
-ENCRYPTION_KEY = 'Red'
-
 @pytest.mark.encryption
 @pytest.mark.version('>=3.0.4')
 def test_1(act: Action, capsys):
-        with act.db.connect() as con:
 
-            t1=py_dt.datetime.now()
-            d1 = t1-t1
-            sttm = f'alter database encrypt with "{ENCRYPTION_PLUGIN}" key "{ENCRYPTION_KEY}"'
-            try:
-                con.execute_immediate(sttm)
-                con.commit()
-            except DatabaseError as e:
-                print( e.__str__() )
+    # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+    # from act.files_dir/'test_config.ini':
+    enc_settings = QA_GLOBALS['encryption']
 
-            act.expected_stdout = ''
-            act.stdout = capsys.readouterr().out
-            assert act.clean_stdout == act.clean_expected_stdout
+    MAX_ENCRYPT_DECRYPT_MS = int(enc_settings['max_encrypt_decrypt_ms']) # 5000
+    ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
+    ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
+
+    with act.db.connect() as con:
+
+        t1=py_dt.datetime.now()
+        d1 = t1-t1
+        sttm = f'alter database encrypt with "{ENCRYPTION_PLUGIN}" key "{ENCRYPTION_KEY}"'
+        try:
+            con.execute_immediate(sttm)
+            con.commit()
+        except DatabaseError as e:
+            print( e.__str__() )
+
+        act.expected_stdout = ''
+        act.stdout = capsys.readouterr().out
+        assert act.clean_stdout == act.clean_expected_stdout
+        act.reset()
+
+        while True:
+            t2=py_dt.datetime.now()
+            d1=t2-t1
+            if d1.seconds*1000 + d1.microseconds//1000 > MAX_ENCRYPT_DECRYPT_MS:
+                con.execute_immediate(f"select 'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.' as msg from rdb$database")
+                break
+
+            # Possible output:
+            #     Database not encrypted
+            #     Database encrypted, crypt thread not complete
+            act.isql(switches=['-q'], input = 'show database;', combine_output = True)
+            if 'Database encrypted' in act.stdout:
+                if 'not complete' in act.stdout:
+                    pass
+                else:
+                    break
             act.reset()
 
-            while True:
-                t2=py_dt.datetime.now()
-                d1=t2-t1
-                if d1.seconds*1000 + d1.microseconds//1000 > MAX_ENCRYPT_DECRYPT_MS:
-                    con.execute_immediate(f"select 'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.' as msg from rdb$database")
-                    break
+        if d1.seconds*1000 + d1.microseconds//1000 <= MAX_ENCRYPT_DECRYPT_MS:
+            act.reset()
+            act.gstat(switches=['-e'])
 
-                # Possible output:
-                #     Database not encrypted
-                #     Database encrypted, crypt thread not complete
-                act.isql(switches=['-q'], input = 'show database;', combine_output = True)
-                if 'Database encrypted' in act.stdout:
-                    if 'not complete' in act.stdout:
-                        pass
+            # Data pages: total 884803, encrypted 884803, non-crypted 0
+            # ...
+            pattern = re.compile('(data|index|blob|generator)\\s+pages[:]{0,1}\\s+total[:]{0,1}\\s+\\d+[,]{0,1}\\s+encrypted[:]{0,1}\\s+\\d+.*[,]{0,1}non-crypted[:]{0,1}\\s+\\d+.*', re.IGNORECASE)
+            for line in act.stdout.splitlines():
+                if pattern.match(line.strip()):
+                    # We assume that every line finishes with number of NON-crypted pages, and this number must be 0:
+                    words = line.split()
+                    if words[-1] == '0':
+                        print(words[0] + ': expected, ' +  words[-1])
                     else:
-                        break
-                act.reset()
+                        print(words[0] + ': UNEXPECTED, ' +  words[-1])
 
-            if d1.seconds*1000 + d1.microseconds//1000 <= MAX_ENCRYPT_DECRYPT_MS:
-                act.reset()
-                act.gstat(switches=['-e'])
+        else:
+            print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.')
 
-                # Data pages: total 884803, encrypted 884803, non-crypted 0
-                # ...
-                pattern = re.compile('(data|index|blob|generator)\\s+pages[:]{0,1}\\s+total[:]{0,1}\\s+\\d+[,]{0,1}\\s+encrypted[:]{0,1}\\s+\\d+.*[,]{0,1}non-crypted[:]{0,1}\\s+\\d+.*', re.IGNORECASE)
-                for line in act.stdout.splitlines():
-                    if pattern.match(line.strip()):
-                        # We assume that every line finishes with number of NON-crypted pages, and this number must be 0:
-                        words = line.split()
-                        if words[-1] == '0':
-                            print(words[0] + ': expected, ' +  words[-1])
-                        else:
-                            print(words[0] + ': UNEXPECTED, ' +  words[-1])
+        act.expected_stdout = """
+            Data: expected, 0
+            Index: expected, 0
+            Blob: expected, 0
+            Generator: expected, 0
+        """
 
-            else:
-                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.')
+        act.stdout = capsys.readouterr().out
 
-            act.expected_stdout = """
-                Data: expected, 0
-                Index: expected, 0
-                Blob: expected, 0
-                Generator: expected, 0
-            """
-
-            act.stdout = capsys.readouterr().out
-
-            assert act.clean_stdout == act.clean_expected_stdout
+        assert act.clean_stdout == act.clean_expected_stdout
