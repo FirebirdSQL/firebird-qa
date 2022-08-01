@@ -341,8 +341,11 @@ def pytest_configure(config):
     # Driver encoding for NONE charset
     CHARSET_MAP['NONE'] = 'utf-8'
     CHARSET_MAP[None] = 'utf-8'
-    # Server architecture [CS,SS,SC]
+    # Server architecture [CS,SS,SC] and sample directory
+    _vars_['sample_dir'] = None
     with connect('employee') as con1, connect('employee') as con2:
+        db_path = Path(con1.info.name)
+        _vars_['sample_dir'] = db_path.parent
         sql = f"""
         select count(distinct a.mon$server_pid), min(a.mon$remote_protocol),
         max(iif(a.mon$remote_protocol is null, 1, 0))
@@ -365,11 +368,6 @@ def pytest_configure(config):
             f2 = con1.info.get_info(DbInfoCode.FETCHES)
             result = 'SuperClassic' if f1 == f2 else 'SuperServer'
     _vars_['server-arch'] = result
-    # get sampleDB directory
-    _vars_['sample_dir'] = None
-    with connect('employee') as con:
-        db_path = Path(con.info.name)
-        _vars_['sample_dir'] = db_path.parent
     # Create QA subdirectory in samle db directory
     if _vars_['sample_dir'] is None:
         raise Exception("Cannot determine the 'sample_dir'")
