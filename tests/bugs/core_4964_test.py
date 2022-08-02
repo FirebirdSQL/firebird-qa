@@ -35,14 +35,12 @@ NOTES:
 """
 
 import re
-import shutil
 import time
 from pathlib import Path
 from difflib import unified_diff
 
 import pytest
 from firebird.qa import *
-from firebird.driver import connect, DatabaseError
 
 substitutions = [('[ \t]+', ' '), ('file .* is not a valid database', 'file is not a valid database'), ]
 
@@ -64,14 +62,6 @@ expected_stdout_log_diff = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_user: User, capsys):
-
-    #-----------------------------------------------
-    def copy_with_metadata(src, tgt):
-        shutil.copy2(src, tgt)
-        if act.platform == 'Linux':
-            st = Path.stat(Path(src))
-            shutil.chown(tgt, st.st_uid, st.st_gid)
-    #-----------------------------------------------
 
     fblog_1 = act.get_firebird_log()
 
@@ -101,7 +91,7 @@ def test_1(act: Action, tmp_user: User, capsys):
     # PermissionError: [Errno 13] Permission denied --> probably because
     # Firebird was started by root rather than current (non-privileged) user.
     #
-    copy_with_metadata(str(act.db.db_path), str(tmp_fdb))
+    tmp_fdb.write_bytes(act.db.db_path.read_bytes())
 
     check_sql = f'''
        set bail on;
