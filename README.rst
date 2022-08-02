@@ -7,7 +7,7 @@ This package contains:
 - pytest plugin that provides support for testing the Firebird engine. It uses new Python
   driver for Firebird (firebird-driver).
 - tests for Firebird engine (directory 'tests')
-- files needed by tests (directories 'databases', 'files', 'backups')
+- files needed by tests (directories 'databases', 'files', 'backups' and 'configs')
 
 Requirements: Python 3.8+, Firebird 3+
 
@@ -24,143 +24,213 @@ Quickstart
 
 3. Adjust Firebird server configuration.
 
-3.1. $FB_HOME/firebird.conf::
+     3.1. $FB_HOME/firebird.conf::
 
-   Firebird 3::
+        Firebird 3::
 
-     # Required
-     ExternalFileAccess = Full
-     AuthServer = Srp, Legacy_Auth
-     UserManager = Srp, Legacy_UserManager
-     WireCrypt = Enabled
+            # Required
+            ExternalFileAccess = Full
+            AuthServer = Srp, Legacy_Auth
+            UserManager = Srp, Legacy_UserManager
+            WireCrypt = Enabled
+            FileSystemCacheThreshold = 99999K
+            IpcName = xnet_fb3x
+            RemotePipeName = wnet_fb3x
 
-     # Recommended
-     DefaultDbCachePages = 10000
-     MaxUnflushedWrites = -1
-     MaxUnflushedWriteTime = -1
-     BugcheckAbort = 1
+            # Recommended
+            DefaultDbCachePages = 10000
+            MaxUnflushedWrites = -1
+            MaxUnflushedWriteTime = -1
+            BugcheckAbort = 1
 
-     # Needed for encryption-related tests:
-     KeyHolderPlugin = fbSampleKeyHolder
+            # Needed for encryption-related tests.
+            KeyHolderPlugin = fbSampleKeyHolder
 
-   Firebird 4+::
+        Firebird 4::
 
-     # Required
-     ExternalFileAccess = Full
-     AuthServer = Srp256, Legacy_auth
-     UserManager = Srp, Legacy_UserManager
-     ReadConsistency = 0
-     WireCrypt = Enabled
-     ExtConnPoolSize = 10
-     ExtConnPoolLifeTime = 10
+            # Required
+            ExternalFileAccess = Full
+            AuthServer = Srp256, Legacy_auth
+            UserManager = Srp, Legacy_UserManager
+            ReadConsistency = 0
+            WireCrypt = Enabled
+            ExtConnPoolSize = 10
+            ExtConnPoolLifeTime = 10
+            UseFileSystemCache = true
+            IpcName = xnet_fb4x
+            RemotePipeName = wnet_fb4x
 
-     # Recommended
-     DefaultDbCachePages = 10000
-     MaxUnflushedWrites = -1
-     MaxUnflushedWriteTime = -1
-     BugcheckAbort = 1
+            # Recommended
+            DefaultDbCachePages = 10000
+            MaxUnflushedWrites = -1
+            MaxUnflushedWriteTime = -1
+            BugcheckAbort = 1
 
-     # Needed for encryption-related tests:
-     KeyHolderPlugin = fbSampleKeyHolder
+            # number of seconds after which statement execution will be automatically cancelled by the engine
+            # can be very useful if some test will hang or become work extremely slow:
+            StatementTimeout = 7200
 
-3.2. Required changes for running encryption-related tests::
+            # Needed for encryption-related tests:
+            KeyHolderPlugin = fbSampleKeyHolder
 
-     3.2.1. Change dir to $FB_HOME/examples/prebuilt/plugins/ and make copy of following files into $FB_HOME/plugins/ ::
+        Firebird 5::
 
-         3.2.1.1. Configs::
-             fbSampleKeyHolder.conf
-             fbSampleDbCrypt.conf
+            currently all parameters from FB-4.x can be used, except 'RemotePipeName'
+            because support of WNET protocol was removed from FB-5.x.
+            It is recommended to assign value like 'xnet_fb5x' to IpcName.
 
-         3.2.1.2. Binaries on Windows::
-             fbSampleDbCrypt.dll
-             fbSampleKeyHolder.dll
+            
+        NOTES::
+            Proper values of some parameters strongly depends on ServerMode and amount of avaliable RAM.
+            * DefaultDbCachePages::
+                On Classic/SuperClassic it must not be greater than 4K in real systems. For tests 10K...20K is OK.
+                On Super it can be increased so that size of page cache become 25%...33% of physical RAM.
+            * TempCacheLimit::
+                On Classic usually it must be limited because every connection uses its own memory area
+                for sort purposes. Nowadays may to use values about 256M ... 512M.
+                On SuperClassic and Super common memory area is used to sorts, so this parameter can have
+                values of dozen Gb. As first approximation, it can be set up to 33% of total RAM.
+     
+     3.2. Changes in OS environment variables::
+          it is recommended to create variable FIREBIRD_TMP that will point to the pre-created directory
+          on some fast drive (e.g. SSD or RAM). This drive must have at least 30 Gb free space.
+          Once this variable is defined, one may not specify parameter 'TempDirectories'.
 
-         3.2.1.3. Binaries on Linux::
-             libfbSampleDbCrypt.so
-             libfbSampleKeyHolder.so
+     
+     3.3. Required changes for running encryption-related tests::
 
-         # NOTE.
-         # These files present only in Firebird 4.x+ snapshots. 
-         # They missed in Firebird 3.x but they can be used there.
+          3.3.1. Change dir to $FB_HOME/examples/prebuilt/plugins/ and make copy of following files into $FB_HOME/plugins/ ::
 
-     3.2.2. In $FB_HOME/plugins/fbSampleKeyHolder.conf::
+              3.3.1.1. Configs::
+                  fbSampleKeyHolder.conf
+                  fbSampleDbCrypt.conf
 
-         Auto = true
-         KeyRed=111
-         KeyGreen = 119
+              3.3.1.2. Binaries on Windows::
+                  fbSampleDbCrypt.dll
+                  fbSampleKeyHolder.dll
 
-     3.2.3. In $FB_HOME/plugins/fbSampleDbCrypt.conf::
+              3.3.1.3. Binaries on Linux::
+                  libfbSampleDbCrypt.so
+                  libfbSampleKeyHolder.so
 
-         # Encure that Auto = false or just is commented out
+              NOTES.
+              These files missed in Firebird 3.x but one may to use such files from any recent FB 4.x snapshot.
+              Config parameter KeyHolderPlugin currently is 'fbSampleKeyHolder'.
+              This value must match to value of parameter 'ENCRYPTION_HOLDER' that is specified in the file
+              $(QA_ROOT)/files/test_config.ini (it contains several settings that are common for many tests).
 
-     3.3.3. Restart Firebird and check that all set correct. Example for Linux:
+          3.3.2. In $FB_HOME/plugins/fbSampleKeyHolder.conf::
 
-         shell rm -f /var/tmp/tmp4test.fdb;
-         create database 'localhost:/var/tmp/tmp4test.fdb' user sysdba password 'masterkey';
+              Auto = true
+              KeyRed=111
+              KeyGreen = 119
+
+          3.3.3. In $FB_HOME/plugins/fbSampleDbCrypt.conf::
+
+              # Encure that Auto = false or just is commented out
+
+          3.3.3. Restart Firebird and check that all set correct. Example for Linux:
+
+              shell rm -f /var/tmp/tmp4test.fdb;
+              create database 'localhost:/var/tmp/tmp4test.fdb' user sysdba password 'masterkey';
 
 
-         -- Following must PASS:
+              -- Following must PASS:
 
-         set echo on;
-         set bail on;
-         alter database encrypt with "fbSampleDbCrypt" key Red;
-         shell sleep 2;
+              set echo on;
+              set bail on;
+              alter database encrypt with "fbSampleDbCrypt" key Red;
+              shell sleep 2;
 
-         alter database decrypt;
-         shell sleep 2;
+              alter database decrypt;
+              shell sleep 2;
 
-         alter database encrypt with "fbSampleDbCrypt" key Green;
-         shell sleep 2;
+              alter database encrypt with "fbSampleDbCrypt" key Green;
+              shell sleep 2;
 
-         alter database decrypt;
-         shell sleep 2;
+              alter database decrypt;
+              shell sleep 2;
 
-         set echo off;
-         set bail off;
+              set echo off;
+              set bail off;
 
-         -- Following must FAIL with:
-         -- Statement failed, SQLSTATE = 42000
-         -- unsuccessful metadata update
-         -- -ALTER DATABASE failed
-         -- -Missing correct crypt key
-         -- -Plugin fbSampleKeyHolder:
-         -- -Crypt key NOSUCH not set
+              -- Following must FAIL with:
+              -- Statement failed, SQLSTATE = 42000
+              -- unsuccessful metadata update
+              -- -ALTER DATABASE failed
+              -- -Missing correct crypt key
+              -- -Plugin fbSampleKeyHolder:
+              -- -Crypt key NOSUCH not set
 
-         set echo on;
-         alter database encrypt with "fbSampleDbCrypt" key NoSuch;
-         shell sleep 2;
+              set echo on;
+              alter database encrypt with "fbSampleDbCrypt" key NoSuch;
+              shell sleep 2;
 
-         show database;
-         quit;
+              show database;
+              quit;
 
-     3.2.4. IMPORTANT. 
-            Ensure that EMPLOYEE database was not encrypted before with key/value that is unknown currently!
-            Otherwise attempt to run ANY test will fail with:
-                INTERNALERROR> firebird.driver.types.DatabaseError: Missing database encryption key for your attachment
-                INTERNALERROR> -Plugin fbSampleKeyHolder:
-                INTERNALERROR> -Crypt key <HERE_SOME_UNKNOWN_KEY> not set
+          3.3.4. IMPORTANT. 
+                 Ensure that EMPLOYEE database was not encrypted before with key/value that is unknown currently!
+                 Otherwise attempt to run ANY test will fail with:
+                     INTERNALERROR> firebird.driver.types.DatabaseError: Missing database encryption key for your attachment
+                     INTERNALERROR> -Plugin fbSampleKeyHolder:
+                     INTERNALERROR> -Crypt key <HERE_SOME_UNKNOWN_KEY> not set
 
-3. Use pytest to run tests.
+4. Optional. Enable your OS to create dump files in case of FB crashes caused by tests::
 
-   The plugin adds next options to pytest::
+    4.1. Windows::
+        4.1.1. Parameter 'BugcheckAbort' must always be set to 1, otherwise dumps will not be created.
+        4.1.2. Run regedit, navigate to key::
+                   HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\
+               Create sub-key there with name: 'firebird.exe' (without single quotes).
+               Add following parameters in the 'firebird.exe' key::
+                    DumpCount, type = DWORD, value:: not less than 5;
+                    DumpFoler, type = REG_EXPAND_SZ, value = directory where you want dumps to be created;
+                    DumpType, type = DWORD, value = 2
+        4.1.3. Following setting must present in the registry to disable any pop-up window when program crashes::
+                    key": HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\Windows Error Reporting\
+                    parameter:: 'DontShowUI', type =  DWORD, value:: 2
 
-      Firebird server:
-         --server=SERVER       Server configuration name
-         --bin-dir=PATH        Path to directory with Firebird utilities
-         --protocol={xnet,inet,inet4,wnet}
-                               Network protocol used for database attachments
-         --runslow             Run slow tests
-         --save-output         Save test std[out|err] output to files
-         --skip-deselected={platform,version,any}
-                               SKIP tests instead deselection
-         --extend-xml          Extend XML JUnit report with additional information
-         --install-terminal    Use our own terminal reporter
+    4.2. Linux::
+        File /etc/security/limits.conf must have setting::
+            *               soft    core            unlimited
+        File /etc/sysctl.conf must have parameter 'kernel.core_pattern' that specifies directory to store dumps
+        and pattern for dumps name, e.g.::
+            kernel.core_pattern=/var/tmp/core.%e.%t.%p
 
-   To run all tests (except slow ones) against local server use next command::
+5. Cautions.
+     5.1. Problems can occur on Windows if we launch two FB instances which uses the same major version ODS.
+          Currently this relates to FB-4.x and FB-5.x: each of them tries to create file 'fb13_user_mapping'
+          in %programdata%\firebird. This leads to conflict and attempt to connect to any DB using latter FB instance
+          issues "Error occurred during login, please check server firebird.log for details" and firebird.log will have:
+          "Database is probably already opened by another engine instance in another Windows session".
+          BE SURE THAT YOU DID NOT LAUNCH ANOTHER FIREBIRD INSTANCE THAT USES SAME ODS AS CURRENTLY TESTING.
+     5.2. Be sure that directory specified by FIREBIRD_TMP variable actually exists and is accessible for 'firebird' account.
+     5.3. Ensure that your firebird-driver.conf contains 'DEFAULT' section with 'encoding_errors = ignore'.
+          Otherwise outcome of some tests can be unpredictable if your OS has non-ascii system console
 
-      pytest --server local ./tests
+6. Use pytest to run tests.
 
-  Note: If plugin fails to determine the directory with Firebird utilities (isql, gbak etc.),
-        use `--bin-dir` option to specify it.
+    The plugin adds next options to pytest::
+
+        Firebird server:
+            --server=SERVER       Server configuration name
+            --bin-dir=PATH        Path to directory with Firebird utilities
+            --protocol={xnet,inet,inet4,wnet}
+                                  Network protocol used for database attachments
+            --runslow             Run slow tests
+            --save-output         Save test std[out|err] output to files
+            --skip-deselected={platform,version,any}
+                                  SKIP tests instead deselection
+            --extend-xml          Extend XML JUnit report with additional information
+            --install-terminal    Use our own terminal reporter
+
+    To run all tests (except slow ones) against local server use next command::
+
+        pytest --server local ./tests
+
+   Note:
+       If plugin fails to determine the directory with Firebird utilities (isql, gbak etc.),
+       use `--bin-dir` option to specify it.
 
 .. _QA suite documentation: https://firebird-qa.readthedocs.io
