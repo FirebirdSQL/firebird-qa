@@ -5,54 +5,50 @@ ID:          issue-5255
 ISSUE:       5255
 JIRA:        CORE-4964
 FBTEST:      bugs.core_4964
-TITLE:       Real errors during connect to security database are hidden by Srp user manager.
-  Errors should be logged no matter what AuthServer is used
+TITLE:       Real errors during connect to security database are hidden by Srp user manager. Errors should be logged no matter what AuthServer is used
 DESCRIPTION:
-
     Test does following:
     1) creates temporary user using plugin Srp (in order to avoid occasional connect as SYSDBA using Legacy plugin);
-    2) makes copy of DB to temporary file (<tmp_fdb>; we will try to connect to it via ALIAS from databases.conf);
-    3) makes copy ot databases.conf (for restoring from it at the end) and adds following lines in it:
-        <tmp_alias> = <tmp_fdb>
-        {
-            SecurityDatabase = $(dir_conf)/firebird.msg
-        }
-
-    NOTE: we intentionally assign to SecurityDatabase value that points to the file
-    that for sure exists but is INVALID for usage as fdb: 'firebird.msg'
+    2) makes copy of test DB to file which is specified n databases.conf as database for alias defined by variable with name REQUIRED_ALIAS
+       (its value: 'tmp_4964_alias'; test will try to connect to this file via ALIAS from pre-created databases.conf);
+    3) uses pre-created databases.conf which has alias and SecurityDatabase parameter in its details.
+       This parameter that points to existing file that for sure can NOT be a Firebird database
+       (file $(dir_conf)/firebird.msg is used for this purpose).
 
     Then we:
-    1) obtain content of server firebird.log
-    2) try to make connect to alias <tmp_alias> and (as expected) get error.
-    3) wait a little and obtain again content of server firebird.log
-
-    Finally we restore original databases.conf and check client error messages and diff in the firebird.log
+    1) obtain content of server firebird.log;
+    2) try to make connect to alias <tmp_alias> and (as expected) get error;
+    3) obtain again content of server firebird.log and compare to origin one.
 
 NOTES:
-    [30.05.2022] pzotov
-    
-    Added aux func 'copy_with_metadata()' which uses shutil.copy2 and os.chown (for Linux).
-    !! GOT STRANGE RESULTS FOR shutil.copy(), without "2" suffix !!
-    To be discussed with pcisar, comments will be updated soon.
+    [02.08.2022] pzotov
+    1. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
+    2. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
+       (for LINUX this equality is case-sensitive, even when aliases are compared!)
+    3. Make sure that firebird was launched by user who is currently runs this test.
+       Otherwise shutil.copy2() failes with "[Errno 13] Permission denied".
+    4. Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace it before every test session).
+       Discussed with pcisar, letters since 30-may-2022 13:48, subject:
+       "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
 
-    Checked on 5.0.0.501, 4.0.1.2692, 3.0.8.33535 -- both on Windows and Linux
+    Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
 """
-import os
-import platform
-import shutil
-import datetime
-import time
-import locale
+
 import re
+import shutil
+import time
 from pathlib import Path
 from difflib import unified_diff
 
 import pytest
 from firebird.qa import *
+from firebird.driver import connect, DatabaseError
 
-substitutions = [('file .* is not a valid database', 'file is not a valid database'), ]
+substitutions = [('[ \t]+', ' '), ('file .* is not a valid database', 'file is not a valid database'), ]
 
-db = db_factory(utf8filename=True, charset='UTF8')
+REQUIRED_ALIAS = 'tmp_4964_alias'
+
+db = db_factory()
 act = python_act('db', substitutions=substitutions)
 tmp_user = user_factory('db', name='tmp$c4964', password='123', plugin = 'Srp')
 
@@ -66,73 +62,89 @@ expected_stdout_log_diff = """
     file is not a valid database
 """
 
-dbconf_bak = temp_file('dbconf.bak')
-tmp_fdb = temp_file('tmp_4964_fdb.tmp')
-
 @pytest.mark.version('>=3.0')
-def test_1(act: Action, tmp_user: User, dbconf_bak: Path, tmp_fdb: Path, capsys):
+def test_1(act: Action, tmp_user: User, capsys):
 
+    #-----------------------------------------------
     def copy_with_metadata(src, tgt):
-        global os, shutil, platform
-        #shutil.copy(src, tgt)
         shutil.copy2(src, tgt)
-        if platform.system() == 'Linux':
-            st = os.stat(src)
-            os.chown(tgt, st.st_uid, st.st_gid)
+        if act.platform == 'Linux':
+            st = Path.stat(Path(src))
+            shutil.chown(tgt, st.st_uid, st.st_gid)
+    #-----------------------------------------------
 
-    with act.connect_server() as srv:
-        srv_home=str(srv.info.home_directory)
+    fblog_1 = act.get_firebird_log()
 
-    dbconf_cur = Path(srv_home, 'databases.conf')
-    copy_with_metadata(dbconf_cur, Path(dbconf_bak))
+    # Scan line-by-line through databases.conf, find line starting with REQUIRED_ALIAS and extract name of file that
+    # must be created in the $(dir_sampleDb)/qa/ folder. This name will be used further as target database (tmp_fdb).
+    # NOTE: we have to SKIP lines which are commented out, i.e. if they starts with '#':
+    p_required_alias_ptn =  re.compile( '^(?!#)((^|\\s+)' + REQUIRED_ALIAS + ')\\s*=\\s*\\$\\(dir_sampleDb\\)/qa/', re.IGNORECASE )
+    fname_in_dbconf = None
 
-    with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
-        srv.info.get_log()
-        fb_log_init = srv.readlines()
+    with open(act.home_dir/'databases.conf', 'r') as f:
+        for line in f:
+            if p_required_alias_ptn.search(line):
+                # If databases.conf contains line like this:
+                #     tmp_4964_alias = $(dir_sampleDb)/qa/tmp_qa_4964.fdb 
+                # - then we extract filename: 'tmp_qa_4964.fdb' (see below):
+                fname_in_dbconf = Path(line.split('=')[1].strip()).name
+                break
 
-    try:
-        copy_with_metadata(act.db.db_path, tmp_fdb)
+    # if 'fname_in_dbconf' remains undefined here then propably REQUIRED_ALIAS not equals to specified in the databases.conf!
+    #
+    assert fname_in_dbconf
 
-        tmp_alias = 'tmp_4964_' + datetime.datetime.now().strftime("%H%M%S")
-        addi_lines = f"""
-            # Temporary added by QA, test CORE-4964. Should be removed auto.
-            ###########
-            #{tmp_alias} = {str(tmp_fdb)} {{
-            {tmp_alias} = {act.db.db_path} {{
-                # dir_msg - directory where messages file (firebird.msg) is located
-                SecurityDatabase = $(dir_msg)/firebird.msg
-            }}
-        """
-        with open(dbconf_cur, mode = 'a') as f:
-            f.seek(0, 2)
-            f.write(addi_lines)
+    # Full path + filename of database to which we will try to connect:
+    #
+    tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
+    
+    # PermissionError: [Errno 13] Permission denied --> probably because
+    # Firebird was started by root rather than current (non-privileged) user.
+    #
+    copy_with_metadata(str(act.db.db_path), str(tmp_fdb))
 
-        act.isql(switches=['-q', act.get_dsn(tmp_alias), '-user', tmp_user.name, '-password', tmp_user.password], input = 'select mon$database_name from mon$database;', credentials = False, connect_db = False, combine_output = True, io_enc=locale.getpreferredencoding())
+    check_sql = f'''
+       set bail on;
+       set list on;
+       connect '{act.host+":" if act.host else ""}{tmp_fdb}' user {tmp_user.name} password {tmp_user.password};
+       -- This can occus only if we databases.conf contains {REQUIRED_ALIAS}
+       -- but without reference to invalid security DB (e.g., alias without curly braces at all):
+       select mon$database_name as "UNEXPECTED CONNECTION:" from mon$database;
+       quit;
+    '''
 
-    finally:
-        copy_with_metadata(Path(dbconf_bak), dbconf_cur)
-
-
-    time.sleep(1) # Let content of firebird.log be flushed on disk
-    with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
-        srv.info.get_log()
-        fb_log_curr = srv.readlines()
-
+    ###############################################################################################################
+    # POINT-1: check that ISQL raises:
+    # "SQLSTATE = 08006 / Error occurred during login, please check server firebird.log ..."
+    #
     act.expected_stdout = expected_stdout_isql
+    try:
+        act.isql(switches = ['-q'], input = check_sql, connect_db=False, credentials = False, combine_output = True)
+    finally:
+        tmp_fdb.unlink()
+
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
 
+    time.sleep(1) # Allow content of firebird log be fully flushed on disk.
+    fblog_2 = act.get_firebird_log()
+
     diff_patterns = [
-        r"\+\s+Authentication error",
-        r"\+\s+file .* is not a valid database",
+        "\\+\\s+Authentication error",
+        "\\+\\s+file .* is not a valid database",
     ]
     diff_patterns = [re.compile(s) for s in diff_patterns]
-
-    for line in unified_diff(fb_log_init, fb_log_curr):
+    
+    for line in unified_diff(fblog_1, fblog_2):
         if line.startswith('+'):
             if act.match_any(line, diff_patterns):
-                print(line[1:].strip())
-
+                print(line.split('+')[-1])
+                
+    ###############################################################################################################
+    # POINT-2: check that diff between firebird.log initial and current content has phrases
+    # 'Authentication error' and '... file is not a valid database':
+    #
     act.expected_stdout = expected_stdout_log_diff
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
