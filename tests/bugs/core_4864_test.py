@@ -31,6 +31,23 @@ NOTES:
        "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
     4. It is crucial to be sure that current OS environment has no ISC_USER and ISC_PASSWORD variables. Test forcibly unsets them.
 
+    Confirmed problem on WI-T3.0.0.31896 Firebird 3.0 Beta 2 (date of built: 02-JUL-2015), but only when
+    using ISQL (i.e. like it was specified in the ticked: 'isql employee -user sysdba').
+    Current version of firebird-driver can not work with 3.0.0.31896, internal error raises before any connect can be established.
+
+    Problematic statement:
+        create database 'tmp_core_4864_alias' page_size 8192 default character set win1250 collation pxw_hun;
+        Statement failed, SQLSTATE = 42000
+        Dynamic SQL Error
+        -SQL error code = -104
+        -Token unknown - line 1, column 45
+        -sysdba
+    If we use script with "CONNECT 'employee' user SYSDBA;" (instead of isql employee -user sysdba) then error looks differ:
+        Statement failed, SQLSTATE = 42S02
+        find/display record error
+        -table PLG$VIEW_USERS is not defined
+    (and it raises when we run query to mon$database join mon$attachments left join sec$users).
+
     Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
 """
 
