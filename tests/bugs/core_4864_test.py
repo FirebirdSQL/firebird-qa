@@ -2,160 +2,148 @@
 
 """
 ID:          issue-5160
-ISSUE:       5160
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5160
 TITLE:       CREATE DATABASE fail with ISQL
 DESCRIPTION:
-    Test obtains full path to $fb_home via FBSVCMGR info_get_env.
-    Then it makes copy of file 'databases.conf' that is in $fb_home directory because
-    following lines will be added to that 'databases.conf':
-    ===
-    tmp_alias_4864 = ...
-    {
-      SecurityDatabase = tmp_alias_4864
-    }
-    ===
-    Then we run ISQL and give to it command to create database which definition
-    should be taken from 'databases.conf', as it was explained in the ticket by Alex:
-    ===
-    create database 'tmp_alias_4864' user 'SYSDBA';
-    ===
-    Finally, mon$attachment is queried and some info is extracted from it in order
-    to be sure that we really got proper result.
-    .............................................
-    ::: NB :::
-    It is impossible to check ability to create new user in new database that was made by such way:
-    plugin 'Srp' is required that currently is replaced before any test with 'Legacy' one.
+    Test uses pre-created databases.conf which has alias (see variable REQUIRED_ALIAS) and SecurityDatabase in its details
+    which points to that alias, thus making such database be self-security.
+    Database file for that alias must NOT exist in the QA_root/files/qa/ subdirectory: it will be created here.
+    
+    Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
+    (for LINUX this equality is case-sensitive, even when aliases are compared!)
+
+    We connect to currently used test DB (which is created by QA plugin) via local protocol, using appropriate
+    'CONNECT' command in the SQL script.
+    Then we attempt to create new database using command which was providd in the ticket (only page_size was increased to recent).
+    After this, we create user in this (new) database and ensure that this DB has owner = current OS user, is self-security etc.
+    Finally, we drop new DB and make connect to 'previous' DB which was created by QA plugin, and check that there is NO user
+    which was created in the self-security (just dropped) DB.
+
 JIRA:        CORE-4864
 FBTEST:      bugs.core_4864
+NOTES:
+    [04.08.2022] pzotov
+    1. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
+    2. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
+       (for LINUX this equality is case-sensitive, even when aliases are compared!)
+    3. Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace it before every test session).
+       Discussed with pcisar, letters since 30-may-2022 13:48, subject:
+       "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
+    4. It is crucial to be sure that current OS environment has no ISC_USER and ISC_PASSWORD variables. Test forcibly unsets them.
+
+    Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
 """
+
+import os
+import re
+from pathlib import Path
+import getpass
 
 import pytest
 from firebird.qa import *
 
+substitutions = [('[ \t]+', ' '), ('file .* is not a valid database', 'file is not a valid database'), ]
+
+REQUIRED_ALIAS = 'tmp_core_4864_alias'
+
+# MANDATORY! OTHERWISE ISC_ variables will take precedense over credentials = False!
+for v in ('ISC_USER','ISC_PASSWORD'):
+    try:
+        del os.environ[ v ]
+    except KeyError as e:
+        pass
+
 db = db_factory()
+act = python_act('db', substitutions=substitutions)
 
-act = python_act('db')
 
-expected_stdout = """
-    MON$SEC_DATABASE                Self
-    MON$ATTACHMENT_NAME             tmp_alias_4864
-    MON$USER                        SYSDBA
-    MON$REMOTE_PROTOCOL             <null>
-    MON$REMOTE_ADDRESS              <null>
-    MON$REMOTE_PROCESS              <null>
-    MON$AUTH_METHOD                 User name in DPB
-"""
-
-@pytest.mark.skip('FIXME: databases.conf')
 @pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
 
-# test_script_1
-#---
-#
-#  import os
-#  import time
-#  import shutil
-#  import subprocess
-#  from subprocess import Popen
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  svc = services.connect(host='localhost')
-#  fb_home=svc.get_home_directory()
-#  svc.close()
-#
-#  dbconf = os.path.join(fb_home,'databases.conf')
-#  dbcbak = os.path.join(fb_home,'databases.bak')
-#  shutil.copy2( dbconf, dbcbak )
-#
-#  tmp_fdb = os.path.join(context['temp_directory'],'tmp_4864.fdb')
-#
-#  cleanup( (tmp_fdb,) )
-#
-#  f_dbconf=open(dbconf,'a')
-#  f_dbconf.seek(0, 2)
-#  f_dbconf.write("\\n\\n# Created temply by fbtest, CORE-4864. Should be removed auto.")
-#  f_dbconf.write("\\n\\ntmp_alias_4864 = " + tmp_fdb )
-#  f_dbconf.write("\\n{\\n  SecurityDatabase = tmp_alias_4864 \\n}\\n")
-#  f_dbconf.close()
-#
-#  isql_script='''
-#      create database 'tmp_alias_4864' user 'SYSDBA';
-#      set list on;
-#      select
-#         d.mon$sec_database
-#        ,a.mon$attachment_name
-#        ,a.mon$user
-#        ,a.mon$remote_protocol
-#        ,a.mon$remote_address
-#        ,a.mon$remote_process
-#        ,a.mon$auth_method
-#      from mon$database d cross join mon$attachments a
-#      where a.mon$attachment_id = current_connection;
-#      commit;
-#      drop database;
-#      quit;
-#  '''
-#
-#  f_isql_cmd=open( os.path.join(context['temp_directory'],'tmp_create_4864.sql'), 'w')
-#  f_isql_cmd.write( isql_script )
-#  flush_and_close( f_isql_cmd )
-#
-#  f_isql_log=open( os.path.join(context['temp_directory'],'tmp_create_4864.log'), 'w')
-#  subprocess.call([context['isql_path'],"-q","-i",f_isql_cmd.name], stdout=f_isql_log, stderr=subprocess.STDOUT)
-#  flush_and_close( f_isql_log )
-#
-#  shutil.move(dbcbak, dbconf)
-#
-#  with open( f_isql_log.name,'r') as f:
-#      print(f.read())
-#
-#  #####################################################################
-#  # Cleanup:
-#
-#  # do NOT remove this pause otherwise some of logs will not be enable for deletion and test will finish with
-#  # Exception raised while executing Python test script. exception: WindowsError: 32
-#  time.sleep(1)
-#  cleanup( (f_isql_log, f_isql_cmd, tmp_fdb) )
-#
-#
-#---
+    # Scan line-by-line through databases.conf, find line starting with REQUIRED_ALIAS and extract name of file that
+    # must be created in the $(dir_sampleDb)/qa/ folder. This name will be used further as target database (tmp_fdb).
+    # NOTE: we have to SKIP lines which are commented out, i.e. if they starts with '#':
+    p_required_alias_ptn =  re.compile( '^(?!#)((^|\\s+)' + REQUIRED_ALIAS + ')\\s*=\\s*\\$\\(dir_sampleDb\\)/qa/', re.IGNORECASE )
+    fname_in_dbconf = None
+
+    with open(act.home_dir/'databases.conf', 'r') as f:
+        for line in f:
+            if p_required_alias_ptn.search(line):
+                # If databases.conf contains line like this:
+                #     tmp_4964_alias = $(dir_sampleDb)/qa/tmp_qa_4964.fdb 
+                # - then we extract filename: 'tmp_qa_4964.fdb' (see below):
+                fname_in_dbconf = Path(line.split('=')[1].strip()).name
+                break
+
+    # if 'fname_in_dbconf' remains undefined here then propably REQUIRED_ALIAS not equals to specified in the databases.conf!
+    #
+    assert fname_in_dbconf
+
+    # Full path + filename of database to which we will try to connect:
+    #
+    tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
+    tmp_usr = 'tmp$user_4864'
+    
+    # PermissionError: [Errno 13] Permission denied --> probably because
+    # Firebird was started by root rather than current (non-privileged) user.
+    #
+    #tmp_fdb.write_bytes(act.db.db_path.read_bytes())
+
+    #print(str(tmp_fdb))
+    check_sql = f"""
+        set bail on;
+        set list on;
+        --connect '{act.db.dsn}' user SYSDBA password 'masterkey';
+        connect '{act.db.db_path}' user {act.db.user};
+
+        select upper(mon$database_name) as initial_db_name, a.mon$remote_protocol as initial_protocol, a.mon$user as initial_user
+        from mon$database join mon$attachments a on a.mon$attachment_id = current_connection;
+        rollback;
+
+        --/*
+        create database '{REQUIRED_ALIAS}' page_size 8192 default character set win1250 collation pxw_hun;
+        create user SYSDBA password 'another_dba' using plugin Srp;
+        commit;
+        connect '{REQUIRED_ALIAS}' user SYSDBA;
+        create user {tmp_usr} password '123' using plugin Srp;
+        commit;
+        connect '{REQUIRED_ALIAS}' user {tmp_usr};
+        select
+            upper(m.mon$database_name) as new_db_name
+            ,upper(m.mon$owner) as new_db_owner
+            ,m.mon$sec_database as new_db_sec_database
+            ,a.mon$user as new_db_user
+            ,s.sec$user_name
+            ,s.sec$plugin
+        from mon$database m
+        join mon$attachments a on a.mon$attachment_id = current_connection
+        left join sec$users s on a.mon$user = s.sec$user_name
+        ;
+        commit;
+        connect '{REQUIRED_ALIAS}' user SYSDBA;
+        drop database;
+        connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
+        select s.sec$user_name as remained_in_main_sec_db from rdb$database r left join sec$users s on s.sec$user_name = '{tmp_usr.upper()}';
+        quit;
+        --*/
+    """
+
+    expected_stdout = f"""
+        INITIAL_DB_NAME {str(act.db.db_path).upper()}
+        INITIAL_PROTOCOL <null>
+        INITIAL_USER {act.db.user}
+        NEW_DB_NAME {str(tmp_fdb).upper()}
+        NEW_DB_OWNER {getpass.getuser().upper()}
+        NEW_DB_SEC_DATABASE Self
+        NEW_DB_USER {tmp_usr.upper()}
+        SEC$USER_NAME {tmp_usr.upper()}
+        SEC$PLUGIN Srp
+        REMAINED_IN_MAIN_SEC_DB <null>
+    """
+    
+    act.expected_stdout = expected_stdout
+    act.expected_stderr = ''
+    act.isql(switches=['-q'], charset = 'utf8', input = check_sql, credentials = False, connect_db = False)
+
+    assert act.clean_stdout == act.clean_expected_stdout and act.clean_stderr == act.clean_expected_stderr
+    act.reset()
