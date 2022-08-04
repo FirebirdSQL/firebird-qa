@@ -44,7 +44,7 @@ from firebird.qa import *
 
 substitutions = [('[ \t]+', ' '), ('file .* is not a valid database', 'file is not a valid database'), ]
 
-REQUIRED_ALIAS = 'tmp_4964_alias'
+REQUIRED_ALIAS = 'tmp_core_4964_alias'
 
 db = db_factory()
 act = python_act('db', substitutions=substitutions)
