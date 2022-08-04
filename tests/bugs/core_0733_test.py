@@ -5,343 +5,230 @@ ID:          issue-1108
 ISSUE:       1108
 TITLE:       Compress Data over the Network
 DESCRIPTION:
-  Results are completely opposite to those which were obtained on snapshots when this test
-  was implenmented (3.0.5.33084, 4.0.0.1347). Requirement to compress data leads to DEGRADATION
-  of performance when data are stored on local machine, and we have no ability to change
-  storage when fbt_run is in work (at least for nowadays).
-  After discuss with dimitr it was decided to remove any logging and its analysis.
-  We only verify matching of RDB$GET_CONTEXT('SYSTEM', 'WIRE_COMPRESSED') and value that
-  was stored in the firebird.conf for current check.
+  Test creates two tables with similar DDL (single varchar column) and fills data into them.
+  First table ('t_common_text') gets textual data which can be compressed in extremely high degree.
+  Second table ('t_binary_data') will store GUID-data which is obviously incompressable.
+  Then we perform <N_MEASURES> runs with selecting data from each of these tables, and we store
+  result of *deltas* of CPU user time that was 'captured' before and after cursor fetch all rows.
+                                                                                   
+  Within each measurement we gather info TWO times, by changing WireCompression =  true vs false
+  (this is client-side parameter and it must be defined in DPB; see 'db_cfg_object' variable).
 
-  ### NOTE ###
-  Changed value of parameter WireCompression (in firebird.conf) will be seen by application
-  if it reloads client library. Reconnect is NOT enough for this. For this reason we use
-  subprocess and call ISQL utility to do above mentioned actions in new execution context.
+  Results of <N_MEASURES> for each value of WireCompression and each source (t_common_text vs t_binary_data)
+  are accumulated in the lists, and MEDIAN (of that CPU time values) is evaluated after all serie completed.
+
+  Following ratios are compared in this test with apropriate 'thresholds':
+  1) how CPU UserTime depends on WireCompression if we send 'IDEALLY COMPRESSABLE' textual data over network.
+     If WireCompression is ON (and actually works) then CPU time must be GREATER then if WireCompression = OFF.
+     Minimal threshold for that case is tuned by 'MIN_CPU_RATIO_TXT_WCOMPR_ON_OFF' setting;
+  2) same as "1", but when we send 'ABSOLUTELY IMCOMPRESSABLE' binary data over network.
+     Minimal threshold for that case is tuned by 'MIN_CPU_RATIO_BIN_WCOMPR_ON_OFF' setting;
+  3) how CPU userTime depends on NATURE of sending data ('ideally compressable' vs 'absolutely imcompressable')
+     if WireCompression is OFF. This comparison is not mandatory for this test purpose, but it can be useful
+     for estimation of how record-level compression works. 
+     Ideally compresable text occupies much less data pages this CPU usertime for processing must be LESS then
+     for imcompressible binary data.
+     Maximal ratio between them must be more than 1, see setting 'MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF'.
+
+  We have to compare RATIOS between these CPU time medians with some statistics which was collected beforhand.
+  Ten runs was done for Windows and Linux, values of thresholds see in the source below.
 
   See also tests for:
     CORE-5536 - checks that field mon$wire_compressed actually exists in MON$ATTACHMENTS table;
     CORE-5913 - checks that built-in rdb$get_context('SYSTEM','WIRE_ENCRYPTED') is avaliable;
 NOTES:
-[9.11.2021] pcisar
+  [09.11.2021] pcisar
   This test was fragile from start, usualy lefts behind resources and requires
   temporary changes to firebird.conf on run-time. It's questionable whether
   wire-compression should be tested at all.
+
+  [04.08.2022] pzotov
+  Fully re-implemented (see description). No more datediff() for time measurement, CPU UserTime is analyzed.
+
+  CAUTION.
+  DO NOT set DATA_WIDTH less than 1'500 and N_ROWS less then 10'000 
+  otherwise ratios can be unreal because of CPU UserTime = 0.
+
+  Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
+
 JIRA:        CORE-733
 FBTEST:      bugs.core_0733
 """
+import psutil
+import platform
+from collections import defaultdict
 
 import pytest
 from firebird.qa import *
+from firebird.driver import driver_config, connect
 
-init_script = """
-    create domain dm_dump varchar(32700) character set none;
-    recreate table t_log( required_value varchar(5), actual_value varchar(5), elap_ms int );
-    commit;
+#--------------------------------------------------------------------
+def median(lst):
+    n = len(lst)
+    s = sorted(lst)
+    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+#--------------------------------------------------------------------
+
+N_MEASURES = 9
+DATA_WIDTH = 10000 # 1500 # 8200 #1600
+N_ROWS = 15000
+
+# MINIMAL ratio between CPU user time when WireCompression = true vs false
+# and we operate with 'IDEALLY COMPRESSABLE' (textual) data.
+# Windows: 10.000; 13.330; 10.250; 14.000;  8.000;  9.750;  8.400; 13.667; 10.000 // 4.0.1
+#           8.600;  8.800;  8.800;  7.167; 11.000;  8.600;  8.800; 15.000;  7.167 // 3.0.8
+# Linux:    7.538;  6.733;  6.266;  6.125;  7.692;  7.538;  8.083;  7.143;  8.083 // 4.0.1
+#           7.384;  7.071;  6.999;  6.733;  6.714;  8.083;  6.467;  7.308;  7.538 // 3.0.8
+MIN_CPU_RATIO_TXT_WCOMPR_ON_OFF = 5 if platform.system() == 'Linux' else 6
+
+
+# MINIMAL ratio between CPU user time when WireCompression = true vs false
+# and we operate with 'ABSOLUTELY IMCOMPRESSIBLE' data.
+# Windows: 5.750; 9.000; 6.286; 6.285; 6.286; 7.167; 5.500; 6.286; 6.285  // 4.0.1
+#          4.909; 3.714; 3.643; 4.417  3.000; 4.384; 3.600; 3.533; 4.500  // 3.0.8
+# Linux:   5.158; 6.466; 6.333; 6.533; 6.667; 6.063; 6.267; 5.500; 5.875  // 4.0.1
+#          6.643; 7.000; 6.333; 6.267; 7.385; 5.812; 6.063; 6.643; 6.500  // 3.0.8
+MIN_CPU_RATIO_BIN_WCOMPR_ON_OFF = 4 if platform.system() == 'Linux' else 4
+
+# OPTIONAL CHECK: minimal ratio between CPU user time when WireCompression = false
+# and engine sends to client: 1) 'IDEALLY COMPRESSABLE'; 2) 'ABSOLUTELY IMCOMPRESSIBLE' data.
+# This can be useful to estimate record-level compression: textual data can be compressed
+# very well, so its transfer must take much less time then for GEN_UUID.
+# Experiments show that this ratio can be on Windows in the scope 0.3.... 0.8,
+# but on Linux it can be 1.0 or even slightly more then 1(!)
+# Windows: 0.500; 0.600; 0.571; 0.428; 0.714; 0.667; 0.625; 0.429; 0.571 // 4.0.1
+#          0.454; 0.357; 0.357; 0.500; 0.250; 0.385; 0.333; 0.200; 0.500 // 3.0.8
+# Linux:   0.684; 1.000; 1.000; 1.067; 0.867; 0.813; 0.800; 0.777; 0.750 // 4.0.1
+#          0.928; 1.000; 0.933; 1.000; 1.077; 0.750; 0.938; 0.929; 0.928 // 3.0.8
+MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF = 1.1 if platform.system() == 'Linux' else 0.95
+
+init_script = f"""
+    create domain dm_dump varchar({DATA_WIDTH}) character set octets;
+    create table t_common_text(s dm_dump);
+    create table t_binary_data(s dm_dump);
     set term ^;
-    create or alter procedure sp_uuid(a_compressable boolean, n_limit int default 1)
-    returns (b dm_dump) as
-        declare g char(16) character set octets;
+    execute block as
+        declare i int = {N_ROWS};
     begin
-        if ( a_compressable ) then
-           while (n_limit > 0) do
-           begin
-               g = gen_uuid();
-               b = lpad('',32700,  'AAAAAAAAAAAAAAAA' );
-               n_limit = n_limit - 1;
-               suspend;
-           end
-        else
-           while (n_limit > 0) do
-           begin
-               b = lpad('',32700, gen_uuid() );
-               n_limit = n_limit - 1;
-               suspend;
-           end
+        while (i > 0)do
+        begin
+            insert into t_common_text(s) values( lpad('',{DATA_WIDTH}, 'A') );
+            insert into t_binary_data(s) values( lpad(_octets '',{DATA_WIDTH}, gen_uuid()) );
+            i = i - 1;
+        end
+    end
+    ^
+    create or alter procedure sp_emitter(a_compressable boolean, n_limit int default 1)
+    returns (b dm_dump) as
+    begin
+        while (n_limit > 0) do
+        begin
+            b = lpad('',{DATA_WIDTH}, iif(a_compressable, 'A', uuid_to_char(gen_uuid())));
+            n_limit = n_limit - 1;
+            suspend;
+        end
     end
     ^
     set term ;^
     commit;
 """
 
-db = db_factory(init=init_script)
+db = db_factory(init=init_script, charset = 'none')
 
 act = python_act('db')
 
-expected_stdout = """
-    RESULT_OF_REQ_COMPARE_TO_ACTUAL EXPECTED: actual values were equal to required.
-"""
-
-@pytest.mark.skip("FIXME: Test fate to be determined")
 @pytest.mark.version('>=3.0')
-def test_1():
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
 
-# ORIGINAL fbtest test_script
-#---
-#
-#  import os
-#  import time as tm
-#  import datetime
-#  from time import time
-#  import re
-#  import shutil
-#  import subprocess
-#  import platform
-#
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  DB_NAME = '$(DATABASE_LOCATION)' + 'bugs.core_0733.fdb'
-#
-#  DB_PATH = '$(DATABASE_LOCATION)'
-#  U_NAME = user_name
-#  U_PSWD = user_password
-#  NUL_DEVICE = 'nul' if platform.system() == 'Windows' else '/dev/null'
-#
-#  N_ROWS = 1
-#
-#  F_SQL_NAME=os.path.join(context['temp_directory'],'tmp_core_0733.sql')
-#
-#  fb_home = services.connect(host='localhost', user= user_name, password= user_password).get_home_directory()
-#  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#  fbconf_bak = fb_home+'firebird_'+dts+'.tmp_0733.bak'
-#  shutil.copy2( fb_home+'firebird.conf', fbconf_bak )
-#
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close(file_handle):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb'):
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def prepare_fb_conf( fb_home, a_required_value ):
-#
-#      f_fbconf=open(fb_home+'firebird.conf','r')
-#      fbconf_content=f_fbconf.readlines()
-#      f_fbconf.close()
-#      for i,s in enumerate( fbconf_content ):
-#          if s.lower().lstrip().startswith( 'wirecompression'.lower() ):
-#              fbconf_content[i] = '# <temply commented> ' + s
-#
-#      fbconf_content.append('\\n# Temporarily added by fbtest, CORE-0733. Should be removed auto:')
-#      fbconf_content.append("\\n#" + '='*30 )
-#      fbconf_content.append('\\nWireCompression = %s' % a_required_value )
-#      fbconf_content.append("\\n#" + '='*30 )
-#      fbconf_content.append("\\n" )
-#
-#      f_fbconf=open(fb_home+'firebird.conf','w')
-#      f_fbconf.writelines( fbconf_content )
-#      f_fbconf.close()
-#  #------------------------------------------------------------------------------------
-#
-#  def prepare_sql_4run( required_compression, db_path, n_rows, sql_file_name ):
-#      global os
-#      global U_NAME
-#      global U_PSWD
-#      global NUL_DEVICE
-#
-#      sql_dump='tmp_core_0733_compression_%(required_compression)s.dump' % ( locals() )
-#
-#      if os.path.isfile( '%(db_path)s%(sql_dump)s' % (locals()) ):
-#          os.remove( '%(db_path)s%(sql_dump)s' % (locals()) )
-#
-#      if n_rows is None:
-#          return
-#
-#      #------------------
-#
-#      sql_text='''
-#          set list on;
-#
-#          set term ^;
-#          execute block returns(dts timestamp) as
-#          begin
-#             dts = 'now';
-#             rdb$set_context('USER_SESSION','DTS_BEG', dts);
-#             suspend;
-#          end
-#          ^
-#          set term ;^
-#
-#          out %(NUL_DEVICE)s;
-#
-#          set term ^;
-#          execute block returns(b dm_dump) as
-#          begin
-#              /***********
-#              for
-#                  execute statement 'select b from sp_uuid( true, %(n_rows)s )'
-#                  on external 'localhost:' || rdb$get_context('SYSTEM', 'DB_NAME')
-#                  as user '%(U_NAME)s' password '%(U_PSWD)s'
-#                  into b
-#              do
-#                  suspend;
-#              ***********/
-#          end
-#          ^
-#          set term ;^
-#          out;
-#
-#          set term ^;
-#          execute block returns(dts timestamp) as
-#          begin
-#             dts = 'now';
-#             rdb$set_context('USER_SESSION','DTS_END', dts);
-#             suspend;
-#          end
-#          ^
-#          set term ;^
-#
-#          insert into t_log( required_value, actual_value, elap_ms)
-#          values(
-#                  upper( '%(required_compression)s' )
-#                 ,upper( rdb$get_context('SYSTEM','WIRE_COMPRESSED') )
-#                 ,datediff( millisecond
-#                            from cast(rdb$get_context('USER_SESSION','DTS_BEG') as timestamp)
-#                            to cast(rdb$get_context('USER_SESSION','DTS_END') as timestamp)
-#                          )
-#                )
-#          returning required_value, actual_value, elap_ms
-#          ;
-#          commit;
-#      ''' % dict(globals(), **locals())
-#       # ( locals() )
-#
-#      f_sql=open( sql_file_name, 'w')
-#      f_sql.write( sql_text )
-#      f_sql.close()
-#
-#  #-------------------------
-#
-#  # Call for removing dump from disk:
-#  prepare_sql_4run( 'false', DB_PATH, None, None )
-#  prepare_sql_4run( 'true',  DB_PATH, None, None )
-#
-#
-#  REQUIRED_WIRE_COMPRESSION = 'false'
-#  # ------------------------------------------------------ ###########
-#  # Generate SQL script for running when WireCompression = |||FALSE|||
-#  # ------------------------------------------------------ ###########
-#  prepare_sql_4run( REQUIRED_WIRE_COMPRESSION, DB_PATH, N_ROWS, F_SQL_NAME )
-#
-#  # ------------------------------------------------------ ###########
-#  # Update content of firebird.conf with WireCompression = |||FALSE|||
-#  # ------------------------------------------------------ ###########
-#  prepare_fb_conf( fb_home, REQUIRED_WIRE_COMPRESSION)
-#
-#
-#  # --------------------------------------------------------------------------------------
-#  #  Launch ISQL in separate context of execution with job to obtain data and log duration
-#  # --------------------------------------------------------------------------------------
-#
-#  fn_log = open(os.devnull, 'w')
-#  #fn_log = open( os.path.join(context['temp_directory'],'tmp_0733_with_compression.log'), 'w')
-#  f_isql_obtain_data_err = open( os.path.join(context['temp_directory'],'tmp_0733_obtain_data.err'), 'w')
-#
-#  subprocess.call( [ context['isql_path'], dsn, "-i", F_SQL_NAME ],
-#                     stdout = fn_log,
-#                     stderr = f_isql_obtain_data_err
-#                 )
-#  fn_log.close()
-#  f_isql_obtain_data_err.close()
-#
-#  # Call for removing dump from disk:
-#  #prepare_sql_4run( False, DB_PATH, None, None )
-#  #prepare_sql_4run( True, DB_PATH, None, None )
-#
-#
-#  # Update content of firebird.conf with WireCompression = true
-#  ##############################################################
-#
-#  REQUIRED_WIRE_COMPRESSION = 'true'
-#  # ------------------------------------------------------ ###########
-#  # Generate SQL script for running when WireCompression = ||| TRUE|||
-#  # ------------------------------------------------------ ###########
-#  prepare_sql_4run( REQUIRED_WIRE_COMPRESSION, DB_PATH, N_ROWS, F_SQL_NAME )
-#
-#  # ------------------------------------------------------ ###########
-#  # Update content of firebird.conf with WireCompression = ||| TRUE|||
-#  # ------------------------------------------------------ ###########
-#  prepare_fb_conf( fb_home, REQUIRED_WIRE_COMPRESSION)
-#
-#  fn_log = open(os.devnull, 'w')
-#  #fn_log = open( os.path.join(context['temp_directory'],'tmp_0733_without_compress.log'), 'w')
-#  f_isql_obtain_data_err = open( os.path.join(context['temp_directory'],'tmp_0733_obtain_data.err'), 'a')
-#
-#  subprocess.call( [ context['isql_path'], dsn, "-i", F_SQL_NAME ],
-#                     stdout = fn_log,
-#                     stderr = f_isql_obtain_data_err
-#                 )
-#  fn_log.close()
-#  flush_and_close( f_isql_obtain_data_err )
-#
-#  # Call for removing dump from disk:
-#  #prepare_sql_4run( REQUIRED_WIRE_COMPRESSION, DB_PATH, None, None )
-#
-#  # RESTORE original config:
-#  ##########################
-#  shutil.copy2( fbconf_bak , fb_home+'firebird.conf')
-#
-#  sql='''
-#      -- select * from t_log;
-#      --   REQUIRED_VALUE ACTUAL_VALUE      ELAP_MS
-#      --   ============== ============ ============
-#      --   FALSE          FALSE                2187
-#      --   TRUE           TRUE                 1782
-#      set list on;
-#      select
-#           result_of_req_compare_to_actual
-#          --,iif( slowest_with_compression < fastest_without_compression,
-#          --      'EXPECTED: compression was FASTER.',
-#          --      'POOR. slowest_with_compression=' || slowest_with_compression || ', fastest_without_compression=' || fastest_without_compression
-#          --    ) as result_of_compression_benchmark
-#      from (
-#          select
-#               min( iif( upper(required_value) is distinct from upper(actual_value)
-#                         ,coalesce(required_value,'<null>') || coalesce(actual_value,'<null>')
-#                         ,'EXPECTED: actual values were equal to required.'
-#                       )
-#                  ) as result_of_req_compare_to_actual
-#              ,min( iif( upper(required_value) = upper('false'), elap_ms, null ) ) fastest_without_compression
-#              ,max( iif( upper(required_value) = upper('true'), elap_ms, null ) ) slowest_with_compression
-#          from t_log
-#      )
-#      ;
-#      set list off;
-#      --select * from t_log;
-#
-#  '''
-#  runProgram('isql', [ dsn ], sql)
-#
-#
-#  # Additional check: STDERR for ISQL must be EMPTY.
-#  ##################################################
-#
-#  f_list=(f_isql_obtain_data_err,)
-#  for i in range(len(f_list)):
-#     f_name=f_list[i].name
-#     if os.path.getsize(f_name) > 0:
-#         with open( f_name,'r') as f:
-#             for line in f:
-#                 print("Unexpected STDERR, file "+f_name+": "+line)
-#
-#  os.remove(f_isql_obtain_data_err.name)
-#  os.remove(fbconf_bak)
-#  os.remove(F_SQL_NAME)
-#
-#
-#---
+    # Register Firebird server (D:\FB\probes\fid-set-dpb-probe-05x.py)
+    srv_config_key_value_text = \
+    f"""
+        [test_srv_core_0733]
+        protocol = inet
+    """
+    driver_config.register_server(name = 'test_srv_core_0733', config = srv_config_key_value_text)
+    db_cfg_object = driver_config.register_database(name = 'test_db_core_0733')
+    db_cfg_object.database.value = str(act.db.db_path)
+    # 4debug only, check in trace: db_cfg_object.charset.value = 'win1257'
+
+    benchmark_data = defaultdict(list)
+    for i in range(0, N_MEASURES):
+
+        for w_compr in ('true', 'false'):
+
+            db_cfg_object.config.value = f"""
+                WireCompression = {w_compr}
+                WireCrypt = Disabled
+            """
+
+            with connect('test_db_core_0733') as con:
+                with con.cursor() as cur:
+                    cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
+                    fb_pid = int(cur.fetchone()[0])
+
+                    for data_source in ('t_common_text', 't_binary_data'):
+                        cur.execute('select s from ' + data_source)
+
+                        fb_info_a = psutil.Process(fb_pid).cpu_times()
+                        for r in cur:
+                            # *** FULL FETCH ***
+                            pass
+                        fb_info_b = psutil.Process(fb_pid).cpu_times()
+
+                        k = ('WireCompression=' + w_compr, 'DataSource='+data_source)
+                        benchmark_data[k] += fb_info_b.user - fb_info_a.user,
+
+
+    compressed_txt = [ v for k,v in benchmark_data.items() if k[0] == 'WireCompression=true' and k[1] == 'DataSource=t_common_text'][0]
+    compressed_bin = [ v for k,v in benchmark_data.items() if k[0] == 'WireCompression=true' and k[1] == 'DataSource=t_binary_data'][0]
+    non_comprs_txt = [ v for k,v in benchmark_data.items() if k[0] == 'WireCompression=false' and k[1] == 'DataSource=t_common_text'][0]
+    non_comprs_bin = [ v for k,v in benchmark_data.items() if k[0] == 'WireCompression=false' and k[1] == 'DataSource=t_binary_data'][0]
+
+    cpu_txt_wcompr_ON_vs_OFF = median(compressed_txt) / max(0.00001, median(non_comprs_txt))
+    cpu_bin_wcompr_ON_vs_OFF = median(compressed_bin) / max(0.00001, median(non_comprs_bin))
+    cpu_txt2bin_wcompr_OFF = median(non_comprs_txt) / max(0.00001, median(non_comprs_bin))
+
+    msg_result1 = 'CPU time ratio when sending %s and WireCompression is ON vs OFF: %s'
+    what_sent1 = 'COMPRESSABLE TEXTUAL DATA'
+    all_fine = 1
+    if cpu_txt_wcompr_ON_vs_OFF > MIN_CPU_RATIO_TXT_WCOMPR_ON_OFF:
+        print(msg_result1 % (what_sent1, 'EXPECTED') )
+    else:
+        print(msg_result1 % (what_sent1, 'UNEXPECTED, less than '+str(MIN_CPU_RATIO_TXT_WCOMPR_ON_OFF)) )
+        all_fine = 0
+
+
+    what_sent2 = 'INCOMPRESSABLE BINARY DATA'
+    if cpu_bin_wcompr_ON_vs_OFF > MIN_CPU_RATIO_BIN_WCOMPR_ON_OFF:
+        print(msg_result1 % (what_sent2, 'EXPECTED') )
+    else:
+        print(msg_result1 % (what_sent2, 'UNEXPECTED, less than '+str(MIN_CPU_RATIO_BIN_WCOMPR_ON_OFF)) )
+        all_fine = 0
+
+
+    msg_result2 = 'CPU time ratio when WireCompression is OFF and sending TEXTUAL vs BINARY data: %s'
+    if cpu_txt2bin_wcompr_OFF <= MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF:
+        print(msg_result2 % ('EXPECTED') )
+    else:
+        print(msg_result2 % ('UNEXPECTED, more than ' + str(MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF)) )
+        all_fine = 0
+
+    if not all_fine:
+        print('compressed_txt=',compressed_txt,' min=',min(compressed_txt),' max=',max(compressed_txt))
+        print('compressed_bin=',compressed_bin,' min=',min(compressed_bin),' max=',max(compressed_bin))
+        print('non_comprs_txt=',non_comprs_txt,' min=',min(non_comprs_txt),' max=',max(non_comprs_txt))
+        print('non_comprs_bin=',non_comprs_bin,' min=',min(non_comprs_bin),' max=',max(non_comprs_bin))
+
+        print('median(compressed_txt) / median(non_comprs_txt) =',1.000 * median(compressed_txt) / max(0.00001, median(non_comprs_txt)) )
+        print('median(compressed_bin) / median(non_comprs_bin) =',1.000 * median(compressed_bin) / max(0.00001, median(non_comprs_bin)) )
+        print('median(non_comprs_txt) / median(non_comprs_bin) =',1.000 * median(non_comprs_txt) / max(0.00001, median(non_comprs_bin)) )
+
+
+    expected_stdout = ''
+    for f in (what_sent1, what_sent2):
+        expected_stdout += ''.join( (msg_result1 % (f, 'EXPECTED'), '\n')  )
+    expected_stdout += (msg_result2 % 'EXPECTED')
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
