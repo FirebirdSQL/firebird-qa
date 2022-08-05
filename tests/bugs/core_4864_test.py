@@ -31,7 +31,7 @@ NOTES:
        "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
     4. It is crucial to be sure that current OS environment has no ISC_USER and ISC_PASSWORD variables. Test forcibly unsets them.
 
-    Confirmed problem on WI-T3.0.0.31896 Firebird 3.0 Beta 2 (date of built: 02-JUL-2015), but only when
+    Confirmed problem on WI-T3.0.0.31896 Firebird 3.0 Beta 2 (date of snapshot: 02-JUL-2015), but only when
     using ISQL (i.e. like it was specified in the ticked: 'isql employee -user sysdba').
     Current version of firebird-driver can not work with 3.0.0.31896, internal error raises before any connect can be established.
 
@@ -46,7 +46,7 @@ NOTES:
         Statement failed, SQLSTATE = 42S02
         find/display record error
         -table PLG$VIEW_USERS is not defined
-    (and it raises when we run query to mon$database join mon$attachments left join sec$users).
+    (and it raises when we run query 'select ... from mon$database join mon$attachments ... left join sec$users ...').
 
     Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
 """
@@ -59,7 +59,7 @@ import getpass
 import pytest
 from firebird.qa import *
 
-substitutions = [('[ \t]+', ' '), ('file .* is not a valid database', 'file is not a valid database'), ]
+substitutions = [('[ \t]+', ' '), ]
 
 REQUIRED_ALIAS = 'tmp_core_4864_alias'
 
@@ -101,17 +101,12 @@ def test_1(act: Action, capsys):
     tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
     tmp_usr = 'tmp$user_4864'
     
-    # PermissionError: [Errno 13] Permission denied --> probably because
-    # Firebird was started by root rather than current (non-privileged) user.
-    #
-    #tmp_fdb.write_bytes(act.db.db_path.read_bytes())
-
-    #print(str(tmp_fdb))
     check_sql = f"""
         set bail on;
         set list on;
-        --connect '{act.db.dsn}' user SYSDBA password 'masterkey';
-        connect '{act.db.db_path}' user {act.db.user};
+
+        -- XXX WRONG XXX >>> connect '{act.db.db_path}' user {act.db.user};
+        -- WE HAVE TO ESTABLISH CONNECTION FROM COMMAND LINE, USING '-user SYSDBA' switch!
 
         select upper(mon$database_name) as initial_db_name, a.mon$remote_protocol as initial_protocol, a.mon$user as initial_user
         from mon$database join mon$attachments a on a.mon$attachment_id = current_connection;
@@ -119,7 +114,6 @@ def test_1(act: Action, capsys):
 
         --/*
         create database '{REQUIRED_ALIAS}' page_size 8192 default character set win1250 collation pxw_hun;
-        create user SYSDBA password 'another_dba' using plugin Srp;
         commit;
         connect '{REQUIRED_ALIAS}' user SYSDBA;
         create user {tmp_usr} password '123' using plugin Srp;
@@ -150,17 +144,25 @@ def test_1(act: Action, capsys):
         INITIAL_PROTOCOL <null>
         INITIAL_USER {act.db.user}
         NEW_DB_NAME {str(tmp_fdb).upper()}
-        NEW_DB_OWNER {getpass.getuser().upper()}
+        NEW_DB_OWNER {act.db.user}
         NEW_DB_SEC_DATABASE Self
         NEW_DB_USER {tmp_usr.upper()}
         SEC$USER_NAME {tmp_usr.upper()}
         SEC$PLUGIN Srp
         REMAINED_IN_MAIN_SEC_DB <null>
     """
+    #    NEW_DB_OWNER {getpass.getuser().upper()}
     
     act.expected_stdout = expected_stdout
     act.expected_stderr = ''
-    act.isql(switches=['-q'], charset = 'utf8', input = check_sql, credentials = False, connect_db = False)
+
+    # WRONG >>> act.isql(switches=['-q'], charset = 'utf8', input = check_sql, credentials = False, connect_db = False)
+    # We have to run ISQL exactly how it was shown in the ticket, i.e. 'isql -q -user SYSDBA'.
+    # If we run ISQL without '-user ....' switch and make connection to test DB in the .sql script (using CONNECT command)
+    # then error (on 3.0.0.31896 Beta 2) will be in another statement and it will be different: SQLSTATE = 42S02.
+    # Also, NEW_DB_OWNER will have name of current OS user rather than SYSDBA.
+    #
+    act.isql(switches=['-q', act.db.db_path, '-user', act.db.user], charset = 'win1250', input = check_sql, credentials = False, connect_db = False)
 
     assert act.clean_stdout == act.clean_expected_stdout and act.clean_stderr == act.clean_expected_stderr
     act.reset()
