@@ -2,18 +2,14 @@
 
 """
 ID:          issue-6204
-ISSUE:       6204
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6204
 TITLE:       Make WIN_SSPI plugin produce keys for wirecrypt plugin
 DESCRIPTION:
-    We create mapping from current Windows user to SYSBDBA and then make following
-    changes in the firebird.conf:
-    * AuthClient = Win_Sspi
-    * WireCrypt = Required
-    (these changes do not require restart of server because they relate to client-side).
-    After this we try to connect without specifying user/password pair - it must PASS
-    and we check that our attachment actualy uses wire encryption (by querying mon$ table).
-    Finally, we return original firebird.conf back and create connect using common pair
-    SYSDBA/masterkey. This is needed for drop mapping.
+    We create LOCAL mapping from current Windows user to SYSDBA and use custom driver config object ('db_cfg_object')
+    in order to change DPB content and use client-side parameters: AuthClient = Win_SSpi and WireCrypt = Required.
+
+    After this we try to connect without specifying user/password pair - it must be successful, and then
+    we check that our attachment actualy uses wire encryption (by querying con.info.is_encrypted()).
 
     Confirmed problem on 4.0.0.1227 (date of build: 01.10.2018): attempt to connect
     using Win_SSPI leads to:
@@ -24,267 +20,95 @@ DESCRIPTION:
     Checked on 4.0.0.1346 (date of build: 17.12.2018), SS/SC/CS - works fine.
     Checked on 3.0.6.33222, SS/SC/CS -- all OK.
 
-    ::: NB ::: Test has separate code for 3.0.x and 4.0 because there is no column
-    mon$attachments.mon$wire_encrypted in FB 3.x
 JIRA:        CORE-5948
 FBTEST:      bugs.core_5948
+NOTES:
+    [06.08.2022] pzotov
+    Re-implemented: see custom driver config object ('db_cfg_object'). No more changes in the firebird.conf.
+    Confirmed again problem on 4.0.0.1227.
+    Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535
 """
+import os
+import socket
+import getpass
+import time
 
 import pytest
 from firebird.qa import *
+from firebird.driver import driver_config, connect
+
+#---------------------------------------
+# MANDATORY! OTHERWISE ISC_ variables will take precedense over credentials = False!
+for v in ('ISC_USER','ISC_PASSWORD'):
+    try:
+        del os.environ[ v ]
+    except KeyError as e:
+        pass
+#---------------------------------------
+
+THIS_COMPUTER_NAME = socket.gethostname()
+CURRENT_WIN_ADMIN = getpass.getuser()
 
 db = db_factory()
+substitutions = [('TCPv(4|6)', 'TCP')]
+act = python_act('db', substitutions=substitutions)
 
-# version: 3.0.5
+expected_stdout = ''
 
-act_1 = python_act('db')
-
-expected_stdout_1 = """
-    PREPARE: RDB$MAP_NAME                    TEST_WMAP
-    PREPARE: RDB$MAP_USING                   P
-    PREPARE: RDB$MAP_PLUGIN                  WIN_SSPI
-    PREPARE: RDB$MAP_DB                      <null>
-    PREPARE: RDB$MAP_FROM_TYPE               USER
-    PREPARE: RDB_MAP_FROM                    <EXPECTED>
-    PREPARE: RDB$MAP_TO_TYPE                 0
-    PREPARE: RDB$MAP_TO                      <EXPECTED>
-    PREPARE: RDB$SYSTEM_FLAG                 0
-    PREPARE: Records affected: 1
-
-    CONNECT: AUTH_METHOD                     Mapped from Win_Sspi
-
-    CLEANUP: RDB$MAP_NAME                    <null>
-    CLEANUP: RDB$MAP_USING                   <null>
-    CLEANUP: RDB$MAP_PLUGIN                  <null>
-    CLEANUP: RDB$MAP_DB                      <null>
-    CLEANUP: RDB$MAP_FROM_TYPE               <null>
-    CLEANUP: RDB_MAP_FROM                    <null>
-    CLEANUP: RDB$MAP_TO_TYPE                 <null>
-    CLEANUP: RDB$MAP_TO                      <null>
-    CLEANUP: RDB$SYSTEM_FLAG                 <null>
-    CLEANUP: Records affected: 1
-"""
-
-@pytest.mark.skip('FIXME: firebird.conf')
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')
-def test_1(act_1: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, capsys):
 
-# version: 4.0
+    MAP_NAME = 'test_wmap'
+    addi_sql = f'''
+         set bail on;
+         recreate view v_map_info as
+         select
+              m.rdb$map_name as map_name
+             ,m.rdb$map_plugin as map_plugin
+             ,upper(m.rdb$map_from) as map_from
+             ,m.rdb$map_to as map_to
+             ,a.mon$user as who_ami
+             ,a.mon$remote_protocol as att_protocol
+             ,a.mon$auth_method as auth_method
+         from mon$attachments a
+         left join rdb$auth_mapping m on rdb$map_name = upper('test_wmap')
+         where a.mon$attachment_id = current_connection
+         ;
+         create or alter mapping {MAP_NAME} using plugin win_sspi from user "{THIS_COMPUTER_NAME}\\{CURRENT_WIN_ADMIN}" to user {act.db.user};
+         commit;
+    '''
+    act.isql(switches=[], input=addi_sql)
 
-act_2 = python_act('db')
+    srv_config_key_value_text = \
+    f"""
+        [test_srv_core_5948]
+        protocol = inet
+    """
+    driver_config.register_server(name = 'test_srv_core_5948', config = srv_config_key_value_text)
+    db_cfg_object = driver_config.register_database(name = 'test_db_core_5948')
+    db_cfg_object.database.value = str(act.db.db_path)
+    db_cfg_object.config.value = f"""
+        AuthClient = Win_Sspi
+        WireCrypt = Required
+    """
+    
+    with connect('test_db_core_5948', user = '') as con:
+        with con.cursor() as cur:
+             for r in cur.execute('select * from v_map_info'):
+                 for i,col in enumerate(cur.description):
+                     print((col[0] +':').ljust(32), r[i])
+        print('Is connection encrypted ?'.ljust(32),con.info.is_encrypted())
 
-expected_stdout_2 = """
-    PREPARE: RDB$MAP_NAME                    TEST_WMAP
-    PREPARE: RDB$MAP_USING                   P
-    PREPARE: RDB$MAP_PLUGIN                  WIN_SSPI
-    PREPARE: RDB$MAP_DB                      <null>
-    PREPARE: RDB$MAP_FROM_TYPE               USER
-    PREPARE: RDB_MAP_FROM                    <EXPECTED>
-    PREPARE: RDB$MAP_TO_TYPE                 0
-    PREPARE: RDB$MAP_TO                      <EXPECTED>
-    PREPARE: RDB$SYSTEM_FLAG                 0
-    PREPARE: Records affected: 1
-
-    CONNECT: AUTH_METHOD                     Mapped from Win_Sspi
-    CONNECT: WIRE_ENCRYPTED                  <true>
-
-    CLEANUP: RDB$MAP_NAME                    <null>
-    CLEANUP: RDB$MAP_USING                   <null>
-    CLEANUP: RDB$MAP_PLUGIN                  <null>
-    CLEANUP: RDB$MAP_DB                      <null>
-    CLEANUP: RDB$MAP_FROM_TYPE               <null>
-    CLEANUP: RDB_MAP_FROM                    <null>
-    CLEANUP: RDB$MAP_TO_TYPE                 <null>
-    CLEANUP: RDB$MAP_TO                      <null>
-    CLEANUP: RDB$SYSTEM_FLAG                 <null>
-    CLEANUP: Records affected: 1
-"""
-
-@pytest.mark.skip('FIXME: firebird.conf')
-@pytest.mark.version('>=4.0')
-@pytest.mark.platform('Windows')
-def test_2(act_2: Action):
-    pytest.fail("Not IMPLEMENTED")
-
-# test_script_2
-#---
-#
-#  import sys
-#  import os
-#  import shutil
-#  import socket
-#  import getpass
-#  import time
-#  import datetime
-#  import subprocess
-#  from fdb import services
-#
-#  # 23.08.2020: !!! REMOVING OS-VARIABLE ISC_USER IS MANDATORY HERE !!!
-#  # This variable could be set by other .fbts which was performed before current within batch mode (i.e. when fbt_run is called from <rundaily>)
-#  # NB: os.unsetenv('ISC_USER') actually does NOT affect on content of os.environ dictionary, see: https://docs.python.org/2/library/os.html
-#  # We have to remove OS variable either by os.environ.pop() or using 'del os.environ[...]', but in any case this must be enclosed intro try/exc:
-#  #os.environ.pop('ISC_USER')
-#  try:
-#      del os.environ["ISC_USER"]
-#  except KeyError as e:
-#      pass
-#
-#  THIS_COMPUTER_NAME = socket.gethostname()
-#  CURRENT_WIN_ADMIN = getpass.getuser()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if os.path.isfile( f_names_list[i]):
-#              os.remove( f_names_list[i] )
-#              if os.path.isfile( f_names_list[i]):
-#                  print('ERROR: can not remove file ' + f_names_list[i])
-#
-#  #--------------------------------------------
-#
-#  db_conn.close()
-#  fb_home = services.connect(host='localhost', user=user_name, password=user_password).get_home_directory()
-#
-#  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#
-#  fbconf_cur = os.path.join(fb_home, 'firebird.conf')
-#  fbconf_bak = os.path.join(context['temp_directory'], 'firebird_'+dts+'.bak')
-#
-#  sql_pre='''
-#      set bail on;
-#      set list on;
-#      set count on;
-#      -- set echo on;
-#
-#      recreate view v_map_info as
-#      select
-#           rdb$map_name              --    test_wmap
-#          ,rdb$map_using            --     p
-#          ,rdb$map_plugin           --     win_sspi
-#          ,rdb$map_db               --     <null>
-#          ,rdb$map_from_type        --     user
-#          ,iif( upper(rdb$map_from) = upper('%(THIS_COMPUTER_NAME)s\\%(CURRENT_WIN_ADMIN)s'), '<EXPECTED>', 'UNEXPECTED: ' || rdb$map_from ) as rdb_map_from
-#          ,rdb$map_to_type          --     0
-#          ,iif( upper(rdb$map_to) = upper('%(user_name)s'), '<EXPECTED>', 'UNEXPECTED: ' || rdb$map_to ) as rdb$map_to
-#          ,rdb$system_flag          --     0
-#      from rdb$database
-#      left join rdb$auth_mapping on rdb$map_name = upper('test_wmap')
-#      ;
-#
-#      create or alter mapping test_wmap using plugin win_sspi from user "%(THIS_COMPUTER_NAME)s\\%(CURRENT_WIN_ADMIN)s" to user %(user_name)s;
-#      commit;
-#
-#      select * from v_map_info
-#      ;
-#
-#  ''' % dict(globals(), **locals())
-#
-#  f_prepare_sql = open( os.path.join(context['temp_directory'],'tmp_winsspi_prepare.sql'), 'w', buffering=0)
-#  f_prepare_sql.write(sql_pre)
-#  f_prepare_sql.close()
-#
-#  f_prepare_log=open( os.path.join(context['temp_directory'],'tmp_winsspi_prepare.log'), 'w', buffering=0)
-#  subprocess.call( [ fb_home + "isql", dsn, "-user", user_name, "-pas", user_password, "-q", "-i", f_prepare_sql.name ], stdout=f_prepare_log, stderr=subprocess.STDOUT )
-#  f_prepare_log.close()
-#
-#  shutil.copy2( fbconf_cur, fbconf_bak )
-#
-#  f_fbconf=open( fbconf_cur, 'r')
-#  fbconf_content=f_fbconf.readlines()
-#  f_fbconf.close()
-#  for i,s in enumerate( fbconf_content ):
-#      line = s.lower().lstrip()
-#      if line.startswith( 'wirecrypt'.lower() ):
-#          fbconf_content[i] = '# [temply commented] ' + s
-#
-#      if line.startswith( 'AuthClient'.lower() ):
-#          fbconf_content[i] = '# [temply commented] ' + s
-#
-#
-#  text2app='''
-#  ### TEMPORARY CHANGED BY FBTEST FRAMEWORK ###
-#  AuthClient = Win_Sspi
-#  WireCrypt = Required
-#  ##############################################
-#  '''
-#
-#  fbconf_content += [ '\\n' + x for x in text2app.split('\\n') ]
-#
-#  f_fbconf=open( fbconf_cur, 'w', buffering = 0)
-#  f_fbconf.writelines( fbconf_content )
-#  f_fbconf.close()
-#
-#  sql_run='''
-#      set wng off;
-#      set bail on;
-#      set list on;
-#      -- set echo on;
-#
-#      connect '%(dsn)s';
-#      select
-#           mon$auth_method    as auth_method     -- mapped from win_sspi
-#          ,mon$wire_encrypted as wire_encrypted  -- <true> # <--- THIS LINE IS FOR FB 4 ONLY, REMOVE FOR FB 3
-#      from mon$attachments where mon$attachment_id = current_connection;
-#      commit;
-#  ''' % dict(globals(), **locals())
-#
-#  f_connect_sql = open( os.path.join(context['temp_directory'],'tmp_winsspi_connect.sql'), 'w', buffering=0)
-#  f_connect_sql.write(sql_run)
-#  f_connect_sql.close()
-#
-#  f_connect_log=open( os.path.join(context['temp_directory'],'tmp_winsspi_connect.log'), 'w', buffering=0)
-#  subprocess.call( [ fb_home + "isql", "-q", "-i", f_connect_sql.name ], stdout=f_connect_log, stderr=subprocess.STDOUT )
-#  f_connect_log.close()
-#
-#
-#  # RESTORE previous content of firebird.conf. This must be done BEFORE drop mapping!
-#  shutil.copy2( fbconf_bak, fbconf_cur )
-#
-#  # DROP mapping. NB: this connect will use Srp plugin because attempt to connect using WinSSPI could failed:
-#  sql_end='''
-#      drop mapping test_wmap;
-#      commit;
-#      set list on;
-#      set count on;
-#      select * from v_map_info;
-#  '''
-#
-#  f_cleanup_sql = open( os.path.join(context['temp_directory'],'tmp_winsspi_cleanup.sql'), 'w', buffering=0)
-#  f_cleanup_sql.write(sql_end)
-#  f_cleanup_sql.close()
-#
-#  f_cleanup_log=open( os.path.join(context['temp_directory'],'tmp_winsspi_cleanup.log'), 'w', buffering=0)
-#  subprocess.call( [ fb_home + "isql", dsn, "-user", user_name, "-pas", user_password, "-q", "-i", f_cleanup_sql.name ], stdout=f_cleanup_log, stderr=subprocess.STDOUT )
-#  f_cleanup_log.close()
-#
-#
-#  with open(f_prepare_log.name, 'r') as f:
-#      for line in f:
-#          if line.split():
-#              print('PREPARE: ' + line)
-#
-#  with open(f_connect_log.name, 'r') as f:
-#      for line in f:
-#          if line.split():
-#              print('CONNECT: ' + line)
-#
-#  with open(f_cleanup_log.name, 'r') as f:
-#      for line in f:
-#          if line.split():
-#              print('CLEANUP: ' + line)
-#
-#  time.sleep(1)
-#
-#  f_list=( f_prepare_sql, f_prepare_log, f_connect_sql, f_connect_log, f_cleanup_sql, f_cleanup_log, )
-#
-#  # Cleanup
-#  ##########
-#  cleanup( [ i.name for i in f_list ] + [fbconf_bak] )
-#
-#
-#
-#---
+    act.expected_stdout = f"""
+        MAP_NAME:                        {MAP_NAME.upper()}
+        MAP_PLUGIN:                      WIN_SSPI
+        MAP_FROM:                        {THIS_COMPUTER_NAME.upper()}\\{CURRENT_WIN_ADMIN.upper()}
+        MAP_TO:                          {act.db.user.upper()}
+        WHO_AMI:                         {act.db.user.upper()}
+        ATT_PROTOCOL:                    TCP
+        AUTH_METHOD:                     Mapped from Win_Sspi
+        Is connection encrypted ?        True
+    """
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
