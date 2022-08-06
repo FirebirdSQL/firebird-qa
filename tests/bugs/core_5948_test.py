@@ -93,6 +93,10 @@ def test_1(act: Action, capsys):
         WireCrypt = Required
     """
     
+    # NOTE: is it mandatory to specify "user=<empty_string>" if we want to use Win_SSpi here.
+    # Otherwise (if 'user' missed) driver will try to take act.db.user and connection will fail
+    # with SQLSTATE = 28000 ("...user name and password are not defined...")
+    #
     with connect('test_db_core_5948', user = '') as con:
         with con.cursor() as cur:
              for r in cur.execute('select * from v_map_info'):
