@@ -1382,8 +1382,9 @@ class Mapping:
        Fixture created by `mapping_factory` does this automatically.
     """
     def __init__(self, database: Database, name: str, charset: str, do_not_create: bool,
-                 is_global: bool, source: Database, source_db: str, serverwide: bool,
-                 from_name: str, from_type: str, to_name: Optional[str], to_type: str):
+                 is_global: bool, source: Database, source_db: Optional[Database],
+                 serverwide: bool, from_name: str, from_type: str,
+                 to_name: Optional[str], to_type: str):
         #: Database used to manage mapping.
         self.db: Database = database
         #: Mapping name.
@@ -1397,7 +1398,7 @@ class Mapping:
         #: Authentication plugin name, `ANY` for any plugin, `-` for mapping or `*` for any method.
         self.source: str = source
         #: Database where authentication succeeded.
-        self.source_db: Database = source_db
+        self.source_db: Optional[Database] = source_db
         #: Work only with server-wide plugins or not.
         self.serverwide: bool = serverwide
         #: The name of the object from which mapping is performed. Could be `None` for any value of given type.
@@ -1490,7 +1491,10 @@ def mapping_factory(db_fixture_name: str, *, name: str, is_global: bool, source:
     """
     @pytest.fixture
     def mapping_fixture(request: pytest.FixtureRequest) -> Mapping:
-        source_db = request.getfixturevalue(source_db_fixture_name)
+        if source_db_fixture_name is not None:
+            source_db = request.getfixturevalue(source_db_fixture_name)
+        else:
+            source_db = None
         with Mapping(request.getfixturevalue(db_fixture_name), name, charset, do_not_create,
                      is_global, source, source_db, serverwide, from_name, from_type,
                      to_name, to_type) as mapping:
