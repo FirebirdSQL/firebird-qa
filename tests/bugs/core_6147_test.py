@@ -2,364 +2,221 @@
 
 """
 ID:          issue-6396
-ISSUE:       6396
-TITLE:       PLG$SRP table, PLG$SRP_VIEW View instructions are strangely added in the metadata
-  script extracted when Windows trusted authentication is enabled
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6396
+TITLE:       PLG$SRP table, PLG$SRP_VIEW View instructions are strangely added in the metadata script extracted when Windows trusted authentication is enabled
 DESCRIPTION:
-    References to the table PLG$SRP and view PLG$SRP_VIEW *always* present in extracted metadata,
-    regardless of using auth plugin (and this is NOT a bug!).
 
-    Fix was introduced in 4.0.0.2087: extracted metadata must contain "OR ALTER" clause in:
-        CREATE OR ALTER GLOBAL MAPPING TRUSTED_AUTH_C6147 ...
-               ^^^^^^^^
+    ## ACHTUNG ## Ticket title ("PLG$SRP table, PLG$SRP_VIEW View instructions are strangely added ...")
+    must be REPLACED because references to the table PLG$SRP and view PLG$SRP_VIEW *always* present
+    in extracted metadata, and this is EXPECTED, i.e. this is not error!
+    The only change that was in the FB source related to this ticket is appearance of 'OR ALTER'
+    phrase in the 'CREATE [OR ALTER] GLOBAL MAPPING ...' statement.
+    (i.e. phase "OR ALTER" missed in extracted metadata before that).
+
     Builds before 4.0.0.2084 did not add this clause in extracted metadata script (checked 4.0.0.2076).
-    (see also discussion with Alex, 02-jun-2020 08:23).
+    COnfirmed problem also on 3.0.5.33115 (date of build: 26-mar-2019).
 
-    ### NB ###
-    For unclear reason ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL + DROP DATABASE do not work as expected in this test:
-    test DB remains opened by firebird.exe about 5...7 seconds after test finish, and 'drop database' does not issues any error.
-    Because of this it was decided to forcedly change DB state to full shutdown in order to have ability to drop it.
-    22.02.2021: perhaps, this was somehow related to core-6441.
+    Comparison between major FB and builds (3.0.5.33212 vs 3.0.6.33326 and 4.0.0.2076 vs 4.0.0.2084):
+    see letter to Alex, 01-JUL-2020 21:38. Reply from Alex: 02-JUL-2020 08:23.
 
-    NOTES FOR WINDOWS:
-    ##################
-    We create copy of %FIREBIRD_HOME%\\database.conf and change it content by adding lines:
-         tmp_alias_6147 = ...
-         {
-             SecurityDatabase = tmp_alias_6147
-         }
-    Then we create trest DB in embedded mode, create SYSDBA that belongs to this DB and create global mapping.
-    We check content of rdb$auth_mapping table after this step in order to ensure that mapping was actually created.
-    After this we do connect to DB using Win_SSPI and extract metadata.
+    fix for FB 4.x
+    https://github.com/FirebirdSQL/firebird/commit/dbc28a88c0b96964c19f9a8fa76f7f3dc1db16c4
+    Date: 01-Jul-2020 18:06
+    Changed paths: M src/isql/show.epp
+    Partial f_ix for CORE-6147: be smart when dealing with global mappings in metadata script
 
-    NOTES FOR LINUX:
-    ################
-    03-mar-2021. This test can run on Linux but we have to use plugin = Srp instead of win_sspi.
-    This is done by check result of os.name (see below).
-    Local mapping (i.e. in RDB$DATABASE) will *not* be created in this case (in contrary to win_sspi),
-    thus we create and drop it "manually" in order to pass expected results check.
+    fix for FB 3.x
+    https://github.com/FirebirdSQL/firebird/commit/66499fdbeed7fe2e1765a01e7d599553c3330b0e
+    Date: 09-Jul-2020 18:10
+    Changed paths: M src/isql/show.epp
+    Backported f_ix for CORE-6147: script with extracted metadata may fail on global mapping
+
+    Kind of auth plugin does not matter (i.e. win_sspi or srp), so Srp was selected for running this test
+    both on Windows and Linux.
+
+    Test uses pre-created databases.conf which has alias (see variable REQUIRED_ALIAS) and SecurityDatabase in its details
+    which points to that alias, thus making such database be self-security.
+    Database file for that alias must NOT exist in the QA_root/files/qa/ subdirectory: it will be created here.
+
+    Self-security database allows us to create GLOBAL mapping without worrying about how it will be removed on test finish.
 
     Checked on:
     * Windows: 4.0.0.2377 SS/CS (done for both win_sspi and Srp, but only win_sspi is used in this test for Windows)
     * Linux:   4.0.0.2377 SS/CS (done for Srp)
 JIRA:        CORE-6147
 FBTEST:      bugs.core_6147
+NOTES:
+    [07.08.2022] pzotov
+    1. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
+    2. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
+       (for LINUX this equality is case-sensitive, even when aliases are compared!)
+    3. Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace it before every test session).
+       Discussed with pcisar, letters since 30-may-2022 13:48, subject:
+       "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
+
+    ::: NOTE :::
+    TEST CAN AND MUST BE SIMPLIFIED.
+    There is mapping_factory() in the QA plugin, and it can be used to create/drop GLOBAL mapping.
+    To be discussed with pcisar.
+
+    Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
 """
+
+import os
+import re
+import locale
+import subprocess
+from pathlib import Path
+import time
 
 import pytest
 from firebird.qa import *
 
-db = db_factory()
+# Name of alias for self-security DB in the QA_root/files/qa-databases.conf.
+# This file must be copied manually to each testing FB homw folder, with replacing
+# databases.conf there:
+#
+REQUIRED_ALIAS = 'tmp_core_6147_alias'
 
+db = db_factory()
 act = python_act('db', substitutions=[('[ \t]+', ' '), ('.*===.*', ''), ('PLUGIN .*', 'PLUGIN')])
 
-expected_stdout = """
-AFTER_MADE_MAPPING: MAP_NAME                        MAP_TYPE   FROM_TYPE  MAP_FROM   TO_TYPE MAP_TO
-AFTER_MADE_MAPPING: =============================== ========== ========== ========== ======= ==========
-AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              local      USER       *                0 <null>
-AFTER_MADE_MAPPING: TRUSTED_AUTH_C6147              global     USER       *                0 <null>
-AFTER_MADE_MAPPING: Records affected: 2
+fn_meta_log = temp_file('tmp_core_6147-meta.log')
+fn_meta_err = temp_file('tmp_core_6147-meta.err')
 
-EXTRACTED_METADATA: CREATE MAPPING TRUSTED_AUTH_C6147 USING PLUGIN
-EXTRACTED_METADATA: CREATE OR ALTER GLOBAL MAPPING TRUSTED_AUTH_C6147 USING PLUGIN
+#@pytest.mark.version('>=3.0.7')
+@pytest.mark.version('>=3.0')
+def test_1(act: Action, fn_meta_log: Path, fn_meta_err: Path, capsys):
+    
+    # Scan line-by-line through databases.conf, find line starting with REQUIRED_ALIAS and extract name of file that
+    # must be created in the $(dir_sampleDb)/qa/ folder. This name will be used further as target database (tmp_fdb).
+    # NOTE: we have to SKIP lines which are commented out, i.e. if they starts with '#':
+    p_required_alias_ptn =  re.compile( '^(?!#)((^|\\s+)' + REQUIRED_ALIAS + ')\\s*=\\s*\\$\\(dir_sampleDb\\)/qa/', re.IGNORECASE )
+    fname_in_dbconf = None
 
-AFTER_DROP_MAPPING: Records affected: 0
+    with open(act.home_dir/'databases.conf', 'r') as f:
+        for line in f:
+            if p_required_alias_ptn.search(line):
+                # If databases.conf contains line like this:
+                #     tmp_6147_alias = $(dir_sampleDb)/qa/tmp_core_6147.fdb
+                # - then we extract filename: 'tmp_core_6147.fdb' (see below):
+                fname_in_dbconf = Path(line.split('=')[1].strip()).name
+                break
 
-"""
+    # if 'fname_in_dbconf' remains undefined here then propably REQUIRED_ALIAS not equals to specified in the databases.conf!
+    #
+    assert fname_in_dbconf
 
-@pytest.mark.skip('FIXME: databases.conf')
-@pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+    # Full path + filename of database to which we will try to connect:
+    #
+    tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import datetime
-#  import time
-#  import shutil
-#  import re
-#  from fdb import services
-#
-#  this_fdb = db_conn.database_name
-#
-#  if os.name == 'nt':
-#      # On Windows we test what it was initially described  in the ticket (trusted auth.):
-#      PLUGIN_FOR_MAPPING = 'win_sspi'
-#  else:
-#      # On Linux currently we can check only Srp plugin
-#      # but results must be the same as for win_sspi:
-#      PLUGIN_FOR_MAPPING = 'Srp'
-#
-#
-#  # 23.08.2020: !!! REMOVING OS-VARIABLE ISC_USER IS MANDATORY HERE !!!
-#  # This variable could be set by other .fbts which was performed before current within batch mode (i.e. when fbt_run is called from <rundaily>)
-#  # NB: os.unsetenv('ISC_USER') actually does NOT affect on content of os.environ dictionary, see: https://docs.python.org/2/library/os.html
-#  # We have to remove OS variable either by os.environ.pop() or using 'del os.environ[...]', but in any case this must be enclosed intro try/exc:
-#  #os.environ.pop('ISC_USER')
-#  try:
-#      del os.environ["ISC_USER"]
-#  except KeyError as e:
-#      pass
-#
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  svc = services.connect(host='localhost', user= user_name, password= user_password)
-#  fb_home = svc.get_home_directory()
-#  svc.close()
-#  # Resut: fb_home is full path to FB instance home (with trailing slash).
-#
-#  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#
-#  dbconf = os.path.join( fb_home, 'databases.conf')
-#  dbcbak = os.path.join( fb_home, 'databases_'+dts+'.bak')
-#
-#  shutil.copy2( dbconf, dbcbak )
-#
-#  tmp_fdb=os.path.join(context['temp_directory'],'tmp_6147.fdb')
-#  cleanup( (tmp_fdb,) )
-#
-#  text2app='''
-#
-#  # Temporarily added by fbtest, CORE-6147. Should be removed auto:
-#  ##############################
-#  tmp_alias_6147 = %(tmp_fdb)s
-#  {
-#      SecurityDatabase = tmp_alias_6147
-#  }
-#  ##############################
-#  ''' % locals()
-#
-#  f_dbconf=open( dbconf, 'a')
-#  f_dbconf.seek(0, 2)
-#  f_dbconf.write( text2app )
-#  flush_and_close( f_dbconf )
-#
-#
-#  SHOW_MAP_INFO_QUERY = '''
-#      set count on;
-#      -- set echo on;
-#      set width map_name 31;
-#      set width map_type 10;
-#      set width map_plugin 16;
-#      set width from_type 10;
-#      set width map_from 10;
-#      set width to_type 10;
-#      set width map_to 10;
-#      select * from v_map_info;
-#  '''
-#
-#  if PLUGIN_FOR_MAPPING == 'Srp':
-#      db_connect_string = this_fdb
-#      sql_txt=    '''
-#          set bail on;
-#          connect 'localhost:%(db_connect_string)s' user %(user_name)s password '%(user_password)s';
-#          commit;
-#          -- ::: NB :::
-#          -- Local mapping will NOT be created when use Srp; create it here in order to have the same results
-#          -- as for win_sspi:
-#          create or alter mapping trusted_auth_c6147 using plugin %(PLUGIN_FOR_MAPPING)s from any user to user;
-#          commit;
-#      ''' % dict(globals(), **locals())
-#  else:
-#      db_connect_string = 'tmp_alias_6147'
-#      sql_txt=    '''
-#          set bail on;
-#          -- do NOT use 'localhost:' here! Otherwise:
-#          -- Statement failed, SQLSTATE = 28000
-#          -- Your user name and password are not defined. ...
-#          create database '%(db_connect_string)s' user %(user_name)s;
-#          create user %(user_name)s password '%(user_password)s';
-#          commit;
-#      ''' % dict(globals(), **locals())
-#
-#  sql_txt += '''
-#      -- ::: NB :::
-#      -- When used plugin is win_sspi then *TWO* mappings will be created here:  "local' (in rdb$auth_mapping)
-#      -- and g;pbal (in sec$global_auth_mapping). This is NOT so when used plugin = Srp (only global mapping will be made).
-#      create or alter global mapping trusted_auth_c6147 using plugin %(PLUGIN_FOR_MAPPING)s from any user to user;
-#      commit;
-#
-#      recreate view v_map_info as
-#      select
-#          map_name
-#         ,map_type
-#         -- ,map_plugin
-#         ,from_type
-#         ,map_from
-#         ,to_type
-#         ,map_to
-#      from
-#      (
-#          select
-#               rdb$map_name      as map_name
-#              ,'local'           as map_type
-#              ,rdb$map_plugin    as map_plugin
-#              ,rdb$map_from_type as from_type
-#              ,rdb$map_from      as map_from
-#              ,rdb$map_to_type   as to_type
-#              ,rdb$map_to        as map_to
-#          from rdb$auth_mapping
-#          UNION ALL
-#          select
-#              sec$map_name
-#              ,'global'
-#              ,sec$map_plugin
-#              ,sec$map_from_type
-#              ,sec$map_from
-#              ,sec$map_to_type
-#              ,sec$map_to
-#          from sec$global_auth_mapping
-#      ) t
-#      where
-#          t.map_name = upper('trusted_auth_c6147')
-#          and t.map_plugin = upper('%(PLUGIN_FOR_MAPPING)s')
-#      ;
-#      commit;
-#
-#      %(SHOW_MAP_INFO_QUERY)s
-#
-#  ''' % dict(globals(), **locals())
-#
-#  f_prepare_sql = open( os.path.join(context['temp_directory'],'tmp_6147_prepare.sql'), 'w')
-#  f_prepare_sql.write(sql_txt)
-#  flush_and_close( f_prepare_sql )
-#
-#  f_prepare_log=open( os.path.join(context['temp_directory'],'tmp_6147_prepare.log'), 'w')
-#  subprocess.call( [ context['isql_path'], "-q", "-i", f_prepare_sql.name ], stdout=f_prepare_log, stderr=subprocess.STDOUT )
-#  flush_and_close( f_prepare_log )
-#
-#
-#  # Extract metadata from test DB:
-#  ##################
-#  f_medatata_log=open( os.path.join(context['temp_directory'],'tmp_6147_meta.mapping.sql'), 'w')
-#  subprocess.call( [ context['isql_path'], '-x', 'localhost:%(db_connect_string)s' % locals(),'-user', user_name, '-pas', user_password ], stdout=f_medatata_log, stderr=subprocess.STDOUT )
-#  flush_and_close( f_medatata_log )
-#
-#
-#  # Remove global mapping:
-#  ########################
-#  f_cleanup_sql = open( os.path.join(context['temp_directory'],'tmp_6147_cleanup.sql'), 'w')
-#  sql_txt='''
-#      set bail on;
-#      -- NB: here we have to connect as "common" SYSDBA (using Srp) rather than Win_SSPI.
-#      -- Otherwise global mapping can not be deleted:
-#      -- ############################################
-#      -- Statement failed, SQLSTATE = 28000
-#      -- unsuccessful metadata update
-#      -- -DROP MAPPING TRUSTED_AUTH_C6147 failed
-#      -- -Unable to perform operation
-#      -- -System privilege CHANGE_MAPPING_RULES is missing
-#      -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#      -- This I can not explain: why user who did create global mapping can not delete it ???
-#      -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#      connect 'localhost:%(db_connect_string)s' user %(user_name)s password '%(user_password)s';
-#      drop global mapping trusted_auth_c6147;
-#  ''' % dict(globals(), **locals())
-#
-#  if PLUGIN_FOR_MAPPING == 'Srp':
-#      sql_txt +=     '''
-#          -- Delete record from rdb$auth_mapping (only when used plugin = 'Srp'):
-#          drop mapping trusted_auth_c6147;
-#      '''
-#
-#  sql_txt += '''
-#      commit;
-#
-#      %(SHOW_MAP_INFO_QUERY)s
-#      quit;
-#
-#      -- DOES NOT HELP! DATABASE FILE REMAINS OPENED BY FIREBIRD!
-#      -- ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL; -- !! mandatory otherwise database file will be kept by engine and fbtest will not able to drop it !!
-#      -- drop database; --> does not raise errot when clear pool but DB file still remains opened !!!
-#  ''' % dict(globals(), **locals())
-#
-#  f_cleanup_sql.write(sql_txt)
-#  flush_and_close( f_cleanup_sql )
-#
-#  # DROP MAPPING:
-#  ###############
-#  f_cleanup_log = open( os.path.join(context['temp_directory'],'tmp_6147_cleanup.log'), 'w')
-#  subprocess.call( [ context['isql_path'], "-q", "-i", f_cleanup_sql.name ], stdout=f_cleanup_log, stderr=subprocess.STDOUT )
-#  flush_and_close( f_cleanup_log )
-#
-#  subprocess.call( [context['gfix_path'], 'localhost:%(db_connect_string)s' % locals(), '-shut', 'single', '-force', '0', '-user', user_name, '-pas', user_password] )
-#
-#  # RESTORE original config:
-#  ##########################
-#  shutil.move( dbcbak, dbconf)
-#
-#  with open(f_prepare_log.name, 'r') as f:
-#      for line in f:
-#          if line.split():
-#              print('AFTER_MADE_MAPPING: ' + line)
-#
-#  allowed_patterns = (
-#       re.compile('MAPPING TRUSTED_AUTH_C6147', re.IGNORECASE)
-#      ,re.compile('SQLSTATE', re.IGNORECASE)
-#      ,re.compile('Missing security', re.IGNORECASE)
-#      ,re.compile('Your user', re.IGNORECASE)
-#  )
-#
-#  with open(f_medatata_log.name, 'r') as f:
-#      for line in f:
-#          match2some = [ p.search(line) for p in allowed_patterns ]
-#          if max(match2some):
-#              print('EXTRACTED_METADATA: ' + line)
-#
-#  with open(f_cleanup_log.name, 'r') as f:
-#      for line in f:
-#          if line.split():
-#              print('AFTER_DROP_MAPPING: ' + line)
-#
-#  # CLEANUP:
-#  ##########
-#  time.sleep(1)
-#  f_list=(
-#       f_prepare_sql
-#      ,f_prepare_log
-#      ,f_medatata_log
-#      ,f_cleanup_sql
-#      ,f_cleanup_log
-#      ,tmp_fdb
-#  )
-#  cleanup( f_list )
-#
-#
-#
-#---
+    PLUGIN_FOR_MAPPING = 'Srp'
+    MAPPING_NAME = 'trusted_auth_c6147'
+
+    sql_txt = f'''
+        set bail on;
+        set list on;
+        create database '{REQUIRED_ALIAS}' user {act.db.user};
+        select
+            m.mon$sec_database as mon_sec_db
+        from mon$database m;
+        commit;
+
+        create or alter global mapping {MAPPING_NAME} using plugin {PLUGIN_FOR_MAPPING} from any user to user;
+        commit;
+
+        recreate view v_map_info as
+        select
+            map_name
+           ,map_type
+           -- ,map_plugin
+           ,from_type
+           ,map_from
+           ,to_type
+           ,map_to
+        from
+        (
+            select
+                 'LOCAL'           as map_type
+                ,rdb$map_name      as map_name
+                ,rdb$map_plugin    as map_plugin
+                ,rdb$map_from_type as from_type
+                ,rdb$map_from      as map_from
+                ,rdb$map_to_type   as to_type
+                ,rdb$map_to        as map_to
+            from rdb$auth_mapping
+            UNION ALL
+            select
+                 'GLOBAL'
+                ,sec$map_name
+                ,sec$map_plugin
+                ,sec$map_from_type
+                ,sec$map_from
+                ,sec$map_to_type
+                ,sec$map_to
+            from sec$global_auth_mapping
+        ) t
+        where
+            t.map_name = upper('{MAPPING_NAME}')
+            and upper(t.map_plugin) = upper('{PLUGIN_FOR_MAPPING}')
+        ;
+        commit;
+
+        set count on;
+        select * from v_map_info;
+        quit;
+    '''
+
+    expected_stdout_isql = f'''
+        MON_SEC_DB Self
+
+        MAP_NAME TRUSTED_AUTH_C6147
+        MAP_TYPE LOCAL
+        FROM_TYPE USER
+        MAP_FROM *
+        TO_TYPE 0
+        MAP_TO <null>
+
+        MAP_NAME TRUSTED_AUTH_C6147
+        MAP_TYPE GLOBAL
+        FROM_TYPE USER
+        MAP_FROM *
+        TO_TYPE 0
+        MAP_TO <null>
+        Records affected: 2
+    '''
+    try:
+        act.expected_stdout = expected_stdout_isql
+        act.isql(switches = ['-q'], input = sql_txt, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
+
+        assert act.clean_stdout == act.clean_expected_stdout
+        act.reset()
+        
+        with fn_meta_log.open(mode='w') as meta_out, fn_meta_err.open(mode='w') as meta_err:
+            # could not find how properly call act.extract_meta with ANOTHER database (different from currently created).
+            subprocess.call( [ act.vars['isql'],'-x', '-user', act.db.user, '-pas', act.db.password, REQUIRED_ALIAS ], 
+                             stdout = meta_out,
+                             stderr = meta_err
+                           )
+        for g in (fn_meta_log, fn_meta_err):
+            with g.open() as f:
+                for line in f:
+                    if line.split():
+                        if g == fn_meta_log:
+                            if ' MAPPING ' in line:
+                                print(f'{line}')
+                        else:
+                            print(f'UNEXPECTED MATADATA STDOUT: {line}')
+
+        act.expected_stdout = f"""
+            CREATE MAPPING {MAPPING_NAME.upper()} USING PLUGIN
+            CREATE OR ALTER GLOBAL MAPPING {MAPPING_NAME.upper()} USING PLUGIN
+        """
+
+    finally:
+        tmp_fdb.unlink()
+    
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
