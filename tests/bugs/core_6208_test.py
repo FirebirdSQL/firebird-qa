@@ -2,52 +2,78 @@
 
 """
 ID:          issue-6453
-ISSUE:       6453
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6453
 TITLE:       CREATE DATABASE grant is lost in security.db after backup/restore cycle
 DESCRIPTION:
-  Ticket shows scenario with local protocol which allows security.db to be overwritten.
-  This can not be done when we work using remote protocol, but we can exploit ability
-  to change security DB. This is done by specifying parameter SecurityDatabase in databases.conf
-  and its value is equal to alias of test database that we use:
-    tmp_6208 = <path__and_name_of_test_database> {
-        SecurityDatabase = tmp_6208
-    }
+    Ticket shows scenario with local protocol which allows security.db to be overwritten.
+    This can not be done when we work using remote protocol, but we can exploit ability
+    to change security DB. This is done by specifying parameter SecurityDatabase in databases.conf
+    and its value is equal to alias of test database that we use:
+        tmp_core_6208_alias = $(dir_sampleDb)/qa/tmp_core_6208.fdb
+        {
+            SecurityDatabase = tmp_core_6208_alias
+        }
 
-  Test DB is named here 'fdb_init' and it is created by file copy of $FB_HOME\\securityN.db
-  Then file 'databases.conf' as adjusted so that SecurityDatabase will point to this test DB.
-  After this we can connect to $fdb_ini, create user (his name: 'TMP6208DBA') and give him
-  privilege to create database.
+    We create this database using local protocol and specifying name of user that DOES NOT exist
+    in 'common' security.db, see variable 'ALTER_DB_USER'. This user becomes OWNER of that DB.
+    After this, we make backup and restore of this DB (using local protocol!), and finally we
+    check that 'SHOW GRANTS' output contain grant to CREATE DATABASE for user <ALTER_DB_USER>.
+    As final, temporary file with this DB must be manually removed because this is not act.db fixture.
 
-  Futher, we make backup of this test DB and restore it. New database name is 'fdb_rest'.
-  After this, we change state of test DB to full shutdown and overwrite it by $fdb_rest.
-  Finaly, we make connection to this DB (that was just overwritten) and check that output
-  of 'show grants' command contains:
-
-    GRANT CREATE DATABASE TO USER TMP6208DBA
-
-  Confirmed lost of grant on 4.0.0.1691 (build 14-dec-2019).
-NOTES:
-[26.08.2020]
-  IT CRUSIAL FOR THIS TEST DO MAKE ALL RESTORE AND FURTHER ACTIONS IN LOCAL/EMBEDDED PROTOCOL.
-  Discissed with Alex, see letter 24.08.2020 19:49.
-
-  Main problem is in SuperClassic: after restore finish, we can not connect to this DB by TCP,
-  error is
-    "Statement failed, SQLSTATE = 08006 / Error occurred during login, please check server firebird.log for details"
-  Server log contains in this case: "Srp Server / connection shutdown / Database is shutdown."
-
-  Checked initially on 4.0.0.1712 SC: 11s, 4.0.0.1714 SS, CS (7s, 16s).
-  Checked again 26.08.2020 on 4.0.0.2173 SS/CS/SC.
 JIRA:        CORE-6208
 FBTEST:      bugs.core_6208
+NOTES:
+    [26.08.2020] pzotov
+      IT CRUSIAL FOR THIS TEST DO MAKE ALL RESTORE AND FURTHER ACTIONS IN LOCAL/EMBEDDED PROTOCOL.
+      Discissed with Alex, see letter 24.08.2020 19:49.
+
+      Main problem is in SuperClassic: after restore finish, we can not connect to this DB by TCP,
+      error is
+        "Statement failed, SQLSTATE = 08006 / Error occurred during login, please check server firebird.log for details"
+      Server log contains in this case: "Srp Server / connection shutdown / Database is shutdown."
+
+      Checked initially on 4.0.0.1712 SC: 11s, 4.0.0.1714 SS, CS (7s, 16s).
+      Checked again 26.08.2020 on 4.0.0.2173 SS/CS/SC.
+
+    [08.08.2022] pzotov
+    1. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
+    2. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
+       (for LINUX this equality is case-sensitive, even when aliases are compared!)
+    3. Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace it before every test session).
+       Discussed with pcisar, letters since 30-may-2022 13:48, subject:
+       "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
+
+    Confirmed again problem: lost of grant on 4.0.0.1691.
+    Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
 """
+import os
+import re
+import locale
+import subprocess
+from pathlib import Path
+import time
 
 import pytest
 from firebird.qa import *
 
-db_= db_factory()
+for v in ('ISC_USER','ISC_PASSWORD'):
+    try:
+        del os.environ[ v ]
+    except KeyError as e:
+        pass
+
+# Name of alias for self-security DB in the QA_root/files/qa-databases.conf.
+# This file must be copied manually to each testing FB homw folder, with replacing
+# databases.conf there:
+#
+REQUIRED_ALIAS = 'tmp_core_6208_alias'
+
+db= db_factory()
 
 act = python_act('db', substitutions=[('\t+', ' ')])
+
+fbk_file = temp_file('tmp_core_6208.fbk')
+res_file = temp_file('tmp_core_6208.restored.fdb')
 
 expected_stdout = """
     mon$database.mon$owner          SYSDBA
@@ -58,213 +84,70 @@ expected_stdout = """
     sec$db_creators.sec$user_type   8
 """
 
-@pytest.mark.skip('FIXME: databases.conf')
-@pytest.mark.version('>=4.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
 
-# test_script_1
-#---
-#
-#  import os
-#  import sys
-#  import time
-#  import subprocess
-#  import shutil
-#  from subprocess import PIPE
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#  this_db = db_conn.database_name
-#  fb_vers = str(db_conn.engine_version)[:1] # character for security.db file: engine = 4.0  --> '4'
-#  db_conn.close()
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  def svc_get_fb_log( fb_home, f_fb_log ):
-#
-#    global subprocess
-#    subprocess.call( [ fb_home + "fbsvcmgr",
-#                       "localhost:service_mgr",
-#                       "action_get_fb_log"
-#                     ],
-#                     stdout=f_fb_log, stderr=subprocess.STDOUT
-#                   )
-#    return
-#
-#  svc = services.connect(host='localhost', user= user_name, password= user_password)
-#  fb_home = svc.get_home_directory()
-#  svc.close()
-#  dbconf = os.path.join(fb_home, 'databases.conf')
-#  dbcbak = os.path.join(fb_home, 'databases.bak')
-#
-#  sec_db = context['isc4_path']
-#
-#  fdb_init = os.path.join(context['temp_directory'],'tmp_6208_initial.fdb')
-#  fdb_bkup = os.path.join(context['temp_directory'],'tmp_6208_initial.fbk')
-#  fdb_rest = os.path.join(context['temp_directory'],'tmp_6208_restored.fdb')
-#
-#  cleanup( (fdb_init, fdb_rest) )
-#
-#  shutil.copy2( sec_db, fdb_init )
-#
-#  # Resut: fb_home is full path to FB instance home (with trailing slash).
-#  shutil.copy2( dbconf, dbcbak)
-#
-#  alias_data='''
-#      # Added temporarily for executing test core_6208.fbt
-#      tmp_6208 = %(fdb_init)s {
-#          # RemoteAccess = true
-#          SecurityDatabase = tmp_6208
-#      }
-#  ''' % locals()
-#
-#  f_dbconf=open( dbconf,'a', buffering = 0)
-#  f_dbconf.seek(0, 2)
-#  f_dbconf.write(alias_data)
-#  flush_and_close( f_dbconf )
-#
-#  sql_init='''
-#      set bail on;
-#      create or alter user tmp6208dba password '123' using plugin Srp;
-#      grant create database to user tmp6208dba;
-#      alter database set linger to 0;
-#      commit;
-#  '''
-#  runProgram('isql',[ fdb_init ], sql_init)
-#
-#  #########################################################################
-#
-#  f_backup_log = open( os.path.join(context['temp_directory'],'tmp_6208.backup.log'), 'w', buffering = 0)
-#  f_backup_err = open( ''.join( (os.path.splitext(f_backup_log.name)[0], '.err' ) ), 'w', buffering = 0)
-#
-#  subprocess.call( [ context['gfix_path'], '-h', '54321', fdb_init ], stdout = f_backup_log, stderr = f_backup_err)
-#  subprocess.call( [ context['gstat_path'], '-h', fdb_init ], stdout = f_backup_log, stderr = f_backup_err)
-#  subprocess.call( [ context['gbak_path'], '-b', fdb_init, fdb_bkup, '-v', '-st', 'tdrw' ], stdout = f_backup_log, stderr = f_backup_err)
-#
-#  flush_and_close( f_backup_log )
-#  flush_and_close( f_backup_err )
-#
-#  ########################################################################
-#
-#  cleanup( (fdb_rest,) )
-#
-#  f_restore_log = open( os.path.join(context['temp_directory'],'tmp_6208.restore.log'), 'w', buffering = 0)
-#  f_restore_err = open( ''.join( (os.path.splitext(f_restore_log.name)[0], '.err' ) ), 'w', buffering = 0)
-#
-#  subprocess.call( [ context['gbak_path'], '-c', fdb_bkup, fdb_rest, '-v', '-st', 'tdrw' ], stdout = f_restore_log, stderr = f_restore_err)
-#
-#  flush_and_close( f_restore_log )
-#  flush_and_close( f_restore_err )
-#
-#  ########################################################################
-#
-#  runProgram('gfix',['-shut', 'full', '-force', '0', fdb_init] )
-#  runProgram('gfix',['-shut', 'full', '-force', '0', fdb_rest] )
-#
-#  shutil.move( fdb_rest, fdb_init )
-#
-#  runProgram('gfix',['-online', fdb_init] )
-#
-#  sql_chk='''
-#      set bail on;
-#      set list on;
-#      -- set echo on;
-#  	-- ##########################
-#      -- SuperClassic:
-#      -- Statement failed, SQLSTATE = 08006
-#      -- Error occurred during login, please check server firebird.log for details
-#      -- firebird.log:
-#  	-- Srp Server
-#  	-- connection shutdown
-#  	-- Database is shutdown.
-#  	-- ##########################
-#      -- connect 'localhost:%(fdb_init)s' user tmp6208dba password '123';
-#      connect '%(fdb_init)s' user tmp6208dba password '123';
-#      select
-#           d.mon$owner as "mon$database.mon$owner"
-#          ,d.mon$sec_database as "mon$database.mon$sec_database"
-#          ,r.rdb$linger as "rdb$database.rdb$linger"
-#          --,a.mon$remote_protocol as "mon$attachments.mon$remote_protocol"
-#          ,current_user as whoami
-#      from mon$database d
-#      join mon$attachments a on a.mon$attachment_id = current_connection
-#      cross join rdb$database r
-#
-#      ;
-#
-#      select
-#          s.sec$user_name as "sec$users.sec_user"
-#         ,c.sec$user_type as "sec$db_creators.sec$user_type"
-#      from sec$users s
-#      left join sec$db_creators c on s.sec$user_name = c.sec$user
-#      where sec$user_name = upper('TMP6208DBA');
-#      rollback;
-#
-#      connect '%(fdb_init)s';
-#      drop user tmp6208dba using plugin Srp;
-#      commit;
-#  ''' % locals()
-#
-#  f_chk_sql = open( os.path.join(context['temp_directory'],'tmp_6208_chk.sql'), 'w', buffering = 0)
-#  f_chk_sql.write(sql_chk)
-#  flush_and_close( f_chk_sql )
-#
-#  f_chk_log = open( os.path.join(context['temp_directory'],'tmp_6208_chk.log'), 'w', buffering = 0)
-#  subprocess.call( [context['isql_path'], "-q", "-i", f_chk_sql.name ], stdout = f_chk_log, stderr = subprocess.STDOUT)
-#  flush_and_close( f_chk_log )
-#
-#  #######runProgram('isql',[ fdb_init ], 'drop user tmp6208dba using plugin Srp; commit;')
-#
-#  f_shut_log = open( os.path.join(context['temp_directory'],'tmp_6208_shut.log'), 'w', buffering = 0)
-#  subprocess.call( [ context['gfix_path'], "-shut", "full", "-force", "0",  fdb_init ], stdout = f_shut_log, stderr = subprocess.STDOUT)
-#  subprocess.call( [ context['gstat_path'], "-h", fdb_init ], stdout = f_shut_log, stderr = subprocess.STDOUT)
-#  flush_and_close( f_shut_log )
-#
-#
-#  # Restore previous content:
-#  shutil.move( dbcbak, dbconf )
-#
-#  with open(f_chk_log.name,'r') as f:
-#     for line in f:
-#        print(line)
-#
-#
-#  # cleanup:
-#  ##########
-#  time.sleep(1)
-#  cleanup( (f_backup_log, f_backup_err, f_restore_log, f_restore_err, f_chk_sql, f_chk_log, f_shut_log, fdb_init, fdb_bkup) )
-#
-#---
+@pytest.mark.version('>=3.0.6')
+def test_1(act: Action, fbk_file: Path, res_file: Path, capsys):
+    
+    # Scan line-by-line through databases.conf, find line starting with REQUIRED_ALIAS and extract name of file that
+    # must be created in the $(dir_sampleDb)/qa/ folder. This name will be used further as target database (tmp_fdb).
+    # NOTE: we have to SKIP lines which are commented out, i.e. if they starts with '#':
+    p_required_alias_ptn =  re.compile( '^(?!#)((^|\\s+)' + REQUIRED_ALIAS + ')\\s*=\\s*\\$\\(dir_sampleDb\\)/qa/', re.IGNORECASE )
+    fname_in_dbconf = None
+
+    with open(act.home_dir/'databases.conf', 'r') as f:
+        for line in f:
+            if p_required_alias_ptn.search(line):
+                # If databases.conf contains line like this:
+                #     tmp_6147_alias = $(dir_sampleDb)/qa/tmp_core_6147.fdb
+                # - then we extract filename: 'tmp_core_6147.fdb' (see below):
+                fname_in_dbconf = Path(line.split('=')[1].strip()).name
+                break
+
+    # if 'fname_in_dbconf' remains undefined here then propably REQUIRED_ALIAS not equals to specified in the databases.conf!
+    #
+    assert fname_in_dbconf
+
+    # Full path + filename of database to which we will try to connect:
+    #
+    tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
+
+    ALTER_DB_USER = 'tmp6208dba'
+
+    init_sql = f'''
+       set bail on;
+       set list on;
+       create database '{REQUIRED_ALIAS}' user {ALTER_DB_USER};
+       create user {ALTER_DB_USER} password '123' using plugin Srp;
+       grant create database to user tmp6208dba;
+       alter database set linger to 0;
+       exit;
+    '''
+
+    act.expected_stdout = ''
+    try:
+        act.isql(switches = ['-q'], input = init_sql, connect_db=False, credentials = False, combine_output = True)
+        assert act.clean_stdout == ''
+        act.reset()
+
+        act.gbak(switches=['-b', '-user', act.db.user, REQUIRED_ALIAS, str(fbk_file)])
+        assert act.clean_stdout == ''
+        act.reset()
+
+        act.gbak(switches=['-rep', '-user', ALTER_DB_USER, str(fbk_file), REQUIRED_ALIAS ])
+        assert act.clean_stdout == ''
+        act.reset()
+
+        # NB: no need to drop user <ALTER_DB_USER> because this DB is self-security
+        # thus all its users will disappear together with this DB:
+        act.isql(switches = ['-q'], input = f"connect '{REQUIRED_ALIAS}' user {ALTER_DB_USER};show grants;", connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
+        ptn_expected = re.compile( f'grant create database to user {ALTER_DB_USER}', re.IGNORECASE)
+        for line in act.stdout.split('\n'):
+            if ptn_expected.search(line):
+                print(line)
+
+        act.expected_stdout = f'GRANT CREATE DATABASE TO USER {ALTER_DB_USER.upper()}'
+        act.stdout = capsys.readouterr().out
+        assert act.clean_stdout == act.clean_expected_stdout
+        act.reset()
+    finally:
+        tmp_fdb.unlink()
