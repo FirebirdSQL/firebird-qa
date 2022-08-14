@@ -11,7 +11,7 @@ DESCRIPTION:
     We make two custom DatabaseConfig objects and put different session_time_zone values
     in each of them, "-7:00" and "+7:00" (see 'db_cfg_object' variable).
     Then we make connections using these objects and get current_time from server.
-    These two values must differ for 50400..50401 seconds.
+    These two values must differ for 50400 or 50401 seconds.
     -----------------------------------------------------------------------------------------
     ::: ACHTUNG :::
     THIS TEST SHOULD NOT BE CONFUSED WITH CORE_6395_TEST.PY WHICH WAS REMOVED BECAUSE
