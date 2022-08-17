@@ -58,12 +58,6 @@ db = db_factory()
 
 act = python_act('db', substitutions=[('\t+', ' '), ('TCPv.*', 'TCP')])
 
-expected_stdout = """
-    MON$REMOTE_PROTOCOL             TCPv6
-    MON$SEC_DATABASE                Self
-    RESULT                          Completed
-"""
-
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
     # Scan line-by-line through databases.conf, find line starting with REQUIRED_ALIAS and extract name of file that
