@@ -37,12 +37,9 @@ NOTES:
     Confirmed again problem: 4.0.0.2214 hangs.
     Checked on 5.0.0.623, 4.0.1.2692 - both on Windows and Linux.
 """
-import os
 import re
 import locale
-import subprocess
 from pathlib import Path
-import time
 
 import pytest
 from firebird.qa import *
