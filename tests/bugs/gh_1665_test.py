@@ -2,7 +2,7 @@
 
 """
 ID:          issue-1665
-ISSUE:       1665
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1665
 TITLE:       TempDirectories parameter in firebird.conf ignored by global temporary tables
 DESCRIPTION:
   Source discussions:
@@ -11,17 +11,20 @@ DESCRIPTION:
     2) https://github.com/FirebirdSQL/firebird/issues/1665
        ("TempDirectories parameter in firebird.conf ignored by global temporary tables [CORE1241]")
         Old: CORE-1241; discussion resumed 14.12.2020.
-  Commits (17.05.2021 15:46):
+  Commits (20.04.2021 14:17; 17.05.2021 15:46):
     1) https://github.com/FirebirdSQL/firebird/commit/f2805020a6f34d253c93b8edac6068c1b35f9b89
        "New setting TempTableDirectory.
        Used to set directory where engine should put data of temporary tables and temporary blobs."
     2) https://github.com/FirebirdSQL/firebird/commit/fd0fa8a3a58fbfe7fdc0641b4e48258643d72127
        "Let include file name into error message when creation of temp file failed."
 
-  This test checks only second commit of above mentioned (i.e. message about invalid/incaccessible TempTableDirectory).
+  Test verifies that:
+      * we can use 'TempTableDirectory' as per-database parameter;
+      * we will able to see in firebird.log messages about failure of fb_table* file creation
 
-  We make backup of current firebird.conf for changing it by adding line with 'TempTableDirectory' parameter
-  which has INVALID form for both Windows and Linux: '|DEFINITELY|INACCESSIBLE|' (no such folder can exist).
+  Section in databases.conf related to test DB must contain definition of 'TempTableDirectory' with value
+  that for sure will be *incorrect* both on Windows and Linux. It was decided to use following value:
+  '|DEFINITELY|INACCESSIBLE|' (no such folder can exist in either OS).
 
   Then we establish connection to the test DB and run SQL which creates GTT and adds several rows in it.
   NO exception must be raised in this case: GTT must be fulfilled w/o problems and FB must create temporary
@@ -32,228 +35,100 @@ DESCRIPTION:
   could not be accessed. We check old and new content of firebird.log with expecting to see message that
   did appear about this problem.
 
-  ::: NB :::
-  Affect of changed parameter TempTableDirectory can be seen only if DB is attached using *LOCAL* protocol.
+  Initially checked on 5.0.0.40, 4.0.0.2436.
 
-  Checked on 5.0.0.40
 JIRA:        CORE-1241
 FBTEST:      bugs.gh_1665
+NOTES:
+    [17.08.2022] pzotov
+    1. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
+    2. Test uses pre-created databases.conf which has alias defvined by variable REQUIRED_ALIAS.
+       Database file for that alias must NOT exist in the QA_root/files/qa/ subdirectory: it will be created here.
+       Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace
+       it before every test session).
+       Discussed with pcisar, letters since 30-may-2022 13:48, subject:
+       "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
+    3. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
+       (for LINUX this equality is case-sensitive, even when aliases are compared!)
+
+    Checked on 5.0.0.623, 4.0.1.2692 - both on Windows and Linux.
 """
+
+import locale
+import re
+from difflib import unified_diff
+import time
 
 import pytest
 from firebird.qa import *
 
-db = db_factory()
+REQUIRED_ALIAS = 'tmp_gh_1665_alias'
+db = db_factory(filename = '#' + REQUIRED_ALIAS)
 
-act = python_act('db', substitutions=[('[ \t]+', ' '), ('.*fb_table_.*', 'fb_table_')])
+act = python_act('db', substitutions=[('[ \t]+', ' '), ('"\\|DEFINITELY\\|INACCESSIBLE\\|"', '')])
 
-expected_stdout = """
-    + Error creating file in TempTableDirectory "|DEFINITELY|INACCESSIBLE|"
-    + I/O error during "CreateFile (create)" operation for file "|DEFINITELY|INACCESSIBLE|\\fb_table_"
-    + Error while trying to create file
-"""
+FLD_WIDTH=100
+NUM_ROWS=100
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=5.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+@pytest.mark.version('>=4.0')
+def test_1(act: Action, capsys):
 
-# test_script_1
-#---
-#
-#  import sys
-#  import os
-#  import shutil
-#  import time
-#  import datetime
-#  from datetime import timedelta
-#  import subprocess
-#  import difflib
-#  import re
-#  import codecs
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_name=db_conn.database_name
-#  db_conn.close()
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  def svc_get_fb_log( f_fb_log ):
-#
-#    global subprocess
-#    subprocess.call( [ context['fbsvcmgr_path'],
-#                       "localhost:service_mgr",
-#                       "user", user_name,
-#                       "password", user_password,
-#                       "action_get_fb_log"
-#                     ],
-#                     stdout=f_fb_log, stderr=subprocess.STDOUT
-#                   )
-#    return
-#
-#  #--------------------------------------------
-#
-#  def try_to_use_tempdir( db_name ):
-#
-#      global flush_and_close
-#      global subprocess
-#      global cleanup
-#      sql_chk=    '''
-#          set list on;
-#          select rdb$config_name, rdb$config_value from rdb$config g where upper(g.rdb$config_name) = upper('TempTableDirectory');
-#          recreate global temporary table gtt_test(s varchar(100) unique) on commit preserve rows;
-#          commit;
-#          set count on;
-#          insert into gtt_test(s) select lpad('',100,uuid_to_char(gen_uuid())) from rdb$types rows 100;
-#          commit;
-#      '''
-#
-#      f_connect_sql = open( os.path.join(context['temp_directory'],'tmp_1665_check.sql'), 'w')
-#      f_connect_sql.write( sql_chk )
-#      flush_and_close( f_connect_sql )
-#
-#      f_connect_log=open( os.path.join(context['temp_directory'],'tmp_1665_check.log'), 'w')
-#
-#      ###############
-#      ### ACHTUNG ###
-#      ###############
-#      # LOCAL protocol must be used here!
-#      # Attempt to connect using remote protocol will fail: engine returns previous value of DefaultTimeZone.
-#      # One need to wait at least 130 seconds after changing firebird.conf for new value be returned at this case!
-#      # The reason of that is 10+60+60 seconds which are needed to fully unload shmem-related structures from memory.
-#      # Explanation from Vlad: letter 24.01.2021 18:00, subj: "System audit in FB.  Is there some kind of timeout of 130 seconds ?"
-#      # (it was discussion about attempts make test for CORE-5993)
-#      # See also: http://tracker.firebirdsql.org/browse/CORE-6476
-#
-#      subprocess.call( [ context['isql_path'], db_name, "-i", f_connect_sql.name ], stdout=f_connect_log, stderr=subprocess.STDOUT )
-#      flush_and_close( f_connect_log )
-#      cleanup( (f_connect_sql, f_connect_log) )
-#
-#  #---------------------------------------------
-#
-#  svc = services.connect(host='localhost', user=user_name, password=user_password)
-#  fb_home = svc.get_home_directory()
-#  svc.close()
-#
-#  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#
-#  fbconf_cur = os.path.join(fb_home, 'firebird.conf')
-#  fbconf_bak = os.path.join(context['temp_directory'], 'firebird_'+dts+'.bak')
-#
-#  shutil.copy2( fbconf_cur, fbconf_bak )
-#
-#  f_fbconf=open( fbconf_cur, 'r')
-#  fbconf_content=f_fbconf.readlines()
-#  flush_and_close( f_fbconf )
-#
-#  for i,s in enumerate( fbconf_content ):
-#      line = s.lower().lstrip()
-#      if line.startswith( 'TempTableDirectory'.lower() ):
-#          fbconf_content[i] = '# [temply commented] ' + s
-#
-#  text2app='''
-#  ### TEMPORARY CHANGED BY FBTEST FRAMEWORK ###
-#  TempTableDirectory = |DEFINITELY|INACCESSIBLE|
-#  ##############################################
-#  '''
-#
-#  f_fbconf=open( fbconf_cur, 'w')
-#  f_fbconf.writelines( fbconf_content + [ '\\n' + x for x in text2app.split('\\n') ] )
-#  flush_and_close( f_fbconf )
-#  #..........................................
-#
-#  # Get FB log before trying to use invalid TempTableDirectory
-#  ###################
-#  f_fblog_before=open( os.path.join(context['temp_directory'],'tmp_1665_fblog_before.txt'), 'w')
-#  svc_get_fb_log( f_fblog_before )
-#  flush_and_close( f_fblog_before )
-#
-#  try_to_use_tempdir( db_name )
-#
-#  # Get FB log after trying to use invalid TempTableDirectory
-#  ##################
-#  f_fblog_after=open( os.path.join(context['temp_directory'],'tmp_1665_fblog_after.txt'), 'w')
-#  svc_get_fb_log( f_fblog_after )
-#  flush_and_close( f_fblog_after)
-#
-#
-#  old_fb_log=open(f_fblog_before.name, 'r')
-#  new_fb_log=open(f_fblog_after.name, 'r')
-#
-#  fb_log_diff = ''.join(difflib.unified_diff(
-#      old_fb_log.readlines(),
-#      new_fb_log.readlines()
-#    ))
-#  old_fb_log.close()
-#  new_fb_log.close()
-#
-#  f_diff=open( os.path.join(context['temp_directory'],'tmp_1665_fblog_diff.txt'), 'w')
-#  f_diff.write(fb_log_diff)
-#  flush_and_close( f_diff )
-#
-#  ##################################################
-#
-#  # RESTORE previous content of firebird.conf. This must be done BEFORE drop mapping!
-#  shutil.move( fbconf_bak, fbconf_cur )
-#
-#  # Compare content of previous and current firebird.log: we have to found in current log
-#  # messages like these:
-#  #   Database: ...
-#  #   Error creating file in TempTableDirectory "|DEFINITELY|INACCESSIBLE"
-#  #   I/O error during "CreateFile (create)" operation for file "|DEFINITELY|INACCESSIBLE|..."
-#  #   Error while trying to create file
-#  # NB: we use codecs.open() in order to skip localized message.
-#
-#  allowed_patterns = (
-#       re.compile('Error creating file in TempTableDirectory "|DEFINITELY|INACCESSIBLE|"', re.IGNORECASE)
-#      ,re.compile('I/O error during "CreateFile (create)" operation for file "|DEFINITELY|INACCESSIBLE|(\\/)fb_table_.*"', re.IGNORECASE)
-#      ,re.compile('Error while trying to create file')
-#  )
-#
-#  with codecs.open( f_diff.name, 'r', encoding = 'utf-8', errors = 'ignore' ) as f:
-#    for line in f:
-#      if line.startswith('+'):
-#          ls = line.strip()
-#          match2some = [ p.search(ls) for p in allowed_patterns ]
-#          if max(match2some) != None:
-#              print(ls)
-#
-#  # cleanup:
-#  ##########
-#  time.sleep(1)
-#  cleanup( (old_fb_log, new_fb_log, f_diff) )
-#
-#---
+    fblog_1 = act.get_firebird_log()
+
+    init_sql = f'''
+        set bail on;
+        connect '{REQUIRED_ALIAS}' user {act.db.user};
+        set list on;
+        select rdb$config_name, rdb$config_value from rdb$config g where upper(g.rdb$config_name) = upper('TempTableDirectory');
+        recreate global temporary table gtt_test(s varchar({FLD_WIDTH}) unique) on commit preserve rows;
+        commit;
+        set count on;
+        insert into gtt_test(s) select lpad('',{FLD_WIDTH},uuid_to_char(gen_uuid())) from rdb$types rows {NUM_ROWS};
+        commit;
+    '''
+
+    ###############################################################################################################
+    # POINT-1: check that ISQL does NOT raise any error (related to invalid path for TempTableDirectory):
+    #
+    act.expected_stdout = f"""
+        RDB$CONFIG_NAME   TempTableDirectory
+        RDB$CONFIG_VALUE  |DEFINITELY|INACCESSIBLE|
+        Records affected: {NUM_ROWS}
+    """
+    
+    act.isql(switches = ['-q'], input = init_sql, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
+    #-------------------------------------------------------------------
+
+    time.sleep(1) # Allow content of firebird log be fully flushed on disk.
+    fblog_2 = act.get_firebird_log()
+
+
+    ###############################################################################################################
+    # POINT-2: check that diff between firebird.log initial and current content has phrases:
+	# Error creating file in TempTableDirectory "|DEFINITELY|INACCESSIBLE|"
+	# I/O error during "CreateFile (create)" operation for file "|DEFINITELY|INACCESSIBLE|\fb_table_mwyjb8"
+	# Error while trying to create file
+    #
+    diff_patterns = [
+        "\\+\\s+Error creating file in TempTableDirectory",
+        "\\+\\s+Error while trying to create file"
+    ]
+    diff_patterns = [re.compile(s) for s in diff_patterns]
+    
+    for line in unified_diff(fblog_1, fblog_2):
+        if line.startswith('+'):
+            if act.match_any(line, diff_patterns):
+                print(line)
+
+
+    expected_stdout_log_diff = """
+        + Error creating file in TempTableDirectory
+        + Error while trying to create file
+    """
+    act.expected_stdout = expected_stdout_log_diff
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
