@@ -2,219 +2,95 @@
 
 """
 ID:          issue-6790
-ISSUE:       6790
-TITLE:       MON$ATTACHMENTS.MON$TIMESTAMP is incorrect when DefaultTimeZone is configured
-  with time zone different from the server's default
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6790
+TITLE:       MON$ATTACHMENTS.MON$TIMESTAMP is incorrect when DefaultTimeZone is configured with time zone different from the server's default
 DESCRIPTION:
-  We make backup of current firebird.conf before changing its parameter DefaultTimeZone to randomly selected value from RDB$TIME_ZONES.
-  Then we close current connection and launch child ISQL process that makes *LOCAL* connect to current DB.
-  ISQL will obtain mon$session_timezone, mon$timestamp and current_timestamp values from mon$attachments.
-  Then it will extract time zone name from current_timestamp string (by call substring() with specifying starting position = 26).
+    Test creates custom DatabaseConfig object for writing in its session_time_zone value that will differ from server.
+    Query to rdb$time_zones is performed for obtaining random record and assigns it to DefaultTimeZone column of DB config.
 
-  Values of mon$session_timezone and extracted time zone from current_timestamp must be equals.
-  Also, difference between mon$timestamp current_timestamp must be no more than 1..2 seconds (see 'MAX_DIFF_SECONDS' variable).
+    Then we obtain values of current_timestamp and mon$attachments.mon$timestamp for current connection, and parse them in order to:
+    * get timezone name for each of these values;
+    * get timestamp WITHOUT timezone name.
 
-  ::: NB :::
-  1. Affect of changed parameter DefaultTimeZone can be seen only if DB is attached using *LOCAL* protocol.
-     Attempt to connect using remote protocol will fail: engine returns previous value of DefaultTimeZone.
-     One need to wait at least 130 seconds after changing firebird.conf for new value be returned at this case!
-     The reason of that is 10+60+60 seconds which are needed to fully unload shmem-related structures from memory.
-     Explanation from Vlad: letter 24.01.2021 18:00, subj: "System audit in FB.  Is there some kind of timeout of 130 seconds ?"
-     (it was discussion about attempts make test for CORE-5993)
-     See also: http://tracker.firebirdsql.org/browse/CORE-6476
-
-  2. FDB driver loads client library only *once* before this test launch and, in turn, this library reads firebird.conf.
-     For this reason we have to launch separate (child) process two times, which will be forced to load firebird.conf
-     every launch. This is why subprocess.call(['isql', ...]) is needed here rather than just query DB using cursor of
-     pre-existing db_conn connection (see routine 'get_local_time').
-NOTES:
-[22.05.2021]
-  This test initially had wrong value of min_version = 4.0
-  Bug was fixed on 4.1.0.2468, build timestamp: 06-may-2021 12:34 thus min_version should be 4.1
-  After several days this new FB branch was renamed to 5.0.
-  Because of this, min_version for this test is 5.0
+    Result of parsing for these values must meet following conditions:
+    1) both timestamps must belong to the same time zone (this was NOT so before fix);
+    2) difference between timestamps must not be valuable, usually this must be no more than 1..2 seconds (see 'MAX_DIFF_MS')
 FBTEST:      bugs.gh_6790
+NOTES:
+    [18.08.2022] pzotov
+    Confirmed problem on WI-V4.0.0.2436: either different time zones or too big time differences can be issued.
+    Improvement ('add MON$SESSION_TIMEZONE to MON$ATTACHMENTS') commit info:
+        06-may-2021 15:18
+        https://github.com/FirebirdSQL/firebird/commit/c8750376bb78e5a588fb269a144bba4dea34ae47
+
+    Checked on 5.0.0.623, 4.0.1.2692 - both on Windows and Linux.
 """
+
+import datetime
+from datetime import timedelta
 
 import pytest
 from firebird.qa import *
+from firebird.driver import driver_config, connect
+
+MAX_DIFF_MS = 1500
 
 db = db_factory()
-
 act = python_act('db')
 
-expected_stdout = """
-    mon$session_timezone = current_timestamp zone ? => OK, EQUALS.
-    mon$timestamp = current_timestamp ? => OK, EQUALS.
-"""
+@pytest.mark.version('>=4.0')
+def test_1(act: Action, capsys):
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=5.0')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+    with act.db.connect() as con:
+        with con.cursor() as cur:
+            cur.execute('select z.rdb$time_zone_name from rdb$time_zones z order by rand() rows 1')
+            RANDOM_TZ = cur.fetchone()[0]
 
-# test_script_1
-#---
-#
-#  import os
-#  import shutil
-#  import time
-#  import datetime
-#  import subprocess
-#  from fdb import services
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  db_name = db_conn.database_name
-#  cur =db_conn.cursor()
-#  cur.execute('select z.rdb$time_zone_name from rdb$time_zones z order by rand() rows 1')
-#  RANDOM_TZ = cur.fetchone()[0]
-#  cur.close()
-#  db_conn.close()
-#
-#  MAX_DIFF_SECONDS = 3
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for f in f_names_list:
-#         if type(f) == file:
-#            del_name = f.name
-#         elif type(f) == str:
-#            del_name = f
-#         else:
-#            print('Unrecognized type of element:', f, ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  def get_local_time( fb_home, db_name ):
-#
-#      global flush_and_close
-#      global subprocess
-#      global cleanup
-#
-#      sql_chk='select substring( cast(cast(current_time as time) as varchar(13)) from 1 for 8) from rdb$database'
-#
-#      f_connect_sql = open( os.path.join(context['temp_directory'],'tmp_6396_check.sql'), 'w')
-#      f_connect_sql.write('set heading off; ' + sql_chk + ';' )
-#      flush_and_close( f_connect_sql )
-#
-#      f_connect_log=open( os.path.join(context['temp_directory'],'tmp_6396_check.log'), 'w')
-#      subprocess.call( [ context['isql_path'], db_name, "-i", f_connect_sql.name ], stdout=f_connect_log, stderr=subprocess.STDOUT )
-#      flush_and_close( f_connect_log )
-#
-#      changed_time = '00:00:00'
-#      with open(f_connect_log.name,'r') as f:
-#          for line in f:
-#              if line.split():
-#                  changed_time = line.strip()
-#
-#      cleanup( [x.name for x in (f_connect_sql, f_connect_log)] )
-#      return changed_time
-#
-#  #---------------------------------------------
-#
-#  svc = services.connect(host='localhost', user=user_name, password=user_password)
-#  fb_home = svc.get_home_directory()
-#  svc.close()
-#
-#  dts = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-#
-#  fbconf_cur = os.path.join(fb_home, 'firebird.conf')
-#  fbconf_bak = os.path.join(context['temp_directory'], 'firebird_'+dts+'.bak')
-#
-#  shutil.copy2( fbconf_cur, fbconf_bak )
-#
-#  f_fbconf=open( fbconf_cur, 'r')
-#  fbconf_content=f_fbconf.readlines()
-#  flush_and_close( f_fbconf )
-#
-#  for i,s in enumerate( fbconf_content ):
-#      line = s.lower().lstrip()
-#      if line.startswith( 'DefaultTimeZone'.lower() ):
-#          fbconf_content[i] = '# [temply commented] ' + s
-#
-#  text2app='''
-#  ### TEMPORARY CHANGED BY FBTEST FRAMEWORK ###
-#  DefaultTimeZone = %(RANDOM_TZ)s
-#  ##############################################
-#  ''' % locals()
-#
-#  f_fbconf=open( fbconf_cur, 'w')
-#  f_fbconf.writelines( fbconf_content + [ '\\n' + x for x in text2app.split('\\n') ] )
-#  flush_and_close( f_fbconf )
-#  #..........................................
-#
-#
-#  sql_chk='''
-#      set list on;
-#      select
-#           iif( t.mon_session_timezone = t.curent_timestamp_zone,   'OK, EQUALS.', 'POOR: mon$session_timezone = "' || trim(coalesce(mon_session_timezone, '[null]')) || '", curent_timestamp_zone = "' || trim(coalesce(curent_timestamp_zone, '[null]')) || '"' ) as "mon$session_timezone = current_timestamp zone ? =>"
-#          ,iif( abs(t.timestamp_diff_seconds) < t.max_diff_seconds, 'OK, EQUALS.', 'POOR: mon$timestamp differs from current_timestamp for more than ' || t.max_diff_seconds ||' seconds.' ) as "mon$timestamp = current_timestamp ? =>"
-#      from (
-#          select
-#              m.mon$session_timezone as mon_session_timezone
-#             ,substring(cast(current_timestamp as varchar(255)) from 26) as curent_timestamp_zone
-#             ,datediff(second from current_timestamp to m.mon$timestamp) as timestamp_diff_seconds
-#             ,%(MAX_DIFF_SECONDS)s as max_diff_seconds
-#          from mon$attachments m
-#          where m.mon$attachment_id=current_connection
-#      ) t;
-#  ''' % locals()
-#
-#  f_connect_sql = open( os.path.join(context['temp_directory'],'tmp_6790_check.sql'), 'w')
-#  f_connect_sql.write('set heading off; ' + sql_chk + ';' )
-#  flush_and_close( f_connect_sql )
-#
-#  f_connect_log=open( os.path.join(context['temp_directory'],'tmp_6790_check.log'), 'w')
-#
-#  ###############
-#  ### ACHTUNG ###
-#  ###############
-#  # LOCAL protocol must be used here!
-#  # Attempt to connect using remote protocol will fail: engine returns previous value of DefaultTimeZone.
-#  # One need to wait at least 130 seconds after changing firebird.conf for new value be returned at this case!
-#  # The reason of that is 10+60+60 seconds which are needed to fully unload shmem-related structures from memory.
-#  # Explanation from Vlad: letter 24.01.2021 18:00, subj: "System audit in FB.  Is there some kind of timeout of 130 seconds ?"
-#  # (it was discussion about attempts make test for CORE-5993)
-#  # See also: http://tracker.firebirdsql.org/browse/CORE-6476
-#
-#  subprocess.call( [ context['isql_path'], db_name, "-i", f_connect_sql.name ], stdout=f_connect_log, stderr=subprocess.STDOUT )
-#
-#  flush_and_close( f_connect_log )
-#
-#  # RESTORE previous content of firebird.conf. This must be done BEFORE drop mapping!
-#  shutil.move( fbconf_bak, fbconf_cur )
-#
-#  with open(f_connect_log.name,'r') as f:
-#     for line in f:
-#         if line.split():
-#             print(line)
-#
-#  # CLEANUP:
-#  ##########
-#  time.sleep(1)
-#  cleanup( (f_connect_sql, f_connect_log,) )
-#
-#---
+    db_cfg_name = f'tmp_gh_6790'
+    db_cfg_object = driver_config.register_database(name = db_cfg_name)
+
+    db_cfg_object.database.value = str(act.db.db_path)
+    db_cfg_object.session_time_zone.value = RANDOM_TZ
+
+    sql_chk = f"""
+        select
+              cast(t1 as varchar(255)) as ts1
+             ,cast(t2 as varchar(255)) as ts2
+        from (
+            select
+                 current_timestamp as t1
+                ,a.mon$timestamp as t2
+            from mon$attachments a
+            where a.mon$attachment_id = current_connection
+        );
+    """
+
+    tz_names_set = set()
+    time_values = []
+    with connect(db_cfg_name) as con:
+        with con.cursor() as cur:
+            for r in cur.execute(sql_chk):
+                for i,col in enumerate(cur.description):
+                    # print((col[0]).ljust(63), r[i])
+                    tz_names_set.add(  r[i].split()[-1] )   # '2022-08-18 19:59:48.6860 Pacific/Yap' ==> 'Pacific/Yap'
+                    time_values.append(datetime.datetime.strptime(r[i][:23], '%Y-%m-%d %H:%M:%S.%f') )
+    
+    
+    expected_stdout = 'Timestamps difference acceptable.'
+    time_diff_ms = (max(time_values) - min(time_values)).total_seconds() * 1000
+
+    if time_diff_ms <= MAX_DIFF_MS and len(tz_names_set) ==1:
+        print(expected_stdout)
+    else:
+        print(f'UNEXPECTED: detected either diff time zones or too significant difference between timestamps.')
+        print('1. Check tz_names_set:')
+        for p in tz_names_set:
+            print(p)
+        print(f'2. Check time_values (difference: {time_diff_ms} ms)')
+        for p in time_values:
+            print(p)
+
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
