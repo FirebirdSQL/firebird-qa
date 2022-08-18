@@ -127,10 +127,6 @@ def test_1(act: Action, capsys):
             assert act.clean_stdout == act.clean_expected_stdout
             act.reset()
 
-            act.stdout = capsys.readouterr().out
-            assert act.clean_stdout == act.clean_expected_stdout
-            act.reset()
-
             # Change DB state to full shutdown in order to have ability to drop database file.
             # This is needed because when DB is self-security then it will be kept opened for 10s
             # (as it always occurs for common security.db). Set linger to 0 does not help.
