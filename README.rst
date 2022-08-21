@@ -24,6 +24,24 @@ Quickstart
 
 3. Adjust Firebird server configuration.
 
+     3.0. ONLY FOR MANUAL runs::
+
+         Check content of $FB_HOME/databases.conf.
+     
+         Ensure that RemoteAccess is allowed for security.db.
+         Also, it is recommended to set number of buffers not less than 256 for it:
+
+         security.db = $(dir_secDb^)/security<suffix>.fdb
+         {
+             RemoteAccess = true
+             DefaultDbCachePages = 256
+         }
+
+         This must be done only if you want to run some tests manually.
+         Automated scenario for running tests will overwrite this file
+         and put there all needed data before every pytest session (using
+         $QA_ROOT/files/qa-databases.conf as prototype for that purpose).
+
      3.1. $FB_HOME/firebird.conf::
 
         Firebird 3::
