@@ -28,7 +28,7 @@ DESCRIPTION:
     Confirmed bug on 4.0.0.2465, got in replication.log:
         * Added 1 segment(s) to the processing queue
         * Segment 1 replication failure at offset 150
-        * Blob 128.480 is not found for table TEST
+        * Blob <nnn.mmm> is not found for table TEST
         After this replication of segment 1 unable to continue and issues repeating messages about added segments.
 
     Checked on:
