@@ -24,12 +24,6 @@ DESCRIPTION:
         FB crashes, segment is not delivered on replica.
     Initial fix was for FB 4.x 30-jul-2021 16:28 (44f48955c250193096c244bee9e5cd7ddf9a099b),
     frontported to FB 5.x 04-aug-2021 12:48 (220ca99b85289fdd7a5257e576499a1b9c345cd9)
-
-    Checked on:
-        5.0.0.126 SS: 27.290s  // intermediate build, timestamp: 04-aug-2021 12:08.
-        5.0.0.126 CS: 26.239s.
-        4.0.1.2556 SS: 29.956s.
-        4.0.1.2556 CS: 26.108s.
 FBTEST:      tests.functional.replication.some_updates_crash_server_on_replica_side
 NOTES:
     [25.08.2022] pzotov

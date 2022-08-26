@@ -22,7 +22,6 @@ DESCRIPTION:
     The only difference in metadata must be 'CREATE DATABASE' statement with different DB names - we suppress it,
     thus metadata difference must not be issued.
 
-    Checked on: WI-T5.0.0.257; WI-V4.0.1.2631 (both SS/CS).
 FBTEST:      tests.functional.replication.invalid_msg_if_target_db_has_no_replica_flag
 NOTES:
     [26.08.2022] pzotov

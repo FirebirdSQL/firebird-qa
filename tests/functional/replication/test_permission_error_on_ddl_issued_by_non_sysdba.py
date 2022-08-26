@@ -22,7 +22,6 @@ DESCRIPTION:
     Confirmed bug on 4.0.1.2578 and 5.0.0.169: messages "ERROR: unsuccessful metadata update / CREATE OR ALTER VIEW v_test failed"
     will be added into replication log and after this replication gets stuck.
 
-    Checked on: 4.0.1.2585 (SS/CS); 5.0.0.192 (SS/CS)
 FBTEST:      tests.functional.replication.permission_error_on_ddl_issued_by_non_sysdba
 NOTES:
     [25.08.2022] pzotov

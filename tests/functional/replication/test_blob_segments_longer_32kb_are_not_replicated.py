@@ -24,7 +24,6 @@ DESCRIPTION:
     thus metadata difference must not be issued.
 
     Confirmed bug on 5.0.0.88, 4.0.1.2523: record appears on replica but blob will be NULL.
-    Checked on: 5.0.0.120, 4.0.1.2547 -- all OK.
 FBTEST:      functional.replication.blob_segments_longer_32kb_are_not_replicated
 NOTES:
     [23.08.2022] pzotov

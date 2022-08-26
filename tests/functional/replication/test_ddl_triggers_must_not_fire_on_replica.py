@@ -24,9 +24,6 @@ DESCRIPTION:
 
     Finally, we extract metadata for master and replica after this cleanup and compare them.
 
-
-    Checked on:
-        4.0.1.2547 (SS/CS), 5.0.0.120 (SS/CS).
 FBTEST:      tests.functional.replication.ddl_triggers_must_not_fire_on_replica
 NOTES:
     [25.08.2022] pzotov

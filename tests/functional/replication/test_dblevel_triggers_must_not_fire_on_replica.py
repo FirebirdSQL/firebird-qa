@@ -27,9 +27,6 @@ DESCRIPTION:
     The only difference in metadata must be 'CREATE DATABASE' statement with different DB names - we suppress it,
     thus metadata difference must not be issued.
 
-    Checked on:
-        4.0.1.2519 SS: 56.48s, CS: 99.31s
-        5.0.0.82   SS: 20.63s, CS: 21.39s
 FBTEST:      tests.functional.replication.dblevel_triggers_must_not_fire_on_replica
 NOTES:
     [25.08.2022] pzotov

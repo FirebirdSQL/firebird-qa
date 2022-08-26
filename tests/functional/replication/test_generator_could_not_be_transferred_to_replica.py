@@ -26,8 +26,6 @@ DESCRIPTION:
     thus metadata difference must not be issued.
 
     Confirmed bug on 4.0.0.2465: sequence with least ID ('g_1') is not replicated, its value on replica remains 0.
-    Checked on:
-        4.0.1.2519 SS; 5.0.0.82 SS/CS.
 FBTEST:      tests.functional.replication.generator_could_not_be_transferred_to_replica
 NOTES:
     [25.08.2022] pzotov
