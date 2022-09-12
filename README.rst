@@ -31,7 +31,7 @@ Quickstart
          Ensure that RemoteAccess is allowed for security.db.
          Also, it is recommended to set number of buffers not less than 256 for it:
 
-         security.db = $(dir_secDb^)/security<suffix>.fdb
+         security.db = $(dir_secDb)/security<suffix>.fdb
          {
              RemoteAccess = true
              DefaultDbCachePages = 256
@@ -47,19 +47,19 @@ Quickstart
         Firebird 3::
 
             # Required
+            BugcheckAbort = 1
             ExternalFileAccess = Full
-            AuthServer = Srp, Legacy_Auth
+            AuthServer = Srp, Win_Sspi, Legacy_Auth
             UserManager = Srp, Legacy_UserManager
             WireCrypt = Enabled
             FileSystemCacheThreshold = 99999K
-            IpcName = xnet_fb3x
-            RemotePipeName = wnet_fb3x
+            IpcName = xnet_fb3x_qa
+            RemotePipeName = wnet_fb3x_qa
 
             # Recommended
             DefaultDbCachePages = 10000
             MaxUnflushedWrites = -1
             MaxUnflushedWriteTime = -1
-            BugcheckAbort = 1
 
             # Needed for encryption-related tests.
             KeyHolderPlugin = fbSampleKeyHolder
@@ -67,22 +67,22 @@ Quickstart
         Firebird 4::
 
             # Required
+            BugcheckAbort = 1
             ExternalFileAccess = Full
-            AuthServer = Srp256, Legacy_auth
+            AuthServer = Srp256, Win_Sspi, Legacy_auth
             UserManager = Srp, Legacy_UserManager
             ReadConsistency = 0
             WireCrypt = Enabled
             ExtConnPoolSize = 10
             ExtConnPoolLifeTime = 10
             UseFileSystemCache = true
-            IpcName = xnet_fb4x
-            RemotePipeName = wnet_fb4x
+            IpcName = xnet_fb4x_qa
+            RemotePipeName = wnet_fb4x_qa
 
             # Recommended
             DefaultDbCachePages = 10000
             MaxUnflushedWrites = -1
             MaxUnflushedWriteTime = -1
-            BugcheckAbort = 1
 
             # number of seconds after which statement execution will be automatically cancelled by the engine
             # can be very useful if some test will hang or become work extremely slow:
@@ -95,7 +95,7 @@ Quickstart
 
             currently all parameters from FB-4.x can be used, except 'RemotePipeName'
             because support of WNET protocol was removed from FB-5.x.
-            It is recommended to assign value like 'xnet_fb5x' to IpcName.
+            It is recommended to assign value like 'xnet_fb5x_qa' to IpcName.
 
             
         NOTES::
@@ -193,6 +193,19 @@ Quickstart
                      INTERNALERROR> firebird.driver.types.DatabaseError: Missing database encryption key for your attachment
                      INTERNALERROR> -Plugin fbSampleKeyHolder:
                      INTERNALERROR> -Crypt key <HERE_SOME_UNKNOWN_KEY> not set
+
+
+     3.4. Additional issues about folder $(dir_sampleDb) ( $FB_HOME/examples/empbuild/ ) and its subdirectories.
+         3.4.1. There are many tests which supposes that this directory is avaliable for read/write access.
+                Test suite (firebird-qa plugin for pytest) will re-create subdirectory with name 'qa' under $(dir_sample) for
+                every such test, so be sure that you have not any significant data in this folder.
+         3.4.2. Firebird 4.x+ has ability to involve databases in replication schema. There are several tests which assumes that
+                such schema already was created (before pytest session) and there arte two databases in it (master and replica).
+                It was decided to use directory with name: $(dir_sampleDb)/qa_replication/ for this purpoces. Two databases must
+                be created in it: db_main.fdb and db_repl.fdb, and one need to prepare them into replication beforehand.
+                Also, one need to prepare two directories in THIS folder which will serve as replication journal and archive.
+                All these actions are performed by batch scenarios which can be provided by IBSurgeon company by request.
+
 
 4. Optional. Enable your OS to create dump files in case of FB crashes caused by tests::
 
