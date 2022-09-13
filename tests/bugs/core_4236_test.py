@@ -8,13 +8,14 @@ DESCRIPTION:
   Test restores database with single table of following DDL:
     create table test(s varchar(1000));
     create index test_s on test(s);
-  Than we start asynchronously several ISQL attachments which will do 'heavy DML' job: insert lot of rows in this table.
+  Then we start asynchronously several ISQL attachments which will do 'heavy DML' job: insert lot of rows in this table.
   After some delay (IMO, it should be at least 15..20 seconds) we start process of SHUTDOWN but with target mode = 'single'
   instead of 'full'.
   After control will return from shutdown command, we can ensure that database has no any access and its file is closed
   - this is done by call FBSVCMGR utility with arguments: action_repair rpr_validate_db rpr_full. This will launch process
   of database validation and it requires exclusive access, like 'gfix -v -full'.
-  If validation will be able to open database in exclusive mode and do its job than NO any output will be produced.
+  If validation will be able to open database in exclusive mode and do its job then NO any output must appear.
+
   Any problem with exclusive DB access will lead to error with text like: "database <db_file> shutdown".
   Finally, we check that:
   1) output of validation is really EMPTY - no any rows should present between two intentionally added lines
@@ -33,6 +34,13 @@ DESCRIPTION:
     (we check that both validation *did* complete and absense of errors in DB).
 JIRA:        CORE-4236
 FBTEST:      bugs.core_4236
+NOTES:
+    [13.09.2022] pzotov
+    Validation outcome may contain info about WARNINGS (found in 3.0.8 SS and 4.0.1 SS), like this:
+    "Number of index page warnings   : NN"
+    This outcome is considered as EXCEPTION, so we have to prevent from fail because of that.
+    We must raise fail only in case of message like this: "Number of <index | record level | ...> errors   : NN"
+    Checked on Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.691
 """
 
 from __future__ import annotations
@@ -120,15 +128,21 @@ def test_1(act: Action, capsys):
           # This process normally should produce NO output at all, it is "silent".
           # If database currently is in use by engine or some attachments than it shoudl fail
           # with message "database <db_file> shutdown."
+
           try:
-               srv.database.repair(database=act.db.db_path,
+              srv.database.repair(database=act.db.db_path,
                                    flags=SrvRepairFlag.FULL | SrvRepairFlag.VALIDATE_DB)
           except Exception as exc:
-               print(f'Database repair failed with: {exc}')
-          #
+              # Prevent from 'fail-alarm' related to WARNINGS found during validation.
+              # We are interesting only about real errors:
+              p_validation_problem_msg = re.compile('number of .* errors', re.IGNORECASE)
+              if p_validation_problem_msg.search(exc.__str__().lower()):
+                  print(f'Database validation failed: {exc}')
+
           # get firebird.log _after_ validation
           srv.info.get_log()
           log_after = srv.readlines()
+
           # bring database online
           srv.database.bring_online(database=act.db.db_path)
      # At this point, threads should be dead
