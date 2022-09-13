@@ -5,14 +5,28 @@ ID:          issue-2890
 ISSUE:       2890
 TITLE:       mon$memory_usage: Sorting memory should be reported as owned by the statement
 DESCRIPTION:
-NOTES:
-[16.11.2021] pcisar
-  This test is too complicated and fragile, and it's IMHO not worth to be implemented
-[24.07.2022] pzotov
-  Test was totally re-implemented. No async call of ISQL, waiting/killing etc.
-  Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.591
+    We open cursor that executes statement that requires to sort 10'000 rows of 32K width.
+    Cursor fetches only half of this rows number and breaks from loop (but we do not close this cursor).
+    This causes huge memory consumation and we can compare value in mon$memory_used that was before
+    this query start.
+    In order to check ticket issue we filer mon$ data by criteria 'where m.mon$stat_group = 3' (i.e. STATEMENT level)
+    and also we have to check memory usage only for statement that we are running. Because of this, we add special
+    tag in the SQL query '/* HEAVY_SORT_TAG */' - and search for that.
+
+    Runs this test on firebird.conf with default TempCacheLimit show following values of differences:
+      * for SuperServer: ~68.1 Mb; 
+      * for Classic: ~9.4 Mb
+    Because of this, difference of mon$memory_used is compared with DIFFERENT threshold depending on
+    FB ServerMode (see act.vars['server-arch']).
 JIRA:        CORE-2477
 FBTEST:      bugs.core_2477
+NOTES:
+[16.11.2021] pcisar
+    This test is too complicated and fragile, and it's IMHO not worth to be implemented
+[24.07.2022] pzotov
+    Test was totally re-implemented. No async call of ISQL, waiting/killing etc.
+
+    Checked on Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.591
 """
 
 import subprocess
@@ -20,8 +34,6 @@ from pathlib import Path
 import pytest
 from firebird.qa import *
 import time
-
-MIN_DIFF_THRESHOLD=60000000
 
 init_script = """
     create or alter view v_mon as
@@ -115,13 +127,18 @@ def test_1(act: Action, capsys):
 
     expected_msg = 'DELTA of mon$memory_used increased significantly.'
     diff = map_result['end'][1] - map_result['beg'][1]
+
+    ##################
+    MIN_DIFF_THRESHOLD = 10000000 if 'classic' in act.vars['server-arch'].lower() else 60000000
+    ##################
     if diff > MIN_DIFF_THRESHOLD:
         print(expected_msg)
     else:
-        print('### FAIL ### DELTA of mon$memory_used increased for less than MIN_DIFF_THRESHOLD = %d' % MIN_DIFF_THRESHOLD)
+        print('FAIL on %s, MON$MEMORY_USED increased for less than MIN_DIFF_THRESHOLD = %d' % (act.vars['server-arch'], MIN_DIFF_THRESHOLD) )
         for k,v in sorted(map_result.items()):
            print(k,':',v)
         print('diff = %d' % diff)
+
 
     act.expected_stdout = expected_msg
     act.stdout = capsys.readouterr().out
