@@ -30,7 +30,9 @@ FBTEST:      bugs.core_4462
 NOTES:
     [29.08.2022] pzotov
     1. This file contains test for LINUX. Implementation for Windows differs. It was decided to put it in separate file.
-    2. To make test more complex, database is encrypted before actions
+    2. To make test more complex, database is encrypted before actions; before run this test,
+       make sure that firebird.conf contains parameter:
+           KeyHolderPlugin = fbSampleKeyHolder
        (NB: restored database must also be encrypted, but currently this is not checked by test)
 
     Checked on 5.0.0.691, 4.0.1.2692, 3.0.8.33535.
@@ -48,7 +50,7 @@ import time
 
 import pytest
 from firebird.qa import *
-from firebird.driver import SrvRepairFlag
+from firebird.driver import SrvRepairFlag, DatabaseError
 
 tmp_blob_txt = temp_file('core_4462_txt.dat')
 tmp_blob_bin = temp_file('core_4462_bin.dat')
