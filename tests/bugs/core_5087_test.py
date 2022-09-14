@@ -31,6 +31,13 @@ DESCRIPTION:
      We also do additional check: all ISQL sessions should be disconnected with writing to logs appropriate messages about shutdown.
 JIRA:        CORE-5087
 FBTEST:      bugs.core_5087
+NOTES:
+    [14.09.2022] pzotov
+    NB: ticket was created at 28-jan-2016 after testing on LI-V3.0.0.32294 (Release Candidate 1).
+    QA suite can not run with such  too old snapshot and fails with:
+        firebird.driver.types.DatabaseError: invalid format for transaction parameter block
+        wrong version of transaction parameter block
+    Checked on Linux and Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.591
 """
 
 from __future__ import annotations
@@ -298,9 +305,15 @@ def test_1(act: Action, db_dml_sessions: Database, dml_logs: List[Path],
                               re.compile('Error writing data',re.IGNORECASE)
                               ]
           for line in unified_diff(log_before, log_after):
-               if line.startswith('+'):
-                    if filter(None, [p.search(line) for p in allowed_patterns]):
-                         f_check_log.write(f'Crash message in firebird.log detected: {line.upper()}\n')
+              # ::: NB :::
+              # filter(None, [p.search(line) for p in allowed_patterns]) will be None only in Python 2.7.x!
+              # In Python 3.x this will retrun "<filter object at 0xNNNNN>" ==> we must NOT use this statement!
+              if line.startswith('+') and act.match_any(line, allowed_patterns):
+                  f_check_log.write(f'Crash message in firebird.log detected: {line.upper()}\n')
+                  # !! DOES NOT WORK IN Python 3.x !!
+                  # if filter(None, [p.search(line) for p in allowed_patterns]):
+                  #     f_check_log.write(f'Crash message in firebird.log detected: {line.upper()}\n')
+
      # Final check
      act.expected_stdout = expected_stdout
      act.stdout = check_log.read_text()
