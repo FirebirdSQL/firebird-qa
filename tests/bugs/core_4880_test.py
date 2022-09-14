@@ -63,7 +63,7 @@ NOTES:
     2. Additional testing after get fail with weird message:
        "psutil.NoSuchProcess: process PID not found (pid=16652)" for 3.0.8 Classic,
        captured for: fb_info_b = psutil.Process(fb_pid).cpu_times(), perhaps due to FB crash.
-       TO BE INVESTIGATED FURTHER!
+       TO BE INVESTIGATED FURTHER.
 """
 
 import os
