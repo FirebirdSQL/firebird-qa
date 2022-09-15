@@ -61,8 +61,7 @@ expected_stdout_trace = f"""
 """
 
 
-#@pytest.mark.version('>=4.0')
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
     trace_cfg_items = [
         'time_threshold = 0',
