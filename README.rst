@@ -69,7 +69,7 @@ Quickstart
             # Required
             BugcheckAbort = 1
             ExternalFileAccess = Full
-            AuthServer = Srp256, Win_Sspi, Legacy_auth
+            AuthServer = Srp, Win_Sspi, Legacy_auth
             UserManager = Srp, Legacy_UserManager
             ReadConsistency = 0
             WireCrypt = Enabled
@@ -108,7 +108,12 @@ Quickstart
                 for sort purposes. Nowadays may to use values about 256M ... 512M.
                 On SuperClassic and Super common memory area is used to sorts, so this parameter can have
                 values of dozen Gb. As first approximation, it can be set up to 33% of total RAM.
-     
+            * AuthServer::
+                CAUTION! Currently there is non-identified bug related to Srp256 plugin.
+                One need to exclude Srp256 from list of plugins specified in this parameter, otherwise some tests
+                could fail because of mismatch in user-names output when local and global mapping is used.
+                At least one test that fails in such way is: core_5884_test.py.
+
      3.2. Changes in OS environment variables::
           it is recommended to create variable FIREBIRD_TMP that will point to the pre-created directory
           on some fast drive (e.g. SSD or RAM). This drive must have at least 30 Gb free space.
