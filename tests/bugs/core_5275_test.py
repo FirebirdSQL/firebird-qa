@@ -18,25 +18,30 @@ DESCRIPTION:
   Beside above mentioned steps, we also:
   1) compare content of old/new firebird.log (difference): it should NOT contain line "consistency check";
   2) run database online validation: it should NOT report any error in the database.
-NOTES:
-[18.08.2020]
-  FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-  statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-  gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
-  See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-  This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-
-  Because of this, it was decided to replace 'alter sequence restart...' with subtraction of two gen values:
-  c = gen_id(<g>, -gen_id(<g>, 0)) -- see procedure sp_restart_sequences.
 JIRA:        CORE-5275
 FBTEST:      bugs.core_5275
+NOTES:
+  [18.08.2020] pzotov
+      FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
+      statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
+      gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
+      See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
+      This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
+
+      Because of this, it was decided to replace 'alter sequence restart...' with subtraction of two gen values:
+      c = gen_id(<g>, -gen_id(<g>, 0)) -- see procedure sp_restart_sequences.
+  [15.09.2022] pzotov
+  Fixed 18.06.2016 15:57
+  Checked on Linux and Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.591
 """
 
-import pytest
 import subprocess
 import time
 from pathlib import Path
 from difflib import unified_diff
+import re
+
+import pytest
 from firebird.qa import *
 
 substitutions = [('0: CREATE INDEX LOG: RDB_EXPR_BLOB.*', '0: CREATE INDEX LOG: RDB_EXPR_BLOB'),
@@ -216,6 +221,7 @@ def print_validation(line: str) -> None:
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, bulk_insert_script: Path, bulk_insert_output: Path,
            create_idx_script: Path, create_idx_output: Path, capsys):
+
     bulk_insert_script.write_text(bulk_insert)
     create_idx_script.write_text(create_idx)
     # Get Firebird log before test
@@ -257,14 +263,30 @@ def test_1(act: Action, bulk_insert_script: Path, bulk_insert_output: Path,
         for line in act.clean_string(act.stdout).splitlines():
             if line:
                 print(f'{step}: KILL ATTACH LOG: {line.strip().upper()}')
-    # Get Firebird log after test
-    log_after = act.get_firebird_log()
+
     # Run database validation
     with act.connect_server() as srv:
         srv.database.validate(database=act.db.db_path, callback=print_validation)
     # Check
-    act.reset()
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
-    assert list(unified_diff(log_before, log_after)) == []
+    act.reset()
+
+
+    # Get Firebird log after test
+    log_after = act.get_firebird_log()
+
+    allowed_patterns = [re.compile('consistency\\s+check',re.IGNORECASE),
+                        re.compile('terminate\\S+ abnormally',re.IGNORECASE),
+                        re.compile('Error\s+(reading|writing)\s+data',re.IGNORECASE)
+                        ]
+    for line in unified_diff(log_before, log_after):
+        # ::: NB :::
+        # filter(None, [p.search(line) for p in allowed_patterns]) will be None only in Python 2.7.x!
+        # In Python 3.x this will retrun "<filter object at 0xNNNNN>" ==> we must NOT use this statement!
+        if line.startswith('+') and act.match_any(line, allowed_patterns):
+            print(f'Problematic message in firebird.log: {line.upper()}\n')
+
+    assert '' == capsys.readouterr().out
+
