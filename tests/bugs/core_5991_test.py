@@ -56,6 +56,9 @@ DESCRIPTION:
     Confirmed bug on 3.0.4.33054.
 JIRA:        CORE-5991
 FBTEST:      bugs.core_5991
+NOTES:
+    [15.09.2022] pzotov
+    Checked on Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730
 """
 
 import pytest
