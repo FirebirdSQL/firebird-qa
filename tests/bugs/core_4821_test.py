@@ -64,17 +64,6 @@ import time
 import pytest
 from firebird.qa import *
 
-# version: 3.0.5
-
-substitutions = [('no permission for CREATE access to DATABASE .*',
-                  'no permission for CREATE access to DATABASE'),
-                 ('gbak: ERROR:failed to create database .*',
-                  'gbak: ERROR:failed to create database'),
-                 ('-failed to create database .*', '-failed to create database'),
-                 ('CREATED_DB_NAME .*', 'CREATED_DB_NAME'),
-                 ('FDB_RESTORED_USING_GBAK .*', 'FDB_RESTORED_USING_GBAK'),
-                 ('FDB_RESTORED_USING_SMGR .*', 'FDB_RESTORED_USING_SMGR')]
-
 # Pre-defined alias for self-security DB in the QA_root/files/qa-databases.conf.
 # This file must be copied manually to each testing FB home folder, with replacing
 # databases.conf there:
@@ -92,16 +81,8 @@ db_clone = db_factory(filename = '#' + DB_BIND_ALIAS, do_not_create = True, do_n
 tmp_user = user_factory('db', name='dba_4821', password='123', do_not_create = True)
 tmp_role = role_factory('db', name='db_maker', do_not_create = True)
 
-act = python_act('db') # , substitutions=substitutions)
+act = python_act('db')
 act_clone = python_act('db_clone')
-
-fdb_test1 = temp_file('tmp_4821_test1.fdb')
-fdb_test2 = temp_file('tmp_4821_test2.fdb')
-fbk_name = temp_file('tmp_4821_test2.fbk')
-fdb_restored_using_gbak = temp_file('tmp_4821_restored.gbak.fdb')
-fdb_restored_using_smgr = temp_file('tmp_4821_restored.smgr.fdb')
-fdb_restored_unexpected = temp_file('tmp_4821_restored.no_grant.fdb')
-
 
 #----------------------------------------------------
 def get_filename_by_alias(act: Action, alias_from_dbconf):
@@ -136,12 +117,6 @@ def get_filename_by_alias(act: Action, alias_from_dbconf):
 @pytest.mark.version('>=3.0.5')
 def test_1(act: Action,
            act_clone: Action,
-           fdb_test1: Path,
-           fdb_test2: Path,
-           fbk_name: Path,
-           fdb_restored_using_gbak: Path,
-           fdb_restored_using_smgr: Path,
-           fdb_restored_unexpected: Path,
            tmp_user: User,
            tmp_role: Role,
            capsys
