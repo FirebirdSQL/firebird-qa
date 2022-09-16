@@ -90,18 +90,6 @@ MIN_CPU_RATIO_TXT_WCOMPR_ON_OFF = 5 if platform.system() == 'Linux' else 6
 #          6.643; 7.000; 6.333; 6.267; 7.385; 5.812; 6.063; 6.643; 6.500  // 3.0.8
 MIN_CPU_RATIO_BIN_WCOMPR_ON_OFF = 4 if platform.system() == 'Linux' else 4
 
-# OPTIONAL CHECK: minimal ratio between CPU user time when WireCompression = false
-# and engine sends to client: 1) 'IDEALLY COMPRESSABLE'; 2) 'ABSOLUTELY IMCOMPRESSIBLE' data.
-# This can be useful to estimate record-level compression: textual data can be compressed
-# very well, so its transfer must take much less time then for GEN_UUID.
-# Experiments show that this ratio can be on Windows in the scope 0.3.... 0.8,
-# but on Linux it can be 1.0 or even slightly more then 1(!)
-# Windows: 0.500; 0.600; 0.571; 0.428; 0.714; 0.667; 0.625; 0.429; 0.571 // 4.0.1
-#          0.454; 0.357; 0.357; 0.500; 0.250; 0.385; 0.333; 0.200; 0.500 // 3.0.8
-# Linux:   0.684; 1.000; 1.000; 1.067; 0.867; 0.813; 0.800; 0.777; 0.750 // 4.0.1
-#          0.928; 1.000; 0.933; 1.000; 1.077; 0.750; 0.938; 0.929; 0.928 // 3.0.8
-MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF = 1.1 if platform.system() == 'Linux' else 0.95
-
 init_script = f"""
     create domain dm_dump varchar({DATA_WIDTH}) character set octets;
     create table t_common_text(s dm_dump);
@@ -139,6 +127,22 @@ act = python_act('db')
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
+
+    # OPTIONAL CHECK: minimal ratio between CPU user time when WireCompression = false
+    # and engine sends to client: 1) 'IDEALLY COMPRESSABLE'; 2) 'ABSOLUTELY IMCOMPRESSIBLE' data.
+    # This can be useful to estimate record-level compression: textual data can be compressed
+    # very well, so its transfer must take much less time then for GEN_UUID.
+    # Experiments show that this ratio can be on Windows in the scope 0.3.... 0.8,
+    # but on Linux it can be 1.0 or even slightly more then 1(!)
+    # Windows: 0.500; 0.600; 0.571; 0.428; 0.714; 0.667; 0.625; 0.429; 0.571 // 4.0.1
+    #          0.454; 0.357; 0.357; 0.500; 0.250; 0.385; 0.333; 0.200; 0.500 // 3.0.8
+    # Linux:   0.684; 1.000; 1.000; 1.067; 0.867; 0.813; 0.800; 0.777; 0.750 // 4.0.1
+    #          0.928; 1.000; 0.933; 1.000; 1.077; 0.750; 0.938; 0.929; 0.928 // 3.0.8
+    if act.is_version('<4'):
+        # 16.09.2022, 43.0.8 Classic: Windows -> 1.2
+        MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF = 1.1 if platform.system() == 'Linux' else 1.5
+    else:
+        MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF = 1.1 if platform.system() == 'Linux' else 0.95
 
     # Register Firebird server (D:\FB\probes\fid-set-dpb-probe-05x.py)
     srv_config_key_value_text = \
