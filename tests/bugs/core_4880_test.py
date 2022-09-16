@@ -74,6 +74,22 @@ from firebird.qa import *
 db = db_factory()
 act = python_act('db')
 
+###########################
+###   S E T T I N G S   ###
+###########################
+# How many times we call PSQL code (two stored procedures:
+# one for performing comparisons based on LIKE, second based on SIMILAR TO statements):
+N_MEASURES = 21
+
+# How many functions must be created on each iteration:
+N_LIMIT = 1500
+
+if os.name == 'nt':
+    MAX_TIME_RATIOS_COMMIT_TO_COMPILE = {'packaged' : 0.55, 'standalone' : 0.75}
+else:
+    MAX_TIME_RATIOS_COMMIT_TO_COMPILE = {'packaged' : 0.55, 'standalone' : 0.50}
+
+
 #--------------------------------------------------------------------
 def median(lst):
     n = len(lst)
@@ -86,34 +102,10 @@ def test_1(act: Action, capsys):
 
     act.db.set_async_write() # just to be sure, although this is by default
 
-    with act.db.connect() as con:
-        cur = con.cursor()
-        cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
-        fb_pid = int(cur.fetchone()[0])
-
-    ###########################
-    ###   S E T T I N G S   ###
-    ###########################
-    # How many times we call PSQL code (two stored procedures:
-    # one for performing comparisons based on LIKE, second based on SIMILAR TO statements):
-    N_MEASURES = 21
-
-    # How many functions must be created on each iteration:
-    N_LIMIT = 1500
-
     expected_stdout = f"""
         Median value for {N_MEASURES} ratios of commit_time/compile_time when create {N_LIMIT} packaged PSQL objects: acceptable
         Median value for {N_MEASURES} ratios of commit_time/compile_time when create {N_LIMIT} standalone PSQL objects: acceptable
     """
-
-    ###############################
-    ###   T H R E S H O L D S   ###
-    ###############################
-    if os.name == 'nt':
-        MAX_TIME_RATIOS_COMMIT_TO_COMPILE = {'packaged' : 0.55, 'standalone' : 0.75}
-    else:
-        MAX_TIME_RATIOS_COMMIT_TO_COMPILE = {'packaged' : 0.55, 'standalone' : 0.50}
-
 
     func_headers_ddl = ''.join( [ '\n  function fn_%d returns int;' % i for i in range(N_LIMIT) ] )
     func_bodies_ddl = ''.join( [ '\n  function fn_%d returns int as begin return %d; end' % (i,i) for i in range(N_LIMIT) ] )
@@ -123,6 +115,11 @@ def test_1(act: Action, capsys):
 
     sp_time = {}
     with act.db.connect() as con:
+
+        with con.cursor() as cur:
+            cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
+            fb_pid = int(cur.fetchone()[0])
+
         for i in range(0, N_MEASURES):
             for ftype in ('packaged', 'standalone'):
 
