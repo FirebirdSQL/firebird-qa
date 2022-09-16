@@ -10,11 +10,16 @@ DESCRIPTION:
   This script makes connection to test DB using charset = ISO8859_1 and perform several queries.
   Result will be redirected to .log and .err files (they will be encoded, of course, also in ISO8859_1).
   Finally, we open .log file (using codecs package), convert its content to UTF8 and show in expected_stdout.
-NOTES:
-[16.11.2021]
-  This test fails as UPPER('ÿ') does not work properly
 JIRA:        CORE-2912
 FBTEST:      bugs.core_2912
+NOTES:
+  [16.11.2021] pcisar
+    This test fails as UPPER('ÿ') does not work properly
+  [16.09.2022] pzotov
+    Trouble with 'ÿ' raises only on LINUX. All fine on Windows.
+    Mark for running on Windows was *temporary* added to this test. Problem will be investigated.
+
+    Checked on Windows: 3.0.8.33535, 4.0.1.2692, 5.0.0.730
 """
 
 import pytest
@@ -69,7 +74,7 @@ expected_stdout = """
     CU                              FAÿ
 """
 
-@pytest.mark.skip("FIXME: see notes")
+@pytest.mark.platform('Windows')
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
