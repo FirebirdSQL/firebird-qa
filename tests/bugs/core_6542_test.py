@@ -97,7 +97,7 @@ def test_1(act: Action, capsys):
 
     # Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
     #
-    UTF8_TO_UFSS_MAX_RATIO = 1.30
+    UTF8_TO_UFSS_MAX_RATIO = 3.00
     #############################
 
     cset_map = {'sp_ufss': 'unicode_fss', 'sp_utf8': 'utf8'}
