@@ -5,12 +5,18 @@ ID:          issue-3903
 ISSUE:       3903
 TITLE:       Floating-point negative zero doesn't match positive zero in the index
 DESCRIPTION:
-NOTES:
-[09.02.2022] pcisar
-  Specific stdout is required on Windows for v3 up to 3.0.8 due to small difference
-  It's possible that this problem would be fixed in 3.0.9.
 JIRA:        CORE-3547
 FBTEST:      bugs.core_3547
+NOTES:
+    [09.02.2022] pcisar
+        Specific stdout is required on Windows for v3 up to 3.0.8 due to small difference
+        It's possible that this problem would be fixed in 3.0.9.
+    [20.09.2022] pzotov
+        Added substitution in order to stop comparison after 15th digit ("COL = 0.000000000000000").
+        We have to ensure that one can not insert duplicate (-0e0). It is enough to show concrete
+        value of problematic key with accuracy 15 digits.
+
+    Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.730 - both Linux and Windows
 """
 
 import pytest
@@ -50,7 +56,7 @@ test_script = """
     --                                                          ^
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script, substitutions = [(' = 0.0000000000000000', ' = 0.000000000000000')])
 
 expected_stdout = """
     where id = 0                    1
@@ -63,30 +69,17 @@ expected_stdout = """
     t_double_pk: col, count(*)      1
 """
 
-expected_stderr_win = """
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "T1_DOUBLE_PK" on table "T1_DOUBLE_AS_PK"
-    -Problematic key value is ("COL" = 0.0000000000000000)
-"""
-
-expected_stderr_non_win = """
+expected_stderr = """
     Statement failed, SQLSTATE = 23000
     violation of PRIMARY or UNIQUE KEY constraint "T1_DOUBLE_PK" on table "T1_DOUBLE_AS_PK"
     -Problematic key value is ("COL" = 0.000000000000000)
 """
 
-@pytest.mark.version('>=3,<4')
+@pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr_win if act.platform == 'Windows' else expected_stderr_non_win
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
 
-@pytest.mark.version('>=4')
-def test_2(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr_non_win
+    act.expected_stderr = expected_stderr
     act.execute()
     assert (act.clean_stderr == act.clean_expected_stderr and
             act.clean_stdout == act.clean_expected_stdout)
