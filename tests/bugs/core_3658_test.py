@@ -16,7 +16,9 @@ NOTES:
         returned TraceSession( ... ) instance, so we have no ability to call trace manager with IMPLICIT
         credentials, i.e. via ISC_* env. variables.
 
-        Checked on 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730 (SS/CS)
+        See also: tests/functional/services/test_role_in_service_attachment.py 
+
+        Checked on 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730 (SS/CS) -- Windows and Linux
 """
 import os
 import subprocess
@@ -69,8 +71,9 @@ def test_1(act: Action, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
 
             p.terminate()
 
-    # service_mgr, (Service 0000000000C8B140, SYSDBA, TCPv6:::1/60775, C:\python3x\python.exe:18960)
-    p = re.compile('service_mgr,\\s+\\(\\s*Service\\s+\\w{16}[,]?\\s+' + act.db.user+ '[,]?', re.IGNORECASE)
+    # Windows: service_mgr, (Service 0000000000C8B140, SYSDBA, TCPv6:::1/60775, ...)
+    # Linux:   service_mgr, (Service 0x7fc58f6073c0, SYSDBA, TCPv6:::1/35666, ...)
+    p = re.compile('service_mgr,\\s+\\(\\s*Service\\s+\\w+[,]?\\s+' + act.db.user+ '[,]?', re.IGNORECASE)
 
     expected_stdout = 'Found expected line: 1'
     with open(tmp_trace_log,'r') as f:
