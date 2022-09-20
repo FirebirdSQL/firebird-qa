@@ -48,10 +48,15 @@ NOTES:
         -table PLG$VIEW_USERS is not defined
     (and it raises when we run query 'select ... from mon$database join mon$attachments ... left join sec$users ...').
 
+    [20.09.2022] pzotov
+    Removed query to security.db ("select s.sec$user_name as remained_in_main_sec_db ...") because it can cause translit error
+    in case when some non-ascii user remains in this database (after previous tests). This problem is quite irrelevant to this test.
+
     Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
 """
 
 import os
+import locale
 import re
 from pathlib import Path
 import getpass
@@ -106,16 +111,15 @@ def test_1(act: Action, capsys):
         set list on;
 
         -- XXX WRONG XXX >>> connect '{act.db.db_path}' user {act.db.user};
-        -- WE HAVE TO ESTABLISH CONNECTION FROM COMMAND LINE, USING '-user SYSDBA' switch!
+        -- WE HAVE TO ESTABLISH CONNECTION FROM COMMAND LINE, USING '-user' switch!
 
         select upper(mon$database_name) as initial_db_name, a.mon$remote_protocol as initial_protocol, a.mon$user as initial_user
         from mon$database join mon$attachments a on a.mon$attachment_id = current_connection;
         rollback;
 
-        --/*
         create database '{REQUIRED_ALIAS}' page_size 8192 default character set win1250 collation pxw_hun;
         commit;
-        connect '{REQUIRED_ALIAS}' user SYSDBA;
+        connect '{REQUIRED_ALIAS}' user {act.db.user};
         create user {tmp_usr} password '123' using plugin Srp;
         commit;
         connect '{REQUIRED_ALIAS}' user {tmp_usr};
@@ -131,12 +135,9 @@ def test_1(act: Action, capsys):
         left join sec$users s on a.mon$user = s.sec$user_name
         ;
         commit;
-        connect '{REQUIRED_ALIAS}' user SYSDBA;
+        connect '{REQUIRED_ALIAS}' user {act.db.user};
         drop database;
-        connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
-        select s.sec$user_name as remained_in_main_sec_db from rdb$database r left join sec$users s on s.sec$user_name = '{tmp_usr.upper()}';
         quit;
-        --*/
     """
 
     expected_stdout = f"""
@@ -149,12 +150,9 @@ def test_1(act: Action, capsys):
         NEW_DB_USER {tmp_usr.upper()}
         SEC$USER_NAME {tmp_usr.upper()}
         SEC$PLUGIN Srp
-        REMAINED_IN_MAIN_SEC_DB <null>
     """
-    #    NEW_DB_OWNER {getpass.getuser().upper()}
     
     act.expected_stdout = expected_stdout
-    act.expected_stderr = ''
 
     # WRONG >>> act.isql(switches=['-q'], charset = 'utf8', input = check_sql, credentials = False, connect_db = False)
     # We have to run ISQL exactly how it was shown in the ticket, i.e. 'isql -q -user SYSDBA'.
@@ -162,7 +160,7 @@ def test_1(act: Action, capsys):
     # then error (on 3.0.0.31896 Beta 2) will be in another statement and it will be different: SQLSTATE = 42S02.
     # Also, NEW_DB_OWNER will have name of current OS user rather than SYSDBA.
     #
-    act.isql(switches=['-q', act.db.db_path, '-user', act.db.user], charset = 'win1250', input = check_sql, credentials = False, connect_db = False)
+    act.isql(switches=['-q', act.db.db_path, '-user', act.db.user], charset = 'win1250', input = check_sql, credentials = False, connect_db = False, combine_output = True, io_enc = locale.getpreferredencoding())
 
-    assert act.clean_stdout == act.clean_expected_stdout and act.clean_stderr == act.clean_expected_stderr
+    assert act.clean_stdout == act.clean_expected_stdout # and act.clean_stderr == act.clean_expected_stderr
     act.reset()
