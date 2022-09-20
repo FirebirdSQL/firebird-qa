@@ -13,7 +13,7 @@ DESCRIPTION:
     After this, we make loop for <ITER_COUNT> iterations and do on each of them:
       * drop GTT;
       * create GTT (with new name);
-      * add some data into just created GTT
+      * add some data into just created GTT;
       * get GTT file size and add it to the list for further analysis (see 'gtt_size_list.append(...)')
 
     Finally, we scan list 'gtt_size_list' (starting from 2nd element) and evaluate DIFFERENCE between size of GTT file
