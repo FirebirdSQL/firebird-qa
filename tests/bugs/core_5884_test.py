@@ -23,8 +23,10 @@ NOTES:
     3. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
        (for LINUX this equality is case-sensitive, even when aliases are compared!)
 
-    4. Currently one need to *** EXCLUDE *** 'Srp256' from plugins list of AuthServer parameter.
-       Parameter 'AuthClient' in the database section can be missed.
+    4. Outcome of this test (pass/fail) depends on whether *per-database* 'AuthServer' parameter is used for test DB!
+       Pre-created section in databases.conf must contain 'AuthServer' parameter. Its its value must be the EXACTLY
+       the same as we set here to setting PLUGIN_FOR_MAPPING (e.g. if it is 'Srp256' then it must be specified both
+       in databases.conf section and here in PLUGIN_FOR_MAPPING variable).
        Otherwise user name from DPB will be shown instead of mapping ('tmp$c5884_*' instead of '(global|local)_mapped_*')
        Sent report to Alex et al, 15.09.2022.
 
@@ -85,12 +87,16 @@ def test_1(act: Action, user_a: User, user_b: User, capsys):
     # Full path + filename of database to which we will try to connect:
     #
     tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
-    
-    PLUGIN_FOR_MAPPING = 'Srp'
-    LOCAL_MAPPING_NAME = 'local_map_5884'
-    GLOBAL_MAPPING_NAME = 'global_map_5884'
-    LOCAL_MAPPED_USER = 'local_mapped_5884'.upper()
-    GLOBAL_MAPPED_USER = 'global_mapped_5884'.upper()
+
+    #######!!! ACHTUNG !!!#######
+    PLUGIN_FOR_MAPPING = 'Srp256' # <<< !! MUST BE EXACTLY THE SAME AS IN databases.conf !!
+    #############################
+
+    PLUGIN_FOR_AUTH = 'Srp'
+    LOCAL_MAPPING_NAME =  'local_mapping_5884'
+    GLOBAL_MAPPING_NAME = 'global_mapping_5884'
+    LOCAL_MAPPED_USER =   'john_from_local_mapping_5884'
+    GLOBAL_MAPPED_USER =  'mike_from_global_mapping_5884'
 
     tmp_dba_pswd = 'alt@pa$5884'
     sql_txt = f'''
@@ -98,10 +104,10 @@ def test_1(act: Action, user_a: User, user_b: User, capsys):
         -- set bail on;
         set list on;
         create database '{REQUIRED_ALIAS}' user {act.db.user};
-        create user {act.db.user} password '{tmp_dba_pswd}' using plugin {PLUGIN_FOR_MAPPING};
+        create user {act.db.user} password '{tmp_dba_pswd}' using plugin {PLUGIN_FOR_AUTH};
 
-        create user {user_a.name} password '{user_a.password}' using plugin {PLUGIN_FOR_MAPPING};
-        create user {user_b.name} password '{user_b.password}' using plugin {PLUGIN_FOR_MAPPING};
+        create user {user_a.name} password '{user_a.password}' using plugin {PLUGIN_FOR_AUTH};
+        create user {user_b.name} password '{user_b.password}' using plugin {PLUGIN_FOR_AUTH};
         commit;
 
         create or alter mapping {LOCAL_MAPPING_NAME} using plugin {PLUGIN_FOR_MAPPING} from user {user_a.name} to user {LOCAL_MAPPED_USER};
@@ -124,12 +130,14 @@ def test_1(act: Action, user_a: User, user_b: User, capsys):
         where
             t.map_name in ( upper('{LOCAL_MAPPING_NAME}'), upper('{GLOBAL_MAPPING_NAME}') )
             and upper(t.map_plugin) = upper('{PLUGIN_FOR_MAPPING}')
+        order by map_name, from_type, map_from, to_type, map_to
         ;
         commit;
 
         set count on;
 
         select m.mon$sec_database as mon_sec_db from mon$database m;
+
         select sec$user_name,sec$admin,sec$plugin from sec$users order by 1;
         commit;
 
@@ -149,41 +157,40 @@ def test_1(act: Action, user_a: User, user_b: User, capsys):
         MON_SEC_DB                      Self
         Records affected: 1
 
-        SEC$USER_NAME                   SYSDBA
+        SEC$USER_NAME                   {act.db.user}
         SEC$ADMIN                       <true>
         SEC$PLUGIN                      Srp
 
-        SEC$USER_NAME                   TMP$C5884_1
+        SEC$USER_NAME                   {user_a.name.upper()}
         SEC$ADMIN                       <false>
         SEC$PLUGIN                      Srp
 
-        SEC$USER_NAME                   TMP$C5884_2
+        SEC$USER_NAME                   {user_b.name.upper()}
         SEC$ADMIN                       <false>
         SEC$PLUGIN                      Srp
         Records affected: 3
 
-        MAP_NAME                        LOCAL_MAP_5884
-        MAP_PLUGIN                      SRP
+        MAP_NAME                        {GLOBAL_MAPPING_NAME.upper()}
+        MAP_PLUGIN                      {PLUGIN_FOR_MAPPING.upper()}
         FROM_TYPE                       USER
-        MAP_FROM                        TMP$C5884_1
+        MAP_FROM                        {user_b.name.upper()}
         TO_TYPE                         0
-        MAP_TO                          {LOCAL_MAPPED_USER}
+        MAP_TO                          {GLOBAL_MAPPED_USER.upper()}
 
-        MAP_NAME                        GLOBAL_MAP_5884
-        MAP_PLUGIN                      SRP
+        MAP_NAME                        {LOCAL_MAPPING_NAME.upper()}
+        MAP_PLUGIN                      {PLUGIN_FOR_MAPPING.upper()}
         FROM_TYPE                       USER
-        MAP_FROM                        TMP$C5884_2
+        MAP_FROM                        {user_a.name.upper()}
         TO_TYPE                         0
-        MAP_TO                          {GLOBAL_MAPPED_USER}
+        MAP_TO                          {LOCAL_MAPPED_USER.upper()}
 
         Records affected: 2
 
-        WHOAMI_A                        {LOCAL_MAPPED_USER}
+        WHOAMI_A                        {LOCAL_MAPPED_USER.upper()}
         Records affected: 1
 
-        WHOAMI_B                        {GLOBAL_MAPPED_USER}
+        WHOAMI_B                        {GLOBAL_MAPPED_USER.upper()}
         Records affected: 1
-
     """
     try:
         act.isql(switches = ['-q'], input = sql_txt, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
