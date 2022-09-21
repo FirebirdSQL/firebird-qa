@@ -13,8 +13,8 @@ DESCRIPTION:
 
     On each calls of procedural code (see variable N_MEASURES) dozen execution of LIKE <pattern%> and
     SIMILAR_TO statements are performed (see variable N_COUNT_PER_MEASURE). Name of procedures which do work:
-    'sp_like_test' and 'sp_sim2_test' (first of them uses 'LIKE' statement, second uses 'SIMILAR TO'). Both procedures
-    uses the same data for handling.
+    'sp_like_test' and 'sp_sim2_test' (first of them uses 'LIKE' statement, second uses 'SIMILAR TO').
+    Both procedures uses the same data for handling.
 
     Each result (difference between cpu_times().user values when PSQL code finished) is added to the list.
     Finally, we evaluate MEDIAN of ratio values between cpu user time which was received for SIMILAR_TO and LIKE statements.
@@ -46,8 +46,8 @@ db = db_factory()
 act = python_act('db')
 
 expected_stdout = """
-    String STARTS WITH pattern, result: acceptable.
     String ENDS WITH pattern, result: acceptable.
+    String STARTS WITH pattern, result: acceptable.
 """
 
 #------------------
@@ -61,20 +61,24 @@ def median(lst):
 ###   S E T T I N G S   ###
 ###########################
 # How many times we call PSQL code (two stored procedures:
-# one for performing comparisons based on LIKE, second based on SIMILAR TO statements):
-N_MEASURES = 30
+# one for performing comparisons based on LIKE, second based on SIMILAR TO statements).
+# DO NOT set this value less than 10!
+#
+N_MEASURES = 21
 
 # How many iterations must be done in each of stored procedures when they work.
 # DO NOT set this value less then 10'000 otherwise lot of measures will last ~0 ms
 # and we will not able to evaluate ratio properly:
 #
-N_COUNT_PER_MEASURE = 1000
+N_COUNT_PER_ITER_MAP = { 'starts_with' : 5000, 'ends_with': 1000 }
 
 # Maximal value for MEDIAN of ratios between CPU user time when comparison was made
-# using SIMILAR TO vs LIKE. Lot of measurements show that SIMILAR_TO is FASTER then LIKE
-# when handling long string and pattern that are used in this test, ratio is ~0.9 ... 1.1
+# using SIMILAR TO vs LIKE. Dozen of measures show that SIMILAR_TO works much *slower*
+# than LIKE if <text_to_search> is at the BEGINNING of long string (rather than at the end).
+# Because of this, thresholds must differ:
 #
-SIM2_LIKE_MAX_RATIO = 5.0
+SIM2_LIKE_RATIO_MAP = { 'starts_with' : 10.0, 'ends_with': 8.0 }
+
 ###########################
 
 @pytest.mark.version('>=4.0')
@@ -144,18 +148,19 @@ def test_1(act: Action, capsys):
         cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
         fb_pid = int(cur.fetchone()[0])
 
-        # test_1: string ENDS with pattern (s like '%QWERTY' == vs== s similar to '%QWERTY' )
-        # test_2: string STARTS with pattern (s like 'QWERTY%' == vs == s similar to 'QWERTY%' )
-
+        # test_1: string ENDS with pattern, i.e.:   <str> like '%QWERTY' == vs==  <str> similar to '%QWERTY'
+        # test_2: string STARTS with pattern, i.e.: <str> like 'QWERTY%' == vs == <str> similar to 'QWERTY%'
+       
         sp_call_data = {}
-        for long_text_form in ('starts_with', 'ends_with'):
+        for long_text_form, n_count_per_measure in sorted(N_COUNT_PER_ITER_MAP.items()):
+            
             ratio_list = []
 
             for i in range(0, N_MEASURES):
                 sp_time = {}
                 for sp_name in op_map.keys():
                     fb_info_init = psutil.Process(fb_pid).cpu_times()
-                    cur.callproc('sp_' + sp_name + '_test', (N_COUNT_PER_MEASURE, long_text_form) )
+                    cur.callproc('sp_' + sp_name + '_test', (n_count_per_measure, long_text_form) )
                     fb_info_curr = psutil.Process(fb_pid).cpu_times()
 
                     sp_time[ sp_name ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
@@ -165,19 +170,25 @@ def test_1(act: Action, capsys):
                 except ZeroDivisionError as e:
                     print(e)
 
-            if median(ratio_list) <= SIM2_LIKE_MAX_RATIO:
-                print('String %s pattern, result: acceptable.' % long_text_form.upper().replace('_',' '))
-            else:
-                print('THE SEARCH WAS TOO SLOW when string %s pattern' % long_text_form.upper().replace('_',' '))
-                print("\\nCheck sp_call_data values (k=[long_text_form, i], v = (sp_time['sim2'], sp_time['like'])):" )
-                for k,v in sorted(sp_call_data.items()):
-                    print(k,':',v, '; ratio:', v[0]/v[1])
+            max_allowed_ratio = SIM2_LIKE_RATIO_MAP[long_text_form]
 
-                print('\\nCheck ratio values:')
+            if median(ratio_list) <= max_allowed_ratio:
+                # String ENDS WITH pattern, result: acceptable.
+                # String STARTS WITH pattern, result: acceptable.
+                print('Check: ' + long_text_form + ' - acceptable.')
+            else:
+                print('\nTOO SLOW search when use "%s": median greater %12.2f' % (long_text_form.upper().replace('_',' '), max_allowed_ratio) )
+
+                print("\nCheck sp_call_data values (k=[", long_text_form, ", i], v = (sp_time['sim2'], sp_time['like'])):" )
+                for k,v in sorted(sp_call_data.items()):
+                    #print( k,':', 'time of "SIMILAR_TO" = %12.6f' % v[0], 'time of "LIKE" = %12.6f' % v[1], '; ratio = %12.6f' % v[0]/v[1] )
+                    print( k,':', '"SIMILAR_TO" = %12.6f' % v[0], ',  "LIKE" = %12.6f' % v[1], '; ratio = ', v[0]/v[1] )
+
+                print('\nTime ratios SIMILAR_TO vs LIKE for "%s":' % long_text_form)
                 for i,p in enumerate(ratio_list):
                     print( "%d : %12.2f" % (i,p) )
-                print('\\nMedian value: %12.2f' % median(ratio_list))
+                print('\nMedian value of time ratios for "%s": %12.2f' % (long_text_form, median(ratio_list)))
 
-    act.expected_stdout = expected_stdout
-    act.stdout = capsys.readouterr().out
-    assert act.clean_stdout == act.clean_expected_stdout
+        act.expected_stdout = '\n'.join( [ 'Check: ' + k + ' - acceptable.' for k in sorted(N_COUNT_PER_ITER_MAP.keys()) ] )
+        act.stdout = capsys.readouterr().out
+        assert act.clean_stdout == act.clean_expected_stdout
