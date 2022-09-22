@@ -5,14 +5,19 @@ ID:          issue-3811
 ISSUE:       3811
 TITLE:       Inefficient optimization (regression)
 DESCRIPTION:
+JIRA:        CORE-3450
+FBTEST:      bugs.core_3450
 NOTES:
+  [30.11.2016] pzotov
   It seems that we have regression in current 4.0 snapshots (elapsed time more than 10x comparing with 2.5).
   Also, 4.0 has different plan comparing with 3.0.
   After discuss with dimitr it was decided to commit this test into fbt-repo in order to have constant
   reminder about this issue.
-  Currently this test should FAIL on 4.0!
-JIRA:        CORE-3450
-FBTEST:      bugs.core_3450
+  Currently this test should FAIL on 4.0.
+
+  [22.09.2022] pzotov
+  Removed SKIP notation because test works fine on FB 4.0.1
+  Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.736
 """
 
 import pytest
@@ -102,8 +107,6 @@ expected_stdout = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    if act.is_version('>=4'):
-        pytest.skip("See test NOTES")
     act.expected_stdout = expected_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
