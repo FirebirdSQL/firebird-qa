@@ -8,10 +8,15 @@ DESCRIPTION:
   Confirmed crash on 4.0.0.2377 (Windows and Linux)
   Checked on 4.0.0.2384 - all OK, get STDERR: "unable to allocate memory from operating system"
   NB: currently acceptable value for '-buffers' is limited from 50 to 2147483646.
-[22.12.2021] pcisar
-  Crashes v4.0.0.2496 and 4.0.1.2692 64-bit Linux
 JIRA:        CORE-6509
 FBTEST:      bugs.core_6509
+NOTES:
+    [22.12.2021] pcisar
+    Crashes v4.0.0.2496 and 4.0.1.2692 64-bit Linux
+    [22.09.2022] pzotov
+    No crashes on Windows and Linux (CentOS 7.9.2009).
+    Returned test to be allowed for performing.
+    In case of crash on other systems dump + debug info will be sent to FB team.
 """
 
 import pytest
@@ -29,7 +34,6 @@ expected_stdout = """
 
 pattern_for_page_buffers = re.compile('\\s*Page\\s+buffers\\s+\\d+', re.IGNORECASE)
 
-@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
     act.gstat(switches=['-h'])
