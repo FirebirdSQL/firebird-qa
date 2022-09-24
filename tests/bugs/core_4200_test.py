@@ -22,7 +22,7 @@ act = python_act('db')
 
 expected_stdout_1 = """
 WHO_AM_I                        TMP$C4200_LEG
-AUTH_METHOD                     Legacy_Auth
+AUTH_METHOD                     Leg
 
 WHO_AM_I                        TMP$C4200_SRP
 AUTH_METHOD                     Srp
@@ -31,7 +31,7 @@ AUTH_METHOD                     Srp
 @pytest.mark.version('>=3.0,<4')
 def test_1(act: Action, user_srp: User, user_leg: User, capsys):
     act.expected_stdout = expected_stdout_1
-    check_sql='select mon$user as who_am_i, mon$auth_method as auth_method from mon$attachments'
+    check_sql='select mon$user as who_am_i, left(mon$auth_method,3) as auth_method from mon$attachments'
     custom_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
     #
     with act.db.connect() as con1:
@@ -54,16 +54,16 @@ def test_1(act: Action, user_srp: User, user_leg: User, capsys):
 
 expected_stdout_2 = """
 WHO_AM_I                        TMP$C4200_LEG
-AUTH_METHOD                     Legacy_Auth
+AUTH_METHOD                     Leg
 
 WHO_AM_I                        TMP$C4200_SRP
-AUTH_METHOD                     Srp256
+AUTH_METHOD                     Srp
 """
 
 @pytest.mark.version('>=4.0')
 def test_2(act: Action, user_srp: User, user_leg: User, capsys):
     act.expected_stdout = expected_stdout_2
-    check_sql='select mon$user as who_am_i, mon$auth_method as auth_method from mon$attachments'
+    check_sql='select mon$user as who_am_i, left(mon$auth_method,3) as auth_method from mon$attachments'
     custom_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
     #
     with act.db.connect() as con1:
