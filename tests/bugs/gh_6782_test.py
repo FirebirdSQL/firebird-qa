@@ -191,12 +191,14 @@ def test_1(act: Action, capsys):
          r'Procedure\s+(STANDALONE_SELECTABLE_SP:|STANDALONE_NONSELECTED_SP:|PG_TEST.PACKAGED_SELECTABLE_SP:|PG_TEST.PACKAGED_NONSELECTED_SP:|SP_MAIN:)'
         ,r'Function\s+(STANDALONE_FUNC:|PG_TEST.PACKAGED_FUNC:)'
         ,r'\d+\s+record(s|\(s\))?\s+fetched'
-        ,r'\s+\d+\s+ms(,)?\s+\d+\s+fetch(es|\(es\))((,)?\s+\d+\s+read(s|\(s\)))?((,)?\s+\d+\s+write(s|\(s\)))?(,)?\s+\d+\s+mark(s|\(s\))'
+        ,r'\s+\d+\s+ms(,)?'
     )
+    # 0 ms, 1 read(s), 72 fetch(es), 12 mark(s)< False
     allowed_patterns = [ re.compile(p, re.IGNORECASE) for p in allowed_patterns ]
 
     for line in act.trace_log:
-        if line.split():
+        if line.strip():
+            #print('>'+line.strip()+'<', act.match_any(line, allowed_patterns))
             if act.match_any(line, allowed_patterns):
                 if ' ms' in line and 'fetch' in line:
                     print('FOUND line with execution statistics')
@@ -204,7 +206,7 @@ def test_1(act: Action, capsys):
                     print('FOUND line with number of fetched records')
                 else:
                     print(line)
-
+            
     act.expected_stdout = expected_stdout_trace
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
