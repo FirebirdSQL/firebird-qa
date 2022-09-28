@@ -2297,7 +2297,9 @@ class Action:
         if isinstance(role, Role):
             role = role.name
         if config is not None:
-            return TraceSession(self, config, keep_log=keep_log, encoding=encoding,
+            return TraceSession(self, config, user=_vars_['user'] if user is None else user,
+                                password=_vars_['password'] if password is None else password,
+                                role=role, keep_log=keep_log, encoding=encoding,
                                 encoding_errors=encoding_errors)
         else:
             config = []
