@@ -7,8 +7,12 @@ TITLE:       AV in fbclient when reading blob stored in incompatible encoding
 DESCRIPTION:
 JIRA:        CORE-5464
 FBTEST:      bugs.core_5464
+NOTES:
+    [06.10.2022] pzotov
+        Could not complete adjusting for LINUX in new-qa.
+        DEFERRED.
 """
-
+import platform
 import pytest
 from firebird.qa import *
 
@@ -56,6 +60,7 @@ expected_stderr = """
     Cannot transliterate character between character sets
 """
 
+@pytest.mark.skipif(platform.system() != 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action):
     act.expected_stderr = expected_stderr
