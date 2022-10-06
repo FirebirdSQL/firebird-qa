@@ -61,18 +61,24 @@ db = db_factory(charset='UTF8')
 
 act = python_act('db', substitutions=substitutions)
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 08001
-    I/O error during "ReadFile" operation for file
-    -Error while trying to read from file
-"""
-
 tmp_fdb = temp_file('tmp_gh_2484_trash.tmp')
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_fdb: Path):
     tmp_fdb.write_text( 'ŒåŁä', encoding='utf8' )
+    if act.platform == 'Windows':
+        expected_stdout = """
+            Statement failed, SQLSTATE = 08001
+            I/O error during "ReadFile" operation for file
+            -Error while trying to read from file
+        """
+    else:
+        expected_stdout = """
+            Statement failed, SQLSTATE = 08001
+            I/O error during "read" operation for file
+            -File size is less than expected
+        """
 
-    act.expected_stderr = expected_stderr
-    act.isql(switches=[ str(tmp_fdb), '-q' ], connect_db = False, input = 'select mon$database_name from mon$database;')
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_stdout
+    act.isql( switches=[ str(tmp_fdb), '-q' ], connect_db = False, input = 'select mon$database_name from mon$database;', combine_output = True )
+    assert act.clean_stdout == act.clean_expected_stdout
