@@ -38,8 +38,14 @@ DESCRIPTION:
   (expected: all fields in ITER #2 must be NULL)
 JIRA:        CORE-5685
 FBTEST:      bugs.core_5685
+NOTES:
+    [06.10.2022] pzotov
+        Fails on Linux when run in 'batch' mode (i.e. when pytest has to perform the whole tests set).
+        Can not reproduce fail when run this test 'separately': it passes, but lasts too longm, ~130 s.
+        Test will be re-implemented.
+        DEFERRED.
 """
-
+import platform
 import pytest
 import re
 import subprocess
@@ -145,6 +151,7 @@ hang_script = temp_file('hang_script.sql')
 hang_stdout = temp_file('hang_script.out')
 hang_stderr = temp_file('hang_script.err')
 
+@pytest.mark.skipif(platform.system() != 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action, hang_script: Path, hang_stdout: Path, hang_stderr: Path,
            capsys):
