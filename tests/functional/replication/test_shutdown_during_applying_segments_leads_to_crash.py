@@ -68,8 +68,25 @@ NOTES:
         Success
     
     4. ### ACHTUNG ###
-       On linux test atually "silently" FAILS, without showing any error (but FB process is terminated!).
-       Will be investigated later.
+        On linux test actually "silently" FAILS, without showing any error (but FB process is terminated!).
+        Will be investigated later.
+
+    [06.10.022] pzotov
+        FB crashed on CentOS-7. Sent report to dimitr et al.
+
+        Changed code: attempt to make actions in the 'finally' section more robust.
+        If test fails at some intermediate point then we must not assume
+        that all of its databases (master or replica) are closed.
+
+        Rather, some of them can be opened by engine, so we must change
+        their state to FULL SHUTDOWN before re-creation.
+
+        This means that we must delete DB file by call OS utilities rather
+        than use drop database ("act.db.drop()") - because database now is
+        unavaliable (and reverting to online can be NOT desirable).
+
+        This is only first attempt.
+        Sooner of all, it will be changed many times further.
 
     Checked on 5.0.0.691, 4.0.1.2692 - both CS and SS. Both on Windows and Linux.
 """
