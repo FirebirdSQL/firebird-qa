@@ -5,18 +5,23 @@ ID:          intfunc.string.rpad
 TITLE:       RPAD function, including non-ascii characters
 DESCRIPTION:
 NOTES:
-[03.03.2021]
-  Re-implemented in order to have ability to run this test on Linux.
-  Added tests from some COREs which have no apropriate .fbt
-  Test creates table and fills it with non-ascii characters using charset = UTF8.
-  Then it generates .sql script for running it in separate ISQL process.
-  This script makes connection to test DB using charset = ISO8859_1 and perform needed DML.
-  Result will be redirected to .log which will be opened via codecs.open(...encoding='iso-8859-1').
-  Its content will be converted to UTF8 for showing in expected_stdout.
 FBTEST:      functional.intfunc.string.rpad_01
+NOTES:
+    [03.03.2021] pzotov
+        Re-implemented in order to have ability to run this test on Linux.
+        Added tests from some COREs which have no apropriate .fbt
+        Test creates table and fills it with non-ascii characters using charset = UTF8.
+        Then it generates .sql script for running it in separate ISQL process.
+        This script makes connection to test DB using charset = ISO8859_1 and perform needed DML.
+        Result will be redirected to .log which will be opened via codecs.open(...encoding='iso-8859-1').
+        Its content will be converted to UTF8 for showing in expected_stdout.
+    [06.10.2022] pzotov
+        Could not complete adjustingfor LINUX in new-qa.
+        DEFERRED.
 """
 
 import os
+import platform
 import pytest
 from firebird.qa import *
 
@@ -42,6 +47,7 @@ test_expected_stderr = """
     -expected length 32765, actual 32766
 """
 
+@pytest.mark.skipif(platform.system() != 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     # NB: do NOT include here character "&#173; &shy; soft hyphen"
