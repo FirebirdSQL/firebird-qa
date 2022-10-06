@@ -7,7 +7,7 @@ DESCRIPTION:
   Original test see in:
   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/REF_INT.1.ISQL.script
 
-  This test uses pre-created script ( <QA_ROOT>/files/gtcs-ref-integ.sql ) which creates two
+  This test uses pre-created script ( <QA_ROOT>/files/gtcs-ref-integ-init.sql ) which creates two
   tables with PK/FK referencing constraint(parent = department, child = employee).
   We DROP constraints (first FK, then PK) and verify that one may to do DML with both tables
   which had to be failed before with because of PK/FK violation.

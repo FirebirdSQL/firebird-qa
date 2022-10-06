@@ -7,7 +7,7 @@ DESCRIPTION:
   Original test see in:
   https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/REF_INT.4.ISQL.script
 
-  This test uses pre-created script ( <QA_ROOT>/files/gtcs-ref-integ.sql ) which creates two
+  This test uses pre-created script ( <QA_ROOT>/files/gtcs-ref-integ-init.sql ) which creates two
   tables with PK/FK referencing constraint(parent = department, child = employee).
   FK-constraint uses index with name = 'ref_key', and here we try to:
       * DROP this index;
