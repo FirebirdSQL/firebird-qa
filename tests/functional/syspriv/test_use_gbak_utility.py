@@ -104,7 +104,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, fbk_tmp1: Path, fbk_tmp2:
              insert into att_log(att_id, att_name, att_user, att_role, att_prot, sys_priv_mask)
              select
                   a.mon$attachment_id
-                 ,a.mon$attachment_name
+                 ,upper(a.mon$attachment_name)
                  ,a.mon$user
                  ,v.sys_role_name
                  ,a.mon$remote_protocol
