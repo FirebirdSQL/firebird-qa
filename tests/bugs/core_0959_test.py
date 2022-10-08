@@ -9,6 +9,8 @@ JIRA:        CORE-959
 FBTEST:      bugs.core_0959
 """
 
+import locale
+from firebird.driver import NetProtocol
 import pytest
 from firebird.qa import *
 import re
@@ -33,7 +35,7 @@ substitutions = [('Database ".*', 'Database'),
 
 act = python_act('db', substitutions=substitutions)
 
-expected_stdout = """
+gs_filtered_out = """
     Database "C:\\MIX\\FIREBIRD\\QA\\FBT-REPO\\TMP\\BUGS.CORE_0959.FDB"
     Gstat execution time Fri Nov 17 12:37:29 2017
     Attributes force write
@@ -56,18 +58,28 @@ def test_1(act: Action):
     #
     watched_ptn_list = [hdr_dbname_ptn, hdr_dbattr_ptn, table_ppip_ptn, table_dpaf_ptn,
                         index_root_ptn, gstat_init_ptn, gstat_fini_ptn]
-    #
-    act.expected_stdout = expected_stdout
-    act.gstat(switches=['-d', '-i', '-r'])
-    #
-    matched = []
-    for line in act.stdout.splitlines():
-        for p in watched_ptn_list:
-            if p.search(line):
-                matched.append(' '.join(line.replace('%','[percent_sign]').split()))
-    #
-    actual = '\n'.join(matched)
-    actual = act.clean_string(actual, act.substitutions)
-    assert ('localhost' in act.db.dsn and act.clean_expected_stdout == actual)
 
+    protocols_list = [ NetProtocol.INET, ]
+    if act.platform == 'Windows':
+        protocols_list.append(NetProtocol.XNET)
+        if act.is_version('<5'):
+            protocols_list.append(NetProtocol.WNET)
 
+    # NOTE: firebird process must be started by same user who is currently testing,
+    # otherwise 'permission denied' can raise on attempt to open test DB by gstat.
+    protocols_list = [ 1, ]
+    for p in protocols_list:
+        act.expected_stdout = gs_filtered_out
+        #act.gstat(switches=['-d', '-i', '-r', p.name.lower() + '://' + str(act.db.db_path) ], io_enc = locale.getpreferredencoding(), connect_db = False)
+        act.gstat(switches=['-d', '-i', '-r' ], io_enc = locale.getpreferredencoding())
+        #
+        matched = []
+        for line in act.stdout.splitlines():
+            for p in watched_ptn_list:
+                if p.search(line):
+                    matched.append(' '.join(line.replace('%','[percent_sign]').split()))
+        #
+        actual = '\n'.join(matched)
+        actual = act.clean_string(actual, act.substitutions)
+        assert ('localhost' in act.db.dsn and act.clean_expected_stdout == actual)
+        act.reset()
