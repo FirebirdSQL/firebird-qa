@@ -44,11 +44,14 @@ sp_definer_ddl = """
     as
     begin
         execution_context = rdb$get_context('SYSTEM', 'EFFECTIVE_USER');
-        for
-            select mon$user, mon$attachment_id
-            from mon$attachments a
-            where a.mon$system_flag is distinct from 1 and a.mon$attachment_id != current_connection
-        into
+        for 
+            select a.mon$user, a.mon$attachment_id 
+            from mon$attachments a 
+            where
+                a.mon$system_flag is distinct from 1
+                and a.mon$attachment_id != current_connection
+            order by a.mon$attachment_id 
+        into 
             another_name,
             another_conn_id
         do suspend;
@@ -60,14 +63,15 @@ sp_invoker_ddl = """
     as
     begin
         execution_context = rdb$get_context('SYSTEM', 'EFFECTIVE_USER');
-        for
-            select mon$user, mon$attachment_id
-            from mon$attachments a
-            where
-                a.mon$system_flag is distinct from 1
+        for 
+            select a.mon$user, a.mon$attachment_id 
+            from mon$attachments a 
+            where 
+                a.mon$system_flag is distinct from 1 
                 and a.mon$attachment_id != current_connection
                 and a.mon$user = current_user
-        into
+            order by a.mon$attachment_id 
+        into 
             another_name,
             another_conn_id
         do suspend;
