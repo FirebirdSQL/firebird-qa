@@ -27,6 +27,7 @@ NOTES:
     Test was totally re-implemented. No async call of ISQL, waiting/killing etc.
 
     Checked on Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.591
+    Checked on Linux: 4.0.1.2692 (SS/CS) - needed to increase number of rows to be sorted.
 """
 
 import subprocess
@@ -95,7 +96,13 @@ def result_msg(a_diff_value, a_min_threshold):
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
 
-    heavy_sql_sttm = "select /* HEAVY_SORT_TAG */ distinct lpad('', 32500, uuid_to_char(gen_uuid())) s from (select 1 i from rdb$types rows 100) a, (select 1 i from rdb$types rows 100) b"
+    ##################
+    ROWS_TO_BE_SORTED = 10000
+    MIN_DIFF_THRESHOLD = 10000000 if 'classic' in act.vars['server-arch'].lower() else 60000000
+    ##################
+    
+    heavy_sql_sttm = "with a as (select 1 i from rdb$types rows 200) select /* HEAVY_SORT_TAG */ distinct lpad('', 32500, uuid_to_char(gen_uuid())) s from a x, a y"
+    #heavy_sql_sttm = "select /* HEAVY_SORT_TAG */ guid_str from sp_produce_guid(5000) order by 1"
     
     map_result = {}
     with act.db.connect() as con_worker:
@@ -113,7 +120,7 @@ def test_1(act: Action, capsys):
        
             if m == 'beg':
                 cur_worker.execute(cur_wrk_ps)
-                for i in range(0, 5000):
+                for i in range(0, ROWS_TO_BE_SORTED):
                     r = cur_worker.fetchone()
 
                 # After this loop statement with huge sort will remain in stalled state
@@ -128,9 +135,6 @@ def test_1(act: Action, capsys):
     expected_msg = 'DELTA of mon$memory_used increased significantly.'
     diff = map_result['end'][1] - map_result['beg'][1]
 
-    ##################
-    MIN_DIFF_THRESHOLD = 10000000 if 'classic' in act.vars['server-arch'].lower() else 60000000
-    ##################
     if diff > MIN_DIFF_THRESHOLD:
         print(expected_msg)
     else:
