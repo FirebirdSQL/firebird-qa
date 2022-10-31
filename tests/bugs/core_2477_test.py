@@ -114,9 +114,11 @@ def test_1(act: Action, capsys):
             with act.db.connect() as con_monitor:
                 cur_monitor=con_monitor.cursor()
                 cur_monitor.execute('select * from v_gather_mon')
-
+                
                 for r in cur_monitor:
                     map_result[m] = (r[3], r[7]) # ('idle' | 'stalled', memo_used)
+
+                assert map_result.get(m), f"No rows returned from v_gather_mon for m='{m}'"
        
             if m == 'beg':
                 cur_worker.execute(cur_wrk_ps)
