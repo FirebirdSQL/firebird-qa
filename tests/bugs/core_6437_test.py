@@ -24,8 +24,13 @@ DESCRIPTION:
   DO NOT change this value to some "really too big" value otherwise it will fail with "unable to allocate memory"!
 JIRA:        CORE-6437
 FBTEST:      bugs.core_6437
+NOTES:
+    [08.10.2022] pzotov
+        4.0.1.2692
+        Fails on CentOS-7.9.2009 "with unable to allocate memory from operating system"
+        Decided to restrict execution on Windows only.
 """
-
+import platform
 import pytest
 from pathlib import Path
 from firebird.qa import *
@@ -42,6 +47,7 @@ expected_stdout = """
 
 test_db = temp_file('tmp_gfix_6437.fdb')
 
+@pytest.mark.skipif(platform.system() != 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0.8')
 def test_1(act: Action, test_db: Path):
     act.isql(switches=['-q'], connect_db=False,
