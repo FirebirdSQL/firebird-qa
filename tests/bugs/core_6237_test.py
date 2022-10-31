@@ -30,6 +30,8 @@ NOTES:
         Fails on Windows 4.0.1 with ratio 1.98 - raw iron W10, does not fail with Linux on the same HW
     [16.09.2022] pzotov
         Checked on Windows and Linux, 4.0.1.2692, 3.0.8.33535.
+    [07.10.2022] pzotov
+    2DO: WireCrypt must be disabled for this test. Custom driver-config object must be used for DPB.
 """
 
 import pytest
