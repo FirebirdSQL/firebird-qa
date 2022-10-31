@@ -79,12 +79,12 @@ def test_1(act: Action, tmp_user_freq: User, tmp_user_rare: User, tmp_cleaner_ro
     # [doc] state of external connections pool could be queried using ...:
     # - EXT_CONN_POOL_SIZE			pool size
     # - EXT_CONN_POOL_LIFETIME		idle connection lifetime, in seconds
-    ECP_LIFE = -1
+    ECP_SIZE, ECP_LIFE = -1, -1
     with act.db.connect() as con:
         with con.cursor() as cur:
-            cur.execute("select rdb$get_context('SYSTEM', 'EXT_CONN_POOL_LIFETIME') from rdb$database")
-            ECP_LIFE = int(cur.fetchone()[0])
-    assert ECP_LIFE > 0;
+            cur.execute("select cast(rdb$get_context('SYSTEM', 'EXT_CONN_POOL_SIZE') as int), cast(rdb$get_context('SYSTEM', 'EXT_CONN_POOL_LIFETIME') as int) from rdb$database")
+            ECP_SIZE, ECP_LIFE = cur.fetchone()
+    assert ECP_SIZE > 1;
 
     SERVER_MODE = act.get_server_architecture()
     sql_init = f'''
