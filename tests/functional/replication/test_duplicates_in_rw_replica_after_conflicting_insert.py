@@ -33,11 +33,6 @@ DESCRIPTION:
     thus metadata difference must not be issued.
 
     Confirmed bug on 5.0.0.63, 4.0.0.2508 (date of both snapshots: 08-jun-2021, i.e. just before fix).
-    Checked on:
-        5.0.0.85 SS: 34.951s.
-        5.0.0.85 CS: 36.813s.
-        4.0.1.2520 SS: 38.939s.
-        4.0.1.2519 CS: 32.376s.
 FBTEST:      tests.functional.replication.duplicates_in_rw_replica_after_conflicting_insert
 NOTES:
     [25.08.2022] pzotov
@@ -53,8 +48,6 @@ NOTES:
 
     Checked on 5.0.0.623, 4.0.1.2692 - both CS and SS. Both on Windows and Linux.
 """
-
-
 import os
 import shutil
 import re
