@@ -27,10 +27,15 @@ DESCRIPTION:
   It was encountered that in FB 3.0.3 Classic lines 2..4 appear TWICE. See note in the ticket, 16/Jan/18 05:08 PM
 JIRA:        CORE-5706
 FBTEST:      bugs.core_5706
+NOTES:
+    [15.09.2022] pzotov
+    Full trace config must be passed to act.trace() rather than only trace items.
+    Checked on Linux and Windows: 3.0.8.33535, 4.0.1.2692
 """
+import locale
+from difflib import unified_diff
 
 import pytest
-from difflib import unified_diff
 from firebird.qa import *
 
 db = db_factory()
