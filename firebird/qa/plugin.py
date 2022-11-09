@@ -482,6 +482,9 @@ def pytest_collection_modifyitems(session, config, items):
             item.user_properties.append(("id", item._qa_id_))
             item.user_properties.append(("fbtest", item._qa_pytest_))
             item.user_properties.append(("issue", item._qa_issue_))
+            item.user_properties.append(("title", item._qa_title_))
+            item.user_properties.append(("description", item._qa_description_))
+            item.user_properties.append(("notes", item._qa_notes_))
 
 def substitute_macros(text: str, macros: Dict[str, str]):
     """Helper function to substitute `$(name)` macros in text.
