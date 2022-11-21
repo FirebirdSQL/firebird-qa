@@ -58,7 +58,7 @@ from threading import Thread, Barrier
 from firebird.driver import connect, connect_server, create_database, driver_config, \
      NetProtocol, Server, CHARSET_MAP, Connection, Cursor, \
      DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope, DbInfoCode, \
-     DbWriteMode, get_api
+     DbWriteMode, get_api, Error
 from firebird.driver.core import _connect_helper
 
 Substitutions = List[Tuple[str, str]]
@@ -674,7 +674,7 @@ class Database:
             print(result.stdout)
             print(f"-- stderr {'-' * 20}")
             print(result.stderr)
-            raise Exception("Database init script execution failed")
+            raise Error("Database init script execution failed", stderr=result.stderr)
         return result
     def drop(self) -> None:
         """Drop the test database.
@@ -804,7 +804,12 @@ def db_factory(*, filename: str='test.fdb', init: Optional[str]=None,
             if async_write:
                 db.set_async_write()
             if init: # Do not check for None, we want to skip empty scripts as well
-                db.init(init)
+                try:
+                    db.init(init)
+                except Error as exc:
+                    if hasattr(exc, 'stderr'):
+                        request.node.user_properties.append(("dbinit-stderr", exc.stderr))
+                    raise
         yield db
         if not do_not_drop:
             db.drop()

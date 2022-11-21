@@ -4,6 +4,12 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.17.1
+==============
+
+* When database initialization script fails, the XML output is extended with `dbinit-stderr`
+  property that contains `stderr` output with errors reported by ISQL.
+
 Version 0.17.0
 ==============
 
