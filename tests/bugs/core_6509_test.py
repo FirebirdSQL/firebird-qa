@@ -34,7 +34,7 @@ expected_stdout = """
 
 pattern_for_page_buffers = re.compile('\\s*Page\\s+buffers\\s+\\d+', re.IGNORECASE)
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=9.0')
 def test_1(act: Action, capsys):
     act.gstat(switches=['-h'])
     print(act.stdout)
