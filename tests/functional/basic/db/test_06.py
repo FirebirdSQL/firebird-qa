@@ -5,6 +5,14 @@ ID:          new-database-06
 TITLE:       New DB - RDB$FIELD_DIMENSIONS
 DESCRIPTION: Check for correct content of RDB$FIELD_DIMENSIONS in new database.
 FBTEST:      functional.basic.db.06
+NOTES:
+[17.01.2023] pzotov
+    DISABLED after discussion with dimitr, letters 17-sep-2022 11:23.
+    Reasons:
+        * There is no much sense to keep such tests because they fails extremely often during new major FB developing.
+        * There is no chanse to get successful outcome for the whole test suite is some of system table became invalid,
+          i.e. lot of other tests will be failed in such case.
+    Single test for check DDL (type of columns, their order and total number) will be implemented for all RDB-tables.
 """
 
 import pytest
@@ -24,7 +32,8 @@ expected_stdout = """
     Records affected: 0
 """
 
-@pytest.mark.version('>=3')
+#@pytest.mark.version('>=3')
+@pytest.mark.skip("DISABLED: see notes")
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute()

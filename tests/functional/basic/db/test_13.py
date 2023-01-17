@@ -5,12 +5,20 @@ ID:          new-database-13
 TITLE:       New DB - RDB$GENERATORS
 DESCRIPTION: Check for correct content of RDB$GENERATORS in empty database.
 NOTES:
-[28.10.2015]
-  1. Removed from comparison values of RDB$SECURITY_CLASS because its values often differ in 3.0 recent builds.
-  2. Field rdb$description has been moved at the end of output (select) list.
-  3. Added query to select FIELDS list of table because main check does not use asterisk
-     and we have to know if DDL of table will have any changes in future.
 FBTEST:      functional.basic.db.13
+NOTES:
+[28.10.2015]
+    1. Removed from comparison values of RDB$SECURITY_CLASS because its values often differ in 3.0 recent builds.
+    2. Field rdb$description has been moved at the end of output (select) list.
+    3. Added query to select FIELDS list of table because main check does not use asterisk
+       and we have to know if DDL of table will have any changes in future.
+[17.01.2023] pzotov
+    DISABLED after discussion with dimitr, letters 17-sep-2022 11:23.
+    Reasons:
+        * There is no much sense to keep such tests because they fails extremely often during new major FB developing.
+        * There is no chanse to get successful outcome for the whole test suite is some of system table became invalid,
+          i.e. lot of other tests will be failed in such case.
+    Single test for check DDL (type of columns, their order and total number) will be implemented for all RDB-tables.
 """
 
 import pytest
@@ -156,7 +164,8 @@ expected_stdout = """
     Records affected: 11
 """
 
-@pytest.mark.version('>=3.0')
+#@pytest.mark.version('>=3.0')
+@pytest.mark.skip("DISABLED: see notes")
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute()

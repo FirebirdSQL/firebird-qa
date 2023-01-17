@@ -6,12 +6,19 @@ TITLE:       New DB - RDB$RELATIONS content
 DESCRIPTION: Check the correct content of RDB$RELATIONS in new database.
 NOTES:
 [28.10.2015]
-  1. Removed from output BLOB IDs for fields rdb$security_class and rdb$default_class - they changes very often.
-  2. Added blocks to 'substitution' section to:
-  2.1  Suppress possible differences when check IDs of all BLOB fields.
-  2.2. Ignore values of IDs in lines like "trigger_name: RDB$TRIGGER_**".
-  3. Added query to select FIELDS list of table because main check does not use asterisk
-  and we have to know if DDL of table will have any changes in future.
+    1. Removed from output BLOB IDs for fields rdb$security_class and rdb$default_class - they changes very often.
+    2. Added blocks to 'substitution' section to:
+    2.1  Suppress possible differences when check IDs of all BLOB fields.
+    2.2. Ignore values of IDs in lines like "trigger_name: RDB$TRIGGER_**".
+    3. Added query to select FIELDS list of table because main check does not use asterisk
+    and we have to know if DDL of table will have any changes in future.
+[17.01.2023] pzotov
+    DISABLED after discussion with dimitr, letters 17-sep-2022 11:23.
+    Reasons:
+        * There is no much sense to keep such tests because they fails extremely often during new major FB developing.
+        * There is no chanse to get successful outcome for the whole test suite is some of system table became invalid,
+          i.e. lot of other tests will be failed in such case.
+    Single test for check DDL (type of columns, their order and total number) will be implemented for all RDB-tables.
 FBTEST:      functional.basic.db.23
 """
 
@@ -1113,7 +1120,8 @@ BLOB_ID_EXT_DESCR
 Records affected: 50
 """
 
-@pytest.mark.version('>=3.0,<4.0')
+#@pytest.mark.version('>=3.0,<4.0')
+@pytest.mark.skip("DISABLED: see notes")
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_1
     act.execute()
@@ -2215,7 +2223,8 @@ BLOB_ID_EXT_DESCR
 Records affected: 54
 """
 
-@pytest.mark.version('>=4.0,<5.0')
+#@pytest.mark.version('>=4.0,<5.0')
+@pytest.mark.skip("DISABLED: see notes")
 def test_2(act: Action):
     act.expected_stdout = expected_stdout_2
     act.execute()
@@ -3344,7 +3353,8 @@ BLOB_ID_EXT_DESCR
 Records affected: 56
 """
 
-@pytest.mark.version('>=5.0')
+#@pytest.mark.version('>=5.0')
+@pytest.mark.skip("DISABLED: see notes")
 def test_3(act: Action):
     act.expected_stdout = expected_stdout_3
     act.execute()

@@ -4,13 +4,20 @@
 ID:          new-database-16
 TITLE:       New DB - RDB$INDICES content
 DESCRIPTION: Check the correct content of RDB$INDICES in new database.
+FBTEST:      functional.basic.db.16
 NOTES:
 [28.10.2015]
-  Added blocks in subst-section in order to ignore concrete values in RBD$INDEX_** (i.e. suffixes).
-  Moved all BLOB fields at the end of output, suppress comparison of their IDs.
-  Added query to select FIELDS list of table because main check does not use asterisk
-  and we have to know if DDL of table will have any changes in future.
-FBTEST:      functional.basic.db.16
+    Added blocks in subst-section in order to ignore concrete values in RBD$INDEX_** (i.e. suffixes).
+    Moved all BLOB fields at the end of output, suppress comparison of their IDs.
+    Added query to select FIELDS list of table because main check does not use asterisk
+    and we have to know if DDL of table will have any changes in future.
+[17.01.2023] pzotov
+    DISABLED after discussion with dimitr, letters 17-sep-2022 11:23.
+    Reasons:
+        * There is no much sense to keep such tests because they fails extremely often during new major FB developing.
+        * There is no chanse to get successful outcome for the whole test suite is some of system table became invalid,
+          i.e. lot of other tests will be failed in such case.
+    Single test for check DDL (type of columns, their order and total number) will be implemented for all RDB-tables.
 """
 
 import pytest
@@ -830,7 +837,8 @@ expected_stdout_1 = """
     Records affected: 54
 """
 
-@pytest.mark.version('>=3.0,<4.0')
+#@pytest.mark.version('>=3.0,<4.0')
+@pytest.mark.skip("DISABLED: see notes")
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_1
     act.execute()
@@ -1658,7 +1666,8 @@ expected_stdout_2 = """
     Records affected: 57
 """
 
-@pytest.mark.version('>=4.0')
+#@pytest.mark.version('>=4.0')
+@pytest.mark.skip("DISABLED: see notes")
 def test_2(act: Action):
     act.expected_stdout = expected_stdout_2
     act.execute()
