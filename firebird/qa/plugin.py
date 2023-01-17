@@ -54,11 +54,11 @@ from configparser import ConfigParser, ExtendedInterpolation
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse
 import time
-from threading import Thread, Barrier
+from threading import Thread, Barrier, Event
 from firebird.driver import connect, connect_server, create_database, driver_config, \
      NetProtocol, Server, CHARSET_MAP, Connection, Cursor, \
      DESCRIPTION_NAME, DESCRIPTION_DISPLAY_SIZE, DatabaseConfig, DBKeyScope, DbInfoCode, \
-     DbWriteMode, get_api, Error
+     DbWriteMode, get_api, Error, TIMEOUT
 from firebird.driver.core import _connect_helper
 
 Substitutions = List[Tuple[str, str]]
@@ -1077,7 +1077,7 @@ def user_factory(db_fixture_name: str, *, name: str, password: str='', plugin: O
 
 def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], keep_log: bool,
                  encoding: str, encoding_errors: str, user: str, password: str,
-                 role: str):
+                 role: str, stop: Event):
     """Function used by `TraceSession` for execution in separate thread to run trace session.
 
     Arguments:
@@ -1088,14 +1088,22 @@ def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], kee
         keep_log: When `True`, the trace session output is discarded.
         encoding: Encoding for trace session output.
         encoding_errors: Error handler for trace session output encoding.
+        user: user name
+        password: User password
+        role: User role
+        stop: Event used to stop the trace thread
     """
     with act.connect_server(encoding=encoding, encoding_errors=encoding_errors,
                             user=user, password=password) as srv:
         output.append(srv.trace.start(config='\n'.join(cfg)))
         b.wait()
-        for line in srv:
-            if keep_log:
-                output.append(line)
+        while not stop.is_set():
+            line = srv.readline_timed(1)
+            if line is not TIMEOUT:
+                if not line:
+                    stop.set()
+                elif keep_log:
+                    output.append(line)
 
 class TraceSession:
     """Object to manage Firebird trace session.
@@ -1145,6 +1153,7 @@ class TraceSession:
         self.encoding: Optional[str] = encoding
         #: Encoding errors handling for trace session output.
         self.encoding_errors: Optional[str] = encoding_errors
+        self.stop_event: Event = Event()
     def __enter__(self) -> TraceSession:
         b = Barrier(2)
         self.trace_thread = Thread(target=trace_thread, args=[self.act, b, self.config,
@@ -1152,7 +1161,7 @@ class TraceSession:
                                                               self.encoding,
                                                               self.encoding_errors,
                                                               self.user, self.password,
-                                                              self.role])
+                                                              self.role, self.stop_event])
         self.trace_thread.start()
         b.wait()
         return self
@@ -1161,6 +1170,7 @@ class TraceSession:
         session = self.output.pop(0)
         with self.act.connect_server() as srv:
             srv.trace.stop(session_id=session)
+            self.stop_event.set()
             self.trace_thread.join(5.0)
             if self.trace_thread.is_alive():
                 pytest.fail('Trace thread still alive')

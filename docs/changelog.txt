@@ -4,6 +4,13 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.17.2
+==============
+
+* Trace session support in plugin now uses service query with timeout (provided by
+  firebird-driver 1.8.0) and terminates the trace thread gracefuly even if terminating
+  trace session fails.
+
 Version 0.17.1
 ==============
 

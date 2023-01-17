@@ -19,14 +19,14 @@ import sphinx_bootstrap_theme
 # -- Project information -----------------------------------------------------
 
 project = 'Firebird QA'
-copyright = '2022, Pavel Cisar'
+copyright = '2021, Pavel Cisar'
 author = 'Pavel Císař'
 
 # The short X.Y version
-version = '0.17.1'
+version = '0.17.2'
 
 # The full version, including alpha/beta/rc tags
-release = '0.17.1'
+release = '0.17.2'
 
 
 # -- General configuration ---------------------------------------------------
