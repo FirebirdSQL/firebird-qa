@@ -837,7 +837,7 @@ expected_stdout_1 = """
     Records affected: 54
 """
 
-#@pytest.mark.version('>=3.0,<4.0')
+@pytest.mark.version('>=3.0,<4.0')
 @pytest.mark.skip("DISABLED: see notes")
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_1
@@ -1666,7 +1666,7 @@ expected_stdout_2 = """
     Records affected: 57
 """
 
-#@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=4.0')
 @pytest.mark.skip("DISABLED: see notes")
 def test_2(act: Action):
     act.expected_stdout = expected_stdout_2

@@ -4698,7 +4698,7 @@ RDB$OWNER_NAME                  SYSDBA
 Records affected: 150
 """
 
-#@pytest.mark.version('>=3.0,<4.0')
+@pytest.mark.version('>=3.0,<4.0')
 @pytest.mark.skip("DISABLED: see notes")
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_1
@@ -9999,7 +9999,7 @@ Records affected: 170
 """
 
 @pytest.mark.skip("DISABLED: see notes")
-#@pytest.mark.version('>=4.0,<5.0')
+@pytest.mark.version('>=4.0,<5.0')
 def test_2(act: Action):
     act.expected_stdout = expected_stdout_2
     act.execute()
@@ -14840,7 +14840,7 @@ expected_stdout_3 = """
     Records affected: 172
 """
 
-#@pytest.mark.version('>=5.0')
+@pytest.mark.version('>=5.0')
 @pytest.mark.skip("DISABLED: see notes")
 def test_3(act: Action):
     act.expected_stdout = expected_stdout_3

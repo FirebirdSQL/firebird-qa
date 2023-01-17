@@ -1570,7 +1570,7 @@ expected_stdout_1 = """
     RDB$SYSTEM_FLAG                 1
 """
 
-#@pytest.mark.version('>=3.0,<4.0')
+@pytest.mark.version('>=3.0,<4.0')
 @pytest.mark.skip("DISABLED: see notes")
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_1
@@ -4874,7 +4874,8 @@ expected_stdout_3 = """
     Records affected: 1
 """
 
-#@pytest.mark.skip("DISABLED: see notes")
+@pytest.mark.version('>=5.0')
+@pytest.mark.skip("DISABLED: see notes")
 def test_3(act: Action):
     act.expected_stdout = expected_stdout_3
     act.execute()

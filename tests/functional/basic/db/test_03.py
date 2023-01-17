@@ -1842,7 +1842,7 @@ expected_stdout = """
     Records affected: 149
 """
 
-#@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=3.0')
 @pytest.mark.skip("DISABLED: see notes")
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
