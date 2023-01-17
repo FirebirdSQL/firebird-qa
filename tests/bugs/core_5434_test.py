@@ -2,8 +2,8 @@
 
 """
 ID:          issue-5706
-ISSUE:       5706Read-only transactions in SuperServer could avoid immediate write of Header
-  and TIP pages after changeIncorrect results when left join on subquery with constant column
+ISSUE:       5706
+TITLE:       Read-only transactions in SuperServer could avoid immediate write of Header and TIP pages after change
 DESCRIPTION:
   If current FB arch is SuperServer then we:
     1. We make 'snapshot' of mon$io_stats.mon$page_writes value before test and then launch plently transactions (e.g, 50)
