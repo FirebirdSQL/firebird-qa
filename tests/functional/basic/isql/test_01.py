@@ -27,7 +27,9 @@ db = db_factory()
 
 act = isql_act('db', 'show database;', substitutions=substitutions)
 
-expected_stdout_1 = """
+# ---===+++---===+++---===+++---===+++---===+++---===+++
+
+expected_stdout_3x = """
     Database: localhost:test.fdb
     Owner: SYSDBA
     PAGE_SIZE 8192
@@ -48,13 +50,14 @@ expected_stdout_1 = """
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout_1
+    act.expected_stdout = expected_stdout_3x
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
 
-# version: 4.0
+# ---===+++---===+++---===+++---===+++---===+++---===+++
 
-expected_stdout_2 = """
+# version: 4.0
+expected_stdout_4x = """
     Database: localhost:test.fdb
     Owner: SYSDBA
     PAGE_SIZE 8192
@@ -71,19 +74,21 @@ expected_stdout_2 = """
     Database not encrypted
     Wire crypt plugin:
     Creation date: Sep 10, 2021 14:43:52
+    Replica mode: NONE
     Protocol version = 17
     Default Character set: NONE
 """
 
 @pytest.mark.version('>=4.0,<5.0')
 def test_2(act: Action):
-    act.expected_stdout = expected_stdout_2
+    act.expected_stdout = expected_stdout_4x
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
 
-# version: 5.0
+# ---===+++---===+++---===+++---===+++---===+++---===+++
 
-expected_stdout_3 = """
+# version: 5.0
+expected_stdout_5x = """
     Database: localhost:test.fdb
     Owner: SYSDBA
     PAGE_SIZE 8192
@@ -106,6 +111,6 @@ expected_stdout_3 = """
 
 @pytest.mark.version('>=5.0')
 def test_3(act: Action):
-    act.expected_stdout = expected_stdout_3
+    act.expected_stdout = expected_stdout_5x
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
