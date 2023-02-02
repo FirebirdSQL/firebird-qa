@@ -19,18 +19,13 @@ NOTES:
 
     Regression can be reproduced on:
         * FB 3.0.11.33654 (17-jan-2023): "SQLSTATE = 3B000 / Unable to find savepoint with name S in transaction context".
-        * FB 5.0.0.907 (12-jan-2023): "consistency check (decompression overran buffer (179), file: sqz.cpp line: 487)"
     Checked on:
-        3.0.11.33658; 4.0.3.2894 -- all fine.
-
-    ::: ACHTUNG :::
-    Build 5.0.0.920 (01-feb-2022): still has a problem with BUGCHECK, see above for 5.0.0.907. 
+        3.0.11.33658; 4.0.3.2894;  5.0.0.920 -- all fine.
 """
 
 import pytest
 import locale
 from firebird.qa import *
-from firebird.driver import TraAccessMode, TPB
 
 db = db_factory()
 act = python_act('db')
