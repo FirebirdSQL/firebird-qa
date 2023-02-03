@@ -15,7 +15,7 @@ NOTES:
     [01.02.2023] pzotov
     This test checks regression that was introduced by first attempt to solve problem described in the title.
     SQL example was provided by dimitr, see letter 31-jan-2023 13:43. Running SQL script must NOT issue any output.
-    There is NO_FBT analog for this test.
+    There is no similar test in old fbtest QA suite.
 
     Regression can be reproduced on:
         * FB 3.0.11.33654 (17-jan-2023): "SQLSTATE = 3B000 / Unable to find savepoint with name S in transaction context".
