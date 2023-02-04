@@ -20,7 +20,7 @@ NOTES:
     Regression can be reproduced on:
         * FB 3.0.11.33654 (17-jan-2023): "SQLSTATE = 3B000 / Unable to find savepoint with name S in transaction context".
     Checked on:
-        3.0.11.33658; 4.0.3.2894;  5.0.0.920 -- all fine.
+        3.0.11.33658; 4.0.3.2894; 5.0.0.920 - all fine.
 """
 
 import pytest
