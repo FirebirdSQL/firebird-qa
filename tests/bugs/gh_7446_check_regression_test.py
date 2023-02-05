@@ -12,7 +12,7 @@ DESCRIPTION:
     them after commit/rollback in metadata cache is bad idea.
 
 NOTES:
-    [01.02.2023] pzotov
+    [01.02.2023] pzotov.
     This test checks regression that was introduced by first attempt to solve problem described in the title.
     SQL example was provided by dimitr, see letter 31-jan-2023 13:43. Running SQL script must NOT issue any output.
     There is no similar test in old fbtest QA suite.
