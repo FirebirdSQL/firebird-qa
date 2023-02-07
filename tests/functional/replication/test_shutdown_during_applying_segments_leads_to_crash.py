@@ -291,10 +291,10 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         # N_ROWS = 30'000:
         #     FW = ON ==>
         #         Added 2 segment(s) to the processing queue
-        #         Segment 1 (16783004 bytes) is replicated in 1 minute(s), preserving the file due to 1 active transaction(s) (oldest: 10 in segment 1)
+        #         Segment 1 (16783004 bytes) is replicated in 1 minute(s), preserving the file due to 1 active transaction(s) ...
         #         Segment 2 (4667696 bytes) is replicated in 55 second(s), deleting the file
         #     FW = OFF ==>
-    	#         Segment 1 (16783004 bytes) is replicated in 1 second(s), preserving the file due to 1 active transaction(s) (oldest: 10 in segment 1)
+    	#         Segment 1 (16783004 bytes) is replicated in 1 second(s), preserving the file due to 1 active transaction(s) ...
     	#         Segment 2 (4667696 bytes) is replicated in 374 ms, deleting the file
 
         act_db_main.db.set_async_write()
@@ -352,15 +352,16 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
 
         with act_db_repl.connect_server() as srv:
 
-            try:
-                # 5.0.0.215:
-                # 335544344 : I/O error during "WriteFile" operation for file "<db_repl_file.fdb>"
-                # 335544737 : Error while trying to write to file
-                srv.database.set_write_mode(database=act_db_repl.db.db_path
-                                            , mode=DbWriteMode.ASYNC
-                                           )
-            except:
-                pass
+            # DISABLED 07.02.2023, after discussion with dimitr.
+            #try:
+            #    # 5.0.0.215:
+            #    # 335544344 : I/O error during "WriteFile" operation for file "<db_repl_file.fdb>"
+            #    # 335544737 : Error while trying to write to file
+            #    srv.database.set_write_mode(database=act_db_repl.db.db_path
+            #                                , mode=DbWriteMode.ASYNC
+            #                               )
+            #except:
+            #    pass
 
             #try:
             # 5.0.0.215:
