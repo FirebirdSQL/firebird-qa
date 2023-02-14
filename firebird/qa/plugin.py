@@ -37,7 +37,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Union, Optional, Tuple, Sequence
+from typing import List, Dict, Union, Optional, Tuple, Sequence, Set
 import sys
 import locale
 import os
@@ -97,6 +97,47 @@ def log_session_context(record_testsuite_property):
         record_testsuite_property('architecture', _vars_['arch'])
         record_testsuite_property('mode', _vars_['server-arch'])
 
+class DbCache:
+    """Cache for empty databases.
+    """
+    def __init__(self):
+        self.cache: Path = _vars_['dbcache']
+        self.databases: Dict[str, Path] = {}
+        for db in self.cache.glob('**/*.fdb'):
+            self.databases[db.stem] = db
+    def get_db(self, page_size: Optional[int]=None, sql_dialect: Optional[int]=None,
+               charset: Optional[str] = None) -> Optional[Path]:
+        """Returns path to cached database or None if database is not in cache.
+
+        Arguments:
+          page_size: Database page size.
+          sql_dialect: Database SQL dialect.
+          charset: Database character set.
+        """
+        return self.databases.get(f"db-{_vars_['ods'][0]}.{_vars_['ods'][1]}-{page_size}-{sql_dialect}-{charset}")
+    def store_db(self, src_path: Path, page_size: Optional[int]=None,
+                 sql_dialect: Optional[int]=None, charset: Optional[str] = None) -> None:
+        """Copy database to cache.
+
+        Arguments:
+          page_size: Database page size.
+          sql_dialect: Database SQL dialect.
+          charset: Database character set.
+        """
+        db_name = f"db-{_vars_['ods'][0]}.{_vars_['ods'][1]}-{page_size}-{sql_dialect}-{charset}.fdb"
+        db_path = self.cache / db_name
+        shutil.copyfile(src_path, db_path)
+        # Fix permissions
+        if platform.system != 'Windows':
+            os.chmod(db_path, 33206)
+        self.databases[db_name] = db_path
+
+@pytest.fixture(scope='session', autouse=True)
+def db_cache() -> DbCache:
+    """Database cache for empty databases.
+    """
+    return DbCache()
+
 class ExecutionError(Exception):
     """Exception used to indicate errors when external QA tools (like isql, gstat etc.) are executed.
     """
@@ -114,6 +155,8 @@ def pytest_addoption(parser, pluginmanager):
     grp.addoption('--protocol',
                   choices=[i.name.lower() for i in NetProtocol],
                   help="Network protocol used for database attachments")
+    grp.addoption('--disable-db-cache', action='store_true', default=False,
+                  help="Disable cache for empty databases")
     grp.addoption('--runslow', action='store_true', default=False, help="Run slow tests")
     grp.addoption('--save-output', action='store_true', default=False, help="Save test std[out|err] output to files")
     grp.addoption('--skip-deselected', choices=[SKIP_PLATFORM, SKIP_VERSION, SKIP_ANY],
@@ -130,6 +173,7 @@ def pytest_report_header(config):
             f"  encodings: sys:{sys.getdefaultencoding()} locale:{locale.getpreferredencoding()} filesystem:{sys.getfilesystemencoding()}",
             "Firebird:",
             f"  configuration: {_vars_['driver-config']}",
+            f"  ODS: {_vars_['ods'][0]}.{_vars_['ods'][1]}",
             f"  server: {_vars_['server']} [v{_vars_['version']}, {_vars_['server-arch']}, {_vars_['arch']}]",
             f"  home: {_vars_['home-dir']}",
             f"  bin: {_vars_['bin-dir']}",
@@ -285,9 +329,15 @@ def pytest_configure(config):
     driver_config.register_database('pytest')
     #
     _vars_['driver-config'] = config.getoption('driver_config')
+    _vars_['dbcache-disabled'] = config.getoption('disable_db_cache')
     _vars_['basetemp'] = config.getoption('basetemp')
     _vars_['runslow'] = config.getoption('runslow')
     _vars_['root'] = config.rootpath
+    path: Path = config.rootpath / 'dbcache'
+    path.mkdir(exist_ok=True)
+    if platform.system != 'Windows':
+        path.chmod(16895)
+    _vars_['dbcache'] = path if path.is_dir() else config.rootpath
     path = config.rootpath / 'databases'
     _vars_['databases'] = path if path.is_dir() else config.rootpath
     path = config.rootpath / 'backups'
@@ -347,6 +397,7 @@ def pytest_configure(config):
     # Server architecture [CS,SS,SC] and sample directory
     _vars_['sample_dir'] = None
     with connect('employee') as con1, connect('employee') as con2:
+        _vars_['ods'] = (con1.info.ods_version, con1.info.ods_minor_version)
         db_path = Path(con1.info.name)
         _vars_['sample_dir'] = db_path.parent
         sql = f"""
@@ -584,7 +635,8 @@ class Database:
         """Returns `firebird-driver`_ configuration for test database.
         """
         return driver_config.get_database(self.config_name)
-    def create(self, page_size: Optional[int]=None, sql_dialect: Optional[int]=None) -> None:
+    def create(self, page_size: Optional[int]=None, sql_dialect: Optional[int]=None,
+               cache: DbCache=None) -> None:
         """Create the test database.
 
         Arguments:
@@ -598,11 +650,28 @@ class Database:
 
         """
         __tracebackhide__ = True
-        self._make_config(page_size=page_size, sql_dialect=sql_dialect, charset=self.charset)
-        charset = self.charset
-        print(f"Creating db: {self.dsn} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
-        with create_database(self.config_name):
-            pass
+        # Path means database file, str means alias
+        use_cache: bool = isinstance(self.db_path, Path) and cache is not None and not _vars_['dbcache-disabled']
+        src_path: Path = None
+        if use_cache:
+            src_path = cache.get_db(page_size=page_size, sql_dialect=sql_dialect, charset=self.charset)
+        if src_path:
+            charset = self.charset
+            print(f"Cached db: {src_path.name} [{page_size=}, {sql_dialect=}, {charset=}")
+            shutil.copyfile(src_path, self.db_path)
+            # Fix permissions
+            if platform.system != 'Windows':
+                os.chmod(self.db_path, 33206)
+        else:
+            self._make_config(page_size=page_size, sql_dialect=sql_dialect, charset=self.charset)
+            charset = self.charset
+            print(f"Creating db: {self.dsn} [{page_size=}, {sql_dialect=}, {charset=}, user={self.user}, password={self.password}]")
+            with create_database(self.config_name):
+                pass
+            if use_cache:
+                cache.store_db(self.db_path, page_size=page_size, sql_dialect=sql_dialect,
+                               charset=self.charset)
+
     def restore(self, backup: str) -> None:
         """Create the test database from backup.
 
@@ -644,7 +713,7 @@ class Database:
         """
         __tracebackhide__ = True
         src_path = _vars_['databases'] / filename
-        #print(f"Copying db: {self.db_path} from {src_path}")
+        print(f"Copying db: {self.db_path} from {src_path}")
         shutil.copyfile(src_path, self.db_path)
         # Fix permissions
         if platform.system != 'Windows':
@@ -794,12 +863,12 @@ def db_factory(*, filename: str='test.fdb', init: Optional[str]=None,
     """
 
     @pytest.fixture
-    def database_fixture(request: pytest.FixtureRequest, db_path) -> Database:
+    def database_fixture(request: pytest.FixtureRequest, db_path, db_cache) -> Database:
         db = Database(db_path, filename, user, password, charset, debug=str(request.module),
                       config_name=config_name, utf8filename=utf8filename)
         if not do_not_create:
             if from_backup is None and copy_of is None:
-                db.create(page_size, sql_dialect)
+                db.create(page_size, sql_dialect, db_cache)
             elif from_backup is not None:
                 db.restore(from_backup)
             elif copy_of is not None:
