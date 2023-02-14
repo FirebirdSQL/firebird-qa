@@ -4,6 +4,11 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.17.3
+==============
+
+* Added --driver-config option to specify different filename for driver configuration.
+
 Version 0.17.2
 ==============
 

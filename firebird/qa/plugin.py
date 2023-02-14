@@ -109,6 +109,7 @@ def pytest_addoption(parser, pluginmanager):
     """
     grp = parser.getgroup('firebird', "Firebird QA", 'general')
     grp.addoption('--server', help="Server configuration name", default='', required=True)
+    grp.addoption('--driver-config', help="Firebird driver configuration filename", default='firebird-driver.conf')
     grp.addoption('--bin-dir', metavar='PATH', help="Path to directory with Firebird utilities")
     grp.addoption('--protocol',
                   choices=[i.name.lower() for i in NetProtocol],
@@ -128,6 +129,7 @@ def pytest_report_header(config):
     return ["System:",
             f"  encodings: sys:{sys.getdefaultencoding()} locale:{locale.getpreferredencoding()} filesystem:{sys.getfilesystemencoding()}",
             "Firebird:",
+            f"  configuration: {_vars_['driver-config']}",
             f"  server: {_vars_['server']} [v{_vars_['version']}, {_vars_['server-arch']}, {_vars_['arch']}]",
             f"  home: {_vars_['home-dir']}",
             f"  bin: {_vars_['bin-dir']}",
@@ -276,12 +278,13 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "encryption: Mark test as requiring the encryption plugin")
     if config.getoption('help'):
         return
-    config_path: Path = Path.cwd() / 'firebird-driver.conf'
+    config_path: Path = Path.cwd() / config.getoption('driver_config')
     if config_path.is_file():
         driver_config.read(str(config_path))
         _vars_['firebird-config'] = config_path
     driver_config.register_database('pytest')
     #
+    _vars_['driver-config'] = config.getoption('driver_config')
     _vars_['basetemp'] = config.getoption('basetemp')
     _vars_['runslow'] = config.getoption('runslow')
     _vars_['root'] = config.rootpath
