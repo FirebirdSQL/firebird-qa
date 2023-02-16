@@ -58,7 +58,7 @@ expected_stdout = """
     Malformed string
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=4.0.3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
