@@ -27,7 +27,7 @@ db = db_factory()
 act = python_act('db')
 
 tmp_fbk = temp_file('gh_6941.tmp.fbk')
-db_tmp = db_factory(filename='tmp_core_5965.fdb', do_not_create=True)
+db_tmp = db_factory(filename='tmp_gh_6941.fdb', do_not_create=True)
 
 chk_sql = """
     select t1.*
