@@ -15,7 +15,7 @@ NOTES:
 
     Checked on 4.0.3.2903, 5.0.0.957 (both SS and CS).
 """
-
+import os
 import pytest
 from firebird.qa import *
 
@@ -31,6 +31,20 @@ test_script = """
     order by 1;
 """
 act = isql_act('db', test_script, substitutions = substitutions)
+
+if os.name == 'nt':
+    AuthClient_DEFAULT = 'Srp256, Srp, Win_Sspi, Legacy_Auth'
+    IpcName_DEFAULT = 'FIREBIRD'
+    MaxUnflushedWrites_DEFAULT = 100
+    MaxUnflushedWriteTime_DEFAULT = 5
+    OutputRedirectionFile_DEFAULT = 'nul'
+else:
+    AuthClient_DEFAULT = 'Srp256, Srp, Legacy_Auth'
+    IpcName_DEFAULT = 'FirebirdIPI'
+    MaxUnflushedWrites_DEFAULT = -1
+    MaxUnflushedWriteTime_DEFAULT = -1
+    OutputRedirectionFile_DEFAULT = '/dev/null'
+
 
 fb4x_expected_out = r"""
     RDB$CONFIG_ID 0
@@ -95,13 +109,13 @@ fb4x_expected_out = r"""
     RDB$CONFIG_DEFAULT interbas
     RDB$CONFIG_ID 20
     RDB$CONFIG_NAME IpcName
-    RDB$CONFIG_DEFAULT FIREBIRD
+    RDB$CONFIG_DEFAULT %(IpcName_DEFAULT)s
     RDB$CONFIG_ID 21
     RDB$CONFIG_NAME MaxUnflushedWrites
-    RDB$CONFIG_DEFAULT 100
+    RDB$CONFIG_DEFAULT %(MaxUnflushedWrites_DEFAULT)s
     RDB$CONFIG_ID 22
     RDB$CONFIG_NAME MaxUnflushedWriteTime
-    RDB$CONFIG_DEFAULT 5
+    RDB$CONFIG_DEFAULT %(MaxUnflushedWriteTime_DEFAULT)s
     RDB$CONFIG_ID 23
     RDB$CONFIG_NAME ProcessPriorityLevel
     RDB$CONFIG_DEFAULT 0
@@ -164,7 +178,7 @@ fb4x_expected_out = r"""
     RDB$CONFIG_DEFAULT Srp256
     RDB$CONFIG_ID 43
     RDB$CONFIG_NAME AuthClient
-    RDB$CONFIG_DEFAULT Srp256, Srp, Win_Sspi, Legacy_Auth
+    RDB$CONFIG_DEFAULT %(AuthClient_DEFAULT)s
     RDB$CONFIG_ID 44
     RDB$CONFIG_NAME UserManager
     RDB$CONFIG_DEFAULT Srp
@@ -218,7 +232,7 @@ fb4x_expected_out = r"""
     RDB$CONFIG_DEFAULT 131072
     RDB$CONFIG_ID 61
     RDB$CONFIG_NAME OutputRedirectionFile
-    RDB$CONFIG_DEFAULT nul
+    RDB$CONFIG_DEFAULT %(OutputRedirectionFile_DEFAULT)s
     RDB$CONFIG_ID 62
     RDB$CONFIG_NAME ExtConnPoolSize
     RDB$CONFIG_DEFAULT 0
@@ -250,7 +264,7 @@ fb4x_expected_out = r"""
     RDB$CONFIG_NAME TempTableDirectory
     RDB$CONFIG_DEFAULT
     Records affected: 72
-"""
+""" % locals()
 
 fb5x_expected_out = r"""
     RDB$CONFIG_ID 0
@@ -309,13 +323,13 @@ fb5x_expected_out = r"""
     RDB$CONFIG_DEFAULT 0
     RDB$CONFIG_ID 18
     RDB$CONFIG_NAME IpcName
-    RDB$CONFIG_DEFAULT FIREBIRD
+    RDB$CONFIG_DEFAULT %(IpcName_DEFAULT)s
     RDB$CONFIG_ID 19
     RDB$CONFIG_NAME MaxUnflushedWrites
-    RDB$CONFIG_DEFAULT 100
+    RDB$CONFIG_DEFAULT %(MaxUnflushedWrites_DEFAULT)s
     RDB$CONFIG_ID 20
     RDB$CONFIG_NAME MaxUnflushedWriteTime
-    RDB$CONFIG_DEFAULT 5
+    RDB$CONFIG_DEFAULT %(MaxUnflushedWriteTime_DEFAULT)s
     RDB$CONFIG_ID 21
     RDB$CONFIG_NAME ProcessPriorityLevel
     RDB$CONFIG_DEFAULT 0
@@ -378,7 +392,7 @@ fb5x_expected_out = r"""
     RDB$CONFIG_DEFAULT Srp256
     RDB$CONFIG_ID 41
     RDB$CONFIG_NAME AuthClient
-    RDB$CONFIG_DEFAULT Srp256, Srp, Win_Sspi, Legacy_Auth
+    RDB$CONFIG_DEFAULT %(AuthClient_DEFAULT)s
     RDB$CONFIG_ID 42
     RDB$CONFIG_NAME UserManager
     RDB$CONFIG_DEFAULT Srp
@@ -435,7 +449,7 @@ fb5x_expected_out = r"""
     RDB$CONFIG_DEFAULT 131072
     RDB$CONFIG_ID 60
     RDB$CONFIG_NAME OutputRedirectionFile
-    RDB$CONFIG_DEFAULT nul
+    RDB$CONFIG_DEFAULT %(OutputRedirectionFile_DEFAULT)s
     RDB$CONFIG_ID 61
     RDB$CONFIG_NAME ExtConnPoolSize
     RDB$CONFIG_DEFAULT 0
@@ -476,7 +490,7 @@ fb5x_expected_out = r"""
     RDB$CONFIG_NAME MaxParallelWorkers
     RDB$CONFIG_DEFAULT 1
     Records affected: 74
-"""
+""" % locals()
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
