@@ -25,8 +25,7 @@ def test_1(act: Action, db_tmp: Path):
 
     chk_sql = f"""
         set list on;
-        set bail on;
-        rollback;
+        -- NB: do NOT use 'set bail on' here!
         create database 'localhost:{db_tmp}' user {act.db.user} password '{act.db.password}';
         savepoint A1;
         release savepoint A1 only;
