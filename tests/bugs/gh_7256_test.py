@@ -113,7 +113,7 @@ expected_stdout = """
     :  name: BLOB_APPEND  alias: BLOB_RESULT_5
 """
 
-@pytest.mark.version('>=5.0')
+@pytest.mark.version('>=4.0.3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True, charset = 'None' )
