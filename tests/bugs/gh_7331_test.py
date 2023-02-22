@@ -111,7 +111,7 @@ expected_stdout = """
     PLAN HASH (LINEITEM INDEX (LINEITEM_SHIPDATE), JOIN (CUSTOMER NATURAL, ORDERS INDEX (ORDERS_CUSTKEY_FK)))
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=5.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
