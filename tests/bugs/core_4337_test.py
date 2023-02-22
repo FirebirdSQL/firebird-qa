@@ -41,6 +41,12 @@ NOTES:
         Appearance of 'gfix' process is checked in loop by querying mon$attachments, see also: MAX_WAIT_FOR_SWEEP_START_MS.
         More precise pattern for line with message about failed sweep (see 'p_sweep_failed').
         Checked on Windows and Linux: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730
+    [22.02.2023] pzotov
+    During run on 5.0.0.958 SS, "Windows fatal exception: access violation" error occurs and its full text + stack was 'embedded'
+    in the pytest output. This error happens on garbage collection of Python code, when Statement destructor (__del__) was executed.
+    Although all resources, including prepared statement, are used here within 'with' context manager, it will be good to put every
+    'ps' usage inside 'with' block related to appropriate cursor. Before this, second 'ps' usage was linked to 1st [closed] cursor,
+    so this may be relate4d somehow to this AV.
 """
 
 import datetime as py_dt
@@ -159,8 +165,8 @@ def test_1(act: Action, sweep_log: Path, capsys):
             f_sweep_log = open(sweep_log,'w')
             stm = r"select first 1 a.mon$attachment_id from mon$attachments a where a.mon$system_flag <> 1 and lower(a.mon$remote_process) similar to '(%[\\/](gfix|fbsvcmgr)(.exe)?)'"
             t1=py_dt.datetime.now()
-            with con.cursor() as cur:
-                ps = cur.prepare(stm)
+            with con.cursor() as cur1:
+                ps1 = cur1.prepare(stm)
                 p_sweep = subprocess.Popen( [act.vars['gfix'], '-sweep', '-user', act.db.user, '-password', act.db.password, act.db.dsn],
                                             stdout = f_sweep_log,
                                             stderr = subprocess.STDOUT
@@ -177,8 +183,8 @@ def test_1(act: Action, sweep_log: Path, capsys):
                         print(f'TIMEOUT EXPIRATION: waiting for SWEEP process took {dd} ms which exceeds limit = {MAX_WAIT_FOR_SWEEP_START_MS} ms.')
                         break
 
-                    cur.execute(ps)
-                    for r in cur:
+                    cur1.execute(ps1)
+                    for r in cur1:
                         sweep_attach_id = r[0]
                     
                     con.commit()
@@ -188,7 +194,7 @@ def test_1(act: Action, sweep_log: Path, capsys):
                         time.sleep(0.1)
                 #<while True (loop for search gfix process in mon$attachments)
 
-            #< with con.cursor() as cur
+            #< with con.cursor() as cur1
 
             #assert sweep_attach_id is None, f'attacment_id of SWEEP process is {sweep_attach_id}'
             assert sweep_attach_id, 'attacment_id of SWEEP process was not found.'
@@ -209,9 +215,9 @@ def test_1(act: Action, sweep_log: Path, capsys):
             ##################################################################################################
             # LOOP-2: WAIT FOR POSSIBLE SECOND APPEARENCE (RECONNECT) OF GFIX. IF IT OCCURS THEN WE HAVE A BUG
             ##################################################################################################
-            ps = cur.prepare( stm.replace('select ', 'select /* search re-connect that could be made */ ') )
             t1=py_dt.datetime.now()
-            with con.cursor() as cur:
+            with con.cursor() as cur2:
+                ps2 = cur2.prepare( stm.replace('select ', 'select /* search re-connect that could be made */ ') )
                 while True:
                     t2=py_dt.datetime.now()
                     d1=t2-t1
@@ -220,9 +226,9 @@ def test_1(act: Action, sweep_log: Path, capsys):
                         # Expected: gfix reconnect was not detected for last {MAX_WAIT_FOR_GFIX_RESTART_MS} ms.
                         break
                     con.commit()
-                    cur.execute(ps)
+                    cur2.execute(ps2)
                     # Resultset now must be EMPTY. we must not find any record!
-                    for r in cur:
+                    for r in cur2:
                         sweep_reconnect = r[0]
                     
                     #con.commit()
@@ -231,9 +237,10 @@ def test_1(act: Action, sweep_log: Path, capsys):
                         break
                     else:
                         time.sleep(0.1)
+            #< with con.cursor() as cur2
 
             assert sweep_reconnect is None, f'Found re-connect of SWEEP process, attachment: {sweep_reconnect}'
-        
+
         #< with db.connect as con
 
     #---------------------------------------------------------------
@@ -279,13 +286,13 @@ def test_1(act: Action, sweep_log: Path, capsys):
 
     '''
     Example of diff:
-    <COMPUTERNAME>	Wed Sep 14 15:58:37 2022
+    COMPUTERNAME	Wed Sep 14 15:58:37 2022
     	Sweep is started by SYSDBA
-    	Database "C:\TEMP\<PYTEST_PATH>\TEST.FDB" 
+    	Database "C:/TEMP/PYTEST_PATH/TEST.FDB" 
     	OIT 20, OAT 21, OST 21, Next 21
 
-    <COMPUTERNAME>	Wed Sep 14 15:58:37 2022
-    	Error during sweep of C:\<PYTEST_PATH>\TEST.FDB:
+    COMPUTERNAME	Wed Sep 14 15:58:37 2022
+    	Error during sweep of C:/PYTEST_PATH/TEST.FDB:
     	connection shutdown
     '''
 
