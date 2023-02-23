@@ -1,8 +1,8 @@
 #coding:utf-8
 
 """
-ID:          issue-57063
-ISSUE:       57063
+ID:          issue-5703
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5703
 TITLE:       Support for DROP IDENTITY clause
 DESCRIPTION:
 JIRA:        CORE-5431
