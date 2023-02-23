@@ -7,6 +7,11 @@ TITLE:       Support for DROP IDENTITY clause
 DESCRIPTION:
 JIRA:        CORE-5431
 FBTEST:      bugs.core_5431
+NOTES:
+    [23.02.2023] pzotov
+    Adjusted expected_stderr according to notes in #7229. Removed unneeded substitutions and old comments.
+    Confirmed problem on 5.0.0.573
+    Checked on 5.0.0.958, 4.0.3.2903 - all OK.
 """
 
 import pytest
@@ -40,27 +45,20 @@ test_script = """
     from rdb$generators
     where rdb$system_flag = 6;
 
-    -- Should issue
-    -- Statement failed, SQLSTATE = 42000
-    -- invalid request BLR at offset 47
-    -- -generator RDB$nnn is not defined
+    -- Should issue error:
     insert into test1 default values returning id as test1_id;
-
 """
 
-act = isql_act('db', test_script, substitutions=[('RDB\\$[\\d]+', 'RDB'),
-                                                 ('.*at offset [\\d]+', 'at offset')])
+act = isql_act('db', test_script)
 
 expected_stdout = """
     IDENTITY_SEQUENCES_COUNT_1      1
     TEST1_ID                        32767
     IDENTITY_SEQUENCES_COUNT_2      0
 """
-
 expected_stderr = """
-    Statement failed, SQLSTATE = 42000
-    invalid request BLR at offset 47
-    -generator RDB is not defined
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST1"."ID", value "*** null ***"
 """
 
 @pytest.mark.version('>=4.0')
