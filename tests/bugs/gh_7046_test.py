@@ -27,7 +27,7 @@ NOTES:
     ::: NB-1 :::
     CURRENTLY comment for mapping is NOT shown when we extract metadata using isql -x.
     Because of that, only comment for VIEW is specified in expected text.
-    Test will be asjusted after this issue will be fixed.
+    Test will be adjusted after this issue will be fixed.
 
     ::: NB-2 :::
     Ability to specify non-ascii comment to mapping was not checked.
