@@ -7,7 +7,7 @@ TITLE:       user with DROP ANY PACKAGE privilege can not execute DROP PACKAGE B
 NOTES:
     [25.02.2023] pzotov
     Confirmed bug on 5.0.0.520.
-    Checked on 5.0.0.959 - all OK.
+    Checked on 5.0.0.959, 4.0.3.2903 - all OK.
 """
 
 import pytest
@@ -60,7 +60,7 @@ expected_stdout = """
     Records affected: 2
 """
 
-@pytest.mark.version('>=5.0')
+@pytest.mark.version('>=4.0.2')
 def test_1(act: Action, tmp_usr1: User, tmp_usr2: User, tmp_role: Role):
 
     test_script = f"""
