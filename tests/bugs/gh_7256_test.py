@@ -94,22 +94,22 @@ test_script = """
 act = isql_act('db', test_script, substitutions = [('^((?!sqltype:|BLOB_RESULT).)*$', ''), ('[ \t]+', ' ')])
 
 expected_stdout = """
-    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 1 OCTETS
+    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 1 OCTETS
     :  name: BLOB_APPEND  alias: BLOB_RESULT_1
 
-    01: sqltype: 520 BLOB scale: 0 subtype: 0 len: 8
+    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 0 len: 8
     :  name: BLOB_APPEND  alias: BLOB_RESULT_2
 
-    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 21 ISO8859_1
+    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 21 ISO8859_1
     :  name: BLOB_APPEND  alias: BLOB_RESULT_3A
 
-    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 4 UTF8
+    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 4 UTF8
     :  name: BLOB_APPEND  alias: BLOB_RESULT_3B
 
-    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 2 ASCII
+    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 2 ASCII
     :  name: BLOB_APPEND  alias: BLOB_RESULT_4
 
-    01: sqltype: 520 BLOB scale: 0 subtype: 0 len: 8
+    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 0 len: 8
     :  name: BLOB_APPEND  alias: BLOB_RESULT_5
 """
 
