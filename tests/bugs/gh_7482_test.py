@@ -2,8 +2,8 @@
 
 """
 ID:          issue-7482
-ISSUE:       7482
-TITLE:       Simple SQL crashes firebird: select cast(rdb$db_key as integer) from rdb$database
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7482
+TITLE:       Result of blob_append(null, null) (literal '<null>') is not shown
 NOTES:
     [14.02.2023] pzotov
     Checked on 5.0.0.958, intermediate build of 24-feb-2023. All OK.
