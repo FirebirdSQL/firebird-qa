@@ -15,6 +15,10 @@ DESCRIPTION:
     attempt to delete trace log after 'with' block ends (fbsvcmgr made requests to Services API with interval =  1.0 second).
 NOTES:
     [26.02.2023] pzotov
+    1. Initially discussed by email, started 28-feb-2022, subj:
+        Firebird new-QA: weird result for trivial test (outcome depends on presence of... running trace session!)
+    2. One of trace sessions must be launched using fbsvcmgr, NOT using "with act.trace ..." (otherwise issue will not be reproduced).
+    
     Confirmed problem on: 5.0.0.514, 4.0.1.2735, got in trace (as reaction on connect + quit):
         select RDB$RELATION_NAME from RDB$USER_PRIVILEGES where RDB$USER = ? and RDB$PRIVILEGE = 'M' and RDB$USER_TYPE = 8 and RDB$OBJECT_TYPE = 13
     Checked on 5.0.0.518 SS/CS; 4.0.1.2736 SS/CS -- all fine: no any message will be issued when two trace sessions exist and we do connect plus quit.
