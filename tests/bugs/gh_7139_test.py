@@ -65,7 +65,7 @@ def get_external_trace_id(act: Action, a_what_to_check, a_ext_trace_session_name
 
 #-------------------------------------------------------------------------
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=4.0.2')
 def test_1(act: Action, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
 
     # C:\temp\pytest-of-PashaZ\pytest-513\test_10\TEST.FDB
