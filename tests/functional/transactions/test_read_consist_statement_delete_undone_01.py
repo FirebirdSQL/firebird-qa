@@ -108,8 +108,16 @@ DESCRIPTION:
       Checked on 4.0.0.2151 SS/CS
 FBTEST:      functional.transactions.read_consist_statement_delete_undone_01
 NOTES:
-[28.07.2022] pzotov
-    Checked on 4.0.1.2692, 5.0.0.591
+    [28.07.2022] pzotov
+        Checked on 4.0.1.2692, 5.0.0.591
+    [27.02.2023] pzotov
+        Added check for presense of STATEMENT RESTART in the trace (see https://github.com/FirebirdSQL/firebird/issues/6730 )
+        Trace must contain several groups, each with similar lines:
+            <timestamp> (<trace_memory_address>) EXECUTE_STATEMENT_RESTART
+            {SQL_TO_BE_RESTARTED}
+            Restarted <N> time(s)
+
+        Checked on 5.0.0.561 (date of build: 29-jun-2022) - all OK.
 """
 
 import subprocess
@@ -117,16 +125,16 @@ import pytest
 from firebird.qa import *
 from pathlib import Path
 import time
+import re
+import locale
 
 db = db_factory()
-
-act = python_act('db', substitutions=[('=', ''), ('[ \t]+', ' ')])
 
 fn_worker_sql = temp_file('tmp_worker.sql')
 fn_worker_log = temp_file('tmp_worker.log')
 fn_worker_err = temp_file('tmp_worker.err')
 
-expected_stdout = """
+expected_stdout_worker = """
     Records affected: 0
 
          ID
@@ -154,6 +162,36 @@ expected_stdout = """
     Records affected: 4
 """
 
+SQL_TO_BE_RESTARTED = 'delete from test where not exists(select * from test where id >= 10) order by id desc'
+
+expected_stdout_trace = f"""
+    {SQL_TO_BE_RESTARTED}
+
+    2023-02-27T18:03:19.1100 (26564:0000000005A01940) EXECUTE_STATEMENT_RESTART
+    {SQL_TO_BE_RESTARTED}
+    Restarted 1 time(s)
+
+    2023-02-27T18:03:19.1100 (26564:0000000005A01940) EXECUTE_STATEMENT_RESTART
+    {SQL_TO_BE_RESTARTED}
+    Restarted 2 time(s)
+
+    2023-02-27T18:03:19.1100 (26564:0000000005A01940) EXECUTE_STATEMENT_RESTART
+    {SQL_TO_BE_RESTARTED}
+    Restarted 3 time(s)
+
+    2023-02-27T18:03:19.1100 (26564:0000000005A01940) EXECUTE_STATEMENT_RESTART
+    {SQL_TO_BE_RESTARTED}
+    Restarted 4 time(s)
+
+    2023-02-27T18:03:19.1100 (26564:0000000005A01940) EXECUTE_STATEMENT_RESTART
+    {SQL_TO_BE_RESTARTED}
+    Restarted 5 time(s)
+
+    {SQL_TO_BE_RESTARTED}
+
+"""
+act = python_act('db', substitutions=[('=', ''), ('[ \t]+', ' '), ('.* EXECUTE_STATEMENT_RESTART', 'EXECUTE_STATEMENT_RESTART')])
+
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
     sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()
@@ -178,132 +216,164 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
     assert act.stderr == ''
     act.reset()
 
-    with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2:
-        for i,c in enumerate((con_lock_1,con_lock_2)):
-            sttm = f"execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #{i+1}'); end"
-            c.execute_immediate(sttm)
+    trace_cfg_items = [
+        'time_threshold = 0',
+        'log_errors = true',
+        'log_statement_start = true',
+        'log_statement_finish = true',
+    ]
 
-        #########################
-        ###  L O C K E R - 1  ###
-        #########################
-        con_lock_1.execute_immediate( 'update test set id=id where id = 1' )
-
-        worker_sql = '''
-            set list on;
-            set autoddl off;
-            set term ^;
-            execute block returns (whoami varchar(30)) as
-            begin
-                whoami = 'WORKER'; -- , ATT#' || current_connection;
-                rdb$set_context('USER_SESSION','WHO', whoami);
-                -- suspend;
-            end
-            ^
-            set term ;^
-            commit;
-            SET KEEP_TRAN_PARAMS ON;
-            set transaction read committed read consistency;
-            --select current_connection, current_transaction from rdb$database;
-            set list off;
-            set wng off;
-            --set plan on;
-            set count on;
-
-            delete from test where not exists(select * from test where id >= 10) order by id desc; -- THIS MUST BE LOCKED
-
-            -- check results:
-            -- ###############
-
-            select id from test order by id; -- this will produce output only after all lockers do their commit/rollback
-
-            select v.old_id, v.op, v.snap_no_rank
-            from v_worker_log v
-            where v.op = 'del';
-
-            set width who 10;
-            -- DO NOT check this! Values can differ here from one run to another!
-            --select id, trn, who, old_id, new_id, op, rec_vers, global_cn, snap_no from tlog_done order by id;
-
-            rollback;
-        '''
-        fn_worker_sql.write_text(worker_sql)
-
-        with fn_worker_log.open(mode='w') as hang_out, fn_worker_err.open(mode='w') as hang_err:
-
-            ############################################################################
-            ###  L A U N C H     W O R K E R    U S I N G     I S Q L,   A S Y N C.  ###
-            ############################################################################
-            p_worker = subprocess.Popen([act.vars['isql'], '-i', str(fn_worker_sql),
-                                           '-user', act.db.user,
-                                           '-password', act.db.password,
-                                           act.db.dsn
-                                        ],
-                                          stdout = hang_out,
-                                          stderr = hang_err
-                                       )
-            time.sleep(1)
+    with act.trace(db_events = trace_cfg_items, encoding=locale.getpreferredencoding()):
 
 
-            #########################
-            ###  L O C K E R - 2  ###
-            #########################
-            # Add record so that it **will* be included in the set of rows that must be affected by session-worker:
-            con_lock_2.execute_immediate( 'insert into test(id, x) values(6, 6);' )
-            con_lock_2.commit()
-            con_lock_2.execute_immediate( 'update test set id = id where id = 6;' )
+        with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2:
+            for i,c in enumerate((con_lock_1,con_lock_2)):
+                sttm = f"execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #{i+1}'); end"
+                c.execute_immediate(sttm)
 
             #########################
             ###  L O C K E R - 1  ###
             #########################
-            con_lock_1.commit() # releases record with ID=1 (allow it to be deleted by session-worker)
-            # Add record so that it **will* be included in the set of rows that must be affected by session-worker:
-            con_lock_1.execute_immediate( 'insert into test(id, x) values(7, 7);' )
-            con_lock_1.commit()
-            con_lock_1.execute_immediate( 'update test set id = id where id = 7;' )
+            con_lock_1.execute_immediate( 'update test set id=id where id = 1' )
 
-            #########################
-            ###  L O C K E R - 2  ###
-            #########################
-            con_lock_2.commit() # releases record with ID = 6, but session-worker is waiting for record with ID = 7 (that was added by locker-1).
-            con_lock_2.execute_immediate( 'insert into test(id, x) values(8, 8);' )
-            con_lock_2.commit()
-            con_lock_2.execute_immediate( 'update test set id = id where id = 8;' )
+            worker_sql = f'''
+                set list on;
+                set autoddl off;
+                set term ^;
+                execute block returns (whoami varchar(30)) as
+                begin
+                    whoami = 'WORKER'; -- , ATT#' || current_connection;
+                    rdb$set_context('USER_SESSION','WHO', whoami);
+                    -- suspend;
+                end
+                ^
+                set term ;^
+                commit;
+                SET KEEP_TRAN_PARAMS ON;
+                set transaction read committed read consistency;
+                --select current_connection, current_transaction from rdb$database;
+                set list off;
+                set wng off;
+                --set plan on;
+                set count on;
+
+                -- delete from test where not exists(select * from test where id >= 10) order by id desc; -- THIS MUST BE LOCKED
+                {SQL_TO_BE_RESTARTED};
+
+                -- check results:
+                -- ###############
+
+                select id from test order by id; -- this will produce output only after all lockers do their commit/rollback
+
+                select v.old_id, v.op, v.snap_no_rank
+                from v_worker_log v
+                where v.op = 'del';
+
+                set width who 10;
+                -- DO NOT check this! Values can differ here from one run to another!
+                --select id, trn, who, old_id, new_id, op, rec_vers, global_cn, snap_no from tlog_done order by id;
+
+                rollback;
+            '''
+            fn_worker_sql.write_text(worker_sql)
+
+            with fn_worker_log.open(mode='w') as hang_out, fn_worker_err.open(mode='w') as hang_err:
+
+                ############################################################################
+                ###  L A U N C H     W O R K E R    U S I N G     I S Q L,   A S Y N C.  ###
+                ############################################################################
+                p_worker = subprocess.Popen([act.vars['isql'], '-i', str(fn_worker_sql),
+                                               '-user', act.db.user,
+                                               '-password', act.db.password,
+                                               act.db.dsn
+                                            ],
+                                              stdout = hang_out,
+                                              stderr = hang_err
+                                           )
+                time.sleep(1)
 
 
-            #########################
-            ###  L O C K E R - 1  ###
-            #########################
-            con_lock_1.commit() # releases record with ID = 7, but session-worker is waiting for record with ID = 8 (that was added by locker-2).
-            con_lock_1.execute_immediate( 'insert into test(id, x) values(9, 9);' )
-            con_lock_1.commit()
-            con_lock_1.execute_immediate( 'update test set id = id where id = 9;' )
+                #########################
+                ###  L O C K E R - 2  ###
+                #########################
+                # Add record so that it **will* be included in the set of rows that must be affected by session-worker:
+                con_lock_2.execute_immediate( 'insert into test(id, x) values(6, 6);' )
+                con_lock_2.commit()
+                con_lock_2.execute_immediate( 'update test set id = id where id = 6;' )
+
+                #########################
+                ###  L O C K E R - 1  ###
+                #########################
+                con_lock_1.commit() # releases record with ID=1 (allow it to be deleted by session-worker)
+                # Add record so that it **will* be included in the set of rows that must be affected by session-worker:
+                con_lock_1.execute_immediate( 'insert into test(id, x) values(7, 7);' )
+                con_lock_1.commit()
+                con_lock_1.execute_immediate( 'update test set id = id where id = 7;' )
+
+                #########################
+                ###  L O C K E R - 2  ###
+                #########################
+                con_lock_2.commit() # releases record with ID = 6, but session-worker is waiting for record with ID = 7 (that was added by locker-1).
+                con_lock_2.execute_immediate( 'insert into test(id, x) values(8, 8);' )
+                con_lock_2.commit()
+                con_lock_2.execute_immediate( 'update test set id = id where id = 8;' )
 
 
-            #########################
-            ###  L O C K E R - 2  ###
-            #########################
-            con_lock_2.commit() # releases record with ID = 8, but session-worker is waiting for record with ID = 9 (that was added by locker-1).
-            con_lock_2.execute_immediate( 'insert into test(id, x) values(10, 10);' )
-            con_lock_2.commit()
-            con_lock_2.execute_immediate( 'update test set id = id where id = 10;' )
+                #########################
+                ###  L O C K E R - 1  ###
+                #########################
+                con_lock_1.commit() # releases record with ID = 7, but session-worker is waiting for record with ID = 8 (that was added by locker-2).
+                con_lock_1.execute_immediate( 'insert into test(id, x) values(9, 9);' )
+                con_lock_1.commit()
+                con_lock_1.execute_immediate( 'update test set id = id where id = 9;' )
 
 
-            #########################
-            ###  L O C K E R - 1  ###
-            #########################
-            con_lock_1.commit() # <<< THIS MUST CANCEL ALL PERFORMED DELETIONS OF SESSION-WORKER
-
-            con_lock_2.commit()
-
-            # Here we wait until ISQL complete its mission:
-            p_worker.wait()
+                #########################
+                ###  L O C K E R - 2  ###
+                #########################
+                con_lock_2.commit() # releases record with ID = 8, but session-worker is waiting for record with ID = 9 (that was added by locker-1).
+                con_lock_2.execute_immediate( 'insert into test(id, x) values(10, 10);' )
+                con_lock_2.commit()
+                con_lock_2.execute_immediate( 'update test set id = id where id = 10;' )
 
 
+                #########################
+                ###  L O C K E R - 1  ###
+                #########################
+                con_lock_1.commit() # <<< THIS MUST CANCEL ALL PERFORMED DELETIONS OF SESSION-WORKER
 
-    for g in (fn_worker_log, fn_worker_err):
-        with g.open() as f:
-            print( f.read() )
+                con_lock_2.commit()
 
-    act.expected_stdout = expected_stdout
+                # Here we wait until ISQL complete its mission:
+                p_worker.wait()
+
+
+
+        for g in (fn_worker_log, fn_worker_err):
+            with g.open() as f:
+                print( f.read() )
+
+        act.expected_stdout = expected_stdout_worker
+        act.stdout = capsys.readouterr().out
+        assert act.clean_stdout == act.clean_expected_stdout
+        act.reset()
+    #< act.trace()
+
+    allowed_patterns = \
+    (
+         '\\)\\s+EXECUTE_STATEMENT_RESTART$'
+        ,re.escape(SQL_TO_BE_RESTARTED)
+        ,'^Restarted \\d+ time\\(s\\)'
+    )
+    #for p in allowed_patterns:
+    #    print(p)
+    allowed_patterns = [ re.compile(p, re.IGNORECASE) for p in allowed_patterns ]
+    for line in act.trace_log:
+        if line.strip():
+            if act.match_any(line.strip(), allowed_patterns):
+                print(line.strip())
+            
+    act.expected_stdout = expected_stdout_trace
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
+
