@@ -56,7 +56,7 @@ expected_stdout = """
 """
 
 @pytest.mark.encryption
-@pytest.mark.version('>=4.0.1')
+@pytest.mark.version('>=4.0.2')
 def test_1(act: Action, act_tmp: Action, tmp_sql: Path, tmp_log: Path, capsys):
 
     init_sql = f"""
