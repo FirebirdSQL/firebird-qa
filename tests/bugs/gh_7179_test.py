@@ -69,7 +69,7 @@ expected_stdout = """
     -expected length 4, actual 6
 """
 
-@pytest.mark.version('>=5.0')
+@pytest.mark.version('>=4.0.2')
 def test_1(act: Action):
     test_script = """
         set list on;
