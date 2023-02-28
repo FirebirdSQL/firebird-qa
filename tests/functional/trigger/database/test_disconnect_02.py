@@ -32,7 +32,7 @@ expected_stdout = """
     Records affected: 1
 """
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=5.0')
 def test_1(act: Action, tmp_worker: User):
 
     init_sql  = f"""
@@ -54,12 +54,16 @@ def test_1(act: Action, tmp_worker: User):
         set term ;^
         commit;
     """
-    act.isql(switches=['-q'], input = init_sql)
+
+    act.expected_stdout = ''
+    act.isql(switches=['-q'], input = init_sql, combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
 
     with act.connect_server() as srv, act.db.connect(user = tmp_worker.name, password = tmp_worker.password) as con_worker:
         srv.database.shutdown(database=act.db.db_path, mode=ShutdownMode.FULL, method=ShutdownMethod.FORCED, timeout=0)
         srv.database.bring_online(database=act.db.db_path)
 
     act.expected_stdout = expected_stdout
-    act.isql(switches=['-q'], input = 'set count on;set list on;select id,who from detach_audit;')
+    act.isql(switches=['-q'], input = 'set count on;set list on;select id,who from detach_audit;', combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
