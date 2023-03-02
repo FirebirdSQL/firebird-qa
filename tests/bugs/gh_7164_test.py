@@ -29,7 +29,7 @@ expected_stdout = """
     PLAN HASH (HASH (V1 A NATURAL, V1 B NATURAL, V1 C NATURAL), HASH (V2 A NATURAL, V2 B NATURAL, V2 C NATURAL), HASH (V3 A NATURAL, V3 B NATURAL, V3 C NATURAL))
     PLAN HASH (HASH (U1 A NATURAL, U1 B NATURAL, U1 C NATURAL), HASH (U2 A NATURAL, U2 B NATURAL, U2 C NATURAL), HASH (U3 A NATURAL, U3 B NATURAL, U3 C NATURAL))
 """
-@pytest.mark.version('>=4.0.2')
+@pytest.mark.version('>=5.0')
 def test_1(act: Action):
     test_sql = """
         create table test_a (id int, f01 computed by(id+1));
