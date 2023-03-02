@@ -11,14 +11,16 @@ DESCRIPTION:
 
   Then 'ALTER DATABASE ENCRYPT...' is issued by ISQL which is launched ASYNCHRONOUSLY, and we start
   loop with query: 'select mon$crypt_state from mon$database'.
-  As far as query will return columd value = 3 ("is encrypting") - we break from loop and try to DROP database
-  using method drop_database() of class Connection.
-  Otherwise, if we could not find this state during <ENCRYPTION_START_MAX_WAIT> seconds, assert will interrupt further execution.
-
+  As far as query will return columd value = 3 ("is encrypting") - we break from loop and try to DROP database.
   Attempt to drop database which has incompleted encryption must raise exception:
       lock time-out on wait transaction
       -object is in use
   Test verifies that this exception actually raises (i.e. this is EXPECTED behaviour).
+
+  ::: NB ::: 03-mar-2023.
+  We have to run second ISQL for DROP DATABASE (using 'act_tmp.isql(...)' for that).
+  Attempt to use drop_database() of class Connection behaves strange on Classic: it does not return exception 'obj in use'
+  and silently allows code to continue. The reason currently is unknown. To be discussed with pcisar/alex et al.
 
 NOTES:
     [27.02.2023] pzotov
@@ -38,11 +40,14 @@ import time
 
 import pytest
 from firebird.qa import *
-from firebird.driver import DatabaseError
+from firebird.driver import DatabaseError, tpb, Isolation, TraLockResolution, DatabaseError
 
 FLD_LEN =   500
 N_ROWS = 100000
 ENCRYPTION_START_MAX_WAIT = 30
+
+# Value in mon$crypt_state for "Database is currently encrypting"
+IS_ENCRYPTING_STATE = 3
 
 db = db_factory()
 tmp_fdb = db_factory(filename = 'tmp_gh_7200.tmp.fdb')
@@ -101,57 +106,69 @@ def test_1(act: Action, act_tmp: Action, tmp_sql: Path, tmp_log: Path, capsys):
     sttm = f'alter database encrypt with "{encryption_plugin}" key "{encryption_key}";'
     tmp_sql.write_bytes(sttm.encode('utf-8'))
 
-    with act_tmp.db.connect() as con_killer:
-        cur_check_mon = con_killer.cursor()
-        ps = cur_check_mon.prepare('select mon$crypt_state from mon$database') # 0 = non-encrypted; 1 = encrypted; 2 = is DEcrypting; 3 - is Encrypting
+    with tmp_log.open('w') as f_log:
+       
+        p = subprocess.Popen( [ act_tmp.vars['isql'],
+                                '-q',
+                                '-user', act_tmp.db.user,
+                                '-password', act_tmp.db.password,
+                                act_tmp.db.dsn,
+                                '-i', tmp_sql
+                              ], 
+                              stdout = f_log, stderr = subprocess.STDOUT
+                            )
+    
         encryption_started = False
-        with tmp_log.open('w') as f_log:
-           
-            p = subprocess.Popen( [ act_tmp.vars['isql'],
-                                    '-q',
-                                    '-user', act_tmp.db.user,
-                                    '-password', act_tmp.db.password,
-                                    act_tmp.db.dsn,
-                                    '-i', tmp_sql
-                                  ], 
-                                  stdout = f_log, stderr = subprocess.STDOUT
-                                )
+        with act_tmp.db.connect() as con_watcher:
+
+            custom_tpb = tpb(isolation = Isolation.SNAPSHOT, lock_timeout = -1)
+            tx_watcher = con_watcher.transaction_manager(custom_tpb)
+            cur_watcher = tx_watcher.cursor()
+
+            # 0 = non-encrypted; 1 = encrypted; 2 = is DEcrypting; 3 - is Encrypting
+            ps = cur_watcher.prepare('select mon$crypt_state from mon$database')
+
             i = 0
             while True:
-                cur_check_mon.execute(ps)
-                for r in cur_check_mon:
+                cur_watcher.execute(ps)
+                for r in cur_watcher:
                     db_crypt_state = r[0]
 
-                con_killer.commit()
+                tx_watcher.commit()
 
-                if db_crypt_state == 3:
+                if db_crypt_state == IS_ENCRYPTING_STATE:
                     encryption_started = True
-                    cur_check_mon.call_procedure('sp_tmp', ('encryption_started',))
+                    cur_watcher.call_procedure('sp_tmp', ('encryption_started',))
                     break
                 elif i > ENCRYPTION_START_MAX_WAIT:
                     break
 
                 time.sleep(1)
 
-            assert encryption_started, f'Could not find start of encryption process for {ENCRYPTION_START_MAX_WAIT} seconds.'
+            ps.free()
 
-            try:
-                cur_check_mon.call_procedure('sp_tmp', ('before drop database',))
-                cur_check_mon.close()
-                #time.sleep(1)
-                # act_tmp.db.drop_database()
-                con_killer.drop_database()
-            except Exception as e:
-                print(e)
-        #< with tmp_log.open('w') as f_log
-    #< with act_tmp.db.connect() as con_killer
+        assert encryption_started, f'Could not find start of encryption process for {ENCRYPTION_START_MAX_WAIT} seconds.'
 
-    drop_db_expected_stdout = """
-        lock time-out on wait transaction
-        -object is in use
-    """
+        drop_db_expected_stdout = f"""
+            MON$CRYPT_STATE                 {IS_ENCRYPTING_STATE}
+            Statement failed, SQLSTATE = 42000
+            unsuccessful metadata update
+            -object is in use        
+        """
 
-    act_tmp.expected_stdout = drop_db_expected_stdout
-    act_tmp.stdout = capsys.readouterr().out
-    assert act_tmp.clean_stdout == act_tmp.clean_expected_stdout
-    act_tmp.reset()
+        act_tmp.expected_stdout = drop_db_expected_stdout
+
+        # Get current state of encryption (again, just for additional check)
+        # and attempt to DROP database:
+        ###############################
+        act_tmp.isql(switches=['-q', '-n'], input = 'set list on; select mon$crypt_state from mon$database; commit; DROP DATABASE;', combine_output=True)
+
+        assert act_tmp.clean_stdout == act_tmp.clean_expected_stdout
+        act_tmp.reset()
+        assert act_tmp.db.db_path.is_file(), f'File {str(act_tmp.db.db_path)} was unexpectedly removed from disk!'
+
+    #< with tmp_log.open('w') as f_log
+
+
+
+
