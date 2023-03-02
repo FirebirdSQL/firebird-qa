@@ -10,7 +10,7 @@ NOTES:
     Confirmed bug on 5.0.0.959 SS (date of build: 26.02.2023), got:
     "External engine SYSTEM not found / -901 / 335545001"
 
-    Checked on 5.0.0.957 - all OK.
+    Checked on 5.0.0.957, 4.0.3.2904 - all OK.
 """
 
 import pytest
@@ -24,7 +24,7 @@ expected_stdout = """
 """
 
 @pytest.mark.encryption
-@pytest.mark.version('>=5.0')
+@pytest.mark.version('>=4.0.3')
 def test_1(act: Action, capsys):
     sttm = 'select rdb$time_zone_util.database_version() from rdb$database'
     with act.db.connect() as con1, act.db.connect() as con2:
