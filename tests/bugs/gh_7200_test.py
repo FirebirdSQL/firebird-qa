@@ -23,8 +23,9 @@ DESCRIPTION:
   and silently allows code to continue. The reason currently is unknown. To be discussed with pcisar/alex et al.
 
 NOTES:
-    [27.02.2023] pzotov
-    0. SuperServer only was affected. No such problem on Classic.
+    [03.03.2023] pzotov
+    0. On SuperServer FB 4.0.2.2772 hanged. On Classic another problem did exist: DROP DATABASE could start only after encryption
+       completed (i.e. until value MON$CRYPT_STATE will not changed from 3 to 1).
     1. Settings for encryption are taken from act.files_dir/'test_config.ini' file.
     2. We have to avoid usage of act_tmp.db.drop_database() because it suppresses any occurring exception.
     3. Confirmed problem on 4.0.2.2772 SS (02-jun-2022), 5.0.0.236 SS (30-sep-2021) - test hangs.
