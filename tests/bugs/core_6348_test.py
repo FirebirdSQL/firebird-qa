@@ -59,8 +59,12 @@ NOTES:
        No more neither ISQL with datediff(), nor Python timedelta; psutil cpu_times() is used to get exact value
        of time that was spent for loading blob.
        Test duration is about 30...50s, depending of OS and hardware.
-
        Checked on 5.0.0.623, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
+
+    [03.03.2023] pzotov
+        Fixed wrong usage of driver_config.register_database() instance, added check for properly selected protocol (only INET must be used).
+        Added columns to GTT in order to see in the trace used values of compression_suitability and wire_compression.
+        Checked on Windows: 5.0.0.967 SS/CS, 4.0.3.2904 SS/CS, 3.0.11.33665 SS/CS
 """
 
 import os
@@ -69,7 +73,7 @@ import psutil
 
 import pytest
 from firebird.qa import *
-from firebird.driver import driver_config, connect
+from firebird.driver import driver_config, connect, NetProtocol
 
 
 #--------------------------------------------------------------------
@@ -79,7 +83,7 @@ def median(lst):
     return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
 #--------------------------------------------------------------------
 
-db = db_factory(init = 'recreate global temporary table gtt_test(b blob) on commit delete rows;')
+db = db_factory(init = 'recreate global temporary table gtt_test(b blob, compression_suitability varchar(10), wire_compression varchar(10)) on commit delete rows;')
 
 act = python_act('db')
 
@@ -108,13 +112,7 @@ MAX_THRESHOLD_FOR_COMPRESS_ON_VS_OFF = 4.0
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_data: Path, capsys):
 
-    srv_config_key_value_text = \
-    f"""
-        [test_srv_core_6348]
-        protocol = inet
-    """
-
-    driver_config.register_server(name = 'test_srv_core_6348', config = srv_config_key_value_text)
+    srv_cfg = driver_config.register_server(name = 'test_srv_core_6348', config = '')
     blob_load_map = {}
     for compression_suitability in ('excellent', 'incompres'):
         if compression_suitability == 'excellent':
@@ -122,25 +120,34 @@ def test_1(act: Action, tmp_data: Path, capsys):
         else:
             tmp_data.write_bytes( bytearray(os.urandom(DATA_LEN)) )
 
-        for wire_compression in ('false','true'):
+        for wire_compression in (True, False):
             db_cfg_name = f'tmp_6348_compression_suit_{compression_suitability}__wire_compression_{wire_compression}'
             db_cfg_object = driver_config.register_database(name = db_cfg_name)
+            db_cfg_object.server.value = srv_cfg.name # 'test_srv_core_6348'
+            # db_cfg_object.protocol.value = None /  XNET /  WNET -- these can not be used in this test!
+            db_cfg_object.protocol.value = NetProtocol.INET
             db_cfg_object.database.value = str(act.db.db_path)
+            
             db_cfg_object.config.value = f"""
                 WireCrypt = Disabled
                 WireCompression = {wire_compression}
             """
             blob_load_lst = []
-            with connect(db_cfg_name) as con:
+            with connect(db_cfg_name, user = act.db.user, password = act.db.password) as con:
+                prot_name = db_cfg_object.protocol.value.name if db_cfg_object.protocol.value else 'Embedded'
+                assert wire_compression == con.info.is_compressed(), f'Protocol: {prot_name} - can not be used to measure wire_compression'
                 with con.cursor() as cur:
-                    cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
-                    fb_pid = int(cur.fetchone()[0])
+                    cur.execute('select mon$server_pid, mon$remote_protocol as p from mon$attachments where mon$attachment_id = current_connection')
+                    for r in cur:
+                        fb_pid, connection_protocol = r
+                        assert connection_protocol.startswith('TCP'), f'Invalid connection protocol: {connection_protocol}'
+
                     for iter in range(0,N_MEASURES):
                         # Load stream blob into table: open file with data and pass file object into INSERT command.
                         # https://firebird-driver.readthedocs.io/en/latest/usage-guide.html?highlight=blob#working-with-blobs
                         with open(tmp_data, 'rb') as blob_file:
                             fb_info_a = psutil.Process(fb_pid).cpu_times()
-                            cur.execute("insert into gtt_test(b) values(?)", (blob_file,) )
+                            cur.execute("insert into gtt_test(b, compression_suitability, wire_compression) values(?, ?, ?)", (blob_file, compression_suitability, str(wire_compression)) )
                             fb_info_b = psutil.Process(fb_pid).cpu_times()
                             blob_load_lst.append( fb_info_b.user - fb_info_a.user )
                             con.commit()
