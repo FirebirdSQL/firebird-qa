@@ -23,6 +23,14 @@ NOTES:
 
     Thanks to Vlad for suggestions. Discussed 20-21 feb 2023.
     Checked on 5.0.0.958.
+
+    [03.03.2023] pzotov
+    Added 'set blob all' because result of blob_append(null, null) must be visible as literal '<null>'.
+    Waiting for patch in FB 4.x that fixes problem with <null> literal (4.0.3.2904 still fails).
+    Added substitution for suppressing 'Nullable' flags in the SQLDA output: it is sufficient for this test
+    to check only datatypes of result.
+    Discussed with Vlad, letters 02-mar-2023 16:01 and 03-mar-2023 14:43.
+    Checked on 5.0.0.967.
 """
 
 import pytest
@@ -71,8 +79,10 @@ db = db_factory(charset = 'utf8', init = init_script, utf8filename=True)
 
 test_script = """
     set sqlda_display on;
+    set blob all;
+    set list on;
+
     set planonly;
-    -- set echo on;
 
     -- if first non-NULL argument is blob, then use its blob subtype and charset
     select blob_append(null, fbo, 'foo', 123) as blob_result_1 from test;
@@ -88,29 +98,33 @@ test_script = """
     select blob_append(null, num, current_date, boo) as blob_result_4 from test;
     -----------------------------------------------------
     -- if all arguments is NULL, then return NULL
+
+    set planonly;
     select blob_append(null, null, null) as blob_result_5 from test;
 """
 
-act = isql_act('db', test_script, substitutions = [('^((?!sqltype:|BLOB_RESULT).)*$', ''), ('[ \t]+', ' ')])
+act = isql_act('db', test_script, substitutions = [('^((?!sqltype:|BLOB_RESULT).)*$', ''), ('BLOB Nullable', 'BLOB'), ('[ \t]+', ' ')])
 
 expected_stdout = """
-    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 1 OCTETS
+    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 1 OCTETS
     :  name: BLOB_APPEND  alias: BLOB_RESULT_1
 
-    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 0 len: 8
+    01: sqltype: 520 BLOB scale: 0 subtype: 0 len: 8
     :  name: BLOB_APPEND  alias: BLOB_RESULT_2
 
-    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 21 ISO8859_1
+    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 21 ISO8859_1
     :  name: BLOB_APPEND  alias: BLOB_RESULT_3A
 
-    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 4 UTF8
+    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 4 UTF8
     :  name: BLOB_APPEND  alias: BLOB_RESULT_3B
 
-    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 2 ASCII
+    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 2 ASCII
     :  name: BLOB_APPEND  alias: BLOB_RESULT_4
 
     01: sqltype: 520 BLOB Nullable scale: 0 subtype: 0 len: 8
     :  name: BLOB_APPEND  alias: BLOB_RESULT_5
+
+    BLOB_RESULT_5 <null>
 """
 
 @pytest.mark.version('>=4.0.3')
