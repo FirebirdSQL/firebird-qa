@@ -24,9 +24,13 @@ JIRA:        CORE-5948
 FBTEST:      bugs.core_5948
 NOTES:
     [06.08.2022] pzotov
-    Re-implemented: see custom driver config object ('db_cfg_object'). No more changes in the firebird.conf.
-    Confirmed again problem on 4.0.0.1227.
-    Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535
+        Re-implemented: see custom driver config object ('db_cfg_object'). No more changes in the firebird.conf.
+        Confirmed again problem on 4.0.0.1227.
+        Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535
+
+    [03.03.2023] pzotov
+        Fixed wrong usage of driver_config.register_database() instance, added check for properly selected protocol (only INET must be used).
+        Checked on 5.0.0.967 SS/CS, 4.0.3.2904 SS/CS, 3.0.11.33665 SS/CS
 """
 import os
 import socket
@@ -35,7 +39,7 @@ import time
 
 import pytest
 from firebird.qa import *
-from firebird.driver import driver_config, connect
+from firebird.driver import driver_config, connect, NetProtocol
 
 #---------------------------------------
 # MANDATORY! OTHERWISE ISC_ variables will take precedense over credentials = False!
@@ -50,10 +54,7 @@ THIS_COMPUTER_NAME = socket.gethostname()
 CURRENT_WIN_ADMIN = getpass.getuser()
 
 db = db_factory()
-substitutions = [('TCPv(4|6)', 'TCP')]
-act = python_act('db', substitutions=substitutions)
-
-expected_stdout = ''
+act = python_act('db', substitutions = [('TCPv(4|6)', 'TCP')])
 
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')
@@ -80,13 +81,11 @@ def test_1(act: Action, capsys):
     '''
     act.isql(switches=[], input=addi_sql)
 
-    srv_config_key_value_text = \
-    f"""
-        [test_srv_core_5948]
-        protocol = inet
-    """
-    driver_config.register_server(name = 'test_srv_core_5948', config = srv_config_key_value_text)
-    db_cfg_object = driver_config.register_database(name = 'test_db_core_5948')
+    srv_cfg = driver_config.register_server(name = 'test_srv_core_5948', config = '')
+    db_cfg_name = 'test_db_core_5948'
+    db_cfg_object = driver_config.register_database(name = db_cfg_name)
+    db_cfg_object.server.value = srv_cfg.name
+    db_cfg_object.protocol.value = NetProtocol.INET
     db_cfg_object.database.value = str(act.db.db_path)
     db_cfg_object.config.value = f"""
         AuthClient = Win_Sspi
@@ -97,8 +96,12 @@ def test_1(act: Action, capsys):
     # Otherwise (if 'user' missed) driver will try to take act.db.user and connection will fail
     # with SQLSTATE = 28000 ("...user name and password are not defined...")
     #
-    with connect('test_db_core_5948', user = '') as con:
+    with connect(db_cfg_name, user = '') as con:
+        prot_name = db_cfg_object.protocol.value.name if db_cfg_object.protocol.value else 'Embedded'
         with con.cursor() as cur:
+             for r in cur.execute('select mon$remote_protocol as p from mon$attachments where mon$attachment_id = current_connection'):
+                 assert r[0].startswith('TCP'), f'Invalid connection protocol: {r[0]}'
+
              for r in cur.execute('select * from v_map_info'):
                  for i,col in enumerate(cur.description):
                      print((col[0] +':').ljust(32), r[i])
