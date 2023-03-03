@@ -26,11 +26,11 @@ NOTES:
 
     [03.03.2023] pzotov
     Added 'set blob all' because result of blob_append(null, null) must be visible as literal '<null>'.
-    Waiting for patch in FB 4.x that fixes problem with <null> literal (4.0.3.2904 still fails).
     Added substitution for suppressing 'Nullable' flags in the SQLDA output: it is sufficient for this test
     to check only datatypes of result.
     Discussed with Vlad, letters 02-mar-2023 16:01 and 03-mar-2023 14:43.
-    Checked on 5.0.0.967.
+
+    Checked on 5.0.0.967, 4.0.3.2904 (intermediate build 03-mar-2023 12:33)
 """
 
 import pytest
