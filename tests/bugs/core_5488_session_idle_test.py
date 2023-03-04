@@ -23,7 +23,14 @@ DESCRIPTION: Timeout for IDLE connection (SET SESSION IDLE TIMEOUT <N>)
     * log of STDERR contains exception SQLSTATE = 08003 / connection shutdown / -Idle timeout expired
 
     Trace log should contain only following events:
-    attach to DB, start Tx, first statement finish, rollback Tx and detach DB.
+      * attach to DB
+      * start Tx
+      * EXECUTE_STATEMENT_FINISH of 'SET TRANSACTION' statement // it appeared in 5.0.0.391, 08-feb-2022
+      * EXECUTE_STATEMENT_FINISH of 'set session idle timeout 1 second' statement
+      * EXECUTE_STATEMENT_FINISH finish of 'select 1 as point_1 from rdb$database' statement
+      * rollback Tx
+      * detach DB.
+
 
     ::: NB:::
     No events related to SECOND statement should be in the trace log.
@@ -50,6 +57,7 @@ act = python_act('db', substitutions=substitutions)
 expected_trace = """
 ATTACH_DATABASE
 START_TRANSACTION
+EXECUTE_STATEMENT_FINISH
 EXECUTE_STATEMENT_FINISH
 set session idle timeout second
 EXECUTE_STATEMENT_FINISH
