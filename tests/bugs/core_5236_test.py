@@ -81,7 +81,7 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
+fb3x_expected_out = """
     Select Expression
         -> Filter
             -> Filter
@@ -98,8 +98,24 @@ expected_stdout = """
                         -> Index "UNQ1_DP_RECIBO" Range Scan (partial match: 1/2)
 """
 
+fb5x_expected_out = """
+    Sub-query
+        -> Filter
+            -> Filter
+                -> Table "DP_REGISTRO_OEST" Access By ID
+                    -> Bitmap
+                        -> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
+    Select Expression
+        -> Filter
+            -> Hash Join (inner)
+                -> Table "DP_RECIBO" Full Scan
+                -> Record Buffer (record length: 25)
+                    -> Filter
+                        -> Table "DP_REGISTRO" Full Scan
+"""
+
 @pytest.mark.version('>=3.0.1')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    act.expected_stdout = fb3x_expected_out if act.is_version('<5') else fb5x_expected_out
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
