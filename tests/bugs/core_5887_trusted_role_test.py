@@ -21,7 +21,9 @@ JIRA:        CORE-5887
 FBTEST:      bugs.core_5887_trusted_role
 NOTES:
     [15.08.2022] pzotov
-    Checked on 5.0.0.623, 4.0.1.2692.
+        Checked on 5.0.0.623, 4.0.1.2692.
+    [04.03.2023] pzotov
+        Computer name must be converted to UPPERCASE, otherwise test fails.
 """
 
 import os
@@ -37,7 +39,7 @@ for v in ('ISC_USER','ISC_PASSWORD'):
     except KeyError as e:
         pass
 
-THIS_COMPUTER_NAME = socket.gethostname()
+THIS_COMPUTER_NAME = socket.gethostname().upper()
 CURRENT_WIN_ADMIN = getpass.getuser()
 
 db = db_factory()
