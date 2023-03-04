@@ -29,7 +29,7 @@ test_script = """
     commit;
     set statistics index tk_x;
     commit;
-
+    
     recreate table tf(id_key int primary key using index tf_id_key);
     commit;
     insert into tf(id_key)
@@ -38,172 +38,206 @@ test_script = """
     commit;
     set statistics index tf_id_key;
     commit;
-
+    
     set planonly;
-
+    
     -- 1. Join using RDB$DB_KEY based expressions:
-
+    
     ----------- test `traditional` join form -----------------
-
+    
     select count(*)
-    from (select rdb$db_key||'' a from tk) r
-    join (select rdb$db_key||'' a from tk) s on r.a = s.a;
-
-
+    from (select rdb$db_key||'' a from tk) datasource_a
+    join (select rdb$db_key||'' a from tk) datasource_b on datasource_a.a = datasource_b.a;
+    
+    
     select count(*)
-    from (select rdb$db_key||'' a from tk) r
-    join (select rdb$db_key||'' a from tk) s on r.a = s.a
-    join (select rdb$db_key||'' a from tk) t on s.a = t.a;
-
-
+    from (select rdb$db_key||'' a from tk) datasource_a
+    join (select rdb$db_key||'' a from tk) datasource_b on datasource_a.a = datasource_b.a
+    join (select rdb$db_key||'' a from tk) datasource_c on datasource_b.a = datasource_c.a;
+    
+    
     select count(*)
-    from (select rdb$db_key||'' a from tk) r
-    join (select rdb$db_key||'' a from tk) s on r.a = s.a
-    join (select rdb$db_key||'' a from tk) t on s.a = t.a
-    join (select rdb$db_key||'' a from tk) u on t.a = u.a;
-
+    from (select rdb$db_key||'' a from tk) datasource_a
+    join (select rdb$db_key||'' a from tk) datasource_b on datasource_a.a = datasource_b.a
+    join (select rdb$db_key||'' a from tk) datasource_c on datasource_b.a = datasource_c.a
+    join (select rdb$db_key||'' a from tk) datasource_d on datasource_c.a = datasource_d.a;
+    
     ----------- test join on named columns form -----------------
-
+    
     select count(*)
-    from (select rdb$db_key||'' a from tk) r
-    join (select rdb$db_key||'' a from tk) s using(a);
-
+    from (select rdb$db_key||'' a from tk) datasource_a
+    join (select rdb$db_key||'' a from tk) datasource_b using(a);
+    
     select count(*)
-    from (select rdb$db_key||'' a from tk) r
-    join (select rdb$db_key||'' a from tk) s using(a)
-    join (select rdb$db_key||'' a from tk) t using(a);
-
+    from (select rdb$db_key||'' a from tk) datasource_a
+    join (select rdb$db_key||'' a from tk) datasource_b using(a)
+    join (select rdb$db_key||'' a from tk) datasource_c using(a);
+    
     select count(*)
-    from (select rdb$db_key||'' a from tk) r
-    join (select rdb$db_key||'' a from tk) s using(a)
-    join (select rdb$db_key||'' a from tk) t using(a)
-    join (select rdb$db_key||'' a from tk) u using(a);
-
+    from (select rdb$db_key||'' a from tk) datasource_a
+    join (select rdb$db_key||'' a from tk) datasource_b using(a)
+    join (select rdb$db_key||'' a from tk) datasource_c using(a)
+    join (select rdb$db_key||'' a from tk) datasource_d using(a);
+    
     ----------- test natural join form -----------------
-
+    
     select count(*)
-    from (select rdb$db_key||'' a from tk) r
-    natural join (select rdb$db_key||'' a from tk) s;
-
+    from (select rdb$db_key||'' a from tk) datasource_a
+    natural join (select rdb$db_key||'' a from tk) datasource_b;
+    
     select count(*)
-    from (select rdb$db_key||'' a from tk) r
-    natural join (select rdb$db_key||'' a from tk) s
-    natural join (select rdb$db_key||'' a from tk) t;
-
+    from (select rdb$db_key||'' a from tk) datasource_a
+    natural join (select rdb$db_key||'' a from tk) datasource_b
+    natural join (select rdb$db_key||'' a from tk) datasource_c;
+    
     select count(*)
-    from (select rdb$db_key||'' a from tk) r
-    natural join (select rdb$db_key||'' a from tk) s
-    natural join (select rdb$db_key||'' a from tk) t
-    natural join (select rdb$db_key||'' a from tk) u;
-
+    from (select rdb$db_key||'' a from tk) datasource_a
+    natural join (select rdb$db_key||'' a from tk) datasource_b
+    natural join (select rdb$db_key||'' a from tk) datasource_c
+    natural join (select rdb$db_key||'' a from tk) datasource_d;
+    
     -------------------------------------------------
-
+    
     -- 2. Join using COMMON FIELD based expressions:
-    -- (all following statements produced 'PLAN HASH' before fix also;
+    -- (all following statements produced 'PLAN HASH' before fix also; 
     --  here we verify them only for sure that evething remains OK).
-
+    
     ----------- test `traditional` join form -----------------
-
+    
     select count(*)
-    from (select id_key||'' a from tf) r
-    join (select id_key||'' a from tf) s on r.a = s.a;
-
-
+    from (select id_key||'' a from tf) datasource_a
+    join (select id_key||'' a from tf) datasource_b on datasource_a.a = datasource_b.a;
+    
+    
     select count(*)
-    from (select id_key||'' a from tf) r
-    join (select id_key||'' a from tf) s on r.a = s.a
-    join (select id_key||'' a from tf) t on s.a = t.a;
-
-
+    from (select id_key||'' a from tf) datasource_a
+    join (select id_key||'' a from tf) datasource_b on datasource_a.a = datasource_b.a
+    join (select id_key||'' a from tf) datasource_c on datasource_b.a = datasource_c.a;
+    
+    
     select count(*)
-    from (select id_key||'' a from tf) r
-    join (select id_key||'' a from tf) s on r.a = s.a
-    join (select id_key||'' a from tf) t on s.a = t.a
-    join (select id_key||'' a from tf) u on t.a = u.a;
-
+    from (select id_key||'' a from tf) datasource_a
+    join (select id_key||'' a from tf) datasource_b on datasource_a.a = datasource_b.a
+    join (select id_key||'' a from tf) datasource_c on datasource_b.a = datasource_c.a
+    join (select id_key||'' a from tf) datasource_d on datasource_c.a = datasource_d.a;
+    
     ----------- test join on named columns form -----------------
-
+    
     select count(*)
-    from (select id_key||'' a from tf) r
-    join (select id_key||'' a from tf) s using(a);
-
+    from (select id_key||'' a from tf) datasource_a
+    join (select id_key||'' a from tf) datasource_b using(a);
+    
     select count(*)
-    from (select id_key||'' a from tf) r
-    join (select id_key||'' a from tf) s using(a)
-    join (select id_key||'' a from tf) t using(a);
-
+    from (select id_key||'' a from tf) datasource_a
+    join (select id_key||'' a from tf) datasource_b using(a)
+    join (select id_key||'' a from tf) datasource_c using(a);
+    
     select count(*)
-    from (select id_key||'' a from tf) r
-    join (select id_key||'' a from tf) s using(a)
-    join (select id_key||'' a from tf) t using(a)
-    join (select id_key||'' a from tf) u using(a);
-
+    from (select id_key||'' a from tf) datasource_a
+    join (select id_key||'' a from tf) datasource_b using(a)
+    join (select id_key||'' a from tf) datasource_c using(a)
+    join (select id_key||'' a from tf) datasource_d using(a);
+    
     ----------- test natural join form -----------------
-
+    
     select count(*)
-    from (select id_key||'' a from tf) r
-    natural join (select id_key||'' a from tf) s;
-
+    from (select id_key||'' a from tf) datasource_a
+    natural join (select id_key||'' a from tf) datasource_b;
+    
     select count(*)
-    from (select id_key||'' a from tf) r
-    natural join (select id_key||'' a from tf) s
-    natural join (select id_key||'' a from tf) t;
-
+    from (select id_key||'' a from tf) datasource_a
+    natural join (select id_key||'' a from tf) datasource_b
+    natural join (select id_key||'' a from tf) datasource_c;
+    
     select count(*)
-    from (select id_key||'' a from tf) r
-    natural join (select id_key||'' a from tf) s
-    natural join (select id_key||'' a from tf) t
-    natural join (select id_key||'' a from tf) u;
+    from (select id_key||'' a from tf) datasource_a
+    natural join (select id_key||'' a from tf) datasource_b
+    natural join (select id_key||'' a from tf) datasource_c
+    natural join (select id_key||'' a from tf) datasource_d;
 """
 
 act = isql_act('db', test_script)
 
 fb3x_checked_stdout = """
-    PLAN HASH (S TK NATURAL, R TK NATURAL)
-    PLAN HASH (HASH (T TK NATURAL, S TK NATURAL), R TK NATURAL)
-    PLAN HASH (HASH (HASH (U TK NATURAL, T TK NATURAL), S TK NATURAL), R TK NATURAL)
-    PLAN HASH (S TK NATURAL, R TK NATURAL)
-    PLAN HASH (T TK NATURAL, HASH (S TK NATURAL, R TK NATURAL))
-    PLAN HASH (U TK NATURAL, HASH (T TK NATURAL, HASH (S TK NATURAL, R TK NATURAL)))
-    PLAN HASH (S TK NATURAL, R TK NATURAL)
-    PLAN HASH (T TK NATURAL, HASH (S TK NATURAL, R TK NATURAL))
-    PLAN HASH (U TK NATURAL, HASH (T TK NATURAL, HASH (S TK NATURAL, R TK NATURAL)))
-    PLAN HASH (S TF NATURAL, R TF NATURAL)
-    PLAN HASH (HASH (T TF NATURAL, S TF NATURAL), R TF NATURAL)
-    PLAN HASH (HASH (HASH (U TF NATURAL, T TF NATURAL), S TF NATURAL), R TF NATURAL)
-    PLAN HASH (S TF NATURAL, R TF NATURAL)
-    PLAN HASH (T TF NATURAL, HASH (S TF NATURAL, R TF NATURAL))
-    PLAN HASH (U TF NATURAL, HASH (T TF NATURAL, HASH (S TF NATURAL, R TF NATURAL)))
-    PLAN HASH (S TF NATURAL, R TF NATURAL)
-    PLAN HASH (T TF NATURAL, HASH (S TF NATURAL, R TF NATURAL))
-    PLAN HASH (U TF NATURAL, HASH (T TF NATURAL, HASH (S TF NATURAL, R TF NATURAL)))
+    PLAN HASH (DATASOURCE_B TK NATURAL, DATASOURCE_A TK NATURAL)
+
+    PLAN HASH (HASH (DATASOURCE_C TK NATURAL, DATASOURCE_B TK NATURAL), DATASOURCE_A TK NATURAL)
+
+    PLAN HASH (HASH (HASH (DATASOURCE_D TK NATURAL, DATASOURCE_C TK NATURAL), DATASOURCE_B TK NATURAL), DATASOURCE_A TK NATURAL)
+
+    PLAN HASH (DATASOURCE_B TK NATURAL, DATASOURCE_A TK NATURAL)
+
+    PLAN HASH (DATASOURCE_C TK NATURAL, HASH (DATASOURCE_B TK NATURAL, DATASOURCE_A TK NATURAL))
+
+    PLAN HASH (DATASOURCE_D TK NATURAL, HASH (DATASOURCE_C TK NATURAL, HASH (DATASOURCE_B TK NATURAL, DATASOURCE_A TK NATURAL)))
+
+    PLAN HASH (DATASOURCE_B TK NATURAL, DATASOURCE_A TK NATURAL)
+
+    PLAN HASH (DATASOURCE_C TK NATURAL, HASH (DATASOURCE_B TK NATURAL, DATASOURCE_A TK NATURAL))
+
+    PLAN HASH (DATASOURCE_D TK NATURAL, HASH (DATASOURCE_C TK NATURAL, HASH (DATASOURCE_B TK NATURAL, DATASOURCE_A TK NATURAL)))
+
+    PLAN HASH (DATASOURCE_B TF NATURAL, DATASOURCE_A TF NATURAL)
+
+    PLAN HASH (HASH (DATASOURCE_C TF NATURAL, DATASOURCE_B TF NATURAL), DATASOURCE_A TF NATURAL)
+
+    PLAN HASH (HASH (HASH (DATASOURCE_D TF NATURAL, DATASOURCE_C TF NATURAL), DATASOURCE_B TF NATURAL), DATASOURCE_A TF NATURAL)
+
+    PLAN HASH (DATASOURCE_B TF NATURAL, DATASOURCE_A TF NATURAL)
+
+    PLAN HASH (DATASOURCE_C TF NATURAL, HASH (DATASOURCE_B TF NATURAL, DATASOURCE_A TF NATURAL))
+
+    PLAN HASH (DATASOURCE_D TF NATURAL, HASH (DATASOURCE_C TF NATURAL, HASH (DATASOURCE_B TF NATURAL, DATASOURCE_A TF NATURAL)))
+
+    PLAN HASH (DATASOURCE_B TF NATURAL, DATASOURCE_A TF NATURAL)
+
+    PLAN HASH (DATASOURCE_C TF NATURAL, HASH (DATASOURCE_B TF NATURAL, DATASOURCE_A TF NATURAL))
+
+    PLAN HASH (DATASOURCE_D TF NATURAL, HASH (DATASOURCE_C TF NATURAL, HASH (DATASOURCE_B TF NATURAL, DATASOURCE_A TF NATURAL)))
 """
 
 
 fb5x_checked_stdout = """
-    PLAN HASH (R TK NATURAL, S TK NATURAL)
-    PLAN HASH (R TK NATURAL, S TK NATURAL, T TK NATURAL)
-    PLAN HASH (R TK NATURAL, S TK NATURAL, T TK NATURAL, U TK NATURAL)
-    PLAN HASH (R TK NATURAL, S TK NATURAL)
-    PLAN HASH (HASH (R TK NATURAL, S TK NATURAL), T TK NATURAL)
-    PLAN HASH (HASH (HASH (R TK NATURAL, S TK NATURAL), T TK NATURAL), U TK NATURAL)
-    PLAN HASH (R TK NATURAL, S TK NATURAL)
-    PLAN HASH (HASH (R TK NATURAL, S TK NATURAL), T TK NATURAL)
-    PLAN HASH (HASH (HASH (R TK NATURAL, S TK NATURAL), T TK NATURAL), U TK NATURAL)
-    PLAN HASH (R TF NATURAL, S TF NATURAL)
-    PLAN HASH (R TF NATURAL, S TF NATURAL, T TF NATURAL)
-    PLAN HASH (R TF NATURAL, S TF NATURAL, T TF NATURAL, U TF NATURAL)
-    PLAN HASH (R TF NATURAL, S TF NATURAL)
-    PLAN HASH (HASH (R TF NATURAL, S TF NATURAL), T TF NATURAL)
-    PLAN HASH (HASH (HASH (R TF NATURAL, S TF NATURAL), T TF NATURAL), U TF NATURAL)
-    PLAN HASH (R TF NATURAL, S TF NATURAL)
-    PLAN HASH (HASH (R TF NATURAL, S TF NATURAL), T TF NATURAL)
-    PLAN HASH (HASH (HASH (R TF NATURAL, S TF NATURAL), T TF NATURAL), U TF NATURAL)
+    PLAN HASH (DATASOURCE_A TK NATURAL, DATASOURCE_B TK NATURAL)
+
+    PLAN HASH (DATASOURCE_A TK NATURAL, DATASOURCE_B TK NATURAL, DATASOURCE_C TK NATURAL)
+
+    PLAN HASH (DATASOURCE_A TK NATURAL, DATASOURCE_B TK NATURAL, DATASOURCE_C TK NATURAL, DATASOURCE_D TK NATURAL)
+
+    PLAN HASH (DATASOURCE_A TK NATURAL, DATASOURCE_B TK NATURAL)
+
+    PLAN HASH (DATASOURCE_C TK NATURAL, HASH (DATASOURCE_A TK NATURAL, DATASOURCE_B TK NATURAL))
+
+    PLAN HASH (DATASOURCE_D TK NATURAL, HASH (DATASOURCE_C TK NATURAL, HASH (DATASOURCE_A TK NATURAL, DATASOURCE_B TK NATURAL)))
+
+    PLAN HASH (DATASOURCE_A TK NATURAL, DATASOURCE_B TK NATURAL)
+
+    PLAN HASH (DATASOURCE_C TK NATURAL, HASH (DATASOURCE_A TK NATURAL, DATASOURCE_B TK NATURAL))
+
+    PLAN HASH (DATASOURCE_D TK NATURAL, HASH (DATASOURCE_C TK NATURAL, HASH (DATASOURCE_A TK NATURAL, DATASOURCE_B TK NATURAL)))
+
+    PLAN HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL)
+
+    PLAN HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL, DATASOURCE_C TF NATURAL)
+
+    PLAN HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL, DATASOURCE_C TF NATURAL, DATASOURCE_D TF NATURAL)
+
+    PLAN HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL)
+
+    PLAN HASH (DATASOURCE_C TF NATURAL, HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL))
+
+    PLAN HASH (DATASOURCE_D TF NATURAL, HASH (DATASOURCE_C TF NATURAL, HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL)))
+
+    PLAN HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL)
+
+    PLAN HASH (DATASOURCE_C TF NATURAL, HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL))
+
+    PLAN HASH (DATASOURCE_D TF NATURAL, HASH (DATASOURCE_C TF NATURAL, HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL)))
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
