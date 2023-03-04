@@ -408,7 +408,23 @@ expected_stdout_3 = """
     SEC$GLOBAL_AUTH_MAPPING
     SEC$USERS
     SEC$USER_ATTRIBUTES
-
+    Package: RDB$BLOB_UTIL
+    CANCEL_BLOB
+    CLOSE_HANDLE
+    Package: RDB$PROFILER
+    CANCEL_SESSION
+    DISCARD
+    FINISH_SESSION
+    FLUSH
+    PAUSE_SESSION
+    RESUME_SESSION
+    SET_FLUSH_INTERVAL
+    Package: RDB$TIME_ZONE_UTIL
+    TRANSITIONS
+    Packages:
+    RDB$BLOB_UTIL
+    RDB$PROFILER
+    RDB$TIME_ZONE_UTIL
     Collations:
     ASCII
     BIG_5
@@ -559,7 +575,6 @@ expected_stdout_3 = """
     WIN_CZ
     WIN_CZ_CI_AI
     WIN_PTBR
-
     Roles:
     RDB$ADMIN
 """
