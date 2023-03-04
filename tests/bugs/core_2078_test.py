@@ -292,7 +292,7 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
+fb3x_expected_out = """
     RUN1_TAB_NAME                   TBIG
     RUN1_IDX_NAME                   TBIG_IDX1_FK_SML
     RUN1_IDX_STAT                   0.5000000000
@@ -343,8 +343,59 @@ expected_stdout = """
     FETCHES_2_2                     acceptable
 """
 
+fb5x_expected_out = """
+    RUN1_TAB_NAME                   TBIG                           
+    RUN1_IDX_NAME                   TBIG_IDX1_FK_SML               
+    RUN1_IDX_STAT                   0.5000000000
+
+    RUN1_TAB_NAME                   TBIG                           
+    RUN1_IDX_NAME                   TBIG_IDX2_FK_MED               
+    RUN1_IDX_STAT                   0.0033333334
+
+    RUN1_TAB_NAME                   TMED                           
+    RUN1_IDX_NAME                   TMED_PK                        
+    RUN1_IDX_STAT                   0.0033333334
+
+    RUN1_TAB_NAME                   TSML                           
+    RUN1_IDX_NAME                   TSML_PK                        
+    RUN1_IDX_STAT                   0.0666666701
+
+    PLAN HASH (JOIN (M NATURAL, B INDEX (TBIG_IDX2_FK_MED)), S NATURAL)
+    CNT_1_1                         3000
+
+    PLAN HASH (JOIN (S NATURAL, B INDEX (TBIG_IDX1_FK_SML)), M NATURAL)
+    CNT_1_2                         1500
+
+    RUN2_TAB_NAME                   TBIG                           
+    RUN2_IDX_NAME                   TBIG_IDX1_FK_SML               
+    RUN2_IDX_STAT                   0.5000000000
+
+    RUN2_TAB_NAME                   TBIG                           
+    RUN2_IDX_NAME                   TBIG_IDX2_FK_MED               
+    RUN2_IDX_STAT                   0.0033333334
+
+    RUN2_TAB_NAME                   TMED                           
+    RUN2_IDX_NAME                   TMED_PK                        
+    RUN2_IDX_STAT                   0.0033333334
+
+    RUN2_TAB_NAME                   TSML                           
+    RUN2_IDX_NAME                   TSML_PK                        
+    RUN2_IDX_STAT                   0.0222222228
+
+    PLAN HASH (JOIN (M NATURAL, B INDEX (TBIG_IDX2_FK_MED)), S NATURAL)
+    CNT_2_1                         3000
+
+    PLAN HASH (JOIN (S NATURAL, B INDEX (TBIG_IDX1_FK_SML)), M NATURAL)
+    CNT_2_2                         1500
+    FETCHES_1_1                     acceptable
+    FETCHES_1_2                     acceptable
+    FETCHES_2_1                     acceptable
+    FETCHES_2_2                     acceptable
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = fb3x_expected_out if act.is_version('<5') else fb5x_expected_out
     act.execute()
+    #assert act.stdout == act.clean_expected_stdout
     assert act.clean_stdout == act.clean_expected_stdout
