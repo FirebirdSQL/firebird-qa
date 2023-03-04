@@ -16,15 +16,15 @@ JIRA:        CORE-4319
 FBTEST:      bugs.core_4319
 NOTES:
     [15.1.2022] pcisar
-      This test fails on localized Windows due to encoding error and other
-      expected output differences, so we skip it for now.
+        This test fails on localized Windows due to encoding error and other
+        expected output differences, so we skip it for now.
 
     [17.09.2022] pzotov
-    One need to specify 'io_enc=locale.getpreferredencoding()' when invoke ISQL
-    if we want this message to appear at console in readable view:
-        act.isql(switches = ..., input = ..., charset = ..., io_enc=locale.getpreferredencoding())
-    NOTE: specifying 'encoding_errors = ignore' in the DEFAULT section of firebird-driver.conf
-    does not prevent from UnicodeDecode error in this case.
+        One need to specify 'io_enc=locale.getpreferredencoding()' when invoke ISQL
+        if we want this message to appear at console in readable view:
+            act.isql(switches = ..., input = ..., charset = ..., io_enc=locale.getpreferredencoding())
+        NOTE: specifying 'encoding_errors = ignore' in the DEFAULT section of firebird-driver.conf
+        does not prevent from UnicodeDecode error in this case.
 
     Checked on Linux and Windows (localized, cp1251): 3.0.8.33535, 4.0.1.2692, 5.0.0.730
 """
@@ -66,19 +66,21 @@ def test_1(act: Action, capsys):
     with act.trace(config = trace_conf, encoding = locale.getpreferredencoding(), encoding_errors='utf8'):
         act.isql(switches = ['-q'], input = sql_txt, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
 
-        possible_crash_pattern = re.compile('error\s+(reading|writing)\s+data', re.IGNORECASE)
+        possible_crash_pattern = re.compile(r'error\s+(reading|writing)\s+data\s+(from|to)(\s+the)?\s+connection', re.IGNORECASE)
         assert 'SQLSTATE = 08001' in act.stdout and NO_SUCH_ALIAS in act.stdout and not possible_crash_pattern.search(act.stdout)
         act.reset()
     
-    assert len(act.trace_log) == 0
+    # 04.03.2023. Trace in recent FB 4.x and 5.x contains FAILED ATTACH_DATABASE when we attempt to make connection to non-existnng alias.
+    # Because of that, requirement about empty trace must be removed from here:
+    # >>> DISABLED 04.03.2023 >>> assert len(act.trace_log) == 0
 
     # Get Firebird log after test
     log_after = act.get_firebird_log()
 
-    problematic_patterns = [re.compile('access\s+violation',re.IGNORECASE),
-                        re.compile('terminate\\S+ abnormally',re.IGNORECASE),
-                        re.compile('error\s+(reading|writing)\s+data',re.IGNORECASE)
-                        ]
+    problematic_patterns = [re.compile( r'access\s+violation',re.IGNORECASE),
+                            re.compile( r'terminate\S+ abnormally',re.IGNORECASE),
+                            re.compile( r'error\s+(reading|writing)\s+data',re.IGNORECASE)
+                           ]
     for line in unified_diff(log_before, log_after):
         # ::: NB :::
         # filter(None, [p.search(line) for p in problematic_patterns]) will be None only in Python 2.7.x!
