@@ -5,6 +5,9 @@ ID:          issue-7165
 ISSUE:       7165
 TITLE:       Provide ability to see in the trace log events related to missing security context
 DESCRIPTION:
+    List of AuthClient plugins must contain Win_Sspi in order to reproduce this test expected results.
+    Otherwise firebird.log will not contain any message like "Available context(s): ..."
+    Because of this, test marked as to be performed on WINDOWS only.
     Test removed ISC_USER and ISC_PASSWORD from environment (if they were defined previously),
     this is mandatory condition for reproducing problem.
     Then we launch trace and invoke ISQL with single command: QUIT.
@@ -51,6 +54,7 @@ expected_stderr_isql = """
 """
 
 @pytest.mark.version('>=5.0')
+@pytest.mark.platform('Windows')
 def test_1(act: Action, capsys):
 
     trace_cfg_items = [
