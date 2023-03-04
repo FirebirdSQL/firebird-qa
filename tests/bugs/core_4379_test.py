@@ -111,7 +111,8 @@ test_script = """
     select natural_reads, indexed_reads from v_agg_stat_tabs where table_name = upper('T');
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script, substitutions = [('(--\\s+)?line \\d+, col(umn)? \\d+', '')])
+# -- line 2, column 7
 
 expected_stdout = """
     PLAN (X ORDER T_PK_IDX)
