@@ -132,7 +132,7 @@ expected_stdout = """
     EXAMPLE_4_BLOB_IS_WRITABLE      <false>
 """
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=5.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
