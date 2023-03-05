@@ -26,6 +26,35 @@ DESCRIPTION:
       2.2) EQUALS to "NEW NUMBER" for subsequent Tx..." for LAST statement because it does not change anything (updates empty table);
 JIRA:        CORE-6095
 FBTEST:      bugs.core_6095
+NOTES:
+    [05-mar-2023] pzotov
+        1. Additional transaction is started by Garbage Collector when SuperServer is checked.
+           This transaction starts first so it will be seen as Tx with minimal number in the trace log.
+           But on some hosts *message* in the trace for this tx can appear *after* common transactions.
+           In order to force GC transaction appear always as FIRST in the trace log, we launch AUX connection here, see 'con_aux'.
+        2. In SuperServer mode we have to take in account as minimal user Tx = 3 (see START_TX).
+           In Classic this tx = 0.
+        3. Expected outputs:
+            For Classic and SuperClassic:
+            Found record with "NEW NUMBER" for subsequent Tx numbers:  1
+            Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  0 ; Tx that finished now: 1
+            Found record with "NEW NUMBER" for subsequent Tx numbers:  2
+            Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  0 ; Tx that finished now: 2
+            Found record with "NEW NUMBER" for subsequent Tx numbers:  3
+            Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  0 ; Tx that finished now: 3
+            Found record with "NEW NUMBER" for subsequent Tx numbers:  3
+            Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  0 ; Tx that finished now: 3
+
+            For SuperServer:
+            Found record with "NEW NUMBER" for subsequent Tx numbers:  4
+            Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  3 ; Tx that finished now: 4
+            Found record with "NEW NUMBER" for subsequent Tx numbers:  5
+            Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  3 ; Tx that finished now: 5
+            Found record with "NEW NUMBER" for subsequent Tx numbers:  6
+            Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  3 ; Tx that finished now: 6
+            Found record with "NEW NUMBER" for subsequent Tx numbers:  6
+            Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  3 ; Tx that finished now: 6
+        4. Checked on 5.0.0.970 SS/CS/SC
 """
 
 import pytest
@@ -54,17 +83,6 @@ db = db_factory(init=init_script)
 
 act = python_act('db')
 
-expected_stdout = """
-    Found record with "NEW NUMBER" for subsequent Tx numbers:  1
-    Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  0 ; Tx that finished now: 1
-    Found record with "NEW NUMBER" for subsequent Tx numbers:  2
-    Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  0 ; Tx that finished now: 2
-    Found record with "NEW NUMBER" for subsequent Tx numbers:  3
-    Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  0 ; Tx that finished now: 3
-    Found record with "NEW NUMBER" for subsequent Tx numbers:  3
-    Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  0 ; Tx that finished now: 3
-"""
-
 trace = ['log_initfini = false',
          'log_transactions = true',
          'time_threshold = 0'
@@ -76,24 +94,29 @@ allowed_patterns = [re.compile('\\s*\\(TRA_\\d+,', re.IGNORECASE),
 
 @pytest.mark.version('>=3.0.6')
 def test_1(act: Action, capsys):
+
+
     with act.trace(db_events=trace):
-        with act.db.connect() as con:
-            cur = con.cursor()
-            con.execute_immediate('insert into test(x) values(123)')
-            con.commit(retaining = True)                    # (TRA_12, ... ; next line: "New number 13"
-            cur.callproc('sp_worker', [456])                # (TRA_13, INIT_12, ...
-            con.commit(retaining = True)                    # (TRA_13, INIT_12, ... ; next line: "New number 14"
-            con.execute_immediate('delete from test')       # (TRA_14, INIT_12, ...
-            con.commit(retaining = True)                    # (TRA_14, INIT_12, ... ; next line: "New number 15"
-            # This statement does not change anything:
-            con.execute_immediate('update test set x = -x') # (TRA_15, INIT_12, ...
-            con.commit(retaining = True)                    # (TRA_15, INIT_12, ... ; next line: "New number 15" -- THE SAME AS PREVIOUS!
+        with act.db.connect() as con_aux:
+            with act.db.connect() as con:
+                cur = con.cursor()
+                con.execute_immediate('insert into test(x) values(123)')
+                con.commit(retaining = True)                    # (TRA_12, ... ; next line: "New number 13"
+                cur.callproc('sp_worker', [456])                # (TRA_13, INIT_12, ...
+                con.commit(retaining = True)                    # (TRA_13, INIT_12, ... ; next line: "New number 14"
+                con.execute_immediate('delete from test')       # (TRA_14, INIT_12, ...
+                con.commit(retaining = True)                    # (TRA_14, INIT_12, ... ; next line: "New number 15"
+                # This statement does not change anything:
+                con.execute_immediate('update test set x = -x') # (TRA_15, INIT_12, ...
+                con.commit(retaining = True)                    # (TRA_15, INIT_12, ... ; next line: "New number 15" -- THE SAME AS PREVIOUS!
     # Process trace
     tx_base = -1
     for line in act.trace_log:
         if line.rstrip().split():
+            #print(line.strip())
             for p in allowed_patterns:
                 if p.search(line):
+                    #print(line.strip())
                     if '(TRA_' in line:
                         words = line.replace(',',' ').replace('_',' ').replace('(',' ').split()
                         # Result:
@@ -108,7 +131,19 @@ def test_1(act: Action, capsys):
                     elif 'number' in line:
                         tx_for_subsequent_changes = int(line.split()[2]) - tx_base # New number 15 --> 15
                         print('Found record with "NEW NUMBER" for subsequent Tx numbers: ', tx_for_subsequent_changes)
-    #
+
+    START_TX = 0 if 'classic'.lower() in act.vars['server-arch'].lower() else 3
+    expected_stdout = f"""
+        Found record with "NEW NUMBER" for subsequent Tx numbers:  {START_TX+1}
+        Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  {START_TX} ; Tx that finished now: {START_TX+1}
+        Found record with "NEW NUMBER" for subsequent Tx numbers:  {START_TX+2}
+        Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  {START_TX} ; Tx that finished now: {START_TX+2}
+        Found record with "NEW NUMBER" for subsequent Tx numbers:  {START_TX+3}
+        Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  {START_TX} ; Tx that finished now: {START_TX+3}
+        Found record with "NEW NUMBER" for subsequent Tx numbers:  {START_TX+3}
+        Found "INIT_" token in "TRA_" record. Tx that is origin of changes:  {START_TX} ; Tx that finished now: {START_TX+3}
+    """
+
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
