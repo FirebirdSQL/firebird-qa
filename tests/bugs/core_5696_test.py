@@ -4,6 +4,10 @@
 ID:          issue-5962
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5962
 TITLE:       Conversion from zero numeric literals to DECFLOAT results in incorrect value
+DESCRIPTION:
+    Confirmed wrong output from table with decfloat16 field (in WI-T4.0.0.1047, date of build: 03-JUL-2018).
+    Confirmed overflow of decfloat34 when inserting values with exponent more than 385,
+    i.e. >= 1e+385 or <= -1e385 (in WI-T4.0.0.1535, date of build: 24-JUN-2019)).
 NOTES:
     Test should be added during initial migration from fbtest but did not, the reason is unknown.
     Noted by Anton Zuev: https://github.com/FirebirdSQL/firebird-qa/pull/6
