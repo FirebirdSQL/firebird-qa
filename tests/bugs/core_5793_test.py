@@ -64,4 +64,4 @@ def test_1(act: Action, capsys):
 
         act.expected_stdout = fb3x_checked_stdout if act.is_version('<4') else fb4x_checked_stdout
         act.stdout = capsys.readouterr().out
-        assert act.clean_stdout == act.clean_expected_stdout
+        assert act.clean_stdout == act.clean_expected_stdout, f'Failed command: {sttm}'
