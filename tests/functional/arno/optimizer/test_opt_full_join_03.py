@@ -8,6 +8,11 @@ DESCRIPTION:
   Three tables are used, where 1 table (RC) holds references to the two other tables (R and C).
   The two tables R and C contain both 1 value that isn't inside RC.
 FBTEST:      functional.arno.optimizer.opt_full_join_03
+NOTES:
+    [07.03.2023] pzotov
+    Replaced WHERE-expr: added coalesce() after discussion with dimitr, letter 07-mar-2023 16:29.
+    Plan changed for datasource 'C'.
+    Checked on 3.0.11.33665, 4.0.3.2904, 5.0.0.970
 """
 
 import pytest
@@ -76,7 +81,8 @@ test_script = """
         full join relationcategories rc on (rc.relationid = r.relationid)
         full join categories c on (c.categoryid = rc.categoryid)
     where
-        c.categoryid >= 2
+        -- c.categoryid >= 2
+        coalesce(c.categoryid,0) >= 2
     order by
         rc.categoryid desc;
 """
@@ -84,8 +90,7 @@ test_script = """
 act = isql_act('db', test_script)
 
 expected_stdout = """
-    PLAN SORT (JOIN (JOIN (C INDEX (PK_CATEGORIES), JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS)))), JOIN (JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS))), C INDEX (PK_CATEGORIES))))
-
+    PLAN SORT (JOIN (JOIN (C NATURAL, JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS)))), JOIN (JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS))), C NATURAL)))
     RELATIONNAME                    diving snorkel shop
     RELATIONID                      1
     CATEGORYID                      3
