@@ -85,7 +85,7 @@ expected_stdout = """PLAN (ST INDEX (I_F3_F2_ASC))
 
          100          100          100"""
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=3,<4')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute()
