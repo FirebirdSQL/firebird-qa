@@ -65,15 +65,60 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    EXISTS with ref. to 1st stream:
+fb3x_expected_out = """
+        EXISTS with ref. to 1st stream:
 
-    Select Expression
+        Select Expression
+            -> Filter
+                -> Table "T" as "X" Access By ID
+                    -> Bitmap
+                        -> Index "T_ID" Range Scan (full match)
+        Select Expression
+            -> Filter
+                -> Table "T" as "Z" Access By ID
+                    -> Bitmap
+                        -> Index "T_ID" Range Scan (full match)
+        Select Expression
+            -> Nested Loop Join (inner)
+                -> Filter
+                    -> Table "T" as "A" Full Scan
+                -> Filter
+                    -> Table "T" as "B" Access By ID
+                        -> Bitmap
+                            -> Index "T_ID" Range Scan (lower bound: 1/1)
+
+
+        Two sep. DT and EXISTS inside:
+
+        Select Expression
+            -> Filter
+                -> Table "T" as "B X" Access By ID
+                    -> Bitmap
+                        -> Index "T_ID" Range Scan (full match)
+        Select Expression
+            -> Filter
+                -> Table "T" as "A X" Access By ID
+                    -> Bitmap
+                        -> Index "T_ID" Range Scan (full match)
+        Select Expression
+            -> Nested Loop Join (inner)
+                -> Filter
+                    -> Table "T" as "A T1" Full Scan
+                -> Filter
+                    -> Table "T" as "B T2" Access By ID
+                        -> Bitmap
+                            -> Index "T_ID" Range Scan (lower bound: 1/1)
+"""
+
+fb5x_expected_out = """
+    EXISTS with ref. to 1st stream: 
+
+    Sub-query
         -> Filter
             -> Table "T" as "X" Access By ID
                 -> Bitmap
                     -> Index "T_ID" Range Scan (full match)
-    Select Expression
+    Sub-query
         -> Filter
             -> Table "T" as "Z" Access By ID
                 -> Bitmap
@@ -87,15 +132,16 @@ expected_stdout = """
                     -> Bitmap
                         -> Index "T_ID" Range Scan (lower bound: 1/1)
 
+    Two sep. DT and EXISTS inside:  
 
-    Two sep. DT and EXISTS inside:
 
-    Select Expression
+
+    Sub-query
         -> Filter
             -> Table "T" as "B X" Access By ID
                 -> Bitmap
                     -> Index "T_ID" Range Scan (full match)
-    Select Expression
+    Sub-query
         -> Filter
             -> Table "T" as "A X" Access By ID
                 -> Bitmap
@@ -109,10 +155,9 @@ expected_stdout = """
                     -> Bitmap
                         -> Index "T_ID" Range Scan (lower bound: 1/1)
 """
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    act.expected_stdout = fb3x_expected_out if act.is_version('<5') else fb5x_expected_out
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 

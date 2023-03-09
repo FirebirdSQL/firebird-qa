@@ -2,227 +2,114 @@
 
 """
 ID:          issue-5868
-ISSUE:       5868
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5868
 TITLE:       Slow changes on domain
 DESCRIPTION:
-   Poor performance was reproduced after discuss with Vlad (14.09.2017).
-   Test restores DB which has 20 tables, each with 20 fields based on domain 
-   (i.e. 'create table t_NN(f_N bool_emul, ...)', where NN=1,2, ..., 20).
-   Also it has 20 stored procedures, and each of these SP has 20 input 
-   and 20 output parameters declared as 'type of column t_NN.field_NN'
-   NOTE. We have to SKIP preparing phase of such DB because DDL vasts 
-   too much time, so this database was created once and then stored as fbk.
-   After restoring we only run:
-   1) alter domain drop constraint; 
-   2) commit;
-   3) alter domain add check; 
-   4) commit;
-   -- and measure elapsed time of each step (we store time in context variables).
-   Then we evaluate DATEDIFF() for each of 1...4 steps and two RATIOS:
-   A) 'alter domain drop constraint' vs commit just after it;
-   B) 'alter domain add check' vs commit just after it;
-
-   RESULTS of dozen measures :
-   ==========================
-   * on build 31798 (17-aug-2017) ratio for 20 tables, 20 fields and 20 SPs was more than 100
-     (i.e. 'ALTER DOMAIN ADD | DROP' ran ~100x slower than COMMIT);
-   * on build 32802 (06-sep-2017) ratio is about 0.1 (YES, 'alter domain' runs FASTER ~10x than commit!)
-
-   Threshold in this test is assigned to 1 - I hope it will be enough for all subsequent builds of 3.0 and 4.0.
-
-   Checked on:
-       fb30Cs, build 3.0.3.32802: OK, 5.312s.
-       FB30SS, build 3.0.3.32802: OK, 4.297s.
-       FB40CS, build 4.0.0.744: OK, 7.484s.
-       FB40SS, build 4.0.0.744: OK, 7.140s.
-
-   Here is auxiliary batch that allows to get DB with arbitrary number of tables/fields and SPs:
-   ========= start of batch ========
-
-        @echo off
-        setlocal enabledelayedexpansion enableextensions
-
-        @rem Required number of TABLES:
-        set tq=20
-
-        @rem Required number of FIELDS in each table (and also this will be equal to number of SP input and output args):
-        set fq=20
-
-        set tmp_ddl=%~dpn0_tmp_ddl.sql
-        set tmp_run=%~dpn0_tmp_run.sql
-        
-        @rem Name of test DB that will be recreated each time this batch run:
-        set dsn=localhost:C:\MIX\firebird\QA\fbt-repo\tmp\c5602.fdb
-
-        @rem Which FB we test: 2.5 or 3.0 ?
-        if .%1.==.25. (
-            set fbc=C:\MIX\firebird\fb25\bin
-        ) else if .%1.==.30. (
-            set fbc=C:\MIX\firebird\fb30
-        ) else (
-            echo Arg #1 must be specified: 'fbc' = 25 ^| 30 - path to FB binaries.
-            exit
-        )
-
-        if exist C:\MIX\firebird\QA\fbt-repo\tmp\c5602.fdb del C:\MIX\firebird\QA\fbt-repo\tmp\c5602.fdb
-
-        echo create database '!dsn!' page_size 8192; | !fbc!\isql -q -z
-        !fbc!\gfix -w async !dsn!
-        @rem !fbc!\gstat -h !dsn! | findstr /i /c:date /c:attrib
-
-        (
-            echo set bail on;
-            echo create domain bool_emul char(1^) check ( value in ('t','f' ^) ^);
-            echo commit;
-            echo set autoddl off;
-            echo commit;
-            echo.
-        ) >!tmp_ddl!
-
-        for /l %%i in (1,1,!tq!) do (
-            (
-
-               echo create table t_%%i(
-               for /l %%j in (1,1,!fq!) do (
-                 set del=,
-                 if %%j EQU 1 set del=
-                 echo   !del!bool_fld_%%j bool_emul
-               )
-               echo ^);
-               
-               echo set term ^^;
-               echo create or alter procedure p_%%i (
-               for /l %%j in (1,1,!fq!) do (
-                 set del=,
-                 if %%j EQU 1 set del=
-                 echo       !del!inp_%%j type of column t_%%i.bool_fld_%%j
-               )
-               echo ^) returns (
-               for /l %%j in (1,1,!fq!) do (
-                 set del=,
-                 if %%j EQU 1 set del=
-                 echo       !del!out_%%j type of column t_%%i.bool_fld_%%j
-               )
-               echo ^) as begin
-               echo        suspend;
-               echo end
-               echo ^^
-               echo set term ;^^
-               echo commit;
-
-               echo --------------------
-            ) >>!tmp_ddl!
-
-            if %%i EQU !tq! (
-                echo commit; 
-            ) >>!tmp_ddl!
-        ) 
-
-        !fbc!\isql !dsn! -i !tmp_ddl!
-
-
-        (
-            echo --set stat on;
-            echo --set echo on;
-            echo set autoddl OFF;
-            echo commit;
-            echo set term ^^; execute block as begin rdb$set_context('USER_SESSION','DTS_1', current_timestamp^); end ^^ set term ;^^
-            echo alter domain bool_emul drop constraint;
-            echo set term ^^; execute block as begin rdb$set_context('USER_SESSION','DTS_2', current_timestamp^); end ^^ set term ;^^
-            echo commit;
-            echo set term ^^; execute block as begin rdb$set_context('USER_SESSION','DTS_3', current_timestamp^); end ^^ set term ;^^
-            echo alter domain bool_emul add check (value in ('t', 'f'^)^);
-            echo set term ^^; execute block as begin rdb$set_context('USER_SESSION','DTS_4', current_timestamp^); end ^^ set term ;^^
-            echo commit;
-            echo set term ^^; execute block as begin rdb$set_context('USER_SESSION','DTS_5', current_timestamp^); end ^^ set term ;^^
-            echo set list on;
-            echo select 
-            echo      iif(drop_to_commit_ratio ^< 1, 'OK, ACCEPTABLE', '"ALTER DOMAIN DROP CONSTRAINT" too slow: ratio to commit is ' ^|^| drop_to_commit_ratio ^) "DROP CHECK to COMMIT time ratio"
-            echo     ,iif(add_to_commit_ratio ^< 1, 'OK, ACCEPTABLE', '"ALTER DOMAIN ADD CHECK" too slow: ratio to commit is ' ^|^| add_to_commit_ratio ^) "ADD CHECK to COMMIT time ratio"
-            echo from (
-            echo   select 
-            echo       cast(1.0000 * elap_ms_drop_chk/elap_ms_commit_1 as double precision^) as drop_to_commit_ratio
-            echo      ,cast(1.0000 * elap_ms_add_chk/elap_ms_commit_2 as double precision^) as add_to_commit_ratio
-            echo   from (
-            echo     select 
-            echo          datediff(millisecond from dts1 to dts2^) as elap_ms_drop_chk
-            echo         ,datediff(millisecond from dts2 to dts3^) as elap_ms_commit_1
-            echo         ,datediff(millisecond from dts3 to dts4^) as elap_ms_add_chk
-            echo         ,datediff(millisecond from dts4 to dts5^) as elap_ms_commit_2
-            echo     from (
-            echo           select
-            echo              cast( rdb$get_context('USER_SESSION','DTS_1'^) as timestamp ^) as dts1
-            echo             ,cast( rdb$get_context('USER_SESSION','DTS_2'^) as timestamp ^) as dts2
-            echo             ,cast( rdb$get_context('USER_SESSION','DTS_3'^) as timestamp ^) as dts3
-            echo             ,cast( rdb$get_context('USER_SESSION','DTS_4'^) as timestamp ^) as dts4
-            echo             ,cast( rdb$get_context('USER_SESSION','DTS_5'^) as timestamp ^) as dts5
-            echo           from rdb$database
-            echo     ^)
-            echo  ^)
-            echo ^);
-            echo quit;
-        )>!tmp_run!
-
-        !fbc!\isql !dsn! -n -i !tmp_run!
-
-   ======== finish of batch ========
 JIRA:        CORE-5602
 FBTEST:      bugs.core_5602
-"""
 
+NOTES:
+    [08.03.2023] pzotov
+    Re-implemented: we have to use psutil package instead of 'fragile' datediff.
+    Confirmed bug on 3.0.2.32703 (date of build: 21-mar-2017).
+    Timedelta for 'alter domain ... add|drop constraint' could achieve ~110 seconds:
+        2023-03-08T14:27:09.6540 (16460:00000000032C0040) EXECUTE_STATEMENT_START
+        alter domain bool_emul drop constraint
+        2023-03-08T14:29:01.0190 (16460:00000000032C0040) EXECUTE_STATEMENT_FINISH
+        alter domain bool_emul drop constraint
+
+    Checked on 3.0.11.33665, 4.0.3.2904, 5.0.0.970
+"""
+import os
+import psutil
 import pytest
 from firebird.qa import *
+import time
+
+#--------------------------------------------------------------------
+def median(lst):
+    n = len(lst)
+    s = sorted(lst)
+    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+#--------------------------------------------------------------------
+
+###########################
+###   S E T T I N G S   ###
+###########################
+# How many measures we will perform:
+N_MEASURES = 11
+
+# Maximal value for MEDIAN of ratios between CPU user time when comparison was made,
+# time_for_alter_domain_(add_|_drop)_constraint and time_for_transaction_commit.
+# On march-2023, medians are almost equal and are about 0.35 ... 0.45 (in FB 3.x, 4.x and 5.x)
+#
+############################
+DEL_2_COMMIT_MAX_RATIO = 0.8
+ADD_2_COMMIT_MAX_RATIO = 0.8
+############################
 
 db = db_factory(from_backup='core5602.fbk')
-
-test_script = """
-    set autoddl OFF;
-    commit;
-    set term ^; execute block as begin rdb$set_context('USER_SESSION','DTS_1', current_timestamp); end ^ set term ;^
-    alter domain bool_emul drop constraint;
-    set term ^; execute block as begin rdb$set_context('USER_SESSION','DTS_2', current_timestamp); end ^ set term ;^
-    commit;
-    set term ^; execute block as begin rdb$set_context('USER_SESSION','DTS_3', current_timestamp); end ^ set term ;^
-    alter domain bool_emul add check (value in ('t', 'f'));
-    set term ^; execute block as begin rdb$set_context('USER_SESSION','DTS_4', current_timestamp); end ^ set term ;^
-    commit;
-    set term ^; execute block as begin rdb$set_context('USER_SESSION','DTS_5', current_timestamp); end ^ set term ;^
-    set list on;
-    select 
-         iif(drop_to_commit_ratio < 1, 'OK, ACCEPTABLE', 'ALTER DOMAIN DROP CONSTRAINT runs slowly: ratio to commit is ' || drop_to_commit_ratio ) "DROP CHECK to COMMIT time ratio"
-        ,iif(add_to_commit_ratio < 1, 'OK, ACCEPTABLE', 'ALTER DOMAIN ADD CHECK runs slowly: ratio to commit is ' || add_to_commit_ratio ) "ADD CHECK to COMMIT time ratio"
-    from (
-      select 
-          cast(1.0000 * elap_ms_drop_chk/elap_ms_commit_1 as double precision) as drop_to_commit_ratio
-         ,cast(1.0000 * elap_ms_add_chk/elap_ms_commit_2 as double precision) as add_to_commit_ratio
-      from (
-        select 
-             datediff(millisecond from dts1 to dts2) as elap_ms_drop_chk
-            ,datediff(millisecond from dts2 to dts3) as elap_ms_commit_1
-            ,datediff(millisecond from dts3 to dts4) as elap_ms_add_chk
-            ,datediff(millisecond from dts4 to dts5) as elap_ms_commit_2
-        from (
-              select
-                 cast( rdb$get_context('USER_SESSION','DTS_1') as timestamp ) as dts1
-                ,cast( rdb$get_context('USER_SESSION','DTS_2') as timestamp ) as dts2
-                ,cast( rdb$get_context('USER_SESSION','DTS_3') as timestamp ) as dts3
-                ,cast( rdb$get_context('USER_SESSION','DTS_4') as timestamp ) as dts4
-                ,cast( rdb$get_context('USER_SESSION','DTS_5') as timestamp ) as dts5
-              from rdb$database
-        )
-     )
-    );
-"""
-
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    DROP CHECK to COMMIT time ratio OK, ACCEPTABLE
-    ADD CHECK to COMMIT time ratio  OK, ACCEPTABLE
-"""
+act = python_act('db')
 
 @pytest.mark.version('>=3.0.3')
-def test_1(act: Action):
+def test_1(act: Action, capsys):
+    time_data = {}
+    with act.db.connect() as con:
+        cur=con.cursor()
+        cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
+        fb_pid = int(cur.fetchone()[0])
+
+        for i in range(0, N_MEASURES):
+            fb_info_1 = psutil.Process(fb_pid).cpu_times()
+            con.execute_immediate(f'alter domain bool_emul drop constraint -- {i}')
+            fb_info_2 = psutil.Process(fb_pid).cpu_times()
+            con.commit()
+            fb_info_3 = psutil.Process(fb_pid).cpu_times()
+            time_data[ 'del_constraint', i ] = ( max(fb_info_2.user - fb_info_1.user, 0.000001), max(fb_info_3.user - fb_info_2.user, 0.000001)  )
+
+            con.execute_immediate(f"alter domain bool_emul add check (value in ('t', 'f')) -- {i}")
+            fb_info_4 = psutil.Process(fb_pid).cpu_times()
+            con.commit()
+            fb_info_5 = psutil.Process(fb_pid).cpu_times()
+            time_data[ 'add_constraint', i ] = ( max(fb_info_4.user - fb_info_3.user, 0.000001), max(fb_info_5.user - fb_info_4.user, 0.000001)  )
+
+
+    del_constraint_to_commit_ratios = [ v[0] / v[1] for k,v in time_data.items() if k[0] == 'del_constraint' ]
+    add_constraint_to_commit_ratios = [ v[0] / v[1] for k,v in time_data.items() if k[0] == 'add_constraint'  ]
+
+    #for k,v in sorted(time_data.items()):
+    #    print(k,':::',v)
+    #print(del_constraint_to_commit_ratios)
+    #print(add_constraint_to_commit_ratios)
+
+    del_constr_to_commit_median = median(del_constraint_to_commit_ratios)
+    add_constr_to_commit_median = median(add_constraint_to_commit_ratios)
+
+    msg_del_success = 'ALTER DOMAIN DROP CONSTRAINT performed for acceptable time'
+    msg_add_success = 'ALTER DOMAIN ADD CONSTRAINT performed for acceptable time'
+
+    if del_constr_to_commit_median < DEL_2_COMMIT_MAX_RATIO:
+        print(msg_del_success)
+    else:
+        print('ALTER DOMAIN DROP CONSTRAINT perfomed too slow. Ratios of DML to COMMIT time:')
+        for p in del_constraint_to_commit_ratios:
+            print('%12.4f' % p)
+        print('Median value: %12.4f - GREATER than threshold: %12.4f' % (del_constr_to_commit_median,DEL_2_COMMIT_MAX_RATIO))
+       
+
+    if add_constr_to_commit_median < ADD_2_COMMIT_MAX_RATIO:
+        print(msg_add_success)
+    else:
+        print('ALTER DOMAIN ADD CONSTRAINT perfomed too slow. Ratios of DML to COMMIT time:')
+        for p in add_constraint_to_commit_ratios:
+            print('%12.4f' % p)
+        print('Median value: %12.4f - GREATER than threshold: %12.4f' % (add_constr_to_commit_median,ADD_2_COMMIT_MAX_RATIO))
+
+    expected_stdout = '''
+        ALTER DOMAIN DROP CONSTRAINT performed for acceptable time
+        ALTER DOMAIN ADD CONSTRAINT performed for acceptable time
+    '''
+
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout

@@ -13,6 +13,7 @@ JIRA:        CORE-6362
 FBTEST:      bugs.core_6362
 NOTES:
     [20.06.2022] pzotov
+    See also bugs/gh_7165_test.py
     Message about missed sec. context will raise if we make undefined ISC_* variables and try to connect.
     Confirmed missed info in FB 3.0.6.33301: firebird.log remains unchanged (though ISQL issues expected message).
     Checked on 4.0.1.2692, 3.0.8.33535.

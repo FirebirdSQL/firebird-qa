@@ -7,6 +7,9 @@ TITLE:       Using both the procedure name and alias inside an explicit plan cra
 DESCRIPTION:
 JIRA:        CORE-3064
 FBTEST:      bugs.core_3064
+NOTES:
+    [04.03.2023] pzotov
+    Expected output was splitted because FB 5.x now *allows* execution w/o error.
 """
 
 import pytest
@@ -44,20 +47,25 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('offset .*', 'offset')])
 
-expected_stderr = """
-Statement failed, SQLSTATE = 42S02
-Dynamic SQL Error
--SQL error code = -104
--Invalid command
--there is no alias or table named GET_DATES at this scope level
-Statement failed, SQLSTATE = HY000
-invalid request BLR at offset 50
--BLR syntax error: expected TABLE at offset 51, encountered 132
+fb3x_expected_out = """
+    Statement failed, SQLSTATE = 42S02
+    Dynamic SQL Error
+    -SQL error code = -104
+    -Invalid command
+    -there is no alias or table named GET_DATES at this scope level
+
+    Statement failed, SQLSTATE = HY000
+    invalid request BLR at offset 50
+    -BLR syntax error: expected TABLE at offset 51, encountered 132
+"""
+
+fb5x_expected_out = """
+    PLAN (GET_DATES NATURAL)
+    PLAN (P NATURAL)
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
-
+    act.expected_stdout = fb3x_expected_out if act.is_version('<5') else fb5x_expected_out
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout

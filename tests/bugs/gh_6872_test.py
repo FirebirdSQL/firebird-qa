@@ -44,6 +44,7 @@ NOTES:
 import psutil
 import pytest
 from firebird.qa import *
+import platform
 
 #--------------------------------------------------------------------
 def median(lst):
@@ -63,7 +64,9 @@ N_COUNT_PER_MEASURE = 100000
 
 # Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
 #
-ADDED_COLL_TIME_MAX_RATIO = 2.0
+# 05-mar-2023, debian-11, 5.0.0.970 SS: 2.0 --> 4.0
+ADDED_COLL_TIME_MAX_RATIO = 4.0 if platform.system() == 'Linux' else 2.0
+
 ###############################
 
 init_script = """
@@ -131,8 +134,6 @@ def test_1(act: Action, capsys):
 
         median_ratio = median(ratio_lst)
 
-
-    # print( 'Duration ratio: ' + ('acceptable' if median_ratio < UTF8_TO_PTBR_MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(UTF8_TO_PTBR_MAX_RATIO) ) ) )
 
     if median(ratio_lst) <= ADDED_COLL_TIME_MAX_RATIO:
         print('Duration ratio: acceptable.')

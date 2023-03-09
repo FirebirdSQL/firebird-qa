@@ -43,7 +43,7 @@ test_script = """
   set planonly;
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script, substitutions = [('(--\\s+)?line \\d+, col(umn)? \\d+', '')])
 
 expected_stdout = """
   PLAN (T INDEX (TT_PK_XY))

@@ -2,11 +2,12 @@
 
 """
 ID:          issue-517
-ISSUE:       517
-TITLE:       Trigger with except-s on view with union
-DESCRIPTION:
-JIRA:        CORE-190
-FBTEST:      bugs.core_0190
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/517
+TITLE:       trigger with except-s on view with union
+NOTES:
+    Test should be added during initial migration from fbtest but did not, the reason is unknown.
+    Noted by Anton Zuev: https://github.com/FirebirdSQL/firebird-qa/pull/5
+    Checked on 3.0.11.33665, 4.0.3.2904, 5.0.0.970
 """
 
 import pytest
@@ -41,16 +42,8 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-"""
-
-expected_stderr = """
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
+    act.expected_stdout = ''
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-    assert act.clean_stderr == act.clean_expected_stderr

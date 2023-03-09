@@ -13,38 +13,26 @@ import pytest
 from firebird.qa import *
 
 db = db_factory()
+act = python_act('db')
 
-test_script = """
-    set blob all;
-    set list on;
-    commit;
-    select
-        (select sign(count(*)) from rdb$relations r)
-       ,s.mon$explained_plan as mon_explained_blob_id
-    from mon$statements s
-    where
-    s.mon$transaction_id = current_transaction
-    and s.mon$sql_text containing 'from mon$statements' -- prevent from RDB$AUTH record, 4.0 Classic
-    ;
-"""
-
-act = isql_act('db', test_script, substitutions=[('MON_EXPLAINED_BLOB_ID .*', '')])
-
-expected_stdout = """
-    SIGN                            1
-
+TAG_TEXT = 'TAG_FOR_SEARCH'
+expected_stdout = f"""
+    select 1 /* {TAG_TEXT} */ from rdb$database
     Select Expression
-        -> Singularity Check
-            -> Aggregate
-                -> Table "RDB$RELATIONS" as "R" Full Scan
-    Select Expression
-        -> Filter
-            -> Table "MON$STATEMENTS" as "S" Full Scan
+        -> Table "RDB$DATABASE" Full Scan
 """
 
 @pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout
+def test_1(act: Action, capsys):
+    with act.db.connect() as con:
+        cur1 = con.cursor()
+        cur2 = con.cursor()
+        ps = cur1.prepare(f'select 1 /* {TAG_TEXT} */ from rdb$database')
+        cur2.execute(f"select mon$sql_text, mon$explained_plan from mon$statements s where s.mon$sql_text containing '{TAG_TEXT}' and s.mon$sql_text NOT containing 'mon$statements'")
+        for r in cur2:
+            print(r[0])
+            print(r[1])
 
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
