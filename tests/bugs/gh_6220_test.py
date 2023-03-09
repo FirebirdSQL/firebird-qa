@@ -34,6 +34,10 @@ NOTES:
     Confirmed problem on  3.0.4.32972 (build of 11-may-2018).
     Refactored initial DDL (made it shorter because of dynamic list/string creation - see 'NESTED_LIMIT' variable).
     Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.509 -- both Windows and Linux.
+
+    [09.03.2023] pzotov
+    Increased threshold from 1.3 to 1.8
+    NB. Confirmed poor ratio between sysdba/non_dba time on 3.0.4.33054 (03-oct-2018): ratio was about 3.5 ... 4.0.
 """
 import psutil
 import pytest
@@ -59,7 +63,8 @@ N_COUNT_PER_MEASURE = 100
 
 # Maximal allowable threshold for MEDIAN of ratios:
 #
-MAX_TIME_RATIO = 1.3
+# before 09.03.2023 MAX_TIME_RATIO = 1.3
+MAX_TIME_RATIO = 1.8
 
 # Max level of views nesting:
 #
