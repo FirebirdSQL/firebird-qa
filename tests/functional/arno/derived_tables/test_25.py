@@ -4,11 +4,7 @@
 ID:          derived-table-25
 TITLE:       Derived table with outer reference from FULL JOIN.
 DESCRIPTION: Outer reference inside derived table to other relations in from clause is not allowed.
-NOTES:
-    [09.03.2023] pzotov
-    This test was missing as a result of migration for unknown reason.
-    Thanks to Anton Zuev for note.
-    Checked on 3.0.11.33665, 4.0.3.2904, 5.0.0.970
+FBTEST:      functional.arno.derived_tables.27
 """
 
 import pytest
@@ -18,7 +14,9 @@ init_script = """CREATE TABLE Table_10 (
   ID INTEGER NOT NULL,
   DESCRIPTION VARCHAR(10)
 );
+
 COMMIT;
+
 INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (0, NULL);
 INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (1, 'one');
 INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (2, 'two');
@@ -29,6 +27,7 @@ INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (6, 'six');
 INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (7, 'seven');
 INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (8, 'eight');
 INSERT INTO Table_10 (ID, DESCRIPTION) VALUES (9, 'nine');
+
 COMMIT;"""
 
 db = db_factory(init=init_script)
@@ -49,6 +48,12 @@ Dynamic SQL Error
 -T10.ID
 -At line 5, column 58
 """
+
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stderr = expected_stderr
+    act.execute()
+    assert act.clean_stderr == act.clean_expected_stderr
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
