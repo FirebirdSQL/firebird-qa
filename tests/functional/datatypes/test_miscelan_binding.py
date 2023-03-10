@@ -5,7 +5,7 @@ ID:          miscelan.binding
 TITLE:       Test ability for DECFLOAT values to be represented as other data types using LEGACY keyword.
 DESCRIPTION:
     We check here that values from DECFLOAT will be actually converted to legacy datatypes 
-    according to following table from sql.extensions\README.set_bind.md:
+    according to following table from sql.extensions/README.set_bind.md:
         ----------------------------------------------------------
         | Native datatype          | Legacy datatype             |
         |--------------------------|-----------------------------|
@@ -77,7 +77,7 @@ test_script = """
     select timestamp '2018-01-01 12:00 GMT' as "check_bind_timestamp_with_zone_to_legacy" from rdb$database;
 """
 
-act = isql_act('db', test_script, substitutions=[ (' \d{2}:00:00.0000', ' ??:00:00.0000'), ('charset.*', ''), ('.*alias:.*', ''), ('^((?!(sqltype|check_bind_)).)*$',''), ('[ \t]+',' ') ])
+act = isql_act('db', test_script, substitutions=[ (' \\d{2}:00:00.0000', ' ??:00:00.0000'), ('charset.*', ''), ('.*alias:.*', ''), ('^((?!(sqltype|check_bind_)).)*$',''), ('[ \\t]+',' ') ])
 
 expected_stdout = """
     01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 5
