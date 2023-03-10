@@ -123,7 +123,7 @@ fb5_expected_stdout = """
     PLAN JOIN (C A2 NATURAL, C A1 INDEX (IA1))
 """
 
-act = python_act('db', substitutions=[('-- line(:)? \d+, col(umn)?(:)? \d+', '-- line, column')])
+act = python_act('db', substitutions=[('-- line(:)?\\s+\\d+,\\s+col(umn)?(:)?\\s+\\d+', '-- line, column')])
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
