@@ -20,7 +20,7 @@ NOTES:
     [12.06.2022] pzotov
     Checked on 4.0.1.2692, 3.0.8.33535 - both on Linux and Windows.
 """
-
+import os
 import re
 import time
 import datetime as py_dt
@@ -29,6 +29,23 @@ from datetime import timedelta
 import pytest
 from firebird.qa import *
 from firebird.driver import DatabaseError
+
+###########################
+###   S E T T I N G S   ###
+###########################
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+enc_settings = QA_GLOBALS['encryption']
+
+# ACHTUNG: this must be carefully tuned on every new host:
+#
+MAX_WAITING_ENCR_FINISH = int(enc_settings['MAX_WAIT_FOR_ENCR_FINISH_WIN' if os.name == 'nt' else 'MAX_WAIT_FOR_ENCR_FINISH_NIX'])
+assert MAX_WAITING_ENCR_FINISH > 0
+
+ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
+ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
+
 
 N_ROWS = 25
 init_script = f"""
@@ -63,14 +80,6 @@ act = python_act('db')
 @pytest.mark.version('>=3.0.4')
 def test_1(act: Action, capsys):
 
-    # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
-    # from act.files_dir/'test_config.ini':
-    enc_settings = QA_GLOBALS['encryption']
-
-    MAX_ENCRYPT_DECRYPT_MS = int(enc_settings['max_encrypt_decrypt_ms']) # 5000
-    ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
-    ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
-
     with act.db.connect() as con:
 
         t1=py_dt.datetime.now()
@@ -90,8 +99,8 @@ def test_1(act: Action, capsys):
         while True:
             t2=py_dt.datetime.now()
             d1=t2-t1
-            if d1.seconds*1000 + d1.microseconds//1000 > MAX_ENCRYPT_DECRYPT_MS:
-                con.execute_immediate(f"select 'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.' as msg from rdb$database")
+            if d1.seconds*1000 + d1.microseconds//1000 > MAX_WAITING_ENCR_FINISH:
+                con.execute_immediate(f"select 'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAITING_ENCR_FINISH} ms.' as msg from rdb$database")
                 break
 
             # Possible output:
@@ -105,7 +114,7 @@ def test_1(act: Action, capsys):
                     break
             act.reset()
 
-        if d1.seconds*1000 + d1.microseconds//1000 <= MAX_ENCRYPT_DECRYPT_MS:
+        if d1.seconds*1000 + d1.microseconds//1000 <= MAX_WAITING_ENCR_FINISH:
             act.reset()
             act.gstat(switches=['-e'])
 
@@ -122,7 +131,7 @@ def test_1(act: Action, capsys):
                         print(words[0] + ': UNEXPECTED, ' +  words[-1])
 
         else:
-            print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.')
+            print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAITING_ENCR_FINISH} ms.')
 
         act.expected_stdout = """
             Data: expected, 0
