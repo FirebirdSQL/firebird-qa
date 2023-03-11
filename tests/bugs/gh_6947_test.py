@@ -12,7 +12,7 @@ DESCRIPTION:
   This loop must return NOT LESS than <MIN_DISTINCT_ENCRYPTED_PAGES> values greater than zero (i.e. it must
   show progress of this process; zero values mean that encryption either did not start or already finished).
   On each iteration we also check whether encryption completed (use ISQL call with 'show database' command)
-  or may be it is too slow and we have to cancel loop because of expiration <max_encrypt_decrypt_ms> limit.
+  or may be it is too slow and we have to cancel loop because of expiration <MAX_WAITING_ENCR_FINISH> limit.
 
   When this loop is finished, we check number of elements in the encrypted_pages_set (unique values returned
   by query from mon$database) and show outcome message.
