@@ -33,7 +33,7 @@ NOTES:
     Sent example with bug reproducing to Alex et al, 16-jun-2022 01:04. Waiting for reply.
     Checked on 4.0.1.2692, 5.0.0.509.
 """
-
+import os
 import re
 import datetime as py_dt
 from datetime import timedelta
@@ -43,6 +43,25 @@ import pytest
 from firebird.qa import *
 from firebird.driver import DatabaseError
 from pathlib import Path
+
+
+###########################
+###   S E T T I N G S   ###
+###########################
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+enc_settings = QA_GLOBALS['encryption']
+
+# ACHTUNG: this must be carefully tuned on every new host:
+#
+MAX_WAITING_ENCR_FINISH = int(enc_settings['MAX_WAIT_FOR_ENCR_FINISH_WIN' if os.name == 'nt' else 'MAX_WAIT_FOR_ENCR_FINISH_NIX'])
+assert MAX_WAITING_ENCR_FINISH > 0
+
+ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
+ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
+
+ENCRYPTION_HOLDER = enc_settings['encryption_holder'] # fbSampleKeyHolder
 
 db = db_factory()
 
@@ -57,15 +76,6 @@ tmp_log = temp_file( filename = 'tmp_core_6071_bkup_rest.log')
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, tmp_fbk: Path, tmp_res: Path, tmp_log: Path, capsys):
-
-    # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
-    # from act.files_dir/'test_config.ini':
-    enc_settings = QA_GLOBALS['encryption']
-
-    MAX_ENCRYPT_DECRYPT_MS = int(enc_settings['max_encrypt_decrypt_ms']) # 5000
-    ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
-    ENCRYPTION_HOLDER = enc_settings['encryption_holder'] # fbSampleKeyHolder
-    ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
 
     encryption_started = False
     encryption_finished = False
@@ -87,8 +97,8 @@ def test_1(act: Action, tmp_fbk: Path, tmp_res: Path, tmp_log: Path, capsys):
         while encryption_started:
             t2=py_dt.datetime.now()
             d1=t2-t1
-            if d1.seconds*1000 + d1.microseconds//1000 > MAX_ENCRYPT_DECRYPT_MS:
-                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.')
+            if d1.seconds*1000 + d1.microseconds//1000 > MAX_WAITING_ENCR_FINISH:
+                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAITING_ENCR_FINISH} ms.')
                 break
 
             # Possible output:
