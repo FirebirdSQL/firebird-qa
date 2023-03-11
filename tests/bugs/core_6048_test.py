@@ -5,26 +5,33 @@ ID:          issue-6298
 ISSUE:       6298
 TITLE:       Provide ability to see current state of DB encryption
 DESCRIPTION:
-    Test adds lot of data to database, issues 'alter database encrypt ...' and starts loop with query:
-    'select mon$crypt_page, mon$crypt_state from mon$database', with repeating it every 1 second.
-    Loop continues until we find that mon$crypt_state become 1, or if <MAX_ENCRYPT_DECRYPT_MS> ms expired.
-    On every iteration of this loop we accumulate pairs (mon$crypt_page, mon$crypt_state) in the list,
-    and when encryption completes we check that:
-        * at least two measures could be done (i.e. there was no hang of query to mon$ table during encryption);
-        * last query to mon$database returned mon$crypt_page =0 and mon$crypt_state = 1 (i.e. encryption was actually finished).
+    Test adds lot of data to database, changes FW to ON and runs 'alter database encrypt ...'.
+    Then it starts loop with query:
+        'select mon$crypt_page, mon$crypt_state from mon$database', with repeating it every 0.5 second.
+
+    Loop continues until we find <ENCRYPTING_PAGES_MIN_CNT> different number of encrypted pages,
+    or if timeout <MAX_ENCRYPT_DECRYPT_MS> ms expired.
+
+    If (after loop) number of pages detected in encrypted state less then <ENCRYPTING_PAGES_MIN_CNT>
+    then test is considered as failed.
+    NB: we do NOT wait for the encryption process to complete for the whole database because this
+    time strongly depends on hardware of testing host and concurrent workload. We just want to see
+    *several* different values of mon$crypt_page where mon$crypt_state = <RUNNING_ENCRYPTING_STATE>.
+
 JIRA:        CORE-6048
 FBTEST:      bugs.core_6048
 NOTES:
     [13.06.2022] pzotov
     Checked on 5.0.0.509 - both on Linux and Windows.
+
+    [11.03.2023] pzotov
+    Checked on 5.0.0.972, 4.0.3.2907 (Windows).
     
     ::: NB-1 :::
-    Currently test must check only FB 5.0! Encryption in FB 3.x and 4.x *block* obtaining data from monitoring tables.
+    Before ~06-sep-2021 encryption *blocked* obtaining data from monitoring tables.
     See also: https://github.com/FirebirdSQL/firebird/issues/6947
 
     ::: NB-2 :::
-    Number of records that will be added into table must be sufficient big to force encryption thread work at least 3 seconds,
-    but - at the same time - it must not be too large because we have time limit <MAX_ENCRYPT_DECRYPT_MS> which must not be exeeded.
     Careful tuning required on each tesing box for this test.
 """
 
@@ -37,10 +44,37 @@ import pytest
 from firebird.qa import *
 from firebird.driver import DatabaseError, DbWriteMode
 
-########################### ACHTUNG ###############
-# this must be carefully tuned on every new host: #
-###################################################
-N_ROWS =15000 if os.name == 'nt' else 5000
+###########################
+###   S E T T I N G S   ###
+###########################
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+enc_settings = QA_GLOBALS['encryption']
+
+
+# ACHTUNG: this must be carefully tuned on every new host:
+#
+MAX_WAITING_ENCR_FINISH = int(enc_settings['MAX_WAIT_FOR_ENCR_FINISH_WIN' if os.name == 'nt' else 'MAX_WAIT_FOR_ENCR_FINISH_NIX'])
+assert MAX_WAITING_ENCR_FINISH > 0
+
+ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
+ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
+
+# How many *different* page numbers we want to see as being encrypted before break and finish test:
+#
+ENCRYPTING_PAGES_MIN_CNT = 3
+
+# Value in mon$database.mon$crypt_state for completed encryption:
+#
+COMPLETED_ENCRYPTION_STATE = 1
+
+# Value in mon$database.mon$crypt_state for CURRENTLY running encryption:
+#
+RUNNING_ENCRYPTING_STATE = 3
+
+# How many rows will be inserted in order to make encryption thread do its work for some valuable time:
+N_ROWS = 15000 if os.name == 'nt' else 10000
 
 F_LEN = 16383
 init_script = f"""
@@ -63,25 +97,12 @@ init_script = f"""
     ^
 """
 
-db = db_factory(init = init_script, utf8filename = False, charset='none')
+db = db_factory(init = init_script, charset='none', page_size = 4096)
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-expected_stdout = """
-    Number of distinct values of mon$crypt_page: EXPECTED
-    Last measured values of mon$crypt_page and mon$crypt_state: EXPECTED
-"""
-
 @pytest.mark.encryption
-@pytest.mark.version('>=5.0')
+@pytest.mark.version('>=4.0.2')
 def test_1(act: Action, capsys):
-
-    # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
-    # from act.files_dir/'test_config.ini':
-    enc_settings = QA_GLOBALS['encryption']
-
-    MAX_ENCRYPT_DECRYPT_MS = int(enc_settings['max_encrypt_decrypt_ms']) # 5000 // was: 60'000
-    ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
-    ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
    
     with act.connect_server() as srv:
         srv.database.set_write_mode(database=act.db.db_path, mode=DbWriteMode.SYNC)
@@ -105,46 +126,55 @@ def test_1(act: Action, capsys):
 
         cur2 = con2.cursor()
         ps = cur2.prepare('select mon$crypt_page, mon$crypt_state from mon$database')
-        crypt_chronolody = []
+
+        # This will store different number of pages which are currently encrypted.
+        # When length of this set will exceed ENCRYPTING_PAGES_MIN_CNT then we break from loop:
+        #
+        encrypting_pages_set = set()
+        waiting_in_loop = -1
         while encryption_started:
             t2=py_dt.datetime.now()
             d1=t2-t1
-            if d1.seconds*1000 + d1.microseconds//1000 > MAX_ENCRYPT_DECRYPT_MS:
-                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_ENCRYPT_DECRYPT_MS} ms.')
+            waiting_in_loop = d1.seconds*1000 + d1.microseconds//1000
+            if waiting_in_loop > MAX_WAITING_ENCR_FINISH:
+                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAITING_ENCR_FINISH} ms.')
                 break
 
             cur2.execute(ps)
             crypt_page, crypt_state = cur2.fetchone()
-            crypt_chronolody.append( (crypt_page, crypt_state) )
             con2.commit()
 
             # 0 = non crypted;
             # 1 = has been encrypted;
             # 2 = is DEcrypting;
             # 3 = is Encrypting;
-            if crypt_state == 1:
+            if crypt_state == RUNNING_ENCRYPTING_STATE:
+                encrypting_pages_set.add(crypt_page,)
+
+            if crypt_state == COMPLETED_ENCRYPTION_STATE:
                 encryption_finished = True
                 break
+            elif len(encrypting_pages_set) > ENCRYPTING_PAGES_MIN_CNT:
+                break
             else:
-                time.sleep(1)
+                time.sleep(0.5)
 
-        if encryption_started: # encryption_finished:
-            crypt_chrono_pset = set([ p[0] for p in crypt_chronolody if p[1] == 3 ])
-            crypt_chrono_last = crypt_chronolody[-1]
-
-            if len( crypt_chrono_pset ) > 1:
-                logged_unique_crypt_pages_msg = 'EXPECTED'
+        # ---------------------------------------------------------
+        
+        expected_msg = f'EXPECTED: at least {ENCRYPTING_PAGES_MIN_CNT} different mon$crypt_page values found during encryption process.'
+        if encryption_started:
+            if len(encrypting_pages_set) > ENCRYPTING_PAGES_MIN_CNT:
+                print(expected_msg)
             else:
-                logged_unique_crypt_pages_msg = 'UNEXPECTED: len = %d; list: %s' % ( len(crypt_chrono_pset),  ','.join( (str(x) for x in sorted(crypt_chrono_pset)) ) )
+                print(f'UNEXPECTED: only {len(encrypting_pages_set)} different mon$crypt_page values found for {waiting_in_loop} ms: %s'  % ','.join( (str(x) for x in sorted(encrypting_pages_set)) ) )
+                print(f'At least {ENCRYPTING_PAGES_MIN_CNT} different values expected to be found; encryption_finished = {encryption_finished}')
+        else:
+            print('UNEXPECTED: encryption did not start.')
+        # ---------------------------------------------------------
 
-            print('Number of distinct values of mon$crypt_page: %s' % logged_unique_crypt_pages_msg)
-
-            if crypt_chrono_last == (0,1):
-                logged_last_crypt_page_state_msg = 'EXPECTED'
-            else:
-                logged_last_crypt_page_state_msg = 'UNEXPECTED: %s' % ','.join( (str(x) for x in crypt_chrono_last) )
-
-            print('Last measured values of mon$crypt_page and mon$crypt_state: %s' % logged_last_crypt_page_state_msg)
+        expected_stdout = f"""
+            {expected_msg}
+        """
 
         act.expected_stdout = expected_stdout
         act.stdout = capsys.readouterr().out
