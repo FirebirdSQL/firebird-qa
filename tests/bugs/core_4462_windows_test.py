@@ -70,7 +70,6 @@ tmp_compressors_list = temp_files(['7zip.exe', 'zstd.exe'])
 # from act.files_dir/'test_config.ini':
 enc_settings = QA_GLOBALS['encryption']
 
-MAX_ENCRYPT_DECRYPT_MS = int(enc_settings['max_encrypt_decrypt_ms']) # 5000
 ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
 ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
 
