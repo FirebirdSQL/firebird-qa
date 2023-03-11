@@ -10,7 +10,7 @@ DESCRIPTION:
         'select mon$crypt_page, mon$crypt_state from mon$database', with repeating it every 0.5 second.
 
     Loop continues until we find <ENCRYPTING_PAGES_MIN_CNT> different number of encrypted pages,
-    or if timeout <MAX_ENCRYPT_DECRYPT_MS> ms expired.
+    or if timeout <MAX_WAITING_ENCR_FINISH> ms expired.
 
     If (after loop) number of pages detected in encrypted state less then <ENCRYPTING_PAGES_MIN_CNT>
     then test is considered as failed.
