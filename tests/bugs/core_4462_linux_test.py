@@ -67,7 +67,6 @@ tmp_zipped_nbk_list = temp_files( [ f'tmp_core_4462.nbk{i}.compressed' for i in 
 # from act.files_dir/'test_config.ini':
 enc_settings = QA_GLOBALS['encryption']
 
-MAX_ENCRYPT_DECRYPT_MS = int(enc_settings['max_encrypt_decrypt_ms']) # 5000
 ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
 ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
 
