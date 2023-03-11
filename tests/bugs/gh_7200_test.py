@@ -99,7 +99,6 @@ def test_1(act: Action, act_tmp: Action, tmp_sql: Path, tmp_log: Path, capsys):
     # from act.files_dir/'test_config.ini':
     enc_settings = QA_GLOBALS['encryption']
 
-    max_encrypt_decrypt_ms = int(enc_settings['max_encrypt_decrypt_ms']) # 5000
     encryption_plugin = enc_settings['encryption_plugin'] # fbSampleDbCrypt
     encryption_holder  = enc_settings['encryption_holder'] # fbSampleKeyHolder
     encryption_key = enc_settings['encryption_key'] # Red
