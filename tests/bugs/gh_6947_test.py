@@ -24,8 +24,12 @@ NOTES:
     [20.06.2022] pzotov
     Settings for encryption are taken from act.files_dir/'test_config.ini' file.
     Checked on 5.0.0.509 - both Windows and Linux.
-"""
 
+    [11.03.2023] pzotov
+    Marked as SKIPPED because covered by core_6048_test.
+    Probably will be deleted soon.
+"""
+import os
 import datetime as py_dt
 from datetime import timedelta
 import time
@@ -33,6 +37,23 @@ import time
 import pytest
 from firebird.qa import *
 from firebird.driver import ShutdownMode, ShutdownMethod, DatabaseError
+
+###########################
+###   S E T T I N G S   ###
+###########################
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+enc_settings = QA_GLOBALS['encryption']
+
+
+# ACHTUNG: this must be carefully tuned on every new host:
+#
+MAX_WAITING_ENCR_FINISH = int(enc_settings['MAX_WAIT_FOR_ENCR_FINISH_WIN' if os.name == 'nt' else 'MAX_WAIT_FOR_ENCR_FINISH_NIX'])
+assert MAX_WAITING_ENCR_FINISH > 0
+
+ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
+ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
 
 FLD_LEN = 500
 N_ROWS = 50000
@@ -69,18 +90,11 @@ expected_stdout = f"Expected: query to mon$database returned not less then {MIN_
 
 @pytest.mark.encryption
 @pytest.mark.version('>=5.0')
+@pytest.mark.skip('Covered by bugs/core_6048_test')
+
 def test_1(act: Action, capsys):
 
     act.db.set_sync_write() # here we want DB be  encrypted for some *valuable* time
-
-    # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
-    # from act.files_dir/'test_config.ini':
-    enc_settings = QA_GLOBALS['encryption']
-
-    max_encrypt_decrypt_ms = int(enc_settings['max_encrypt_decrypt_ms']) # 5000
-    encryption_plugin = enc_settings['encryption_plugin'] # fbSampleDbCrypt
-    encryption_holder  = enc_settings['encryption_holder'] # fbSampleKeyHolder
-    encryption_key = enc_settings['encryption_key'] # Red
 
     encryption_started = False
     encryption_finished = False
@@ -89,7 +103,7 @@ def test_1(act: Action, capsys):
     with act.db.connect() as con:
 
         t1=py_dt.datetime.now()
-        sttm = f'alter database encrypt with "{encryption_plugin}" key "{encryption_key}"'
+        sttm = f'alter database encrypt with "{ENCRYPTION_PLUGIN}" key "{ENCRYPTION_KEY}"'
         try:
             con.execute_immediate(sttm)
             con.commit()
@@ -109,8 +123,8 @@ def test_1(act: Action, capsys):
         while encryption_started:
             t2=py_dt.datetime.now()
             d1=t2-t1
-            if d1.seconds*1000 + d1.microseconds//1000 > max_encrypt_decrypt_ms:
-                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {max_encrypt_decrypt_ms} ms.')
+            if d1.seconds*1000 + d1.microseconds//1000 > MAX_WAITING_ENCR_FINISH:
+                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAITING_ENCR_FINISH} ms.')
                 break
 
             cur.execute(ps)
