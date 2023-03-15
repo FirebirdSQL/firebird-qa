@@ -4,11 +4,7 @@
 ID:          issue-4198
 ISSUE:       4198
 TITLE:       Very poor performance of SIMILAR TO on some arguments + unable to disconnect via DELETE FROM MON$ATTACHMENTS
-DESCRIPTION:
-  Confirmed normal work (evaluation for less than 2 ms) on WI-T4.0.0.1598
-  Note. Part of pattern: "[[:ALNUM:]\\_\\-]" -- looks strange but it is correct.
-  And it should NOT be changed to somewhat like "[[:ALNUM:]]\\_\\-": previoud FB versions hanged exactly
-  because of this "strange and wrong" pattern.
+DESCRIPTION: This case was suggested by Anton Zuev. It also forces FB 3.x to hang.
 JIRA:        CORE-3858
 FBTEST:      bugs.core_3858
 """
