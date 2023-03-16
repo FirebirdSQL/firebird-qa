@@ -31,8 +31,13 @@ NOTES:
       Because of this, it was decided to replace 'alter sequence restart...' with subtraction of two gen values:
       c = gen_id(<g>, -gen_id(<g>, 0)) -- see procedure sp_restart_sequences.
   [15.09.2022] pzotov
-  Fixed 18.06.2016 15:57
-  Checked on Linux and Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.591
+      Fixed 18.06.2016 15:57
+      Checked on Linux and Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.591
+  [16.03.2023] pzotov
+      Reduced timeouts according to values that were used in old test that could reproduce problem on WI-T4.0.0.258
+      Check again reproducing of problem: confirmed for WI-4.0.0.258 Classic, got:
+      INTERNAL FIREBIRD CONSISTENCY CHECK (INVALID SEND REQUEST (167), FILE: JRDSTATEMENT.CPP LINE: 325)
+      Confirmed fix on WI-4.0.0.262 (currently checked only for Windows).
 """
 
 import subprocess
@@ -229,30 +234,29 @@ def test_1(act: Action, bulk_insert_script: Path, bulk_insert_output: Path,
     #
     for step in range(2):
         # Start bulk insert
-        with open(bulk_insert_output, mode='w') as bulk_insert_out:
+        with open(bulk_insert_output, mode='w') as bulk_insert_out, \
+             open(create_idx_output, mode='w') as create_idx_out:
             p_bulk_insert = subprocess.Popen([act.vars['isql'], '-q',
                                               '-i', str(bulk_insert_script),
                                               '-user', act.db.user,
                                               '-password', act.db.password, act.db.dsn],
                                              stdout=bulk_insert_out, stderr=subprocess.STDOUT)
-            try:
-                time.sleep(4)
-                # Create index
-                with open(create_idx_output, mode='w') as create_idx_out:
-                    p_create_idx = subprocess.Popen([act.vars['isql'], '-q',
-                                                     '-i', str(create_idx_script),
-                                                     '-user', act.db.user,
-                                                     '-password', act.db.password, act.db.dsn],
-                                                    stdout=create_idx_out, stderr=subprocess.STDOUT)
-                    try:
-                        time.sleep(4)
-                        # kill isql connections
-                        act.isql(switches=[], input=kill_att)
-                    finally:
-                        p_create_idx.terminate()
-                #
-            finally:
-                p_bulk_insert.terminate()
+            time.sleep(2)
+
+            # Create index
+            p_create_idx = subprocess.Popen([act.vars['isql'], '-q',
+                                             '-i', str(create_idx_script),
+                                             '-user', act.db.user,
+                                             '-password', act.db.password, act.db.dsn],
+                                            stdout=create_idx_out, stderr=subprocess.STDOUT)
+            time.sleep(2)
+
+            # kill isql connections
+            act.isql(switches=[], input=kill_att)
+
+            p_bulk_insert.wait()
+            p_create_idx.wait()
+
         # Print logs
         for line in act.clean_string(bulk_insert_output.read_text()).splitlines():
             if line:
@@ -267,6 +271,7 @@ def test_1(act: Action, bulk_insert_script: Path, bulk_insert_output: Path,
     # Run database validation
     with act.connect_server() as srv:
         srv.database.validate(database=act.db.db_path, callback=print_validation)
+
     # Check
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
@@ -279,7 +284,7 @@ def test_1(act: Action, bulk_insert_script: Path, bulk_insert_output: Path,
 
     allowed_patterns = [re.compile('consistency\\s+check',re.IGNORECASE),
                         re.compile('terminate\\S+ abnormally',re.IGNORECASE),
-                        re.compile('Error\s+(reading|writing)\s+data',re.IGNORECASE)
+                        re.compile('Error\\s+(reading|writing)\\s+data',re.IGNORECASE)
                         ]
     for line in unified_diff(log_before, log_after):
         # ::: NB :::
