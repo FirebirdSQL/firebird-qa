@@ -118,12 +118,23 @@ NOTES:
 [29.07.2022] pzotov
     Checked on 4.0.1.2692, 5.0.0.591
 """
-
-import subprocess
 import pytest
 from firebird.qa import *
+import os
+import subprocess
 from pathlib import Path
 import time
+import datetime as py_dt
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act_src.files_dir/'test_config.ini':
+#
+enc_settings = QA_GLOBALS['wait_for_async_pid']
+
+# ACHTUNG: this must be carefully tuned on every new host:
+#
+MAX_WAIT_FOR_PID_APPEAR_MS = int(enc_settings['MAX_WAIT_FOR_PID_APPEAR_WIN' if os.name == 'nt' else 'MAX_WAIT_FOR_PID_APPEAR_NIX'])
+assert MAX_WAIT_FOR_PID_APPEAR_MS > 0
 
 db = db_factory()
 
@@ -235,6 +246,8 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
 
             con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = 5' )
 
+            worker_dml = f'update {target_obj} set id = -id order by id'
+
             worker_sql = f'''
                 set list on;
                 set autoddl off;
@@ -257,7 +270,8 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                 --set plan on;
                 set count on;
 
-                update {target_obj} set id = -id order by id; -- THIS MUST BE LOCKED
+                 -- THIS MUST BE LOCKED:
+                {worker_dml};
 
                 -- check results:
                 -- ###############
@@ -292,7 +306,37 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                                               stdout = hang_out,
                                               stderr = hang_err
                                            )
-                time.sleep(1)
+
+                ##########################################################################################################
+                # added 18.03.2023: we have to be sure that ISQL process really establishes connection
+                # and start execution of <worker_dml> (and will be paused because of locked record):
+                #
+                t1=py_dt.datetime.now()
+                d1 = 0
+                with act.db.connect() as con_checker:
+                    cur_checker = con_checker.cursor()
+                    stm = f"""
+                        select a.mon$remote_pid
+                        from mon$attachments a join mon$statements s using(mon$attachment_id)
+                        where a.mon$remote_pid = ? and cast(s.mon$sql_text as varchar(8190)) = ? and ? >= 0
+                    """
+                    ps = cur_checker.prepare(stm)
+
+                    found_worker_pid = False
+                    while not found_worker_pid:
+                        t2=py_dt.datetime.now()
+                        d1=t2-t1
+                        if d1.seconds*1000 + d1.microseconds//1000 > MAX_WAIT_FOR_PID_APPEAR_MS:
+                            break
+
+                        cur_checker.execute(ps, (p_worker.pid, worker_dml, d1.seconds*1000 + d1.microseconds//1000))
+                        for r in cur_checker:
+                            found_worker_pid = True
+                        con_checker.commit()
+
+                assert found_worker_pid, f'TIMEOUT EXPIRATION: could not find ISQL pid for {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAIT_FOR_PID_APPEAR_MS} ms.'
+                # 4debug assert not found_worker_pid, f'ISQL pid found for {d1.seconds*1000 + d1.microseconds//1000} ms.'
+                ##########################################################################################################
 
                 #########################
                 ###  L O C K E R - 2  ###
