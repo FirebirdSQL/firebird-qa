@@ -3,7 +3,7 @@
 """
 ID:          issue-7488
 ISSUE:       7488
-TITLE:       Invalid real to string cast
+TITLE:       Invalid real to string cast.
 NOTES:
     [14.02.2023] pzotov
     Confirmed bug on 5.0.0.967; 4.0.3.2904
