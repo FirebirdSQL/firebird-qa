@@ -3,7 +3,7 @@
 """
 ID:          issue-7499
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7499
-TITLE:       Problem with restore
+TITLE:       Problem with restore when backup has procedure which contains explicit PLAN clause with inappropriate indices.
 DESCRIPTION: 
     Test uses .fbk which was created on the basis of DDL from gh_7517_test.py
     in FB 3.0.10.33665. There is stored procedure which has query that uses
