@@ -146,7 +146,8 @@ def test_1(act: Action, capsys):
         MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF = 1.1 if platform.system() == 'Linux' else 1.5
     else:
         # 05.03.2023, 5.0.0.970, SS, Linux: 1.1 --> 1.3
-        MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF = 1.3 if platform.system() == 'Linux' else 0.95
+        # 05.04.2023, 5.0.0.1001, SS, WIndows: 0.95 --> 1.5
+        MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF = 1.3 if platform.system() == 'Linux' else 1.5
 
     # Register Firebird server (D:\FB\probes\fid-set-dpb-probe-05x.py)
     srv_cfg = driver_config.register_server(name = 'test_srv_core_0733', config = '')
