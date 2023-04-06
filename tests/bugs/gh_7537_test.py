@@ -22,7 +22,7 @@ test_script = """
     select rdb$set_context(null, 'VARNAME', 2) from rdb$database;
     select rdb$set_context(false, 'VARNAME', 2) from rdb$database;
     select rdb$set_context(date '05.04.2023', 'VARNAME', 2) from rdb$database;
-    select rdb$set_context(0E-6176, 'VARNAME', 2) from rdb$database;
+    select rdb$set_context(1, 'VARNAME', 2) from rdb$database;
 
     -- 2. Trying to get smth non-existent, empty or non-textual namespace:
     select rdb$get_context('NO_SUCH_NS', 'VARNAME') from rdb$database;
@@ -30,7 +30,7 @@ test_script = """
     select rdb$get_context(null, 'VARNAME') from rdb$database;
     select rdb$get_context(false, 'VARNAME') from rdb$database;
     select rdb$get_context(date '05.04.2023', 'VARNAME') from rdb$database;
-    select rdb$get_context(0E-6176, 'VARNAME') from rdb$database;
+    select rdb$get_context(1, 'VARNAME') from rdb$database;
     
     -- 3. Trying to set smth in the READ-ONLY name space 'SYSTEM':
     select rdb$set_context('SYSTEM', 'NO_SUCH_VAR', 2) from rdb$database;
@@ -58,7 +58,7 @@ expected_stdout = """
     Invalid namespace name '2023-04-05' passed to RDB$SET_CONTEXT
 
     Statement failed, SQLSTATE = HY000
-    Invalid namespace name '0E-6176' passed to RDB$SET_CONTEXT
+    Invalid namespace name '1' passed to RDB$SET_CONTEXT
 
     Statement failed, SQLSTATE = HY000
     Invalid namespace name 'NO_SUCH_NS' passed to RDB$GET_CONTEXT
@@ -76,7 +76,7 @@ expected_stdout = """
     Invalid namespace name '2023-04-05' passed to RDB$GET_CONTEXT
 
     Statement failed, SQLSTATE = HY000
-    Invalid namespace name '0E-6176' passed to RDB$GET_CONTEXT
+    Invalid namespace name '1' passed to RDB$GET_CONTEXT
 
     Statement failed, SQLSTATE = HY000
     Invalid namespace name 'SYSTEM' passed to RDB$SET_CONTEXT
