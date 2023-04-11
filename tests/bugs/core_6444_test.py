@@ -263,7 +263,10 @@ fb4x_expected_out = r"""
     RDB$CONFIG_ID 71
     RDB$CONFIG_NAME TempTableDirectory
     RDB$CONFIG_DEFAULT
-    Records affected: 72
+    RDB$CONFIG_ID 72
+    RDB$CONFIG_NAME UseLegacyKernelObjectsNames
+    RDB$CONFIG_DEFAULT false
+    Records affected: 73
 """ % locals()
 
 fb5x_expected_out = r"""
