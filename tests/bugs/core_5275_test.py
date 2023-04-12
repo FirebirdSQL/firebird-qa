@@ -38,8 +38,21 @@ NOTES:
       Check again reproducing of problem: confirmed for WI-4.0.0.258 Classic, got:
       INTERNAL FIREBIRD CONSISTENCY CHECK (INVALID SEND REQUEST (167), FILE: JRDSTATEMENT.CPP LINE: 325)
       Confirmed fix on WI-4.0.0.262 (currently checked only for Windows).
+  [12.04.2023] pzotov
+      This test FAILS on Linux when running against FB 4.x (almost every run on Classic, but also it can fail on Super).
+      Connection that is waiting for COMMIT during index creation for some reason can finish its work successfully,
+      despite the fact that we issue 'delete from mon$attachments' and all transactions have to be rolled back.
+      
+      Issue that was described in the ticket can be reproduced if attachment will be killed during creation of SECOND
+      (non-computed) index for big table within the same transaction that creates first (computed-by) index.
+      Perhaps, one need to query IndexRoot Page in some other ('monitoring') connection and run 'delete from mon$attachments'
+      command exactly at the moment when result of parsing shows that we have only 1st index for selected relation.
+      Discussed with dimitr et al, letters ~20-mar-2023.
+
+      Test needs to be fully re-implemented, but it remains avaliable for Windows because it shows stable results there.
 """
 
+import platform
 import subprocess
 import time
 from pathlib import Path
@@ -224,6 +237,8 @@ def print_validation(line: str) -> None:
         print(f'VALIDATION STDOUT: {line.upper()}')
 
 @pytest.mark.version('>=3.0')
+@pytest.mark.skipif(platform.system() != 'Windows', reason='UNSTABLE on Linux FB 4.x (mostly on Classic). See notes.')
+
 def test_1(act: Action, bulk_insert_script: Path, bulk_insert_output: Path,
            create_idx_script: Path, create_idx_output: Path, capsys):
 
