@@ -78,7 +78,7 @@ expected_stderr = """
 
     Statement failed, SQLSTATE = HY000
     Expression evaluation error for index "TEST_EVAL3" on table "TEST"
-    -Context variable 'FOO_&_BAR' is not found in namespace SYSTEM
+    -Context variable 'FOO_&_BAR' is not found in namespace 'SYSTEM'
     Statement failed, SQLSTATE = 22012
 
     Expression evaluation error for index "TEST_EVAL4" on table "TEST"
