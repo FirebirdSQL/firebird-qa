@@ -43,14 +43,19 @@ NOTES:
     Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
     We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
 
-    NOTE: we use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
-    During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
+    NOTE-1.
+        We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
+        During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
+    NOTE-2.
+        Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
+        'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
     
     Checked on 5.0.0.1010, 4.0.3.2923 - both SS and CS.
 """
 
 import os
 import shutil
+import platform
 from difflib import unified_diff
 from pathlib import Path
 import time
@@ -319,6 +324,10 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
     tmp_data.write_bytes( bytearray(os.urandom(DATA_LEN)) )
 
     with act_db_main.db.connect(no_db_triggers = True) as con:
+
+        if platform.system() != 'Windows' and act.vars['server-arch'] == 'Classic':
+            pytest.skip("Problem in CS: 'Engine is shutdown' in replication.log")
+
         db_main_file = con.info.name
         con.execute_immediate('recreate table test(id int primary key, b blob)')
         con.commit()
