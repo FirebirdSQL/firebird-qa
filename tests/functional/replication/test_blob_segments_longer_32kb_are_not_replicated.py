@@ -325,8 +325,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
 
     with act_db_main.db.connect(no_db_triggers = True) as con:
 
-        if platform.system() != 'Windows' and act.vars['server-arch'] == 'Classic':
-            pytest.skip("Problem in CS: 'Engine is shutdown' in replication.log")
+        if act_db_main.vars['server-arch'] == 'Classic' and platform.system() != 'Windows':
+            pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
 
         db_main_file = con.info.name
         con.execute_immediate('recreate table test(id int primary key, b blob)')
