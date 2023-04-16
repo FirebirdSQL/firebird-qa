@@ -29,17 +29,12 @@ DESCRIPTION:
 FBTEST:      tests.functional.replication.ddl_triggers_must_not_fire_on_replica
 NOTES:
     [25.08.2022] pzotov
-    1. In case of any errors (somewhat_failed <> 0) test will re-create db_main and db_repl, and then perform all needed
-       actions to resume replication (set 'replica' flag on db_repl, enabling publishing in db_main, remove all files
-       from subdirectories <repl_journal> and <repl_archive> which must present in the same folder as <db_main>).
-    2. Warning raises on Windows and Linux:
+    Warning raises on Windows and Linux:
        ../../../usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126
           /usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126: 
           PytestAssertRewriteWarning: Module already imported so cannot be rewritten: __editable___firebird_qa_0_17_0_finder
             self._mark_plugins_for_rewrite(hook)
        The reason currently is unknown.
-
-    Checked on 5.0.0.623, 4.0.1.2692 - both CS and SS. Both on Windows and Linux.
 
     [15.04.2023] pzotov
     Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
@@ -51,9 +46,11 @@ NOTES:
     NOTE-2.
         Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
         'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
-    
-    Checked on 5.0.0.1014, 4.0.3.2929 - both SS and CS.
+    NOTE-3.
+        This test changes FW to OFF in order to reduce time of DDL operations. FW is restored to initial state at final point.
+        Otherwise changes may not be delivered to replica for <MAX_TIME_FOR_WAIT_DATA_IN_REPLICA> seconds.
 
+    Checked on 5.0.0.1014, 4.0.3.2929 - both SS and CS.
 """
 
 import os
@@ -318,17 +315,22 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     # Use only con.info.name for that!
     #    
     db_main_file, db_repl_file = '', ''
+    db_main_fw, db_repl_fw = DbWriteMode.SYNC, DbWriteMode.SYNC
 
     with act_db_main.db.connect(no_db_triggers = True) as con:
         if act_db_main.vars['server-arch'] == 'Classic' and os.name != 'nt':
             pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
 
         db_main_file = con.info.name
+        db_main_fw = con.info.write_mode
 
     with act_db_repl.db.connect(no_db_triggers = True) as con:
         db_repl_file = con.info.name
+        db_repl_fw = con.info.write_mode
 
-    # ONLY FOR THIS test: temporary change FW to OFF:
+    # ONLY FOR THIS test: forcedly change FW to OFF, without any condition.
+    # Otherwise changes may not be delivered to replica for <MAX_TIME_FOR_WAIT_DATA_IN_REPLICA> seconds.
+    #####################
     act_db_main.db.set_async_write()
     act_db_repl.db.set_async_write()
 
@@ -417,8 +419,6 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
                     || 'begin'
                     || :v_lf
                     || q'{    if (rdb$get_context('USER_SESSION', 'SKIP_DDL_TRIGGER') is null) then}'
-                    || :v_lf
-                    || '        in autonomous transaction do'
                     || :v_lf
                     || '        insert into log_ddl_triggers_activity(ddl_trigger_name, event_type, object_type, ddl_event, object_name) values('
                     || :v_lf
@@ -588,10 +588,15 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         # Must be EMPTY:
         out_main = capsys.readouterr().out
 
-    act_db_main.db.set_sync_write()
-    act_db_repl.db.set_sync_write()
-
+    
     drop_db_objects(act_db_main, act_db_repl, capsys)
+
+    # Return FW to initial values (if needed):
+    if db_main_fw == DbWriteMode.SYNC:
+        act_db_main.db.set_sync_write()
+    if db_repl_fw == DbWriteMode.SYNC:
+        act_db_repl.db.set_sync_write()
+
     # Must be EMPTY:
     out_drop = capsys.readouterr().out
 
