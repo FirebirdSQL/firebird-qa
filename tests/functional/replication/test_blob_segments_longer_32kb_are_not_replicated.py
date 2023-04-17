@@ -61,8 +61,7 @@ import time
 
 import pytest
 from firebird.qa import *
-from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, ShutdownMode, ShutdownMethod
-
+from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, ShutdownMode, ShutdownMethod, DatabaseError
 
 # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
 # from act.files_dir/'test_config.ini':
@@ -78,6 +77,7 @@ db_repl = db_factory( filename = '#' + REPL_DB_ALIAS, do_not_create = True, do_n
 substitutions = [('Start removing objects in:.*', 'Start removing objects'),
                  ('Finish. Total objects removed:  [1-9]\\d*', 'Finish. Total objects removed'),
                  ('.* CREATE DATABASE .*', ''),
+                 ('[\t ]+', ' '),
                  ('FOUND message about replicated segment N .*', 'FOUND message about replicated segment')]
 act_db_main = python_act('db_main', substitutions=substitutions)
 act_db_repl = python_act('db_repl', substitutions=substitutions)
@@ -109,56 +109,55 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
     out_reset = ''
 
     with act_db_main.connect_server() as srv:
-        # NOTE: we must NOT use 'a.db.db_path' for ALIASED databases!
+
+        # !! IT IS ASSUMED THAT REPLICATION FOLDERS ARE IN THE SAME DIR AS <DB_MAIN> !!
+        # DO NOT use 'a.db.db_path' for ALIASED database!
         # It will return '.' rather than full path+filename.
-        # Use only result of con.info.name for that!
-        #
+
+        repl_root_path = Path(db_main_file).parent
+        repl_jrn_sub_dir = repl_settings['journal_sub_dir']
+        repl_arc_sub_dir = repl_settings['archive_sub_dir']
+
         for f in (db_main_file, db_repl_file):
-            # We change DB state to FULL SHUTDOWN instead of attempt to use action.db.drop() method
-            # because this is more reliable (it kills all attachments in all known cases):
-            srv.database.shutdown(database = f, mode = ShutdownMode.FULL, method = ShutdownMethod.FORCED, timeout = 0)
+            # Method db.drop() changes LINGER to 0, issues 'delete from mon$att' with suppressing exceptions
+            # and calls 'db.drop_database()' (also with suppressing exceptions).
+            # We change DB state to FULL SHUTDOWN instead of call action.db.drop() because
+            # this is more reliable (it kills all attachments in all known cases and does not use mon$ table)
+            #
+            try:
+                srv.database.shutdown(database = f, mode = ShutdownMode.FULL, method = ShutdownMethod.FORCED, timeout = 0)
+            except DatabaseError as e:
+                out_reset += e.__str__()
 
             # REMOVE db file from disk:
             ###########################
             os.unlink(f)
 
-        # This method:
-        # * set LINGER to 0
-        # * issues 'delete from mon$attachments' with suppressing exceptions
-        # * calls 'db.drop_database()' with suppressing exceptions
-        #
-        # >>> NOTE! we do not use this >>> a.db.drop()
+        # Clean folders repl_journal and repl_archive: remove all files from there.
+        for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
+            if cleanup_folder(repl_root_path / p) > 0:
+                out_reset += f"Directory {str(p)} remains non-empty.\n"
 
+    if out_reset == '':
+        for a in (act_db_main,act_db_repl):
+            d = a.db.db_path
 
-    for a in (act_db_main,act_db_repl):
-        d = a.db.db_path
-
-        dbx = create_database(str(d), user = a.db.user)
-        dbx.close()
-        with a.connect_server() as srv:
-            srv.database.set_write_mode(database = d, mode=DbWriteMode.ASYNC)
-            srv.database.set_sweep_interval(database = d, interval = 0)
-            if a == act_db_repl:
-                srv.database.set_replica_mode(database = d, mode = ReplicaMode.READ_ONLY)
-            else:
-                with a.db.connect() as con:
-                    # !! IT IS ASSUMED THAT REPLICATION FOLDERS ARE IN THE SAME DIR AS <DB_MAIN> !!
-                    # DO NOT use 'a.db.db_path' for ALIASED database!
-                    # It will return '.' rather than full path+filename.
-                    # Use only con.info.name for that:
-                    repl_root_path = Path(con.info.name).parent
-                    repl_jrn_sub_dir = repl_settings['journal_sub_dir']
-                    repl_arc_sub_dir = repl_settings['archive_sub_dir']
-
-                    # Clean folders repl_journal and repl_archive (remove all files from there):
-                    for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
-                        if cleanup_folder(repl_root_path / p) > 0:
-                            out_reset += f"Directory {str(p)} remains non-empty.\n"
-
-                    if out_reset == '':
-                        con.execute_immediate('alter database enable publication')
-                        con.execute_immediate('alter database include all to publication')
-                        con.commit()
+            try:
+                dbx = create_database(str(d), user = a.db.user)
+                dbx.close()
+                with a.connect_server() as srv:
+                    srv.database.set_write_mode(database = d, mode = DbWriteMode.ASYNC)
+                    srv.database.set_sweep_interval(database = d, interval = 0)
+                    if a == act_db_repl:
+                        srv.database.set_replica_mode(database = d, mode = ReplicaMode.READ_ONLY)
+                    else:
+                        with a.db.connect() as con:
+                            con.execute_immediate('alter database enable publication')
+                            con.execute_immediate('alter database include all to publication')
+                            con.commit()
+            except DatabaseError as e:
+                out_reset += e.__str__()
+            
     # Must remain EMPTY:
     return out_reset
 
@@ -191,10 +190,17 @@ def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', i
     
     final_check_pass = False
     if isql_check_script:
+        retcode = 0
         for i in range(max_allowed_time_for_wait):
             a.reset()
             a.expected_stdout = replica_expected_out
-            a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = False)
+            a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = True)
+
+            if a.return_code:
+                # "Token unknown", "Name longer than database column size" etc: we have to
+                # immediately break from this loop because isql_check_script is incorrect!
+                break
+            
             if a.clean_stdout == a.clean_expected_stdout:
                 final_check_pass = True
                 break
@@ -209,7 +215,11 @@ def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', i
             print(a.clean_expected_stdout)
             print('Actual output:')
             print(a.clean_stdout)
+            print(f'ISQL return_code={a.return_code}')
             print(f'Waited for {i} seconds')
+
+        a.reset()
+
     else:
         final_check_pass = True
 
@@ -235,6 +245,7 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
                 a.reset()
             else:
                 print(a.clean_expected_stdout)
+                a.reset()
                 break
 
             # NB: one need to remember that rdb$system_flag can be NOT ONLY 1 for system used objects!
@@ -317,65 +328,76 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
     # It will return '.' rather than full path+filename.
     # Use only con.info.name for that!
     #    
-    db_main_file, db_repl_file = '', ''
-
-    # Generate random binary data and writing to file which will be loaded as stream blob into DB:
-    tmp_data.write_bytes( bytearray(os.urandom(DATA_LEN)) )
-
-    with act_db_main.db.connect(no_db_triggers = True) as con:
-
-        if act_db_main.vars['server-arch'] == 'Classic' and os.name != 'nt':
-            pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
-
-        db_main_file = con.info.name
-        con.execute_immediate('recreate table test(id int primary key, b blob)')
-        con.commit()
-        with con.cursor() as cur:
-            with open(tmp_data, 'rb') as blob_file:
-                # [doc]: crypt_hash() returns VARCHAR strings with OCTETS charset with length depended on algorithm.
-                # ### ACHTUNG ### ISQL will convert this octets to HEX-form, e.g.:
-                # select cast('AF' as varchar(2) charset octets) ... --> '4146' // i.e. bytes order = BIG-endian.
-                # firebird-driver does NOT perform such transformation, and output for this example will be: b'AF'. 
-                # We have to:
-                # 1. Convert this string to integer using 'big' for bytesOrder (despite that default value most likely = 'little'!)
-                # 2. Convert this (decimal!) integer to hex and remove "0x" prefix from it. This can be done using format() function.
-                # 3. Apply upper() to this string and pad it with zeroes to len=128 (because such padding is always done by ISQL).
-                # Resulting value <inserted_blob_hash> - will be further queried from REPLICA database, using ISQL.
-                # It must be equal to <inserted_blob_hash> that we evaluate here:
-                cur.execute("insert into test(id, b) values(1, ?) returning crypt_hash(b using sha512)", (blob_file,) )
-                ins_blob_hash_raw = cur.fetchone()[0]                                       # b'\xfa\x80\x8a...'
-                ins_blob_hash_raw = format(int.from_bytes(ins_blob_hash_raw,  'big'), 'x')  # 'fa808a...'
-                inserted_blob_hash = ins_blob_hash_raw.upper().rjust(128, '0')
-        con.commit()
+    db_info = {}
+    for a in (act_db_main, act_db_repl):
+        with a.db.connect(no_db_triggers = True) as con:
+            if a == act_db_main and a.vars['server-arch'] == 'Classic' and os.name != 'nt':
+                pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
+            db_info[a,  'db_full_path'] = con.info.name
+            db_info[a,  'db_fw_initial'] = con.info.write_mode
 
 
-    with act_db_repl.db.connect(no_db_triggers = True) as con:
-        db_repl_file = con.info.name
-    
+    # ONLY FOR THIS test: forcedly change FW to OFF, without any condition.
+    # Otherwise changes may not be delivered to replica for <MAX_TIME_FOR_WAIT_DATA_IN_REPLICA> seconds.
+    #####################
+    act_db_main.db.set_async_write()
+    act_db_repl.db.set_async_write()
 
     # Must be EMPTY:
     out_prep = capsys.readouterr().out
    
     if out_prep:
+        # Some problem raised during change DB header(s)
+        pass
+    else:
+        with act_db_main.db.connect(no_db_triggers = True) as con:
+            con.execute_immediate('recreate table test(id int primary key, b blob)')
+            con.commit()
+            with con.cursor() as cur:
+                # Generate random binary data and writing to file which will be loaded as stream blob into DB:
+                tmp_data.write_bytes( bytearray(os.urandom(DATA_LEN)) )
+                with open(tmp_data, 'rb') as blob_file:
+                    # [doc]: crypt_hash() returns VARCHAR strings with OCTETS charset with length depended on algorithm.
+                    # ### ACHTUNG ### ISQL will convert this octets to HEX-form, e.g.:
+                    # select cast('AF' as varchar(2) charset octets) ... --> '4146' // i.e. bytes order = BIG-endian.
+                    # firebird-driver does NOT perform such transformation, and output for this example will be: b'AF'. 
+                    # We have to:
+                    # 1. Convert this string to integer using 'big' for bytesOrder (despite that default value most likely = 'little'!)
+                    # 2. Convert this (decimal!) integer to hex and remove "0x" prefix from it. This can be done using format() function.
+                    # 3. Apply upper() to this string and pad it with zeroes to len=128 (because such padding is always done by ISQL).
+                    # Resulting value <inserted_blob_hash> - will be further queried from REPLICA database, using ISQL.
+                    # It must be equal to <inserted_blob_hash> that we evaluate here:
+                    cur.execute("insert into test(id, b) values(1, ?) returning crypt_hash(b using sha512)", (blob_file,) )
+                    ins_blob_hash_raw = cur.fetchone()[0]                                       # b'\xfa\x80\x8a...'
+                    ins_blob_hash_raw = format(int.from_bytes(ins_blob_hash_raw,  'big'), 'x')  # 'fa808a...'
+                    inserted_blob_hash = ins_blob_hash_raw.upper().rjust(128, '0')
+            con.commit()
+
+    # Must be EMPTY:
+    out_prep = capsys.readouterr().out
+   
+    if out_prep:
+        # Some problem raised during initial DDL and/or blob writing
         pass
     else:
         # Query to be used for check that all DB objects present in replica (after last DML statement completed on master DB):
         ddl_ready_query = "select 1 from rdb$relations where rdb$relation_name = upper('test')"
 
         # Query to be used that replica DB contains all expected data (after last DML statement completed on master DB):
-        isql_check_script = '''
-            set list on;
+        isql_check_script = """
+            set bail on;
             set blob all;
+            set list on;
             set count on;
             select
                 rdb$get_context('SYSTEM','REPLICA_MODE') replica_mode
                 ,crypt_hash(b using sha512) as blob_hash
             from test;
-        '''
+        """
 
         isql_expected_out = f"""
-            REPLICA_MODE                    READ-ONLY
-            BLOB_HASH                       {inserted_blob_hash}
+            REPLICA_MODE READ-ONLY
+            BLOB_HASH {inserted_blob_hash}
             Records affected: 1
         """
 
@@ -387,6 +409,10 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
         out_main = capsys.readouterr().out
 
     drop_db_objects(act_db_main, act_db_repl, capsys)
+    # Return FW to initial values (if needed):
+    for a in (act_db_main, act_db_repl):
+        if db_info[a,'db_fw_initial'] == DbWriteMode.SYNC:
+            a.db.set_sync_write()
     # Must be EMPTY:
     out_drop = capsys.readouterr().out
 
@@ -394,7 +420,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
         # We have a problem either with DDL/DML or with dropping DB objects.
         # First, we have to RECREATE both master and slave databases
         # (otherwise further execution of this test or other replication-related tests most likely will fail):
-        out_reset = reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file)
+        out_reset = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'])
 
         # Next, we display out_main, out_drop and out_reset:
         #
