@@ -2,31 +2,35 @@
 
 """
 ID:          replication.blob_not_found_in_rw_replica_if_target_row_exists
-ISSUE:       7070
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7070
 TITLE:       Error "BLOB is not found" while replication converts INSERT into UPDATE for a conflicting record
 DESCRIPTION:
-    Test temporary changes mode of replica using external call: gfix -replica read_write ...
-    Then we create table TEST(ID int, b blob) on master, without adding records in it, and WAIT
-    until this table will appear on replica DB.
-    Maximal waiting time is limited by variable MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG).
-    Message starting with phrase 'POINT-1A ...' is printed when this table appears in replica DB.
+    Test temporary changes mode of replica to READ-WRITE.
+    Then we create table TEST(ID int primary key, b blob) on master and wait for this table will appear in replica.
+    NB. Despite that we can create such table at the same time on replica, this ticket issue can be reproduced only
+    when we make table in one (master) DB with waiting until it will be replicated.
 
-    NB. Despite that we can create such table at the same time on replica, this ticket issue can be
-    reproduced only when we make table on master and wait until it will be replicated on replica.
+    Maximal waiting time is limited by variable MAX_TIME_FOR_WAIT_DATA_IN_REPLICA.
 
-    After this we:
-    * add record with binary blob (using stream API) into REPLICA database; commit;
-    * add record with another binary blob into MASTER database; commit;
+    Then we add record with ID = 1 both in master and replica, but content for blob column will differ for these DB.
+    For blob that is stored in *master* we evaluate crypt_hash(<blob>) and store result for futher comparison with
+    result of similar action on replica.
 
     Message "WARNING: Record being inserted into table TEST already exists, updating instead" must appear
-    in the replication log at this point but after that message about successfully replicated segment must also be.
+    in the replication log at this point.
+    But after that message about successfully replicated segment also has to be seen there.
+
     Message 'ERROR: Blob ... is not found for table TEST' must NOT appear.
-    If these conditions are met then script issues message starting with 'Point-1B ...'
 
-    Further,  we invoke ISQL with executing auxiliary script for drop all DB objects on master (with '-nod' command switch).
-    After all objects will be dropped, we have to wait again until  replica becomes actual with master (see 'POINT-2').
+    Then we wait until blob from MASTER will be delivered to REPLICA with *overwtiting* previously generated blob.
+    Check is performed by querying DB replica, see call of watch_replica() function.
+    When crypt_hash(<blob>) show equal results on master and replica, we can assume that all completed OK.
 
-    Finally, we extract metadata for master and replica and compare them (see 'f_meta_diff').
+    Further, we invoke ISQL with executing auxiliary script for drop all DB objects on master (with '-nod' command switch).
+    After all objects will be dropped, we have to wait again until replica becomes actual with master.
+    Check that both DB have no custom objects is performed (see UNION-ed query to rdb$ tables + filtering on rdb$system_flag).
+
+    Finally, we extract metadata for master and replica and make comparison.
     The only difference in metadata must be 'CREATE DATABASE' statement with different DB names - we suppress it,
     thus metadata difference must not be issued.
 
@@ -35,21 +39,32 @@ DESCRIPTION:
 FBTEST:      tests.functional.replication.blob_not_found_in_rw_replica_if_target_row_exists
 NOTES:
     [26.08.2022] pzotov
-    1. In case of any errors (somewhat_failed <> 0) test will re-create db_main and db_repl, and then perform all needed
-       actions to resume replication (set 'replica' flag on db_repl, enabling publishing in db_main, remove all files
-       from subdirectories <repl_journal> and <repl_archive> which must present in the same folder as <db_main>).
-    2. Warning raises on Windows and Linux:
-       ../../../usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126
-          /usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126: 
-          PytestAssertRewriteWarning: Module already imported so cannot be rewritten: __editable___firebird_qa_0_17_0_finder
-            self._mark_plugins_for_rewrite(hook)
-       The reason currently is unknown.
+        Warning raises on Windows and Linux:
+           ../../../usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126
+              /usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126: 
+              PytestAssertRewriteWarning: Module already imported so cannot be rewritten: __editable___firebird_qa_0_17_0_finder
+                self._mark_plugins_for_rewrite(hook)
+        The reason currently is unknown.
 
-    Checked on 5.0.0.623, 4.0.1.2692 - both CS and SS. Both on Windows and Linux.
+    [17.04.2023] pzotov
+    Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
+    We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
+
+    NOTE-1.
+        We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
+        During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
+    NOTE-2.
+        Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
+        'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
+    NOTE-3.
+        This test changes FW to OFF in order to reduce time of DDL operations. FW is restored to initial state at final point.
+        Otherwise changes may not be delivered to replica for <MAX_TIME_FOR_WAIT_DATA_IN_REPLICA> seconds.
+    
+    Checked on 5.0.0.1010, 4.0.3.2923 - both SS and CS.
+
 """
 import os
 import shutil
-import re
 from difflib import unified_diff
 from pathlib import Path
 import time
