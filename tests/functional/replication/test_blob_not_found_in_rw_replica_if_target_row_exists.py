@@ -406,6 +406,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
                         # 1. Convert this string to integer using 'big' for bytesOrder (despite that default value most likely = 'little'!)
                         # 2. Convert this (decimal!) integer to hex and remove "0x" prefix from it. This can be done using format() function.
                         # 3. Apply upper() to this string and pad it with zeroes to len=128 (because such padding is always done by ISQL).
+		                # Resulting value <inserted_blob_hash> - will be further queried from REPLICA database, using ISQL.
+		                # It must be equal to <inserted_blob_hash> that we evaluate here:
                         cur.execute("insert into test(id, b) values(1, ?) returning crypt_hash(b using sha512)", (blob_file,) )
                         ins_blob_hash_raw = cur.fetchone()[0]                                       # b'\xfa\x80\x8a...'
                         ins_blob_hash_raw = format(int.from_bytes(ins_blob_hash_raw,  'big'), 'x')  # 'fa808a...'
@@ -422,7 +424,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
         # No errors must be now. We have to wait now until blob from MASTER be delivered
         # to REPLICA and replace there "old" blob (in the record with ID = 1).
 
-        isql_check_script = f"""
+        # Query to be used that replica DB contains all expected data (after last DML statement completed on master DB):
+        isql_check_script = """
             set bail on;
             set blob all;
             set list on;
