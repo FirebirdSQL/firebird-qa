@@ -315,7 +315,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     # Use only con.info.name for that!
     #    
     db_main_file, db_repl_file = '', ''
-    db_main_fw, db_repl_fw = DbWriteMode.SYNC, DbWriteMode.SYNC
+    db_main_fw, db_repl_fw = DbWriteMode.ASYNC, DbWriteMode.ASYNC
 
     with act_db_main.db.connect(no_db_triggers = True) as con:
         if act_db_main.vars['server-arch'] == 'Classic' and os.name != 'nt':
