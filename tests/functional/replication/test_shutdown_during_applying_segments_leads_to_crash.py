@@ -2,7 +2,7 @@
 
 """
 ID:          replication.shutdown_during_applying_segments_leads_to_crash
-ISSUE:       6975
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6975
 TITLE:       Crash or hang while shutting down the replica database if segments are being applied
 DESCRIPTION:
     Bug initially was found during heavy test of replication performed by OLTP-EMUL, for FB 4.x
@@ -11,106 +11,82 @@ DESCRIPTION:
     It *can* be reproduced without heavy/concurrent workload, but one need to make data be written into replica
     database 'slowly'. First of all, we have to set/change (temporary) Forced Writes = _ON_ for replica DB.
     Further, on master DB we can create table with wide INDEXED column and insert GUID-based values there.
-    On master we have FW = OFF thus data will be inserted quickly, but on applying of segments to replica DB
-    will be extremely slow (more than 1..2 minutes).
+    On master we have FW = OFF thus data will be inserted quickly, but applying of segments to replica DB
+    will be extremely slow (about 1..2 minutes).
 
-    At this point we save current timestamp and start to check replicationb.log for appearance of phrase
-    'Added <N> segment(s) to the processing queue' - with requirement that this phrase has timestamp newer
-    than just saved one (essentually, we are looking for LAST such phrase).
-    See function wait_for_add_queue_in_replica() which does this parsing of replication.log.
+    Test creates table 'test' with indexed text column of length about 500...700 bytes, and adds there thousands rows.
+    This leads engine generate at least one segment with size about 16 Mb.
 
-    Since that point control is returned from func wait_for_add_queue_in_replica() to main code.
-    We can be sure that replicating of segments will be performed very slow. In order to check ticket issue,
-    we can now change replica DB to shutdown - and FB must not chash at this point.
+    We wait until table 'test' appear in replica DB (by querying RDB$RELATIONS), and when it is so - make small delay
+    for <TIME_TO_LET_SEGMENTS_BE_APPLIED> seconds in order to allow replica apply some (small) part of this big segment.
+    After that, we change replica DB state to 'full shutdown' and then bring it online.
+    
+    Error message appears in replication.log at that moment, engine suspends replication for <REPLICA_TIMEOUT_FOR_ERROR> seconds.
+    After that, replication must resume and complete normally. We check this by querying RDB$RELATIONS for presense there table
+    with name 't_completed': if appropriate record found then we can assume that replication completed successfully.
 
-    We also have to return FW state to 'OFF', so before shutting down this DB we change it FW attribute
-    (see 'srv.database.set_write_mode(...)').
-    NOTE: changing FW attribute causes error on 5.0.0.215 with messages:
-        335544344 : I/O error during "WriteFile" operation for file "<db_repl_file.fdb>"
-        335544737 : Error while trying to write to file
-    - so we have to enclose it into try/except block (otherwise we will not see crash because of test terminating).
+    Further, we invoke ISQL with executing auxiliary script for drop all DB objects on master (with '-nod' command switch).
+    After all objects will be dropped, we have to wait again until replica becomes actual with master.
+    Check that both DB have no custom objects is performed (see UNION-ed query to rdb$ tables + filtering on rdb$system_flag).
 
-    When we further change DB replica state to full shutdown, FB 5.0.0.215 crashes (checked both of SS and CS).
-    After returning DB to online ('srv.database.bring_online'), we will wait for all segments will be applied.
-    If this occurs then we can conclude that test passes.
-
-    Finally, we extract metadata for master and replica and compare them (see 'f_meta_diff').
+    Finally, we extract metadata for master and replica and make comparison.
     The only difference in metadata must be 'CREATE DATABASE' statement with different DB names - we suppress it,
     thus metadata difference must not be issued.
-
-
-    Confirmed bug on 5.0.0.215: server crashed when segment was applied to replica and at the same time we issued
-    'gfix -shut full -force 0 ...'. Regardless of that command, replica DB remained in NORMAL mode, not in shutdown.
-    If this command was issued after this again - FB process hanged (gfix could not return control to OS).
+    
+    Confirmed bug on 5.0.0.215: server crashed, firebird.log contains message:
+    "Fatal lock manager error: invalid lock id (0), errno: 0".
+    Validation of replica DB shows lot of orphan pages (but no errors).
+    
     This is the same bug as described in the ticked (discussed with dimitr, letters 22.09.2021).
 
 FBTEST:      tests.functional.replication.shutdown_during_applying_segments_leads_to_crash
 NOTES:
     [27.08.2022] pzotov
-    1. In case of any errors (somewhat_failed <> 0) test will re-create db_main and db_repl, and then perform all needed
-       actions to resume replication (set 'replica' flag on db_repl, enabling publishing in db_main, remove all files
-       from subdirectories <repl_journal> and <repl_archive> which must present in the same folder as <db_main>).
-    2. Warning raises on Windows and Linux:
-       ../../../usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126
-          /usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126: 
-          PytestAssertRewriteWarning: Module already imported so cannot be rewritten: __editable___firebird_qa_0_17_0_finder
-            self._mark_plugins_for_rewrite(hook)
-       The reason currently is unknown.
+    Warning raises on Windows and Linux:
+        ../../../usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126
+        /usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126: 
+        PytestAssertRewriteWarning: Module already imported so cannot be rewritten: __editable___firebird_qa_0_17_0_finder
+        self._mark_plugins_for_rewrite(hook)
+    The reason currently is unknown.
 
-	3. Following message appears in the firebird.log during this test:
-	    3.1.[WINDOWS] 
-        I/O error during "WriteFile" operation for file "<db_replica_filename>"
-        Error while trying to write to file
+    [18.04.2023] pzotov
+    Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
+    We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
 
-        3.2 [LINUX]
-        I/O error during "write" operation for file "<db_replica_filename>"
-        Error while trying to write to file
-        Success
+    NOTE-1.
+        We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
+        During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
+    NOTE-2.
+        Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
+        'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
     
-    4. ### ACHTUNG ###
-        On linux test actually "silently" FAILS, without showing any error (but FB process is terminated!).
-        Will be investigated later.
-
-    [06.10.022] pzotov
-        FB crashed on CentOS-7. Sent report to dimitr et al.
-
-        Changed code: attempt to make actions in the 'finally' section more robust.
-        If test fails at some intermediate point then we must not assume
-        that all of its databases (master or replica) are closed.
-
-        Rather, some of them can be opened by engine, so we must change
-        their state to FULL SHUTDOWN before re-creation.
-
-        This means that we must delete DB file by call OS utilities rather
-        than use drop database ("act.db.drop()") - because database now is
-        unavaliable (and reverting to online can be NOT desirable).
-
-        This is only first attempt.
-        Sooner of all, it will be changed many times further.
-
-    Checked on 5.0.0.691, 4.0.1.2692 - both CS and SS. Both on Windows and Linux.
+    Checked on 5.0.0.1017, 4.0.3.2925 - both SS and CS.
 """
-import locale
 import os
 import shutil
-import re
 from difflib import unified_diff
 from pathlib import Path
 import time
-from datetime import datetime
-from datetime import timedelta
 
 import pytest
 from firebird.qa import *
-from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, ShutdownMode,ShutdownMethod, OnlineMode
+from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, ShutdownMode, ShutdownMethod, OnlineMode, DatabaseError
 from firebird.driver.types import DatabaseError
 
 # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
 # from act.files_dir/'test_config.ini':
 repl_settings = QA_GLOBALS['replication']
 
-MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG = int(repl_settings['max_time_for_wait_segment_in_log'])
-MAX_TIME_FOR_WAIT_ADDED_TO_QUEUE = int(repl_settings['max_time_for_wait_added_to_queue'])
+MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
+
+# How long we wit since segments start apply on replica
+# and before we change its state to full shutdown, seconds:
+#
+TIME_TO_LET_SEGMENTS_BE_APPLIED = 5
+
+# How long engine will be idle in case of encountering error.
+#
+REPLICA_TIMEOUT_FOR_ERROR = int(repl_settings['replica_timeout_for_error'])
 
 MAIN_DB_ALIAS = repl_settings['main_db_alias']
 REPL_DB_ALIAS = repl_settings['repl_db_alias']
@@ -145,147 +121,251 @@ def cleanup_folder(p):
 
 #--------------------------------------------
 
-def wait_for_add_queue_in_replica( act_db_main: Action, max_allowed_time_for_wait, min_timestamp, prefix_msg = '' ):
+def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
+    out_reset = ''
 
-    # <hostname> (replica) Tue Sep 21 20:24:57 2021
-    # Database: ...
-    # Added 3 segment(s) to the processing queue
+    with act_db_main.connect_server() as srv:
 
-    # -:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-
-    def check_pattern_in_log( log_lines, pattern, min_timestamp, prefix_msg = '' ):
-        found_required_message = False
-        for i,r in enumerate(log_lines):
-            if pattern.search(r):
-                if i>=2 and log_lines[i-2]:
-                    # a = r.replace('(',' ').split()
-                    a = log_lines[i-2].split()
-                    if len(a)>=4:
-                        # s='replica_host_name (slave) Sun May 30 17:46:43 2021'
-                        # s.split()[-5:] ==> ['Sun', 'May', '30', '17:46:43', '2021']
-                        # ' '.join( ...) ==> 'Sun May 30 17:46:43 2021'
-                        dts = ' '.join( log_lines[i-2].split()[-5:] )
-                        segment_timestamp = datetime.strptime( dts, '%a %b %d %H:%M:%S %Y')
-                        if segment_timestamp >= min_timestamp:
-                            print( (prefix_msg + ' ' if prefix_msg else '') + f'FOUND message about segments added to queue after timestamp {min_timestamp}: {segment_timestamp}')
-                            found_required_message = True
-                            break
-        return found_required_message
+        # !! IT IS ASSUMED THAT REPLICATION FOLDERS ARE IN THE SAME DIR AS <DB_MAIN> !!
+        # DO NOT use 'a.db.db_path' for ALIASED database!
+        # It will return '.' rather than full path+filename.
 
-    # -:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-:-
+        repl_root_path = Path(db_main_file).parent
+        repl_jrn_sub_dir = repl_settings['journal_sub_dir']
+        repl_arc_sub_dir = repl_settings['archive_sub_dir']
 
-    replication_log = act_db_main.home_dir / 'replication.log'
+        for f in (db_main_file, db_repl_file):
+            # Method db.drop() changes LINGER to 0, issues 'delete from mon$att' with suppressing exceptions
+            # and calls 'db.drop_database()' (also with suppressing exceptions).
+            # We change DB state to FULL SHUTDOWN instead of call action.db.drop() because
+            # this is more reliable (it kills all attachments in all known cases and does not use mon$ table)
+            #
+            try:
+                srv.database.shutdown(database = f, mode = ShutdownMode.FULL, method = ShutdownMethod.FORCED, timeout = 0)
+            except DatabaseError as e:
+                out_reset += e.__str__()
 
-    replold_lines = []
-    with open(replication_log, 'r') as f:
-        replold_lines = f.readlines()
+            # REMOVE db file from disk:
+            ###########################
+            os.unlink(f)
 
+        # Clean folders repl_journal and repl_archive: remove all files from there.
+        for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
+            if cleanup_folder(repl_root_path / p) > 0:
+                out_reset += f"Directory {str(p)} remains non-empty.\n"
 
-    # VERBOSE: Added 5 segment(s) to the processing queue
-    segments_to_queue_pattern=re.compile( 'VERBOSE:\\s+added\\s+\\d+\\s+segment.*to.*queue', re.IGNORECASE)
+    if out_reset == '':
+        for a in (act_db_main,act_db_repl):
+            d = a.db.db_path
 
-    # 08.09.2021: replication content can already contain phrase which we are looking for.
-    # Because of this, it is crucial to check OLD content of replication log before loop.
-    # Also, segments_to_queue_pattern must NOT start from '\\+' because it can occur only for diff_data (within loop):
-    #
-    found_required_message = check_pattern_in_log( replold_lines, segments_to_queue_pattern, min_timestamp, prefix_msg )
-
-    if not found_required_message:
-        for i in range(0,max_allowed_time_for_wait):
-            time.sleep(1)
-            # Get content of fb_home replication.log _after_ isql finish:
-            with open(replication_log, 'r') as f:
-                diff_data = unified_diff(
-                    replold_lines,
-                    f.readlines()
-                  )
-
-            found_required_message = check_pattern_in_log( list(diff_data), segments_to_queue_pattern, min_timestamp, prefix_msg )
-            if found_required_message:
-                break
-
-    if not found_required_message:
-        print(f'UNEXPECTED RESULT: no message about segments added to queue after {min_timestamp}.')
+            try:
+                dbx = create_database(str(d), user = a.db.user)
+                dbx.close()
+                with a.connect_server() as srv:
+                    srv.database.set_write_mode(database = d, mode = DbWriteMode.ASYNC)
+                    srv.database.set_sweep_interval(database = d, interval = 0)
+                    if a == act_db_repl:
+                        srv.database.set_replica_mode(database = d, mode = ReplicaMode.READ_ONLY)
+                    else:
+                        with a.db.connect() as con:
+                            con.execute_immediate('alter database enable publication')
+                            con.execute_immediate('alter database include all to publication')
+                            con.commit()
+            except DatabaseError as e:
+                out_reset += e.__str__()
+            
+    # Must remain EMPTY:
+    return out_reset
 
 #--------------------------------------------
 
-def wait_for_data_in_replica( act_db_main: Action, max_allowed_time_for_wait, prefix_msg = '' ):
+def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', isql_check_script = '', replica_expected_out = ''):
 
-    replication_log = act_db_main.home_dir / 'replication.log'
+    retcode = 1;
+    ready_to_check = False
+    if ddl_ready_query:
+        with a.db.connect(no_db_triggers = True) as con:
+            with con.cursor() as cur:
+                for i in range(0,max_allowed_time_for_wait):
+                    cur.execute(ddl_ready_query)
+                    count_actual = cur.fetchone()
+                    if count_actual:
+                        ready_to_check = True
+                        break
+                    else:
+                        con.rollback()
+                        time.sleep(1)
+    else:
+        ready_to_check = True
 
-    replold_lines = []
-    with open(replication_log, 'r') as f:
-        replold_lines = f.readlines()
+    if not ready_to_check:
+        print( f'UNEXPECTED. Initial check query did not return any rows for {max_allowed_time_for_wait} seconds.' )
+        print('Initial check query:')
+        print(ddl_ready_query)
+        return
+    
+    final_check_pass = False
+    if isql_check_script:
+        retcode = 0
+        for i in range(max_allowed_time_for_wait):
+            a.reset()
+            a.expected_stdout = replica_expected_out
+            a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = True)
 
-    with act_db_main.db.connect(no_db_triggers = True) as con:
-        with con.cursor() as cur:
-            cur.execute("select rdb$get_context('SYSTEM','REPLICATION_SEQUENCE') from rdb$database")
-            last_generated_repl_segment = cur.fetchone()[0]
+            if a.return_code:
+                # "Token unknown", "Name longer than database column size" etc: we have to
+                # immediately break from this loop because isql_check_script is incorrect!
+                break
+            
+            if a.clean_stdout == a.clean_expected_stdout:
+                final_check_pass = True
+                break
+            if i < max_allowed_time_for_wait-1:
+                time.sleep(1)
 
-    # VERBOSE: Segment 1 (2582 bytes) is replicated in 1 second(s), deleting the file
-    # VERBOSE: Segment 2 (200 bytes) is replicated in 82 ms, deleting the file
-    p_successfully_replicated = re.compile( f'\\+\\s+verbose:\\s+segment\\s+{last_generated_repl_segment}\\s+\\(\\d+\\s+bytes\\)\\s+is\\s+replicated.*deleting', re.IGNORECASE)
+        if not final_check_pass:
+            print(f'UNEXPECTED. Final check query did not return expected dataset for {max_allowed_time_for_wait} seconds.')
+            print('Final check query:')
+            print(isql_check_script)
+            print('Expected output:')
+            print(a.clean_expected_stdout)
+            print('Actual output:')
+            print(a.clean_stdout)
+            print(f'ISQL return_code={a.return_code}')
+            print(f'Waited for {i} seconds')
 
-    # VERBOSE: Segment 16 replication failure at offset 33628
-    p_replication_failure = re.compile('segment\\s+\\d+\\s+replication\\s+failure', re.IGNORECASE)
+        a.reset()
 
-    found_required_message = False
-    found_replfail_message = False
-    found_common_error_msg = False
+    else:
+        final_check_pass = True
 
-    for i in range(0,max_allowed_time_for_wait):
+    return
 
-        time.sleep(1)
+#--------------------------------------------
 
-        # Get content of fb_home replication.log _after_ isql finish:
-        with open(replication_log, 'r') as f:
-            diff_data = unified_diff(
-                replold_lines,
-                f.readlines()
-              )
+def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
 
-        for k,d in enumerate(diff_data):
-            if p_successfully_replicated.search(d):
-                # We FOUND phrase "VERBOSE: Segment <last_generated_repl_segment> ... is replicated ..." in the replication log.
-                # This is expected success, break!
-                print( (prefix_msg + ' ' if prefix_msg else '') + f'FOUND message about replicated segment N {last_generated_repl_segment}.' )
-                found_required_message = True
+    # return initial state of master DB:
+    # remove all DB objects (tables, views, ...):
+    #
+    db_main_meta, db_repl_meta = '', ''
+    for a in (act_db_main,act_db_repl):
+        if a == act_db_main:
+            sql_clean = (a.files_dir / 'drop-all-db-objects.sql').read_text()
+            a.expected_stdout = """
+                Start removing objects
+                Finish. Total objects removed
+            """
+            a.isql(switches=['-q', '-nod'], input = sql_clean, combine_output = True)
+            if a.clean_stdout == a.clean_expected_stdout:
+                a.reset()
+            else:
+                print(a.clean_expected_stdout)
+                a.reset()
                 break
 
-            if p_replication_failure.search(d):
-                print( (prefix_msg + ' ' if prefix_msg else '') + '@@@ SEGMENT REPLICATION FAILURE @@@ ' + d )
-                found_replfail_message = True
-                break
+            # NB: one need to remember that rdb$system_flag can be NOT ONLY 1 for system used objects!
+            # For example, it has value =3 for triggers that are created to provide CHECK-constraints,
+            # Custom DB objects always have rdb$system_flag = 0 (or null for some very old databases).
+            # We can be sure that there are no custom DB objects if following query result is NON empty:
+            #
+            ddl_ready_query = """
+                select 1
+                from rdb$database
+                where NOT exists (
+                    select custom_db_object_flag
+                    from (
+                        select rt.rdb$system_flag as custom_db_object_flag from rdb$triggers rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$relations rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$functions rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$procedures rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$exceptions rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$fields rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$collations rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$generators rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$roles rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$auth_mapping rt
+                        UNION ALL
+                        select 1 from sec$users s
+                        where upper(s.sec$user_name) <> 'SYSDBA'
+                    ) t
+                    where coalesce(t.custom_db_object_flag,0) = 0
+                )
+            """
 
-            if 'ERROR:' in d:
-                print( (prefix_msg + ' ' if prefix_msg else '') + '@@@ REPLICATION ERROR @@@ ' + d )
-                found_common_error_msg = True
-                break
 
-        if found_required_message or found_replfail_message or found_common_error_msg:
-            break
+            ##############################################################################
+            ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
+            ##############################################################################
+            watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
 
-    if not found_required_message:
-        print(f'UNEXPECTED RESULT: no message about replicating segment N {last_generated_repl_segment} for {max_allowed_time_for_wait} seconds.')
+            # Must be EMPTY:
+            print(capsys.readouterr().out)
+
+            db_main_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
+        else:
+            db_repl_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
+
+        ######################
+        ### A C H T U N G  ###
+        ######################
+        # MANDATORY, OTHERWISE REPLICATION GETS STUCK ON SECOND RUN OF THIS TEST
+        # WITH 'ERROR: Record format with length NN is not found for table TEST':
+        a.gfix(switches=['-sweep', a.db.dsn])
+
+
+    # Final point: metadata must become equal:
+    #
+    diff_meta = ''.join(unified_diff( \
+                         [x for x in db_main_meta.splitlines() if 'CREATE DATABASE' not in x],
+                         [x for x in db_repl_meta.splitlines() if 'CREATE DATABASE' not in x])
+                       )
+    # Must be EMPTY:
+    print(diff_meta)
 
 #--------------------------------------------
 
 @pytest.mark.version('>=4.0.1')
 def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
 
-    db_files_map = {}
-    ###################
-    somewhat_failed = 1
-    ###################
-    try:
+    out_prep, out_main, out_drop = '', '', ''
 
-        for a in (act_db_main,act_db_repl):
-            with a.db.connect(no_db_triggers = True) as con:
-                # Put into map ACTUAL FILE NAME od database, NOT alias!
-                db_files_map[ a ] = con.info.name
+    # Obtain full path + filename for DB_MAIN and DB_REPL aliases.
+    # NOTE: we must NOT use 'a.db.db_path' for ALIASED databases!
+    # It will return '.' rather than full path+filename.
+    # Use only con.info.name for that!
+    #    
+    db_info = {}
+    for a in (act_db_main, act_db_repl):
+        with a.db.connect(no_db_triggers = True) as con:
+            if a == act_db_main and a.vars['server-arch'] == 'Classic' and os.name != 'nt':
+                pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
+            db_info[a,  'db_full_path'] = con.info.name
+            db_info[a,  'db_fw_initial'] = con.info.write_mode
 
-        #assert '' == capsys.readouterr().out
-        
-        N_ROWS = 30000
+    # ONLY FOR THIS test: forcedly change FW to OFF on master and ON for replica.
+    #####################
+    act_db_main.db.set_async_write()
+    act_db_repl.db.set_sync_write()
+
+    # Must be EMPTY:
+    out_prep = capsys.readouterr().out
+   
+    if out_prep:
+        # Some problem raised during change DB header(s)
+        pass
+    else:
+        #N_ROWS = 30000
+        N_ROWS = 20000
         FLD_WIDTH = 700
 
         # N_ROWS = 30'000:
@@ -297,15 +377,11 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     	#         Segment 1 (16783004 bytes) is replicated in 1 second(s), preserving the file due to 1 active transaction(s) ...
     	#         Segment 2 (4667696 bytes) is replicated in 374 ms, deleting the file
 
-        act_db_main.db.set_async_write()
-        act_db_repl.db.set_sync_write()
-        assert '' == capsys.readouterr().out
-
         current_date_with_hhmmss = datetime.today().replace(microsecond=0) # datetime.datetime(2022, 8, 26, 22, 54, 33) etc
-
         sql_init = f'''
             set bail on;
-            recreate table test(s varchar({FLD_WIDTH}), constraint test_s_unq unique(s));
+            recreate sequence g;
+            recreate table test(id int generated by default as identity primary key, s varchar({FLD_WIDTH}), constraint test_s_unq unique(s));
             commit;
 
             set term ^;
@@ -319,7 +395,6 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
                 where upper(rf.rdb$relation_name) = upper('test') and upper(rf.rdb$field_name) = upper('s')
                 into fld_len;
 
-
                 n = {N_ROWS};
                 while (n > 0) do
                 begin
@@ -330,41 +405,40 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
             end
             ^
             set term ;^
+            recreate table t_completed(id int primary key);
             commit;
         '''
 
         act_db_main.expected_stderr = ''
         act_db_main.isql(switches=['-q'], input = sql_init)
-        assert act_db_main.clean_stderr == act_db_main.clean_expected_stderr
+        out_prep = act_db_main.clean_stderr
         act_db_main.reset()
 
-        act_db_main.expected_stdout = f'POINT-1 FOUND message about segments added to queue after timestamp {current_date_with_hhmmss}'
-        ##############################################################################
-        ###  W A I T   F O R    S E G M E N T S    A D D E D    T O    Q U E U E   ###
-        ##############################################################################
-        wait_for_add_queue_in_replica( act_db_main, MAX_TIME_FOR_WAIT_ADDED_TO_QUEUE, current_date_with_hhmmss, 'POINT-1' )
+    if out_prep:
+        # Some problem raised during initial data filling
+        pass
+    else:
+        ddl_ready_query = "select 1 from rdb$relations r where r.rdb$relation_name = upper('test')"
 
-        act_db_main.stdout = capsys.readouterr().out
-        assert act_db_main.clean_stdout == act_db_main.clean_expected_stdout
-        act_db_main.reset()
+        ##############################################################
+        ###  WAIT FOR THE FIRST (BUT NOT THE ALL) DATA IN REPLICA  ###
+        ##############################################################
+        watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
+        # Must be EMPTY:
+        out_main = capsys.readouterr().out
 
-        time.sleep(1)
+    if out_main:
+        # Some problem raised during check replica for appearance of table 'test' and positive value of generator 'g'.
+        pass
+    else:
 
+        # Let replica to apply some part of big segment (with UUID data) for table TEST
+        time.sleep(TIME_TO_LET_SEGMENTS_BE_APPLIED)
+
+        # Here we can assume that replica is accepting segments and this work is not completed.
+        # Now we change replica state to full shutdown:
         with act_db_repl.connect_server() as srv:
 
-            # DISABLED 07.02.2023, after discussion with dimitr.
-            #try:
-            #    # 5.0.0.215:
-            #    # 335544344 : I/O error during "WriteFile" operation for file "<db_repl_file.fdb>"
-            #    # 335544737 : Error while trying to write to file
-            #    srv.database.set_write_mode(database=act_db_repl.db.db_path
-            #                                , mode=DbWriteMode.ASYNC
-            #                               )
-            #except:
-            #    pass
-
-            #try:
-            # 5.0.0.215:
             # FB crashes here, replication archive folder can not be cleaned:
             # PermissionError: [WinError 32] ...: '<repl_arc_sub_dir>/<dbmain>.journal-NNN'
             srv.database.shutdown(
@@ -373,118 +447,96 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
                                       ,method=ShutdownMethod.FORCED
                                       ,timeout=0
                                  )
-            
-            # Without crash replication here will be resumed, but DB_REPL now has FW = OFF, and segments
-            # will be replicated very fast after this:
-            srv.database.bring_online(
-                                      database=act_db_repl.db.db_path
-                                      ,mode=OnlineMode.NORMAL
-                                     )
+            out_main = capsys.readouterr().out
+
+            if not out_main:
+
+                # We have to wait here because replication falls in pause when error occurred.
+                # ("VERBOSE: Suspending for <apply_error_timeout> seconds")
+                # But this delay must be LESS than <REPLICA_TIMEOUT_FOR_ERROR> to prevent from
+                # SECOND suspending of replication (because bringing DB online is not instant).
+                #
+                #time.sleep(max(1, REPLICA_TIMEOUT_FOR_ERROR-3))
+
+                # Without crash replication here must be resumed:
+                srv.database.bring_online(
+                                          database=act_db_repl.db.db_path
+                                          ,mode=OnlineMode.NORMAL
+                                         )
+                out_main = capsys.readouterr().out
+
+            if not out_main:
+                isql_check_script = f"""
+                    set list on;
+                    set count on;
+                    select 1 x /* check that not all data present in replica */
+                    from rdb$database
+                    where not exists(select * from rdb$relations where rdb$relation_name = upper('t_completed'));
+                """
+                isql_expected_out = f"""
+                    X 1
+                    Records affected: 1
+                """
+                ####################################################
+                ###  CHECK THAT NOT ALL DATA PRESENT IN REPLICA  ###
+                ####################################################
+                watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, '', isql_check_script, isql_expected_out)
+                # Must be EMPTY:
+                out_main = capsys.readouterr().out
+
+    if out_main:
+        # Some problem raised during change state of replica DB to full shutdown or bring it online.
+        pass
+    else:
+
+        # NOTE: changing DB state to full shutdown will cause following messages in the replication.log:
+        #   ERROR: database <db_replica>
+        #   At segment 2, offset <nnnn>
+        #   VERBOSE: Suspending for <apply_error_timeout> seconds
+        # (where <apply_error_timeout> = value of QA-config parameter REPLICA_TIMEOUT_FOR_ERROR)
+        # Because of this, we have to wait enough time for replication resumes its work!
+        
+        ddl_ready_query = """
+            select 1 x /* waiting for all data appears in replica */
+            from rdb$relations r where r.rdb$relation_name = upper('t_completed')
+        """
+        ################################################
+        ###  CHECK THAT ALL DATA PRESENT IN REPLICA  ###
+        ################################################
+        watch_replica( act_db_repl, 2 * MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
+        # Must be EMPTY:
+        out_main = capsys.readouterr().out
+
+    
+    # temp dis 
+    drop_db_objects(act_db_main, act_db_repl, capsys)
+
+    # Return FW to initial values (if needed):
+    for a in (act_db_main, act_db_repl):
+        if db_info[a,'db_fw_initial'] == DbWriteMode.SYNC:
+            a.db.set_sync_write()
+
+    # Must be EMPTY:
+    out_drop = capsys.readouterr().out
+
+    if [ x for x in (out_prep, out_main, out_drop) if x.strip() ]:
+        # We have a problem either with DDL/DML or with dropping DB objects.
+        # First, we have to RECREATE both master and slave databases
+        # (otherwise further execution of this test or other replication-related tests most likely will fail):
+        out_reset = ''
+        # temp dis  
+        out_reset = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'])
+
+        # Next, we display out_main, out_drop and out_reset:
+        #
+        print('Problem(s) detected:')
+        if out_prep.strip():
+            print('out_prep:\n', out_prep)
+        if out_main.strip():
+            print('out_main:\n', out_main)
+        if out_drop.strip():
+            print('out_drop:\n', out_drop)
+        if out_reset.strip():
+            print('out_reset:\n', out_reset)
 
         assert '' == capsys.readouterr().out
-        
-        act_db_main.expected_stdout = 'POINT-2 FOUND message about replicated segment'
-        ##############################################################################
-        ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
-        ##############################################################################
-        wait_for_data_in_replica( act_db_main, MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG, 'POINT-2' )
-        
-        act_db_main.stdout = capsys.readouterr().out
-        assert act_db_main.clean_stdout == act_db_main.clean_expected_stdout
-        act_db_main.reset()
-
-
-        #---------------------------------------------------
-
-        # return initial state of master DB:
-        # remove all DB objects (tables, views, ...):
-        #
-        db_main_meta, db_repl_meta = '', ''
-        for a in (act_db_main,act_db_repl):
-            if a == act_db_main:
-                sql_clean = (a.files_dir / 'drop-all-db-objects.sql').read_text()
-                a.expected_stdout = """
-                    Start removing objects
-                    Finish. Total objects removed
-                """
-                a.isql(switches=['-q', '-nod'], input = sql_clean, combine_output = True)
-                assert a.clean_stdout == a.clean_expected_stdout
-                a.reset()
-
-                
-                a.expected_stdout = 'POINT-3 FOUND message about replicated segment'
-                ##############################################################################
-                ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
-                ##############################################################################
-                wait_for_data_in_replica( a, MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG, 'POINT-3' )
-
-                a.stdout = capsys.readouterr().out
-                assert a.clean_stdout == a.clean_expected_stdout
-                a.reset()
-
-                db_main_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
-            else:
-                db_repl_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
-
-            ######################
-            ### A C H T U N G  ###
-            ######################
-            # MANDATORY, OTHERWISE REPLICATION GETS STUCK ON SECOND RUN OF THIS TEST
-            # WITH 'ERROR: Record format with length NN is not found for table TEST':
-            a.gfix(switches=['-sweep', a.db.dsn])
-
-
-        # Final point: metadata must become equal:
-        #
-        diff_meta = ''.join(unified_diff( \
-                             [x for x in db_main_meta.splitlines() if 'CREATE DATABASE' not in x],
-                             [x for x in db_repl_meta.splitlines() if 'CREATE DATABASE' not in x])
-                           )
-        assert diff_meta == ''
-
-        
-        ###################
-        somewhat_failed = 0
-        ###################
-    
-    except Exception as e:
-        print(e.__str__())
-
-    finally:
-        if somewhat_failed:
-            # If any previous assert failed, we have to RECREATE both master and slave databases.
-            # Otherwise further execution of this test or other replication-related tests most likely will fail.
-            for a in (act_db_main,act_db_repl):
-                d = a.db.db_path # this is ALIAS, not filename
-                a.gfix(switches=['-shut', 'full', '-force', '0', a.db.dsn], io_enc = locale.getpreferredencoding(), combine_output = True)
-
-                # get database FILE name, NOT alias:
-                actual_db_file = db_files_map[ a ] 
-                Path(actual_db_file).unlink()
-                
-                dbx = create_database(str(d), user = a.db.user)
-                dbx.close()
-                with a.connect_server() as srv:
-                    srv.database.set_write_mode(database = d, mode=DbWriteMode.ASYNC)
-                    srv.database.set_sweep_interval(database = d, interval = 0)
-                    if a == act_db_repl:
-                        srv.database.set_replica_mode(database = d, mode = ReplicaMode.READ_ONLY)
-                    else:
-                        with a.db.connect() as con:
-                            # !! IT IS ASSUMED THAT REPLICATION FOLDERS ARE IN THE SAME DIR AS <DB_MAIN> !!
-                            # DO NOT use 'a.db.db_path' for ALIASED database!
-                            # Its '.parent' property will be '.' rather than full path.
-                            # Use only con.info.name for that:
-                            repl_root_path = Path(con.info.name).parent
-                            repl_jrn_sub_dir = repl_settings['journal_sub_dir']
-                            repl_arc_sub_dir = repl_settings['archive_sub_dir']
-
-                            # Clean folders repl_journal and repl_archive (remove all files from there):
-                            for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
-                                # PermissionError: [WinError 32] ...: '<repl_arc_sub_dir>/<dbmain>.journal-000000001'
-                                assert cleanup_folder(repl_root_path / p) == 0, f"Directory {str(p)} remains non-empty."
-
-                            con.execute_immediate('alter database enable publication')
-                            con.execute_immediate('alter database include all to publication')
-                            con.commit()
-            assert '' == capsys.readouterr().out
