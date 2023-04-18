@@ -5,17 +5,20 @@ ID:          replication.permission_error_on_ddl_issued_by_non_sysdba
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6856
 TITLE:       Permission error with replication
 DESCRIPTION:
-    Test run actions which are specified in the ticket (create user with granting admin access to him, etc).
-    After this we wait until replica becomes actual to master, and this delay will last no more then threshold
-    that is defined by MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG variable (measured in seconds).
-    During this delay, we check every second for replication log and search there line with number of last generated
-    segment (which was replicated and deleting finally).
-    We can assume that replication finished OK only when such line is found see ('POINT-1').
+    Test perform actions which are specified in the ticket: create user, grant him admin role and create VIEW
+    with specifying this user as its OWNER.
 
-    Further,  we invoke ISQL with executing auxiliary script for drop all DB objects on master (with '-nod' command switch).
-    After all objects will be dropped, we have to wait again until  replica becomes actual with master (see 'POINT-2').
+    After this we wait until replica becomes actual to master, and this delay will last no more then threshold that
+    is defined by MAX_TIME_FOR_WAIT_DATA_IN_REPLICA variable (measured in seconds), see QA_ROOT/files/test_config.ini
 
-    Finally, we extract metadata for master and replica and compare them (see 'f_meta_diff').
+    We query RDB$ tables on replica with check presense of just created view and who is the OWNER of it
+    (see calls of watch_replica() function).
+
+    Further, we invoke ISQL with executing auxiliary script for drop all DB objects on master (with '-nod' command switch).
+    After all objects will be dropped, we have to wait again until replica becomes actual with master.
+    Check that both DB have no custom objects is performed (see UNION-ed query to rdb$ tables + filtering on rdb$system_flag).
+
+    Finally, we extract metadata for master and replica and make comparison.
     The only difference in metadata must be 'CREATE DATABASE' statement with different DB names - we suppress it,
     thus metadata difference must not be issued.
 
@@ -25,17 +28,29 @@ DESCRIPTION:
 FBTEST:      tests.functional.replication.permission_error_on_ddl_issued_by_non_sysdba
 NOTES:
     [25.08.2022] pzotov
-    1. In case of any errors (somewhat_failed <> 0) test will re-create db_main and db_repl, and then perform all needed
-       actions to resume replication (set 'replica' flag on db_repl, enabling publishing in db_main, remove all files
-       from subdirectories <repl_journal> and <repl_archive> which must present in the same folder as <db_main>).
-    2. Warning raises on Windows and Linux:
-       ../../../usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126
-          /usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126: 
-          PytestAssertRewriteWarning: Module already imported so cannot be rewritten: __editable___firebird_qa_0_17_0_finder
-            self._mark_plugins_for_rewrite(hook)
-       The reason currently is unknown.
+    Warning raises on Windows and Linux:
+        ../../../usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126
+        /usr/local/lib/python3.9/site-packages/_pytest/config/__init__.py:1126: 
+        PytestAssertRewriteWarning: Module already imported so cannot be rewritten: __editable___firebird_qa_0_17_0_finder
+        self._mark_plugins_for_rewrite(hook)
+    The reason currently is unknown.
 
-    Checked on 5.0.0.623, 4.0.1.2692 - both CS and SS. Both on Windows and Linux.
+    [18.04.2023] pzotov
+    Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
+    We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
+
+    NOTE-1.
+        We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
+        During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
+    NOTE-2.
+        Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
+        'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
+    NOTE-3.
+        This test changes FW to OFF in order to reduce time of DDL operations. FW is restored to initial state at final point.
+        Otherwise changes may not be delivered to replica for <MAX_TIME_FOR_WAIT_DATA_IN_REPLICA> seconds.
+    
+    Checked on 5.0.0.1017, 4.0.1.2930 - both CS and SS.
+
 """
 import os
 import shutil
