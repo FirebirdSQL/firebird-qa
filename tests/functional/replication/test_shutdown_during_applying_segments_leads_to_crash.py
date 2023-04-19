@@ -377,7 +377,6 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     	#         Segment 1 (16783004 bytes) is replicated in 1 second(s), preserving the file due to 1 active transaction(s) ...
     	#         Segment 2 (4667696 bytes) is replicated in 374 ms, deleting the file
 
-        current_date_with_hhmmss = datetime.today().replace(microsecond=0) # datetime.datetime(2022, 8, 26, 22, 54, 33) etc
         sql_init = f'''
             set bail on;
             recreate sequence g;
