@@ -7,6 +7,8 @@ TITLE:       ISQL showing publication status
 DESCRIPTION:
 NOTES:
     [20.04.2023] pzotov
+    command 'show pub;' currently displays "There is no publications in this database".
+    This is expected. Detailed output of this command will be implemented later (discussed with dimitr).
     Checked on 5.0.0.1022 (intermediate build)
 """
 import locale
