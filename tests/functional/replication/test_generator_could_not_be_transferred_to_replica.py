@@ -346,7 +346,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         act_db_main.reset()
 
     if out_prep:
-        # Some problem raised during establishing connections to master/replica DB
+        # Some problem raised during execution of initial SQL
         pass
     else:
         # Query to be used for check that all DB objects present in replica (after last DML statement completed on master DB):
