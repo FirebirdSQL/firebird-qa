@@ -4,563 +4,522 @@
 ID:          replication.oltp_emul_ddl
 TITLE:       Applying full DDL from OLTP-EMUL test on master with further check replica
 DESCRIPTION:
-    ################
-    ### N O T E  ###
-    ################
-    Test assumes that master and replica DB have been created beforehand.
-    Also, it assumes that %FB_HOME%/replication.conf has been prepared with apropriate parameters for replication.
-    Particularly, name of directories and databases must have info about checked FB major version and ServerMode.
-        * verbose = true // in order to find out line with message that required segment was replicated
-        * section for master database with specified parameters:
-            journal_directory = "!fbt_repo!/tmp/fb-replication.!fb_major!.!server_mode!.journal"
-            journal_archive_directory = "!fbt_repo!/tmp/fb-replication.!fb_major!.!server_mode!.archive"
-            journal_archive_command = "copy $(pathname) $(archivepathname)"
-            journal_archive_timeout = 10
-        * section for replica database with specified parameter:
-             journal_source_directory =  "!fbt_repo!/tmp/fb-replication.!fb_major!.!server_mode!.archive"
+    We create table and add data in it according to ticket info.
+    The last DDL that we do is creating table with name 't_completed'. It serves as 'flag' to be checked that all DDL actions
+    on master finished.
 
-    Master and replica databases must be created in "!fbt_repo!	mp" directory and have names like these:
-        'fbt-main.fb40.SS.fdb'; 'fbt-repl.fb40.SS.fdb'; - for FB 4.x ('SS' = Super; 'CS' = Classic)
-        'fbt-main.fb50.SS.fdb'; 'fbt-repl.fb50.SS.fdb'; - for FB 5.x ('SS' = Super; 'CS' = Classic)
-        NB: fixed numeric value ('40' or '50') must be used for any minor FB version (4.0; 4.0.1; 4.1; 5.0; 5.1 etc)
+    After this we wait until replica becomes actual to master, and this delay will last no more then threshold that
+    is defined by MAX_TIME_FOR_WAIT_DATA_IN_REPLICA variable (measured in seconds), see QA_ROOT/files/test_config.ini
 
-    These two databases must NOT be dropped in any of tests related to replication!
-    They are created and dropped in the batch scenario which prepares FB instance to be checked for each ServerMode
-    and make cleanup after it, i.e. when all tests will be completed.
+    When table 't_completed' will appear in replica, we run query to the table 'test' in order to check that it contains
+    only data that were allowed on master.
 
-    NB. Currently this task was implemented only in Windows batch, thus test has attribute platform = 'Windows'.
+    Further, we invoke ISQL with executing auxiliary script for drop all DB objects on master (with '-nod' command switch).
+    After all objects will be dropped, we have to wait again until replica becomes actual with master.
+    Check that both DB have no custom objects is performed (see UNION-ed query to rdb$ tables + filtering on rdb$system_flag).
 
-    Temporary comment. For debug purpoces:
-        1) find out SUFFIX of the name of FB service which is to be tested (e.g. 'DefaultInstance', '40SS' etc);
-        2) copy file %fbt-repo%/tests/functional/tabloid/batches/setup-fb-for-replication.bat.txt
-           to some place and rename it "*.bat";
-        3) open this .bat in editor and asjust value of 'fbt_repo' variable;
-        4) run: setup-fb-for-replication.bat [SUFFIX_OF_FB_SERVICE]
-           where SUFFIX_OF_FB_SERVICE is ending part of FB service which you want to check:
-           DefaultInstance ; 40ss ; 40cs ; 50ss ; 50cs etc
-        5) batch 'setup-fb-for-replication.bat' will:
-           * stop selected FB instance
-           * create test databases (in !fbt_repo!/tmp);
-           * prepare journal/archive sub-folders for replication (also in !fbt_repo!/tmp);
-           * replace %fb_home%/replication.conf with apropriate
-           * start selected FB instance
-        6) run this test (FB instance will be already launched by setup-fb-for-replication.bat):
-            %fpt_repo%/fbt-run2.bat dblevel-triggers-must-not-fire-on-replica.fbt 50ss, etc
+    Finally, we extract metadata for master and replica and make comparison.
+    The only difference in metadata must be 'CREATE DATABASE' statement with different DB names - we suppress it,
+    thus metadata difference must not be issued.
 FBTEST:      tests.functional.replication.oltp_emul_ddl
+NOTES:
+    [22.04.2023] pzotov
+    Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
+    We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
+
+    NOTE-1.
+        We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
+        During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
+    NOTE-2.
+        Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
+        'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
+
+    Checked on 4.0.3.2931, 5.0.0.1022, both SS and CS.
 """
+
+import os
+import locale
+import shutil
+import zipfile
+from difflib import unified_diff
+from pathlib import Path
+import time
 
 import pytest
 from firebird.qa import *
+from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, ShutdownMode, ShutdownMethod, DatabaseError
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+repl_settings = QA_GLOBALS['replication']
+
+MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
+MAIN_DB_ALIAS = repl_settings['main_db_alias']
+REPL_DB_ALIAS = repl_settings['repl_db_alias']
+
+db_main = db_factory( filename = '#' + MAIN_DB_ALIAS, do_not_create = True, do_not_drop = True)
+db_repl = db_factory( filename = '#' + REPL_DB_ALIAS, do_not_create = True, do_not_drop = True)
 
 substitutions = [('Start removing objects in:.*', 'Start removing objects'),
                  ('Finish. Total objects removed:  [1-9]\\d*', 'Finish. Total objects removed'),
-                 ('.* CREATE DATABASE .*', '')]
+                 ('.* CREATE DATABASE .*', ''),
+                ]
 
-db = db_factory()
+act_db_main = python_act('db_main', substitutions=substitutions)
+act_db_repl = python_act('db_repl', substitutions=substitutions)
 
-act = python_act('db', substitutions=substitutions)
+tmp_oltp_build_sql = temp_file('tmp_oltp_emul_ddl.sql')
+tmp_oltp_build_log = temp_file('tmp_oltp_emul_ddl.log')
 
-expected_stdout = """
-    POINT-1 FOUND message about replicated segment.
-    Master and replica data: THE SAME.
-    Start removing objects
-    Finish. Total objects removed
-    POINT-2 FOUND message about replicated segment.
-"""
+#--------------------------------------------
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=4.0')
-@pytest.mark.platform('Windows')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def cleanup_folder(p):
+    # Removed all files and subdirs in the folder <p>
+    # Used for cleanup <repl_journal> and <repl_archive> when replication must be reset
+    # in case when any error occurred during test execution.
+    assert os.path.dirname(p) != p, f"@@@ ABEND @@@ CAN NOT operate in the file system root directory. Check your code!"
+    for root, dirs, files in os.walk(p):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
+    return len(os.listdir(p))
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import re
-#  import zipfile
-#  import difflib
-#  import shutil
-#  import time
-#
-#  os.environ["ISC_USER"] = user_name
-#  os.environ["ISC_PASSWORD"] = user_password
-#
-#  #####################################
-#  MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG = 65
-#  #####################################
-#
-#  svc = fdb.services.connect(host='localhost', user=user_name, password=user_password)
-#  FB_HOME = svc.get_home_directory()
-#  svc.close()
-#
-#  engine = db_conn.engine_version         # 4.0; 4.1; 5.0 etc -- type float
-#  fb_major = 'fb' + str(engine)[:1] + '0' # 'fb40'; 'fb50'
-#
-#  cur = db_conn.cursor()
-#  cur.execute("select rdb$config_value from rdb$config where upper(rdb$config_name) = upper('ServerMode')")
-#  server_mode = 'XX'
-#  for r in cur:
-#      if r[0] == 'Super':
-#          server_mode = 'SS'
-#      elif r[0] == 'SuperClassic':
-#          server_mode = 'SC'
-#      elif r[0] == 'Classic':
-#          server_mode = 'CS'
-#  cur.close()
-#
-#  # 'fbt-main.fb50.ss.fdb' etc:
-#  db_main = os.path.join( context['temp_directory'], 'fbt-main.' + fb_major + '.' + server_mode + '.fdb' )
-#  db_repl = db_main.replace( 'fbt-main.', 'fbt-repl.')
-#
-#  # Folders for journalling and archieving segments.
-#  repl_journal_dir = os.path.join( context['temp_directory'], 'fb-replication.' + fb_major + '.' + server_mode + '.journal' )
-#  repl_archive_dir = os.path.join( context['temp_directory'], 'fb-replication.' + fb_major + '.' + server_mode +  '.archive' )
-#
-#  fb_port = 0
-#  cur = db_conn.cursor()
-#  cur.execute("select rdb$config_value from rdb$config where rdb$config_name = 'RemoteServicePort'")
-#  for r in cur:
-#      fb_port = int(r[0])
-#  cur.close()
-#
-#  db_conn.close()
-#
-#  runProgram('gfix', ['-w', 'async', 'localhost:' + db_main])
-#
-#  #--------------------------------------------
-#
-#  def flush_and_close( file_handle ):
-#      # https://docs.python.org/2/library/os.html#os.fsync
-#      # If you're starting with a Python file object f,
-#      # first do f.flush(), and
-#      # then do os.fsync(f.fileno()), to ensure that all internal buffers associated with f are written to disk.
-#      global os
-#
-#      file_handle.flush()
-#      if file_handle.mode not in ('r', 'rb') and file_handle.name != os.devnull:
-#          # otherwise: "OSError: [Errno 9] Bad file descriptor"!
-#          os.fsync(file_handle.fileno())
-#      file_handle.close()
-#
-#  #--------------------------------------------
-#
-#  def cleanup( f_names_list ):
-#      global os
-#      for i in range(len( f_names_list )):
-#         if type(f_names_list[i]) == file:
-#            del_name = f_names_list[i].name
-#         elif type(f_names_list[i]) == str:
-#            del_name = f_names_list[i]
-#         else:
-#            print('Unrecognized type of element:', f_names_list[i], ' - can not be treated as file.')
-#            del_name = None
-#
-#         if del_name and os.path.isfile( del_name ):
-#             os.remove( del_name )
-#
-#  #--------------------------------------------
-#
-#  def wait_for_data_in_replica( fb_home, max_allowed_time_for_wait, db_main, prefix_msg = '' ):
-#
-#      global re
-#      global difflib
-#      global time
-#
-#      replold_lines = []
-#      with open( os.path.join(fb_home,'replication.log'), 'r') as f:
-#          replold_lines = f.readlines()
-#
-#      con = fdb.connect( dsn = 'localhost:' + db_main, no_db_triggers = 1)
-#      cur = con.cursor()
-#      cur.execute("select rdb$get_context('SYSTEM','REPLICATION_SEQUENCE') from rdb$database")
-#      for r in cur:
-#          last_generated_repl_segment = r[0]
-#      cur.close()
-#      con.close()
-#
-#      #print('last_generated_repl_segment:', last_generated_repl_segment)
-#
-#      # VERBOSE: Segment 1 (2582 bytes) is replicated in 1 second(s), deleting the file
-#      p_successfully_replicated = re.compile( '\\+\\s+verbose:\\s+segment\\s+%(last_generated_repl_segment)s\\s+\\(\\d+\\s+bytes\\)\\s+is\\s+replicated.*deleting' % locals(), re.IGNORECASE)
-#
-#      # VERBOSE: Segment 16 replication failure at offset 33628
-#      p_replication_failure = re.compile('segment\\s+\\d+\\s+replication\\s+failure', re.IGNORECASE)
-#
-#      # ERROR: Record format with length 56 is not found for table PERF_ESTIMATED
-#      p_rec_format_not_found = re.compile('record\\s+format\\s+with\\s+length\\s+\\d+\\s+is\\s+not\\s+found', re.IGNORECASE)
-#
-#      found_required_message = False
-#
-#      found_replfail_message = False
-#      found_recformat_message = False
-#      found_common_error_msg = False
-#
-#      for i in range(0,max_allowed_time_for_wait):
-#          time.sleep(1)
-#
-#          # Get content of fb_home replication.log _after_ isql finish:
-#          f_repllog_new = open( os.path.join(fb_home,'replication.log'), 'r')
-#          diff_data = difflib.unified_diff(
-#              replold_lines,
-#              f_repllog_new.readlines()
-#            )
-#          f_repllog_new.close()
-#
-#          for k,d in enumerate(diff_data):
-#
-#              if p_replication_failure.search(d):
-#                  print( (prefix_msg + ' ' if prefix_msg else '') + '@@@ SEGMENT REPLICATION FAILURE @@@ ' + d )
-#                  found_replfail_message = True
-#                  break
-#
-#              if p_rec_format_not_found.search(d):
-#                  print( (prefix_msg + ' ' if prefix_msg else '') + '@@@ RECORD FORMAT NOT FOUND @@@ ' + d )
-#                  found_recformat_message = True
-#                  break
-#
-#              if 'ERROR:' in d:
-#                  print( (prefix_msg + ' ' if prefix_msg else '') + '@@@ REPLICATION ERROR @@@ ' + d )
-#                  found_common_error_msg = True
-#                  break
-#
-#              if p_successfully_replicated.search(d):
-#                  print( (prefix_msg + ' ' if prefix_msg else '') + 'FOUND message about replicated segment.' )
-#                  found_required_message = True
-#                  break
-#
-#          if found_required_message or found_replfail_message or found_recformat_message or found_common_error_msg:
-#              break
-#
-#      if not found_required_message:
-#          print('UNEXPECTED RESULT: no message about replicated segment for %d seconds.' % max_allowed_time_for_wait)
-#
-#  #--------------------------------------------
-#
-#  def generate_sync_settings_sql(db_main, fb_port):
-#
-#      def generate_inject_setting_sql(working_mode, mcode, new_value, allow_insert_if_eof = 0):
-#          sql_inject_setting = ''
-#          if allow_insert_if_eof == 0:
-#              sql_inject_setting =             '''
-#                  update settings set svalue = %(new_value)s
-#                  where working_mode = upper('%(working_mode)s') and mcode = upper('%(mcode)s');
-#                  if (row_count = 0) then
-#                      exception ex_record_not_found using('SETTINGS', q'{working_mode = upper('%(working_mode)s') and mcode = upper('%(mcode)s')}');
-#              ''' % locals()
-#          else:
-#              sql_inject_setting =             '''
-#                  update or insert into settings(working_mode, mcode, svalue)
-#                  values( upper('%(working_mode)s'), upper('%(mcode)s'), %(new_value)s )
-#                  matching (working_mode, mcode);
-#              ''' % locals()
-#
-#          return sql_inject_setting
-#
-#
-#      sql_adjust_settings_table =     '''
-#          set list on;
-#          select 'Adjust settings: start at ' || cast('now' as timestamp) as msg from rdb$database;
-#          set term ^;
-#          execute block as
-#          begin
-#      '''
-#
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'working_mode', "upper('small_03')" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'enable_mon_query', "'0'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'unit_selection_method', "'random'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'build_with_split_heavy_tabs', "'1'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'build_with_qd_compound_ordr', "lower('most_selective_first')" ) ) )
-#
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'build_with_separ_qdistr_idx', "'0'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'used_in_replication', "'1'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'separate_workers', "'1'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'workers_count', "'100'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'update_conflict_percent', "'0'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'connect_str', "'connect ''localhost:%(db_main)s'' user ''SYSDBA'' password ''masterkey'';'" % locals(), 1 ) ) )
-#
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'mon_unit_list', "'//'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'halt_test_on_errors', "'/CK/'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'qmism_verify_bitset', "'1'" ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'recalc_idx_min_interval', "'9999999'" ) ) )
-#
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'warm_time', "'0'", 1 ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'test_intervals', "'10'", 1 ) ) )
-#
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'tmp_worker_role_name', "upper('tmp$oemul$worker')", 1 ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'tmp_worker_user_prefix', "upper('tmp$oemul$user_')", 1 ) ) )
-#
-#
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'use_es', "'2'", 1 ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'host', "'localhost'", 1 ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'port', "'%(fb_port)s'" % locals(), 1 ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'usr', "'SYSDBA'", 1 ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'pwd', "'masterkey'", 1 ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'tmp_worker_user_pswd', "'0Ltp-Emu1'", 1 ) ) )
-#
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'conn_pool_support', "'1'", 1 ) ) )
-#      sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'resetting_support', "'1'", 1 ) ) )
-#
-#      sql_adjust_settings_table +=     '''
-#          end ^
-#          set term ;^
-#          commit;
-#          select 'Adjust settings: finish at ' || cast('now' as timestamp) as msg from rdb$database;
-#          set list off;
-#      '''
-#
-#      return sql_adjust_settings_table
-#
-#  #--------------------------------------------
-#
-#  # Extract .sql files with OLTP-EMUL DDL for applying
-#  # ZipFile.extractall(path=None, members=None, pwd=None)
-#  zf = zipfile.ZipFile( os.path.join(context['files_location'],'oltp-emul-ddl.zip') )
-#  src_files = zf.namelist()
-#  zf.extractall(path = context['temp_directory'])
-#  zf.close()
-#
-#  #--------------------------------------------
-#
-#  oltp_emul_initial_scripts = [
-#       'oltp-emul-01_initial_DDL'
-#      ,'oltp-emul-02_business_units'
-#      ,'oltp-emul-03_common_units'
-#      ,'oltp-emul-04_misc_debug_code'
-#      ,'oltp-emul-05_main_tabs_filling'
-#  ]
-#
-#
-#  #src_dir = context['files_location']
-#  src_dir = context['temp_directory']
-#
-#  sql_apply = '\\n'
-#  for f in oltp_emul_initial_scripts:
-#      sql_apply += '    in ' + os.path.join(src_dir, f+'.sql;\\n')
-#
-#  sql_ddl = '''    %(sql_apply)s
-#  ''' % locals()
-#
-#  #--------------------------------------------
-#
-#  f_run_initial_ddl = open( os.path.join(context['temp_directory'],'tmp-oltp-emul-ddl.sql'), 'w')
-#  f_run_initial_ddl.write(sql_ddl)
-#
-#  # Add SQL code for adjust SETTINGS table with values which are commonly used in OLTP-EMUL config:
-#  f_run_initial_ddl.write( generate_sync_settings_sql(db_main, fb_port) )
-#  flush_and_close( f_run_initial_ddl )
-#
-#  f_run_initial_log = open( ''.join( (os.path.splitext(f_run_initial_ddl.name)[0], '.log' ) ), 'w')
-#  f_run_initial_err = open( ''.join( (os.path.splitext(f_run_initial_ddl.name)[0], '.err' ) ), 'w')
-#  subprocess.call( [ context['isql_path'], 'localhost:' + db_main, '-i', f_run_initial_ddl.name ], stdout = f_run_initial_log, stderr = f_run_initial_err)
-#
-#  flush_and_close( f_run_initial_log )
-#  flush_and_close( f_run_initial_err )
-#
-#  with open(f_run_initial_err.name,'r') as f:
-#      for line in f:
-#          print('UNEXPECTED STDERR in initial SQL: ' + line)
-#          MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG = 0
-#
-#  if MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG: # ==> initial SQL script finished w/o errors
-#
-#      post_handling_out = os.path.join( context['temp_directory'],'oltp_split_heavy_tabs.tmp' )
-#      post_adjust_sep_wrk_out = os.path.join( context['temp_directory'], 'oltp_adjust_sep_wrk.tmp' )
-#      post_adjust_replication = os.path.join( context['temp_directory'], 'post_adjust_repl_pk.tmp' )
-#      post_adjust_ext_pool = os.path.join( context['temp_directory'], 'post_adjust_ext_pool.tmp' )
-#      post_adjust_eds_perf = os.path.join( context['temp_directory'], 'post_adjust_eds_perf.tmp' )
-#
-#      oltp_emul_post_handling_scripts =     [
-#           'oltp-emul-06_split_heavy_tabs'
-#          ,'oltp-emul-07_adjust_perf_tabs'
-#          ,'oltp-emul-08_adjust_repl_ddl'
-#          ,'oltp-emul-09_adjust_eds_calls'
-#          ,'oltp-emul-10_adjust_eds_perf'
-#      ]
-#
-#
-#      sql_post_handling = '\\n'
-#      for f in oltp_emul_post_handling_scripts:
-#          run_post_handling_sql = os.path.join( src_dir, f+'.sql' )
-#          tmp_post_handling_sql = os.path.join( context['temp_directory'], f + '.tmp' )
-#          cleanup( (tmp_post_handling_sql,) )
-#          sql_post_handling +=         '''
-#              out %(tmp_post_handling_sql)s;
-#              in %(run_post_handling_sql)s;
-#              out;
-#              in %(tmp_post_handling_sql)s;
-#              -----------------------------
-#          ''' % locals()
-#
-#          if  'adjust_eds_calls' in f:
-#              # We have to make RECONNECT here, otherwise get:
-#              # Statement failed, SQLSTATE = 2F000
-#              # Error while parsing procedure SP_PERF_EDS_LOGGING's BLR
-#              # -attempted update of read-only column <unknown>
-#              # After line 49 in file ... oltp-emul-10_adjust_eds_perf.sql
-#
-#              sql_post_handling += "    commit; connect 'localhost:%(db_main)s' user 'SYSDBA' password 'masterkey';" % locals()
-#
-#      oltp_emul_final_actions_scripts =     [
-#           'oltp-emul-11_ref_data_filling'
-#          ,'oltp-emul-12_activate_db_triggers'
-#      ]
-#      for f in oltp_emul_final_actions_scripts:
-#          sql_post_handling += '    in ' + os.path.join(src_dir, f+'.sql;\\n')
-#
-#      f_post_handling_sql = open( os.path.join(context['temp_directory'],'tmp-oltp-emul-post.sql'), 'w')
-#      f_post_handling_sql.write(sql_post_handling)
-#
-#      sql4debug_only =     '''
-#          set echo off;
-#          set list on;
-#          commit;
-#          set stat off;
-#          select
-#               rdb$get_context('SYSTEM','DB_NAME') as db_name
-#              ,rdb$get_context('SYSTEM','REPLICATION_SEQUENCE') as last_generated_repl_segment
-#          from rdb$database;
-#          quit;
-#      '''
-#      f_post_handling_sql.write( sql4debug_only )
-#
-#      flush_and_close( f_post_handling_sql )
-#
-#      f_post_handling_log = open( ''.join( (os.path.splitext(f_post_handling_sql.name)[0], '.log' ) ), 'w')
-#      f_post_handling_err = open( ''.join( (os.path.splitext(f_post_handling_sql.name)[0], '.err' ) ), 'w')
-#      subprocess.call( [ context['isql_path'], 'localhost:' + db_main, '-i', f_post_handling_sql.name ], stdout = f_post_handling_log, stderr = f_post_handling_err)
-#      flush_and_close( f_post_handling_log )
-#      flush_and_close( f_post_handling_err )
-#
-#      with open(f_post_handling_err.name,'r') as f:
-#          for line in f:
-#              print('UNEXPECTED STDERR in post-handling SQL: ' + line)
-#              MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG = 0
-#
-#      cleanup( (f_post_handling_sql, f_post_handling_log, f_post_handling_err ) )
-#      for f in oltp_emul_post_handling_scripts:
-#          tmp_post_handling_sql = os.path.join( context['temp_directory'], f + '.tmp' )
-#          cleanup( (tmp_post_handling_sql,) )
-#
-#  if MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG: # ==> initial SQL script finished w/o errors
-#
-#      # Test connect to master DB, call initial business operation: create client order
-#      ###########################
-#      custom_tpb = fdb.TPB()
-#      custom_tpb.lock_resolution = fdb.isc_tpb_nowait
-#      custom_tpb.isolation_level = fdb.isc_tpb_concurrency
-#
-#      con1 = fdb.connect( dsn = 'localhost:' + db_main, isolation_level = custom_tpb)
-#      cur1 = con1.cursor()
-#      cur1.execute( 'select ware_id from sp_client_order order by ware_id' )
-#
-#      client_order_wares_main = []
-#      for r in cur1:
-#          client_order_wares_main.append(r[0])
-#      cur1.close()
-#      con1.commit()
-#      con1.close()
-#
-#      ##############################################################################
-#      ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
-#      ##############################################################################
-#      wait_for_data_in_replica( FB_HOME, MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG, db_main, 'POINT-1' )
-#
-#      con2 = fdb.connect( dsn = 'localhost:' + db_repl, no_db_triggers = 1)
-#      cur2 = con2.cursor()
-#      cur2.execute( 'select d.ware_id from doc_data d order by d.ware_id' )
-#      client_order_wares_repl = []
-#      for r in cur2:
-#          client_order_wares_repl.append(r[0])
-#      cur2.close()
-#      con2.commit()
-#      con2.close()
-#
-#      print('Master and replica data: %s ' % ( 'THE SAME.' if client_order_wares_main and sorted(client_order_wares_main) == sorted(client_order_wares_repl) else '### FAIL: DIFFERS ###' ) )
-#
-#      #print('client_order_wares_main=',client_order_wares_main)
-#      #print('client_order_wares_repl=',client_order_wares_repl)
-#
-#  # return initial state of master DB:
-#  # remove all DB objects (tables, views, ...):
-#  # --------------------------------------------
-#  sql_clean_ddl = os.path.join(context['files_location'],'drop-all-db-objects.sql')
-#
-#  f_clean_log=open( os.path.join(context['temp_directory'],'drop-all-db-objects.log'), 'w')
-#  f_clean_err=open( ''.join( ( os.path.splitext(f_clean_log.name)[0], '.err') ), 'w')
-#  subprocess.call( [context['isql_path'], 'localhost:' + db_main, '-q', '-nod', '-i', sql_clean_ddl], stdout=f_clean_log, stderr=f_clean_err )
-#  flush_and_close(f_clean_log)
-#  flush_and_close(f_clean_err)
-#
-#  with open(f_clean_err.name,'r') as f:
-#      for line in f:
-#          print('UNEXPECTED STDERR in cleanup SQL: ' + line)
-#          MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG = 0
-#
-#  with open(f_clean_log.name,'r') as f:
-#      for line in f:
-#          # show number of dropped objects
-#          print(line)
-#
-#  if MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG: # ==> initial SQL script finished w/o errors
-#
-#      ##############################################################################
-#      ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
-#      ##############################################################################
-#      wait_for_data_in_replica( FB_HOME, MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG, db_main, 'POINT-2' )
-#
-#      f_main_meta_sql=open( os.path.join(context['temp_directory'],'db_main_meta_skip_gen_repl.sql'), 'w')
-#      subprocess.call( [context['isql_path'], 'localhost:' + db_main, '-q', '-nod', '-ch', 'utf8', '-x'], stdout=f_main_meta_sql, stderr=subprocess.STDOUT )
-#      flush_and_close( f_main_meta_sql )
-#
-#      f_repl_meta_sql=open( os.path.join(context['temp_directory'],'db_repl_meta_skip_gen_repl.sql'), 'w')
-#      subprocess.call( [context['isql_path'], 'localhost:' + db_repl, '-q', '-nod', '-ch', 'utf8', '-x'], stdout=f_repl_meta_sql, stderr=subprocess.STDOUT )
-#      flush_and_close( f_repl_meta_sql )
-#
-#      db_main_meta=open(f_main_meta_sql.name, 'r')
-#      db_repl_meta=open(f_repl_meta_sql.name, 'r')
-#
-#      diffmeta = ''.join(difflib.unified_diff(
-#          db_main_meta.readlines(),
-#          db_repl_meta.readlines()
-#        ))
-#      db_main_meta.close()
-#      db_repl_meta.close()
-#
-#      f_meta_diff=open( os.path.join(context['temp_directory'],'db_meta_diff_skip_gen_repl.txt'), 'w', buffering = 0)
-#      f_meta_diff.write(diffmeta)
-#      flush_and_close( f_meta_diff )
-#
-#      # Following must issue only TWO rows:
-#      #     UNEXPECTED METADATA DIFF.: -/* CREATE DATABASE 'localhost:[db_main]' ... */
-#      #     UNEXPECTED METADATA DIFF.: -/* CREATE DATABASE 'localhost:[db_repl]' ... */
-#      # Only thes lines will be suppressed further (see subst. section):
-#      with open(f_meta_diff.name, 'r') as f:
-#          for line in f:
-#             if line[:1] in ('-', '+') and line[:3] not in ('---','+++'):
-#                 print('UNEXPECTED METADATA DIFF.: ' + line)
-#
-#
-#      cleanup( (f_main_meta_sql, f_repl_meta_sql, f_meta_diff) )
-#
-#  ######################
-#  ### A C H T U N G  ###
-#  ######################
-#  # MANDATORY, OTHERWISE REPLICATION GETS STUCK ON SECOND RUN OF THIS TEST
-#  # WITH 'ERROR: Record format with length 68 is not found for table TEST':
-#  runProgram('gfix', ['-sweep', 'localhost:' + db_repl])
-#  runProgram('gfix', ['-sweep', 'localhost:' + db_main])
-#  #######################
-#
-#  # cleanup:
-#  ##########
-#  cleanup( (f_run_initial_ddl, f_run_initial_log, f_run_initial_err, f_clean_log, f_clean_err) )
-#
-#  # src_files - list of .sql files which were applied; got from zf.namelist().
-#  # We have to remove all of them:
-#  cleanup( [ os.path.join(context['temp_directory'],f) for f in src_files ] )
-#
-#
-#---
+#--------------------------------------------
+
+def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
+    out_reset = ''
+
+    with act_db_main.connect_server() as srv:
+
+        # !! IT IS ASSUMED THAT REPLICATION FOLDERS ARE IN THE SAME DIR AS <DB_MAIN> !!
+        # DO NOT use 'a.db.db_path' for ALIASED database!
+        # It will return '.' rather than full path+filename.
+
+        repl_root_path = Path(db_main_file).parent
+        repl_jrn_sub_dir = repl_settings['journal_sub_dir']
+        repl_arc_sub_dir = repl_settings['archive_sub_dir']
+
+        for f in (db_main_file, db_repl_file):
+            # Method db.drop() changes LINGER to 0, issues 'delete from mon$att' with suppressing exceptions
+            # and calls 'db.drop_database()' (also with suppressing exceptions).
+            # We change DB state to FULL SHUTDOWN instead of call action.db.drop() because
+            # this is more reliable (it kills all attachments in all known cases and does not use mon$ table)
+            #
+            try:
+                srv.database.shutdown(database = f, mode = ShutdownMode.FULL, method = ShutdownMethod.FORCED, timeout = 0)
+            except DatabaseError as e:
+                out_reset += e.__str__()
+
+            # REMOVE db file from disk:
+            ###########################
+            os.unlink(f)
+
+        # Clean folders repl_journal and repl_archive: remove all files from there.
+        for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
+            if cleanup_folder(repl_root_path / p) > 0:
+                out_reset += f"Directory {str(p)} remains non-empty.\n"
+
+    if out_reset == '':
+        for a in (act_db_main,act_db_repl):
+            d = a.db.db_path
+
+            try:
+                dbx = create_database(str(d), user = a.db.user)
+                dbx.close()
+                with a.connect_server() as srv:
+                    srv.database.set_write_mode(database = d, mode = DbWriteMode.ASYNC)
+                    srv.database.set_sweep_interval(database = d, interval = 0)
+                    if a == act_db_repl:
+                        srv.database.set_replica_mode(database = d, mode = ReplicaMode.READ_ONLY)
+                    else:
+                        with a.db.connect() as con:
+                            con.execute_immediate('alter database enable publication')
+                            con.execute_immediate('alter database include all to publication')
+                            con.commit()
+            except DatabaseError as e:
+                out_reset += e.__str__()
+            
+    # Must remain EMPTY:
+    return out_reset
+
+#--------------------------------------------
+
+def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', isql_check_script = '', replica_expected_out = ''):
+
+    retcode = 1;
+    ready_to_check = False
+    if ddl_ready_query:
+        with a.db.connect(no_db_triggers = True) as con:
+            with con.cursor() as cur:
+                for i in range(0,max_allowed_time_for_wait):
+                    cur.execute(ddl_ready_query)
+                    count_actual = cur.fetchone()
+                    if count_actual:
+                        ready_to_check = True
+                        break
+                    else:
+                        con.rollback()
+                        time.sleep(1)
+    else:
+        ready_to_check = True
+
+    if not ready_to_check:
+        print( f'UNEXPECTED. Query to check DDL completion did not return any rows for {max_allowed_time_for_wait} seconds.' )
+        print('Initial check query:')
+        print(ddl_ready_query)
+        return
+    
+    final_check_pass = False
+    if isql_check_script:
+        retcode = 0
+        for i in range(max_allowed_time_for_wait):
+            a.reset()
+            a.expected_stdout = replica_expected_out
+            a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = True)
+
+            if a.return_code:
+                # "Token unknown", "Name longer than database column size" etc: we have to
+                # immediately break from this loop because isql_check_script is incorrect!
+                break
+            
+            if a.clean_stdout == a.clean_expected_stdout:
+                final_check_pass = True
+                break
+            if i < max_allowed_time_for_wait-1:
+                time.sleep(1)
+
+        if not final_check_pass:
+            print(f'UNEXPECTED. Final check query did not return expected dataset for {max_allowed_time_for_wait} seconds.')
+            print('Final check query:')
+            print(isql_check_script)
+            print('Expected output:')
+            print(a.clean_expected_stdout)
+            print('Actual output:')
+            print(a.clean_stdout)
+            print(f'ISQL return_code={a.return_code}')
+            print(f'Waited for {i} seconds')
+
+        a.reset()
+
+    else:
+        final_check_pass = True
+
+    return
+
+#--------------------------------------------
+
+def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
+
+    # return initial state of master DB:
+    # remove all DB objects (tables, views, ...):
+    #
+    db_main_meta, db_repl_meta = '', ''
+    drop_failed_txt = ''
+    for a in (act_db_main,act_db_repl):
+        if a == act_db_main:
+            sql_clean = (a.files_dir / 'drop-all-db-objects.sql').read_text()
+            a.expected_stdout = """
+                Start removing objects
+                Finish. Total objects removed
+            """
+            a.isql(switches=['-q', '-nod'], input = sql_clean, combine_output = True)
+
+            if a.clean_stdout == a.clean_expected_stdout:
+                a.reset()
+            else:
+                drop_failed_txt = '\n'.join( (f'Problem with DROP all objects in {a.db.db_path}:', a.clean_stdout) )
+                a.reset()
+                break
+
+            # NB: one need to remember that rdb$system_flag can be NOT ONLY 1 for system used objects!
+            # For example, it has value =3 for triggers that are created to provide CHECK-constraints,
+            # Custom DB objects always have rdb$system_flag = 0 (or null for some very old databases).
+            # We can be sure that there are no custom DB objects if following query result is NON empty:
+            #
+            ddl_ready_query = """
+                select 1
+                from rdb$database
+                where NOT exists (
+                    select custom_db_object_flag
+                    from (
+                        select rt.rdb$system_flag as custom_db_object_flag from rdb$triggers rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$relations rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$functions rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$procedures rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$exceptions rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$fields rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$collations rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$generators rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$roles rt
+                        UNION ALL
+                        select rt.rdb$system_flag from rdb$auth_mapping rt
+                        UNION ALL
+                        select 1 from sec$users s
+                        where upper(s.sec$user_name) <> 'SYSDBA'
+                    ) t
+                    where coalesce(t.custom_db_object_flag,0) = 0
+                )
+            """
+
+
+            ##############################################################################
+            ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
+            ##############################################################################
+            watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
+
+            # Must be EMPTY:
+            print(capsys.readouterr().out)
+
+            db_main_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
+        else:
+            db_repl_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
+
+        ######################
+        ### A C H T U N G  ###
+        ######################
+        # MANDATORY, OTHERWISE REPLICATION GETS STUCK ON SECOND RUN OF THIS TEST
+        # WITH 'ERROR: Record format with length NN is not found for table TEST':
+        a.gfix(switches=['-sweep', a.db.dsn])
+
+
+    if drop_failed_txt:
+        # No sens to compare metadata if we could not drop all objects in any of databases.
+        print(drop_failed_txt)
+        pass
+    else:
+        # Final point: metadata must become equal:
+        #
+        diff_meta = ''.join(unified_diff( \
+                             [x for x in db_main_meta.splitlines() if 'CREATE DATABASE' not in x],
+                             [x for x in db_repl_meta.splitlines() if 'CREATE DATABASE' not in x])
+                           )
+        # Must be EMPTY:
+        if diff_meta:
+            print('Metadata differs after DROP all objects')
+        print(diff_meta)
+
+#--------------------------------------------
+
+def generate_sync_settings_sql(db_main_file_name, fb_port):
+
+    def generate_inject_setting_sql(working_mode, mcode, new_value, allow_insert_if_eof = 0):
+        sql_inject_setting = ''
+        if allow_insert_if_eof == 0:
+            sql_inject_setting = '''
+                update settings set svalue = %(new_value)s
+                where working_mode = upper('%(working_mode)s') and mcode = upper('%(mcode)s');
+                if (row_count = 0) then
+                    exception ex_record_not_found using('SETTINGS', q'{working_mode = upper('%(working_mode)s') and mcode = upper('%(mcode)s')}');
+            ''' % locals()
+        else:
+            sql_inject_setting = '''
+                update or insert into settings(working_mode, mcode, svalue)
+                values( upper('%(working_mode)s'), upper('%(mcode)s'), %(new_value)s )
+                matching (working_mode, mcode);
+            ''' % locals()
+
+        return sql_inject_setting
+
+    sql_adjust_settings_table = '''
+        set list on;
+        select 'Adjust settings: start at ' || cast('now' as timestamp) as msg from rdb$database;
+        set term ^;
+        execute block as
+        begin
+    '''
+
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'working_mode', "upper('small_03')" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'enable_mon_query', "'0'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'unit_selection_method', "'random'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'build_with_split_heavy_tabs', "'1'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'build_with_qd_compound_ordr', "lower('most_selective_first')" ) ) )
+
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'build_with_separ_qdistr_idx', "'0'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'used_in_replication', "'1'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'separate_workers', "'1'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'workers_count', "'100'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'update_conflict_percent', "'0'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'connect_str', "'connect ''localhost:%(db_main_file_name)s'' user ''SYSDBA'' password ''masterkey'';'" % locals(), 1 ) ) )
+
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'mon_unit_list', "'//'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'halt_test_on_errors', "'/PK/CK/'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'qmism_verify_bitset', "'1'" ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'recalc_idx_min_interval', "'9999999'" ) ) )
+
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'warm_time', "'0'", 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'test_intervals', "'10'", 1 ) ) )
+
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'tmp_worker_role_name', "upper('tmp$oemul$worker')", 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'tmp_worker_user_prefix', "upper('tmp$oemul$user_')", 1 ) ) )
+
+
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'use_es', "'2'", 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'host', "'localhost'", 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'port', "'%(fb_port)s'" % locals(), 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'usr', "'SYSDBA'", 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'pwd', "'masterkey'", 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'tmp_worker_user_pswd', "'0Ltp-Emu1'", 1 ) ) )
+
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'conn_pool_support', "'1'", 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'resetting_support', "'1'", 1 ) ) )
+
+    sql_adjust_settings_table +=     '''
+        end ^
+        set term ;^
+        commit;
+        select 'Adjust settings: finish at ' || cast('now' as timestamp) as msg from rdb$database;
+        set list off;
+    '''
+
+    return sql_adjust_settings_table
+
+#--------------------------------------------
+
+@pytest.mark.version('>=4.0.1')
+def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, tmp_oltp_build_log: Path, capsys):
+
+    tmp_oltp_sql_files = []
+    out_prep, out_main, out_drop = '', '', ''
+    # Obtain full path + filename for DB_MAIN and DB_REPL aliases.
+    # NOTE: we must NOT use 'a.db.db_path' for ALIASED databases!
+    # It will return '.' rather than full path+filename.
+    # Use only con.info.name for that!
+    #
+    db_info = {}
+    for a in (act_db_main, act_db_repl):
+        with a.db.connect(no_db_triggers = True) as con:
+            if a == act_db_main and a.vars['server-arch'] == 'Classic' and os.name != 'nt':
+                pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
+            db_info[a,  'db_full_path'] = con.info.name
+
+
+    # Must be EMPTY:
+    out_prep = capsys.readouterr().out
+    if out_prep:
+        # Some problem raised during establishing connections to master/replica DB
+        pass
+    else:
+        oltp_files = Path(act_db_main.files_dir / 'oltp-emul-ddl.zip')
+        with zipfile.ZipFile(oltp_files, 'r') as zip_ref:
+            zip_ref.extractall(tmp_oltp_build_sql.parents[0])
+            tmp_oltp_sql_files = [ Path(tmp_oltp_build_sql.parents[0]/x) for x in zip_ref.namelist() ]
+        sql_build_init = '\n'.join([ 'in ' + str(x) + ';' for x in tmp_oltp_sql_files[:5]])
+
+        #--------------------------------------------------------------------------------
+        with open(tmp_oltp_build_sql, 'w') as f:
+            f.write( sql_build_init )
+            f.write( generate_sync_settings_sql(db_info[act_db_main,  'db_full_path'], act_db_main.port) )
+        #--------------------------------------------------------------------------------
+
+        oltp_post_files = tmp_oltp_sql_files[5:10] # 'oltp-emul-06_split_heavy_tabs.sql' ... 'oltp-emul-10_adjust_eds_perf.sql'
+        sql_build_post = ''
+        tmp_post_handling_lst = []
+        for f in oltp_post_files:
+            tmp_post_handling_sql = f.with_suffix('.tmp')
+            tmp_post_handling_sql.unlink(missing_ok = True)
+
+            tmp_post_handling_lst.append(tmp_post_handling_sql)
+            sql_build_post += f"""
+                out {tmp_post_handling_sql};
+                in {f};
+                out;
+                in {tmp_post_handling_sql};
+            """
+            if  'adjust_eds_calls' in str(f):
+                # We have to make COMMIT here, otherwise get:
+                # Statement failed, SQLSTATE = 2F000
+                # Error while parsing procedure SP_PERF_EDS_LOGGING's BLR
+                # -attempted update of read-only column <unknown>
+                # After line ... in file ... oltp-emul-10_adjust_eds_perf.sql
+                #
+                sql_build_post += "\ncommit;\n"
+
+        with open(tmp_oltp_build_sql, 'a') as f:
+            f.write( sql_build_post )
+
+        oltp_final_files = tmp_oltp_sql_files[10:]  # 'oltp-emul-11_ref_data_filling.sql', 'oltp-emul-12_activate_db_triggers.sql'
+        sql_build_final = '\n'.join( [ f'in {x};' for x in oltp_final_files] )
+
+        sql_completed = """
+            recreate table t_completed(id int primary key);
+            commit;
+        """
+        with open(tmp_oltp_build_sql, 'a') as f:
+            f.write( sql_build_final )
+            f.write( sql_completed )
+
+        tmp_oltp_sql_files += tmp_post_handling_lst
+
+        act_db_main.isql(switches=['-q', '-nod'], input_file = str(tmp_oltp_build_sql), io_enc = locale.getpreferredencoding(), combine_output = True)
+        if act_db_main.return_code:
+            out_prep = act_db_main.clean_stdout
+
+        act_db_main.reset()
+
+        for p in tmp_oltp_sql_files:
+            p.unlink(missing_ok = True)
+
+
+    if out_prep:
+        # Some problem raised during execution of initial SQL
+        pass
+    else:
+        # Query to be used for check that all DB objects present in replica (after last DML statement completed on master DB):
+        ddl_ready_query = "select 1 from rdb$relations where rdb$relation_name = upper('t_completed')"
+
+        # Query to be used that replica DB contains all expected data (after last DML statement completed on master DB):
+        isql_check_script = """
+                set list on;
+                set count on;
+                select
+                     rdb$get_context('SYSTEM','REPLICA_MODE') replica_mode
+                    ,s.task
+                from semaphores s
+                where s.id = -1;
+        """
+
+        isql_expected_out = f"""
+            REPLICA_MODE                    READ-ONLY
+            TASK                            all_build_ok
+            Records affected: 1
+        """
+
+        ##############################################################################
+        ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
+        ##############################################################################
+        watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query, isql_check_script, isql_expected_out)
+        # Must be EMPTY:
+        out_main = capsys.readouterr().out
+
+    drop_db_objects(act_db_main, act_db_repl, capsys)
+    # Must be EMPTY:
+    out_drop = capsys.readouterr().out
+
+    if [ x for x in (out_prep, out_main, out_drop) if x.strip() ]:
+        # We have a problem either with DDL/DML or with dropping DB objects.
+        # First, we have to RECREATE both master and slave databases
+        # (otherwise further execution of this test or other replication-related tests most likely will fail):
+        out_reset = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'])
+
+        # Next, we display out_main, out_drop and out_reset:
+        #
+        print('Problem(s) detected:')
+        if out_prep.strip():
+            print('out_prep:\n', out_prep)
+        if out_main.strip():
+            print('out_main:\n', out_main)
+        if out_drop.strip():
+            print('out_drop:\n', out_drop)
+        if out_reset.strip():
+            print('out_reset:\n', out_reset)
+
+    assert '' == capsys.readouterr().out
