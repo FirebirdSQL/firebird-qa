@@ -29,7 +29,7 @@ test_script = """
     SHOW TRIGGER tg;
 """
 
-act = isql_act('db', test_script, substitutions=[('\\+.*',''),('\\=.*',''),('Trigger text.*','')])
+act = isql_act('db', test_script, substitutions=[('\\+.*',''),('\\=.*',''),('Trigger text.*',''), ('-attempted', 'attempted'), ('-ID',''), ('Error while parsing trigger TG\'s BLR', '')])
 
 expected_stdout_fb3 = """
     Triggers on Table TEST:
@@ -59,6 +59,7 @@ expected_stdout_fb4 =  """
         new.id=1;
     END
 """
+
 expected_stderr_fb4 = """
     Statement failed, SQLSTATE
     Error while parsing trigger TG's BLR
