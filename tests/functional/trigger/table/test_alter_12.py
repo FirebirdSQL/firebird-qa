@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.table.alter-01
+ID:          trigger.table.alter-12
 TITLE:       ALTER TRIGGER - AS
 DESCRIPTION:
   Try use old prefix in INSERT trigger
