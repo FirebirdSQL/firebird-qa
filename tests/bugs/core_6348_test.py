@@ -164,7 +164,7 @@ def test_1(act: Action, tmp_data: Path, capsys):
         if locals()[var_name] <= MAX_THRESHOLD_FOR_COMPRESS_ON_VS_OFF:
             print(msg_prefix + 'OK, acceptable.')
         else:
-            print(msg_prefix + 'TOO HIGH: %9.2f -  more than threshold: %6.2f' % ( locals()[var_name], MAX_THRESHOLD_FOR_COMPRESS_ON_VS_OFF ) )
+            print(msg_prefix + '/* perf_issue_tag */ TOO HIGH: %9.2f -  more than threshold: %6.2f' % ( locals()[var_name], MAX_THRESHOLD_FOR_COMPRESS_ON_VS_OFF ) )
 
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
