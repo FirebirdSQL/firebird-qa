@@ -2,7 +2,7 @@
 
 """
 ID:          issue-1353
-ISSUE:       1353
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1353
 TITLE:       AV when blob is used in expression index
 DESCRIPTION:
 JIRA:        CORE-952
