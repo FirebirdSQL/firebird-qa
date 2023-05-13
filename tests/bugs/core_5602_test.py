@@ -91,7 +91,7 @@ def test_1(act: Action, capsys):
     if del_constr_to_commit_median < DEL_2_COMMIT_MAX_RATIO:
         print(msg_del_success)
     else:
-        print('ALTER DOMAIN DROP CONSTRAINT perfomed too slow. Ratios of DML to COMMIT time:')
+        print('/* perf_issue_tag */ ALTER DOMAIN DROP CONSTRAINT perfomed too slow. Ratios of DML to COMMIT time:')
         for p in del_constraint_to_commit_ratios:
             print('%12.4f' % p)
         print('Median value: %12.4f - GREATER than threshold: %12.4f' % (del_constr_to_commit_median,DEL_2_COMMIT_MAX_RATIO))
