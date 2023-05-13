@@ -1,15 +1,16 @@
 #coding:utf-8
 
 """
-ID:          isql-04
-ISSUE:       1383
+ID:          issue-1383
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1383
 TITLE:       ISQL - SHOW SYSTEM parameters
 DESCRIPTION: Extend ISQL SHOW SYSTEM command to accept parameters TABLES, COLLATIONS and FUNCTIONS
 JIRA:        CORE-978
 FBTEST:      functional.basic.isql.03
 
 NOTES:
-[28.04.2022] pzotov
+    [28.04.2022] pzotov
+    See: gh-1383, "Extend ISQL SHOW SYSTEM command [CORE978]"
     Checked on 5.0.0.488, 4.0.1.2692, 3.0.8.33535.
 """
 
