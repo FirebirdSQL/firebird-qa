@@ -90,7 +90,7 @@ def test_1(act: Action, leg_user: User, srp_user: User, capsys):
     if conn_time_ratio < MIN_RATIO_THRESHOLD or max( median(srp_user_conn_time), median(leg_user_conn_time) ) < MAX_MEDIAN_TO_IGNORE:
         print(expected_txt)
     else:
-        print(f'Ratio Srp/Legacy: {conn_time_ratio} - is GREATER than threshold = {MIN_RATIO_THRESHOLD}.')
+        print(f'/* perf_issue_tag */ Ratio Srp/Legacy: {conn_time_ratio} - is GREATER than threshold = {MIN_RATIO_THRESHOLD}.')
         print(f'    Median for Srp: {median(srp_user_conn_time)}')
         print(f'    Median for Legacy: {median(leg_user_conn_time)}')
 
