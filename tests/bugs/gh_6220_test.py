@@ -159,7 +159,7 @@ def test_1(act: Action, tmp_user: User, capsys):
     if median_ratio < MAX_TIME_RATIO:
         print(MSG_PREFIX + ' acceptable.')
     else:
-        print(MSG_PREFIX + ' UNACCEPTABLE, greater than threshold = ', MAX_TIME_RATIO)
+        print(MSG_PREFIX + ' /* perf_issue_tag */ UNACCEPTABLE, greater than threshold = ', MAX_TIME_RATIO)
 
         #print( 'Check result of %d measures:' % N_MEASURES )
         #for k,v in sorted(sp_time.items()):
