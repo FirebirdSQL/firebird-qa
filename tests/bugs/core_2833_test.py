@@ -7,6 +7,10 @@ TITLE:       Changing data that affects an expression index that contains refere
 DESCRIPTION:
 JIRA:        CORE-2833
 FBTEST:      bugs.core_2833
+NOTES:
+    [13.05.2023] pzotov
+    Added 'combine_output = True' (otherwise error message remains unclear:
+    "firebird.qa.plugin.ExecutionError: Test script execution failed").
 """
 
 import pytest
@@ -88,13 +92,20 @@ init_script = """
 db = db_factory(init=init_script)
 
 test_script = """
+    set bail on;
     set list on;
+
     update policen_order set vstatus = 8 where id = 2;
     commit;
-    select * from policen_order;
+    set count on;
+    select * from policen_order order by id;
+    set count off;
+
     update policen_order set vstatus = 2 where id = 2;
     commit;
-    select * from policen_order;
+    set count on;
+    select * from policen_order order by id;
+    set count off;
 """
 
 act = isql_act('db', test_script)
@@ -117,7 +128,7 @@ expected_stdout = """
     ABLAUF                          <null>
     VSTORNO                         <null>
     STORNO                          <null>
-
+    Records affected: 3
 
 
     ID                              2
@@ -137,11 +148,12 @@ expected_stdout = """
     ABLAUF                          <null>
     VSTORNO                         <null>
     STORNO                          <null>
+    Records affected: 3
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
