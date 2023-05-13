@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          isql-03
+ID:          isql-02
 TITLE:       ISQL - SHOW SYSTEM TABLES
 DESCRIPTION: Check for correct output of "SHOW SYSTEM;" command on empty database.
 FBTEST:      functional.basic.isql.02
@@ -14,9 +14,11 @@ db = db_factory()
 
 act = isql_act('db', 'show system;')
 
+##############################################################
 # version: 3.0
+##############################################################
 
-expected_stdout_1 = """
+expected_out_3x = """
 Tables:
        MON$ATTACHMENTS                        MON$CALL_STACK
        MON$CONTEXT_VARIABLES                  MON$DATABASE
@@ -124,13 +126,15 @@ Collations:
 
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout_1
-    act.execute()
+    act.expected_stdout = expected_out_3x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
+##############################################################
 # version: 4.0
+##############################################################
 
-expected_stdout_2 = """
+expected_out_4x = """
     Tables:
     MON$ATTACHMENTS
     MON$CALL_STACK
@@ -344,13 +348,17 @@ expected_stdout_2 = """
 
 @pytest.mark.version('>=4.0,<5.0')
 def test_2(act: Action):
-    act.expected_stdout = expected_stdout_2
-    act.execute()
+    act.expected_stdout = expected_out_4x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
-# version: 5.0
 
-expected_stdout_3 = """
+##############################################################
+# version: 5.0
+##############################################################
+
+expected_out_5x = """
+
     Tables:
     MON$ATTACHMENTS
     MON$CALL_STACK
@@ -575,12 +583,16 @@ expected_stdout_3 = """
     WIN_CZ
     WIN_CZ_CI_AI
     WIN_PTBR
+
     Roles:
     RDB$ADMIN
+
+    Publications:
+    RDB$DEFAULT
 """
 
 @pytest.mark.version('>=5.0')
 def test_3(act: Action):
-    act.expected_stdout = expected_stdout_3
-    act.execute()
+    act.expected_stdout = expected_out_5x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
