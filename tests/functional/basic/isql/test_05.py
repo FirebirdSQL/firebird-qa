@@ -1,13 +1,15 @@
 #coding:utf-8
 
 """
-ID:          isql-05
-ISSUE:       5655
+ID:          issue-5655
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5655
 TITLE:       ISQL should be able to process single statement with length up to 10*1024*1024 chars
 DESCRIPTION:
-  Source sample see in #5655
+  Source sample see in #5655 / CORE-5382
   Test prepares script with two SELECT statements:
-  One of them has length EXACTLY equal to 10*1024*1024 chars (excluding final ';'), another length = 10Mb + 1.
+  One of them has length EXACTLY equal to 10*1024*1024 characters (excluding final ';'),
+  second has length = 10*1024*1024 + 1.
+
   First statement should be executed OK, second should fail.
   Checked on WI-V3.0.2.32625, WI-T4.0.0.440
 
