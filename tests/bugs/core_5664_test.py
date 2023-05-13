@@ -177,7 +177,7 @@ def test_1(act: Action, capsys):
                 # String STARTS WITH pattern, result: acceptable.
                 print('Check: ' + long_text_form + ' - acceptable.')
             else:
-                print('\nTOO SLOW search when use "%s": median greater %12.2f' % (long_text_form.upper().replace('_',' '), max_allowed_ratio) )
+                print('\n/* perf_issue_tag */ TOO SLOW search when use "%s": median greater %12.2f' % (long_text_form.upper().replace('_',' '), max_allowed_ratio) )
 
                 print("\nCheck sp_call_data values (k=[", long_text_form, ", i], v = (sp_time['sim2'], sp_time['like'])):" )
                 for k,v in sorted(sp_call_data.items()):
