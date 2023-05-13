@@ -144,7 +144,7 @@ def test_1(act: Action, capsys):
 
     median_ratio = median(ratio_lst)
 
-    print( 'Duration ratio: ' + ('acceptable' if median_ratio < UTF8_TO_UFSS_MAX_RATIO else 'POOR: %12.2f, more than threshold: %12.2f' % ( median_ratio, UTF8_TO_UFSS_MAX_RATIO ) ) )
+    print( 'Duration ratio: ' + ('acceptable' if median_ratio < UTF8_TO_UFSS_MAX_RATIO else '/* perf_issue_tag */ POOR: %12.2f, more than threshold: %12.2f' % ( median_ratio, UTF8_TO_UFSS_MAX_RATIO ) ) )
     if median_ratio >= UTF8_TO_UFSS_MAX_RATIO:
         print('Ratio statistics for %d measurements' % N_MEASURES)
         for p in ratio_lst:
