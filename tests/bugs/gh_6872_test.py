@@ -138,7 +138,7 @@ def test_1(act: Action, capsys):
     if median(ratio_lst) <= ADDED_COLL_TIME_MAX_RATIO:
         print('Duration ratio: acceptable.')
     else:
-        print('Duration ratio: POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(ADDED_COLL_TIME_MAX_RATIO) ) )
+        print('Duration ratio: /* perf_issue_tag */ POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(ADDED_COLL_TIME_MAX_RATIO) ) )
 
         print("\\nCheck sp_time values:" )
         for k,v in sorted(sp_time.items()):
