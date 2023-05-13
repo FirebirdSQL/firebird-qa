@@ -150,7 +150,7 @@ def test_1(act: Action, capsys):
         if actual_time_ratios_commit2compile[ ftype ] < MAX_TIME_RATIOS_COMMIT_TO_COMPILE[ ftype ]:
             print( msg + 'acceptable')
         else:
-            print( msg + 'UNACCEPTABLE: %12.2f -- greater than threshold = %12.2f' % (actual_time_ratios_commit2compile[ ftype ],  MAX_TIME_RATIOS_COMMIT_TO_COMPILE[ ftype ]) )
+            print( msg + '/* perf_issue_tag */ UNACCEPTABLE: %12.2f -- greater than threshold = %12.2f' % (actual_time_ratios_commit2compile[ ftype ],  MAX_TIME_RATIOS_COMMIT_TO_COMPILE[ ftype ]) )
             print( 'Check result of %d measures:' % N_MEASURES )
 
             # List with concrete values (source for median evaluation):
