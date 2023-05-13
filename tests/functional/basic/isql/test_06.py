@@ -2,7 +2,7 @@
 
 """
 ID:          issue-7218
-ISSUE:       7218
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7218
 TITLE:       Let ISQL show per-table run-time statistics.
 NOTES:
     [23.02.2023] pzotov
