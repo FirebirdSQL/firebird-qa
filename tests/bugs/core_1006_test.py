@@ -2,11 +2,20 @@
 
 """
 ID:          issue-1417
-ISSUE:       1417
-TITLE:       AV at rollback and \\ or garbage collection if updated table have expression index with SELECT in it
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1417
+TITLE:       AV at rollback and/or garbage collection if updated table have expression index with SELECT in it
 DESCRIPTION:
 JIRA:        CORE-1006
 FBTEST:      bugs.core_1006
+NOTES:
+    [13.05.2023] pzotov
+    On 5.0.0.1047 test script causes error:
+        Statement failed, SQLSTATE = 42000
+        Expression evaluation error for index "TABLE1_IDX1" on table "TABLE1"
+        -Attempt to evaluate index expression recursively
+        -At block line: 17, col: 13
+    Added SELECT statement to check its output in assert (otherwise error message remains unclear:
+    "firebird.qa.plugin.ExecutionError: Test script execution failed").
 """
 
 import pytest
@@ -15,6 +24,8 @@ from firebird.qa import *
 db = db_factory(from_backup='core1006.fbk')
 
 test_script = """
+    set bail on;
+    set heading off;
     set term ^;
     execute block
     as
@@ -36,10 +47,17 @@ test_script = """
     end
     ^ set term ;^
     rollback;
+    select 'Done.' as msg from rdb$database;
 """
 
 act = isql_act('db', test_script)
 
-@pytest.mark.version('>=3')
+expected_stdout = """
+    Done.
+"""
+
+@pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.execute()
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
