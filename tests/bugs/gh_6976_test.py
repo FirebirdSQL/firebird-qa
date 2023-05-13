@@ -172,7 +172,7 @@ def test_1(act_source: Action, act_broken: Action, capsys):
         if median_connect_ms <= THRESHOLD_FOR_MAKE_CONNECT_MS:
             print(msg_prefix + 'acceptable.')
         else:
-            print(msg_prefix + 'POOR: %s - more than threshold: %s' % ( '{:9g}'.format(median_connect_ms), '{:9g}'.format(THRESHOLD_FOR_MAKE_CONNECT_MS)  ))
+            print(msg_prefix + '/* perf_issue_tag */ POOR: %s - more than threshold: %s' % ( '{:9g}'.format(median_connect_ms), '{:9g}'.format(THRESHOLD_FOR_MAKE_CONNECT_MS)  ))
             print("Check values:" )
             for p in connect_establishing_ms:
                 print(p)
