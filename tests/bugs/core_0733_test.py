@@ -214,7 +214,7 @@ def test_1(act: Action, capsys):
     if cpu_txt_wcompr_ON_vs_OFF > MIN_CPU_RATIO_TXT_WCOMPR_ON_OFF:
         print(msg_result1 % (what_sent1, 'EXPECTED') )
     else:
-        print(msg_result1 % (what_sent1, 'UNEXPECTED, less than '+str(MIN_CPU_RATIO_TXT_WCOMPR_ON_OFF)) )
+        print(msg_result1 % (what_sent1, '/* perf_issue_tag */ UNEXPECTED less than '+str(MIN_CPU_RATIO_TXT_WCOMPR_ON_OFF)) )
         all_fine = 0
 
 
@@ -222,7 +222,7 @@ def test_1(act: Action, capsys):
     if cpu_bin_wcompr_ON_vs_OFF > MIN_CPU_RATIO_BIN_WCOMPR_ON_OFF:
         print(msg_result1 % (what_sent2, 'EXPECTED') )
     else:
-        print(msg_result1 % (what_sent2, 'UNEXPECTED, less than '+str(MIN_CPU_RATIO_BIN_WCOMPR_ON_OFF)) )
+        print(msg_result1 % (what_sent2, '/* perf_issue_tag */ UNEXPECTED, less than '+str(MIN_CPU_RATIO_BIN_WCOMPR_ON_OFF)) )
         all_fine = 0
 
 
@@ -230,7 +230,7 @@ def test_1(act: Action, capsys):
     if cpu_txt2bin_wcompr_OFF <= MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF:
         print(msg_result2 % ('EXPECTED') )
     else:
-        print(msg_result2 % ('UNEXPECTED, more than ' + str(MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF)) )
+        print(msg_result2 % ('/* perf_issue_tag */ UNEXPECTED, more than ' + str(MAX_CPU_RATIO_TXT2BIN_WCOMPR_OFF)) )
         all_fine = 0
 
     if not all_fine:
