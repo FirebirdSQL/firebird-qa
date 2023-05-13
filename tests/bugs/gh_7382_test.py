@@ -159,7 +159,7 @@ def test_1(act: Action, capsys):
         ratio_lst.append( sp_time['sp_blob_copy_2',i]  / sp_time['sp_blob_copy_1',i]  )
     median_ratio = median(ratio_lst)
 
-    print( 'Duration ratio, median: ' + ('acceptable' if median_ratio < MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(MAX_RATIO) ) ) )
+    print( 'Duration ratio, median: ' + ('acceptable' if median_ratio < MAX_RATIO else '/* perf_issue_tag */ POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(MAX_RATIO) ) ) )
 
     if median_ratio >= MAX_RATIO:
         print('Ratio statistics for %d measurements' % N_MEASURES)
