@@ -189,7 +189,7 @@ def test_1(act: Action, capsys):
 
     median_ratio = median(ratio_lst)
 
-    print( MSG_PREFIX + ('acceptable.' if median_ratio < INSERTS_TIME_MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(INSERTS_TIME_MAX_RATIO) ) ) )
+    print( MSG_PREFIX + ('acceptable.' if median_ratio < INSERTS_TIME_MAX_RATIO else '/* perf_issue_tag */ POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(INSERTS_TIME_MAX_RATIO) ) ) )
     if median_ratio >= INSERTS_TIME_MAX_RATIO:
         print('Ratio statistics for %d measurements' % N_MEASURES)
         for p in ratio_lst:
