@@ -127,7 +127,7 @@ def test_1(act: Action, capsys):
     for i in range(0, N_MEASURES):
         ratio_lst.append( sp_time['utf8',i]  / sp_time['ptbr',i]  )
     median_ratio = median(ratio_lst)
-    print( 'Duration ratio: ' + ('acceptable' if median_ratio < UTF8_TO_PTBR_MAX_RATIO else 'POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(UTF8_TO_PTBR_MAX_RATIO) ) ) )
+    print( 'Duration ratio: ' + ('acceptable' if median_ratio < UTF8_TO_PTBR_MAX_RATIO else '/* perf_issue_tag */ POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(UTF8_TO_PTBR_MAX_RATIO) ) ) )
 
     if median_ratio >= UTF8_TO_PTBR_MAX_RATIO:
         print('Ratio statistics for %d measurements' % N_MEASURES)
