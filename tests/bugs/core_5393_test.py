@@ -245,7 +245,7 @@ def test_1(act: Action, capsys):
         msg += 'acceptable.'
         print(msg)
     else:
-        msg += 'INACCEPTABLE: %12.2f -- more than threshold = %5.2f' % (median_ratio, MEDIAN_TIME_MAX_RATIO)
+        msg += '/* perf_issue_tag */ INACCEPTABLE: %12.2f -- more than threshold = %5.2f' % (median_ratio, MEDIAN_TIME_MAX_RATIO)
         print(msg)
 
         print('Check values for %d measurements:' % N_MEASURES)
