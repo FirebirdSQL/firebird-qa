@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          isql-02
+ID:          isql-01
 TITLE:       ISQL - SHOW DATABASE
 DESCRIPTION: Check for correct output of SHOW DATABASE on empty database.
 FBTEST:      functional.basic.isql.01
@@ -105,8 +105,10 @@ expected_stdout_5x = """
     Database not encrypted
     Wire crypt plugin:
     Creation date: Sep 10, 2021 7:13:17 GMT
+    Replica mode: NONE
     Protocol version = 17
     Default Character set: NONE
+    Publication: Disabled
 """
 
 @pytest.mark.version('>=5.0')
