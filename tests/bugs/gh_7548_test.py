@@ -43,7 +43,7 @@ expected_stdout = f"""
     F01 {ts} Europe/Moscow
 """
 
-@pytest.mark.version('>=3.0.11')
+@pytest.mark.version('>=4.0.3')
 def test_1(act: Action, capsys):
     cset_list = []
     with act.db.connect() as con:
