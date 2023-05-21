@@ -139,7 +139,7 @@ test_script = """
         -- rdb$set_context('USER_SESSION', 'SUBS_SIM_PATTERN_EXPLICITLY_SPECIFIED', datediff(millisecond from t0_subs_simil to  cast('now' as timestamp)));
 
         if ( 1.00 * elap_similar2_pattern_in_psql_var / elap_similar2_pattern_explicitly > SIMILAR2_THRESHOLD ) then
-            msg_similar2 = 'INACCEPTABLE: '
+            msg_similar2 = 'INACCEPTABLE /* perf_issue_tag */: '
                            || elap_similar2_pattern_in_psql_var
                            || 's  == vs ==  '
                            || elap_similar2_pattern_explicitly || 's'
@@ -150,7 +150,7 @@ test_script = """
 
 
         if ( 1.00 * elap_subs_sim_pattern_in_psql_var / elap_subs_sim_pattern_explicitly > SUBS_SIM_THRESHOLD ) then
-            msg_subs_sim = 'INACCEPTABLE: '
+            msg_subs_sim = 'INACCEPTABLE /* perf_issue_tag */: '
                            || elap_subs_sim_pattern_in_psql_var
                            || 'ms  == vs ==  '
                            || elap_subs_sim_pattern_explicitly || 'ms'
