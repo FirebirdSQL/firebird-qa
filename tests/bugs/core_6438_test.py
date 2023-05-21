@@ -24,7 +24,8 @@ txt_len: 65533
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
     data = '1' * 65533
-    act.isql(switches=[], input=f'''select '{data}' as " ", 1 as "  " from rdb$database;''')
+    act.isql(switches=[], input=f'''select '{data}' as " ", 1 as "  " from rdb$database;''', combine_output = True)
+    hdr_len = txt_len = 0
     for line in act.stdout.splitlines():
         if line.startswith('='):
             hdr_len = len(line.split()[0])
