@@ -21,7 +21,12 @@ test_script = """
     create or alter procedure sp_block_test(a_alg varchar(30)) as begin end;
     commit;
 
-    recreate table test( crypto_alg varchar(30), source_text blob, crypto_key varchar(128), crypto_iv varchar(16) );
+    recreate table test(
+        crypto_alg varchar(30)
+        ,source_text blob
+        ,crypto_key varchar(128)
+        ,crypto_iv varchar(16)
+    );
     commit;
 
     insert into test( crypto_alg, source_text,                 crypto_key,         crypto_iv )
@@ -68,5 +73,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
