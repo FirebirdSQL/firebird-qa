@@ -4,8 +4,7 @@
 ID:          issue-6581
 ISSUE:       6581
 TITLE:       Alternate quoting does not work on some particular cases
-DESCRIPTION:
-  Test tries several cases + checks that string with maximum limit of length (65533) can be properly parsed.
+DESCRIPTION: Test tries several cases + checks that string with maximum limit of length (65533) can be properly parsed.
 JIRA:        CORE-6340
 FBTEST:      bugs.core_6340
 """
@@ -578,5 +577,5 @@ RESULT                           'q '
 @pytest.mark.version('>=3.0.6')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
