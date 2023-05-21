@@ -157,19 +157,19 @@ test_script = """
         ratio_for_1e5 = 'Acceptable, <= ' || max_diff_threshold;
 
         if (ratio_select_vs_count_1e1 > max_diff_threshold) then
-            ratio_for_1e1 = 'Regression: ratio = '||ratio_select_vs_count_1e1||' > '||max_diff_threshold;
+            ratio_for_1e1 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e1||' > '||max_diff_threshold;
 
         if (ratio_select_vs_count_1e2 > max_diff_threshold) then
-            ratio_for_1e2 = 'Regression: ratio = '||ratio_select_vs_count_1e2||' > '||max_diff_threshold;
+            ratio_for_1e2 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e2||' > '||max_diff_threshold;
 
         if (ratio_select_vs_count_1e3 > max_diff_threshold) then
-            ratio_for_1e3 = 'Regression: ratio = '||ratio_select_vs_count_1e3||' > '||max_diff_threshold;
+            ratio_for_1e3 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e3||' > '||max_diff_threshold;
 
         if (ratio_select_vs_count_1e4 > max_diff_threshold) then
-            ratio_for_1e4 = 'Regression: ratio = '||ratio_select_vs_count_1e4||' > '||max_diff_threshold;
+            ratio_for_1e4 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e4||' > '||max_diff_threshold;
 
         if (ratio_select_vs_count_1e5 > max_diff_threshold) then
-            ratio_for_1e5 = 'Regression: ratio = '||ratio_select_vs_count_1e5||' > '||max_diff_threshold;
+            ratio_for_1e5 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e5||' > '||max_diff_threshold;
 
 
         suspend;
