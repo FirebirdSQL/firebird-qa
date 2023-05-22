@@ -292,7 +292,7 @@ class QATerminalReporter(TerminalReporter):
         self.flush()
 
     def write_ensure_prefix(self, prefix: str, extra: str = "", **kwargs) -> None:
-        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         if self.currentfspath != prefix:
             self._tw.line()
             self.currentfspath = prefix
