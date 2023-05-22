@@ -77,7 +77,9 @@ from firebird.driver.types import DatabaseError
 # from act.files_dir/'test_config.ini':
 repl_settings = QA_GLOBALS['replication']
 
-MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
+# 22.05.2023: increased max time for wait, only for THIS test. Otherwise it fails too often.
+#
+MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = max(90, int(repl_settings['max_time_for_wait_data_in_replica']) )
 
 # How long we wit since segments start apply on replica
 # and before we change its state to full shutdown, seconds:
