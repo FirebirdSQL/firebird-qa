@@ -26,7 +26,7 @@ tmp_user = user_factory('db', name='tmp_syspriv_user', password='123')
 tmp_role = role_factory('db', name='tmp_role_trace_any_attachment')
 tmp_usr2 = user_factory('db', name='tmp_stock_manager', password='123')
 
-substitutions = [('^((?!(I/O error)|(Error while)|335544344|335544734).)*$', '')]
+substitutions = [('^((?!(I/O error)|(Error while)|335544344|335544734).)*$', ''), ('CreateFile\\s+\\(open\\)', 'open')]
 
 act = python_act('db', substitutions = substitutions)
 act_non_existing_database = python_act('db_non_existing_database')
@@ -64,17 +64,20 @@ def test_1(act: Action, act_non_existing_database: Action, tmp_user: User, tmp_r
                 pass
         except DatabaseError as e:
             print(e.__str__())
-            print(e.gds_codes)
-            # I/O error during "CreateFile (open)" operation for file ".../no_such_tile.tmp"
+            for g in e.gds_codes:
+                print(g)
+
+            # WINDOWS: I/O error during "CreateFile (open)" operation for file "..."
+            # LINUX:   I/O error during "open" operation for file "..."
             # -Error while trying to open file
             # -[ localized message here: "no such file" ]
             # (335544344, 335544734)
-    
 
     expected_stdout = f"""
-        I/O error during "CreateFile (open)" operation for file "{act_non_existing_database.db.db_path}"
+        I/O error during "open" operation for file "{act_non_existing_database.db.db_path}"
         -Error while trying to open file
-        (335544344, 335544734)
+        335544344
+        335544734
     """
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
