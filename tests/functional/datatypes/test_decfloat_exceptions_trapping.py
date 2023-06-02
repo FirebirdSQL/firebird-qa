@@ -119,8 +119,9 @@ expected_stderr = """
     Statement failed, SQLSTATE = 22000
     Decimal float inexact result.  The result of an operation cannot be represented as a decimal fraction.
 
-    Statement failed, SQLSTATE = 22000
+    Statement failed, SQLSTATE = 22018
     Decimal float invalid operation.  An indeterminant error occurred during an operation.
+    -conversion error from string "34ffd"
 """
 
 @pytest.mark.version('>=4.0')
