@@ -5,13 +5,25 @@ ID:          issue-6013
 ISSUE:       6013
 TITLE:       Date-time parsing is very weak
 DESCRIPTION:
-  Parser changed after following fixes:
-    - CORE-6427 - Whitespace as date separator causes conversion error.
-    - CORE-6429 - Timezone offset in timestamp/time literal and CAST should follow SQL standard syntax only.
-  See: https://github.com/FirebirdSQL/firebird/commit/ff37d445ce844f991242b1e2c1f96b80a5d1636d
-  Adjusted expected stdout/stderr after discuss with Adriano.
+    Parser changed in:
+    https://github.com/FirebirdSQL/firebird/commit/ff37d445ce844f991242b1e2c1f96b80a5d1636d
+    See also:
+        - CORE-6427 - Whitespace as date separator causes conversion error.
+        - CORE-6429 - Timezone offset in timestamp/time literal and CAST should follow SQL standard syntax only.
 JIRA:        CORE-5750
 FBTEST:      bugs.core_5750
+NOTES:
+    [03.06.2023] pzotov
+    If source string contains binary characters (e.g. '2001') then it will not be converted to date,
+    but content of error message depends on FB version:
+        * on FB 4.x and FB 5.x prior 5.0.0.1058 it will look without changes, i.e. "2001";
+        * on 5.0.0.1058 it will look like this: conversion error from string "2029\x01\x19";
+        * on 5.0.0.1066 it will look like this: conversion error from string "2029#x01#x19";
+    Error text became differ after 30-may-2023:
+        https://github.com/FirebirdSQL/firebird/commit/fa6f9196f9015d0cf8c1cb84ff6312934855e9e9
+        ("Fixed #7599: Conversion of text with '\0' to DECFLOAT without errors")
+    Expected STDERR was adjusted to current output after discuss with Alex.
+    Checked on 5.0.0.1066, 4.0.3.2948.
 """
 
 import pytest
@@ -19,7 +31,8 @@ from firebird.qa import *
 
 db = db_factory()
 
-test_script = """
+BINARY_DATA_SUFFIX = ''
+test_script = f"""
     set heading off;
     --set echo on;
 
@@ -34,7 +47,7 @@ test_script = """
     select date '2018-01-31' from rdb$database;
     select date '2018/01/31' from rdb$database;
     select date '2018.01.31' from rdb$database;
-    select date '2018' from rdb$database;
+    select date '2001{BINARY_DATA_SUFFIX}' from rdb$database;
     select date '2018,01,31' from rdb$database;
     select date '2018/01.31' from rdb$database;
     select date '2018 01 31' from rdb$database;
@@ -72,50 +85,53 @@ expected_stdout = """
     2017-05-31 11:22:33.4455
 """
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 20 30
-
-    Statement failed, SQLSTATE = 22009
-    Invalid time zone region: ,20,30 40
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "31/05/2017 2:3:4.5678"
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "2018"
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "2018,01,31"
-
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "2018/01.31"
-
-    Statement failed, SQLSTATE = 22009
-    Invalid time zone region: /29/39
-
-    Statement failed, SQLSTATE = 22009
-    Invalid time zone region: .39
-
-    Statement failed, SQLSTATE = 22009
-    Invalid time zone offset: -29-39 - must use format +/-hours:minutes and be between -14:00 and +14:00
-
-    Statement failed, SQLSTATE = 22009
-    Invalid time zone region: 29 39
-
-    Statement failed, SQLSTATE = 22009
-    Invalid time zone region: ,1238
-
-    Statement failed, SQLSTATE = 22009
-    Invalid time zone region: T01:02:03.4567
-
-    Statement failed, SQLSTATE = 22009
-    Invalid time zone region:
-        22:33:44.5577
-"""
-
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
+
+    BINARY_DATA_OUTPUT = BINARY_DATA_SUFFIX if act.is_version('<5') else '#x01#x19'
+
+    expected_stderr = f"""
+        Statement failed, SQLSTATE = 22009
+        Invalid time zone region: 20 30
+
+        Statement failed, SQLSTATE = 22009
+        Invalid time zone region: ,20,30 40
+
+        Statement failed, SQLSTATE = 22018
+        conversion error from string "31/05/2017 2:3:4.5678"
+
+        Statement failed, SQLSTATE = 22018
+        conversion error from string "2001{BINARY_DATA_OUTPUT}"
+
+        Statement failed, SQLSTATE = 22018
+        conversion error from string "2018,01,31"
+
+        Statement failed, SQLSTATE = 22018
+        conversion error from string "2018/01.31"
+
+        Statement failed, SQLSTATE = 22009
+        Invalid time zone region: /29/39
+
+        Statement failed, SQLSTATE = 22009
+        Invalid time zone region: .39
+
+        Statement failed, SQLSTATE = 22009
+        Invalid time zone offset: -29-39 - must use format +/-hours:minutes and be between -14:00 and +14:00
+
+        Statement failed, SQLSTATE = 22009
+        Invalid time zone region: 29 39
+
+        Statement failed, SQLSTATE = 22009
+        Invalid time zone region: ,1238
+
+        Statement failed, SQLSTATE = 22009
+        Invalid time zone region: T01:02:03.4567
+
+        Statement failed, SQLSTATE = 22009
+        Invalid time zone region:
+            22:33:44.5577
+    """
+
     act.expected_stdout = expected_stdout
     act.expected_stderr = expected_stderr
     act.execute()
