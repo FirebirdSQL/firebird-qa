@@ -13,7 +13,19 @@ import locale
 import pytest
 from firebird.qa import *
 
-db = db_factory(charset = 'utf8')
+init_sql = """
+    set term ^;
+    create or alter function sp_test_func returns blob sub_type text character set utf8 as
+        declare runtotal blob sub_type text;
+    begin
+        runtotal = 'мама мыла раму';
+        return runtotal;
+    end
+    ^
+    set term ;^
+    commit;
+"""
+db = db_factory(charset = 'utf8', init = init_sql)
 
 act = python_act('db', substitutions=[('^((?!sqltype:).)*$',''),('[ \t]+',' '),('.*alias:.*','')])
 
@@ -21,16 +33,6 @@ act = python_act('db', substitutions=[('^((?!sqltype:).)*$',''),('[ \t]+',' '),(
 def test_1(act: Action):
 
     test_sql = """
-        set term ^;
-        create or alter function sp_test_func returns blob sub_type text character set utf8 as
-            declare runtotal blob sub_type text;
-        begin
-            runtotal = 'мама мыла раму';
-            return runtotal;
-        end
-        ^
-        set term ;^
-        commit;
         set list on;
         set sqlda_display on;
         select sp_test_func() as runtotal from rdb$database rows 0;
