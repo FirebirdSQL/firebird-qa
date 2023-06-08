@@ -15,15 +15,16 @@ DESCRIPTION:
     will be extremely slow (about 1..2 minutes).
 
     Test creates table 'test' with indexed text column of length about 500...700 bytes, and adds there thousands rows.
-    This leads engine generate at least one segment with size about 16 Mb.
+    This forces engine to generate at least one segment with size about 16 Mb.
+    In the middle of loop that adds data to the 'test' table, we run execute statement that creates one more table
+    and does that in autonomous Tx:  'create table t_partially_ready'.
+    So, when this table will be seen in the rdb$relations, we can assume that at segment is generated for least half
+    of expected size. At this time we change replica DB state to full shutdown and then bring it online.
 
-    We wait until table 'test' appear in replica DB (by querying RDB$RELATIONS), and when it is so - make small delay
-    for <TIME_TO_LET_SEGMENTS_BE_APPLIED> seconds in order to allow replica apply some (small) part of this big segment.
-    After that, we change replica DB state to 'full shutdown' and then bring it online.
-    
-    Error message appears in replication.log at that moment, engine suspends replication for <REPLICA_TIMEOUT_FOR_ERROR> seconds.
-    After that, replication must resume and complete normally. We check this by querying RDB$RELATIONS for presense there table
-    with name 't_completed': if appropriate record found then we can assume that replication completed successfully.
+    Error message appears in replication.log at that moment, engine suspends replication, but after seconds defined by
+    'apply_error_timeout' parameter in replication.conf. Then replication must resume and complete normally.
+    We check this by querying RDB$RELATIONS for presense there table with name 't_completed': if appropriate record
+    found then we can assume that replication completed successfully.
 
     Further, we invoke ISQL with executing auxiliary script for drop all DB objects on master (with '-nod' command switch).
     After all objects will be dropped, we have to wait again until replica becomes actual with master.
@@ -59,8 +60,17 @@ NOTES:
     NOTE-2.
         Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
         'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
-    
+
     Checked on 5.0.0.1017, 4.0.3.2925 - both SS and CS.
+
+    [08.06.2023] pzotov
+    Previous version of this test strongly depended on IO performance. On fast IO it was easy to fall in case when segmnent
+    with 't_completed' table could be replicated before we change replica DB to shutdown.
+    Current settings for volume of inserting data (N_ROWS and FLD_WIDTH) must be changed with care!
+
+    Checked on 5.0.0.1068 on IBSurgeon test server, both for HDD and SSD drives.
+    Checked again crash on 5.0.0.215 (only SS affected).
+    ATTENTION. Further valuable changes/adjustings possible in this test!
 """
 import os
 import shutil
@@ -79,12 +89,7 @@ repl_settings = QA_GLOBALS['replication']
 
 # 22.05.2023: increased max time for wait, only for THIS test. Otherwise it fails too often.
 #
-MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = max(90, int(repl_settings['max_time_for_wait_data_in_replica']) )
-
-# How long we wit since segments start apply on replica
-# and before we change its state to full shutdown, seconds:
-#
-TIME_TO_LET_SEGMENTS_BE_APPLIED = 5
+MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
 
 # How long engine will be idle in case of encountering error.
 #
@@ -196,7 +201,7 @@ def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', i
                         break
                     else:
                         con.rollback()
-                        time.sleep(1)
+                        time.sleep(0.2)
     else:
         ready_to_check = True
 
@@ -357,7 +362,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     # ONLY FOR THIS test: forcedly change FW to OFF on master and ON for replica.
     #####################
     act_db_main.db.set_async_write()
-    act_db_repl.db.set_sync_write()
+    act_db_repl.db.set_async_write()
+    # [08.06.2023] do not otherwise segments can apply extremely slow on some HDDs !! >>> act_db_repl.db.set_sync_write()
 
     # Must be EMPTY:
     out_prep = capsys.readouterr().out
@@ -366,18 +372,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         # Some problem raised during change DB header(s)
         pass
     else:
-        #N_ROWS = 30000
         N_ROWS = 20000
-        FLD_WIDTH = 700
-
-        # N_ROWS = 30'000:
-        #     FW = ON ==>
-        #         Added 2 segment(s) to the processing queue
-        #         Segment 1 (16783004 bytes) is replicated in 1 minute(s), preserving the file due to 1 active transaction(s) ...
-        #         Segment 2 (4667696 bytes) is replicated in 55 second(s), deleting the file
-        #     FW = OFF ==>
-    	#         Segment 1 (16783004 bytes) is replicated in 1 second(s), preserving the file due to 1 active transaction(s) ...
-    	#         Segment 2 (4667696 bytes) is replicated in 374 ms, deleting the file
+        FLD_WIDTH = 1000
 
         sql_init = f'''
             set bail on;
@@ -400,13 +396,18 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
                 while (n > 0) do
                 begin
                     insert into test(s) values( lpad('', :fld_len, uuid_to_char(gen_uuid())) );
+                    --------------------------------------
+                    if ( n = {N_ROWS} / 2 ) then
+                        execute statement 'recreate table t_partially_ready(id int primary key)'
+                        with autonomous transaction;
+                    --------------------------------------
                     n = n - 1;
                 end
 
             end
             ^
             set term ;^
-            recreate table t_completed(id int primary key);
+            recreate table t_completed(id int primary key, dts timestamp default 'now');
             commit;
         '''
 
@@ -419,11 +420,11 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         # Some problem raised during initial data filling
         pass
     else:
-        ddl_ready_query = "select 1 from rdb$relations r where r.rdb$relation_name = upper('test')"
+        ddl_ready_query = "select 1 from rdb$relations r where r.rdb$relation_name = upper('t_partially_ready')"
 
-        ##############################################################
-        ###  WAIT FOR THE FIRST (BUT NOT THE ALL) DATA IN REPLICA  ###
-        ##############################################################
+        ################################################################
+        ###  WAIT FOR PART (BUT NOT THE ALL) DATA APPEAR IN REPLICA  ###
+        ################################################################
         watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
         # Must be EMPTY:
         out_main = capsys.readouterr().out
@@ -433,11 +434,12 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         pass
     else:
 
-        # Let replica to apply some part of big segment (with UUID data) for table TEST
-        time.sleep(TIME_TO_LET_SEGMENTS_BE_APPLIED)
-
         # Here we can assume that replica is accepting segments and this work is not completed.
-        # Now we change replica state to full shutdown:
+        # Now we change replica state to full shutdown.
+        # On 5.0.0.215 following attempt to make connection to Services API causes crash, client gets:
+        # firebird.driver.types.DatabaseError: Error writing data to the connection.
+        # -send_packet/send
+        # (SS only; no such problem on Classic) 
         with act_db_repl.connect_server() as srv:
 
             # FB crashes here, replication archive folder can not be cleaned:
@@ -451,14 +453,6 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
             out_main = capsys.readouterr().out
 
             if not out_main:
-
-                # We have to wait here because replication falls in pause when error occurred.
-                # ("VERBOSE: Suspending for <apply_error_timeout> seconds")
-                # But this delay must be LESS than <REPLICA_TIMEOUT_FOR_ERROR> to prevent from
-                # SECOND suspending of replication (because bringing DB online is not instant).
-                #
-                #time.sleep(max(1, REPLICA_TIMEOUT_FOR_ERROR-3))
-
                 # Without crash replication here must be resumed:
                 srv.database.bring_online(
                                           database=act_db_repl.db.db_path
@@ -466,37 +460,10 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
                                          )
                 out_main = capsys.readouterr().out
 
-            if not out_main:
-                isql_check_script = f"""
-                    set list on;
-                    set count on;
-                    select 1 x /* check that not all data present in replica */
-                    from rdb$database
-                    where not exists(select * from rdb$relations where rdb$relation_name = upper('t_completed'));
-                """
-                isql_expected_out = f"""
-                    X 1
-                    Records affected: 1
-                """
-                ####################################################
-                ###  CHECK THAT NOT ALL DATA PRESENT IN REPLICA  ###
-                ####################################################
-                watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, '', isql_check_script, isql_expected_out)
-                # Must be EMPTY:
-                out_main = capsys.readouterr().out
-
     if out_main:
         # Some problem raised during change state of replica DB to full shutdown or bring it online.
         pass
     else:
-
-        # NOTE: changing DB state to full shutdown will cause following messages in the replication.log:
-        #   ERROR: database <db_replica>
-        #   At segment 2, offset <nnnn>
-        #   VERBOSE: Suspending for <apply_error_timeout> seconds
-        # (where <apply_error_timeout> = value of QA-config parameter REPLICA_TIMEOUT_FOR_ERROR)
-        # Because of this, we have to wait enough time for replication resumes its work!
-        
         ddl_ready_query = """
             select 1 x /* waiting for all data appears in replica */
             from rdb$relations r where r.rdb$relation_name = upper('t_completed')
@@ -504,10 +471,9 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         ################################################
         ###  CHECK THAT ALL DATA PRESENT IN REPLICA  ###
         ################################################
-        watch_replica( act_db_repl, 2 * MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
+        watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
         # Must be EMPTY:
         out_main = capsys.readouterr().out
-
     
     # temp dis 
     drop_db_objects(act_db_main, act_db_repl, capsys)
