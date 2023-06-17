@@ -23,7 +23,12 @@ NOTES:
         https://github.com/FirebirdSQL/firebird/commit/fa6f9196f9015d0cf8c1cb84ff6312934855e9e9
         ("Fixed #7599: Conversion of text with '\0' to DECFLOAT without errors")
     Expected STDERR was adjusted to current output after discuss with Alex.
-    Checked on 5.0.0.1066, 4.0.3.2948.
+
+    [17.06.2023] pzotov
+    Since 16.06.2023: output for FB 4.x became identical to FB 5.x, see commit
+    https://github.com/FirebirdSQL/firebird/commit/6a1311f1eee2f1a3a2710b0daf900f32aac95d1a
+
+    Checked on 5.0.0.1066, 4.0.3.2948; 4.0.3.2953 (17.06.2023)
 """
 
 import pytest
@@ -88,7 +93,7 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
 
-    BINARY_DATA_OUTPUT = BINARY_DATA_SUFFIX if act.is_version('<5') else '#x01#x19'
+    BINARY_DATA_OUTPUT = '#x01#x19'
 
     expected_stderr = f"""
         Statement failed, SQLSTATE = 22009
