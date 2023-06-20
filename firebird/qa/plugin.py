@@ -48,12 +48,14 @@ import weakref
 import pytest
 from configparser import ConfigParser, ExtendedInterpolation
 from _pytest.terminal import TerminalReporter, _get_raw_skip_reason, _format_trimmed
+from _pytest.pathlib import bestrelpath
 from subprocess import run, CompletedProcess, PIPE, STDOUT
 from pathlib import Path
 from configparser import ConfigParser, ExtendedInterpolation
 from packaging.specifiers import SpecifierSet
 from packaging.version import parse
 import time
+from datetime import datetime
 from threading import Thread, Barrier, Event
 from firebird.driver import connect, connect_server, create_database, driver_config, \
      NetProtocol, Server, CHARSET_MAP, Connection, Cursor, \
@@ -163,6 +165,7 @@ def pytest_addoption(parser, pluginmanager):
                   help="SKIP tests instead deselection")
     grp.addoption('--extend-xml', action='store_true', default=False, help="Extend XML JUnit report with additional information")
     grp.addoption('--install-terminal', action='store_true', default=False, help="Use our own terminal reporter")
+    grp.addoption('--start-time', action='store_true', dest="start_time_info", default=False, help="Show tests start time info")
 
 def pytest_report_header(config):
     """Returns plugin-specific test session header.
@@ -199,10 +202,16 @@ def remove_dir(path: Path) -> None:
         path.rmdir()
 
 class QATerminalReporter(TerminalReporter):
-    """Custom `TerminalReporter` that prints our QA test IDs instead pytest node IDs.
+    """Custom `TerminalReporter`
+    Prints tests start time if '--start-time' option is specified.
+    Prints our QA test IDs instead pytest node IDs if '--install-terminal' option is specified.
 
     The code was directly taken from pytest source and adapted to our needs.
     """
+    def __init__(self, config, install_terminals, start_time_info):
+        super(QATerminalReporter, self).__init__(config)
+        self.install_terminals = install_terminals
+        self.start_time_info = start_time_info
     def _getfailureheadline(self, rep):
         head_line = rep.head_line
         if head_line:
@@ -211,7 +220,7 @@ class QATerminalReporter(TerminalReporter):
     def pytest_runtest_logstart(self, nodeid: str, location: Tuple[str, Optional[int], str]) -> None:
         # Ensure that the path is printed before the
         # 1st test of a module starts running.
-        nodeid = _nodemap.get(nodeid, nodeid)
+        nodeid = _nodemap.get(nodeid, nodeid) if self.install_terminals else nodeid
         if self.showlongtestinfo:
             line = nodeid + ' '
             self.write_ensure_prefix(line, "")
@@ -250,7 +259,7 @@ class QATerminalReporter(TerminalReporter):
             self._tw.write(letter, **markup)
         else:
             self._progress_nodeids_reported.add(rep.nodeid)
-            line = rep._qa_id_ + ' '
+            line = (rep._qa_id_ + ' ') if self.install_terminals else self._locationline(rep.nodeid, *rep.location)
             if not running_xdist:
                 self.write_ensure_prefix(line, word, **markup)
 
@@ -285,6 +294,28 @@ class QATerminalReporter(TerminalReporter):
                 self._tw.write(" " + line)
                 self.currentfspath = -2
         self.flush()
+
+    def write_ensure_prefix(self, prefix: str, extra: str = "", **kwargs) -> None:
+        start_time = (datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + ' ') if self.start_time_info else ''
+        if self.currentfspath != prefix:
+            self._tw.line()
+            self.currentfspath = prefix
+            self._tw.write(f"{start_time}{prefix}")
+        if extra:
+            self._tw.write(extra, **kwargs)
+            self.currentfspath = -2
+
+    def write_fspath_result(self, nodeid: str, res, **markup: bool) -> None:
+        start_time = (datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + ' ') if self.start_time_info else ''
+        fspath = self.config.rootpath / nodeid.split("::")[0]
+        if self.currentfspath is None or fspath != self.currentfspath:
+            if self.currentfspath is not None and self._show_progress_info:
+                self._write_progress_information_filling_space()
+            self.currentfspath = fspath
+            relfspath = bestrelpath(self.startpath, fspath)
+            self._tw.line()
+            self._tw.write(start_time + relfspath + " ")
+        self._tw.write(res, flush=True, **markup)
 
 @pytest.mark.tryfirst
 def pytest_runtest_makereport(item, call):
@@ -431,11 +462,10 @@ def pytest_configure(config):
     if platform.system != 'Windows':
         samle_qa.chmod(16895)
     # Change terminal reporter
-    if config.getoption('install_terminal'):
-        standard_reporter = config.pluginmanager.getplugin('terminalreporter')
-        pspec_reporter = QATerminalReporter(standard_reporter.config)
-        config.pluginmanager.unregister(standard_reporter)
-        config.pluginmanager.register(pspec_reporter, 'terminalreporter')
+    standard_reporter = config.pluginmanager.getplugin('terminalreporter')
+    pspec_reporter = QATerminalReporter(standard_reporter.config, config.getoption('install_terminal'), config.getoption('start_time_info'))
+    config.pluginmanager.unregister(standard_reporter)
+    config.pluginmanager.register(pspec_reporter, 'terminalreporter')
 
 def pytest_collection_modifyitems(session, config, items):
     """Post-processing of collected tests. deselects or mark for skip tests that are not
