@@ -8,6 +8,7 @@ DESCRIPTION:
 NOTES:
     [29.06.2023] pzotov
     Checked on 5.0.0.1093 (intermediate build).
+    Checked on 4.0.3.2966 (after backport 08-JUL-2023).
 """
 
 import pytest
@@ -40,8 +41,8 @@ expected_stdout = """
     VAL                             B3
 """
 
-@pytest.mark.version('>=5.0')
+@pytest.mark.version('>=4.0.3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
