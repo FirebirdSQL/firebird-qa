@@ -318,8 +318,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     db_main_fw, db_repl_fw = DbWriteMode.ASYNC, DbWriteMode.ASYNC
 
     with act_db_main.db.connect(no_db_triggers = True) as con:
-        if act_db_main.vars['server-arch'] == 'Classic' and os.name != 'nt':
-            pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
+        #if act_db_main.vars['server-arch'] == 'Classic' and os.name != 'nt':
+        #    pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
 
         db_main_file = con.info.name
         db_main_fw = con.info.write_mode

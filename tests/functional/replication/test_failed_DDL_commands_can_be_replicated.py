@@ -342,8 +342,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     db_info = {}
     for a in (act_db_main, act_db_repl):
         with a.db.connect(no_db_triggers = True) as con:
-            if a == act_db_main and a.vars['server-arch'] == 'Classic' and os.name != 'nt':
-                pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
+            #if a == act_db_main and a.vars['server-arch'] == 'Classic' and os.name != 'nt':
+            #    pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
             db_info[a,  'db_full_path'] = con.info.name
 
     # Must be EMPTY:
