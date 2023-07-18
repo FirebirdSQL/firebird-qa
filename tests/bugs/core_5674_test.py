@@ -7,6 +7,10 @@ TITLE:       Allow unused Common Table Expressions
 DESCRIPTION:
 JIRA:        CORE-5674
 FBTEST:      bugs.core_5674
+NOTES:
+    [18.07.2023] pzotov
+    Adjusted expected error text for FB 5.x: it now contains not only errors but also warnings about non-used CTEs.
+    New behaviour started in 5.0.0.1110 (09-jul-2023). Discussed with Vlad, 10-jul-2023.
 """
 
 import pytest
@@ -112,33 +116,62 @@ expected_stdout = """
     X                               0
 """
 
-expected_stderr = """
-    SQL warning code = -104
-    -CTE "X" is not used in query
-    -CTE "Y" is not used in query
-
-    SQL warning code = -104
-    -CTE "B" is not used in query
-    -CTE "C" is not used in query
-    -CTE "D" is not used in query
-
-    Statement failed, SQLSTATE = 42S02
-    Dynamic SQL Error
-    -SQL error code = -204
-    -Table unknown
-    -FOO
-    -At line: column:
-
-    Statement failed, SQLSTATE = 42000
-    Dynamic SQL Error
-    -SQL error code = -104
-    -CTE 'C' has cyclic dependencies
-"""
-
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
+    if act.is_version('<5'):
+        act.expected_stderr = """
+            SQL warning code = -104
+            -CTE "X" is not used in query
+            -CTE "Y" is not used in query
+
+            SQL warning code = -104
+            -CTE "B" is not used in query
+            -CTE "C" is not used in query
+            -CTE "D" is not used in query
+
+            Statement failed, SQLSTATE = 42S02
+            Dynamic SQL Error
+            -SQL error code = -204
+            -Table unknown
+            -FOO
+            -At line: column:
+
+            Statement failed, SQLSTATE = 42000
+            Dynamic SQL Error
+            -SQL error code = -104
+            -CTE 'C' has cyclic dependencies
+        """
+    else:
+        act.expected_stderr = """
+            SQL warning code = -104
+            -CTE "X" is not used in query
+            -CTE "Y" is not used in query
+
+            SQL warning code = -104
+            -CTE "B" is not used in query
+            -CTE "C" is not used in query
+            -CTE "D" is not used in query
+
+            Statement failed, SQLSTATE = 42S02
+            Dynamic SQL Error
+            -SQL error code = -204
+            -Table unknown
+            -FOO
+            -At line 8, column 23
+            SQL warning code = -104
+            -CTE "B" is not used in query
+            -CTE "C" is not used in query
+
+            Statement failed, SQLSTATE = 42000
+            Dynamic SQL Error
+            -SQL error code = -104
+            -CTE 'C' has cyclic dependencies
+            SQL warning code = -104
+            -CTE "B" is not used in query
+            -CTE "C" is not used in query
+        """
+
     act.execute()
     assert (act.clean_stderr == act.clean_expected_stderr and
             act.clean_stdout == act.clean_expected_stdout)
