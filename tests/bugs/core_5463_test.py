@@ -7,6 +7,16 @@ TITLE:       Support GENERATED ALWAYS identity columns and OVERRIDE clause
 DESCRIPTION:
 JIRA:        CORE-5463
 FBTEST:      bugs.core_5463
+NOTES:
+    [18.07.2023] pzotov
+    Adjusted STDERR text after changes related to fixed gh-7638
+    ("OVERRIDING USER VALUE should be allowed for GENERATED ALWAYS AS IDENTITY."), see:
+        https://github.com/FirebirdSQL/firebird/commit/844631b0ee473fd94dab61558f146a8268c0967b
+        https://github.com/FirebirdSQL/firebird/commit/43c5426b48b2647c795143fcaa4a8e20c57fc9c8
+    Old text:
+        "OVERRIDING SYSTEM VALUE should be used to override the value of an identity column defined as 'GENERATED ALWAYS' in table/view ..."
+    New text (after #7638 was fixed):
+        "OVERRIDING clause should be used when an identity column defined as 'GENERATED ALWAYS' is present in the INSERT's field list for table table/view ..."
 """
 
 import pytest
@@ -36,7 +46,11 @@ test_script = """
     -- Identity columns are implicitly NOT NULL
     -- ........................................
     -- Statement failed, SQLSTATE = 42000
-    -- OVERRIDING SYSTEM VALUE should be used to override the value of an identity column defined as 'GENERATED ALWAYS' in ta
+    -- ::: NB ::: Error text was changed for following statement.
+    -- 1. For FB 5.x - since 28-JUN-2023 (old text was up to build 5.0.0.1088, new appeared since 5.0.0.1093)
+    -- 2. For FB 4.x - since 08-JUL-2023 (old text was up to build 4.0.3.2958, new appeared since 4.0.3.2963)
+    -- OLD TEXT: OVERRIDING SYSTEM VALUE should be used to override the value of an identity column defined as 'GENERATED ALWAYS' in table/view TEST_ALWAYS
+    -- NEW TEXT: OVERRIDING clause should be used when an identity column defined as 'GENERATED ALWAYS' is present in the INSERT's field list for table table/view TEST_ALWAYS
     insert into test_always(id_always) values(null);
 
     -- Statement failed, SQLSTATE = 23000
@@ -79,8 +93,7 @@ test_script = """
     insert into test_default(id_default) overriding user value values(-7654322) returning id_default; -- expected: -121
 """
 
-act = isql_act('db', test_script, substitutions=[('OVERRIDING SYSTEM VALUE should be used.*',
-                                                  'OVERRIDING SYSTEM VALUE should be used')])
+act = isql_act('db', test_script)
 
 expected_stdout = """
     ID_DEFAULT                      -11
@@ -93,7 +106,7 @@ expected_stdout = """
 
 expected_stderr = """
     Statement failed, SQLSTATE = 42000
-    OVERRIDING SYSTEM VALUE should be used
+    OVERRIDING clause should be used when an identity column defined as 'GENERATED ALWAYS' is present in the INSERT's field list for table table/view TEST_ALWAYS
 
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST_DEFAULT"."ID_DEFAULT", value "*** null ***"
