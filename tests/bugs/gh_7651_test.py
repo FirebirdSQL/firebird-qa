@@ -7,7 +7,8 @@ TITLE:       Unable to find savepoint in insert with nested query and returning 
 DESCRIPTION:
 NOTES:
     [27.06.2023] pzotov
-    Confirmed bug on 4.0.3.2955. Checked on 4.0.3.2956 -- all fine.
+    Confirmed bug on 4.0.3.2955.
+    Checked on 3.0.11.33695, 4.0.3.2956 -- all fine.
 """
 
 import pytest
@@ -37,7 +38,7 @@ expected_stdout = """
     MSG                             Completed
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=3.0.11')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute()
