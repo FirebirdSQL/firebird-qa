@@ -141,16 +141,13 @@ def test_1(act: Action, capsys):
         cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
         fb_pid = int(cur.fetchone()[0])
 
-        #cur.execute('select mon$server_pid ,mon$page_buffers from mon$attachments , mon$database where mon$attachment_id = current_connection')
-        #for r in cur:
-        #    fb_pid, db_buf = r[0],r[1]
-
         sp_time = {}
         for i in range(0, N_MEASURES):
             for sp_suffix in ('1','2'):
-                fb_info_init = psutil.Process(fb_pid).cpu_times()
                 sp_name = f'sp_blob_copy_{sp_suffix}'
+                fb_info_init = psutil.Process(fb_pid).cpu_times()
                 cur.callproc( sp_name, (N_BLOB_FINAL_LEN, N_COUNT_PER_MEASURE,) )
+                #con.commit()
                 fb_info_curr = psutil.Process(fb_pid).cpu_times()
                 sp_time[ sp_name, i ]  = max(fb_info_curr.user - fb_info_init.user, 0.000001)
 
@@ -162,9 +159,11 @@ def test_1(act: Action, capsys):
     print( 'Duration ratio, median: ' + ('acceptable' if median_ratio < MAX_RATIO else '/* perf_issue_tag */ POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(MAX_RATIO) ) ) )
 
     if median_ratio >= MAX_RATIO:
-        print('Ratio statistics for %d measurements' % N_MEASURES)
-        for p in ratio_lst:
-            print( '%12.4f' % p )
+        print('Ratio statistics for %d measurements:' % N_MEASURES)
+        print('sp_blob_copy_1 sp_blob_copy_2 ratio')
+        for i in range(0, N_MEASURES):
+            print( '%14.6f %14.6f %14.6f' % (sp_time['sp_blob_copy_2',i], sp_time['sp_blob_copy_1',i], sp_time['sp_blob_copy_2',i]  / sp_time['sp_blob_copy_1',i]) )
+        print('Ratio median: %12.6f' % median_ratio)
 
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
