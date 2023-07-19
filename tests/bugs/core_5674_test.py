@@ -8,9 +8,10 @@ DESCRIPTION:
 JIRA:        CORE-5674
 FBTEST:      bugs.core_5674
 NOTES:
-    [18.07.2023] pzotov
-    Adjusted expected error text for FB 5.x: it now contains not only errors but also warnings about non-used CTEs.
-    New behaviour started in 5.0.0.1110 (09-jul-2023). Discussed with Vlad, 10-jul-2023.
+    [19.07.2023] pzotov
+    Adjusted expected error text for FB 4.x and 5.x: it now contains not only errors but also warnings about non-used CTEs.
+    Change caused by commit "Print warnings occurred during commit", date: 07-jul-2023, started on builds 4.0.3.2958 and 5.0.0.1101.
+    Discussed with Vlad, 10-jul-2023.
 """
 
 import pytest
@@ -119,7 +120,7 @@ expected_stdout = """
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    if act.is_version('<5'):
+    if act.is_version('<4'):
         act.expected_stderr = """
             SQL warning code = -104
             -CTE "X" is not used in query
