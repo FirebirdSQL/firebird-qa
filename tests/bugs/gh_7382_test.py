@@ -17,7 +17,8 @@ DESCRIPTION:
     We do these measures <N_MEASURES> times for each SP, and each result is added to the list.
     Finally, we evaluate RATIO between duration of SP-1 and SP-2, and then obtain MEDIAN for that.
     This median must not exceed <MAX_RATIO> threshold.
-    NB! It is desirable that test database will use page cache with big enough size (in order to avoid impact of blob creation onIO performance).
+    NB! It is desirable that test database will use page cache with big enough size
+    (in order to avoid impact of blob creation on IO performance).
     Because of this, test DB will use info from predefined <REQUIRED_ALIAS> in the $QA_ROOT/files/qa-database.conf
 
     Before this improvement median ratio was 5.0 ... 6.0 (5.0.0.821). After this improvement (5.0.0.824) it is 1.25 ... 1.33.
@@ -34,6 +35,10 @@ NOTES:
        "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
     3. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
        (for LINUX this equality is case-sensitive, even when aliases are compared!)
+
+    [19.07.2023] pzotov
+    Increased values of N_BLOB_FINAL_LEN and N_COUNT_PER_MEASURE, reduced value of N_MEASURES: every iteration must perform
+    significant volume of job in order its "cpu_time().user" counter will be not too small. Discussed with Vlad.
 
     Checked on:
         LINUX Debian 10, FB 5.0.0.930 SS/CS
@@ -64,12 +69,12 @@ REQUIRED_ALIAS = 'tmp_gh_7382_alias'
 ###########################
 
 # How many times we call procedures:
-N_MEASURES = 31
+N_MEASURES = 11
 
-N_BLOB_FINAL_LEN = 8000
+N_BLOB_FINAL_LEN = 32000
 
 # How many iterations must be done:
-N_COUNT_PER_MEASURE = 1000
+N_COUNT_PER_MEASURE = 2000
 
 # Maximal value for MEDIAN of ratios between CPU user time when comparison was made.
 # On Windows 8.1 and Linux Debian this median ratio is ~1.25 ... 1.33 
@@ -126,7 +131,7 @@ commit
 ^
 '''
 
-db = db_factory(filename = '#' + REQUIRED_ALIAS, init = init_script )
+db = db_factory(filename = '#' + REQUIRED_ALIAS, init = init_script, charset = 'win1251' )
 act = python_act('db')
 
 expected_stdout = """
@@ -157,7 +162,7 @@ def test_1(act: Action, capsys):
         ratio_lst.append( sp_time['sp_blob_copy_2',i]  / sp_time['sp_blob_copy_1',i]  )
     median_ratio = median(ratio_lst)
 
-    print( 'Duration ratio, median: ' + ('acceptable' if median_ratio < MAX_RATIO else '/* perf_issue_tag */ POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(MAX_RATIO) ) ) )
+    print( 'Duration ratio, median: ' + ('acceptable' if median_ratio <= MAX_RATIO else '/* perf_issue_tag */ POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(MAX_RATIO) ) ) )
 
     if median_ratio > MAX_RATIO:
         print('Ratio statistics for %d measurements:' % N_MEASURES)
