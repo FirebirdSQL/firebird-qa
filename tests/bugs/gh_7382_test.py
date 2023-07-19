@@ -36,13 +36,45 @@ NOTES:
     3. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
        (for LINUX this equality is case-sensitive, even when aliases are compared!)
 
-    [19.07.2023] pzotov
-    Increased values of N_BLOB_FINAL_LEN and N_COUNT_PER_MEASURE, reduced value of N_MEASURES: every iteration must perform
-    significant volume of job in order its "cpu_time().user" counter will be not too small. Discussed with Vlad.
-
     Checked on:
         LINUX Debian 10, FB 5.0.0.930 SS/CS
         Windows 8.1, FB 5.0.0.824 SS/CS
+
+    [19.07.2023] pzotov
+    Increased values of N_BLOB_FINAL_LEN and N_COUNT_PER_MEASURE, reduced value of N_MEASURES: every iteration must perform
+    significant volume of job in order its "cpu_time().user" counter will be not too small/inaccurate.
+    Changes caused by permanent fails when FB is running as SuperServer. Discussed with Vlad.
+
+    Checked again on 5.0.0.1121, mode = SuperServer
+    1) Windows-10 v 21H2 bld 19044.3208 (IBSurgeon test server):
+        sp_blob_copy_1 sp_blob_copy_2 ratio
+        0.234375       0.171875       1.363636
+        0.218750       0.171875       1.272727
+        0.250000       0.140625       1.777778
+        0.265625       0.203125       1.307692
+        0.234375       0.125000       1.875000
+        0.250000       0.171875       1.454545
+        0.250000       0.156250       1.600000
+        0.250000       0.140625       1.777778
+        0.265625       0.218750       1.214286
+        0.218750       0.171875       1.272727
+        0.203125       0.234375       0.866667
+        Ratio median:     1.363636
+
+    2) Windows 8.1 v 6.3 bld 9600 (home test machine):
+        sp_blob_copy_1 sp_blob_copy_2 ratio
+        0.484375       0.359375       1.347826
+        0.375000       0.390625       0.960000
+        0.453125       0.406250       1.115385
+        0.406250       0.343750       1.181818
+        0.390625       0.359375       1.086957
+        0.421875       0.359375       1.173913
+        0.437500       0.406250       1.076923
+        0.421875       0.343750       1.227273
+        0.453125       0.296875       1.526316
+        0.468750       0.406250       1.153846
+        0.437500       0.437500       1.000000
+        Ratio median:     1.153846
 """
 
 import os
