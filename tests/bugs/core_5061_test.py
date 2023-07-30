@@ -17,6 +17,9 @@ NOTES:
     Discussion with dimitr:  17.01.2023 13:17
 JIRA:        CORE-5061
 FBTEST:      bugs.core_5061
+NOTES:
+    [31.07.2023] pzotov
+    Test excluded from execution after discuss with dimitr, letter 30.07.2023.
 """
 
 import pytest
@@ -164,6 +167,7 @@ fb5x_test_sql = """
 
 act = python_act('db')
 
+@pytest.mark.skip("No sense to verify length of generated explained plan because it can be vary after any change in optimizer.")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stderr = ''
