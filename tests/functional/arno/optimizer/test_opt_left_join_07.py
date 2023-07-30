@@ -7,6 +7,11 @@ DESCRIPTION:
   A INNER JOINed TableD to a LEFT JOINed TableC should be able to access the outer TableB
   of TableC. Also TableB is INNER JOINed to TableA. Three indexes can and should be used here.
 FBTEST:      functional.arno.optimizer.opt_left_join_07
+NOTES:
+    [31.07.2023] pzotov
+    Test was excluded from execution under FB 5.x: no more sense in it for this FB version.
+    Discussed with dimitr, letter 30.07.2023.
+    Checked finally on 4.0.3.2966, 3.0.11.33695 -- all fine.
 """
 
 import pytest
@@ -74,6 +79,8 @@ expected_stdout = """PLAN JOIN (JOIN (JOIN (F NATURAL, C1 INDEX (PK_COLORS)), C2
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
+    if act.is_version('>=5'):
+        pytest.skip("Test has no sense in FB 5.x, see notes.")
     act.expected_stdout = expected_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
