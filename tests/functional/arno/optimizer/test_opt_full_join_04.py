@@ -10,6 +10,9 @@ DESCRIPTION:
   =====
   NB: 'UNION ALL' is used here, so PLAN for 2.5 will be of TWO separate rows.
 FBTEST:      functional.arno.optimizer.opt_full_join_04
+NOTES:
+    [01.08.2023] pzotov
+    Adjusted plan to actual for FB 5.x after letter from dimitr.
 """
 
 import pytest
@@ -98,21 +101,25 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    PLAN (JOIN (JOIN (C INDEX (PK_CATEGORIES), JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS)))), JOIN (JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS))), C INDEX (PK_CATEGORIES))), JOIN (JOIN (C NATURAL, JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R INDEX (PK_RELATIONS), RC INDEX (FK_RC_RELATIONS)))), JOIN (JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R INDEX (PK_RELATIONS), RC INDEX (FK_RC_RELATIONS))), C NATURAL)))
-
-    RELATIONNAME                    <null>
-    RELATIONID                      <null>
-    CATEGORYID                      <null>
-    DESCRIPTION                     newsletter
-    RELATIONNAME                    folding air-hook shop
-    RELATIONID                      <null>
-    CATEGORYID                      <null>
-    DESCRIPTION                     <null>
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
+    fb3x_plan = "PLAN (JOIN (JOIN (C INDEX (PK_CATEGORIES), JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS)))), JOIN (JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS))), C INDEX (PK_CATEGORIES))), JOIN (JOIN (C NATURAL, JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R INDEX (PK_RELATIONS), RC INDEX (FK_RC_RELATIONS)))), JOIN (JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R INDEX (PK_RELATIONS), RC INDEX (FK_RC_RELATIONS))), C NATURAL)))"
+    fb5x_plan = "PLAN (JOIN (C INDEX (PK_CATEGORIES), JOIN (JOIN (RC INDEX (FK_RC_CATEGORIES), R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (PK_RELATIONCATEGORIES)))), JOIN (JOIN (R INDEX (PK_RELATIONS), RC INDEX (FK_RC_RELATIONS)), C INDEX (PK_CATEGORIES)))"
+    expected_plan = fb3x_plan if act.is_version('<5') else fb5x_plan
+
+    expected_stdout = f"""
+        {expected_plan}
+        RELATIONNAME                    <null>
+        RELATIONID                      <null>
+        CATEGORYID                      <null>
+        DESCRIPTION                     newsletter
+        RELATIONNAME                    folding air-hook shop
+        RELATIONID                      <null>
+        CATEGORYID                      <null>
+        DESCRIPTION                     <null>
+    """
+
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
