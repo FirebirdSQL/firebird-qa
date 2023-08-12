@@ -26,6 +26,10 @@ DESCRIPTION:
         process cannot access the file <nbk_level_2> because it is being used by another process
     =====
     - and file <nbk_level_2> could not be deleted after this until restart of FB.
+    
+    See also: 
+    https://github.com/FirebirdSQL/firebird/issues/6728 (ex. CORE-6498)
+
 JIRA:        CORE-6319
 FBTEST:      bugs.core_6319
 """
@@ -44,15 +48,6 @@ expected_stdout = """
     Attempt 1. Error message is expected.
     Attempt 2. Error message is expected.
 """
-
-#  nbk_level_0 = os.path.splitext(db_source)[0] + '.standby.fdb'
-#
-#  # this is for 3.x only by using command:
-#  # nbackup -r db_3x_restore nbk_level_0 nbk_level_1 nbk_level_2
-#  db_3x_restore = os.path.splitext(db_source)[0] + '.restored_in_3x.fdb'
-#
-#  nbk_level_1 = os.path.splitext(db_source)[0] + '.nbk_01'
-#  nbk_level_2 = os.path.splitext(db_source)[0] + '.nbk_02'
 
 nbk_level_0 = temp_file('core_6319_standby.fdb')
 nbk_level_1 = temp_file('core_6319.nbk_01')
