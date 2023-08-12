@@ -111,7 +111,7 @@ expected_stdout = """
     -duplicate specification of A_NAME_IN_PACKAGED_PROC - not supported
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=4.0.2')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
