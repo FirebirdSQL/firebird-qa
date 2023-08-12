@@ -7,9 +7,9 @@ TITLE:       Firebird performance issue - non necessary index reads
 NOTES:
     [11.04.2023] pzotov
     Checked on 3.0.11.33678.
-    ::: NOTE :::
-    Test currently enabled only for FB 3.x.
-    For FB 4.x+ it will be enabled when appropriate commit appear.
+    [12.08.2023] pzotov
+    Checked on 4.0.4.2978, 5.0.0.1163. Removed upper boundary for version.
+    // was: "Test currently enabled only for FB 3.x. For FB 4.x+ it will be enabled when appropriate commit appear."
 """
 
 import pytest
@@ -509,7 +509,7 @@ expected_stdout = """
 
 act = isql_act('db', test_script)
 
-@pytest.mark.version('>=3.0.11,<4.0')
+@pytest.mark.version('>=3.0.11')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
