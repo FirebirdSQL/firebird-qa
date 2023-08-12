@@ -10,6 +10,9 @@ FBTEST:      bugs.core_5674
 NOTES:
     [19.07.2023] pzotov
     Adjusted expected error text for FB 4.x and 5.x: it now contains not only errors but also warnings about non-used CTEs.
+    [12.08.2023] pzotov
+    Adjusted expected error text for FB 3.0.12: now it is the same as for FB 4.x+
+
     Change caused by commit "Print warnings occurred during commit", date: 07-jul-2023, started on builds 4.0.3.2958 and 5.0.0.1101.
     Discussed with Vlad, 10-jul-2023.
 """
@@ -120,7 +123,7 @@ expected_stdout = """
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    if act.is_version('<4'):
+    if act.is_version('<3.0.12'):
         act.expected_stderr = """
             SQL warning code = -104
             -CTE "X" is not used in query
