@@ -17,6 +17,7 @@ NOTES:
     tries to run: CREATE COLLATION UNICODE_CSCZ_CI.
     Sent report to Adriano, waiting for reply.
 
+    Confirmed problem on 5.0.0.425, checked fix on 5.0.0.426 (no problem since this build).
     Checked on 5.0.0.1163 (passed), 4.0.4.2978 (failed), 3.0.12.33707 (error).
 """
 
