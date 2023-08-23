@@ -87,7 +87,7 @@ def cleanup_folder(p):
 
 #--------------------------------------------
 
-def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
+def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file, cleanup_repl_dirs = True):
     out_reset = ''
 
     with act_db_main.connect_server() as srv:
@@ -116,9 +116,11 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
             os.unlink(f)
 
         # Clean folders repl_journal and repl_archive: remove all files from there.
-        for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
-            if cleanup_folder(repl_root_path / p) > 0:
-                out_reset += f"Directory {str(p)} remains non-empty.\n"
+        #
+        if cleanup_repl_dirs:
+            for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
+                if cleanup_folder(repl_root_path / p) > 0:
+                    out_reset += f"Directory {str(p)} remains non-empty.\n"
 
     if out_reset == '':
         for a in (act_db_main,act_db_repl):
@@ -383,6 +385,16 @@ def generate_sync_settings_sql(db_main_file_name, fb_port):
     return sql_adjust_settings_table
 
 #--------------------------------------------
+def get_replication_log(a: Action):
+
+    replication_log = a.home_dir / 'replication.log'
+    rlog_lines = []
+    with open(replication_log, 'r') as f:
+        rlog_lines = f.readlines()
+
+    return rlog_lines
+
+#--------------------------------------------
 
 @pytest.mark.version('>=4.0.1')
 def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, tmp_oltp_build_log: Path, capsys):
@@ -401,6 +413,9 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
             #    pytest.skip("Waiting for FIX: 'Engine is shutdown' in replication log for CS. Linux only.")
             db_info[a,  'db_full_path'] = con.info.name
 
+
+    repl_log_old = get_replication_log(act_db_main)
+    repl_log_new = repl_log_old.copy()
 
     # Must be EMPTY:
     out_prep = capsys.readouterr().out
@@ -468,6 +483,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
         for p in tmp_oltp_sql_files:
             p.unlink(missing_ok = True)
 
+        repl_log_new = get_replication_log(act_db_main)
 
     if out_prep:
         # Some problem raised during execution of initial SQL
@@ -499,6 +515,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
         watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query, isql_check_script, isql_expected_out)
         # Must be EMPTY:
         out_main = capsys.readouterr().out
+        repl_log_new = get_replication_log(act_db_main)
 
     drop_db_objects(act_db_main, act_db_repl, capsys)
     # Must be EMPTY:
@@ -508,7 +525,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
         # We have a problem either with DDL/DML or with dropping DB objects.
         # First, we have to RECREATE both master and slave databases
         # (otherwise further execution of this test or other replication-related tests most likely will fail):
-        out_reset = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'])
+        out_reset = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'], cleanup_repl_dirs = True)
 
         # Next, we display out_main, out_drop and out_reset:
         #
@@ -521,5 +538,11 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
             print('out_drop:\n', out_drop)
         if out_reset.strip():
             print('out_reset:\n', out_reset)
+
+        # Finally, we have to show content of replication.log afte this test started:
+        print('Lines that did appear in replication.log during test run:')
+        for line in unified_diff(repl_log_old, repl_log_new):
+            if line.startswith('+') and line[2:].strip():
+                print(line.strip())
 
     assert '' == capsys.readouterr().out
