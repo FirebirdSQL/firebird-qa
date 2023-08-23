@@ -6,7 +6,7 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7553
 TITLE:       Firebird 5 profiler error with subselects
 DESCRIPTION:
     Test checks that:
-        1) profiler viewa *do* have expected records after code described in the ticket;
+        1) profiler snapshot tables *do* have expected records after code described in the ticket;
         2) firebird.log have *no* differences related to FK violation in PLG$PROF_RECORD_SOURCES
 NOTES:
     Confirmed bug on 5.0.0.1030.
@@ -73,6 +73,18 @@ def test_1(act: Action, capsys):
         P_RECSOURCE_CURSOR_ID 1
         P_RECSOURCE_OPEN_COUNTER 0
         P_RECSOURCE_FETCH_COUNTER 1
+
+        P_SESSIONS_PROFILE_ID 1
+        P_PSQL_COUNTER_ID 1
+        P_RECSOURCE_CURSOR_ID 1
+        P_RECSOURCE_OPEN_COUNTER 0
+        P_RECSOURCE_FETCH_COUNTER 1
+        
+        P_SESSIONS_PROFILE_ID 1
+        P_PSQL_COUNTER_ID 1
+        P_RECSOURCE_CURSOR_ID 1
+        P_RECSOURCE_OPEN_COUNTER 0
+        P_RECSOURCE_FETCH_COUNTER 1
         
         P_SESSIONS_PROFILE_ID 1
         P_PSQL_COUNTER_ID 1
@@ -84,7 +96,19 @@ def test_1(act: Action, capsys):
         P_PSQL_COUNTER_ID 1
         P_RECSOURCE_CURSOR_ID 2
         P_RECSOURCE_OPEN_COUNTER 1
+        P_RECSOURCE_FETCH_COUNTER 1
+        
+        P_SESSIONS_PROFILE_ID 1
+        P_PSQL_COUNTER_ID 1
+        P_RECSOURCE_CURSOR_ID 2
+        P_RECSOURCE_OPEN_COUNTER 1
         P_RECSOURCE_FETCH_COUNTER 2
+        
+        P_SESSIONS_PROFILE_ID 1
+        P_PSQL_COUNTER_ID 1
+        P_RECSOURCE_CURSOR_ID 2
+        P_RECSOURCE_OPEN_COUNTER 1
+        P_RECSOURCE_FETCH_COUNTER 1
         
         P_SESSIONS_PROFILE_ID 1
         P_PSQL_COUNTER_ID 1
@@ -103,8 +127,8 @@ def test_1(act: Action, capsys):
         P_RECSOURCE_CURSOR_ID 2
         P_RECSOURCE_OPEN_COUNTER 1
         P_RECSOURCE_FETCH_COUNTER 1
-        
-        Records affected: 6
+
+        Records affected: 10
     """
     act.isql(input = test_sql, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
