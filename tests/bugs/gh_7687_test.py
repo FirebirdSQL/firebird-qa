@@ -43,6 +43,7 @@ NOTES:
         If future runs will show that subquery part "jumps" randomly (from "top" to "bottom") than only presense of top-level access paths
         will be checked (without requirement to their concrete order).
     4.  In order to see indents properly (including case if they will change in size) we have to prefix each line ('#' character is used).
+    5.  Initial discussion: https://groups.google.com/g/firebird-devel/c/dWIgSIemys4/m/TzUWYwmVAQAJ?pli=1
 
     Checked on 5.0.0.1169.
 """
