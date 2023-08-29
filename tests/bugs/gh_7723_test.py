@@ -5,13 +5,23 @@ ID:          issue-7723
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7723
 TITLE:       Wrong error message on login if the user doesn't exists and WireCrypt is disabled
 DESCRIPTION:
+    Ticket issue can be reproduced only when AuthServer = Srp256 (i.e. has default value).
+    Problem *not* raises when this parameter is 'Srp' (at least, not on Windows).
+    Parameter AuthServer is per-database. Because of that, we have to use separate predefined
+    ALIAS with setting this parameter value to 'Srp256'.
 NOTES:
     [29.08.2023] pzotov
-    1. Cursom alias must be specified in the databases.conf with:
-       AuthServer = Srp256 // NOT just 'Srp'!
-       Otherwise ticket issue can not be reproduced without server restart. The reason is unknown.
-    2. Custom driver config objects are created here, one with WireCrypt = Disabled and second with Enabled.
-    3. It is supposed that no user with name 'tmp$non_existing_7723' exists.
+    1. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
+    2. Test uses pre-created databases.conf which has alias defined by variable REQUIRED_ALIAS.
+       Database file for that alias must NOT exist in the QA_root/files/qa/ subdirectory: it will be created here.
+       Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace
+       it before every test session).
+       Discussed with pcisar, letters since 30-may-2022 13:48, subject:
+       "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
+    3. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
+       (for LINUX this equality is case-sensitive, even when aliases are compared!)
+    4. Custom driver config objects are created here, one with WireCrypt = Disabled and second with Enabled.
+    5. It is supposed that no user with name 'tmp$non_existing_7723' exists.
 
     Confirmed on 5.0.0.1169, 4.0.4.2979
     Checked on 5.0.0.1177, 4.0.4.2982 -- all OK.
