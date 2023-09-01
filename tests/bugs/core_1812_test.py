@@ -5,12 +5,17 @@ ID:          issue-2242
 ISSUE:       2242
 TITLE:       Index is not used for some date/time expressions in dialect 1
 DESCRIPTION:
-NOTES:
-[02.02.2019] Added separate code for FB 4.0: statements like SELECT TIMESTAMP 'now' FROM RDB$DATABASE;
-  -- can not be used anymore (Statement failed, SQLSTATE = 22018 / conversion error from string "now").
-  Details about timezone datatype see in: doc\\sql.extensions\\README.time_zone.md
 JIRA:        CORE-1812
 FBTEST:      bugs.core_1812
+NOTES:
+    [02.02.2019] pzotov
+    Added separate code for FB 4.0: statements like "SELECT TIMESTAMP 'now' FROM RDB$DATABASE;" can not
+    be used anymore (error: SQLSTATE = 22018 / conversion error from string "now").
+    Details about timezone datatype see in: doc\\sql.extensions\\README.time_zone.md
+
+    [01.09.2023] pzotov
+    Adjusted plan for FB 4.x+ to current versions after fixed
+    https://github.com/FirebirdSQL/firebird/issues/7727
 """
 
 import pytest
@@ -68,7 +73,7 @@ act_2 = isql_act('db_2', test_script_2)
 
 expected_stdout_2 = """
     PLAN (TEST INDEX (TEST_DTS))
-    PLAN (TEST NATURAL)
+    PLAN (TEST INDEX (TEST_DTS))
 """
 
 @pytest.mark.version('>=4.0')
