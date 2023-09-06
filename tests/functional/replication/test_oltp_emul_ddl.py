@@ -34,13 +34,23 @@ NOTES:
         Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
         'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
 
-    Checked on 4.0.3.2931, 5.0.0.1022, both SS and CS.
+    Checked on Windows 4.0.3.2931, 5.0.0.1022, SS and CS.
+    
+    [07.09.2023] pzotov
+    Added 'DEBUG_MODE' variable for quick switch to debug branches if something goes wrong.
+    Added code to explicitly assign 'fb_port' to default value (3050), with check that port is listening (see 'import socket')
+    Replaced hardcoded 'SYSDBA' and 'masterkey' with act.db.user and act.db.password
+    (see call of generate_sync_settings_sql() and its code)
+    
+    Checked on Linux 5.0.0.1190 CS with default firebird.conf and firebird-driver.conf without port specifying
+    (see letters from dimitr, 06.09.2023)
 """
 
 import os
 import locale
 import shutil
 import zipfile
+import socket
 from difflib import unified_diff
 from pathlib import Path
 import time
@@ -48,6 +58,8 @@ import time
 import pytest
 from firebird.qa import *
 from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, ShutdownMode, ShutdownMethod, DatabaseError
+
+DEBUG_MODE = 0
 
 # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
 # from act.files_dir/'test_config.ini':
@@ -311,7 +323,7 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
 
 #--------------------------------------------
 
-def generate_sync_settings_sql(db_main_file_name, fb_port):
+def generate_sync_settings_sql(db_main_file_name, dba_usr, dba_psw, fb_port = 3050):
 
     def generate_inject_setting_sql(working_mode, mcode, new_value, allow_insert_if_eof = 0):
         sql_inject_setting = ''
@@ -350,7 +362,7 @@ def generate_sync_settings_sql(db_main_file_name, fb_port):
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'separate_workers', "'1'" ) ) )
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'workers_count', "'100'" ) ) )
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'update_conflict_percent', "'0'" ) ) )
-    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'connect_str', "'connect ''localhost:%(db_main_file_name)s'' user ''SYSDBA'' password ''masterkey'';'" % locals(), 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'connect_str', "'connect ''localhost:%(db_main_file_name)s'' user ''%(dba_usr)s'' password ''%(dba_psw)s'';'" % locals(), 1 ) ) )
 
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'mon_unit_list', "'//'" ) ) )
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'halt_test_on_errors', "'/PK/CK/'" ) ) )
@@ -367,8 +379,8 @@ def generate_sync_settings_sql(db_main_file_name, fb_port):
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'common', 'use_es', "'2'", 1 ) ) )
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'host', "'localhost'", 1 ) ) )
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'port', "'%(fb_port)s'" % locals(), 1 ) ) )
-    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'usr', "'SYSDBA'", 1 ) ) )
-    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'pwd', "'masterkey'", 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'usr', "'%(dba_usr)s'" % locals(), 1 ) ) )
+    sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'pwd', "'%(dba_psw)s'" % locals(), 1 ) ) )
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'tmp_worker_user_pswd', "'0Ltp-Emu1'", 1 ) ) )
 
     sql_adjust_settings_table = ''.join( (sql_adjust_settings_table, generate_inject_setting_sql( 'init', 'conn_pool_support', "'1'", 1 ) ) )
@@ -417,6 +429,25 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
     repl_log_old = get_replication_log(act_db_main)
     repl_log_new = repl_log_old.copy()
 
+    # NB, 06-sep-2023: we have to explicitly assign default value for listening port because OLTP-EMUL requires it always.
+    # If $QA_HOME/firebird-driver.conf does not contain line with this parameter then act_db_main.port will be None.
+    # In that case execution of some scripts will fail because of conversion error from string 'None' to int variable.
+    # This problem was detected for script 'oltp-emul-09_adjust_eds_calls.sql':
+    #     declare v_port int;
+    #     ...
+    #     select ... max( iif( upper(s.mcode) = upper('port'), s.svalue , null ) )
+    #     from settings s 
+    #     where ...
+    #     into v_port ... ; <<< THIS WILL FAIL with 'conversion error from "None"'.
+
+    fb_port = 3050
+    if act_db_main.port:
+        fb_port = int(act_db_main.port) if act_db_main.port.isdigit() else fb_port
+
+    # Additional check: fb_port must be listening now:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect(('localhost', fb_port))
+
     # Must be EMPTY:
     out_prep = capsys.readouterr().out
     if out_prep:
@@ -432,7 +463,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
         #--------------------------------------------------------------------------------
         with open(tmp_oltp_build_sql, 'w') as f:
             f.write( sql_build_init )
-            f.write( generate_sync_settings_sql(db_info[act_db_main,  'db_full_path'], act_db_main.port) )
+            f.write( generate_sync_settings_sql(db_info[act_db_main,  'db_full_path'], act_db_main.db.user, act_db_main.db.password, fb_port) )
         #--------------------------------------------------------------------------------
 
         oltp_post_files = tmp_oltp_sql_files[5:10] # 'oltp-emul-06_split_heavy_tabs.sql' ... 'oltp-emul-10_adjust_eds_perf.sql'
@@ -480,8 +511,11 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
 
         act_db_main.reset()
 
-        for p in tmp_oltp_sql_files:
-            p.unlink(missing_ok = True)
+        if DEBUG_MODE:
+            pass
+        else:
+            for p in tmp_oltp_sql_files:
+                p.unlink(missing_ok = True)
 
         repl_log_new = get_replication_log(act_db_main)
 
@@ -489,6 +523,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
         # Some problem raised during execution of initial SQL
         pass
     else:
+
+
         # Query to be used for check that all DB objects present in replica (after last DML statement completed on master DB):
         ddl_ready_query = "select 1 from rdb$relations where rdb$relation_name = upper('t_completed')"
 
@@ -517,7 +553,11 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
         out_main = capsys.readouterr().out
         repl_log_new = get_replication_log(act_db_main)
 
-    drop_db_objects(act_db_main, act_db_repl, capsys)
+    if DEBUG_MODE:
+        pass
+    else:
+        drop_db_objects(act_db_main, act_db_repl, capsys)
+
     # Must be EMPTY:
     out_drop = capsys.readouterr().out
 
@@ -525,7 +565,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
         # We have a problem either with DDL/DML or with dropping DB objects.
         # First, we have to RECREATE both master and slave databases
         # (otherwise further execution of this test or other replication-related tests most likely will fail):
-        out_reset = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'], cleanup_repl_dirs = True)
+        out_reset = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'], cleanup_repl_dirs = not DEBUG_MODE)
 
         # Next, we display out_main, out_drop and out_reset:
         #
