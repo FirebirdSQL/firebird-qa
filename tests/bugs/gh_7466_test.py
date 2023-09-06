@@ -34,10 +34,16 @@ NOTES:
        its altering and its dropping - although there is no re-connect between these actions). This is conisdered as bug,
        see: https://github.com/FirebirdSQL/firebird/pull/7426 (currently it is not yet fixed).
     
+    Checked on 5.0.0.1164.
     Thanks to dimitr for explanations.
     Discussed with dimitr, letters 17.08.2023.
 
-    Checked on 5.0.0.1164
+    [06-sep-2023] pzotov
+    Changed expected output: DDL trigger is loaded into metadata cache only once, so we have to check only SINGLE
+    occurence of "Trigger TRG_DDL (AFTER DDL)" event.
+    See also: https://github.com/FirebirdSQL/firebird/commit/00c2d10102468d5494b413c0de295079f62a27ec
+
+    Checkec on 5.0.0.1190
 """
 import locale
 import re
@@ -267,8 +273,6 @@ def test_1(act: Action, capsys):
         Function PG_TEST.PG_FN_WORKER:
         Trigger TRG_DB_CONN (ON CONNECT):
         Trigger TRG_TEST_BIU FOR TEST (BEFORE INSERT):
-        Trigger TRG_DDL (AFTER DDL):
-        Trigger TRG_DDL (AFTER DDL):
         Trigger TRG_DDL (AFTER DDL):
     """
 
