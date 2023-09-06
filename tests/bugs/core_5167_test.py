@@ -5,13 +5,25 @@ ID:          issue-5450
 ISSUE:       5450
 TITLE:       Allow implicit conversion between boolean and string
 DESCRIPTION:
-  Test contains of TWO set of expressions: those which should finish OK and which should FAIL.
-  Expressions that should work fine are called directly with checking only their result.
-  Expressions that should fail are inserted into table and are called via ES from cursor on that table.
-  Inside this cursor we register values of gdscode and sqlstate that raise, and issue via output args
-  three columns: statement, gdscode, sqlstate. This output is then checked for matching with expected.
+    Test contains TWO set of expressions: those which should finish OK and which should FAIL.
+    Expressions that should work fine are called directly with checking only their result.
+    Expressions that should fail are inserted into table and are called via ES from cursor on that table.
+    Inside this cursor we register values of gdscode and sqlstate that raise, and issue via output args
+    three columns: statement, gdscode, sqlstate. This output is then checked for matching with expected.
 JIRA:        CORE-5167
 FBTEST:      bugs.core_5167
+NOTES:
+    [06.09.2023] pzotov
+    Expression "true in ('unknown', 'false', 'true')" failed in FB 3.x/4.x because first literal ('unknown')
+    could not be conversed properly. This was expected: old algorithm of IN(<list>) compared literals using "OR" basis,
+    from left to right, one by one.
+    But this is not so in FB 5.x+ since changed algorithm of IN(<list>), and this expression is evaluated
+    successfully. Because of that, it was decided to replace this expr. with:
+        "select 'unknown' in (true) as result from rdb$database" (it fails on any major FB version).
+    See also:
+    1) https://github.com/FirebirdSQL/firebird/commit/0493422c9f729e27be0112ab60f77e753fabcb5b
+       ("Better processing and optimization if IN <list> predicates (#7707)")
+    2) letter from dimitr, 05-sep-2023 20:51
 """
 
 import pytest
@@ -112,7 +124,7 @@ test_script = """
 
     -- convers error:
     insert into test(id, expr) values(gen_id(g,1), 'select true = ''unknown'' as result from rdb$database'); -- convers error
-    insert into test(id, expr) values(gen_id(g,1), 'select true in (''unknown'', ''false'', ''true'') as result from rdb$database'); -- convers error
+    insert into test(id, expr) values(gen_id(g,1), 'select ''unknown'' in (true) as result from rdb$database'); -- convers error
     insert into test(id, expr) values(gen_id(g,1), 'select cast(''true'' as blob) > false as result from rdb$database');
     insert into test(id, expr) values(gen_id(g,1), 'select list(b, '''') > false as result from (select ''true'' as b from rdb$database)');
     commit;
@@ -341,7 +353,7 @@ expected_stdout = """
     RAISED_SQL                      22018
 
     EXPR_NO                         38
-    RUN_EXPR                        select true in ('unknown', 'false', 'true') as result from rdb$database
+    RUN_EXPR                        select 'unknown' in (true) as result from rdb$database
     RAISED_GDS                      335544334
     RAISED_SQL                      22018
 
