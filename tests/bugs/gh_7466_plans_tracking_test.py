@@ -28,6 +28,16 @@ NOTES:
     Discussed with dimitr, letters 18.08.2023.
 
     Checked on 5.0.0.1164
+
+    [08-sep-2023] pzotov
+    1. Changed plan output: it is desirable to show indentations but they are 'swallowed' when act.clean_stdout is displayed.
+       Because of that, explained plan lines are 'padded' with dot character to their original length.
+    2. Adjusted execution plan for one of queries to actual: one need to replace "Range Scan" with "List Scan" if we have
+       subquery with IN-list which refers to some columns from outer query.
+       See: https://github.com/FirebirdSQL/firebird/commit/5df6668c7bf5a4b27e15f687f8c6cc40e260ced8
+       (Allow computable but non-invariant lists to be used for index lookup)
+
+    Checked on 5.0.0.1200
 """
 import locale
 import re
@@ -50,6 +60,10 @@ trace = ['log_initfini = false',
          'print_plan = true',
          'explain_plan = true',
          ]
+
+def replace_leading(source, char="#"):
+    stripped = source.lstrip()
+    return char * (len(source) - len(stripped)) + stripped
 
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
@@ -98,7 +112,19 @@ def test_1(act: Action, capsys):
                select r.i + 1, dx.id, dx.pid
                from tdetl dx
                join r on dx.pid = r.id
-               where exists(select * from tmain m0a where m0a.id <> dx.pid and m0a.x in(dx.y, dx.z) )
+               where exists(
+                   select * from tmain m0a
+                   where
+                       m0a.id <> dx.pid
+                       -- ::: NB ::: Rest part is IN-list with computable but non-invariant elements.
+                       -- Execution plan for this kind was changed 07-sep-2023, see:
+                       -- https://github.com/FirebirdSQL/firebird/commit/5df6668c7bf5a4b27e15f687f8c6cc40e260ced8
+                       -- (Allow computable but non-invariant lists to be used for index lookup)
+                       -- See also: tests/functional/tabloid/test_e260ced8.py
+                       -- Here "Index "TMAIN_X" List Scan (full match)" will be!
+                       -- Old: "Index "TMAIN_X" Range Scan (full match)"
+                       and m0a.x in (dx.y, dx.z) -- ### ATTENTION ###
+               )
             )
             select count(*) from r where r.i > 2
             into c;
@@ -146,92 +172,89 @@ def test_1(act: Action, capsys):
             start_show = 1
             continue
         if start_show and line.rstrip().split():
-            print(line)
+            print( replace_leading(line,'.') )
 
     expected_stdout = f"""
         Sub-query (invariant)
-            -> Filter
-                -> Aggregate
-                    -> Table "TDETL" as "K DY" Access By ID
-                        -> Index "TDETL_FK" Full Scan
-        Cursor "K" (line 3, column 13)
-            -> Filter (preliminary)
-                -> Nested Loop Join (inner)
-                    -> Table "TMAIN" as "K M4" Full Scan
-                    -> Filter
-                        -> Table "TDETL" as "K D4 DX" Access By ID
-                            -> Bitmap And
-                                -> Bitmap
-                                    -> Index "TDETL_FK" Range Scan (full match)
-                                -> Bitmap
-                                    -> Index "TDETL_Y" Range Scan (upper bound: 1/1)
+        ....-> Filter
+        ........-> Aggregate
+        ............-> Table "TDETL" as "K DY" Access By ID
+        ................-> Index "TDETL_FK" Full Scan
+        Cursor "K"(line, column)
+        ....-> Filter (preliminary)
+        ........-> Nested Loop Join (inner)
+        ............-> Table "TMAIN" as "K M4" Full Scan
+        ............-> Filter
+        ................-> Table "TDETL" as "K D4 DX" Access By ID
+        ....................-> Bitmap And
+        ........................-> Bitmap
+        ............................-> Index "TDETL_FK" Range Scan (full match)
+        ........................-> Bitmap
+        ............................-> Index "TDETL_Y" Range Scan (upper bound: 1/1)
         Sub-query
-            -> Filter
-                -> Table "TMAIN" as "M0" Access By ID
-                    -> Bitmap
-                        -> Index "TMAIN_X" Range Scan (lower bound: 1/1)
+        ....-> Filter
+        ........-> Table "TMAIN" as "M0" Access By ID
+        ............-> Bitmap
+        ................-> Index "TMAIN_X" Range Scan (lower bound: 1/1)
         Sub-query
-            -> Filter
-                -> Table "TMAIN" as "R M0A" Access By ID
-                    -> Bitmap Or
-                        -> Bitmap
-                            -> Index "TMAIN_X" Range Scan (full match)
-                        -> Bitmap
-                            -> Index "TMAIN_X" Range Scan (full match)
-        Select Expression (line 22, column 13)
-            -> Singularity Check
-                -> Aggregate
-                    -> Filter
-                        -> Recursion
-                            -> Filter
-                                -> Table "TDETL" as "R D0" Access By ID
-                                    -> Bitmap
-                                        -> Index "TDETL_FK" Range Scan (full match)
-                            -> Filter
-                                -> Table "TDETL" as "R DX" Access By ID
-                                    -> Bitmap
-                                        -> Index "TDETL_FK" Range Scan (full match)
-        Sub-query (line 37, column 26)
-            -> Singularity Check
-                -> Aggregate
-                    -> Table "TMAIN" as "M1A" Full Scan
-        Sub-query (line 38, column 30)
-            -> Singularity Check
-                -> Aggregate
-                    -> Table "TMAIN" as "M1B" Access By ID
-                        -> Index "TMAIN_X" Full Scan
-        Sub-query (line 39, column 30)
-            -> Singularity Check
-                -> Aggregate
-                    -> Table "TDETL" as "D1B" Access By ID
-                        -> Index "TDETL_FK" Full Scan
-        Sub-query (line 40, column 30)
-            -> Singularity Check
-                -> Aggregate
-                    -> Table "TDETL" as "D1C" Full Scan
-        Select Expression (line 44, column 13)
-            -> Aggregate
-                -> Nested Loop Join (inner)
-                    -> Filter
-                        -> Table "TMAIN" as "M2" Access By ID
-                            -> Index "TMAIN_PK" Full Scan
-                                -> Bitmap
-                                    -> Index "TMAIN_X" Range Scan (lower bound: 1/1)
-                    -> Filter
-                        -> Table "TDETL" as "D" Access By ID
-                            -> Bitmap
-                                -> Index "TDETL_PK" Unique Scan
+        ....-> Filter
+        ........-> Table "TMAIN" as "R M0A" Access By ID
+        ............-> Bitmap
+        ................-> Index "TMAIN_X" List Scan (full match)
+        Select Expression(line, column)
+        ....-> Singularity Check
+        ........-> Aggregate
+        ............-> Filter
+        ................-> Recursion
+        ....................-> Filter
+        ........................-> Table "TDETL" as "R D0" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "TDETL_FK" Range Scan (full match)
+        ....................-> Filter
+        ........................-> Table "TDETL" as "R DX" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "TDETL_FK" Range Scan (full match)
+        Sub-query(line, column)
+        ....-> Singularity Check
+        ........-> Aggregate
+        ............-> Table "TMAIN" as "M1A" Full Scan
+        Sub-query(line, column)
+        ....-> Singularity Check
+        ........-> Aggregate
+        ............-> Table "TMAIN" as "M1B" Access By ID
+        ................-> Index "TMAIN_X" Full Scan
+        Sub-query(line, column)
+        ....-> Singularity Check
+        ........-> Aggregate
+        ............-> Table "TDETL" as "D1B" Access By ID
+        ................-> Index "TDETL_FK" Full Scan
+        Sub-query(line, column)
+        ....-> Singularity Check
+        ........-> Aggregate
+        ............-> Table "TDETL" as "D1C" Full Scan
+        Select Expression(line, column)
+        ....-> Aggregate
+        ........-> Nested Loop Join (inner)
+        ............-> Filter
+        ................-> Table "TMAIN" as "M2" Access By ID
+        ....................-> Index "TMAIN_PK" Full Scan
+        ........................-> Bitmap
+        ............................-> Index "TMAIN_X" Range Scan (lower bound: 1/1)
+        ............-> Filter
+        ................-> Table "TDETL" as "D" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TDETL_PK" Unique Scan
         Sub-query
-            -> Filter
-                -> Table "TDETL" as "D" Access By ID
-                    -> Bitmap
-                        -> Index "TDETL_FK" Range Scan (full match)
-        Select Expression (line 54, column 13)
-            -> Filter
-                -> Table "TMAIN" as "M3" Access By ID
-                    -> Bitmap
-                        -> Index "TMAIN_X" Range Scan (lower bound: 1/1)
-              0 ms
+        ....-> Filter
+        ........-> Table "TDETL" as "D" Access By ID
+        ............-> Bitmap
+        ................-> Index "TDETL_FK" Range Scan (full match)
+        Select Expression(line, column)
+        ....-> Filter
+        ........-> Table "TMAIN" as "M3" Access By ID
+        ............-> Bitmap
+        ................-> Index "TMAIN_X" Range Scan (lower bound: 1/1)
+        ......0 ms
     """
 
     act.expected_stdout = expected_stdout
