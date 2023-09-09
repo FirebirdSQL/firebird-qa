@@ -72,7 +72,7 @@ def test_1(act: Action, capsys):
         ####-> Filter
         ########-> Table "T1" as "B" Access By ID
         ############-> Bitmap
-        ################-> Index "T1_X" Full Scan
+        ################-> Index "T1_X" List Scan (full match)
         Select Expression
         ####-> Filter
         ########-> Table "T1" as "A" Full Scan
