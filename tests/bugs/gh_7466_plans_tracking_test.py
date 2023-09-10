@@ -48,7 +48,7 @@ db = db_factory()
 
 substitutions = [
                     (' \\(line \\d+, column \\d+\\)', '(line, column)' )
-                   ,( '\\s+\\d+\\s+ms', '')
+                   ,( '\\d+\\s+ms', '')
                 ]
 
 act = python_act('db', substitutions = substitutions)
