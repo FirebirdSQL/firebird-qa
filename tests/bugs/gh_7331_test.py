@@ -9,6 +9,10 @@ NOTES:
     Confirmed difference between snapshots before and after commit
     https://github.com/FirebirdSQL/firebird/commit/99c9f63f874d74beb53d338c97c033fe7c8d71a9
     Checked on 5.0.0.763 (plan did not use hash join); 5.0.0.957 (plan uses HJ).
+
+    [12.09.2023] pzotov
+    Adjusted plan for query #2 after letter from dimitr, 11-sep-2023 20:23.
+    Checked on 5.0.0.1204
 """
 
 import pytest
@@ -87,6 +91,7 @@ test_script = """
 
     set planonly on;
 
+    --- Query #1 ---
     select *
     from
        orders, lineitem
@@ -94,6 +99,7 @@ test_script = """
        l_orderkey = o_orderkey
        and l_shipdate between date '1995-03-15' and date '2000-03-15';
 
+    --- Query #2 ---
     select *
     from
        customer, orders, lineitem
@@ -108,7 +114,7 @@ act = isql_act('db', test_script)
 
 expected_stdout = """
     PLAN HASH (LINEITEM INDEX (LINEITEM_SHIPDATE), ORDERS NATURAL)
-    PLAN HASH (LINEITEM INDEX (LINEITEM_SHIPDATE), JOIN (CUSTOMER NATURAL, ORDERS INDEX (ORDERS_CUSTKEY_FK)))
+    PLAN HASH (JOIN (CUSTOMER NATURAL, ORDERS INDEX (ORDERS_CUSTKEY_FK)), LINEITEM INDEX (LINEITEM_SHIPDATE))
 """
 
 @pytest.mark.version('>=5.0')
