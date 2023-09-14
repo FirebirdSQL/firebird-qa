@@ -492,7 +492,10 @@ fb5x_expected_out = r"""
     RDB$CONFIG_ID 73
     RDB$CONFIG_NAME MaxParallelWorkers
     RDB$CONFIG_DEFAULT 1
-    Records affected: 74
+    RDB$CONFIG_ID 74
+    RDB$CONFIG_NAME OptimizeForFirstRows
+    RDB$CONFIG_DEFAULT false
+    Records affected: 75
 """ % locals()
 
 @pytest.mark.version('>=4.0')
