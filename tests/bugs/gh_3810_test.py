@@ -8,6 +8,9 @@ NOTES:
     [14.04.2023] pzotov
     Confirmed poor performance on 3.0.11.33678 (num of fetches = 10'099).
     Checked on 3.0.11.33681 -- all fine, fetches differ for less than 20.
+    [22.09.2023] Zuev
+    Index tmp_tbl1_fld2 was removed from the test because it does not refer to the fix, 
+    while the optimizer may produce a plan different from the expected one.
 """
 
 import pytest
@@ -19,7 +22,6 @@ test_script = """
     set bail on;
     create table tmp_tbl1 (fld1 integer, fld2 integer, fld3 integer);
     create index tmp_tbl1_fld123 on tmp_tbl1(fld1, fld2, fld3);
-    create index tmp_tbl1_fld2 on tmp_tbl1(fld2);
     commit;
     set term ^;
     create or alter procedure tmp_sp1 as
@@ -37,7 +39,6 @@ test_script = """
     execute procedure tmp_sp1;
     commit;
     SET STATISTICS INDEX TMP_TBL1_FLD123;
-    SET STATISTICS INDEX TMP_TBL1_FLD2;
     commit;
 
     recreate view v_check as
