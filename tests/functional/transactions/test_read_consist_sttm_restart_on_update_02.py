@@ -309,8 +309,8 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                                               stdout = hang_out,
                                               stderr = hang_err
                                            )
-                time.sleep(1)
-
+                wait_for_attach_showup_in_monitoring(con_monitoring, SQL_TAG_THAT_WE_WAITING_FOR)
+                
                 #########################
                 ###  L O C K E R - 2  ###
                 #########################
