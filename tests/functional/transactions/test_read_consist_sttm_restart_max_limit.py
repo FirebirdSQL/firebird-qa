@@ -49,8 +49,18 @@ DESCRIPTION:
       29.09.2020: added for-loop in order to check different target objects: TABLE ('test') and VIEW ('v_test'), see 'target_object_type'.
 FBTEST:      functional.transactions.read_consist_sttm_restart_max_limit
 NOTES:
-[29.07.2022] pzotov
-    Checked on 4.0.1.2692 (SS/SC), 5.0.0.591 (SS/SC)
+    [29.07.2022] pzotov
+        Checked on 4.0.1.2692 (SS/SC), 5.0.0.591 (SS/SC)
+    [23.09.2023] pzotov
+        Replaced verification method of worker attachment presense (which tries DML and waits for resource).
+        This attachment is created by *asynchronously* launched ISQL thus using of time.sleep(1) is COMPLETELY wrong.
+        Loop with query to mon$statements is used instead (we search for record which SQL_TEXT contains 'special tag', see variable SQL_TAG_THAT_WE_WAITING_FOR).
+        Maximal duration of this loop is limited by variable 'MAX_WAIT_FOR_WORKER_START_MS'.
+        Many thanks to Vlad for suggestions.
+
+     *** TODO ***
+     THIS TEST NEEDS REIMPLEMENTING!
+     CURRENTLY DISABLED.
 """
 
 import subprocess
@@ -58,12 +68,17 @@ import pytest
 from firebird.qa import *
 from pathlib import Path
 import time
+import datetime as py_dt
 
 substitutions = [('=', ''), ('[ \t]+', ' '), ('.*After line \\d+.*', ''), ('.*[\\-]?concurrent transaction number is \\d+', 'concurrent transaction number is'), ('.*At\\s+block\\s+line(:)?\\s+\\d+(,)?\\s+col(:)?\\s+\\d+', ''), ('.After\\s+line\\s+\\d+\\s+.*', '')]
 
 
 db = db_factory()
 act = python_act('db', substitutions=substitutions)
+
+MAX_WAIT_FOR_WORKER_START_MS = 10000;
+SQL_TAG_THAT_WE_WAITING_FOR = 'SQL_TAG_THAT_WE_WAITING_FOR'
+# SQL_TO_BE_RESTARTED -- will be defined inside loop, see below!
 
 fn_worker_sql = temp_file('tmp_worker.sql')
 fn_worker_log = temp_file('tmp_worker.log')
@@ -734,59 +749,33 @@ expected_stdout = """
     checked_mode: view, checked_DML = del, iter = 1, worker STDERR: -update conflicts with concurrent update
     checked_mode: view, checked_DML = del, iter = 1, worker STDERR: -concurrent transaction number is 2336
 
-    checked_mode: view, checked_DML = lok, iter = 0, restarts number to be tested: 10
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:      ID
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG: =======
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       1
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       2
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       3
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       4
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       5
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       6
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       7
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       8
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:       9
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:      10
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:      11
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:      12
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG:
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 12
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDLOG: Records affected: 0
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDERR: Statement failed, SQLSTATE = 42000
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDERR: Dynamic SQL Error
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDERR: -SQL error code = -104
-    checked_mode: view, checked_DML = lok, iter = 0, worker STDERR: -WITH LOCK can be used only with a single physical table
-
-    checked_mode: view, checked_DML = lok, iter = 1, restarts number to be tested: 12
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      ID
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG: =======
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       1
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       2
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       3
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       4
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       5
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       6
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       7
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       8
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:       9
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      10
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      11
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      12
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      13
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:      14
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG:
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 14
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDLOG: Records affected: 0
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDERR: Statement failed, SQLSTATE = 42000
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDERR: Dynamic SQL Error
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDERR: -SQL error code = -104
-    checked_mode: view, checked_DML = lok, iter = 1, worker STDERR: -WITH LOCK can be used only with a single physical table
-
 """
 
+def wait_for_attach_showup_in_monitoring(con_monitoring, sql_text_tag):
+    chk_sql = f"select 1 from mon$statements s where s.mon$attachment_id != current_connection and s.mon$sql_text containing '{sql_text_tag}'"
+    attach_with_sql_tag = None
+    t1=py_dt.datetime.now()
+    cur_monitoring = con_monitoring.cursor()
+    while True:
+        cur_monitoring.execute(chk_sql)
+        for r in cur_monitoring:
+            attach_with_sql_tag = r[0]
+        if not attach_with_sql_tag:
+            t2=py_dt.datetime.now()
+            d1=t2-t1
+            if d1.seconds*1000 + d1.microseconds//1000 >= MAX_WAIT_FOR_WORKER_START_MS:
+                break
+            else:
+                con_monitoring.commit()
+                time.sleep(0.2)
+        else:
+            break
+            
+    assert attach_with_sql_tag, f"Could not find attach statement containing '{sql_text_tag}' for {MAX_WAIT_FOR_WORKER_START_MS} ms. ABEND."
+    return
+
 @pytest.mark.version('>=4.0')
+@pytest.mark.skip("REIMPLEMENTING REQUIRED.")
 def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
 
     sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()
@@ -794,20 +783,22 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
     for checked_mode in('table', 'view'):
         target_obj = 'test' if checked_mode == 'table' else 'v_test'
 
-        for checked_DML in('upd', 'mer', 'del', 'lok'):
-            worker_dml = "select 'UNKNOWN MODE' as msg from rdb$database"
+        # NB: for 'lok' can not be used with a VIEW, error: "336397326 : WITH LOCK can be used only with a single physical table"
+        for checked_DML in ('upd', 'mer', 'del', 'lok') if checked_mode == 'table' else ('upd', 'mer', 'del'):
+
             if checked_DML == 'upd':
-                worker_dml = f'update {target_obj} set id = id * 100 where id <= 2 order by id DESC;'
+                SQL_TO_BE_RESTARTED = f'update /* {SQL_TAG_THAT_WE_WAITING_FOR} */ {target_obj} set id = id * 100 where id <= 2 order by id DESC'
             elif checked_DML == 'mer':
-                worker_dml = f'merge into {target_obj} t using (select x.id from {target_obj} x where x.id <= 2 order by id DESC) s on t.id = s.id when matched then update set t.id = s.id * 100;'
+                SQL_TO_BE_RESTARTED = f'merge /* {SQL_TAG_THAT_WE_WAITING_FOR} */ into {target_obj} t using (select x.id from {target_obj} x where x.id <= 2 order by id DESC) s on t.id = s.id when matched then update set t.id = s.id * 100'
             elif checked_DML == 'del':
-                worker_dml = f'delete from {target_obj} where id <= 2 order by id DESC;'
+                SQL_TO_BE_RESTARTED = f'delete /* {SQL_TAG_THAT_WE_WAITING_FOR} */ from {target_obj} where id <= 2 order by id DESC'
             elif checked_DML == 'lok':
                 # ::: NB :::
                 # We must SUPRESS sending record to client for SELECT WITH LOCK, otherwise error
                 # deadlock/update conflist will raise immediately! Because of this, we  enclose
                 # such select into execute block which returns nothing:
-                worker_dml = f'set term ^; execute block as declare c int; begin for select id from {target_obj} where id<=2 order by id desc with lock into c do begin end end^ set term ;^'
+                #
+                SQL_TO_BE_RESTARTED = f'set term ^; execute block /* {SQL_TAG_THAT_WE_WAITING_FOR} */ as declare c int; begin for select id from {target_obj} where id<=2 order by id desc with lock into c do begin end end^ set term ;^'
 
             for main_iter in (0,1):
 
@@ -834,7 +825,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                 assert act.stderr == ''
                 act.reset()
 
-                with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2:
+                with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2, act.db.connect() as con_monitoring:
                     for i,c in enumerate((con_lock_1,con_lock_2)):
                         sttm = f"execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #{i+1}'); end"
                         c.execute_immediate(sttm)
@@ -864,8 +855,9 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                         set count on;
 
                         -- Run UPDATE | DELETE | MERGE | SELECT WITH LOCK.
-                        -- EVery statement ends with 'ORDER BY ID DESC' and must hang because of lockes:
-                        {worker_dml} 
+                        -- Every statement ends with 'ORDER BY ID DESC' and must hang because of lockes:
+
+                        {SQL_TO_BE_RESTARTED};
 
                         -- check results:
                         -- ###############
@@ -900,7 +892,8 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                                                       stdout = hang_out,
                                                       stderr = hang_err
                                                    )
-                        time.sleep(1)
+
+                        wait_for_attach_showup_in_monitoring(con_monitoring, SQL_TAG_THAT_WE_WAITING_FOR)
 
                         cur_lock_1 = con_lock_1.cursor()
                         cur_lock_2 = con_lock_2.cursor()
