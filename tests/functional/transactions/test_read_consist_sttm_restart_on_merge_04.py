@@ -134,8 +134,16 @@ DESCRIPTION:
       NOTE: added for-loop in order to check different target objects: TABLE ('test') and VIEW ('v_test'), see 'checked_mode'.
 FBTEST:      functional.transactions.read_consist_sttm_restart_on_merge_04
 NOTES:
-[29.07.2022] pzotov
-    Checked on 4.0.1.2692, 5.0.0.591
+    [29.07.2022] pzotov
+        Checked on 4.0.1.2692, 5.0.0.591
+    [23.09.2023] pzotov
+        Replaced verification method of worker attachment presense (which tries DML and waits for resource).
+        This attachment is created by *asynchronously* launched ISQL thus using of time.sleep(1) is COMPLETELY wrong.
+        Loop with query to mon$statements is used instead (we search for record which SQL_TEXT contains 'special tag', see variable SQL_TAG_THAT_WE_WAITING_FOR).
+        Maximal duration of this loop is limited by variable 'MAX_WAIT_FOR_WORKER_START_MS'.
+        Many thanks to Vlad for suggestions.
+
+        Checked on WI-T6.0.0.48, WI-T5.0.0.1211, WI-V4.0.4.2988.
 """
 
 import subprocess
@@ -143,10 +151,15 @@ import pytest
 from firebird.qa import *
 from pathlib import Path
 import time
+import datetime as py_dt
 
 db = db_factory()
 
 act = python_act('db', substitutions=[('=', ''), ('[ \t]+', ' ')])
+
+MAX_WAIT_FOR_WORKER_START_MS = 10000;
+SQL_TAG_THAT_WE_WAITING_FOR = 'SQL_TAG_THAT_WE_WAITING_FOR'
+# SQL_TO_BE_RESTARTED -- will be defined inside loop, see below!
 
 fn_worker_sql = temp_file('tmp_worker.sql')
 fn_worker_log = temp_file('tmp_worker.log')
@@ -203,12 +216,44 @@ expected_stdout = """
     checked_mode: view, STDLOG: Records affected: 9
 """
 
+def wait_for_attach_showup_in_monitoring(con_monitoring, sql_text_tag):
+    chk_sql = f"select 1 from mon$statements s where s.mon$attachment_id != current_connection and s.mon$sql_text containing '{sql_text_tag}'"
+    attach_with_sql_tag = None
+    t1=py_dt.datetime.now()
+    cur_monitoring = con_monitoring.cursor()
+    while True:
+        cur_monitoring.execute(chk_sql)
+        for r in cur_monitoring:
+            attach_with_sql_tag = r[0]
+        if not attach_with_sql_tag:
+            t2=py_dt.datetime.now()
+            d1=t2-t1
+            if d1.seconds*1000 + d1.microseconds//1000 >= MAX_WAIT_FOR_WORKER_START_MS:
+                break
+            else:
+                con_monitoring.commit()
+                time.sleep(0.2)
+        else:
+            break
+            
+    assert attach_with_sql_tag, f"Could not find attach statement containing '{sql_text_tag}' for {MAX_WAIT_FOR_WORKER_START_MS} ms. ABEND."
+    return
+
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
     sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()
 
     for checked_mode in('table', 'view'):
         target_obj = 'test' if checked_mode == 'table' else 'v_test'
+
+        SQL_TO_BE_RESTARTED = f"""
+            merge /* {SQL_TAG_THAT_WE_WAITING_FOR} */ into {target_obj} t
+            using (select * from {target_obj} where id <=2 order by id DESC rows 4) s on s.id=t.id
+            when matched then
+                update set t.id = -t.id
+            when not matched then
+                insert(id,x) values(1000 + s.id, 1000 + s.x);
+        """
 
         sql_addi = f'''
             set term ^;
@@ -230,7 +275,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
         assert act.stderr == ''
         act.reset()
 
-        with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2:
+        with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2, act.db.connect() as con_monitoring:
             for i,c in enumerate((con_lock_1,con_lock_2)):
                 sttm = f"execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #{i+1}'); end"
                 c.execute_immediate(sttm)
@@ -263,12 +308,14 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                 --set plan on;
                 set count on;
 
-                merge into {target_obj} t -- THIS MUST HANG BECAUSE OF LOCKERs
-                using (select * from {target_obj} where id <=2 order by id DESC rows 4) s on s.id=t.id
-                when matched then
-                    update set t.id = -t.id
-                when not matched then
-                    insert(id,x) values(1000 + s.id, 1000 + s.x);
+                --merge into {target_obj} t -- THIS MUST HANG BECAUSE OF LOCKERs
+                --using (select * from {target_obj} where id <=2 order by id DESC rows 4) s on s.id=t.id
+                --when matched then
+                --    update set t.id = -t.id
+                --when not matched then
+                --    insert(id,x) values(1000 + s.id, 1000 + s.x);
+
+                {SQL_TO_BE_RESTARTED};
 
                 -- check results:
                 -- ###############
@@ -302,7 +349,9 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                                               stdout = hang_out,
                                               stderr = hang_err
                                            )
-                time.sleep(1)
+                wait_for_attach_showup_in_monitoring(con_monitoring, SQL_TAG_THAT_WE_WAITING_FOR)
+                # >>> !!!THIS WAS WRONG!!! >>> time.sleep(1)
+
 
                 #########################
                 ###  L O C K E R - 2  ###
