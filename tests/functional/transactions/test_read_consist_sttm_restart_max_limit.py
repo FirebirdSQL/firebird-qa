@@ -774,8 +774,8 @@ def wait_for_attach_showup_in_monitoring(con_monitoring, sql_text_tag):
     assert attach_with_sql_tag, f"Could not find attach statement containing '{sql_text_tag}' for {MAX_WAIT_FOR_WORKER_START_MS} ms. ABEND."
     return
 
-@pytest.mark.version('>=4.0')
 @pytest.mark.skip("REIMPLEMENTING REQUIRED.")
+@pytest.mark.version('>=4.0')
 def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
 
     sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()
