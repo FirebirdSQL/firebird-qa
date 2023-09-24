@@ -232,7 +232,6 @@ def wait_for_attach_showup_in_monitoring(con_monitoring, sql_text_tag):
     return
 
 @pytest.mark.version('>=4.0')
-# @pytest.mark.skip("TEMPORARY DISABLED. DISCUSSION WITH FB-TEAM REQUIRED!")
 def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
     sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()
 
