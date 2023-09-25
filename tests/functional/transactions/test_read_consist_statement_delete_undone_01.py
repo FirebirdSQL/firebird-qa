@@ -111,8 +111,8 @@ NOTES:
     [25.09.2023] pzotov
         1. Added trace launch and its parsing in order to get number of times when WORKER statement did restart.
            See commits:
-           1) FB 4.x (23-JUN-2022, 4.0.2.2807): https://github.com/FirebirdSQL/firebird/commit/95b8623adbf129d0730a50a18b4f1cf9976ac35c
-           2) FB 5.x (27-jun-2022, 5.0.0.561):  https://github.com/FirebirdSQL/firebird/commit/f121cd4a6b40b1639f560c6c38a057c4e68bb3df
+           1) FB 4.x (23-JUN-2022, 4.0.2.2782): https://github.com/FirebirdSQL/firebird/commit/95b8623adbf129d0730a50a18b4f1cf9976ac35c
+           2) FB 5.x (27-JUN-2022, 5.0.0.555):  https://github.com/FirebirdSQL/firebird/commit/f121cd4a6b40b1639f560c6c38a057c4e68bb3df
 
            Trace must contain several groups, each with similar lines:
                <timestamp> (<trace_memory_address>) EXECUTE_STATEMENT_RESTART
