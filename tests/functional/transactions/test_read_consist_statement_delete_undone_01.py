@@ -105,20 +105,20 @@ DESCRIPTION:
 
 FBTEST:      functional.transactions.read_consist_statement_delete_undone_01
 NOTES:
-    [27.02.2023] pzotov
-        Added check for presense of STATEMENT RESTART in the trace (see https://github.com/FirebirdSQL/firebird/issues/6730 )
-        Trace must contain several groups, each with similar lines:
-            <timestamp> (<trace_memory_address>) EXECUTE_STATEMENT_RESTART
-            {SQL_TO_BE_RESTARTED}
-            Restarted <N> time(s)
-
-        Checked on 5.0.0.561 (date of build: 29-jun-2022) - all OK.
-
     [23.09.2023] pzotov
         Replaced verification method of worker attachment presense (which tries DML and waits for resource).
         Many thanks to Vlad for suggestions.
     [25.09.2023] pzotov
         1. Added trace launch and its parsing in order to get number of times when WORKER statement did restart.
+           See commits:
+           1) FB 4.x (23-JUN-2022, 4.0.2.2807): https://github.com/FirebirdSQL/firebird/commit/95b8623adbf129d0730a50a18b4f1cf9976ac35c
+           2) FB 5.x (27-jun-2022, 5.0.0.561):  https://github.com/FirebirdSQL/firebird/commit/f121cd4a6b40b1639f560c6c38a057c4e68bb3df
+
+           Trace must contain several groups, each with similar lines:
+               <timestamp> (<trace_memory_address>) EXECUTE_STATEMENT_RESTART
+               {SQL_TO_BE_RESTARTED}
+               Restarted <N> time(s)
+
         2. To prevent raises between concurrent transactions, it is necessary to ensure that code:
                * does not allow LOCKER-2 to start its work until WORKER session will establish connection and - moreover - will actually locks first record 
                  from the scope that is seen by the query that we want to be executed by worker.
@@ -213,7 +213,7 @@ def wait_for_record_become_locked(tx_monitoring, cur_monitoring, sql_to_lock_rec
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=4.0.3')
 def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
     sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()
 
@@ -401,12 +401,6 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     ###  L O C K E R - 1  ###
                     #########################
                     con_lock_1.commit() # <<< THIS MUST CANCEL ALL PERFORMED DELETIONS OF SESSION-WORKER: record with ID = 10 become visible to it and its "NOT EXISTS()" query predicate return FAILSE on that.
-
-                    # We have to WAIT HERE until worker will actually 'catch' just released record with ID = 9:
-                    #
-                    #wait_for_record_become_locked(tx_monitoring, cur_monitoring, f'update {target_obj} set id=id where id = 9', SQL_TAG_THAT_WE_WAITING_FOR)
-                    # If we come here then it means that record with ID = 9 for sure is locked by WORKER.
-
                     con_lock_2.commit()
 
                     # Here we wait until ISQL complete its mission:
@@ -422,11 +416,6 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                                 print(f'checked_mode: {checked_mode}, STDLOG: {line}')
                             else:
                                 print(f'UNEXPECTED STDERR {line}')
-
-
-            #for g in (fn_worker_log, fn_worker_err):
-            #    with g.open() as f:
-            #        print( f.read() )
 
             expected_stdout_worker = f"""
                 checked_mode: {checked_mode}, STDLOG: Records affected: 0
