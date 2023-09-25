@@ -176,50 +176,6 @@ fn_worker_sql = temp_file('tmp_worker.sql')
 fn_worker_log = temp_file('tmp_worker.log')
 fn_worker_err = temp_file('tmp_worker.err')
 
-
-expected_stdout = """
-    checked_mode: table, STDLOG: Records affected: 4
-
-    checked_mode: table, STDLOG:      ID
-    checked_mode: table, STDLOG: =======
-    checked_mode: table, STDLOG:      -5
-    checked_mode: table, STDLOG: Records affected: 1
-
-    checked_mode: table, STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    checked_mode: table, STDLOG: ======= ====== =====================
-    checked_mode: table, STDLOG:       2 DEL                        1
-    checked_mode: table, STDLOG:       2 DEL                        2
-    checked_mode: table, STDLOG:       1 DEL                        2
-    checked_mode: table, STDLOG:       2 DEL                        3
-    checked_mode: table, STDLOG:       1 DEL                        3
-    checked_mode: table, STDLOG:       2 DEL                        4
-    checked_mode: table, STDLOG:       1 DEL                        4
-    checked_mode: table, STDLOG:      -3 DEL                        4
-    checked_mode: table, STDLOG:      -4 DEL                        4
-    checked_mode: table, STDLOG: Records affected: 9
-
-
-    checked_mode: view, STDLOG: Records affected: 4
-
-    checked_mode: view, STDLOG:      ID
-    checked_mode: view, STDLOG: =======
-    checked_mode: view, STDLOG:      -5
-    checked_mode: view, STDLOG: Records affected: 1
-
-    checked_mode: view, STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    checked_mode: view, STDLOG: ======= ====== =====================
-    checked_mode: view, STDLOG:       2 DEL                        1
-    checked_mode: view, STDLOG:       2 DEL                        2
-    checked_mode: view, STDLOG:       1 DEL                        2
-    checked_mode: view, STDLOG:       2 DEL                        3
-    checked_mode: view, STDLOG:       1 DEL                        3
-    checked_mode: view, STDLOG:       2 DEL                        4
-    checked_mode: view, STDLOG:       1 DEL                        4
-    checked_mode: view, STDLOG:      -3 DEL                        4
-    checked_mode: view, STDLOG:      -4 DEL                        4
-    checked_mode: view, STDLOG: Records affected: 9
-"""
-
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
 def wait_for_record_become_locked(tx_monitoring, cur_monitoring, sql_to_lock_record, SQL_TAG_THAT_WE_WAITING_FOR):
