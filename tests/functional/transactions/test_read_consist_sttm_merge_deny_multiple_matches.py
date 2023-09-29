@@ -60,32 +60,57 @@ DESCRIPTION:
 
       Above mentioned actions are performed two times: first for TABLE and second for naturally-updatable VIEW (v_test), see 'target_object_type'.
 
-      Checked on 4.0.0.2214 SS/CS.
 FBTEST:      functional.transactions.read_consist_sttm_merge_deny_multiple_matches
 NOTES:
     [29.07.2022] pzotov
         Checked on 4.0.1.2692, 5.0.0.591
-    [23.09.2023] pzotov
-        Replaced verification method of worker attachment presense (which tries DML and waits for resource).
-        This attachment is created by *asynchronously* launched ISQL thus using of time.sleep(1) is COMPLETELY wrong.
-        Loop with query to mon$statements is used instead (we search for record which SQL_TEXT contains 'special tag', see variable SQL_TAG_THAT_WE_WAITING_FOR).
-        Maximal duration of this loop is limited by variable 'MAX_WAIT_FOR_WORKER_START_MS'.
-        Many thanks to Vlad for suggestions.
+    [27.09.2023] pzotov
+        1. Added trace launch and its parsing in order to get number of times when WORKER statement did restart.
+           See commits:
+           1) FB 4.x (23-JUN-2022, 4.0.2.2782): https://github.com/FirebirdSQL/firebird/commit/95b8623adbf129d0730a50a18b4f1cf9976ac35c
+           2) FB 5.x (27-JUN-2022, 5.0.0.555):  https://github.com/FirebirdSQL/firebird/commit/f121cd4a6b40b1639f560c6c38a057c4e68bb3df
 
-        Checked on WI-T6.0.0.48, WI-T5.0.0.1211, WI-V4.0.4.2988.
+           Trace must contain several groups, each with similar lines:
+               <timestamp> (<trace_memory_address>) EXECUTE_STATEMENT_RESTART
+               {SQL_TO_BE_RESTARTED}
+               Restarted <N> time(s)
 
+        2. To prevent raises between concurrent transactions, it is necessary to ensure that code:
+               * does not allow LOCKER-2 to start its work until WORKER session will establish connection and - moreover - will actually locks first record 
+                 from the scope that is seen by the query that we want to be executed by worker.
+               * does not allow LOCKER-1 to do something after LOCKER-2 issued commit (and thus released record): we first have to ensure that this record
+                 now is locked by WORKER. The same when record was occupied by LOCKER-2 and then is released: LOCKER-1 must not do smth until WORKER will
+                 encounter this record and 'catch' it.
+           This is done by calls to function 'wait_for_record_become_locked()' which are performed by separate 'monitoring' connection with starting Tx
+           with NO_WAIT mode and catching exception with further parsing. In case when record has been already occupied (by WORKER) this exception will
+           have form "deadlock / -update conflicts ... / -concurrent transaction number is <N>". We can then obtain number of this transaction and query
+           mon$statements for get MON$SQL_TEXT that is runnig by this Tx. If it contains contains 'special tag' (see variable SQL_TAG_THAT_WE_WAITING_FOR)
+           then we can be sure that WORKER really did establish connection and successfully locked row with required ID.
+
+           Table 'TLOG_WANT' (which is fulfilled by trigger TEST_BIUD using in autonomous tx) can NOT be used for detection of moments when WORKER
+           actually locks records which he was waiting for: this trigger fires BEFORE actual updating occurs, i.e. when record become seeon by WORKER
+           but is still occupied by some LOCKER ("[DOC]: c) engine continue to evaluate remaining records ... and put write locks on it too")
+
+           NB! Worker transaction must running in WAIT mode - in contrary to Tx that we start in our monitoring loop.
+
+        Checked on WI-T6.0.0.55, WI-T5.0.0.1229, WI-V4.0.4.2995 (all SS/CS).
 """
 
 import subprocess
-import pytest
-from firebird.qa import *
+import re
+from difflib import unified_diff
 from pathlib import Path
 import time
 import datetime as py_dt
+import locale
+
+import pytest
+from firebird.qa import *
+from firebird.driver import tpb, Isolation, TraAccessMode, DatabaseError
 
 db = db_factory()
 
-act = python_act('db', substitutions=[('=', ''), ('[ \t]+', ' '), ('After line .*', 'After line')])
+act = python_act( 'db', substitutions = [ ('=', ''), ('[ \t]+', ' '), ('.* EXECUTE_STATEMENT_RESTART', 'EXECUTE_STATEMENT_RESTART'), ('(At|After) line .*', '') ] )
 
 MAX_WAIT_FOR_WORKER_START_MS = 10000;
 SQL_TAG_THAT_WE_WAITING_FOR = 'SQL_TAG_THAT_WE_WAITING_FOR'
@@ -95,95 +120,55 @@ fn_worker_sql = temp_file('tmp_worker.sql')
 fn_worker_log = temp_file('tmp_worker.log')
 fn_worker_err = temp_file('tmp_worker.err')
 
-expected_stdout = """
-    checked_mode: table, STDLOG: Records affected: 2
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-    checked_mode: table, STDLOG:      ID       X
-    checked_mode: table, STDLOG: ======= =======
-    checked_mode: table, STDLOG:      -5       5
-    checked_mode: table, STDLOG:      -4       4
-    checked_mode: table, STDLOG:      -3       3
-    checked_mode: table, STDLOG:      -2       2
-    checked_mode: table, STDLOG:      -1       1
-    checked_mode: table, STDLOG:       0       0
-    checked_mode: table, STDLOG:       1       1
+def wait_for_record_become_locked(tx_monitoring, cur_monitoring, sql_to_lock_record, SQL_TAG_THAT_WE_WAITING_FOR):
 
-    checked_mode: table, STDLOG: Records affected: 7
+    # ::: NB :::
+    # tx_monitoring must work in NOWAIT mode!
 
-    checked_mode: table, STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    checked_mode: table, STDLOG: ======= ====== =====================
-    checked_mode: table, STDLOG:       0 UPD                        1
-    checked_mode: table, STDLOG:       1 UPD                        1
-    checked_mode: table, STDLOG:       0 UPD                        2
-    checked_mode: table, STDLOG:       1 UPD                        2
-    checked_mode: table, STDLOG:       0 UPD                        3
-    checked_mode: table, STDLOG:       1 UPD                        3
-    checked_mode: table, STDLOG:       0 UPD                        4
-    checked_mode: table, STDLOG:       1 UPD                        4
-    checked_mode: table, STDLOG:       0 UPD                        5
-    checked_mode: table, STDLOG:       1 UPD                        5
-
-    checked_mode: table, STDLOG: Records affected: 10
-    checked_mode: table, STDERR: Statement failed, SQLSTATE = 21000
-    checked_mode: table, STDERR: Multiple source records cannot match the same target during MERGE
-    checked_mode: table, STDERR: After line
-    checked_mode: view, STDLOG: Records affected: 2
-
-    checked_mode: view, STDLOG:      ID       X
-    checked_mode: view, STDLOG: ======= =======
-    checked_mode: view, STDLOG:      -5       5
-    checked_mode: view, STDLOG:      -4       4
-    checked_mode: view, STDLOG:      -3       3
-    checked_mode: view, STDLOG:      -2       2
-    checked_mode: view, STDLOG:      -1       1
-    checked_mode: view, STDLOG:       0       0
-    checked_mode: view, STDLOG:       1       1
-
-    checked_mode: view, STDLOG: Records affected: 7
-
-    checked_mode: view, STDLOG:  OLD_ID OP              SNAP_NO_RANK
-    checked_mode: view, STDLOG: ======= ====== =====================
-    checked_mode: view, STDLOG:       0 UPD                        1
-    checked_mode: view, STDLOG:       1 UPD                        1
-    checked_mode: view, STDLOG:       0 UPD                        2
-    checked_mode: view, STDLOG:       1 UPD                        2
-    checked_mode: view, STDLOG:       0 UPD                        3
-    checked_mode: view, STDLOG:       1 UPD                        3
-    checked_mode: view, STDLOG:       0 UPD                        4
-    checked_mode: view, STDLOG:       1 UPD                        4
-    checked_mode: view, STDLOG:       0 UPD                        5
-    checked_mode: view, STDLOG:       1 UPD                        5
-
-    checked_mode: view, STDLOG: Records affected: 10
-    checked_mode: view, STDERR: Statement failed, SQLSTATE = 21000
-    checked_mode: view, STDERR: Multiple source records cannot match the same target during MERGE
-    checked_mode: view, STDERR: After line
-"""
-
-def wait_for_attach_showup_in_monitoring(con_monitoring, sql_text_tag):
-    chk_sql = f"select 1 from mon$statements s where s.mon$attachment_id != current_connection and s.mon$sql_text containing '{sql_text_tag}'"
-    attach_with_sql_tag = None
     t1=py_dt.datetime.now()
-    cur_monitoring = con_monitoring.cursor()
+    required_concurrent_found = None
+    concurrent_tx_pattern = re.compile('concurrent transaction number is \\d+', re.IGNORECASE)
     while True:
-        cur_monitoring.execute(chk_sql)
-        for r in cur_monitoring:
-            attach_with_sql_tag = r[0]
-        if not attach_with_sql_tag:
+        concurrent_tx_number = None
+        concurrent_runsql = ''
+        tx_monitoring.begin()
+        try:
+            cur_monitoring.execute(sql_to_lock_record)
+        except DatabaseError as exc:
+            # Failed: SQL execution failed with: deadlock
+            # -update conflicts with concurrent update
+            # -concurrent transaction number is 40
+            m = concurrent_tx_pattern.search( str(exc) )
+            if m:
+                concurrent_tx_number = m.group().split()[-1] # 'concurrent transaction number is 40' ==> '40'
+                cur_monitoring.execute( 'select mon$sql_text from mon$statements where mon$transaction_id = ?', (int(concurrent_tx_number),) )
+                for r in cur_monitoring:
+                    concurrent_runsql = r[0]
+                    if SQL_TAG_THAT_WE_WAITING_FOR in concurrent_runsql:
+                        required_concurrent_found = 1
+
+            # pytest.fail(f"Can not upd, concurrent TX = {concurrent_tx_number}, sql: {concurrent_runsql}")
+        finally:
+            tx_monitoring.rollback()
+        
+        if not required_concurrent_found:
             t2=py_dt.datetime.now()
             d1=t2-t1
             if d1.seconds*1000 + d1.microseconds//1000 >= MAX_WAIT_FOR_WORKER_START_MS:
                 break
             else:
-                con_monitoring.commit()
                 time.sleep(0.2)
         else:
             break
-            
-    assert attach_with_sql_tag, f"Could not find attach statement containing '{sql_text_tag}' for {MAX_WAIT_FOR_WORKER_START_MS} ms. ABEND."
+
+    assert required_concurrent_found, f"Could not find attach that running SQL with tag '{SQL_TAG_THAT_WE_WAITING_FOR}' and locks record for {MAX_WAIT_FOR_WORKER_START_MS} ms. Check query: {sql_to_lock_record}. ABEND."
     return
 
-@pytest.mark.version('>=4.0')
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+@pytest.mark.version('>=4.0.2')
 def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
     sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()
 
@@ -195,11 +180,10 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                 using (
                     select s.id, s.x from {target_obj} as s
                     where s.id <= 1
-                    order by s.id DESC
                 ) s
                 on abs(t.id) = abs(s.id)
             when matched then
-                update set t.x = t.x * s.x
+                update set t.x = s.id * 100;
             ;
         """
 
@@ -219,7 +203,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
             from rdb$types rows 6;
 
             commit;
-        ''' % locals()
+        '''
 
         act.isql(switches=['-q'], input = ''.join( (sql_init, sql_addi) ) )
         # ::: NOTE ::: We have to immediately quit if any error raised in prepare phase.
@@ -227,141 +211,243 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
         assert act.stderr == ''
         act.reset()
 
-        with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2, act.db.connect() as con_monitoring:
-            cur_lock_1 = con_lock_1.cursor()
-            cur_lock_2 = con_lock_2.cursor()
+        trace_cfg_items = [
+            'time_threshold = 0',
+            'log_errors = true',
+            'log_statement_start = true',
+            'log_statement_finish = true',
+        ]
 
-            for i,c in enumerate((con_lock_1,con_lock_2)):
-                sttm = f"execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #{i+1}'); end"
-                c.execute_immediate(sttm)
+        with act.trace(db_events = trace_cfg_items, encoding=locale.getpreferredencoding()):
 
+            with act.db.connect() as con_lock_1, act.db.connect() as con_lock_2, act.db.connect() as con_monitoring:
 
-            #########################
-            ###  L O C K E R - 1  ###
-            #########################
+                tpb_monitoring = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
+                tx_monitoring = con_monitoring.transaction_manager(tpb_monitoring)
+                cur_monitoring = tx_monitoring.cursor()
 
-            con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = 0' )
+                cur_lock_1 = con_lock_1.cursor()
+                cur_lock_2 = con_lock_2.cursor()
 
-            worker_sql = f'''
-                set list on;
-                set autoddl off;
-                set term ^;
-                execute block as
-                begin
-                    rdb$set_context('USER_SESSION','WHO', 'WORKER');
-                end
-                ^
-                set term ;^
-                commit;
-                SET KEEP_TRAN_PARAMS ON;
-                set transaction read committed read consistency;
-                set list off;
-                set wng off;
+                for i,c in enumerate((con_lock_1,con_lock_2)):
+                    sttm = f"execute block as begin rdb$set_context('USER_SESSION', 'WHO', 'LOCKER #{i+1}'); end"
+                    c.execute_immediate(sttm)
 
-                set count on;
-
-                -- this must hangs because of locker-1:
-                {SQL_TO_BE_RESTARTED};
-
-                -- check results:
-                -- ###############
-
-                select id,x from {target_obj} order by id;
-
-                select v.old_id, v.op, v.snap_no_rank
-                from v_worker_log v
-                where v.op = 'upd';
-
-
-                --set width who 10;
-                -- DO NOT check this! Values can differ here from one run to another!
-                -- select id, trn, who, old_id, new_id, op, rec_vers, global_cn, snap_no from tlog_done order by id;
-                rollback;
-
-            '''
-
-            fn_worker_sql.write_text(worker_sql)
-
-            with fn_worker_log.open(mode='w') as hang_out, fn_worker_err.open(mode='w') as hang_err:
-
-                ############################################################################
-                ###  L A U N C H     W O R K E R    U S I N G     I S Q L,   A S Y N C.  ###
-                ############################################################################
-                p_worker = subprocess.Popen([act.vars['isql'], '-i', str(fn_worker_sql),
-                                               '-user', act.db.user,
-                                               '-password', act.db.password,
-                                               '-pag', '999999',
-                                               act.db.dsn
-                                            ],
-                                              stdout = hang_out,
-                                              stderr = hang_err
-                                           )
-
-                wait_for_attach_showup_in_monitoring(con_monitoring, SQL_TAG_THAT_WE_WAITING_FOR)
-
-                sttm = f'update {target_obj} set id = ? where abs( id ) = ?'
-
-                #########################
-                ###  L O C K E R - 2  ###
-                #########################
-                cur_lock_2.execute( sttm, ( -5, 5, ) )
-                con_lock_2.commit()
-                cur_lock_2.execute( sttm, ( -5, 5, ) )
 
                 #########################
                 ###  L O C K E R - 1  ###
                 #########################
-                con_lock_1.commit()
-                cur_lock_1.execute( sttm, ( -4, 4, ) )
-                con_lock_1.commit()
-                cur_lock_1.execute( sttm, ( -4, 4, ) )
 
-                #########################
-                ###  L O C K E R - 2  ###
-                #########################
-                con_lock_2.commit()
-                cur_lock_2.execute( sttm, ( -3, 3, ) )
-                con_lock_2.commit()
-                cur_lock_2.execute( sttm, ( -3, 3, ) )
+                con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = 0' )
 
-                #########################
-                ###  L O C K E R - 1  ###
-                #########################
-                con_lock_1.commit()
-                cur_lock_1.execute( sttm, ( -2, 2, ) )
-                con_lock_1.commit()
-                cur_lock_1.execute( sttm, ( -2, 2, ) )
+                worker_sql = f'''
+                    set list on;
+                    set autoddl off;
+                    set term ^;
+                    execute block as
+                    begin
+                        rdb$set_context('USER_SESSION','WHO', 'WORKER');
+                    end
+                    ^
+                    set term ;^
+                    commit;
+                    SET KEEP_TRAN_PARAMS ON;
+                    set transaction read committed read consistency;
+                    set list off;
+                    set wng off;
 
-                #########################
-                ###  L O C K E R - 2  ###
-                #########################
-                con_lock_2.commit()
-                cur_lock_2.execute( f'insert into {target_obj}(id,x) values(?, ?)', ( -1, 1, ) )
-                con_lock_2.commit()
-                cur_lock_2.execute( f'update {target_obj} set id = id where id = ?', ( -1, ) )
+                    set count on;
+                    -- THIS MUST HANG:
+                    {SQL_TO_BE_RESTARTED};
 
-                #########################
-                ###  L O C K E R - 1  ###
-                #########################
-                con_lock_1.commit()
+                    -- check results:
+                    -- ###############
+                    select id,x from {target_obj} order by id;
 
-                #########################
-                ###  L O C K E R - 2  ###
-                #########################
-                con_lock_2.commit() # At this point merge can complete its job but it must FAIL because of multiple matches for abs(t.id) = abs(s.id), i.e. when ID = -1 and 1
-
-                # Here we wait for ISQL complete its mission:
-                p_worker.wait()
+                    select v.old_id, v.op, v.snap_no_rank
+                    from v_worker_log v
+                    where v.op = 'upd';
 
 
-        for g in (fn_worker_log, fn_worker_err):
-            log_type = 'STDLOG' if g == fn_worker_log else 'STDERR'
-            with g.open() as f:
-                for line in f:
-                    if line.split():
-                        print(f'checked_mode: {checked_mode}, {log_type}: {line}')
+                    --set width who 10;
+                    -- DO NOT check this! Values can differ here from one run to another!
+                    -- select id, trn, who, old_id, new_id, op, rec_vers, global_cn, snap_no from tlog_done order by id;
+                    rollback;
 
-    act.expected_stdout = expected_stdout
-    act.stdout = capsys.readouterr().out
-    assert act.clean_stdout == act.clean_expected_stdout
+                '''
 
+                fn_worker_sql.write_text(worker_sql)
+
+                with fn_worker_log.open(mode='w') as hang_out, fn_worker_err.open(mode='w') as hang_err:
+
+                    ############################################################################
+                    ###  L A U N C H     W O R K E R    U S I N G     I S Q L,   A S Y N C.  ###
+                    ############################################################################
+                    p_worker = subprocess.Popen([act.vars['isql'], '-i', str(fn_worker_sql),
+                                                   '-user', act.db.user,
+                                                   '-password', act.db.password,
+                                                   '-pag', '999999',
+                                                   act.db.dsn
+                                                ],
+                                                  stdout = hang_out,
+                                                  stderr = hang_err
+                                               )
+
+                    # NB: when ISQL will establish attach, first record that it must lock is ID = 0 -- see above SQL_TO_BE_RESTARTED
+                    # We must to ensure that this (worker) attachment has been really created and LOCKS this record:
+                    #
+                    #wait_for_record_become_locked(tx_monitoring, cur_monitoring, f'update {target_obj} set id=id where id = 0', SQL_TAG_THAT_WE_WAITING_FOR)
+
+                    sttm = f'update {target_obj} set id = ? where abs( id ) = ?'
+
+                    #########################
+                    ###  L O C K E R - 2  ###
+                    #########################
+                    cur_lock_2.execute( sttm, ( -5, 5, ) )
+                    con_lock_2.commit()
+                    cur_lock_2.execute( sttm, ( -5, 5, ) )
+
+                    #########################
+                    ###  L O C K E R - 1  ###
+                    #########################
+                    con_lock_1.commit() # releases record with ID = 0 ==> now it can be locked by worker.
+                    # We must to ensure that this (worker) attachment has been really created and LOCKS this record:
+                    #
+                    wait_for_record_become_locked(tx_monitoring, cur_monitoring, f'update {target_obj} set id=id where id=0', SQL_TAG_THAT_WE_WAITING_FOR)
+
+
+                    cur_lock_1.execute( sttm, ( -4, 4, ) )
+                    con_lock_1.commit()
+                    cur_lock_1.execute( sttm, ( -4, 4, ) )
+
+                    #########################
+                    ###  L O C K E R - 2  ###
+                    #########################
+                    con_lock_2.commit() # releases record with ID = -5 ==> now it can be locked by worker.
+                    # We must to ensure that this (worker) attachment has been really created and LOCKS this record:
+                    #
+                    wait_for_record_become_locked(tx_monitoring, cur_monitoring, f'update {target_obj} set id=id where id=-5', SQL_TAG_THAT_WE_WAITING_FOR)
+
+                    cur_lock_2.execute( sttm, ( -3, 3, ) )
+                    con_lock_2.commit()
+                    cur_lock_2.execute( sttm, ( -3, 3, ) )
+
+                    #########################
+                    ###  L O C K E R - 1  ###
+                    #########################
+                    con_lock_1.commit()
+                    # We must to ensure that this (worker) attachment has been really created and LOCKS this record:
+                    #
+                    wait_for_record_become_locked(tx_monitoring, cur_monitoring, f'update {target_obj} set id=id where id=-4', SQL_TAG_THAT_WE_WAITING_FOR)
+
+                    cur_lock_1.execute( sttm, ( -2, 2, ) )
+                    con_lock_1.commit()
+                    cur_lock_1.execute( sttm, ( -2, 2, ) )
+
+                    #########################
+                    ###  L O C K E R - 2  ###
+                    #########################
+                    con_lock_2.commit()
+                    # We must to ensure that this (worker) attachment has been really created and LOCKS this record:
+                    #
+                    wait_for_record_become_locked(tx_monitoring, cur_monitoring, f'update {target_obj} set id=id where id=-3', SQL_TAG_THAT_WE_WAITING_FOR)
+
+
+                    cur_lock_2.execute( f'insert into {target_obj}(id,x) values(?, ?)', ( -1, 1, ) )
+                    con_lock_2.commit()
+                    cur_lock_2.execute( f'update {target_obj} set id = id where id = ?', ( -1, ) )
+
+                    #########################
+                    ###  L O C K E R - 1  ###
+                    #########################
+                    con_lock_1.commit()
+                    # We must to ensure that this (worker) attachment has been really created and LOCKS this record:
+                    #
+                    wait_for_record_become_locked(tx_monitoring, cur_monitoring, f'update {target_obj} set id=id where id=-2', SQL_TAG_THAT_WE_WAITING_FOR)
+
+                    #########################
+                    ###  L O C K E R - 2  ###
+                    #########################
+                    con_lock_2.commit() # At this point merge can complete its job but it must FAIL because of multiple matches for abs(t.id) = abs(s.id), i.e. when ID = -1 and 1
+
+                    # Here we wait for ISQL complete its mission:
+                    p_worker.wait()
+
+            # < with act.db.connect
+
+            for g in (fn_worker_log, fn_worker_err):
+                with g.open() as f:
+                    for line in f:
+                        if line.strip():
+                            print(f'checked_mode: {checked_mode}, {"STDLOG" if g == fn_worker_log else "STDERR"}: {line}')
+
+            expected_stdout_worker = f"""
+                checked_mode: {checked_mode}, STDLOG: Records affected: 2
+                checked_mode: {checked_mode}, STDLOG:      ID       X
+                checked_mode: {checked_mode}, STDLOG: ======= =======
+                checked_mode: {checked_mode}, STDLOG:      -5       5
+                checked_mode: {checked_mode}, STDLOG:      -4       4
+                checked_mode: {checked_mode}, STDLOG:      -3       3
+                checked_mode: {checked_mode}, STDLOG:      -2       2
+                checked_mode: {checked_mode}, STDLOG:      -1       1
+                checked_mode: {checked_mode}, STDLOG:       0       0
+                checked_mode: {checked_mode}, STDLOG:       1       1
+                checked_mode: {checked_mode}, STDLOG: Records affected: 7
+                checked_mode: {checked_mode}, STDLOG:  OLD_ID OP              SNAP_NO_RANK
+                checked_mode: {checked_mode}, STDLOG: ======= ====== =====================
+                checked_mode: {checked_mode}, STDLOG:       0 UPD                        1
+                checked_mode: {checked_mode}, STDLOG:       1 UPD                        1
+                checked_mode: {checked_mode}, STDLOG:       0 UPD                        2
+                checked_mode: {checked_mode}, STDLOG:       1 UPD                        2
+                checked_mode: {checked_mode}, STDLOG:       0 UPD                        3
+                checked_mode: {checked_mode}, STDLOG:       1 UPD                        3
+                checked_mode: {checked_mode}, STDLOG:       0 UPD                        4
+                checked_mode: {checked_mode}, STDLOG:       1 UPD                        4
+                checked_mode: {checked_mode}, STDLOG:       0 UPD                        5
+                checked_mode: {checked_mode}, STDLOG:       1 UPD                        5
+                checked_mode: {checked_mode}, STDLOG: Records affected: 10
+                checked_mode: {checked_mode}, STDERR: Statement failed, SQLSTATE = 21000
+                checked_mode: {checked_mode}, STDERR: Multiple source records cannot match the same target during MERGE
+                checked_mode: {checked_mode}, STDERR:
+            """
+
+            act.expected_stdout = expected_stdout_worker
+            act.stdout = capsys.readouterr().out
+            assert act.clean_stdout == act.clean_expected_stdout
+            act.reset()
+
+        # < with act.trace
+
+        allowed_patterns = \
+        [
+             '\\)\\s+EXECUTE_STATEMENT_RESTART$'
+            #,re.escape(SQL_TO_BE_RESTARTED)
+            ,'^Restarted \\d+ time\\(s\\)'
+        ]
+        allowed_patterns = [re.compile(x) for x in allowed_patterns]
+
+        for line in act.trace_log:
+            if line.strip():
+                if act.match_any(line.strip(), allowed_patterns):
+                    print(line.strip())
+
+        expected_stdout_trace = f"""
+            EXECUTE_STATEMENT_RESTART
+            Restarted 1 time(s)
+
+            EXECUTE_STATEMENT_RESTART
+            Restarted 2 time(s)
+
+            EXECUTE_STATEMENT_RESTART
+            Restarted 3 time(s)
+
+            EXECUTE_STATEMENT_RESTART
+            Restarted 4 time(s)
+        """
+                
+        act.expected_stdout = expected_stdout_trace
+        act.stdout = capsys.readouterr().out
+        assert act.clean_stdout == act.clean_expected_stdout
+        act.reset()
+
+    # < for checked_mode
