@@ -7,6 +7,9 @@ TITLE:       FB3: Stored function accepts duplicate input arguments
 DESCRIPTION:
 JIRA:        CORE-4280
 FBTEST:      bugs.core_4280
+NOTES:
+    [30.09.2023] pzotov
+    Expected error message become differ in FB 6.x, added splitting.
 """
 
 import pytest
