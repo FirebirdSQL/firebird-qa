@@ -3,11 +3,13 @@
 """
 ID:          issue-4889
 ISSUE:       4889
-TITLE:       Incorrect error for PSQL function when the number of actual arguments does
-  not match the number of formal arguments
+TITLE:       Incorrect error for PSQL function when the number of actual arguments does not match the number of formal arguments
 DESCRIPTION:
 JIRA:        CORE-4572
 FBTEST:      bugs.core_4572
+NOTES:
+    [30.09.2023] pzotov
+    Expected error message became differ in FB 6.x, added splitting.
 """
 
 import pytest
@@ -45,7 +47,7 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 07001
     Dynamic SQL Error
     -Input parameter mismatch for function FN_MULTIPLIER
@@ -55,9 +57,16 @@ expected_stderr = """
     -Input parameter mismatch for procedure SP_MULTIPLIER
 """
 
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 07001
+    Parameter mismatch for function FN_MULTIPLIER
+    -Parameter A_TIMES has no default value and was not specified or was specified with DEFAULT
+    Statement failed, SQLSTATE = 07001
+    Parameter mismatch for procedure SP_MULTIPLIER
+    -Parameter A_TIMES has no default value and was not specified or was specified with DEFAULT
+"""
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
-
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
