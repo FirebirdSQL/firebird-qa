@@ -7,6 +7,9 @@ TITLE:       COLLATE IN STORED PROCEDURE
 DESCRIPTION:
 FBTEST:      functional.procedure.create.15
 JIRA:        CORE-684
+NOTES:
+    [30.09.2023] pzotov
+    Test not needed, see test_02.py and test_03.py. Added mark.skip().
 """
 
 import pytest
@@ -51,6 +54,7 @@ NOM3
 TEST
 """
 
+@pytest.mark.skip("Covered by test_02 and test_03")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
