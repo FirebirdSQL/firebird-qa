@@ -15,7 +15,7 @@ import pytest
 from firebird.qa import *
 
 db = db_factory(charset = 'win1250')
-act = python_act('db') #, substitutions = [ ('=', ''), ('[ \t]+', ' ') ])
+act = python_act('db', substitutions = [ ('=', ''), ('[ \t]+', ' ') ])
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
