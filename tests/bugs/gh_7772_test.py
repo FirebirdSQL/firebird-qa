@@ -14,10 +14,7 @@ NOTES:
     Thanks to Vlad for provided example for test.
     Confirmed bug on 4.0.4.2997: restored database contains blob with size = 4464 which is less than initial size.
 
-    Checked on 4.0.4.2998 -- all fine.
-    ::: NB :::
-    Currently FB 5.x and 6.x are also affected, so this test will FAIL on them.
-    Sent report to Vlad, 01.10.2023 09:50. Waiting for reply / fix in FB 5.x and 6.x
+    Checked on 4.0.4.2998, 5.0.0.1235 (intermediate build), 6.0.0.65 (intermediate build) -- all fine.
 """
 from io import BytesIO
 from pathlib import Path
