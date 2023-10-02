@@ -49,7 +49,9 @@ NOTES:
 
     [29.09.2023] pzotov
     Replaces expected output to be matched to current FB 5.x and 6.x snapshots.
-    Added substitution to suppress output of BLOB_ID values because access_path type now is BLOB.
+    Added substitution to disable output of BLOB_ID values because access_path type is BLOB since 19-sep-2023
+    (see https://github.com/FirebirdSQL/firebird/commit/39b019574a7eb23eff92ee71121043d9a9c8371f )
+
 """
 
 import os
