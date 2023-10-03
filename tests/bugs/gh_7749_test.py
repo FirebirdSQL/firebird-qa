@@ -5,6 +5,10 @@ ID:          issue-7749
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7749
 TITLE:       Fix character set and collation output
 DESCRIPTION:
+    Discussed with Alex, Dmitry Yemanov and Dimitry Sibiryakov, 
+    sibject relates to https://github.com/FirebirdSQL/firebird/pull/7763
+    See commit https://github.com/FirebirdSQL/firebird/commit/8dbdc2ae3f14104f3778cb2e61e680769a105df8
+    ("Separate charset output: full for SHOW and minimal for EXTRACT").
 NOTES:
     [03.10.2023] pzotov
     Checked on 6.0.0.66 (Intermediate build).
