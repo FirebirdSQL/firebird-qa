@@ -52,7 +52,7 @@ expected_stdout = """
     NO
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=6.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute()
