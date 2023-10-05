@@ -2,11 +2,14 @@
 
 """
 ID:          issue-3179
-ISSUE:       3179
-TITLE:       isql extracts the array dimensions after the character set name
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/3179
+TITLE:       ISQL extracts the array dimensions after the character set name rather than after datatype and its length
 DESCRIPTION:
 JIRA:        CORE-2788
 FBTEST:      bugs.core_2788
+NOTES:
+    [05.10.2023] pzotov
+    Removed SHOW command for check result because its output often changes. Query to RDB$ tables is used instead.
 """
 
 import pytest
@@ -17,18 +20,29 @@ db = db_factory()
 act = python_act('db', substitutions=[('- line .*', ''), ('At line .*', '')])
 
 sql_ddl = """
-create domain dm_test as char(1) character set iso8859_1[1:2];
-create domain dm_test as char(1)[1:2] character set iso8859_1;
-commit;
-show domain dm_test;
+    -- DO NOT 'set bail on' here!
+    create domain dm_test as char(1) character set iso8859_1[11:23];
+    create domain dm_test as char(1)[11:23] character set iso8859_1;
+    commit;
 """
 
-expected_stdout = """
-    DM_TEST                         ARRAY OF [2]
-    CHAR(1) CHARACTER SET ISO8859_1 Nullable
+sql_chk = """
+    set list on;
+    select f.rdb$field_name, f.rdb$field_length, f.rdb$dimensions, d.rdb$lower_bound, d.rdb$upper_bound
+    from rdb$fields f
+    join rdb$field_dimensions d on f.rdb$field_name = d.rdb$field_name
+    where f.rdb$field_name = 'DM_TEST';
 """
 
-expected_stderr_a = """
+expected_ddl_stdout = """
+    RDB$FIELD_NAME                  DM_TEST
+    RDB$FIELD_LENGTH                1
+    RDB$DIMENSIONS                  1
+    RDB$LOWER_BOUND                 11
+    RDB$UPPER_BOUND                 23
+"""
+
+expected_ddl_stderr = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -36,19 +50,21 @@ expected_stderr_a = """
     -[
 """
 
-expected_stderr_b = """
-   There is no domain DM_TEST in this database
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr_a
-    act.expected_stdout = expected_stdout
-    act.isql(switches=[], input=sql_ddl)
+
+    # Apply initial DDL and check domain info:
+    #
+    act.expected_stderr = expected_ddl_stderr
+    act.expected_stdout = expected_ddl_stdout
+    act.isql(switches=[], input = '\n'.join((sql_ddl, sql_chk)) )
     assert (act.clean_stderr == act.clean_expected_stderr and
             act.clean_stdout == act.clean_expected_stdout)
-    #
     act.reset()
+
+    #---------------------------------------------------------
+    # Extract metadata:
+    #
     act.isql(switches=['-x'])
     xmeta = act.stdout
     #
@@ -56,16 +72,17 @@ def test_1(act: Action):
         c = con.cursor()
         c.execute('drop domain dm_test')
         con.commit()
-    #
-    act.reset()
-    act.expected_stderr = expected_stderr_b
-    act.isql(switches=['-q'], input='show domain dm_test;')
-    assert act.clean_stderr == act.clean_expected_stderr
-    #
-    act.reset()
+    #---------------------------------------------------------
+    # Attempt to apply extracted metadata. No errors must occur:
     act.isql(switches=[], input=xmeta)
     #
     act.reset()
-    act.expected_stdout = expected_stdout
-    act.isql(switches=['-q'], input='show domain dm_test;')
+
+    #---------------------------------------------------------
+    # Extract domain info again. Result must be the same as above:
+    #
+    act.expected_stdout = expected_ddl_stdout
+    act.isql(switches=['-q'], input= sql_chk)
     assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
