@@ -9,7 +9,7 @@ JIRA:        CORE-1640
 FBTEST:      bugs.core_1640
 NOTES:
     [05.10.2023] pzotov
-    Removed SHOW TABLE command for check result because its output often changes.
+    Removed SHOW VIEW command for check result because its output often changes.
 """
 
 import pytest
