@@ -7,6 +7,7 @@ TITLE:       CREATE INDEX considers NULL and empty string being the same in comp
 DESCRIPTION:
 JIRA:        CORE-3675
 FBTEST:      bugs.core_3675
+NOTES:
     [05.10.2023] pzotov
     Removed SHOW command for check result because its output often changes.
 """
