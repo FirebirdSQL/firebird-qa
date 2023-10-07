@@ -154,42 +154,41 @@ def test_1(act: Action):
     else:
         expected_stdout = """
             Procedure text:
-            =============================================================================
             begin
-                post_event 'test';
+            post_event 'test';
             end
-            =============================================================================
+
             Parameters:
-            P_SMALLINT                        INPUT SMALLINT
-            P_INT                             INPUT INTEGER
-            P_BIGINT                          INPUT INTEGER
-            P_INT128                          INPUT INTEGER
-            P_FLOAT                           INPUT FLOAT
-            P_DOUBLE                          INPUT DOUBLE PRECISION
-            P_DEC                             INPUT DECIMAL(9, 3)
-            P_NUM                             INPUT NUMERIC(10, 4)
-            P_DECFLOAT_16                     INPUT DECFLOAT(16)
-            P_DECFLOAT_34                     INPUT DECFLOAT(34)
-            P_BOOL                            INPUT BOOLEAN
-            P_DATE                            INPUT DATE
-            P_JUST_TIME                       INPUT TIME
-            P_JUST_TIMESTAMP                  INPUT TIMESTAMP
-            P_TIME_WO_TZ                      INPUT TIME
-            P_TIME_WI_TZ                      INPUT TIME WITH TIME ZONE
-            P_TIMESTAMP_WO_TZ                 INPUT TIMESTAMP
-            P_TIMESTAMP_WI_TZ                 INPUT TIMESTAMP WITH TIME ZONE
-            P_CHAR                            INPUT CHAR(1)
-            P_VCHR_WO_CSET_AND_COLL           INPUT VARCHAR(1)
-            P_VCHR_WI_CSET_AND_COLL           INPUT VARCHAR(1) CHARACTER SET WIN1251 COLLATE WIN1251_UA
-            P_VCHR_WI_CSET_ONLY               INPUT VARCHAR(1) CHARACTER SET WIN1251 COLLATE WIN1251
-            P_VCHR_WI_COLL_ONLY               INPUT VARCHAR(1) COLLATE PXW_HUNDC
-            P_NCHR                            INPUT CHAR(1) CHARACTER SET ISO8859_1 COLLATE ISO8859_1
-            P_BINARY                          INPUT BINARY(16)
-            P_VARBIN                          INPUT VARBINARY(16)
-            P_BLOB0                           INPUT BLOB CHARACTER SET NONE COLLATE NONE
-            P_BLOB1                           INPUT BLOB
-            P_BLOB2                           INPUT BLOB CHARACTER SET WIN1251 COLLATE WIN1251
-            P_BLOB3                           INPUT BLOB CHARACTER SET WIN1251 COLLATE WIN1251_UA
+            P_SMALLINT INPUT SMALLINT
+            P_INT INPUT INTEGER
+            P_BIGINT INPUT INTEGER
+            P_INT128 INPUT INTEGER
+            P_FLOAT INPUT FLOAT
+            P_DOUBLE INPUT DOUBLE PRECISION
+            P_DEC INPUT DECIMAL(9, 3)
+            P_NUM INPUT NUMERIC(10, 4)
+            P_DECFLOAT_16 INPUT DECFLOAT(16)
+            P_DECFLOAT_34 INPUT DECFLOAT(34)
+            P_BOOL INPUT BOOLEAN
+            P_DATE INPUT DATE
+            P_JUST_TIME INPUT TIME
+            P_JUST_TIMESTAMP INPUT TIMESTAMP
+            P_TIME_WO_TZ INPUT TIME
+            P_TIME_WI_TZ INPUT TIME WITH TIME ZONE
+            P_TIMESTAMP_WO_TZ INPUT TIMESTAMP
+            P_TIMESTAMP_WI_TZ INPUT TIMESTAMP WITH TIME ZONE
+            P_CHAR INPUT CHAR(1) CHARACTER SET WIN1250
+            P_VCHR_WO_CSET_AND_COLL INPUT VARCHAR(1) CHARACTER SET WIN1250
+            P_VCHR_WI_CSET_AND_COLL INPUT VARCHAR(1) CHARACTER SET WIN1251 COLLATE WIN1251_UA
+            P_VCHR_WI_CSET_ONLY INPUT VARCHAR(1) CHARACTER SET WIN1251
+            P_VCHR_WI_COLL_ONLY INPUT VARCHAR(1) CHARACTER SET WIN1250 COLLATE PXW_HUNDC
+            P_NCHR INPUT CHAR(1) CHARACTER SET ISO8859_1
+            P_BINARY INPUT BINARY(16)
+            P_VARBIN INPUT VARBINARY(16)
+            P_BLOB0 INPUT BLOB CHARACTER SET NONE
+            P_BLOB1 INPUT BLOB CHARACTER SET WIN1250
+            P_BLOB2 INPUT BLOB CHARACTER SET WIN1251
+            P_BLOB3 INPUT BLOB CHARACTER SET WIN1251 COLLATE WIN1251_UA
         """
 
     act.expected_stdout = expected_stdout
