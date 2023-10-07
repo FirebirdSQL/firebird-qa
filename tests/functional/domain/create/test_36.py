@@ -30,7 +30,7 @@ tmp_user = user_factory('db', name='michael_smith', password = '123')
 tmp_role = role_factory('db', name='"company boss"')
 
 act = python_act('db')
-
+DM_SIZE = 32765
 @pytest.mark.version('>=3')
 def test_1(act: Action, tmp_user: User, tmp_role: Role, capsys):
 
@@ -94,7 +94,7 @@ def test_1(act: Action, tmp_user: User, tmp_role: Role, capsys):
         ;
         commit;
 
-        create domain dm_test blob character set win1250 default current_role collate WIN_CZ;
+        create domain dm_test varchar({DM_SIZE}) character set win1250 default current_role collate WIN_CZ;
         recreate table test(s dm_test);
         commit;
 
@@ -114,10 +114,10 @@ def test_1(act: Action, tmp_user: User, tmp_role: Role, capsys):
 
     expected_stdout = f"""
         DM_NAME                         DM_TEST
-        DM_TYPE                         BLOB SUB_TYPE TEXT
-        DM_SIZE                         8
+        DM_TYPE                         VARCHAR
+        DM_SIZE                         {DM_SIZE}
         DM_SCALE                        0
-        DM_CHAR_LEN                     <null>
+        DM_CHAR_LEN                     {DM_SIZE}
         DM_DEFAULT                      default current_role
         DM_NOT_NULL                     <null>
         DM_CHECK_EXPR                   <null>
