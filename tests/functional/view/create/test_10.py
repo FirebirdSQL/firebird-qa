@@ -31,6 +31,7 @@ View Source:
 SELECT ID AS VID, NAME FROM T1
 """
 
+@pytest.mark.skip("Test not needed: there are lot tests which use this functionality.")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
