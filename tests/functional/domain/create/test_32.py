@@ -81,7 +81,7 @@ test_script = f"""
     ;
     commit;
 
-    create domain dm_test blob character set win1250 default '{DM_DEFA}' collate WIN_CZ;
+    create domain dm_test varchar({DM_SIZE}) character set win1250 default '{DM_DEFA}' collate WIN_CZ;
     recreate table test(s dm_test);
     commit;
 
@@ -96,10 +96,10 @@ act = isql_act('db', test_script)
 
 expected_stdout = f"""
     DM_NAME                         DM_TEST
-    DM_TYPE                         BLOB SUB_TYPE TEXT
-    DM_SIZE                         8
+    DM_TYPE                         VARCHAR
+    DM_SIZE                         {DM_SIZE}
     DM_SCALE                        0
-    DM_CHAR_LEN                     <null>
+    DM_CHAR_LEN                     {DM_SIZE}
     DM_DEFAULT                      default '{DM_DEFA}'
     DM_NOT_NULL                     <null>
     DM_CHECK_EXPR                   <null>
