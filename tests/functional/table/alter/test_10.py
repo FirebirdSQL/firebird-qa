@@ -5,30 +5,44 @@ ID:          table.alter-10
 TITLE:       ALTER TABLE - DROP CONSTRAINT - PRIMARY KEY
 DESCRIPTION:
 FBTEST:      functional.table.alter.10
+NOTES:
+    [06.10.2023] pzotov
+    Removed SHOW command. It is enough to check that we can add duplicate values in the table w/o PK.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """CREATE TABLE test( id INTEGER NOT NULL CONSTRAINT pk PRIMARY KEY,
-                   text VARCHAR(32));
-commit;
-"""
+db = db_factory(charset = 'utf8')
 
-db = db_factory(init=init_script)
+test_script = """
+    set bail on;
+    set list on;
+    create table test(id int, constraint test_pk primary key(id));
+    alter table test drop constraint test_pk;
+    commit;
+    insert into test(id) values(1);
+    insert into test(id) values(1);
+    commit;
+    -- this must show two records with the same value:
+    select * from test;
+    commit;
 
-test_script = """ALTER TABLE test DROP CONSTRAINT pk;
-SHOW TABLE test;
+    -- thist must FAIL because NOT NULL still active for ID:
+    insert into test(id) values(null);
 """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """ID                              INTEGER Not Null
-TEXT                            VARCHAR(32) Nullable
+expected_stdout = """
+    ID                              1
+    ID                              1
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."ID", value "*** null ***"
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
