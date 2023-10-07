@@ -5,6 +5,7 @@ ID:          table.alter-01
 TITLE:       ALTER TABLE - ADD column
 DESCRIPTION:
 FBTEST:      functional.table.alter.01
+NOTES:
     [06.10.2023] pzotov
     1. Removed SHOW command for check result because its output often changes.
        It is enough for this test to obtain similar data from RDB tables.
