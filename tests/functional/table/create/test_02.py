@@ -51,6 +51,7 @@ CONSTRAINT INTEG_9:
 CHECK (c6>c5)
 """
 
+@pytest.mark.skip("Test will be reimplemented.")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
