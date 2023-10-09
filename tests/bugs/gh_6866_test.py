@@ -385,5 +385,5 @@ act_2 = isql_act('db', test_script_2, substitutions=substitutions)
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout
-    act_2.execute()
+    act_2.execute(combine_output = True)
     assert act_2.clean_stdout == act_2.clean_expected_stdout
