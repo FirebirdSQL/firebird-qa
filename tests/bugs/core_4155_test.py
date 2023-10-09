@@ -53,6 +53,6 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
