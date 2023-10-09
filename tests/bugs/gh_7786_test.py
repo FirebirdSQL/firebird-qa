@@ -7,6 +7,7 @@ TITLE:       Regression: ISQL extracts metadata with non-compilable 'COLLATE' cl
 DESCRIPTION:
 NOTES:
     [09.10.2023] pzotov
+    Skip usage of SHOW command. It is enough to check that extracted metadata can be compiled w/o errors.
     Checked on 6.0.0.75.
 """
 
