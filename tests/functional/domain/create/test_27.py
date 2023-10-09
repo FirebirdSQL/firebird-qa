@@ -3,8 +3,8 @@
 """
 ID:          domain.create-27
 FBTEST:      functional.domain.create.27
-TITLE:       CREATE DOMAIN - BLOB SUB TYPE
-DESCRIPTION: Domain creation based on BLOB datatype with SUBTYPE specification
+TITLE:       CREATE DOMAIN. Specifying BLOB SUB_TYPE <N>, where N = 0 or 1.
+DESCRIPTION: Domain creation based on BLOB datatype with SUBTYPE <NUM> specification, where NUM = 0 or 1.
 NOTES:
     [06.10.2023] pzotov
     1. Removed SHOW command for check result because its output often changes.
@@ -80,7 +80,10 @@ test_script = f"""
     ;
     commit;
 
-    create domain dm_test blob sub_type text character set win1250 collate WIN_CZ;
+    create domain dm_test blob
+        sub_type 1                            -- sub_type = 1 => text
+        character set win1250 collate WIN_CZ
+    ;
     recreate table test(s dm_test);
     commit;
 
@@ -95,7 +98,7 @@ test_script = f"""
     drop domain dm_test;
     commit;
 
-    create domain dm_test blob sub_type binary;
+    create domain dm_test blob sub_type 0;    -- sub_type 0 => binary
     recreate table test(s dm_test);
     commit;
     select v.* from v_domain_info v;
