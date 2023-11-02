@@ -39,13 +39,6 @@ db = db_factory(init=init_script)
 
 act = python_act('db')
 
-test_script = """
-    set list on;
-    set count on;
-    select rdb$active_flag, rdb$auto_enable from rdb$publications;
-"""
-#act = isql_act('db', test_script)
-
 #----------------------------------------------------------
 
 def replace_leading(source, char="#"):
