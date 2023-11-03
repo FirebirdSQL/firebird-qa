@@ -1860,6 +1860,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                FOREIGN
     RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                FORMAT
+    RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                FREE_IT
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                FROM
@@ -2513,7 +2515,7 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
 
-    Records affected: 498
+    Records affected: 499
 """
 
 @pytest.mark.version('>=5.0')
