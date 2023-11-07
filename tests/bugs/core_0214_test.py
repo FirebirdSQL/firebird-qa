@@ -5,6 +5,16 @@ ID:          issue-542
 ISSUE:       542
 TITLE:       Count ( DISTINCT ... ) is too slow
 DESCRIPTION:
+    This test does following:
+    1. Creates several tables with different number of unique values in field ID.
+    2. Measures for each table time for two statements:
+    2.1. select count(*) from ( select distinct id from ... )
+    vs
+    2.2. select count(distinct id) from ...
+    3. If time for 2.1 exceeds time for 2.2 more than <X> times -  output message
+       about possible regression. After multiple runs it was found that ratio for
+       2.1 vs 2.2 is about 1.05 ... 1.10.  Constant <X> (threshold) was selected
+       to be enough for not to be "violated".
 JIRA:        CORE-214
 FBTEST:      bugs.core_0214
 """
@@ -12,22 +22,11 @@ FBTEST:      bugs.core_0214
 import pytest
 from firebird.qa import *
 
-init_script = """
-    -- This test does following:
-    -- 1. Creates several tables with different number of unique values in field ID.
-    -- 2. Measures for each table time for two statements:
-    -- 2.1. select count(*) from ( select distinct id from ... )
-    -- vs
-    -- 2.2. select count(distinct id) from ...
-    -- 3. If time for 2.1 exceeds time for 2.2 more than <X> times -  output message
-    --    about possible regression. After multiple runs it was found that ratio for
-    --    2.1 vs 2.2 is about 1.05 ... 1.10.  Constant <X> (threshold) was selected
-    --    to be enough for not to be "violated".
-"""
+db = db_factory()
 
-db = db_factory(page_size=4096, init=init_script)
+MAX_DIFF = 3.0
 
-test_script = """
+test_script = f"""
     recreate table test1e1(id int); -- 10^1 distinct values
     recreate table test1e2(id int); -- 10^2 distinct values
     recreate table test1e3(id int); -- 10^3 distinct values
@@ -54,11 +53,11 @@ test_script = """
     set term ^;
 
     execute block returns (
-         ratio_for_1e1 varchar(50)
-        ,ratio_for_1e2 varchar(50)
-        ,ratio_for_1e3 varchar(50)
-        ,ratio_for_1e4 varchar(50)
-        ,ratio_for_1e5 varchar(50)
+         ratio_for_1e1 varchar(150)
+        ,ratio_for_1e2 varchar(150)
+        ,ratio_for_1e3 varchar(150)
+        ,ratio_for_1e4 varchar(150)
+        ,ratio_for_1e5 varchar(150)
     )
     as
         -- ############################################
@@ -68,7 +67,7 @@ test_script = """
         -- Probably random disturbance was caused by other (concurrent) processes on test host.
         -- Check with new threshold was done on: WI-V2.5.5.26942 (SC) and WI-V3.0.0.32134 (CS/SC/SS).
 
-        declare max_diff_threshold numeric(10,4) = 3.00;
+        declare max_diff_threshold numeric(10,4) = {MAX_DIFF};
 
         -- ############################################
 
@@ -150,25 +149,26 @@ test_script = """
 
         ------------
 
-        ratio_for_1e1 = 'Acceptable, <= ' || max_diff_threshold;
-        ratio_for_1e2 = 'Acceptable, <= ' || max_diff_threshold;
-        ratio_for_1e3 = 'Acceptable, <= ' || max_diff_threshold;
-        ratio_for_1e4 = 'Acceptable, <= ' || max_diff_threshold;
-        ratio_for_1e5 = 'Acceptable, <= ' || max_diff_threshold;
+        ratio_for_1e1 = 'Acceptable';
+        ratio_for_1e2 = 'Acceptable';
+        ratio_for_1e3 = 'Acceptable';
+        ratio_for_1e4 = 'Acceptable';
+        ratio_for_1e5 = 'Acceptable';
 
-        if (ratio_select_vs_count_1e1 > max_diff_threshold) then
+        if (1=0 or ratio_select_vs_count_1e1 > max_diff_threshold) then
+            -- Example: RATIO_FOR_1E1                   Regression /* perf_issue_tag */: ratio = 3.3695 > 3.0000
             ratio_for_1e1 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e1||' > '||max_diff_threshold;
 
-        if (ratio_select_vs_count_1e2 > max_diff_threshold) then
+        if (1=0 or ratio_select_vs_count_1e2 > max_diff_threshold) then
             ratio_for_1e2 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e2||' > '||max_diff_threshold;
 
-        if (ratio_select_vs_count_1e3 > max_diff_threshold) then
+        if (1=0 or ratio_select_vs_count_1e3 > max_diff_threshold) then
             ratio_for_1e3 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e3||' > '||max_diff_threshold;
 
-        if (ratio_select_vs_count_1e4 > max_diff_threshold) then
+        if (1=0 or ratio_select_vs_count_1e4 > max_diff_threshold) then
             ratio_for_1e4 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e4||' > '||max_diff_threshold;
 
-        if (ratio_select_vs_count_1e5 > max_diff_threshold) then
+        if (1=0 or ratio_select_vs_count_1e5 > max_diff_threshold) then
             ratio_for_1e5 = 'Regression /* perf_issue_tag */: ratio = '||ratio_select_vs_count_1e5||' > '||max_diff_threshold;
 
 
@@ -178,14 +178,14 @@ test_script = """
     ^ set term ;^
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script,substitutions = [('[ \t]+', ' ')])
 
-expected_stdout = """
-    RATIO_FOR_1E1                   Acceptable, <= 3.0000
-    RATIO_FOR_1E2                   Acceptable, <= 3.0000
-    RATIO_FOR_1E3                   Acceptable, <= 3.0000
-    RATIO_FOR_1E4                   Acceptable, <= 3.0000
-    RATIO_FOR_1E5                   Acceptable, <= 3.0000
+expected_stdout = f"""
+    RATIO_FOR_1E1 Acceptable
+    RATIO_FOR_1E2 Acceptable
+    RATIO_FOR_1E3 Acceptable
+    RATIO_FOR_1E4 Acceptable
+    RATIO_FOR_1E5 Acceptable
 """
 
 @pytest.mark.version('>=3')
