@@ -47,6 +47,8 @@ import platform
 import weakref
 import pytest
 from configparser import ConfigParser, ExtendedInterpolation
+from difflib import ndiff
+from _pytest.config import Config
 from _pytest.terminal import TerminalReporter, _get_raw_skip_reason, _format_trimmed
 from _pytest.pathlib import bestrelpath
 from subprocess import run, CompletedProcess, PIPE, STDOUT
@@ -569,6 +571,15 @@ def pytest_collection_modifyitems(session, config, items):
             item.user_properties.append(("title", item._qa_title_))
             item.user_properties.append(("description", item._qa_description_))
             item.user_properties.append(("notes", item._qa_notes_))
+
+def pytest_assertrepr_compare(config: Config, op: str, left: object, right: object) -> Optional[List[str]]:
+    """Returns explanation for comparisons in failing assert expressions.
+
+    If both objects are `str`, uses `difflib.ndiff` to provide explanation.
+    """
+    if isinstance(left, str) and isinstance(right, str) and op == "==":
+        return ndiff(left.splitlines(), right.splitlines())
+    return None
 
 def substitute_macros(text: str, macros: Dict[str, str]):
     """Helper function to substitute `$(name)` macros in text.
