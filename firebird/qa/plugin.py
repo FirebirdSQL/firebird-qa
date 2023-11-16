@@ -579,8 +579,9 @@ def pytest_assertrepr_compare(config: Config, op: str, left: object, right: obje
     If both objects are `str`, uses `difflib.ndiff` to provide explanation.
     """
     if isinstance(left, str) and isinstance(right, str) and op == "==":
-        # 16.11.2023, pzotov: we have too empty string at the beginning of each comparing lists.
+        # 16.11.2023, pzotov: we have to put empty string at the beginning of each comparing lists.
         # Otherwise first diff will be at the same line as 'assert' phrase, which causes readability be poor.
+        #
         left_lines = ['']
         left_lines.extend(left.splitlines())
         right_lines = ['']
