@@ -7,7 +7,7 @@ TITLE:       Potential bug in BETWEEN Operator
 DESCRIPTION:
 NOTES:
    Confirmed bug on 6.0.0.124.
-   Checked on 6.0.0.127.
+   Checked on 6.0.0.127; 5.0.0.1270, 4.0.4.3021, 3.0.12.33724.
 """
 
 import pytest
@@ -67,7 +67,7 @@ expected_stdout = """
 
 act = isql_act('db', test_script)
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=3.0.12')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
