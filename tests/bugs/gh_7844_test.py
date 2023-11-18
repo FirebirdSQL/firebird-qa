@@ -9,7 +9,7 @@ NOTES:
    [14.11.2023] pzotov
    There are no crashes on FB 3.x ... 6.x neither on Windows nor on Linux.
    Crash occurred only in DEBUG build (reply from Adriano, 14.11.2023 12:18).
-   On release build, 'set width a;' caused loose of info about width for column 'b'.
+   On release build, 'set width a;' caused missing info about width for column 'b'.
    Confirmed bug on WI-T6.0.0.122.
    Checked on 6.0.0.124 (intermediate build, timestamp: 14.11.2023 09:00).
 """
