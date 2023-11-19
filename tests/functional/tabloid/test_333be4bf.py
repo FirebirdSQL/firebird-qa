@@ -76,6 +76,8 @@ def test_1(act: Action, tmp_fbk: Path, tmp_res: Path, tmp_log: Path, capsys):
                 subprocess.call( [
                                     act.vars['gbak']
                                    ,'-rep'
+                                   ,'-user', act.db.user
+                                   ,'-pass', act.db.password
                                    ,'-v'
                                    ,'-par', str(max_parallel_wrk+1)
                                    ,tmp_fbk
@@ -87,6 +89,8 @@ def test_1(act: Action, tmp_fbk: Path, tmp_res: Path, tmp_log: Path, capsys):
                 subprocess.call( [
                                     act.vars['gbak']
                                    ,'-rep'
+                                   ,'-user', act.db.user
+                                   ,'-pass', act.db.password
                                    ,'-v'
                                    ,'-par', str(max_parallel_wrk+1)
                                    ,'-se', 'localhost:service_mgr'
