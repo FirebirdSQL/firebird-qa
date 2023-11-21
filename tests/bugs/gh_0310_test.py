@@ -2116,6 +2116,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                OVERRIDING
     RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                OWNER
+    RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                PACKAGE
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                PAD
@@ -2515,7 +2517,7 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
 
-    Records affected: 499
+    Records affected: 500
 """
 
 @pytest.mark.version('>=5.0')
