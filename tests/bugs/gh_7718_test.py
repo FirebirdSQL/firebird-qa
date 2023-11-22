@@ -10,6 +10,10 @@ DESCRIPTION:
     He must OWNER of this DB and thus have ability to run any DDL there (only 'create table' is checked).
     Finally, this user must be able to DROP database.
 NOTES:
+    Currently test checks only first option of following three:
+       Allow to create database with different owner (#7718)
+       Allow to create database with different owner via API
+       Support for OWNER clause in executeCreateDatabase()
     Checked on 6.0.0.139
 """
 from pathlib import Path
