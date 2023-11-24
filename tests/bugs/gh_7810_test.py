@@ -11,9 +11,11 @@ DESCRIPTION:
     Formulas for computed columns were choosen so that column 'e02' must have value equals to non-computed column or 'e01'.
     Test checks that value of 'e02' that is returned after update/delete must be equal to 'source' column (see 'e03' values in the output).
 NOTES:
-    Here we check only UPDATE and DELETE behavour.
-    Ability to run 'SELECT ... WITH LOCK' is checked in gh_7350_test.py
-    https://github.com/FirebirdSQL/firebird/issues/7350
+    1. Parameter ReadConsistency in firebird.conf must be set to 0, i.e. NOT-default value.
+    2. TIL = "RC NO_record_version" can be used to check feature since gh-7811 was fixed (20.11.2023 in master); see 'tpb_isol_set'
+    3. Here we check only UPDATE and DELETE behavior.
+       Ability to run 'SELECT ... WITH LOCK' is checked in gh_7350_test.py
+       https://github.com/FirebirdSQL/firebird/issues/7350
 
     Checked on 6.0.0.150.
 """
