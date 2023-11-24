@@ -24,6 +24,7 @@ NOTES:
        NOTE: before fix gh-7700, following statement hanged:
          set transaction read committed record_version WAIT;
          select id from test order by id with lock skip locked
+    5. Here we check only 'SELECT ... WITH LOCK' behavour. Results of UPDATE and DELETE are checked in gh_7810_test.py
 
     Checked on 6.0.0.137 (SS/CS), 5.0.0.1274 (SS/CS).
 """
