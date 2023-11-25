@@ -7,40 +7,43 @@ TITLE:       Conversion error when using a blob as an argument for the EXCEPTION
 DESCRIPTION:
 JIRA:        CORE-3761
 FBTEST:      bugs.core_3761
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
 from firebird.qa import *
 
 init_script = """
-    CREATE EXCEPTION CHECK_EXCEPTION 'Check exception';
-    COMMIT;
+    create exception check_exception 'check exception';
+    commit;
 """
 
 db = db_factory(init=init_script)
 
 test_script = """
-    SET TERM ^;
-    EXECUTE BLOCK AS
-    BEGIN
-        EXCEPTION CHECK_EXCEPTION CAST ('WORD' AS BLOB SUB_TYPE TEXT);
-    END^^
-    SET TERM ;^
+    set term ^;
+    execute block as
+    begin
+        exception check_exception cast ('word' as blob sub_type text);
+    end^
+    set term ;^
 """
 
 act = isql_act('db', test_script, substitutions=[('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
 
-expected_stderr = """
+expected_stdout = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -CHECK_EXCEPTION
-    -WORD
+    -word
     -At block line: 4, col: 2
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
