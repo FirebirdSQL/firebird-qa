@@ -26,6 +26,11 @@ NOTES:
          select id from test order by id with lock skip locked
     5. Here we check only 'SELECT ... WITH LOCK' behavour. Results of UPDATE and DELETE are checked in gh_7810_test.py
 
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
+    i.e.
+    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
+
     Checked on 6.0.0.137 (SS/CS), 5.0.0.1274 (SS/CS).
 """
 
@@ -834,7 +839,7 @@ def test_1(act: Action, capsys):
                 suspend;
         end
         ^
-        set term ^;
+        set term ;^
         commit;
 
         insert into test(id, f01) select row_number()over(), 0 from rdb$types rows 10;
