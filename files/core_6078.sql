@@ -201,7 +201,7 @@
     -- unsuccessful metadata update
     -- -CREATE OR ALTER PACKAGE PKG_TEST failed
     -- -No permission for CREATE PACKAGE operation
-    set term ^ ;
+    set term ^;
     create or alter package pkg_test -- error did raise, but packages still WAS created.
     as
     begin
@@ -254,7 +254,7 @@
       return 123987;
     end
     ^
-    set term ^;
+    set term ;^
     commit;
 
     -- Expected:
