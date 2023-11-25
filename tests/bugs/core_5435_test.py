@@ -24,6 +24,11 @@ DESCRIPTION:
 Value of fetches is compared with threshold (currently = 80) which was received after several runs.
 JIRA:        CORE-5435
 FBTEST:      bugs.core_5435
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
+    i.e.
+    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
 """
 
 import pytest
@@ -61,7 +66,7 @@ async_init_script = """
        end
    end
    ^
-   set term ^;
+   set term ;^
    commit;
 
    execute procedure sp_add_init_data( 300000 );
