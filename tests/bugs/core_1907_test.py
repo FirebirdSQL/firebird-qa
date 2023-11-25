@@ -7,6 +7,9 @@ TITLE:       Dropping and adding a domain constraint in the same transaction lea
 DESCRIPTION:
 JIRA:        CORE-1907
 FBTEST:      bugs.core_1907
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -23,7 +26,7 @@ db = db_factory(init=init_script)
 test_script = """set autoddl off;
 
 alter domain d1 drop constraint;
-alter domain d1 add constraint check (value = (select n from t2));;
+alter domain d1 add constraint check (value = (select n from t2));
 commit;
 
 drop table t1; -- cannot drop - there are dependencies
