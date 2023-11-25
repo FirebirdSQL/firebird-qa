@@ -34,4 +34,6 @@ act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.execute()
+    act.expected_stdout = ''
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
