@@ -7,6 +7,9 @@ TITLE:       Non-ASCII quoted identifiers are not converted to metadata (UNICODE
 DESCRIPTION:
 JIRA:        CORE-986
 FBTEST:      bugs.core_0986
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -40,7 +43,7 @@ non_ascii_ddl='''
      set echo on;
 
      create collation "Циферки" for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
-     create collation "Испания" for iso8859_1 from es_es_ci_ai 'SPECIALS-FIRST=1';;
+     create collation "Испания" for iso8859_1 from es_es_ci_ai 'SPECIALS-FIRST=1';
      commit;
 
      create domain "ИД'шники" int;
