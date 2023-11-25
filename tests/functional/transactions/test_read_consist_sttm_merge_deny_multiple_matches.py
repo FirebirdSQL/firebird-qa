@@ -94,6 +94,10 @@ NOTES:
            NB! Worker transaction must running in WAIT mode - in contrary to Tx that we start in our monitoring loop.
 
         Checked on WI-T6.0.0.55, WI-T5.0.0.1229, WI-V4.0.4.2995 (all SS/CS).
+
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
+    Merge expression defined in 'SQL_TO_BE_RESTARTED' must NOT end with semicolon!
 """
 
 import subprocess
@@ -183,8 +187,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                 ) s
                 on abs(t.id) = abs(s.id)
             when matched then
-                update set t.x = s.id * 100;
-            ;
+                update set t.x = s.id * 100
         """
 
         sql_addi = f'''
