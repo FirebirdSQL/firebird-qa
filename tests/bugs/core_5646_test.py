@@ -19,7 +19,7 @@ JIRA:        CORE-5646
 FBTEST:      bugs.core_5646
 NOTES:
     [26.11.2023]
-    This test was commited 24-dec-2018 after discussion with dimitr.
+    This test was commited at the end of DEC-2017 after discussion with dimitr (see discussion started 23-dec-2017 19:32).
     According to my reports, problem reproduced on build 4.0.800 (15-nov-2017) and seemed fixed on build 4.0.0.834 (21-dec-2017).
     But since 6.0.0.97 (28-oct-2023) this test fails on every run for FB 6.x, and this occurs on Linux and Windows-10 (no such problem on Windows-8.1).
 
