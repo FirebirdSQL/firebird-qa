@@ -17,6 +17,20 @@ DESCRIPTION:
   than threshold. After lot of runs this threshold was set to 1.00 (percent) -- see query below.
 JIRA:        CORE-5646
 FBTEST:      bugs.core_5646
+NOTES:
+    [26.11.2023]
+    This test was commited 24-dec-2018 after discussion with dimitr.
+    According to my reports, problem reproduced on build 4.0.800 (15-nov-2017) and seemed fixed on build 4.0.0.834 (21-dec-2017).
+    But since 6.0.0.97 (28-oct-2023) this test fails on every run for FB 6.x, and this occurs on Linux and Windows-10 (no such problem on Windows-8.1).
+
+    Despite fact that problem could be reproduced in dec-2018, i can not understand how this could be so!
+    Because commits in 2017 were only in the branch 'nodes-memory-core-5611':
+        22-oct-2017: refs/heads/work/nodes-memory-core-5611 // Better handling for the scratch pool and fixed CORE-5646.
+        26-nov-2017: refs/heads/work/nodes-memory-core-5611 // Correction - thanks to Dmitry.
+        27-nov-2017: refs/heads/work/nodes-memory-core-5611 // Better handling for the scratch pool and fixed CORE-5646.
+
+    Final commit to refs/heads/B3_0_Release waw only 15-JUN-2021:
+        https://github.com/FirebirdSQL/firebird/commit/ed585ab09fdad63551c48d1ce392c810b5cef4a8
 """
 
 import pytest
@@ -679,9 +693,9 @@ test_script = """
     set width diff_percent_in_max_alloc_memory 50;
     select
          seq_no
-        ,iif( violations_cnt > 1, 'POOR: ' || violations_cnt || ' times', 'OK') as threshold_violations_count
-        ,iif( violations_cnt > 1 and diff_used_prc > max_allowed_diff_prc,  'POOR: '|| diff_used_prc ||' - exeeds max allowed percent = ' || max_allowed_diff_prc, 'OK') as diff_percent_in_max_used_memory
-        ,iif( violations_cnt > 1 and diff_alloc_prc > max_allowed_diff_prc, 'POOR: '|| diff_alloc_prc || ' - exeeds max allowed percent = ' || max_allowed_diff_prc  , 'OK') as diff_percent_in_max_alloc_memory
+        ,iif( violations_cnt > 1, '/* perf_issue_tag */ POOR: ' || violations_cnt || ' times', 'OK') as threshold_violations_count
+        ,iif( violations_cnt > 1 and diff_used_prc > max_allowed_diff_prc,  '/* perf_issue_tag */ POOR: '|| diff_used_prc ||' - exeeds max allowed percent = ' || max_allowed_diff_prc, 'OK') as diff_percent_in_max_used_memory
+        ,iif( violations_cnt > 1 and diff_alloc_prc > max_allowed_diff_prc, '/* perf_issue_tag */ POOR: '|| diff_alloc_prc || ' - exeeds max allowed percent = ' || max_allowed_diff_prc  , 'OK') as diff_percent_in_max_alloc_memory
     from (
         select a.*, sum( iif(a.diff_used_prc > a.max_allowed_diff_prc or a.diff_alloc_prc > a.max_allowed_diff_prc, 1, 0) )over() as violations_cnt
         from (
@@ -859,6 +873,7 @@ expected_stdout = """
     DIFF_PERCENT_IN_MAX_ALLOC_MEMORY OK
 """
 
+# @pytest.mark.skip('TO BE INVESTIGATED. POSSIBLE NEEDS TO BE RE-IMPLEMENTED.')
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
