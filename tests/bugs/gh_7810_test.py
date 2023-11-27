@@ -17,7 +17,7 @@ NOTES:
        Ability to run 'SELECT ... WITH LOCK' is checked in gh_7350_test.py
        https://github.com/FirebirdSQL/firebird/issues/7350
 
-    Checked on 6.0.0.150.
+    Checked on 6.0.0.150, 5.0.0.1280 (intermediate build 27.11.2023, after backporting, commit dc2d85c17b41fb6c378bffc0896338c4f8856998).
 """
 
 import pytest
@@ -28,10 +28,7 @@ import time
 db = db_factory(charset = 'utf8')
 act = python_act('db', substitutions = [('[ \t]+', ' ')])
 
-expected_stdout_5x = f"""
-"""
-
-expected_stdout_6x = f"""
+expected_stdout = f"""
     TIL = SNAPSHOT, WAIT = NO_WAIT: update test_num set id = id order by id rows 7 skip locked returning id,n01, e01, e02, e03 collate unicode_ci as e03_ret;
     ID:                                                              -2
     N01:                                                             -9223372036854775808
@@ -5234,7 +5231,7 @@ expected_stdout_6x = f"""
     E03:                                                             Is e02 not distinct from t0 ? ==> true
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 
     init_sql = f"""
@@ -5330,12 +5327,7 @@ def test_1(act: Action, capsys):
 
         for x_isol in tpb_isol_set:
             for x_wait in tpb_wait_set:
-                if act.is_version('<6'):
-                    skip_flag = x_isol in (Isolation.SERIALIZABLE, Isolation.READ_COMMITTED_NO_RECORD_VERSION) and x_wait == TraLockResolution.WAIT
-                else:
-                    skip_flag = x_isol in (Isolation.SERIALIZABLE,) and x_wait == TraLockResolution.WAIT
-
-                if skip_flag:
+                if x_isol in (Isolation.SERIALIZABLE,) and x_wait == TraLockResolution.WAIT:
                     
                     #######################################
                     ###    D O    N O T    C H E C K    ###
@@ -5373,6 +5365,6 @@ def test_1(act: Action, capsys):
                     finally:
                         tx_free_seeker.rollback()
 
-    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
