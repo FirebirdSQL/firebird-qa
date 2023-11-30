@@ -8,6 +8,9 @@ DESCRIPTION:
 NOTES:
     [01.11.2023] pzotov
     Checked on 6.0.0.101.
+
+    [30.11.2023] pzotov
+    Checked on 5.0.0.1283, 4.0.5.3033 after backport (intermediate snapshots 30.11.2023).
 """
 from io import BytesIO
 from pathlib import Path
@@ -32,7 +35,7 @@ test_script = """
 """
 act = isql_act('db', test_script)
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=4.0')
 def test_1(act: Action):
 
     bkp_data = BytesIO()
