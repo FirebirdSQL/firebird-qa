@@ -9,49 +9,27 @@ NOTES:
     Test verifies only example from doc/sql.extensions/README.profiler.md
     More complex checks will be implementer later.
     Checked on 5.0.0.958 SS/CS.
+
+    [01.12.2023] pzotov
+    New behaviour of ISQL was introduced after implementation of PR #7868: SET AUTOTERM.
+    Since that was implemented, ISQL handles comments (single- and multi-lined) as PART of statement that follows these comments.
+    In other words, ISQL in 6.x does not 'swallow' comments and sends them to engine together with statement that follows.
+    This means that comment PLUS statement can be 'unexpectedly' seen in PROFILER tables (plg$prof_record_source_stats_view in this test).
+
+    Currently this is not considered as a bug, see note by Adriano: https://groups.google.com/g/firebird-devel/c/AM8vlA3YJws
+    Because of this, we have (in this test) to either not use comments at all or filter them out by applying substitution which
+    will 'know' about some special text ('comment_tag') that must be suppressed.
+
+    Checked on 6.0.0.163, 5.0.0.1284
 """
 
 import os
 import pytest
 from firebird.qa import *
 
-# Output contains lot of data with concrete values for attachment_id, timestamps etc.
-# We have to check only presense of such lines and ignore these values:
-ptn_list = [
-     'ATTACHMENT_ID'
-    ,'START_TIMESTAMP'
-    ,'FINISH_TIMESTAMP'
-    ,'SQL_TEXT'
-    ,'LINE_NUM'
-    ,'COLUMN_NUM'
-    ,'MIN_ELAPSED_TIME'
-    ,'MAX_ELAPSED_TIME'
-    ,'TOTAL_ELAPSED_TIME'
-    ,'AVG_ELAPSED_TIME'
-    ,'STATEMENT_ID'
-    ,'OPEN_MIN_ELAPSED_TIME'
-    ,'OPEN_MAX_ELAPSED_TIME'
-    ,'OPEN_TOTAL_ELAPSED_TIME'
-    ,'OPEN_AVG_ELAPSED_TIME'
-    ,'FETCH_COUNTER'
-    ,'FETCH_MIN_ELAPSED_TIME'
-    ,'FETCH_MAX_ELAPSED_TIME'
-    ,'FETCH_TOTAL_ELAPSED_TIME'
-    ,'FETCH_AVG_ELAPSED_TIME'
-    ,'OPEN_FETCH_TOTAL_ELAPSED_TIME'
-    ,'REQUEST_ID'
-    ,'STATEMENT_ID'
-    ,'CALLER_REQUEST_ID'
-    ,'START_TIMESTAMP'
-    ,'FINISH_TIMESTAMP'
-    ,'TOTAL_ELAPSED_TIME'
-]
-sub_list = [ (x+' .*', x) for x in ptn_list ]
-
-substitutions = [ ('[ \t]+', ' ') ] +  sub_list
-
 db = db_factory()
 
+COMMENT_TAG='DONT_SHOW_IN_OUTPUT'
 test_script = f"""
     set list on;
     create table tab (
@@ -81,9 +59,9 @@ test_script = f"""
     end^
     set term ;^
 
-    -- ######################################
-    -- ###    Start profiling, session 1  ###
-    -- ######################################
+    -- {COMMENT_TAG} ######################################
+    -- {COMMENT_TAG} ###    Start profiling, session 1  ###
+    -- {COMMENT_TAG} ######################################
     select rdb$profiler.start_session('profile session 1') from rdb$database;
 
     set term ^;
@@ -96,16 +74,16 @@ test_script = f"""
     end^
     set term ;^
 
-    -- ######################################
-    -- ###   Finish profiling session 1   ###
-    -- ######################################
+    -- {COMMENT_TAG} ######################################
+    -- {COMMENT_TAG} ###   Finish profiling session 1   ###
+    -- {COMMENT_TAG} ######################################
     execute procedure rdb$profiler.finish_session(true);
 
     execute procedure ins;
 
-    -- ######################################
-    -- ###    Start profiling, session 2  ###
-    -- ######################################
+    -- {COMMENT_TAG} ######################################
+    -- {COMMENT_TAG} ###    Start profiling, session 2  ###
+    -- {COMMENT_TAG} ######################################
     select rdb$profiler.start_session('profile session 2') from rdb$database;
 
     out {os.devnull};
@@ -117,9 +95,9 @@ test_script = f"""
       order by sum(val);
     out;
 
-    -- ######################################
-    -- ###   Finish profiling session 2   ###
-    -- ######################################
+    -- {COMMENT_TAG} ######################################
+    -- {COMMENT_TAG} ###   Finish profiling session 2   ###
+    -- {COMMENT_TAG} ######################################
     execute procedure rdb$profiler.finish_session(true);
 
 
@@ -262,6 +240,41 @@ test_script = f"""
                t.record_source_id
     ;
 """
+
+# Output contains lot of data with concrete values for attachment_id, timestamps etc.
+# We have to check only presense of such lines and ignore these values:
+ptn_list = [
+     'ATTACHMENT_ID'
+    ,'START_TIMESTAMP'
+    ,'FINISH_TIMESTAMP'
+    ,'SQL_TEXT'
+    ,'LINE_NUM'
+    ,'COLUMN_NUM'
+    ,'MIN_ELAPSED_TIME'
+    ,'MAX_ELAPSED_TIME'
+    ,'TOTAL_ELAPSED_TIME'
+    ,'AVG_ELAPSED_TIME'
+    ,'STATEMENT_ID'
+    ,'OPEN_MIN_ELAPSED_TIME'
+    ,'OPEN_MAX_ELAPSED_TIME'
+    ,'OPEN_TOTAL_ELAPSED_TIME'
+    ,'OPEN_AVG_ELAPSED_TIME'
+    ,'FETCH_COUNTER'
+    ,'FETCH_MIN_ELAPSED_TIME'
+    ,'FETCH_MAX_ELAPSED_TIME'
+    ,'FETCH_TOTAL_ELAPSED_TIME'
+    ,'FETCH_AVG_ELAPSED_TIME'
+    ,'OPEN_FETCH_TOTAL_ELAPSED_TIME'
+    ,'REQUEST_ID'
+    ,'STATEMENT_ID'
+    ,'CALLER_REQUEST_ID'
+    ,'START_TIMESTAMP'
+    ,'FINISH_TIMESTAMP'
+    ,'TOTAL_ELAPSED_TIME'
+]
+sub_list = [ (x+' .*', x) for x in ptn_list ]
+
+substitutions = [ ('[ \t]+', ' '), (f'-- {COMMENT_TAG}.*', '') ] +  sub_list
 
 act = isql_act('db', test_script, substitutions = substitutions)
 
