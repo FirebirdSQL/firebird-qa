@@ -30,6 +30,11 @@ NOTES:
         3.0.5.33152 SC: 1.243s.
         3.0.5.33206 CS: 2.626s.
     Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
+
+    [01.12.2023] pzotov
+    Adjusted pytest.mark.version: test can run only on FB 3.x and 4.x.
+    Config parameter ClearGTTAtRetaining was removed from FB 5.x+
+    (see "Task #7897 : Remove obsolete setting ClearGTTAtRetaining").
 """
 
 import re
@@ -41,7 +46,7 @@ from firebird.qa import *
 db = db_factory()
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-@pytest.mark.version('>=3.0.5')
+@pytest.mark.version('>=3.0.5','<5.0')
 def test_1(act: Action, capsys):
     
     for ClrRetainGTT in (0,1):
