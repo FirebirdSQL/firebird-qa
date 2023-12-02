@@ -175,8 +175,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
         target_obj = 'test' if checked_mode == 'table' else 'v_test'
 
         # NB: for 'lok' can not be used with a VIEW, error: "336397326 : WITH LOCK can be used only with a single physical table"
-        # for checked_DML in ('upd', 'mer', 'del', 'lok') if checked_mode == 'table' else ('upd', 'mer', 'del'):
-        for checked_DML in ('mer',):
+        for checked_DML in ('upd', 'mer', 'del', 'lok') if checked_mode == 'table' else ('upd', 'mer', 'del'):
 
             ###################################################################################################################
             ### !!! NB !!! DO NOT SPLIT QUERIES ONTO MULTIPLE LINES OTHERWISE CHECK OF TRACE CONTENT WILL FAIL (SEE BELOW)  ###
