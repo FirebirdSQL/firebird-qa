@@ -25,7 +25,7 @@ NOTES:
         division -4611686018427387904/-0.5 does not issue error since this fix.
         Checked on 5.0.0.113, 4.0.1.2539.
     [10.12.2023] pzotov
-        Added 'SQLSTATE' in substitutions: runtime error must be not be filtered out by '?!(...)' pattern
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
