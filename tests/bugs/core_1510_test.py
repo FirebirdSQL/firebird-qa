@@ -9,7 +9,7 @@ JIRA:        CORE-1510
 FBTEST:      bugs.core_1510
 NOTES:
     [10.12.2023] pzotov
-        Added 'SQLSTATE' in substitutions: runtime error must be not be filtered out by '?!(...)' pattern
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
