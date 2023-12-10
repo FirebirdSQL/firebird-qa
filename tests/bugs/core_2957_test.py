@@ -5,29 +5,33 @@ ID:          issue-3339
 ISSUE:       3339
 TITLE:       count(*) from big table returns negative result
 DESCRIPTION:
-  NB: in fact, this test must check data types in SQLDA for columns that are results of aggregated functions
-  COUNT and (maybe) SUM.
-  As of 2.5, COUNT(*) is still displayed as `LONG` (sql_len = 4 bytes ==> integer, max 2^32-1) rather than INT64.
-  Test was made only for 3.0 (as it was said in the ticket header, "Fixed version(s)") and I've added here
-  also check for results of aggregating (for smallint, int and bigint) and ranging analytical functions.
-NOTES:
-[30.10.2019] Separated code for 4.0 because of new output types:
-  ** sum(<bigint>) - its type is "32752 numeric(38)";
-  ** added new column: sum(<decfloat>) - it will have type "32762 decfloat(34)".
+    Actually, this test must check data types in SQLDA for columns that are results of aggregated functions COUNT and (maybe) SUM.
+    As of 2.5, COUNT(*) is still displayed as `LONG` (sql_len = 4 bytes ==> integer, max 2^32-1) rather than INT64.
+    Test was made only for 3.0 (as it was said in the ticket header, "Fixed version(s)") and I've added here
+    also check for results of aggregating (for smallint, int and bigint) and ranging analytical functions.
 JIRA:        CORE-2957
 FBTEST:      bugs.core_2957
+NOTES:
+    [30.10.2019] Separated code for 4.0 because of new output types:
+      ** sum(<bigint>) - its type is "32752 numeric(38)";
+      ** added new column: sum(<decfloat>) - it will have type "32762 decfloat(34)".
+    [10.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
 from firebird.qa import *
 
-substitutions = [('^((?!sqltype).)*$', ''), ('[ \t]+', ' ')]
+substitutions = [('^((?!(SQLSTATE|sqltype)).)*$', ''), ('[ \t]+', ' ')]
 
 db = db_factory()
 
 # version: 3.0
 
 test_script_1 = """
+    set bail on;
     create table test(id bigint, fx int, fs smallint);
     commit;
     set sqlda_display;
@@ -72,12 +76,13 @@ expected_stdout_1 = """
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
+    act_1.execute(combine_output = True)
     assert act_1.clean_stdout == act_1.clean_expected_stdout
 
 # version: 4.0
 
 test_script_2 = """
+    set bail on;
     recreate table test(id bigint, fx int, fs smallint, dx decfloat(34), ds decfloat(16) );
     commit;
     set sqlda_display;
@@ -129,6 +134,6 @@ expected_stdout_2 = """
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
-    act_2.execute()
+    act_2.execute(combine_output = True)
     assert act_2.clean_stdout == act_2.clean_expected_stdout
 
