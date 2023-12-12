@@ -21,7 +21,7 @@ init_script = """
 
 db = db_factory(sql_dialect=3, init=init_script)
 
-act = python_act('db', substitutions=[('^((?!CREATE GENERATOR).)*$', '')])
+act = python_act('db', substitutions=[('^((?!(SQLSTATE|CREATE GENERATOR)).)*$', '')])
 
 expected_stdout = """
     CREATE GENERATOR TMP_GEN_42051 START WITH 9223372036854775807 INCREMENT -2147483647;
@@ -33,7 +33,5 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.isql(switches=['-x'])
+    act.isql(switches=['-x'], combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
-
