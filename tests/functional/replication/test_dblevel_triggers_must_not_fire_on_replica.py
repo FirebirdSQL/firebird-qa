@@ -50,7 +50,11 @@ NOTES:
     NOTE-2.
         Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
         'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
-    
+
+    [18.07.2023] pzotov
+    ENABLED execution of on Linux when ServerMode = Classic after letter from dimitr 13-JUL-2023 12:58.
+    See https://github.com/FirebirdSQL/firebird/commit/9aaeab2d4b414f06dabba37e4ebd32587acd5dc0
+
     Checked on 5.0.0.1014, 4.0.3.2929 - both SS and CS.
 """
 
@@ -69,7 +73,6 @@ from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, 
 # from act.files_dir/'test_config.ini':
 repl_settings = QA_GLOBALS['replication']
 
-#MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG = int(repl_settings['max_time_for_wait_segment_in_log'])
 MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
 MAIN_DB_ALIAS = repl_settings['main_db_alias']
 REPL_DB_ALIAS = repl_settings['repl_db_alias']
