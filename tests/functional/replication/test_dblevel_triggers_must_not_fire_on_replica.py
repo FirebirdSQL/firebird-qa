@@ -44,12 +44,8 @@ NOTES:
     Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
     We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
 
-    NOTE-1.
-        We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
-        During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
-    NOTE-2.
-        Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
-        'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
+    We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
+    During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
 
     [18.07.2023] pzotov
     ENABLED execution of on Linux when ServerMode = Classic after letter from dimitr 13-JUL-2023 12:58.
