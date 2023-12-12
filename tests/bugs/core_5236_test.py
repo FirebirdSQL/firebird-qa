@@ -2,7 +2,7 @@
 
 """
 ID:          issue-5515
-ISSUE:       5515
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5515
 TITLE:       IN/ANY/ALL predicates may cause sub-optimal (late filtering) execution of joins
 DESCRIPTION:
     Plan BEFORE fix was (confirmed on 4.0.0.258):
@@ -64,58 +64,73 @@ init_script = """
 
 db = db_factory(init=init_script)
 
-test_script = """
-    set explain on;
-    select 1
-    from dp_recibo
-    inner join dp_registro on dp_registro.autoinc_registro = dp_recibo.registro_rec
-    where
-      dp_registro.autoinc_registro in (
-        select registro_sec_roest
-        from dp_registro_oest
-        where registro_pri_roest = 1
-      )
-    ;
+act = python_act('db')
 
-"""
+#-----------------------------------------------------------
 
-act = isql_act('db', test_script)
+def replace_leading(source, char="#"):
+    stripped = source.lstrip()
+    return char * (len(source) - len(stripped)) + stripped
 
-fb3x_expected_out = """
-    Select Expression
-        -> Filter
-            -> Filter
-                -> Table "DP_REGISTRO_OEST" Access By ID
-                    -> Bitmap
-                        -> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
-    Select Expression
-        -> Nested Loop Join (inner)
-            -> Filter
-                -> Table "DP_REGISTRO" Full Scan
-            -> Filter
-                -> Table "DP_RECIBO" Access By ID
-                    -> Bitmap
-                        -> Index "UNQ1_DP_RECIBO" Range Scan (partial match: 1/2)
-"""
-
-fb5x_expected_out = """
-    Sub-query
-        -> Filter
-            -> Filter
-                -> Table "DP_REGISTRO_OEST" Access By ID
-                    -> Bitmap
-                        -> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
-    Select Expression
-        -> Filter
-            -> Hash Join (inner)
-                -> Table "DP_RECIBO" Full Scan
-                -> Record Buffer (record length: 25)
-                    -> Filter
-                        -> Table "DP_REGISTRO" Full Scan
-"""
+#-----------------------------------------------------------
 
 @pytest.mark.version('>=3.0.1')
-def test_1(act: Action):
-    act.expected_stdout = fb3x_expected_out if act.is_version('<5') else fb5x_expected_out
+def test_1(act: Action, capsys):
+
+    test_sql = """
+        select 1
+        from dp_recibo
+        inner join dp_registro on dp_registro.autoinc_registro = dp_recibo.registro_rec
+        where
+          dp_registro.autoinc_registro in (
+            select registro_sec_roest
+            from dp_registro_oest
+            where registro_pri_roest = 1
+          )
+        ;
+
+    """
+
+    fb4x_expected_out = """
+        Select Expression
+        ####-> Filter
+        ########-> Filter
+        ############-> Table "DP_REGISTRO_OEST" Access By ID
+        ################-> Bitmap
+        ####################-> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
+        Select Expression
+        ####-> Nested Loop Join (inner)
+        ########-> Filter
+        ############-> Table "DP_REGISTRO" Full Scan
+        ########-> Filter
+        ############-> Table "DP_RECIBO" Access By ID
+        ################-> Bitmap
+        ####################-> Index "UNQ1_DP_RECIBO" Range Scan (partial match: 1/2)
+    """
+
+    fb5x_expected_out = """
+        Sub-query
+        ####-> Filter
+        ########-> Filter
+        ############-> Table "DP_REGISTRO_OEST" Access By ID
+        ################-> Bitmap
+        ####################-> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
+        Select Expression
+        ####-> Filter
+        ########-> Hash Join (inner)
+        ############-> Table "DP_RECIBO" Full Scan
+        ############-> Record Buffer (record length: 25)
+        ################-> Filter
+        ####################-> Table "DP_REGISTRO" Full Scan
+    """
+
+    with act.db.connect() as con:
+        cur = con.cursor()
+        ps = cur.prepare(test_sql)
+        print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+
+    act.expected_stdout = fb4x_expected_out if act.is_version('<5') else fb5x_expected_out
     act.execute(combine_output = True)
+    act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
+
