@@ -1,14 +1,12 @@
 #coding:utf-8
 
 """
-ID:          gtcs.isql-show-command-collation
+ID:          gtcs.test_misplaced_collation_in_extracted_metadata
 TITLE:       Misplaced collation when extracting metadata with isql
 DESCRIPTION:
-  ::: NB :::
-  ### Name of original test has no any relation with actual task of this test: ###
-  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_20.script
-
   bug #223126 Misplaced collation when extracting metadata with isql
+  ::: NB ::: Name of original test has no relation with actual task of this test:
+  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_20.script
 FBTEST:      functional.gtcs.isql_show_command_collation
 NOTES:
     [07.10.2023] pzotov.
