@@ -9,8 +9,12 @@ JIRA:        CORE-6444
 FBTEST:      bugs.core_6444
 NOTES:
     [01.12.2023] pzotov
-    Currently test only checks ability to query virtual table RDB$CONFIG and SQLDA.
-    Records are not fetched because content of some of them depends on OS/major version and/or can change.
+        Currently test only checks ability to query virtual table RDB$CONFIG and SQLDA.
+        Records are not fetched because content of some of them depends on OS/major version and/or can change.
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 import os
 import pytest
@@ -23,7 +27,7 @@ test_script = """
     set sqlda_display on;
     select * from rdb$config;
 """
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype:|name:).)*$',''),('[ \t]+',' ')])
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype:|name:).)*$',''),('[ \t]+',' ')])
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
