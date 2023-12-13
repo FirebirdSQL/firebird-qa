@@ -7,6 +7,11 @@ TITLE:       Negative 128-bit integer constants are not accepted in DEFAULT clau
 DESCRIPTION:
 JIRA:        CORE-6294
 FBTEST:      bugs.core_6294
+NOTES:
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -22,7 +27,7 @@ test_script = """
     insert into test default values returning x as field_x, y as field_y;
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype|FIELD_).)*$', ''), ('[ \t]+', ' ')])
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype|FIELD_).)*$', ''), ('[ \t]+', ' ')])
 
 expected_stdout = """
     01: sqltype: 32752 INT128 Nullable scale: -2 subtype: 1 len: 16
@@ -37,5 +42,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
