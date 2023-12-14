@@ -6,6 +6,11 @@ ISSUE:       6845
 TITLE:       Result type of AVG over BIGINT column results in type INT128
 DESCRIPTION:
 FBTEST:      bugs.gh_6845
+NOTES:
+    [14.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -22,8 +27,7 @@ test_script = """
     select avg(x)over() as avg_bigint_over, avg(y)over() as avg_decf16_over from test;
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype:|multiply_result).)*$', ''),
-                                                 ('[ \t]+', ' '), ('.*alias:.*', '')])
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype:|multiply_result).)*$', ''), ('[ \t]+', ' '), ('.*alias:.*', '')])
 
 expected_stdout = """
     01: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
@@ -36,5 +40,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
