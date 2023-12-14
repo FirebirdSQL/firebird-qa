@@ -7,11 +7,10 @@ TITLE:       AV in engine when attaching to the non-existing database and non-SY
 DESCRIPTION:
 NOTES:
     [22.05.2023] pzotov
-    Confirmed crash on 4.0.3.2933, got on attempt to make connection:
-        Error reading data from the connection.
-        (335544726,)
-    Checked on 4.0.3.2936 SS/CS - works OK, no crash.
-NOTES:
+        Confirmed crash on 4.0.3.2933, got on attempt to make connection:
+            Error reading data from the connection.
+            (335544726,)
+        Checked on 4.0.3.2936 SS/CS - works OK, no crash.
     [14.12.2023] pzotov
         Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
