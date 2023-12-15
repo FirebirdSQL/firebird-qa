@@ -35,24 +35,31 @@ DESCRIPTION:
   FETCHES_2_1                     19548
   FETCHES_2_2                     19548
 NOTES:
-[18.08.2020]
-  Test uses pre-created database which has several procedures for analyzing performance by with the help of MON$ tables.
-  Performance results are gathered in the table STAT_LOG, each odd run will save mon$ counters with "-" sign and next
-  (even) run will save them with "+" -- see SP_GATHER_STAT.
-  Aggegation of results is done in the view V_AGG_STAT (negative values relate to start, positive to the end of measure,
-  difference between them means performance expenses which we want to evaluate).
-  NOTE. Before each new measure we have to set generator G_GATHER_STAT to zero in order to make it produce proper values
-  starting with 1 (odd --> NEGATIVE sign for counters). This is done in SP_TRUNCATE_STAT.
-[18.08.2020]
-  FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-  statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
-  gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
-  See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
+  [18.08.2020]
+    Test uses pre-created database which has several procedures for analyzing performance by with the help of MON$ tables.
+    Performance results are gathered in the table STAT_LOG, each odd run will save mon$ counters with "-" sign and next
+    (even) run will save them with "+" -- see SP_GATHER_STAT.
+    Aggegation of results is done in the view V_AGG_STAT (negative values relate to start, positive to the end of measure,
+    difference between them means performance expenses which we want to evaluate).
+    NOTE. Before each new measure we have to set generator G_GATHER_STAT to zero in order to make it produce proper values
+    starting with 1 (odd --> NEGATIVE sign for counters). This is done in SP_TRUNCATE_STAT.
+  
+  [18.08.2020]
+    FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
+    statement 'alter sequence <seq_name> restart with 0' changes rdb$generators.rdb$initial_value to -1 thus next call
+    gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
+    See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
 
-  This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
+    This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
 
-  Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
-  reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
+    Because of this, it was decided to change code of SP_TRUNCATE_STAT: instead of 'alter sequence restart...' we do
+    reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
+
+  [16.12.2023]
+  Removed output of execution plans after note by dimitr (letter 15.12.2023 10:05): this test probably needs to be re-implemented
+  because initially it was designed for check NESTED LOOPS. To be discussed furter.
+
+
 JIRA:        CORE-2078
 FBTEST:      bugs.core_2078
 """
@@ -115,10 +122,6 @@ test_script = """
     )
     as
     begin
-        -- Refresh index statistics all user (non-system) tables.
-        -- Needs to be run in regular basis (`cron` on linux, `at` on windows)
-        -- otherwise ineffective plans can be generated when doing inner joins!
-        -- Example to run:  select * from srv_recalc_idx_stat;
         for
             select ri.rdb$relation_name, ri.rdb$index_name
             from rdb$indices ri
@@ -179,13 +182,13 @@ test_script = """
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
 
-    set plan on;
+    --set plan on;
     select count(*) cnt_1_1
     from tsml s
       join tbig b on b.sid = s.id
       join tmed m on b.mid = m.id
     ;
-    set plan off;
+    --set plan off;
 
     execute procedure sp_gather_stat;  ------- catch statistics AFTER measured statement(s)
     commit;
@@ -194,14 +197,14 @@ test_script = """
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
 
-    set plan on;
+    --set plan on;
     select count(*) cnt_1_2
     from tsml s
       join tbig b on b.sid = s.id
       join tmed m on b.mid = m.id
     where s.sf = 0  -- selective non-indexed boolean
     ;
-    set plan off;
+    --set plan off;
 
     execute procedure sp_gather_stat;  ------- catch statistics AFTER measured statement(s)
     commit;
@@ -228,29 +231,31 @@ test_script = """
     execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
     commit;
 
-    set plan on;
+    --set plan on;
     select count(*) cnt_2_1
     from tsml s
         join tbig b on b.sid = s.id
         join tmed m on b.mid = m.id
     ;
-    set plan off;
+    --set plan off;
 
     execute procedure sp_gather_stat;  ------- catch statistics AFTER measured statement(s)
     commit;
     --------------------- run-2.2 -------------------
 
-        execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
-        commit;
-    set plan on;
+    execute procedure sp_gather_stat; ------- catch statistics BEFORE measured statement(s)
+    commit;
+
+    --set plan on;
     select count(*) cnt_2_2
     from tsml s
         join tbig b on b.sid = s.id
         join tmed m on b.mid = m.id
     where s.sf = 0  -- selective non-indexed boolean
     ;
-    set plan off;
-        execute procedure sp_gather_stat;  ------- catch statistics AFTER measured statement(s)
+    --set plan off;
+    
+    execute procedure sp_gather_stat;  ------- catch statistics AFTER measured statement(s)
     commit;
 
 
@@ -309,10 +314,8 @@ fb3x_expected_out = """
     RUN1_IDX_NAME                   TSML_PK
     RUN1_IDX_STAT                   0.0666666701
 
-    PLAN JOIN (M NATURAL, B INDEX (TBIG_IDX2_FK_MED), S INDEX (TSML_PK))
     CNT_1_1                         3000
 
-    PLAN JOIN (S NATURAL, B INDEX (TBIG_IDX1_FK_SML), M INDEX (TMED_PK))
     CNT_1_2                         1500
 
     RUN2_TAB_NAME                   TBIG
@@ -331,10 +334,8 @@ fb3x_expected_out = """
     RUN2_IDX_NAME                   TSML_PK
     RUN2_IDX_STAT                   0.0222222228
 
-    PLAN JOIN (M NATURAL, B INDEX (TBIG_IDX2_FK_MED), S INDEX (TSML_PK))
     CNT_2_1                         3000
 
-    PLAN JOIN (M NATURAL, B INDEX (TBIG_IDX2_FK_MED), S INDEX (TSML_PK))
     CNT_2_2                         1500
 
     FETCHES_1_1                     acceptable
@@ -360,10 +361,8 @@ fb5x_expected_out = """
     RUN1_IDX_NAME                   TSML_PK                        
     RUN1_IDX_STAT                   0.0666666701
 
-    PLAN HASH (JOIN (M NATURAL, B INDEX (TBIG_IDX2_FK_MED)), S NATURAL)
     CNT_1_1                         3000
 
-    PLAN HASH (JOIN (S NATURAL, B INDEX (TBIG_IDX1_FK_SML)), M NATURAL)
     CNT_1_2                         1500
 
     RUN2_TAB_NAME                   TBIG                           
@@ -382,10 +381,8 @@ fb5x_expected_out = """
     RUN2_IDX_NAME                   TSML_PK                        
     RUN2_IDX_STAT                   0.0222222228
 
-    PLAN HASH (JOIN (M NATURAL, B INDEX (TBIG_IDX2_FK_MED)), S NATURAL)
     CNT_2_1                         3000
 
-    PLAN HASH (JOIN (S NATURAL, B INDEX (TBIG_IDX1_FK_SML)), M NATURAL)
     CNT_2_2                         1500
     FETCHES_1_1                     acceptable
     FETCHES_1_2                     acceptable
@@ -396,6 +393,5 @@ fb5x_expected_out = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = fb3x_expected_out if act.is_version('<5') else fb5x_expected_out
-    act.execute()
-    #assert act.stdout == act.clean_expected_stdout
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
