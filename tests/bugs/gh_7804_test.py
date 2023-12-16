@@ -5,6 +5,8 @@ ID:          issue-7804
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7804
 TITLE:       The partial index is not involved when filtering conditions through OR.
 DESCRIPTION:
+    https://github.com/FirebirdSQL/firebird/commit/8ad2531e1125e5346eeb98c7879baa73cf79cc84 // FB 5.x
+    https://github.com/FirebirdSQL/firebird/commit/09ae711a4ec486046bf9dcb764d3f9babff124d9 // FB 6.x
     We put several queries into the array and check for each of them:
         * detailed execution plan;
         * number of natural and indexed reads.
@@ -12,13 +14,21 @@ DESCRIPTION:
           Number of IR should increase in proportion to the number of 'OR' terms in the WHERE expression.
 NOTES:
     [01.11.2023] pzotov
-    0. ::: NB ::: TEST IS LIKELY TO BE SUPPLEMENTED WITH OTHER CASES.
-    1. Explained plan must be displayed with preserved indents, see call to func replace_leading().
-    2. Statistics is gathered using con.info.get_table_access_stats() method.
-       One need to remember that values are cumulative, so we have make two 'snapshots',
-       before and after query execution, and then calculate difference between them.
+        0. ::: NB ::: TEST IS LIKELY TO BE SUPPLEMENTED WITH OTHER CASES.
+        1. Explained plan must be displayed with preserved indents, see call to func replace_leading().
+        2. Statistics is gathered using con.info.get_table_access_stats() method.
+           One need to remember that values are cumulative, so we have make two 'snapshots',
+           before and after query execution, and then calculate difference between them.
 
-    Checked on 6.0.0.101.
+        Checked on 6.0.0.101.
+
+    [16.12.2023] pzotov
+        Adjusted output to recent changes in FB, ñurrently only for FB 5.x.
+        See:
+            https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83
+            More realistic cardinality adjustments for unmatchable booleans, this should also fix #7904: FB5 bad plan for query
+
+        Output for FB 6.x will be changed later (letter from dimitr, 16.12.2023 10:32)
 """
 import pytest
 from firebird.qa import *
@@ -47,7 +57,7 @@ def replace_leading(source, char="#"):
 
 #----------------------------------------------------------
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
     
     q_list = (
@@ -99,7 +109,120 @@ def test_1(act: Action, capsys):
         print('IR:', v[1])
         print('')
 
-    expected_stdout = f"""
+    #--------------------------------------------------------------------
+
+    expected_fb5x = f"""
+        Query: {q_list[0]}
+        Select Expression
+        ####-> Filter
+        ########-> Table "TEST" Access By ID
+        ############-> Bitmap
+        ################-> Index "TEST_X_ASC" Range Scan (full match)
+        NR: 0
+        IR: 1000
+
+        Query: select * from test where x = 3 or x = 2
+        Select Expression
+        ####-> Filter
+        ########-> Table "TEST" Access By ID
+        ############-> Bitmap Or
+        ################-> Bitmap
+        ####################-> Index "TEST_X_ASC" Range Scan (full match)
+        ################-> Bitmap
+        ####################-> Index "TEST_X_ASC" Range Scan (full match)
+        NR: 0
+        IR: 2000
+
+        Query: select * from test where x = 2 or x = 3 or x = 1
+        Select Expression
+        ####-> Filter
+        ########-> Table "TEST" Access By ID
+        ############-> Bitmap Or
+        ################-> Bitmap Or
+        ####################-> Bitmap
+        ########################-> Index "TEST_X_ASC" Range Scan (full match)
+        ####################-> Bitmap
+        ########################-> Index "TEST_X_ASC" Range Scan (full match)
+        ################-> Bitmap
+        ####################-> Index "TEST_X_ASC" Range Scan (full match)
+        NR: 0
+        IR: 3000
+
+        Query: select * from test where x = 2 or x is null or x = 3 or x = 1
+        Select Expression
+        ####-> Filter
+        ########-> Table "TEST" Access By ID
+        ############-> Bitmap Or
+        ################-> Bitmap Or
+        ####################-> Bitmap Or
+        ########################-> Bitmap
+        ############################-> Index "TEST_X_ASC" Range Scan (full match)
+        ########################-> Bitmap
+        ############################-> Index "TEST_X_ASC" Range Scan (full match)
+        ####################-> Bitmap
+        ########################-> Index "TEST_X_ASC" Range Scan (full match)
+        ################-> Bitmap
+        ####################-> Index "TEST_X_ASC" Range Scan (full match)
+        NR: 0
+        IR: 4000
+
+        Query: select * from test where x = 5
+        Select Expression
+        ####-> Filter
+        ########-> Table "TEST" Access By ID
+        ############-> Bitmap
+        ################-> Index "TEST_X_DEC" Range Scan (full match)
+        NR: 0
+        IR: 1000
+
+        Query: select * from test where x = 6 or x = 5
+        Select Expression
+        ####-> Filter
+        ########-> Table "TEST" Access By ID
+        ############-> Bitmap Or
+        ################-> Bitmap
+        ####################-> Index "TEST_X_DEC" Range Scan (full match)
+        ################-> Bitmap
+        ####################-> Index "TEST_X_DEC" Range Scan (full match)
+        NR: 0
+        IR: 2000
+
+        Query: select * from test where x = 5 or x = 4 or x = 6
+        Select Expression
+        ####-> Filter
+        ########-> Table "TEST" Access By ID
+        ############-> Bitmap Or
+        ################-> Bitmap Or
+        ####################-> Bitmap
+        ########################-> Index "TEST_X_DEC" Range Scan (full match)
+        ####################-> Bitmap
+        ########################-> Index "TEST_X_DEC" Range Scan (full match)
+        ################-> Bitmap
+        ####################-> Index "TEST_X_DEC" Range Scan (full match)
+        NR: 0
+        IR: 3000
+
+        Query: select * from test where x = 6 or x is null or x = 4 or x = 5
+        Select Expression
+        ####-> Filter
+        ########-> Table "TEST" Access By ID
+        ############-> Bitmap Or
+        ################-> Bitmap Or
+        ####################-> Bitmap Or
+        ########################-> Bitmap
+        ############################-> Index "TEST_X_DEC" Range Scan (full match)
+        ########################-> Bitmap
+        ############################-> Index "TEST_X_DEC" Range Scan (full match)
+        ####################-> Bitmap
+        ########################-> Index "TEST_X_DEC" Range Scan (full match)
+        ################-> Bitmap
+        ####################-> Index "TEST_X_DEC" Range Scan (full match)
+        NR: 0
+        IR: 4000
+    """
+
+
+    expected_fb6x = f"""
         Query: {q_list[0]}
         Select Expression
         ####-> Filter
@@ -191,6 +314,6 @@ def test_1(act: Action, capsys):
         IR: 4000
     """
 
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_fb5x if act.is_version('<6') else expected_fb6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
