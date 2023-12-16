@@ -27,7 +27,7 @@ Quickstart
      3.0. ONLY FOR MANUAL runs::
 
          Check content of $FB_HOME/databases.conf.
-     
+
          Ensure that RemoteAccess is allowed for security.db.
          Also, it is recommended to set number of buffers not less than 256 for it:
 
@@ -69,7 +69,7 @@ Quickstart
             # Required
             BugcheckAbort = 1
             ExternalFileAccess = Full
-            AuthServer = Srp, Win_Sspi, Legacy_auth
+            AuthServer = Srp, Win_Sspi, Legacy_Auth
             UserManager = Srp, Legacy_UserManager
             ReadConsistency = 0
             WireCrypt = Enabled
@@ -97,7 +97,7 @@ Quickstart
             because support of WNET protocol was removed from FB-5.x.
             It is recommended to assign value like 'xnet_fb5x_qa' to IpcName.
 
-            
+
         NOTES::
             Proper values of some parameters strongly depends on ServerMode and amount of avaliable RAM.
             * DefaultDbCachePages::
@@ -114,7 +114,7 @@ Quickstart
           on some fast drive (e.g. SSD or RAM). This drive must have at least 30 Gb free space.
           Once this variable is defined, one may not specify parameter 'TempDirectories'.
 
-     
+
      3.3. Required changes for running encryption-related tests::
 
           3.3.1. Change dir to $FB_HOME/examples/prebuilt/plugins/ and make copy of following files into $FB_HOME/plugins/ ::
@@ -187,7 +187,7 @@ Quickstart
               show database;
               quit;
 
-          3.3.4. IMPORTANT. 
+          3.3.4. IMPORTANT.
                  Ensure that EMPLOYEE database was not encrypted before with key/value that is unknown currently!
                  Otherwise attempt to run ANY test will fail with:
                      INTERNALERROR> firebird.driver.types.DatabaseError: Missing database encryption key for your attachment
