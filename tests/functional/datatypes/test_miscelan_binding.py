@@ -18,18 +18,23 @@ DESCRIPTION:
      SQLDA must contain the same datatypes when we use either explicit rule or LEGACY keyword.
      Checked on 4.0.0.1691 SS: 1.113s.
 
-     WARNING, 11.03.2020.
-     Test verifies binding of TIME WITH TIMEZONE data and uses America/Los_Angeles timezone.
-     But there is daylight saving time in the USA, they change clock at the begining of March.
-
-     For this reason query like: "select time '10:00 America/Los_Angeles' from ..." will return
-     different values depending on current date. For example, if we are in Moscow timezone then
-     returned value will be either 20:00 in February or 21:00 in March. 
-     Result for other timezone (e.g. Tokyo) will be differ, etc.
-     For this reason, special replacement will be done in 'substitution' section: we replace
-     value of hours with '??' because it is no matter what's the time there, we have to ensure
-     only the ability to work with such time using SET BIND clause.
 FBTEST:      functional.datatypes.miscelan-binding
+NOTES:
+     [11.03.2020] pzotov
+         Test verifies binding of TIME WITH TIMEZONE data and uses America/Los_Angeles timezone.
+         But there is daylight saving time in the USA, they change clock at the begining of March.
+
+         For this reason query like: "select time '10:00 America/Los_Angeles' from ..." will return
+         different values depending on current date. For example, if we are in Moscow timezone then
+         returned value will be either 20:00 in February or 21:00 in March. 
+         Result for other timezone (e.g. Tokyo) will be differ, etc.
+         For this reason, special replacement will be done in 'substitution' section: we replace
+         value of hours with '??' because it is no matter what's the time there, we have to ensure
+         only the ability to work with such time using SET BIND clause.
+    [16.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -77,7 +82,7 @@ test_script = """
     select timestamp '2018-01-01 12:00 GMT' as "check_bind_timestamp_with_zone_to_legacy" from rdb$database;
 """
 
-act = isql_act('db', test_script, substitutions=[ (' \\d{2}:00:00.0000', ' ??:00:00.0000'), ('charset.*', ''), ('.*alias:.*', ''), ('^((?!(sqltype|check_bind_)).)*$',''), ('[ \\t]+',' ') ])
+act = isql_act('db', test_script, substitutions=[ (' \\d{2}:00:00.0000', ' ??:00:00.0000'), ('charset.*', ''), ('.*alias:.*', ''), ('^((?!(SQLSTATE|sqltype|check_bind_)).)*$',''), ('[ \\t]+',' ') ])
 
 expected_stdout = """
     01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 5
@@ -114,5 +119,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
