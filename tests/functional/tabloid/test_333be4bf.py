@@ -39,8 +39,6 @@ tmp_log = temp_file('tmp_333be4bf.log')
 
 db = db_factory()
 
-# [('^((?!(sqltype|DIV_RESULT)).)*$', ''), ('[ \t]+', ' '), ('.*alias.*', '')]
-#substitutions = [('^((?!(gbak:[ \t]?(ERROR:|WARNING:))).)*$', '')]
 substitutions = [ (  '^((?!(iter:|(gbak:[ \t]?(ERROR:|WARNING:)))).)*$' , ''  ) ]
 
 act = python_act('db', substitutions = substitutions)
