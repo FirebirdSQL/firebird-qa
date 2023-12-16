@@ -6,30 +6,34 @@ ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Test ability for DECFLOAT values to be represented as other data types (char, double, bigint).
 DESCRIPTION:
-  See  doc/sql.extensions/README.data_types:
+    See  doc/sql.extensions/README.data_types:
 
-  SET DECFLOAT BIND <bind-type> - controls how are DECFLOAT values represented in outer
-  world (i.e. in messages or in XSQLDA). Valid binding types are: NATIVE (use IEEE754
-  binary representation), CHAR/CHARACTER (use ASCII string), DOUBLE PRECISION (use
-  8-byte FP representation - same as used for DOUBLE PRECISION fields) or BIGINT
-  with possible comma-separated SCALE clause (i.e. 'BIGINT, 3').
+    SET DECFLOAT BIND <bind-type> - controls how are DECFLOAT values represented in outer
+    world (i.e. in messages or in XSQLDA). Valid binding types are: NATIVE (use IEEE754
+    binary representation), CHAR/CHARACTER (use ASCII string), DOUBLE PRECISION (use
+    8-byte FP representation - same as used for DOUBLE PRECISION fields) or BIGINT
+    with possible comma-separated SCALE clause (i.e. 'BIGINT, 3').
 
-  ::: NB ::::
-  Temply deferred check of "set decfloat bind bigint, 3" when value has at least one digit in floating part.
-  Also, one need to check case when we try to bind to BIGINT value that is too big for it (say, more than 19 digits).
-  Waiting for reply from Alex, letters 25.05.2017 21:12 & 21:22.
-NOTES:
-[10.12.2019]
-  Updated syntax for SET BIND command because it was changed in 11-nov-2019.
-  Replaced 'bigint,3' with numeric(18,3) - can not specify scale using comma delimiter, i.e. ",3"
-[27.12.2019]
-  Updated expected_stdout after discuss with Alex: subtype now must be zero in all cases.
-[25.06.2020]
-  changed types in SQLDA from numeric to int128 // after discuss with Alex about CORE-6342.
-[01.07.2020]
-  adjusted expected output ('subtype' values). Added SET BIND from decfloat to INT128.
-  Removed unnecessary lines from output and added substitution section for result to be properly filtered.
+    ::: NB ::::
+    Temply deferred check of "set decfloat bind bigint, 3" when value has at least one digit in floating part.
+    Also, one need to check case when we try to bind to BIGINT value that is too big for it (say, more than 19 digits).
+    Waiting for reply from Alex, letters 25.05.2017 21:12 & 21:22.
 FBTEST:      functional.datatypes.decfloat_binding_to_other_types
+NOTES:
+    [10.12.2019]
+        Updated syntax for SET BIND command because it was changed since 11-nov-2019.
+        Replaced 'bigint,3' with numeric(18,3) - can not specify scale using comma delimiter, i.e. ",3"
+    [27.12.2019]
+        Updated expected_stdout after discuss with Alex: subtype now must be zero in all cases.
+    [25.06.2020]
+        Changed types in SQLDA from numeric to int128 // after discuss with Alex about CORE-6342.
+    [01.07.2020]
+        Adjusted expected output ('subtype' values). Added SET BIND from decfloat to INT128.
+        Removed unnecessary lines from output and added substitution section for result to be properly filtered.
+    [16.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -78,10 +82,9 @@ test_script = """
     -- -170141183460469231731687303715884105728 ; 170141183460469231731687303715884105727
     select cast( 1701411834604692317316873037158841.05727 as decfloat(34)) as decfloat_to_int128
     from rdb$database;
-
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype|DECFLOAT_TO_).)*$', ''),
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype|DECFLOAT_TO_).)*$', ''),
                                                  ('[ \t]+', ' ')])
 
 expected_stdout = """
@@ -111,5 +114,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
