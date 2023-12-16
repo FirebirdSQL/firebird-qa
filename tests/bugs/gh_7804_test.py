@@ -23,7 +23,7 @@ NOTES:
         Checked on 6.0.0.101.
 
     [16.12.2023] pzotov
-        Adjusted output to recent changes in FB, ñurrently only for FB 5.x.
+        Adjusted output to recent changes in FB, currently only for FB 5.x.
         See:
             https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83
             More realistic cardinality adjustments for unmatchable booleans, this should also fix #7904: FB5 bad plan for query
