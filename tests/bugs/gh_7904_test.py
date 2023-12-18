@@ -68,6 +68,10 @@ init_sql = f"""
           using index pk_rodzaj_umowy
     );
 
+    create table dyrekcja (
+      dyr_id smallint not null primary key using index pk_dyrekcja 
+    );
+
 
     set term ^ ;
     recreate procedure fill_data
@@ -155,66 +159,57 @@ init_sql = f"""
     set term ;^
     commit;
 
-    set stat on;
     execute procedure fill_data;
-    set stat off;
+
+    insert into dyrekcja(dyr_id)
+    select distinct dyr_id from rozliczenie;
     commit;
 
     alter table rozliczenie add constraint fk_rozliczenie__umowa foreign key(umowa_id, dyr_id, umowa_id_seq) references umowa(umowa_id, dyr_id, umowa_id_seq)  on update cascade;
     alter table umowa add constraint fk_umowa__rodzaj_umowy foreign key(rodz_umowy_id, typ_umowy_id) references rodzaj_umowy(rodz_umowy_id, typ_umowy_id)  on update cascade;
     alter table rozliczenie add constraint rozliczenie_fk4 foreign key(dok_rozliczeniowy_id) references dok_rozliczeniowy(dok_rozliczeniowy_id);
+    alter table rozliczenie add constraint fk_rozliczenie__dyrekcja  foreign key (dyr_id) references dyrekcja (dyr_id);
 
     set statistics index pk_umowa;
     set statistics index pk_dok_rozliczeniowy;
     set statistics index pk_rozliczenie;
     set statistics index pk_rodzaj_umowy;
+    set statistics index pk_dyrekcja;
     commit;
 
 """
 
 db = db_factory(init = init_sql)
 
-test_sql = """
-    select
-        rl.dyr_id
-        , rl.rozlicz_rodz_dzial_id
-        , sum(rl.rozlicz_kwota_rozliczona)
-    from
-        rozliczenie rl
-        inner join dok_rozliczeniowy dk on dk.dok_rozliczeniowy_id = rl.dok_rozliczeniowy_id
-        inner join umowa u on rl.umowa_id=u.umowa_id and rl.dyr_id=u.dyr_id and rl.umowa_id_seq=u.umowa_id_seq
-    where
-        rl.okres_numer between '15'
-        and '18'
-        and dk.dok_rozliczeniowy_inkaso = '1'
-        and u.rodz_umowy_id='27'
-    group by
-        rl.dyr_id
-        , rl.rozlicz_rodz_dzial_id
-    ;
-"""
+query_lst = [
+    # Query from https://github.com/FirebirdSQL/firebird/issues/7904:
+    """
+        select
+            q1_rozl.dyr_id
+            , q1_rozl.rozlicz_rodz_dzial_id
+            , sum(q1_rozl.rozlicz_kwota_rozliczona)
+        from
+            rozliczenie q1_rozl
+            inner join dok_rozliczeniowy q1_dokr
+                on q1_dokr.dok_rozliczeniowy_id = q1_rozl.dok_rozliczeniowy_id
+            inner join umowa q1_umowa
+                on q1_rozl.umowa_id = q1_umowa.umowa_id
+                   and q1_rozl.dyr_id = q1_umowa.dyr_id
+                   and q1_rozl.umowa_id_seq = q1_umowa.umowa_id_seq
+        where
+            q1_rozl.okres_numer between '15'
+            and '18'
+            and q1_dokr.dok_rozliczeniowy_inkaso = '1'
+            and q1_umowa.rodz_umowy_id='27'
+        group by
+            q1_rozl.dyr_id
+            , q1_rozl.rozlicz_rodz_dzial_id
+    """,
+]
 
-act = python_act('db')
+substitutions = [ ('record length: \\d+.*', 'record length'), ('key length: \\d+.*', 'key length') ]
+act = python_act('db', substitutions = substitutions)
 
-expected_stdout = """
-    Select Expression
-    ....-> Aggregate
-    ........-> Sort (record length: 132, key length: 16)
-    ............-> Filter
-    ................-> Hash Join (inner)
-    ....................-> Nested Loop Join (inner)
-    ........................-> Filter
-    ............................-> Table "UMOWA" as "U" Access By ID
-    ................................-> Bitmap
-    ....................................-> Index "FK_UMOWA__RODZAJ_UMOWY" Range Scan (partial match: 1/2)
-    ........................-> Filter
-    ............................-> Table "ROZLICZENIE" as "RL" Access By ID
-    ................................-> Bitmap
-    ....................................-> Index "FK_ROZLICZENIE__UMOWA" Range Scan (full match)
-    ....................-> Record Buffer (record length: 25)
-    ........................-> Filter
-    ............................-> Table "DOK_ROZLICZENIOWY" as "DK" Full Scan
-"""
 #---------------------------------------------------------
 def replace_leading(source, char="."):
     stripped = source.lstrip()
@@ -225,9 +220,31 @@ def replace_leading(source, char="."):
 def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
-        with cur.prepare(test_sql) as ps:
-            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
+        for q in query_lst:
+            with cur.prepare(q) as ps:
+                print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
 
+    expected_stdout = """
+        Select Expression
+        ....-> Aggregate
+        ........-> Sort (record length: 132, key length: 16)
+        ............-> Filter
+        ................-> Hash Join (inner)
+        ....................-> Nested Loop Join (inner)
+        ........................-> Filter
+        ............................-> Table "UMOWA" as "Q1_UMOWA" Access By ID
+        ................................-> Bitmap
+        ....................................-> Index "FK_UMOWA__RODZAJ_UMOWY" Range Scan (partial match: 1/2)
+        ........................-> Filter
+        ............................-> Table "ROZLICZENIE" as "Q1_ROZL" Access By ID
+        ................................-> Bitmap
+        ....................................-> Index "FK_ROZLICZENIE__UMOWA" Range Scan (full match)
+        ....................-> Record Buffer (record length: 25)
+        ........................-> Filter
+        ............................-> Table "DOK_ROZLICZENIOWY" as "Q1_DOKR" Full Scan
+    """
+
+    
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
