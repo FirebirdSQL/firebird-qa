@@ -52,6 +52,12 @@ NOTES:
     Added substitution to disable output of BLOB_ID values because access_path type is BLOB since 19-sep-2023
     (see https://github.com/FirebirdSQL/firebird/commit/39b019574a7eb23eff92ee71121043d9a9c8371f )
 
+    [19-dec-2023] pzotov
+    Removed 'rand()' in order to have predictable values in table column. Use mod() instead.
+    Unstable outcomes started since 6.0.0.180 (18.12.2023).
+    It seems that following commits caused this:
+        https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83 // 5.x
+        https://github.com/FirebirdSQL/firebird/commit/f647dfd757de3c4065ef2b875c95d19311bb9691 // 6.x
 """
 
 import os
@@ -65,11 +71,17 @@ act = python_act('db', substitutions=[('=', ''), ('ACCESS_PATH_BLOB_ID.*', '')])
 def test_1(act: Action, capsys):
 
     test_sql = f"""
-        create table tmain(id int primary key using index tmain_pk, x int);
-        create table tdetl(id int primary key using index tdetl_pk, pid int references tmain using index tdetl_fk, y int, z int);
-        insert into tmain(id,x) select row_number()over(), -100 + rand()*200 from rdb$types rows 100;
-        insert into tdetl(id, pid, y,z) select row_number()over(), 1+rand()*99, rand()*1000, rand()*1000 from rdb$types;
+        recreate table tdetl(id int);
+        recreate table tmain(id int primary key using index tmain_pk, x int);
+        recreate table tdetl(id int primary key using index tdetl_pk, pid int references tmain using index tdetl_fk, y int, z int);
+
+        insert into tmain(id,x)
+        select i, -100 + mod(i,200) from (select row_number()over() i from rdb$types rows 200);
+
+        insert into tdetl(id, pid, y,z)
+        select i, 1+mod(i,10), mod(i,30), mod(i,70) from (select row_number()over() i from rdb$types,rdb$types rows 1000);
         commit;
+
         create index tmain_x on tmain(x);
         create index tdetl_y on tdetl(y);
         create index tdetl_z on tdetl(z);
@@ -155,10 +167,11 @@ def test_1(act: Action, capsys):
         #            -> Filter
         #                -> Table "TDETL" as "V_TEST D4 DX" Access By ID
         #                    -> Bitmap And
-        #                        -> Bitmap
-        #                            -> Index "TDETL_FK" Range Scan (full match)
-        #                        -> Bitmap
-        #                            -> Index "TDETL_Y" Range Scan (upper bound: 1/1)
+        #                        -> Bitmap And
+        #                            -> Bitmap
+        #                                -> Index "TDETL_Z" Range Scan (lower bound: 1/1)
+        #                            -> Bitmap
+        #
         #Sub-query (invariant)
         #    -> Filter
         #        -> Aggregate
