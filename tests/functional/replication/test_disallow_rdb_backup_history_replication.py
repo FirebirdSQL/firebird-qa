@@ -299,6 +299,7 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
 
 #--------------------------------------------
 
+@pytest.mark.replication
 @pytest.mark.version('>=4.0.3')
 def test_1(act_db_main: Action,  act_db_repl: Action, db_main_nbk0: Path, db_main_nbk1: Path, capsys):
 
