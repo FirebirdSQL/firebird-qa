@@ -35,6 +35,7 @@ act_db_repl = python_act('db_repl', substitutions = substitutions)
 
 #--------------------------------------------
 
+@pytest.mark.replication
 @pytest.mark.version('>=4.0.3')
 def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
 
