@@ -34,6 +34,7 @@ act_db_main = python_act('db_main', substitutions = substitutions)
 
 #--------------------------------------------
 
+@pytest.mark.replication
 @pytest.mark.version('>=5.0')
 def test_1(act_db_main: Action):
     test_sql = """
