@@ -6,6 +6,11 @@ TITLE:       DATEADD
 DESCRIPTION:
   Returns a date/time/timestamp value increased (or decreased, when negative) by the specified amount of time.
 FBTEST:      functional.intfunc.date.dateadd_07
+NOTES:
+    [16.12.2023]
+        Adjusted substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -20,7 +25,7 @@ test_script = """
     select dateadd(second,-1, time '12:12:00' ) as tx_2 from rdb$database;
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype:|DD_).)*$', ''),
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype:|DD_).)*$', ''),
                                                  ('[ \t]+', ' '), ('.*alias:.*', '')])
 
 expected_stdout = """
@@ -34,5 +39,5 @@ expected_stdout = """
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

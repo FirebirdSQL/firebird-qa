@@ -7,6 +7,11 @@ TITLE:       Regression: incorrect calculation of byte-length for view columns
 DESCRIPTION:
 JIRA:        CORE-5049
 FBTEST:      bugs.core_5049
+NOTES:
+    [12.12.2023] pzotov
+    Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+    ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+    Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -18,6 +23,7 @@ test_script = """
     -- Confirmed:
     -- 1) FAULT on WI-V3.0.0.32208.
     -- 2) SUCCESS on LI-V3.0.0.32233, Rev: 62699.
+    set bail on;
     create or alter view v_test as
     select
        cast(rdb$character_set_name as varchar(2000)) as test_f01
@@ -32,8 +38,7 @@ test_script = """
     select * from v_test;
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype).)*$', ''), ('[ ]+', ' '),
-                                                 ('[\t]*', ' ')])
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype).)*$', ''), ('[ \t]+', ' ')])
 
 expected_stdout = """
     01: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 UTF8
@@ -44,6 +49,5 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-

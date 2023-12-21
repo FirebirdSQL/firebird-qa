@@ -8,6 +8,9 @@ NOTES:
     [20.02.2023] pzotov
     Confirmed crash on 4.0.3.2824
     Checked on 4.0.3.2825 -- all fine.
+
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -36,7 +39,7 @@ test_script = """
     select a.modul
     from tbl2 b
     join tbl1 a on a.modul = b.modul
-    where 'TT,T0,T2,T3,T4,T5,T6,T7,T8,T9' containing b.modul;
+    where 'TT,T0,T2,T3,T4,T5,T6,T7,T8,T9' containing b.modul
     ;
 """
 

@@ -27,12 +27,8 @@ NOTES:
     Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
     We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
 
-    NOTE-1.
-        We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
-        During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
-    NOTE-2.
-        Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
-        'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
+    We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
+    During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
 
     Checked on Windows 4.0.3.2931, 5.0.0.1022, SS and CS.
     
@@ -408,11 +404,13 @@ def get_replication_log(a: Action):
 
 #--------------------------------------------
 
+@pytest.mark.replication
 @pytest.mark.version('>=4.0.1')
 def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, tmp_oltp_build_log: Path, capsys):
 
     tmp_oltp_sql_files = []
-    out_prep, out_main, out_drop = '', '', ''
+    
+    out_prep, out_init, out_main, out_drop = '', '', '', ''
     # Obtain full path + filename for DB_MAIN and DB_REPL aliases.
     # NOTE: we must NOT use 'a.db.db_path' for ALIASED databases!
     # It will return '.' rather than full path+filename.
@@ -507,7 +505,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
 
         act_db_main.isql(switches=['-q', '-nod'], input_file = str(tmp_oltp_build_sql), io_enc = locale.getpreferredencoding(), combine_output = True)
         if act_db_main.return_code:
-            out_prep = act_db_main.clean_stdout
+            out_init= '\n'.join( ('act_db_main.return_code = %d' % act_db_main.return_code, act_db_main.clean_stdout ) )
 
         act_db_main.reset()
 
@@ -519,7 +517,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
 
         repl_log_new = get_replication_log(act_db_main)
 
-    if out_prep:
+    if out_init:
         # Some problem raised during execution of initial SQL
         pass
     else:
@@ -561,7 +559,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
     # Must be EMPTY:
     out_drop = capsys.readouterr().out
 
-    if [ x for x in (out_prep, out_main, out_drop) if x.strip() ]:
+    if [ x for x in (out_prep, out_init, out_main, out_drop) if x.strip() ]:
         # We have a problem either with DDL/DML or with dropping DB objects.
         # First, we have to RECREATE both master and slave databases
         # (otherwise further execution of this test or other replication-related tests most likely will fail):
@@ -572,6 +570,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
         print('Problem(s) detected:')
         if out_prep.strip():
             print('out_prep:\n', out_prep)
+        if out_init.strip():
+            print('out_init:\n', out_init)
         if out_main.strip():
             print('out_main:\n', out_main)
         if out_drop.strip():

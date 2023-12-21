@@ -11,8 +11,8 @@ DESCRIPTION:
 
   Then 'ALTER DATABASE ENCRYPT...' is issued by ISQL which is launched ASYNCHRONOUSLY, and we start
   loop with query: 'select mon$crypt_state from mon$database'.
-  As far as query will return columd value = 3 ("is encrypting") - we break from loop and try to DROP database.
-  Attempt to drop database which has incompleted encryption must raise exception:
+  As far as query will return column mon$crypt_state = 3 ("is encrypting") - we break from loop and try to DROP database.
+  Attempt to drop database during incompleted (running) encryption must raise exception:
       lock time-out on wait transaction
       -object is in use
   Test verifies that this exception actually raises (i.e. this is EXPECTED behaviour).
@@ -32,34 +32,38 @@ NOTES:
        ::: NB :::
        FB 5.x seems to be escaped this problem much earlier than FB 4.x. Build 5.0.0.240 (01-oct-2021) altready NOT hangs.
        Checked on 5.0.0.961 SS, 4.0.3.2903 SS - all fine.
+
+    [07.12.2023] pzotov
+    Increased number of inserted rows (from 100'000 to 200'000) and indexed column width (from 700 to 800).
+    Otherwise test could fail because encryption thread completes too fast (encountered under Linux).
+    Loop that checks for appearance of encryption state = 3 must have delay much less than one second (changed it from 1 to 0.1).
 """
 
 import datetime as py_dt
 from pathlib import Path
 import subprocess
 import time
+from datetime import datetime as dt
 
 import pytest
 from firebird.qa import *
 from firebird.driver import DatabaseError, tpb, Isolation, TraLockResolution, DatabaseError
 
-FLD_LEN =   500
-N_ROWS = 100000
-ENCRYPTION_START_MAX_WAIT = 30
+FLD_LEN =   800
+N_ROWS = 200000
+MAX_WAIT_FOR_ENCRYPTION_START_MS = 30000
 
 # Value in mon$crypt_state for "Database is currently encrypting"
 IS_ENCRYPTING_STATE = 3
 
-db = db_factory()
+db = db_factory(page_size = 16384)
 tmp_fdb = db_factory(filename = 'tmp_gh_7200.tmp.fdb')
 tmp_sql = temp_file(filename = 'tmp_gh_7200.tmp.sql')
 tmp_log = temp_file(filename = 'tmp_gh_7200.tmp.log')
 
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
-act_tmp = python_act('tmp_fdb', substitutions=[('-object .* is in use', '-object is in use')])
+act_tmp = python_act('tmp_fdb', substitutions=[ ('[ \t]+', ' '), ('-object .* is in use', '-object is in use'), ('(After|(-)?At) line \\d+.*', '') ])
 
-expected_stdout = """
-"""
 
 @pytest.mark.encryption
 @pytest.mark.version('>=4.0.2')
@@ -80,7 +84,7 @@ def test_1(act: Action, act_tmp: Action, tmp_sql: Path, tmp_log: Path, capsys):
         end
         ^
         -- for debug, trace must be started with log_proc = true:
-        create procedure sp_tmp (a_point varchar(50)) as
+        create procedure sp_debug (a_point varchar(50)) as
         begin
             -- nop --
         end
@@ -93,7 +97,11 @@ def test_1(act: Action, act_tmp: Action, tmp_sql: Path, tmp_log: Path, capsys):
     assert act_tmp.clean_stdout == ''
     act_tmp.reset()
 
-    act_tmp.db.set_sync_write() # here we want DB be encrypted for some *valuable* time
+    #############################################
+    ###   c h a n g e     F W    t o    O N   ###
+    #############################################
+    act_tmp.db.set_sync_write()
+
 
     # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
     # from act.files_dir/'test_config.ini':
@@ -129,31 +137,49 @@ def test_1(act: Action, act_tmp: Action, tmp_sql: Path, tmp_log: Path, capsys):
             ps = cur_watcher.prepare('select mon$crypt_state from mon$database')
 
             i = 0
+            da = dt.now()
             while True:
                 cur_watcher.execute(ps)
                 for r in cur_watcher:
                     db_crypt_state = r[0]
 
                 tx_watcher.commit()
-
+                db = dt.now()
+                diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
                 if db_crypt_state == IS_ENCRYPTING_STATE:
                     encryption_started = True
-                    cur_watcher.call_procedure('sp_tmp', ('encryption_started',))
+                    cur_watcher.call_procedure('sp_debug', ('encryption_started',))
                     break
-                elif i > ENCRYPTION_START_MAX_WAIT:
+                elif diff_ms > MAX_WAIT_FOR_ENCRYPTION_START_MS:
                     break
 
-                time.sleep(1)
+                time.sleep(0.1)
 
             ps.free()
 
-        assert encryption_started, f'Could not find start of encryption process for {ENCRYPTION_START_MAX_WAIT} seconds.'
+        assert encryption_started, f'Could not find start of encryption process for {MAX_WAIT_FOR_ENCRYPTION_START_MS} ms.'
+
+        #-----------------------------------------------------------------
+
+        drop_db_when_running_encryption_sql = f"""
+            set list on;
+            select mon$crypt_state from mon$database;
+            commit;
+            set echo on;
+            DROP DATABASE;
+            set echo off;
+            select lower(rdb$get_context('SYSTEM', 'DB_NAME')) as db_name from rdb$database;
+        """
+        tmp_sql.write_text(drop_db_when_running_encryption_sql)
 
         drop_db_expected_stdout = f"""
-            MON$CRYPT_STATE                 {IS_ENCRYPTING_STATE}
+            MON$CRYPT_STATE {IS_ENCRYPTING_STATE}
+            DROP DATABASE;
             Statement failed, SQLSTATE = 42000
             unsuccessful metadata update
-            -object is in use        
+            -object is in use
+            set echo off;
+            DB_NAME {str(act_tmp.db.db_path).lower()}
         """
 
         act_tmp.expected_stdout = drop_db_expected_stdout
@@ -161,14 +187,17 @@ def test_1(act: Action, act_tmp: Action, tmp_sql: Path, tmp_log: Path, capsys):
         # Get current state of encryption (again, just for additional check)
         # and attempt to DROP database:
         ###############################
-        act_tmp.isql(switches=['-q', '-n'], input = 'set list on; select mon$crypt_state from mon$database; commit; DROP DATABASE;', combine_output=True)
+        act_tmp.isql(switches=['-q', '-n'], input_file = tmp_sql, combine_output=True)
 
+        # If following assert fails then act_tmp.db.db_path was unexpectedly removed from disk:
         assert act_tmp.clean_stdout == act_tmp.clean_expected_stdout
         act_tmp.reset()
-        assert act_tmp.db.db_path.is_file(), f'File {str(act_tmp.db.db_path)} was unexpectedly removed from disk!'
 
     #< with tmp_log.open('w') as f_log
 
-
-
-
+    #with tmp_log.open('r') as f:
+    #    print(f.read())
+    #
+    #act.expected_stdout = ''
+    #act.stdout = capsys.readouterr().out
+    #assert act.clean_stdout == act.clean_expected_stdout

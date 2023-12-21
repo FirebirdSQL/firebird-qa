@@ -7,8 +7,12 @@ TITLE:       Server ignores the size of VARCHAR when performing SET BIND ... TO 
 DESCRIPTION:
 NOTES:
     [25.08.2023] pzotov
-    Confirmed problem on 5.0.0.1169, 4.0.4.2982
-    Checked on 5.0.0.1177, 4.0.4.2982 (intermediate snapshots).
+        Confirmed problem on 5.0.0.1169, 4.0.4.2982
+        Checked on 5.0.0.1177, 4.0.4.2982 (intermediate snapshots).
+    [14.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import locale
@@ -16,7 +20,7 @@ import pytest
 from firebird.qa import *
 
 db = db_factory()
-act = python_act('db', substitutions=[('^((?!sqltype:).)*$',''),('[ \t]+',' ')])
+act = python_act('db', substitutions = [ ('^((?!SQLSTATE|sqltype:).)*$',''),('[ \t]+',' ' ) ] )
 
 CHK_TIMESTAMP = '2023-08-29 01:02:03.0123 +03:00'
 test_sql = f"""

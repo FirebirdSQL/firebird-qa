@@ -18,12 +18,9 @@ import pytest
 from pathlib import Path
 from firebird.qa import *
 
-substitutions = [('gbak: ERROR:no permission for CREATE access to DATABASE.*',
-                  'gbak: ERROR:no permission for CREATE access to DATABASE'),
-                 ('gbak: ERROR:    failed to create database.*',
-                  'gbak: ERROR:    failed to create database'),
-                 ('gbak: ERROR:failed to create database localhost(:|/).*',
-                  'gbak: ERROR:failed to create database localhost')]
+substitutions = [ ('gbak: ERROR:([ \t])*no permission for CREATE access to DATABASE.*', 'gbak: ERROR:no permission for CREATE access to DATABASE'),
+                  ('gbak: ERROR:([ \t])*failed to create database .*',                  'gbak: ERROR:failed to create database')
+                ]
 
 db = db_factory()
 
@@ -37,23 +34,24 @@ fbk_file = temp_file('tmp_core_5291.fbk')
 fdb_file_1 = temp_file('tmp_core_5291_1.fdb')
 fdb_file_2 = temp_file('tmp_core_5291_2.fdb')
 
-expected_stderr_1 = """
+expected_stdout = """
+    Restore using SERVICES, user has NO default role:
     gbak: ERROR:no permission for CREATE access to DATABASE
-    gbak: ERROR:    failed to create database
+    gbak: ERROR:failed to create database
     gbak: ERROR:    Exiting before completion due to errors
     gbak:Exiting before completion due to errors
-
+    Restore using GBAK, user has NO default role:
     gbak: ERROR:no permission for CREATE access to DATABASE
-    gbak: ERROR:failed to create database localhost
+    gbak: ERROR:failed to create database
     gbak:Exiting before completion due to errors
-
+    Restore using SERVICES, user HAS default role with system privileges:
     gbak: ERROR:no permission for CREATE access to DATABASE
-    gbak: ERROR:    failed to create database
+    gbak: ERROR:failed to create database
     gbak: ERROR:    Exiting before completion due to errors
     gbak:Exiting before completion due to errors
-
+    Restore using GBAK, user HAS default role with system privileges:
     gbak: ERROR:no permission for CREATE access to DATABASE
-    gbak: ERROR:failed to create database localhost
+    gbak: ERROR:failed to create database
     gbak:Exiting before completion due to errors
 """
 
@@ -64,34 +62,54 @@ def test_1(act: Action, tmp_user_1: User, tmp_user_2: User, fbk_file: Path, fdb_
         con.execute_immediate( f'grant default {tmp_role.name} to user {tmp_user_2.name}' )
     #
     act.gbak(switches=['-b', act.db.dsn, str(fbk_file)])
+
+    #--------------------------------------------------------------------------
     # User 1
     act.reset()
-    act.expected_stderr = "We expect errors"
-    act.gbak(switches=['-se', 'localhost:service_mgr', '-rep', str(fbk_file),
-                       str(fdb_file_1), '-user', tmp_user_1.name, '-pas', tmp_user_1.password],
-             credentials=False)
-    print(act.stderr)
+    print('Restore using SERVICES, user has NO default role:')
+    act.gbak(switches=[ '-se', 'localhost:service_mgr'
+                        ,'-rep', str(fbk_file), str(fdb_file_1)
+                        ,'-user', tmp_user_1.name
+                        ,'-pas', tmp_user_1.password
+                      ]
+            ,credentials=False, combine_output = True)
+    print(act.stdout)
+    #--------------------------------------------------------------------------
+
     # User 1
     act.reset()
-    act.expected_stderr = "We expect errors"
-    act.gbak(switches=['-rep', str(fbk_file), act.get_dsn(fdb_file_2),
-                       '-user', tmp_user_1.name, '-pas', tmp_user_1.password], credentials=False)
-    print(act.stderr)
+    print('Restore using GBAK, user has NO default role:')
+    act.gbak(switches=[ '-rep', str(fbk_file), act.get_dsn(fdb_file_2)
+                        ,'-user', tmp_user_1.name, '-pas', tmp_user_1.password
+                      ]
+             ,credentials=False, combine_output = True)
+    print(act.stdout)
+    #--------------------------------------------------------------------------
+
     # User 2
     act.reset()
-    act.expected_stderr = "We expect errors"
-    act.gbak(switches=['-se', f'{act.host}:service_mgr', '-rep', str(fbk_file),
-                       str(fdb_file_1), '-user', tmp_user_2.name, '-pas', tmp_user_2.password],
-             credentials=False)
-    print(act.stderr)
+    print('Restore using SERVICES, user HAS default role with system privileges:')
+    act.gbak(switches=[ '-se', f'{act.host}:service_mgr'
+                        ,'-rep', str(fbk_file), str(fdb_file_1)
+                        ,'-user', tmp_user_2.name
+                        ,'-pas', tmp_user_2.password
+                      ]
+             ,credentials=False, combine_output = True)
+    print(act.stdout)
+    #--------------------------------------------------------------------------
+
     # User 2
     act.reset()
-    act.expected_stderr = "We expect errors"
-    act.gbak(switches=['-rep', str(fbk_file), act.get_dsn(fdb_file_2),
-                       '-user', tmp_user_2.name, '-pas', tmp_user_2.password], credentials=False)
-    print(act.stderr)
+    print('Restore using GBAK, user HAS default role with system privileges:')
+    act.gbak(switches=[ '-rep', str(fbk_file), act.get_dsn(fdb_file_2),
+                        '-user', tmp_user_2.name
+                        ,'-pas', tmp_user_2.password
+                      ]
+             ,credentials=False, combine_output = True)
+    print(act.stdout)
     #
     act.reset()
-    act.expected_stderr = expected_stderr_1
-    act.stderr = capsys.readouterr().out
-    assert act.clean_stderr == act.clean_expected_stderr
+
+    act.expected_stdout = expected_stdout
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout

@@ -79,6 +79,18 @@ NOTES:
            NB! Worker transaction must running in WAIT mode - in contrary to Tx that we start in our monitoring loop.
 
         Checked on WI-T6.0.0.55, WI-T5.0.0.1229, WI-V4.0.4.2995 (all SS/CS).
+
+    [01.12.2023] pzotov
+    New behaviour of ISQL was introduced after implementation of PR #7868: SET AUTOTERM.
+    Since that was implemented, ISQL handles comments (single- and multi-lined) as PART of statement that follows these comments.
+    In other words, ISQL in 6.x does not 'swallow' comments and sends them to engine together with statement that follows.
+    This means that comment PLUS statement can be 'unexpectedly' seen in the trace log.
+
+    Currently this is not considered as a bug, see note by Adriano: https://groups.google.com/g/firebird-devel/c/AM8vlA3YJws
+    Because of this, we must avoid to put comments directly before executing statement. In order to preserve comments, it was decided
+    for move them from code that is executing by ISQL (see "Run UPDATE | DELETE | MERGE | SELECT WITH LOCK" and next line).
+
+    Checked on 6.0.0.163, 5.0.0.1284.
 """
 
 import subprocess
@@ -240,6 +252,9 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                         locked_rows_map[ 1 ] = 1
                         con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = {locked_rows_map[1]} /* locker-1 */' )
 
+                        # Run UPDATE | DELETE | MERGE | SELECT WITH LOCK  -- see {SQL_TO_BE_RESTARTED}
+                        # Every statement ends with 'ORDER BY ID DESC' and must hang because of lockes:
+
                         worker_sql = f'''
                             set list on;
                             set autoddl off;
@@ -258,8 +273,6 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
 
                             set count on;
                             set term ^;
-                            -- Run UPDATE | DELETE | MERGE | SELECT WITH LOCK.
-                            -- Every statement ends with 'ORDER BY ID DESC' and must hang because of lockes:
                             {SQL_TO_BE_RESTARTED}
                             ^
                             set term ;^
@@ -706,7 +719,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                 allowed_patterns = [re.compile(x) for x in allowed_patterns]
 
                 ##########################################################################
-                # !!! NB !!! It is asusmed that test query is fully written in ONE line !!
+                # !!! NB !!! It is assumed that test query is fully written in ONE line !!
                 ##########################################################################
                 title_print_flag = 0
                 title_message = f'checked_mode: {checked_mode}, checked_DML = {checked_DML}, iter = {main_iter}:' 

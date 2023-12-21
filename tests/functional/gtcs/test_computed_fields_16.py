@@ -41,7 +41,7 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script, substitutions = [('line\\s+\\d+(,)?\\s+col(umn)?\\s+\\d+', '')])
 
 expected_stderr = """
     Statement failed, SQLSTATE = 42000

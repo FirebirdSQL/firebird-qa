@@ -38,6 +38,14 @@ NOTES:
        (Allow computable but non-invariant lists to be used for index lookup)
 
     Checked on 5.0.0.1200
+
+    [19-dec-2023] pzotov
+    Removed 'rand()' in order to have predictable values in table column. Use mod() instead.
+    Unstable outcomes started since 6.0.0.180 (18.12.2023).
+    It seems that following commits caused this:
+        https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83 // 5.x
+        https://github.com/FirebirdSQL/firebird/commit/f647dfd757de3c4065ef2b875c95d19311bb9691 // 6.x
+
 """
 import locale
 import re
@@ -48,7 +56,7 @@ db = db_factory()
 
 substitutions = [
                     (' \\(line \\d+, column \\d+\\)', '(line, column)' )
-                   ,( '\\d+\\s+ms', '')
+                   ,( '\\d+\\s+ms.*', '0 ms')
                 ]
 
 act = python_act('db', substitutions = substitutions)
@@ -61,7 +69,7 @@ trace = ['log_initfini = false',
          'explain_plan = true',
          ]
 
-def replace_leading(source, char="#"):
+def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
 
@@ -69,11 +77,17 @@ def replace_leading(source, char="#"):
 def test_1(act: Action, capsys):
 
     test_script = f"""
-        create table tmain(id int primary key using index tmain_pk, x int);
-        create table tdetl(id int primary key using index tdetl_pk, pid int references tmain using index tdetl_fk, y int, z int);
-        insert into tmain(id,x) select row_number()over(), -100 + rand()*200 from rdb$types rows 100;
-        insert into tdetl(id, pid, y,z) select row_number()over(), 1+rand()*99, rand()*1000, rand()*1000 from rdb$types;
+        recreate table tdetl(id int);
+        recreate table tmain(id int primary key using index tmain_pk, x int);
+        recreate table tdetl(id int primary key using index tdetl_pk, pid int references tmain using index tdetl_fk, y int, z int);
+
+        insert into tmain(id,x)
+        select i, -100 + mod(i,200) from (select row_number()over() i from rdb$types rows 200);
+
+        insert into tdetl(id, pid, y,z)
+        select i, 1+mod(i,10), mod(i,30), mod(i,70) from (select row_number()over() i from rdb$types,rdb$types rows 1000);
         commit;
+
         create index tmain_x on tmain(x);
         create index tdetl_y on tdetl(y);
         create index tdetl_z on tdetl(z);
@@ -165,13 +179,13 @@ def test_1(act: Action, capsys):
     with act.trace(db_events=trace, encoding = locale.getpreferredencoding(), encoding_errors='utf8'):
         act.isql(switches = ['-q'], input = test_script, combine_output = True, io_enc = locale.getpreferredencoding())
 
-    # Process trace
+    # Parse trace log:
     start_show = 0
     for line in act.trace_log:
         if line.startswith("^^^"):
             start_show = 1
             continue
-        if start_show and line.rstrip().split():
+        if start_show and line.rstrip():
             print( replace_leading(line,'.') )
 
     expected_stdout = f"""
@@ -187,10 +201,13 @@ def test_1(act: Action, capsys):
         ............-> Filter
         ................-> Table "TDETL" as "K D4 DX" Access By ID
         ....................-> Bitmap And
+        ........................-> Bitmap And
+        ............................-> Bitmap
+        ................................-> Index "TDETL_Z" Range Scan (lower bound: 1/1)
+        ............................-> Bitmap
+        ................................-> Index "TDETL_Y" Range Scan (upper bound: 1/1)
         ........................-> Bitmap
         ............................-> Index "TDETL_FK" Range Scan (full match)
-        ........................-> Bitmap
-        ............................-> Index "TDETL_Y" Range Scan (upper bound: 1/1)
         Sub-query
         ....-> Filter
         ........-> Table "TMAIN" as "M0" Access By ID

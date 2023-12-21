@@ -25,6 +25,9 @@ FBTEST:      bugs.core_5887
 NOTES:
     [12.06.2022] pzotov
     Checked on 4.0.1.2692 - both on Linux and Windows.
+
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -51,12 +54,14 @@ def test_1(act: Action, tmp_role: Role, capsys):
         execute block as
         begin
             set decfloat round ceiling;
-        end^
+        end
+        ^
 
         execute block as
         begin
             set decfloat traps to Division_by_zero, Invalid_operation, Overflow;
-        end^
+        end
+        ^
 
         execute block as
         begin
@@ -70,41 +75,46 @@ def test_1(act: Action, tmp_role: Role, capsys):
             set bind of decfloat to native;
             --                   ^^
             --                   +--- since 12-dec-2019
-        end^
+        end
+        ^
 
         execute block as
         begin
             set role {tmp_role.name};
-        end^
+        end
+        ^
 
         execute block as
         begin
             set session idle timeout 5 minute;
-        end^
+        end
+        ^
 
         execute block as
         begin
             set statement timeout 1 minute;
-        end^
+        end
+        ^
 
         execute block as
         begin
             set time zone local;
-        end^
+        end
+        ^
 
 
         execute block as
         begin
             set bind of timestamp with time zone to legacy;
             set bind of time with time zone to legacy;
-        end^
+        end
         ^
 
         execute block as
         begin
             set bind of timestamp with time zone to native;
             set bind of time with time zone to native;
-        end^
+        end
         ^
         set term ;^
         commit;

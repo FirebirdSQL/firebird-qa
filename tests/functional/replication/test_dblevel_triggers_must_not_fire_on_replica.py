@@ -44,13 +44,13 @@ NOTES:
     Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
     We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
 
-    NOTE-1.
-        We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
-        During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
-    NOTE-2.
-        Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
-        'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
-    
+    We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
+    During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
+
+    [18.07.2023] pzotov
+    ENABLED execution of on Linux when ServerMode = Classic after letter from dimitr 13-JUL-2023 12:58.
+    See https://github.com/FirebirdSQL/firebird/commit/9aaeab2d4b414f06dabba37e4ebd32587acd5dc0
+
     Checked on 5.0.0.1014, 4.0.3.2929 - both SS and CS.
 """
 
@@ -69,7 +69,6 @@ from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, 
 # from act.files_dir/'test_config.ini':
 repl_settings = QA_GLOBALS['replication']
 
-#MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG = int(repl_settings['max_time_for_wait_segment_in_log'])
 MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
 MAIN_DB_ALIAS = repl_settings['main_db_alias']
 REPL_DB_ALIAS = repl_settings['repl_db_alias']
@@ -306,6 +305,7 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
 
 #--------------------------------------------
 
+@pytest.mark.replication
 @pytest.mark.version('>=4.0.1')
 def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
 

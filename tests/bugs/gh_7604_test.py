@@ -6,8 +6,12 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7604
 TITLE:       PSQL functions do not convert the output BLOB to the connection character set
 NOTES:
     [03.06.2023] pzotov
-    Confirmed problem on 4.0.3.2943, 5.0.0.1060.
-    Checked on 4.0.3.2947, 5.0.0.1063 -- all fine.
+        Confirmed problem on 4.0.3.2943, 5.0.0.1060.
+        Checked on 4.0.3.2947, 5.0.0.1063 -- all fine.
+    [14.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 import locale
 import pytest
@@ -27,7 +31,7 @@ init_sql = """
 """
 db = db_factory(charset = 'utf8', init = init_sql)
 
-act = python_act('db', substitutions=[('^((?!sqltype:).)*$',''),('[ \t]+',' '),('.*alias:.*','')])
+act = python_act('db', substitutions = [ ('^((?!SQLSTATE|sqltype:).)*$',''),('[ \t]+',' '),('.*alias:.*','') ] )
 
 @pytest.mark.version('>=4.0.3')
 def test_1(act: Action):

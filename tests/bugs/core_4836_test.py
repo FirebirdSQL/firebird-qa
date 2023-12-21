@@ -3,11 +3,15 @@
 """
 ID:          issue-5132
 ISSUE:       5132
-TITLE:       Grant update(c) on t to U01 with grant option: user U01 will not be able to
-  `revoke update(c) on t from <user | role>` if this `U01` do some DML before revoke
+TITLE:       Grant update(c) on t to U01 with grant option: user U01 will not be able to `revoke update(c) on t from <user | role>` if this `U01` do some DML before revoke
 DESCRIPTION:
 JIRA:        CORE-4836
 FBTEST:      bugs.core_4836
+NOTES:
+    [12.12.2023] pzotov
+    Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+    ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+    Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -43,7 +47,7 @@ test_script = """
     commit;
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!C4836|R4836).)*$', '')])
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|C4836|R4836).)*$', '')])
 
 expected_stdout = """
     GRANT UPDATE (TEXT) ON TEST TO USER TMP$C4836 WITH GRANT OPTION
@@ -54,6 +58,6 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_user: User, tmp_role: Role):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 

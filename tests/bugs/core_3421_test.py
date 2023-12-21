@@ -7,6 +7,11 @@ TITLE:       [FB3] AV with "UPDATE OR INSERT"
 DESCRIPTION:
 JIRA:        CORE-3421
 FBTEST:      bugs.core_3421
+NOTES:
+    [11.12.2023] pzotov
+    Added 'Error reading/writing' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+    ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+    Added 'combine_output = True' in order to see message related to any error.
 """
 
 import pytest
@@ -39,6 +44,7 @@ init_script = """
 db = db_factory(init=init_script)
 
 test_script = """
+    set bail on;
     set list on;
     set sqlda_display on;
     set planonly;
@@ -55,8 +61,9 @@ test_script = """
     select * from sp_test(1, rpad('',512,'0123456789abcdefghjklmnopqrstuwwxyz'));
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype|DTS_DIFF).)*$', ''),
-                                                   ('[ ]+', ' '), ('[\t]*', ' ')])
+# We have to use substitution which will not suppress "Error reading|writing data from the connection." message:
+#
+act = isql_act('db', test_script, substitutions = [ ('^((?!(sqltype|(Error\\s+(reading|writing)) )).)*$', ''), ('[ \t]+', ' ') ] )
 
 expected_stdout = """
     01: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
@@ -70,6 +77,6 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 

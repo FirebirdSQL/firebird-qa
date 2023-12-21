@@ -25,58 +25,56 @@ from firebird.qa import *
 db = db_factory(charset='ISO8859_1')
 
 test_script = """
-    CREATE TABLE SNIPPETS (
-    f01 VARCHAR(4000) COLLATE DE_DE
+    create table snippets (
+        f01 varchar(4000) collate de_de
     );
 
-    SET TERM ^;
+    set term ^;
 
     insert into snippets values('
-    function JsShowZeroFilled(inValue) {
-    if(inValue > 9) {
-    return inValue;
-    } else {
-    return ''0'' + inValue;
-    }
-    }
+      function JsShowZeroFilled(inValue) {
+      if(inValue > 9) {
+      return inValue;
+      } else {
+      return ''0'' + inValue;
+      }
+      }
 
 
 
 
-    function JsGetWochentagname(wochentag,wochentagtyp,langcode) {
-    var wochentagname;
+      function JsGetWochentagname(wochentag,wochentagtyp,langcode) {
+      var wochentagname;
 
 
-    array_DE = new Array("SO,Son.,Sonntag", "MO,Mon.,Montag",
-    "DI,Di.,Dienstag", "MI,Mi.,Mittwoch",
-    "DO,Don.,Donnerstag","FR,Fr.,Freitag", "SA,Sam.,Samstag");
-    array_EN = new Array("SU,Su.,Sunday", "MO,Mon.,Monday",
-    "TU,Tu.,Tuesday", "WE,We.,Wednesday", "DO,Th.,Thursday",
-    "FR,Fr.,Friday", "SA,Sa.,Saturday");
+      array_DE = new Array("SO,Son.,Sonntag", "MO,Mon.,Montag",
+      "DI,Di.,Dienstag", "MI,Mi.,Mittwoch",
+      "DO,Don.,Donnerstag","FR,Fr.,Freitag", "SA,Sam.,Samstag");
+      array_EN = new Array("SU,Su.,Sunday", "MO,Mon.,Monday",
+      "TU,Tu.,Tuesday", "WE,We.,Wednesday", "DO,Th.,Thursday",
+      "FR,Fr.,Friday", "SA,Sa.,Saturday");
 
 
-    if (langcode.toUpperCase() == ''DE'') {
-    array_wochentagname = array_DE[wochentag].split('','');
-    wochentagname = array_wochentagname[wochentagtyp-1];
-    } else {
-    array_wochentagname = array_EN[wochentag].split('','');
-    wochentagname = array_wochentagname[wochentagtyp-1];
-    }
-    return wochentagname;
-    }
-    ')
-    ^
+      if (langcode.toUpperCase() == ''DE'') {
+      array_wochentagname = array_DE[wochentag].split('','');
+      wochentagname = array_wochentagname[wochentagtyp-1];
+      } else {
+      array_wochentagname = array_EN[wochentag].split('','');
+      wochentagname = array_wochentagname[wochentagtyp-1];
+      }
+      return wochentagname;
+      }
+    '
+    ) ^
     set term ;^
     commit;
 
     set count on;
     set list on;
     select f01 from snippets group by f01;
-
-
 """
 
-act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('^((?!F01|Records affected).)*$', '')])
+act = isql_act('db', test_script, substitutions = [ ('[ \t]+', ' '), ('^((?![Er]rror\\s+(reading|writing)|SQLSTATE|F01|Records affected).)*$', '') ] )
 
 expected_stdout = """
     F01
@@ -86,5 +84,5 @@ expected_stdout = """
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

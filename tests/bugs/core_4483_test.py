@@ -3,11 +3,13 @@
 """
 ID:          issue-4803
 ISSUE:       4803
-TITLE:       Changed data not visible in WHEN-section if exception occured inside SP that
-  has been called from this code
+TITLE:       Changed data not visible in WHEN-section if exception occured inside SP that has been called from this code
 DESCRIPTION:
 JIRA:        CORE-4483
 FBTEST:      bugs.core_4483
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -90,7 +92,7 @@ test_script = """
         --exception;
       end
     end
-    ^ set term ^;
+    ^ set term ;^
 
     SET LIST ON;
     select

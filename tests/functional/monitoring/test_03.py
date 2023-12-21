@@ -3,10 +3,17 @@
 """
 ID:          monitoring-tables-03
 TITLE:       table MON$COMPILED_STATEMENTS and columns MON$STATEMENTS.MON$COMPILED_STATEMENT_ID and MON$CALL_STACK.MON$COMPILED_STATEMENT_ID
-DESCRIPTION: see https://github.com/FirebirdSQL/firebird/commit/3a452630b67f26d100c60234941a40d4468c170e (11-aug-2022)
-NOTES:
-    [21.02.2023] pzotov
+DESCRIPTION:
+    See https://github.com/FirebirdSQL/firebird/commit/3a452630b67f26d100c60234941a40d4468c170e (11-aug-2022)
+    NB: this test verifies only presence of new table / columns.
+    More complicated tests must be implemented for check the whole functionality.
     Checked on 5.0.0.958
+NOTES:
+    [16.12.2023] pzotov
+    Replaced splitted code with assigning appropiate expected text using if-else depending on act.is_version result.
+    Adjusted substitutions: runtime error must not be filtered out by '?!(...)' pattern
+    ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+    Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -22,7 +29,7 @@ test_script = """
     select mon$call_stack.mon$compiled_statement_id from mon$call_stack;
 """
 
-substitutions = [('^((?!sqltype|name:|table:).)*$', ''), ('.*owner:.*', ''), ('.*alias:.*', ''), ('[ ]+', ' '), ('[\t]*', ' ')]
+substitutions = [('^((?!SQLSTATE|sqltype|name:|table:).)*$', ''), ('.*owner:.*', ''), ('.*alias:.*', ''), ('[ \t]+', ' ')]
 
 act = isql_act('db', test_script, substitutions = substitutions)
 

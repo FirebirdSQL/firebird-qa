@@ -271,8 +271,6 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
 
                 con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = 5' )
 
-                worker_dml = f'update {target_obj} set id = -id order by id'
-
                 worker_sql = f'''
                     set list on;
                     set autoddl off;

@@ -7,6 +7,10 @@ TITLE:       with caller privileges option do not work with autonomous transacti
 DESCRIPTION:
 JIRA:        CORE-3799
 FBTEST:      bugs.core_3799
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
+    i.e.
+    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
 """
 
 import pytest
@@ -39,7 +43,7 @@ test_script = """
     recreate table test(whoami rdb$user, my_trn int default current_transaction, outer_trn int);
     commit;
 
-    set term ^ ;
+    set term ^;
     create or alter procedure sp_test as
     begin
        execute statement ('insert into test(whoami, outer_trn) values(:x, :y)')
@@ -65,15 +69,8 @@ test_script = """
         execute statement 'execute procedure sp_test' as user v_usr password v_pwd;
     end
     ^
-    set term ^;
+    set term ;^
     commit;
-
-
-    -------------------------------------------------------------------------------------------------
-    --connect '$(DSN)' user 'tmp$c3799' password '123';
-    --execute procedure sp_test;
-    --commit;
-    -------------------------------------------------------------------------------------------------
 
     set list on;
     select whoami as "Who am I ?", sign( my_trn - outer_trn ) "Did I work in AUTONOMOUS Tx ?"

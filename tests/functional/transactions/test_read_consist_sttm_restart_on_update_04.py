@@ -348,6 +348,11 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     con_lock_2.execute_immediate( f'update {target_obj} set id = -5 where abs(id) = 5;' )
                     con_lock_2.commit()
                     con_lock_2.execute_immediate( f'update {target_obj} set id = id where abs(id) = 5;' )
+
+                    #########################
+                    ###  L O C K E R - 1  ###
+                    #########################
+                    
                     con_lock_1.commit() # releases record with ID=1 ==> now it can be locked by worker.
 
                     # We have to WAIT HERE until worker will actually 'catch' just released record with ID = 1.
@@ -362,6 +367,10 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     con_lock_1.execute_immediate( f'update {target_obj} set id = id where abs(id) = 4;' )
 
 
+                    #########################
+                    ###  L O C K E R - 2  ###
+                    #########################
+                    
                     con_lock_2.commit() # releases record with ID = -5, but session-worker is waiting for record with ID = -4 (that was changed by locker-1).
 
                     # We have to WAIT HERE until worker will actually 'catch' just released record with ID = -5:
@@ -374,6 +383,10 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     con_lock_2.commit()
                     con_lock_2.execute_immediate( f'update {target_obj} set id = id where abs(id) = 3;' )
 
+                    #########################
+                    ###  L O C K E R - 1  ###
+                    #########################
+                    
                     con_lock_1.commit() # This releases row with ID=-4 but session-worker is waiting for ID = - 3 (changed by locker-2).
 
                     # We have to WAIT HERE until worker will actually 'catch' just released record with ID = -4:

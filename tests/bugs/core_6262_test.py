@@ -55,15 +55,21 @@ def test_1(act: Action, capsys):
     act.isql(switches=[], input='\n'.join(chk_script))
     # Checks
     lines_with_charset = lines_without_charset = 0
+    names_without_charset = []
     for line in act.clean_stdout.splitlines():
         if line.split():
             if 'CHARACTER SET' in line:
                 lines_with_charset += 1
             else:
                 lines_without_charset += 1
+                names_without_charset.append(line,)
     if lines_with_charset > 0:
         result = 'SAME AS' if lines_with_charset == text_domains_count else f'{lines_with_charset} - LESS THAN'
         print(f'Number of lines with specified charset: {result} NUMBER OF TEXT DOMAINS')
+        if lines_without_charset:
+            print(f'Number of text domains: {text_domains_count}')
+            print(f'Number of lines WITHOUT specified charset: {lines_without_charset}')
+            print('\n'.join(names_without_charset))
     else:
         print('SOMETHING WAS WRONG: COULD NOT FIND ANY LINE WITH "CHARACTER SET" PHRASE')
     print('Number of lines with missed charset:', lines_without_charset)

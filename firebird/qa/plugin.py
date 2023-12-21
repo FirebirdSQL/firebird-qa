@@ -48,6 +48,7 @@ import weakref
 import pytest
 from configparser import ConfigParser, ExtendedInterpolation
 from difflib import ndiff
+from collections import deque
 from _pytest.config import Config
 from _pytest.terminal import TerminalReporter, _get_raw_skip_reason, _format_trimmed
 from _pytest.pathlib import bestrelpath
@@ -578,7 +579,29 @@ def pytest_assertrepr_compare(config: Config, op: str, left: object, right: obje
     If both objects are `str`, uses `difflib.ndiff` to provide explanation.
     """
     if isinstance(left, str) and isinstance(right, str) and op == "==":
-        return ndiff(left.splitlines(), right.splitlines())
+        # 16.11.2023, pzotov: we have to put empty string at the beginning of each comparing lists.
+        # Otherwise first diff will be at the same line as 'assert' phrase, which causes readability be poor.
+        #
+        left_lines = ['']
+        left_lines.extend(left.splitlines())
+        right_lines = ['']
+        right_lines.extend(right.splitlines())
+
+        # 16.11.2023, pzotov
+        # ndiff output must be interpreted as following:
+        #     * "E     - <some text>" ==> MISSED line (it was in EXPECTED text but absent in actual one).
+        #     * "E     + <some_text>" ==> EXCESSIVE line (it is not in EXPECTED text but did appear in actual).
+        # But for QA-purposes, this output must answer the question:
+        #     "what must be changed in ACTUAL output so that it became equal to EXPECTED"
+        #     (i.e. how to "REVERT" actual back to expected).
+        # In order to see such result, we have to specify 'right_lines' to the 1st argument that is passed to ndiff().
+        # ::: NB :::
+        # We assume that all tests are written so that ACTUAL output is left side in 'assert' statement and EXPECTED
+        # is right side, e.g: assert act.clean_stdout == act.clean_expected_stdout
+        # This requirement is CRUCIAL if we use ndiff() instead of default pytest comparison method!
+        #
+        return ndiff(right_lines, left_lines)
+
     return None
 
 def substitute_macros(text: str, macros: Dict[str, str]):

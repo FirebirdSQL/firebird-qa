@@ -11,7 +11,11 @@ DESCRIPTION:
     ("Separate charset output: full for SHOW and minimal for EXTRACT").
 NOTES:
     [03.10.2023] pzotov
-    Checked on 6.0.0.66 (Intermediate build).
+        Checked on 6.0.0.66 (Intermediate build).
+    [14.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -19,7 +23,7 @@ from firebird.qa import *
 
 db = db_factory(charset = 'utf8')
 
-substitutions = [ ('^((?!(IMPLICIT|EXPLICIT|BINARY)).)*$', ''), ]
+substitutions = [ ('^((?!(SQLSTATE|IMPLICIT|EXPLICIT|BINARY)).)*$', ''), ]
 act = python_act('db', substitutions = substitutions)
 
 @pytest.mark.version('>=6.0')

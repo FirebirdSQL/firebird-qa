@@ -264,7 +264,6 @@ def parse_page_header(con: Connection, page_number: int, map_dbo: Dict):
         #page_info = ''.join( ('UNKNOWN; ',PAGE_TYPES[page_type].ljust(9),'; relation_id ', str(relation_id), '; index_id ', str(index_id)) )
     return (page_type, relation_id, page_info)
 
-#@pytest.mark.skip("FIXME: see notes")
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action, capsys):
     map_dbo = {}
@@ -317,8 +316,10 @@ def test_1(act: Action, capsys):
     with act.connect_server() as srv:
         srv.database.validate(database=act.db.db_path, lock_timeout=1)
         validation_log = srv.readlines()
+
     # gstat
     act.gstat(switches=['-e'])
+
     pattern = re.compile('(data|index|blob|other)\\s+pages[:]{0,1}\\s+total[:]{0,1}\\s+\\d+[,]{0,1}\\s+encrypted[:]{0,1}\\s+\\d+.*[,]{0,1}non-crypted[:]{0,1}\\s+\\d+.*', re.IGNORECASE)
     for line in act.stdout.splitlines():
         if pattern.match(line.strip()):
@@ -341,7 +342,12 @@ def test_1(act: Action, capsys):
     else:
         final_msg += 'NO'
         print(final_msg)
-        print( 'Check: brk_datapage, brk_indxpage, brk_blobpage: ',brk_datapage, brk_indxpage, brk_blobpage )
+        print('Check output of "gstat -e":')
+        for line in act.stdout.splitlines():
+            print(line.replace(' ','.'))
+        print('-' * 50)
+        print(f'brk_datapage = {brk_datapage}, brk_indxpage = {brk_indxpage}, brk_blobpage = {brk_blobpage}')
+        print(f'data_page_problem = {data_page_problem}, indx_page_problem = {indx_page_problem}, blob_page_problem = {blob_page_problem}')
 
     # restore DB content
     act.db.db_path.write_bytes(raw_db_content)

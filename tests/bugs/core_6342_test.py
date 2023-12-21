@@ -5,14 +5,19 @@ ID:          issue-6583
 ISSUE:       6583
 TITLE:       Make explicit basic type for high precision numerics - INT128
 DESCRIPTION:
-  Initial discuss with Alex: letter 24.06.2020 18:29.
-  This test most probably will be added by another checks, currently it has initial state.
-  We verify that:
-  1) one may to write:  create table test( x int128 ); -- i.e. explicitly specify type = 'int128'
-  2) table column can refer to domain which was declared as int128
-  3) one may to write SET BIND OF INT128 TO <any_other_numeric_datatype> ans vice versa.
+    Initial discuss with Alex: letter 24.06.2020 18:29.
+    This test most probably will be added by another checks, currently it has initial state.
+    We verify that:
+    1) one may to write:  create table test( x int128 ); -- i.e. explicitly specify type = 'int128'
+    2) table column can refer to domain which was declared as int128
+    3) one may to write SET BIND OF INT128 TO <any_other_numeric_datatype> ans vice versa.
 JIRA:        CORE-6342
 FBTEST:      bugs.core_6342
+NOTES:
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -203,10 +208,9 @@ test_script = """
     select * from test16;
     commit;
     set sqlda_display off;
-
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype).)*$', ''), ('[ \t]+', ' ')])
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype).)*$', ''), ('[ \t]+', ' ')])
 
 expected_stdout = """
     01: sqltype: 32752 INT128 Nullable scale: 0 subtype: 0 len: 16
@@ -234,5 +238,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

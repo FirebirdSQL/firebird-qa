@@ -7,8 +7,12 @@ TITLE:       ISQL does not extract "INCREMENT BY" for IDENTITY column
 DESCRIPTION:
 NOTES:
     [28.02.2023] pzotov
-    Confirmed bug on 4.0.1.2692.
-    Checked on 5.0.0.961, 4.0.3.2903 - all OK.
+        Confirmed bug on 4.0.1.2692.
+        Checked on 5.0.0.961, 4.0.3.2903 - all OK.
+    [14.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -27,7 +31,7 @@ init_script = """
 """
 
 db = db_factory(init = init_script)
-act = python_act('db', substitutions = [('^((?!ID1(A|B|C|D)|ID2(A|B|C|D)).)*$', '')] )
+act = python_act('db', substitutions = [('^((?!SQLSTATE|ID1(A|B|C|D)|ID2(A|B|C|D)).)*$', '')] )
 
 expected_stdout = """
     CREATE TABLE TEST (ID1A INTEGER GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT 111) NOT NULL,
@@ -43,4 +47,3 @@ def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.isql(switches=['-x'], charset='utf8', combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-

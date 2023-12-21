@@ -5,72 +5,57 @@ ID:          issue-4894
 ISSUE:       4894
 TITLE:       INPUT file not properly closed
 DESCRIPTION:
+    Test makes TWO attempts to execute script using 'IN <script>' command.
+    After first attempt (which must complete OK) we try to delete file using Windows 'DEL' command.
+    This command must finish successful and second attempt to run the same script must file with
+    message 'Unable to open ...'
+
 JIRA:        CORE-4578
 FBTEST:      bugs.core_4578
 """
 
+from pathlib import Path
+import locale
 import pytest
 from firebird.qa import *
-db = db_factory()
 
+init_sql = """
+    recreate table test(id bigint primary key);
+    commit;
+"""
+db = db_factory(init = init_sql)
 act = python_act('db', substitutions=[('Unable to open.*', 'Unable to open')])
 
-expected_stdout = """
-    ID                              1
-    Unable to open
-"""
 
-@pytest.mark.skip('FIXME: Not IMPLEMENTED')
+tmp_worker = temp_file('tmp.core_4578.worker.sql')
+tmp_caller = temp_file('tmp.core_4578.caller.sql')
+
 @pytest.mark.version('>=3')
 @pytest.mark.platform('Windows')
-def test_1(act: Action):
-    pytest.fail("Not IMPLEMENTED")
+def test_1(act: Action, tmp_worker: Path, tmp_caller: Path):
 
-# test_script_1
-#---
-#
-#  import os
-#  import subprocess
-#  import time
-#
-#  db_conn.close()
-#
-#  txt_in = '''set list on;
-#  recreate table test(id int);
-#  commit;
-#  insert into test values(1);
-#  select id from test;
-#  commit;
-#  '''
-#  tmp_input_sql=open( os.path.join(context['temp_directory'],'tmp_4578_in.sql'), 'w')
-#  tmp_input_sql.write(txt_in)
-#  tmp_input_sql.close()
-#
-#  sql_main_file=open( os.path.join(context['temp_directory'],'tmp_4578_go.sql'), 'w')
-#
-#  sql_main_file.write("set bail on;\\n" )
-#  sql_main_file.write("in "+tmp_input_sql.name+";\\n" )
-#  sql_main_file.write("shell del "+tmp_input_sql.name+" 2>nul;\\n" )
-#  sql_main_file.write("in "+tmp_input_sql.name+";\\n" )
-#
-#  sql_main_file.close()
-#
-#  sql_main_log=open( os.path.join(context['temp_directory'],'tmp_isql_4578.log'), 'w')
-#  p_isql = subprocess.call([ "isql" , dsn, "-user" , "SYSDBA" , "-password", "masterkey", "-i", sql_main_file.name ], stdout=sql_main_log, stderr=subprocess.STDOUT)
-#  sql_main_log.close()
-#
-#  time.sleep(1)
-#
-#  with open( sql_main_log.name,'r') as f:
-#        print(f.read())
-#  f.close()
-#
-#  # do NOT remove this pause otherwise log of trace will not be enable for deletion and test will finish with
-#  # Exception raised while executing Python test script. exception: WindowsError: 32
-#  time.sleep(1)
-#
-#  os.remove(sql_main_log.name)
-#  os.remove(sql_main_file.name)
-#
-#
-#---
+
+    worker_sql = """
+        set list on;
+        insert into test(id) values(1) returning id;
+        commit;
+    """
+
+    caller_sql = f"""
+        set list on;
+        commit;
+        in "{str(tmp_worker)}";
+        shell del "{str(tmp_worker)}";
+        in "{str(tmp_worker)}";
+    """
+    tmp_worker.write_text(worker_sql)
+    tmp_caller.write_text(caller_sql)
+    
+    expected_stdout = """
+        ID                              1
+        Unable to open
+    """
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-q'], input_file = str(tmp_caller), io_enc = locale.getpreferredencoding(), combine_output = True)
+
+    assert act.clean_stdout == act.clean_expected_stdout

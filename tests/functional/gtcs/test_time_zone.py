@@ -593,18 +593,10 @@ test_script = """
         timestamp '2019-01-01 GMT') t;
 
 
-    /*******************************
-    ---
-    exit;
-    >> fb_sql_time_zone_b.sql
-    connect "WHERE_GDB:time_zone.fdb";
-    ---
-    /*******************************
-
+    --------------------------
     select * from timetz;
     select * from timestamptz;
-
-    ---
+    --------------------------
 
     set term ^;
 
@@ -833,7 +825,11 @@ expected_stdout = """
     <true>
     <true>
     <true>
+    Statement failed, SQLSTATE = 22018
+    conversion error from string "01:23:45.0000 -03:00"
     CAST 2018-01-01 00:00:00.0000 -02:00
+    Statement failed, SQLSTATE = 22018
+    conversion error from string "2018-01-01"
     CONSTANT 2018-02-03 00:00:00.0000 America/Sao_Paulo
     ADD 23:23:35.0000 +05:00
     SUBTRACT 23:23:33.0000 +05:00
@@ -939,6 +935,18 @@ expected_stdout = """
     : table: owner:
     CONSTANT 2018-05-01 21:01:02.0000
     DATEADD 21:01:02.0000
+    Statement failed, SQLSTATE = 23000
+    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
+    -Problematic key value is ("V" = '12:33:33.0000 +00:00')
+    Statement failed, SQLSTATE = 23000
+    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
+    -Problematic key value is ("V" = '13:33:33.0000 +01:00')
+    Statement failed, SQLSTATE = 23000
+    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
+    -Problematic key value is ("V" = '14:33:33.0000 +02:00')
+    Statement failed, SQLSTATE = 23000
+    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
+    -Problematic key value is ("V" = '11:33:33.0000 -03:00')
     N 6
     V 11:33:33.0000 +01:00
     CAST 08:33:33.0000
@@ -1084,6 +1092,15 @@ expected_stdout = """
     N 0
     V 11:33:33.0000 America/Sao_Paulo
     CAST 12:33:33.0000
+    Statement failed, SQLSTATE = 23000
+    attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
+    -Problematic key value is ("V" = '2018-01-01 12:33:33.0000 +00:00')
+    Statement failed, SQLSTATE = 23000
+    attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
+    -Problematic key value is ("V" = '2018-01-01 13:33:33.0000 +01:00')
+    Statement failed, SQLSTATE = 23000
+    attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
+    -Problematic key value is ("V" = '2018-01-01 14:33:33.0000 +02:00')
     N 6
     V 2018-01-01 11:33:33.0000 +01:00
     CAST 2018-01-01 08:33:33.0000
@@ -1294,41 +1311,42 @@ expected_stdout = """
     START_TZM 0
     END_TZH -8
     END_TZM 0
+    N 1
+    V 11:33:33.4560 -02:00
+    N 1
+    V 2018-01-01 11:33:33.4560 -02:00
+    SUBSTRING America/Sao_Paulo
+    T1 America/New_York
+    T2 America/Los_Angeles
+    SUBSTRING America/Los_Angeles
+    N 0
+    T1 America/Sao_Paulo
+    T2 America/Los_Angeles
+    T3 America/Sao_Paulo
+    N 1
+    T1 America/Sao_Paulo
+    T2 America/Los_Angeles
+    T3 America/Sao_Paulo
+    N 2
+    T1 America/Sao_Paulo
+    T2 America/Los_Angeles
+    T3 America/Sao_Paulo
+    N 3
+    T1 America/Sao_Paulo
+    T2 America/Los_Angeles
+    T3 America/Los_Angeles
+    N 4
+    T1 America/Los_Angeles
+    T2 America/Los_Angeles
+    T3 America/Los_Angeles
+    N 1
+    TZ1 America/Sao_Paulo
+    TZ2 America/New_York
+    TZ3 America/Sao_Paulo
 """
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "01:23:45.0000 -03:00"
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "2018-01-01"
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
-    -Problematic key value is ("V" = '12:33:33.0000 +00:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
-    -Problematic key value is ("V" = '13:33:33.0000 +01:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
-    -Problematic key value is ("V" = '14:33:33.0000 +02:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
-    -Problematic key value is ("V" = '11:33:33.0000 -03:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
-    -Problematic key value is ("V" = '2018-01-01 12:33:33.0000 +00:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
-    -Problematic key value is ("V" = '2018-01-01 13:33:33.0000 +01:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
-    -Problematic key value is ("V" = '2018-01-01 14:33:33.0000 +02:00')
-"""
-
-#@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout

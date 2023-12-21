@@ -26,6 +26,9 @@ DESCRIPTION:
     TEST                                              20
 JIRA:        CORE-5489
 FBTEST:      bugs.core_5489
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -59,7 +62,7 @@ init_sql = """
        end
    end
    ^
-   set term ^;
+   set term ;^
    commit;
 
    execute procedure sp_add_init_data(300000);
@@ -92,10 +95,14 @@ trace = ['time_threshold = 0',
 
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action):
-    act.isql(switches=[], input=init_sql)
+
+    act.isql(switches=[], input=init_sql, combine_output = True)
+    assert act.clean_stdout == ''
+
     with act.trace(db_events=trace):
         act.reset()
-        act.isql(switches=[], input=test_script)
+        act.isql(switches=[], input=test_script, combine_output = True)
+
     # Process trace
     run_with_plan = ''
     num_of_fetches = 99999999

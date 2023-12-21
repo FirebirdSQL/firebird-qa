@@ -3,13 +3,18 @@
 """
 ID:          issue-6542
 ISSUE:       6542
-TITLE:       Next attachment id, next statement id - get this info via MON$ query and rdb$get_context()
+TITLE:       Next attachment id, next statement id and some other additions [CORE-6300]
 DESCRIPTION:
-  Check SQLDA output by query mon$database columns and context variabled that are described
-  in doc/sql.extensions/README.context_variables2
-  See also: https://github.com/FirebirdSQL/firebird/commit/22ad236f625716f5f2885f8d9e783cca9516f7b3
+    Check SQLDA output by query mon$database columns and context variabled that are described
+    in doc/sql.extensions/README.context_variables2
+    See also: https://github.com/FirebirdSQL/firebird/commit/22ad236f625716f5f2885f8d9e783cca9516f7b3
 JIRA:        CORE-6300
 FBTEST:      bugs.core_6300
+NOTES:
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -24,8 +29,7 @@ test_script = """
     from mon$database;
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype|name:).)*$', ''),
-                                                 ('[ \t]+', ' ')])
+act = isql_act('db', test_script, substitutions = [ ( '^((?!SQLSTATE|sqltype|name:).)*$', ''), ('[ \t]+', ' ') ] )
 
 expected_stdout = """
     01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 38 charset: 0 NONE
@@ -45,5 +49,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

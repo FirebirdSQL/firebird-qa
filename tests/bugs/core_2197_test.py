@@ -11,6 +11,9 @@ DESCRIPTION:
   (if option 'bkp_no_triggers' will be omitted then two records will be in that table).
 JIRA:        CORE-2197
 FBTEST:      bugs.core_2197
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -34,26 +37,26 @@ init_script = """
             insert into log(event_name) values ('detach');
     end
     ^
-    set term ^;
+    set term ;^
     commit;
 """
 
 db = db_factory(init=init_script)
 
 test_script = """
-delete from log;
-commit;
-set term ^;
-execute block as begin
-   rdb$set_context('USER_SESSION', 'INIT_STATE','1');
-end
-^
-set term ;^
-alter trigger trg_attach active;
-alter trigger trg_detach active;
-commit;
---set count on;
---select * from log;
+    delete from log;
+    commit;
+    set term ^;
+    execute block as begin
+       rdb$set_context('USER_SESSION', 'INIT_STATE','1');
+    end
+    ^
+    set term ;^
+    alter trigger trg_attach active;
+    alter trigger trg_detach active;
+    commit;
+    --set count on;
+    --select * from log;
 """
 
 act = isql_act('db', test_script)

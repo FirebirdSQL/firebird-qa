@@ -54,12 +54,8 @@ NOTES:
     Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
     We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
 
-    NOTE-1.
-        We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
-        During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
-    NOTE-2.
-        Temporary DISABLED execution on Linux when ServerMode = Classic. Replication can unexpectedly stop with message
-        'Engine is shutdown' appears in replication.log. Sent report to dimitr, waiting for fix.
+    We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
+    During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
 
     Checked on 5.0.0.1017, 4.0.3.2925 - both SS and CS.
 
@@ -67,6 +63,10 @@ NOTES:
     Previous version of this test strongly depended on IO performance. On fast IO it was easy to fall in case when segmnent
     with 't_completed' table could be replicated before we change replica DB to shutdown.
     Current settings for volume of inserting data (N_ROWS and FLD_WIDTH) must be changed with care!
+
+    [18.07.2023] pzotov
+    ENABLED execution of on Linux when ServerMode = Classic after letter from dimitr 13-JUL-2023 12:58.
+    See https://github.com/FirebirdSQL/firebird/commit/9aaeab2d4b414f06dabba37e4ebd32587acd5dc0
 
     Checked on 5.0.0.1068 on IBSurgeon test server, both for HDD and SSD drives.
     Checked again crash on 5.0.0.215 (only SS affected).
@@ -341,6 +341,7 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
 
 #--------------------------------------------
 
+@pytest.mark.replication
 @pytest.mark.version('>=4.0.1')
 def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
 

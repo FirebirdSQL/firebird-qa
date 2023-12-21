@@ -16,6 +16,9 @@ NOTES:
   Script for test is launched here TWO times ("pass I", "pass II").
 JIRA:        CORE-5756
 FBTEST:      bugs.core_5756_addi
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -99,7 +102,7 @@ test_script = """
           new.id = gen_id(g, 1);
     end
     ^
-    set term ^;
+    set term ;^
     commit;
 
     connect '$(DSN)' user sysdba password 'masterkey';
@@ -182,7 +185,7 @@ test_script = """
 
     connect '$(DSN)' user tmp$c5754 password '123';
 
-    set term  ^;
+    set term ^;
     alter trigger test_bi as
     begin
       -- this trigger was updated by tmp$c5754
@@ -190,7 +193,7 @@ test_script = """
           new.id = gen_id(g, 1);
     end
     ^
-    set term ^;
+    set term ;^
     commit;
 
     connect '$(DSN)' user sysdba password 'masterkey';

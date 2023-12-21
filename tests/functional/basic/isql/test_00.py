@@ -129,6 +129,7 @@ fb6x_checked_stdout = """
     Set commands:
     SET                    -- display current SET options
     SET AUTOddl            -- toggle autocommit of DDL statements
+    SET AUTOTERM           -- toggle auto statement terminator
     SET BAIL               -- toggle bailing out on errors in non-interactive mode
     SET BLOB [ALL|<n>]     -- display BLOBS of subtype <n> or ALL
     SET BLOB               -- turn off BLOB display

@@ -6,6 +6,11 @@ ISSUE:       6854
 TITLE:       Crash occurs when use SIMILAR TO ...
 DESCRIPTION:
 FBTEST:      bugs.gh_6854
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
+    i.e.
+    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
 """
 
 import pytest
@@ -54,7 +59,7 @@ test_script = """
 			end
 	end
 	^
-	set term ^;
+	set term ;^
 """
 
 act = isql_act('db', test_script)

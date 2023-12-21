@@ -86,7 +86,7 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!(sqltype|before_reset|after_reset)).)*$', ''),
+act = isql_act('db', test_script, substitutions=[('^((?!(SQLSTATE|divide|sqltype|before_reset|after_reset)).)*$', ''),
                                                  ('[ \t]+', ' '), ('.*alias.*', '')])
 
 expected_stdout = """

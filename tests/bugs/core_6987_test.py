@@ -6,6 +6,11 @@ ISSUE:       6987
 TITLE:       DATEDIFF does not support fractional value for MILLISECOND
 DESCRIPTION:
 FBTEST:      bugs.core_6987
+NOTES:
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -22,11 +27,9 @@ test_script = """
 
     select datediff(millisecond from time '00:00:00' to time '00:00:00.0001') dd_03 from rdb$database;
     select datediff(millisecond from time '23:59:59' to time '00:00:00.0001') dd_04 from rdb$database;
-
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype:|DD_).)*$', ''),
-                                                 ('[ \t]+', ' '), ('.*alias:.*', '')])
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype:|DD_).)*$', ''), ('[ \t]+', ' '), ('.*alias:.*', '')])
 
 expected_stdout = """
     01: sqltype: 580 INT64 scale: -1 subtype: 0 len: 8
@@ -51,5 +54,5 @@ expected_stdout = """
 @pytest.mark.version('>=3.0.8')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

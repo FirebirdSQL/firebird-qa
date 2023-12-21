@@ -138,6 +138,10 @@ NOTES:
            NB! Worker transaction must running in WAIT mode - in contrary to Tx that we start in our monitoring loop.
 
         Checked on WI-T6.0.0.48, WI-T5.0.0.1211, WI-V4.0.4.2988.
+
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
+    Merge expression defined in 'SQL_TO_BE_RESTARTED' must NOT end with semicolon!
 """
 
 import subprocess
@@ -225,8 +229,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
             when matched then
                 update set t.id = -t.id, t.x = -s.x
             when not matched then
-                insert(id,x) values(s.id, -s.x - 500);
-
+                insert(id,x) values(s.id, -s.x - 500)
         """
 
         # add rows with ID = 1, 2, 3:
@@ -420,7 +423,6 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
         allowed_patterns = \
         [
              '\\)\\s+EXECUTE_STATEMENT_RESTART$'
-            #,re.escape(SQL_TO_BE_RESTARTED)
             ,'^Restarted \\d+ time\\(s\\)'
         ]
         allowed_patterns = [re.compile(x) for x in allowed_patterns]
