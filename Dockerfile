@@ -39,4 +39,4 @@ ENV PATH=/opt/firebird/bin:$PATH
 ENV TERMINFO_DIRS=/lib/terminfo
 ENV LD_LIBRARY_PATH=/opt/firebird/lib
 
-CMD /qa/docker/run.sh
+ENTRYPOINT ["/qa/docker/run.sh"]

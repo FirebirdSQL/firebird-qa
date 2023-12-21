@@ -14,7 +14,6 @@ pytest \
 	-vv \
 	--tb=long \
 	--basetemp=/tmp/pytest-tmp \
-	--timeout 250 \
 	--md-report \
 	--md-report-flavor gfm \
 	--md-report-verbose 1 \
@@ -22,4 +21,5 @@ pytest \
 	--md-report-output /qa-out/md_report.md \
 	--ignore=tests/functional/replication \
 	--ignore=tests/functional/basic/isql/test_08.py \
-	./tests/
+	-m "not replication" \
+	"$@"
