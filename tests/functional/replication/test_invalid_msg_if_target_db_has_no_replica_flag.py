@@ -6,7 +6,7 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6989
 TITLE:       Invalid message in replication.log (and possibly crash in the case of synchronous replication) when the target DB has no its "replica" flag set
 DESCRIPTION:
     Test changes replica DB attribute (removes 'replica' flag). Then we do some trivial DDL on master (create and drop table).
-    Log of replication must soon contain "ERROR: Database is not in the replica mode"
+    Log of replication must soon contain "ERROR: Database is not in the replica mode".
     If this phrase does not appear during <MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG> seconds then we have a bug.
 
     Otherwise we continue and return attribute 'replica' to the target DB.
@@ -47,6 +47,8 @@ NOTES:
     This can occurs because engine opens <repl_archive>/<DB_GUID> file every 10 seconds and check whether new segments must be applied.
     Because of this, attempt to drop this file exactly at that moment causes on Windows "PermissionError: [WinError 32]".
     This error must NOT propagate and interrupt entire test. Rather, we must only to log name of file that can not be dropped.
+
+    Checked on 6.0.0.193.
 """
 import os
 import shutil
