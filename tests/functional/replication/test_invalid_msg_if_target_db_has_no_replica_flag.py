@@ -43,12 +43,12 @@ NOTES:
     Checked on 6.0.0.107, 5.0.0.1264 4.0.4.3009.
 
     [22.12.2023] pzotov
-    Refactored: make test more robast when it can not remove some files from <repl_journal> and <repl_archive> folders.
+    Refactored: make test more robust when it can not remove some files from <repl_journal> and <repl_archive> folders.
     This can occurs because engine opens <repl_archive>/<DB_GUID> file every 10 seconds and check whether new segments must be applied.
     Because of this, attempt to drop this file exactly at that moment causes on Windows "PermissionError: [WinError 32]".
     This error must NOT propagate and interrupt entire test. Rather, we must only to log name of file that can not be dropped.
 
-    Checked on 6.0.0.193.
+    Checked on Windows, 6.0.0.193, 5.0.0.1304, 4.0.5.3042 (SS/CS for all).
 """
 import os
 import shutil
