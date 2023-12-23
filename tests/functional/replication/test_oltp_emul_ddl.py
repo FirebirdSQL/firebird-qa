@@ -29,8 +29,6 @@ NOTES:
 
     We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
     During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
-
-    Checked on Windows 4.0.3.2931, 5.0.0.1022, SS and CS.
     
     [07.09.2023] pzotov
     Added 'DEBUG_MODE' variable for quick switch to debug branches if something goes wrong.
@@ -40,6 +38,14 @@ NOTES:
     
     Checked on Linux 5.0.0.1190 CS with default firebird.conf and firebird-driver.conf without port specifying
     (see letters from dimitr, 06.09.2023)
+
+    [22.12.2023] pzotov
+    Refactored: make test more robust when it can not remove some files from <repl_journal> and <repl_archive> folders.
+    This can occurs because engine opens <repl_archive>/<DB_GUID> file every 10 seconds and check whether new segments must be applied.
+    Because of this, attempt to drop this file exactly at that moment causes on Windows "PermissionError: [WinError 32]".
+    This error must NOT propagate and interrupt entire test. Rather, we must only to log name of file that can not be dropped.
+
+    Checked on Windows, 6.0.0.193, 5.0.0.1304, 4.0.5.3042 (SS/CS for all).
 """
 
 import os
@@ -86,17 +92,28 @@ def cleanup_folder(p):
     # Used for cleanup <repl_journal> and <repl_archive> when replication must be reset
     # in case when any error occurred during test execution.
     assert os.path.dirname(p) != p, f"@@@ ABEND @@@ CAN NOT operate in the file system root directory. Check your code!"
+
     for root, dirs, files in os.walk(p):
         for f in files:
-            os.unlink(os.path.join(root, f))
+            # ::: NB ::: 22.12.2023.
+            # We have to expect that attempt to delete of GUID and (maybe) archived segments can FAIL with
+            # PermissionError: [WinError 32] The process cannot ... used by another process: /path/to/{GUID}
+            # Also, we have to skip exception if file (segment) was just deleted by engine
+            try:
+                Path(root +'/' + f).unlink(missing_ok = True)
+            except PermissionError as x:
+                pass
+
         for d in dirs:
-            shutil.rmtree(os.path.join(root, d))
-    return len(os.listdir(p))
+            shutil.rmtree(os.path.join(root, d), ignore_errors = True)
+
+    return os.listdir(p)
 
 #--------------------------------------------
 
-def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file, cleanup_repl_dirs = True):
+def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
     out_reset = ''
+    failed_shutdown_db_map = {} # K = 'db_main', 'db_repl'; V = error that occurred when we attempted to change DB state to full shutdown (if it occurred)
 
     with act_db_main.connect_server() as srv:
 
@@ -116,24 +133,36 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file, clea
             #
             try:
                 srv.database.shutdown(database = f, mode = ShutdownMode.FULL, method = ShutdownMethod.FORCED, timeout = 0)
-            except DatabaseError as e:
-                out_reset += e.__str__()
 
-            # REMOVE db file from disk:
-            ###########################
-            os.unlink(f)
+                # REMOVE db file from disk: we can safely assume that this can be done because DB in full shutdown state.
+                ###########################
+                os.unlink(f)
+            except DatabaseError as e:
+                failed_shutdown_db_map[ f ] = e.__str__()
+
 
         # Clean folders repl_journal and repl_archive: remove all files from there.
-        #
-        if cleanup_repl_dirs:
-            for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
-                if cleanup_folder(repl_root_path / p) > 0:
-                    out_reset += f"Directory {str(p)} remains non-empty.\n"
+        # NOTE: test must NOT raise unrecoverable error if some of files in these folders can not be deleted.
+        # Rather, this must be displayed as diff and test must be considered as just failed.
+        for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
+            
+            remained_files = cleanup_folder(repl_root_path/p)
 
-    if out_reset == '':
-        for a in (act_db_main,act_db_repl):
-            d = a.db.db_path
+            if remained_files:
+                out_reset += '\n'.join( (f"Directory '{str(repl_root_path/p)}' remains non-empty. Could not delete file(s):", '\n'.join(remained_files)) )
 
+    # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    # xxx  r e c r e a t e     d b _ m a i n     a n d     d b _ r e p l  xxx
+    # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    for a in (act_db_main,act_db_repl):
+        d = a.db.db_path
+        failed_shutdown_msg = failed_shutdown_db_map.get( str(d), '' )
+        if failed_shutdown_msg:
+            # we could NOT change state of this database to full shutdown --> we must NOT recreate it.
+            # Accumulate error messages in OUT arg (for displaying as diff):
+            #
+            out_reset += '\n'.join( failed_shutdown_msg )
+        else:
             try:
                 dbx = create_database(str(d), user = a.db.user)
                 dbx.close()
@@ -149,8 +178,9 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file, clea
                             con.commit()
             except DatabaseError as e:
                 out_reset += e.__str__()
-            
+        
     # Must remain EMPTY:
+    ####################
     return out_reset
 
 #--------------------------------------------
@@ -569,15 +599,20 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, 
         #
         print('Problem(s) detected:')
         if out_prep.strip():
-            print('out_prep:\n', out_prep)
+            print('out_prep:')
+            print(out_prep)
         if out_init.strip():
-            print('out_init:\n', out_init)
+            print('out_init:')
+            print(out_init)
         if out_main.strip():
-            print('out_main:\n', out_main)
+            print('out_main:')
+            print(out_main)
         if out_drop.strip():
-            print('out_drop:\n', out_drop)
+            print('out_drop:')
+            print(out_drop)
         if out_reset.strip():
-            print('out_reset:\n', out_reset)
+            print('out_reset:')
+            print(out_reset)
 
         # Finally, we have to show content of replication.log afte this test started:
         print('Lines that did appear in replication.log during test run:')
