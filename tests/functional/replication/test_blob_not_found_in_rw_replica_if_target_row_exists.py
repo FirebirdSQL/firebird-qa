@@ -68,6 +68,9 @@ NOTES:
     Because of this, attempt to drop this file exactly at that moment causes on Windows "PermissionError: [WinError 32]".
     This error must NOT propagate and interrupt entire test. Rather, we must only to log name of file that can not be dropped.
 
+    [23.11.2023] pzotov
+    Make final SWEEP optional, depending on setting RUN_SWEEP_AT_END - see $QA_ROOT/files/test_config.ini.
+
     Checked on Windows, 6.0.0.193, 5.0.0.1304, 4.0.5.3042 (SS/CS for all).
 """
 import os
@@ -87,6 +90,7 @@ repl_settings = QA_GLOBALS['replication']
 MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
 MAIN_DB_ALIAS = repl_settings['main_db_alias']
 REPL_DB_ALIAS = repl_settings['repl_db_alias']
+RUN_SWEEP_AT_END = int(repl_settings['run_sweep_at_end'])
 
 db_main = db_factory( filename = '#' + MAIN_DB_ALIAS, do_not_create = True, do_not_drop = True)
 db_repl = db_factory( filename = '#' + REPL_DB_ALIAS, do_not_create = True, do_not_drop = True)
@@ -343,13 +347,16 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
         else:
             db_repl_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
 
-        ######################
-        ### A C H T U N G  ###
-        ######################
-        # MANDATORY, OTHERWISE REPLICATION GETS STUCK ON SECOND RUN OF THIS TEST
-        # WITH 'ERROR: Record format with length NN is not found for table TEST':
-        a.gfix(switches=['-sweep', a.db.dsn])
 
+        if RUN_SWEEP_AT_END:
+            # Following sweep was mandatory during 2021...2022. Problem was fixed:
+            # * for FB 4.x: 26-jan-2023, commit 2ed48a62c60c029cd8cb2b0c914f23e1cb56580a
+            # * for FB 5.x: 20-apr-2023, commit 5af209a952bd2ec3723d2c788f2defa6b740ff69
+            # (log message: 'Avoid random generation of field IDs, respect the user-specified order instead').
+            # Until this problem was solved, subsequent runs of this test caused to fail with:
+            # 'ERROR: Record format with length NN is not found for table TEST'
+            #
+            a.gfix(switches=['-sweep', a.db.dsn])
 
     # Final point: metadata must become equal:
     #
