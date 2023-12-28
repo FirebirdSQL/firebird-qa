@@ -187,6 +187,7 @@ non_ascii_ddl = '''
 '''
 tmp_file = temp_file('non_ascii_ddl.sql')
 
+@pytest.mark.encryption
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, act_res: Action, tmp_fbk: Path, tmp_res: Database, tmp_file: Path, capsys):
 
