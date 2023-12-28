@@ -156,6 +156,7 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
 
 #-----------------------------------------------------------------------
 
+@pytest.mark.skip("FIXME: hangs on IBSurgeon test server.")
 @pytest.mark.encryption
 @pytest.mark.version('>=4.0.5')
 @pytest.mark.platform('Windows')
