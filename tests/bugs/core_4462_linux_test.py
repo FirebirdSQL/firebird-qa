@@ -96,6 +96,7 @@ def print_validation(line: str) -> None:
         print(f'VALIDATION LOG: {line.upper()}')
 #------------------------------------------------------------------
 
+@pytest.mark.encryption
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Linux')
 def test_1(act: Action, act_rest_fdb: Action, tmp_zipped_nbk_list: List[Path], tmp_blob_txt: Path, tmp_blob_bin: Path, tmp_rest_fdb: Path, tmp_rest_log: Path, capsys):
