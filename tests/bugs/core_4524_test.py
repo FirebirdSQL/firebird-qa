@@ -113,6 +113,7 @@ def check_page_for_readable_values(dbname, gen_page_number, pg_size, check_seque
 
 #----------------------------------------------------------------------------------------------
 
+@pytest.mark.encryption
 @pytest.mark.version('>=4.0')
 def test_1(act_src: Action, act_res: Action, tmp_fbk:Path, capsys):
 
