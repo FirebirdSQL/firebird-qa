@@ -90,7 +90,7 @@ expected_stdout = """
     Medians ratio: acceptable
 """
 
-@pytest.mark.version('>=4.0.1')
+@pytest.mark.version('>=4.0.2')
 def test_1(act: Action, capsys):
     
     with act.db.connect() as con:
