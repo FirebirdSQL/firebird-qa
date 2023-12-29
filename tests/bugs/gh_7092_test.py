@@ -13,7 +13,7 @@ DESCRIPTION:
     We do these measures <N_MEASURES> times for each SP, and each result is added to the list
     which, in turn, is the source for median evaluation.
     Finally, we get ratio between minimal and maximal medians (see 'median_ratio')
-    On Windows 8.1 usually this ratio is about 7 (before fix it was morte than 100).
+    On Windows 8.1 usually this ratio is about 7 (before fix it was more than 100).
     
     Test is considered as passed if median_ratio less than threshold <MAX_RATIO>.
 NOTES:
