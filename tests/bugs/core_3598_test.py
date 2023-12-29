@@ -83,7 +83,6 @@ trace = ['log_transactions = true',
          'log_initfini = false',
          ]
 
-# @pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
     expected_stdout = ''
