@@ -3,7 +3,7 @@
 """
 ID:          issue-7092
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7092
-TITLE:       Improve performance of CURRENT_TIME
+TITLE:       Performance degradation with CURRENT_DATE, LOCALTIME and LOCALTIMESTAMP
 DESCRIPTION:
     Test uses two procedures:
         * one with loop for integer values that does nothing more, and
