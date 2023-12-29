@@ -63,7 +63,6 @@ trace = """
 
 trace_conf = temp_file('trace.conf')
 
-#@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, db_nonexistent: Database, trace_conf: Path, capsys):
     with ServerKeeper(act, None): # Use embedded server for trace
