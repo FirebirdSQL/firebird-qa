@@ -9,8 +9,8 @@ NOTES:
     Confirmed bug on 6.0.0.180.
     Checked on intermediate builds:
          6.0.0.186,  commit 305c40a05b1d64c14dbf5f25f36c42c44c6392d9
+         5.0.1.1307, commit e2999cd3d767dc4620cad74c1ea36936ba5cc319
          4.0.5.3042, commit f7b090043e8886ab6286f8d626dd1684dc09e3b8
-    NB: execution is currently SKIPPED for FB 5.x. Waiting for backport.
 """
 
 import pytest
@@ -41,11 +41,6 @@ expected_stdout = """
 
 @pytest.mark.version('>=4.0.5')
 def test_1(act: Action):
-
-    if act.is_version('>=5.0,<6.0'):
-        # TEMPORARY, TO BE DELETED LATER:
-        pytest.skip('Waiting for backport from FB 6.x')
-
     if act.vars['server-arch'] != 'Classic':
         pytest.skip("No need to run on Super or SuperClassic.")
 
