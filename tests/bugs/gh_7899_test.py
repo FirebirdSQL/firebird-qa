@@ -9,7 +9,7 @@ NOTES:
     Confirmed bug on 6.0.0.180.
     Checked on intermediate builds:
          6.0.0.186,  commit 305c40a05b1d64c14dbf5f25f36c42c44c6392d9
-         5.0.0.1307, commit e35437e00687db9ed6add279cecb816dcdf8b07a
+         5.0.1.1307, commit e35437e00687db9ed6add279cecb816dcdf8b07a
          4.0.5.3042, commit f7b090043e8886ab6286f8d626dd1684dc09e3b8
 """
 
