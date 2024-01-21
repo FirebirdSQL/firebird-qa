@@ -7,15 +7,27 @@ TITLE:       Allow DEFAULT keyword in argument list
 NOTES:
     [12.01.2024] pzotov
     Checked on 6.0.0.207
+
+    [21.01.2024] pzotov
+    Added code for test "When parameter has no default, use domain's default for TYPE OF or NULL."
+    https://github.com/FirebirdSQL/firebird/commit/8224df02787a4a07c4a5ba69ee24240fdf7d40b0
+    See 'sp_domain_based_defaults', 'fn_domain_based_defaults' (standalone and packaged).
+    Checked on 6.0.0.219
 """
 
 import pytest
 from firebird.qa import *
 
-db = db_factory()
+db = db_factory(charset = 'utf8')
 
 test_script = """
+    set bail on;
     set list on;
+    create domain dm_int int default current_connection;
+    create domain dm_dts date default current_date;
+    create domain dm_txt varchar(30) character set utf8 default 'liberté, égalité, fraternité' collate unicode_ci_ai;
+    create domain dm_boo boolean;
+
     set term ^;
     create or alter procedure sp_test (
          a_1 int default 1
@@ -25,7 +37,7 @@ test_script = """
         ,a_5 int default 5
     ) returns( o_sum int ) as
     begin
-        o_sum = a_1 + a_2 + a_3 + a_4+ a_5;
+        o_sum = a_1 + a_2 + a_3 + a_4 + a_5;
         suspend;
     end
     ^
@@ -37,7 +49,30 @@ test_script = """
         ,a_5 int default 5
     ) returns int as
     begin
-        return a_1 + a_2 + a_3 + a_4+ a_5;
+        return a_1 + a_2 + a_3 + a_4 + a_5;
+    end
+    ^
+
+    create or alter procedure sp_domain_based_defaults (
+         a_1 dm_int
+        ,a_2 dm_dts
+        ,a_3 dm_txt
+        ,a_4 dm_boo
+    ) returns( o_result boolean ) as
+    begin
+        o_result = a_1 = current_connection and a_2 >= current_date and a_3 similar to '%éGALITé%' and a_4 is null;
+        suspend;
+    end
+    ^
+
+    create or alter function fn_domain_based_defaults (
+         a_1 dm_int
+        ,a_2 dm_dts
+        ,a_3 dm_txt
+        ,a_4 dm_boo
+    ) returns boolean as
+    begin
+        return a_1 = current_connection and a_2 >= current_date and a_3 similar to '%éGALITé%' and a_4 is null;
     end
     ^
 
@@ -45,11 +80,15 @@ test_script = """
     begin
         procedure sp(a_1 int default 1, a_2 int default 2, a_3 int default 3, a_4 int default 4, a_5 int default 5) returns(o_sum int);
         function fn(a_1 int default 1, a_2 int default 2, a_3 int default 3, a_4 int default 4, a_5 int default 5) returns int;
+
+        procedure sp_domain_based_defaults(a_1 dm_int, a_2 dm_dts, a_3 dm_txt, a_4 dm_boo) returns(o_result boolean);
+        function fn_domain_based_defaults (a_1 dm_int, a_2 dm_dts, a_3 dm_txt, a_4 dm_boo) returns boolean;
     end
     ^
 
     recreate package body pg_test as
     begin
+        -- NB: we must SKIP specifying 'default' clause for input params in the package body, otherwise:
         -- Statement failed, SQLSTATE = 42000
         -- unsuccessful metadata update
         -- -RECREATE PACKAGE BODY PG_TEST failed
@@ -60,13 +99,24 @@ test_script = """
             suspend;
         end
 
-        -- function fn(a_1 int default 1, a_2 int default 2, a_3 int default 3, a_4 int default 4, a_5 int default 5) returns int as
         function fn(a_1 int, a_2 int, a_3 int, a_4 int, a_5 int) returns int as
         begin
             return a_1 + a_2 + a_3 + a_4+ a_5;
         end
+
+        procedure sp_domain_based_defaults(a_1 dm_int, a_2 dm_dts, a_3 dm_txt, a_4 dm_boo) returns(o_result boolean) as
+        begin
+            o_result = a_1 = current_connection and a_2 >= current_date and a_3 similar to '%éGALITé%' and a_4 is null;
+            suspend;
+        end
+
+        function fn_domain_based_defaults (a_1 dm_int, a_2 dm_dts, a_3 dm_txt, a_4 dm_boo) returns boolean as
+        begin
+            return a_1 = current_connection and a_2 >= current_date and a_3 similar to '%éGALITé%' and a_4 is null;
+        end
     end
     ^
+
     set term ;^
     commit;
 
@@ -94,6 +144,14 @@ test_script = """
     select pg_test.fn(default,      -1, default,      -2, default) as packaged_fn_3 from rdb$database;
     select pg_test.fn(     -1, default, default, default,      -5) as packaged_fn_4 from rdb$database;
 
+    ----------------------------------
+
+    select o_result as standalone_sp_domain_defaults from sp_domain_based_defaults(default, default, default, default);
+    select fn_domain_based_defaults(default, default, default, default) as standalone_fn_domain_defaults from rdb$database;
+
+    select o_result as packaged_sp_domain_defaults from pg_test.sp_domain_based_defaults(default, default, default, default);
+    select pg_test.fn_domain_based_defaults(default, default, default, default) as packaged_fn_domain_defaults from rdb$database;
+
 """
 
 act = isql_act('db', test_script)
@@ -115,6 +173,10 @@ expected_stdout = """
     PACKAGED_FN_2                   15
     PACKAGED_FN_3                   6
     PACKAGED_FN_4                   3
+    STANDALONE_SP_DOMAIN_DEFAULTS   <true>
+    STANDALONE_FN_DOMAIN_DEFAULTS   <true>
+    PACKAGED_SP_DOMAIN_DEFAULTS     <true>
+    PACKAGED_FN_DOMAIN_DEFAULTS     <true>
 """
 
 @pytest.mark.version('>=6.0')
