@@ -344,8 +344,15 @@ def test_1(act: Action, capsys):
         print(final_msg)
         print('Check output of "gstat -e":')
         for line in act.stdout.splitlines():
-            print(line.replace(' ','.'))
+            print(line)
+            #print(line.replace(' ','.'))
         print('-' * 50)
+
+        print(f'Check validation log ({len(validation_log)} lines):')
+        for line in validation_log:
+            print(line)
+        print('-' * 50)
+
         print(f'brk_datapage = {brk_datapage}, brk_indxpage = {brk_indxpage}, brk_blobpage = {brk_blobpage}')
         print(f'data_page_problem = {data_page_problem}, indx_page_problem = {indx_page_problem}, blob_page_problem = {blob_page_problem}')
 
