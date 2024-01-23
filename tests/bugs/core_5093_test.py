@@ -5,13 +5,16 @@ ID:          issue-5378
 ISSUE:       5378
 TITLE:       Alter computed field type does not work
 DESCRIPTION:
-  Test creates table with fields of (almost) all possible datatypes.
-  Then we apply "ALTER TABLE ALTER FIELD ..., ALTER FIELD ..." so that every field is changed,
-  either by updating its computed-by value or type (for text fields - also add/remove charset).
-  Expression for ALTER TABLE - see literal "alter_table_ddl", encoded in UTF8.
-  NB: changing character set should NOT be reflected on SQLDA output (at least for current FB builds).
+    Test creates table with fields of (almost) all possible datatypes.
+    Then we apply "ALTER TABLE ALTER FIELD ..., ALTER FIELD ..." so that every field is changed,
+    either by updating its computed-by value or type (for text fields - also add/remove charset).
+    Expression for ALTER TABLE - see literal "alter_table_ddl", encoded in UTF8.
+    NB: changing character set should NOT be reflected on SQLDA output (at least for current FB builds).
 JIRA:        CORE-5093
 FBTEST:      bugs.core_5093
+NOTES:
+    [23.01.2024] pzotov
+    Adjusted output after fixed gh-7924: column 'b_added_charset' character set must be changed to utf8.
 """
 
 import pytest
@@ -149,7 +152,7 @@ expected_stdout_b = """
     : NAME: B_CHANGE_CHARSET ALIAS: B_CHANGE_CHARSET
     15: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 8
     : NAME: B_REMOVE_CHARSET ALIAS: B_REMOVE_CHARSET
-    16: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 1 LEN: 8 CHARSET: 0 NONE
+    16: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 1 LEN: 8 CHARSET: 4 UTF8
     : NAME: B_ADDED_CHARSET ALIAS: B_ADDED_CHARSET
 """
 
