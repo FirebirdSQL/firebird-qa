@@ -41,7 +41,7 @@ expected_stdout = """
     PG_TEST.SP_USER
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
