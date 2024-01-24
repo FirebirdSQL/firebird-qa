@@ -8,6 +8,7 @@ DESCRIPTION:
 NOTES:
     Confirmed problem on 5.0.0.1303.
     Checked on 6.0.0.180 (intermediate build 18.12.2023).
+    Checked on 5.0.1.1322 after backporting (commit fef5af38, 23.01.2024).
 """
 
 import pytest
@@ -204,7 +205,7 @@ def replace_leading(source, char="."):
     return char * (len(source) - len(stripped)) + stripped
 #---------------------------------------------------------
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.1')
 def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
