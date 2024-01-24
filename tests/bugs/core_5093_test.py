@@ -15,6 +15,11 @@ FBTEST:      bugs.core_5093
 NOTES:
     [23.01.2024] pzotov
     Adjusted output after fixed gh-7924: column 'b_added_charset' character set must be changed to utf8.
+
+    [24.01.2024] pzotov
+    Currently gh-7924 fixed only for FB 6.x, thus charsets for FB 3.x ... 5.x will not be changed.
+    Because of that, expected_output depends on major FB version, see its definition in 'blob_new_cset'.
+    Checked on 6.0.0.223, 5.0.1.1322
 """
 
 import pytest
@@ -56,34 +61,33 @@ db = db_factory(charset='UTF8', init=init_script)
 act = python_act('db', substitutions=substitutions)
 
 sql_script = """
-alter table t1
-    alter si type int computed by (32767) -- LONG
-   ,alter bi type int computed by (2147483647) -- LONG
-   ,alter s2 type smallint computed by ( 1 + mod(bi, nullif(si,0)) ) -- SHORT
+    alter table t1
+        alter si type int computed by (32767) -- LONG
+       ,alter bi type int computed by (2147483647) -- LONG
+       ,alter s2 type smallint computed by ( 1 + mod(bi, nullif(si,0)) ) -- SHORT
 
-   ,alter dx type float computed by( pi()/2 ) -- FLOAT
-   ,alter fx type float computed by (dx*dx*dx) -- FLOAT
-   ,alter nf type bigint computed by (fx * fx) -- INT64
+       ,alter dx type float computed by( pi()/2 ) -- FLOAT
+       ,alter fx type float computed by (dx*dx*dx) -- FLOAT
+       ,alter nf type bigint computed by (fx * fx) -- INT64
 
-   ,alter dt type date computed by ('today') -- DATE
-   ,alter tm type timestamp computed by ('now') -- TIMESTAMP
+       ,alter dt type date computed by ('today') -- DATE
+       ,alter tm type timestamp computed by ('now') -- TIMESTAMP
 
-   ,alter c_change_cb_value type char character set win1251 computed by ('Ё') -- TEXT
-   ,alter c_change_charset type char character set utf8 computed by ('Æ') -- TEXT
-   ,alter c_change_length type char(2) computed by ('∑∞')    -- TEXT
+       ,alter c_change_cb_value type char character set win1251 computed by ('Ё') -- TEXT
+       ,alter c_change_charset type char character set utf8 computed by ('Æ') -- TEXT
+       ,alter c_change_length type char(2) computed by ('∑∞')    -- TEXT
 
-    -- All these fields, of course, should remain in type = BLOB,
-    -- but when charset is removed (field "b_remove_charset") then blob subtype has to be changed to 0,
-    -- and when we ADD charset (field "b_added_charset") then blob subtype has to be changed to 1.
-   ,alter b_change_cb_value type blob character set win1251 computed by ('Ё') -- BLOB
-   ,alter b_change_charset type blob character set iso8859_1 computed by ('å') -- BLOB
-   ,alter b_remove_charset type blob /*character set win1252 */ computed by ('Æ') -- BLOB
-   ,alter b_added_charset type blob character set utf8 computed by ('∞')    -- BLOB
-;
-commit;
-set sqlda_display on;
-select * from t1;
-exit;
+        -- All these fields, of course, should remain in type = BLOB,
+        -- but when charset is removed (field "b_remove_charset") then blob subtype has to be changed to 0,
+        -- and when we ADD charset (field "b_added_charset") then blob subtype has to be changed to 1.
+       ,alter b_change_cb_value type blob character set win1251 computed by ('Ё') -- BLOB
+       ,alter b_change_charset type blob character set iso8859_1 computed by ('å') -- BLOB
+       ,alter b_remove_charset type blob /*character set win1252 */ computed by ('Æ') -- BLOB
+       ,alter b_added_charset type blob character set utf8 computed by ('∞')    -- BLOB
+    ;
+    commit;
+    set sqlda_display on;
+    select * from t1;
 """
 
 expected_stdout_a = """
@@ -121,40 +125,8 @@ expected_stdout_a = """
     : NAME: B_ADDED_CHARSET ALIAS: B_ADDED_CHARSET
 """
 
-expected_stdout_b = """
-    01: SQLTYPE: 496 LONG NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
-    : NAME: N0 ALIAS: N0
-    02: SQLTYPE: 496 LONG NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
-    : NAME: SI ALIAS: SI
-    03: SQLTYPE: 496 LONG NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
-    : NAME: BI ALIAS: BI
-    04: SQLTYPE: 500 SHORT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 2
-    : NAME: S2 ALIAS: S2
-    05: SQLTYPE: 482 FLOAT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
-    : NAME: DX ALIAS: DX
-    06: SQLTYPE: 482 FLOAT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
-    : NAME: FX ALIAS: FX
-    07: SQLTYPE: 580 INT64 NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 8
-    : NAME: NF ALIAS: NF
-    08: SQLTYPE: 570 SQL DATE NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
-    : NAME: DT ALIAS: DT
-    09: SQLTYPE: 510 TIMESTAMP NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 8
-    : NAME: TM ALIAS: TM
-    10: SQLTYPE: 452 TEXT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4 CHARSET: 4 UTF8
-    : NAME: C_CHANGE_CB_VALUE ALIAS: C_CHANGE_CB_VALUE
-    11: SQLTYPE: 452 TEXT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4 CHARSET: 4 UTF8
-    : NAME: C_CHANGE_CHARSET ALIAS: C_CHANGE_CHARSET
-    12: SQLTYPE: 452 TEXT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 8 CHARSET: 4 UTF8
-    : NAME: C_CHANGE_LENGTH ALIAS: C_CHANGE_LENGTH
-    13: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 1 LEN: 8 CHARSET: 4 UTF8
-    : NAME: B_CHANGE_CB_VALUE ALIAS: B_CHANGE_CB_VALUE
-    14: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 1 LEN: 8 CHARSET: 4 UTF8
-    : NAME: B_CHANGE_CHARSET ALIAS: B_CHANGE_CHARSET
-    15: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 8
-    : NAME: B_REMOVE_CHARSET ALIAS: B_REMOVE_CHARSET
-    16: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 1 LEN: 8 CHARSET: 4 UTF8
-    : NAME: B_ADDED_CHARSET ALIAS: B_ADDED_CHARSET
-"""
+BLOB_NEW_CSET_5X = 'CHARSET: 0 NONE'
+BLOB_NEW_CSET_6X = 'CHARSET: 4 UTF8'
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
@@ -162,8 +134,49 @@ def test_1(act: Action):
     act.isql(switches=['-q', '-m'], input='set sqlda_display on; select * from t1;')
     act.stdout = act.stdout.upper()
     assert act.clean_stdout == act.clean_expected_stdout
-    #
     act.reset()
+
+    ####################################################
+    # ::: NB :::
+    # We have to separate result for B_ADDED_CHARSET because it differs in FB 6.x and older versions
+    #
+    blob_new_cset = BLOB_NEW_CSET_5X if act.is_version('<6') else BLOB_NEW_CSET_6X
+    ####################################################
+    expected_stdout_b = f"""
+        01: SQLTYPE: 496 LONG NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
+        : NAME: N0 ALIAS: N0
+        02: SQLTYPE: 496 LONG NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
+        : NAME: SI ALIAS: SI
+        03: SQLTYPE: 496 LONG NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
+        : NAME: BI ALIAS: BI
+        04: SQLTYPE: 500 SHORT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 2
+        : NAME: S2 ALIAS: S2
+        05: SQLTYPE: 482 FLOAT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
+        : NAME: DX ALIAS: DX
+        06: SQLTYPE: 482 FLOAT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
+        : NAME: FX ALIAS: FX
+        07: SQLTYPE: 580 INT64 NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 8
+        : NAME: NF ALIAS: NF
+        08: SQLTYPE: 570 SQL DATE NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4
+        : NAME: DT ALIAS: DT
+        09: SQLTYPE: 510 TIMESTAMP NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 8
+        : NAME: TM ALIAS: TM
+        10: SQLTYPE: 452 TEXT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4 CHARSET: 4 UTF8
+        : NAME: C_CHANGE_CB_VALUE ALIAS: C_CHANGE_CB_VALUE
+        11: SQLTYPE: 452 TEXT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 4 CHARSET: 4 UTF8
+        : NAME: C_CHANGE_CHARSET ALIAS: C_CHANGE_CHARSET
+        12: SQLTYPE: 452 TEXT NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 8 CHARSET: 4 UTF8
+        : NAME: C_CHANGE_LENGTH ALIAS: C_CHANGE_LENGTH
+        13: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 1 LEN: 8 CHARSET: 4 UTF8
+        : NAME: B_CHANGE_CB_VALUE ALIAS: B_CHANGE_CB_VALUE
+        14: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 1 LEN: 8 CHARSET: 4 UTF8
+        : NAME: B_CHANGE_CHARSET ALIAS: B_CHANGE_CHARSET
+        15: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 0 LEN: 8
+        : NAME: B_REMOVE_CHARSET ALIAS: B_REMOVE_CHARSET
+        16: SQLTYPE: 520 BLOB NULLABLE SCALE: 0 SUBTYPE: 1 LEN: 8 {blob_new_cset}
+        : NAME: B_ADDED_CHARSET ALIAS: B_ADDED_CHARSET
+    """
+
     act.expected_stdout = expected_stdout_b
     act.isql(switches=['-q', '-m'], input=sql_script)
     act.stdout = act.stdout.upper()
