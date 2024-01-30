@@ -40,7 +40,8 @@ NOTES:
     Confirmed bug on 6.0.0.173.
     
     [30.01.2024] pzotov
-    Checked on 4.0.5.3053, 5.0.1.1327, 6.0.0.230 (intermediate snapshots; all in CS/SS).
+    Checked on Windows: 4.0.5.3053, 5.0.1.1327, 6.0.0.230 (intermediate snapshots; all in CS/SS).
+    Checked on Linbux:  4.0.5.3053, 5.0.1.1327, 6.0.0.237 (all in CS/SS).
     Commits:
         6.x: https://github.com/FirebirdSQL/firebird/commit/8295aeb26ccee4f9a644c6928e598abbe06c31c0
         5.x: https://github.com/FirebirdSQL/firebird/commit/6f393ba762f390f69f895acc091583a3e486f4d0
@@ -84,7 +85,6 @@ MAX_WAIT_FOR_ISQL_TERMINATE=11
 db = db_factory(filename = '#' + REQUIRED_ALIAS)
 
 act = python_act('db', substitutions = [('^((?!(ISQL|Attributes)).)*$', ''), ('[ \t]+', ' '), ('TCPv(4|6)$', 'TCP')])
-#act = python_act('db')
 
 tmp_sql_file = temp_file('tmp_7917.sql')
 tmp_log_file = temp_file('tmp_7917_isql.log')
@@ -165,7 +165,6 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
 
 @pytest.mark.encryption
 @pytest.mark.version('>=4.0.5')
-@pytest.mark.platform('Windows')
 def test_1(act: Action, tmp_sql_file: Path, tmp_log_file: Path, tmp_gstat_log: Path, capsys):
 
     # Scan line-by-line through databases.conf, find line starting with REQUIRED_ALIAS and extract name of file that
