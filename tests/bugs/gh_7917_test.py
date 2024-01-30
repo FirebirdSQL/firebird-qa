@@ -38,12 +38,13 @@ NOTES:
     Great thanks to Alex for suggestions (discussion started 13.12.2023 13:18).
 
     Confirmed bug on 6.0.0.173.
-    Checked on 6.0.0.175, 5.0.0.1305, 4.0.5.3049 - but currenlyt only SuperServer works fine.
-    Classic has the same problem. Sent report to Alex, 28.12.2023 13:10.
-
-    On 3.0.12.33726 error raises:
-        unsuccessful metadata update / -ALTER DATABASE failed / -Missing correct crypt key / -Plugin fbSampleDbCrypt: / -Crypt key not set
-    This problem not [yet] investogated.
+    
+    [30.01.2024] pzotov
+    Checked on 4.0.5.3053, 5.0.1.1327, 6.0.0.230 (intermediate snapshots; all in CS/SS).
+    Commits:
+        6.x: https://github.com/FirebirdSQL/firebird/commit/8295aeb26ccee4f9a644c6928e598abbe06c31c0
+        5.x: https://github.com/FirebirdSQL/firebird/commit/6f393ba762f390f69f895acc091583a3e486f4d0
+        4.x: https://github.com/FirebirdSQL/firebird/commit/4c21cae77886461e68c2cab68ec063b416492e61
 """
 import os
 import time
@@ -78,19 +79,23 @@ ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
 SWP_INTERVAL_TO_CHECK = 100
 TX_NUMBER_BEFORE_HANG = SWP_INTERVAL_TO_CHECK + 10
 
+MAX_WAIT_FOR_ISQL_TERMINATE=11
+
 db = db_factory(filename = '#' + REQUIRED_ALIAS)
 
-act = python_act('db', substitutions = [('TCPv(4|6)$', 'TCP')])
+act = python_act('db', substitutions = [('^((?!(ISQL|Attributes)).)*$', ''), ('[ \t]+', ' '), ('TCPv(4|6)$', 'TCP')])
+#act = python_act('db')
 
 tmp_sql_file = temp_file('tmp_7917.sql')
-tmp_log_file = temp_file('tmp_7917.log')
+tmp_log_file = temp_file('tmp_7917_isql.log')
+tmp_gstat_log = temp_file('tmp_7917_gstat.log')
 
 #-----------------------------------------------------------------------
 
 def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
     if mode == 'encrypt':
         # See letter from Alex, 15.12.2023 16:16 demo-plugin can not transfer named key over network.
-        # Because of that, we have to use following command WITHOUT adding 'key "{ENCRYPTION_KEY}"':
+        # Because of that, we have to use 'ALTER DATABASE ENCRYPT WITH <plugin>'  _WITHOUT_ adding 'key "{ENCRYPTION_KEY}"'.
         # ::: NB ::: One need to be sure that $FB_HOME/plugins.conf contains following lines:
         # Plugin = KH2 {
         #     Module = $(dir_plugins)/fbSampleKeyHolder
@@ -107,66 +112,61 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
         # -Plugin fbSampleDbCrypt:
         # -Crypt key not set
         #
-        alter_db_sttm = f'alter database encrypt with "{ENCRYPTION_PLUGIN}"'
+        alter_db_sttm = f'alter database encrypt with "{ENCRYPTION_PLUGIN}"' # <<< ::: NB ::: DO NOT add '... key "{ENCRYPTION_KEY}"' here!
         wait_for_state = 'Database encrypted'
     elif mode == 'decrypt':
         alter_db_sttm = 'alter database decrypt'
         wait_for_state = 'Database not encrypted'
 
 
-    e_thread_started = False
     e_thread_finished = False
+
+    # 0 = non crypted;
+    # 1 = has been encrypted;
+    # 2 = is DEcrypting;
+    # 3 = is Encrypting;
+    #
+    REQUIRED_CRYPT_STATE = 1 if mode == 'encrypt' else 0
+    current_crypt_state = -1
+    d1 = py_dt.timedelta(0)
     with act.db.connect() as con:
+        cur = con.cursor()
+        ps = cur.prepare('select mon$crypt_state from mon$database')
 
         t1=py_dt.datetime.now()
-        d1 = t1-t1
         try:
+            d1 = t1-t1
             con.execute_immediate(alter_db_sttm)
             con.commit()
-            e_thread_started = True
+            while True:
+                t2=py_dt.datetime.now()
+                d1=t2-t1
+                if d1.seconds*1000 + d1.microseconds//1000 > max_wait_encr_thread_finish:
+                    break
+    
+                ######################################################
+                ###   C H E C K    M O N $ C R Y P T _ S T A T E   ###
+                ######################################################
+                cur.execute(ps)
+                current_crypt_state = cur.fetchone()[0]
+                con.commit()
+                if current_crypt_state == REQUIRED_CRYPT_STATE:
+                    e_thread_finished = True
+                    break
+                else:
+                    time.sleep(0.5)
         except DatabaseError as e:
             print( e.__str__() )
 
-        while e_thread_started:
-            t2=py_dt.datetime.now()
-            d1=t2-t1
-            if d1.seconds*1000 + d1.microseconds//1000 > max_wait_encr_thread_finish:
-                print(f'TIMEOUT EXPIRATION. Mode="{mode}" took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {max_wait_encr_thread_finish} ms.')
-                break
-
-            # Possible output:
-            #     Database [not] encrypted
-            #     Database encrypted, crypt thread not complete
-            act.isql(switches=['-q'], input = 'show database;', combine_output = True)
-            if wait_for_state in act.stdout:
-                if 'not complete' in act.stdout:
-                    pass
-                else:
-                    e_thread_finished = True
-                    break
-            act.reset()
-
-        act.expected_stdout = ''
-        act.stdout = capsys.readouterr().out
-        assert act.clean_stdout == act.clean_expected_stdout
-        act.reset()
-
-    assert e_thread_finished
+    assert e_thread_finished, f'TIMEOUT EXPIRATION. Mode="{mode}" took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {max_wait_encr_thread_finish} ms; current_crypt_state={current_crypt_state}'
 
 
 #-----------------------------------------------------------------------
 
-@pytest.mark.skip("FIXME: hangs on IBSurgeon test server.")
 @pytest.mark.encryption
 @pytest.mark.version('>=4.0.5')
 @pytest.mark.platform('Windows')
-def test_1(act: Action, tmp_sql_file: Path, tmp_log_file: Path, capsys):
-
-    with act.db.connect() as con:
-        if act.vars['server-arch'] == 'SuperServer':
-            pass
-        else:
-            pytest.skip("Currently fixed only for SuperServer. Temporary SKIPPED.")
+def test_1(act: Action, tmp_sql_file: Path, tmp_log_file: Path, tmp_gstat_log: Path, capsys):
 
     # Scan line-by-line through databases.conf, find line starting with REQUIRED_ALIAS and extract name of file that
     # must be created in the $(dir_sampleDb)/qa/ folder. This name will be used further as target database (tmp_fdb).
@@ -187,8 +187,9 @@ def test_1(act: Action, tmp_sql_file: Path, tmp_log_file: Path, capsys):
     #
     assert fname_in_dbconf
 
-    #----------------------------------------------------------------
-
+    ############################################
+    ###   E N C R Y P T    D A T A B A S E   ###
+    ############################################
     run_encr_decr(act, 'encrypt', MAX_WAITING_ENCR_FINISH, capsys)
 
     test_script = f"""
@@ -207,20 +208,14 @@ def test_1(act: Action, tmp_sql_file: Path, tmp_log_file: Path, capsys):
             declare v_swp_interval int;
             declare v_protocol type of column att_log.att_prot;
         begin
-            select a.mon$remote_protocol, d.mon$sweep_interval
-            from mon$attachments a
-            cross join mon$database d
-            where a.mon$attachment_id = current_connection
-            into v_protocol, v_swp_interval;
             insert into att_log(
                  att_prot
                 ,evt_name
-                ,swp_interval
             ) values (
-                 :v_protocol
+                 rdb$get_context('SYSTEM', 'NETWORK_PROTOCOL')
                 ,:a_evt_name
-                ,:v_swp_interval
             );
+
         end
         ^
         create or alter trigger trg_detach on disconnect as
@@ -282,35 +277,59 @@ def test_1(act: Action, tmp_sql_file: Path, tmp_log_file: Path, capsys):
     #
     act.gfix(switches=['-h', f'{SWP_INTERVAL_TO_CHECK}', act.db.dsn], combine_output = True, io_enc = locale.getpreferredencoding())
 
-    # Launch ISQL which will hang because update conflict.
-    # This ISQl will be 'self-terminated' further because we will change DB state to full shutdown:
+    # gstat -h tmp_gh_7917_alias must show at this point:
+    # Attributes              encrypted, plugin fbSampleDbCrypt
+    # ...
+    # Sweep interval:         100
     #
-    p_handed_isql = subprocess.Popen([act.vars['isql'], '-nod', '-i', str(tmp_sql_file),
-                                   '-user', act.db.user,
-                                   '-password', act.db.password, act.db.dsn],
-                                  stderr = subprocess.STDOUT)
-    time.sleep(2)
+    with open(tmp_log_file, 'w') as f:
+        # Launch ISQL which will hang because update conflict.
+        # This ISQl will be 'self-terminated' further because we will change DB state to full shutdown:
+        #
+        p_handed_isql = subprocess.Popen([act.vars['isql'], '-nod', '-i', str(tmp_sql_file),
+                                       '-user', act.db.user,
+                                       '-password', act.db.password, act.db.dsn],
+                                      stdout = f,
+                                      stderr = subprocess.STDOUT)
 
-    try:
-        act.gfix(switches=['-shut', 'full', '-force', '0', act.db.dsn], combine_output = True, io_enc = locale.getpreferredencoding())
-    finally:
-        p_handed_isql.terminate()
-        p_handed_isql.wait()
+        # Let ISQL time to establish connection and fall in hanging state:
+        time.sleep(3)
 
+        try:
+            act.gfix(switches=['-shut', 'full', '-force', '0', act.db.dsn], combine_output = True, io_enc = locale.getpreferredencoding())
+        finally:
+            p_handed_isql.terminate()
+
+        p_handed_isql.wait(MAX_WAIT_FOR_ISQL_TERMINATE)
+        if p_handed_isql.poll() is None:
+            print(f'Hanged ISQL process WAS NOT terminated in {MAX_WAIT_FOR_ISQL_TERMINATE} second(s).!')
+        else:
+            print(f'Hanged ISQL process terminated with retcode = {p_handed_isql.poll()}')
+
+    # Result: log of hanged ISQL must contain now:
+    # Statement failed, SQLSTATE = 08003
+    # connection shutdown
+    # -Database is shutdown.    
+    
     act.gfix(switches=['-online', act.db.dsn], combine_output = True, io_enc = locale.getpreferredencoding())
     assert act.clean_stdout == ''
     act.reset()
 
+    # Must show: Attributes encrypted, plugin {ENCRYPTION_PLUGIN} - without 'shutdown'.
+    # This is needed only for debug:
+    with open(tmp_gstat_log, 'w') as f:
+        subprocess.run( [ act.vars['gstat'], '-h', act.db.db_path, '-user', act.db.user, '-pas', act.db.password ], stdout = f, stderr = subprocess.STDOUT )
+
     #----------------------------------------------------------------
 
+    TEST_QUERY = 'select att_prot,who_ami,evt_name from att_log order by trn_id'
     final_sql = f"""
-        set count on;
         set list on;
-        select att_prot,who_ami,evt_name,swp_interval from att_log
-        order by trn_id;
+        select mon$crypt_state from mon$database;
+        {TEST_QUERY};
+        quit;
     """
     tmp_sql_file.write_text(final_sql)
-
 
     with open(tmp_log_file, 'w') as f:
         # Explained by Alex, letter 13-dec-2023 13:18.
@@ -342,44 +361,38 @@ def test_1(act: Action, tmp_sql_file: Path, tmp_log_file: Path, capsys):
             print(e.__str__())
 
         p_chk_sql.terminate()
+        p_chk_sql.wait(MAX_WAIT_FOR_ISQL_TERMINATE)
 
         # Check if child process has terminated. Set and return returncode attribute. Otherwise, returns None.
         if p_chk_sql.poll() is None:
-            print('Final ISQL process WAS NOT terminated!')
+            print(f'### ERROR ### Final ISQL process WAS NOT terminated in {MAX_WAIT_FOR_ISQL_TERMINATE} second(s).!')
         else:
-            print(f'Final ISQL process terminated with retcode = {p_chk_sql.poll()}')
+            print(f'Final ISQL process terminated')
+            #print(f'Final ISQL process terminated with retcode = {p_chk_sql.poll()}')
 
+    ############################################
+    ###   D E C R Y P T    D A T A B A S E   ###
+    ############################################
+    run_encr_decr(act, 'decrypt', MAX_WAITING_ENCR_FINISH, capsys)
 
-    # do NOT put here this:
-    #run_encr_decr(act, 'decrypt', MAX_WAITING_ENCR_FINISH, capsys)
-    # - otherwise pytest will not return control
-    
     with open(tmp_log_file, 'r') as f:
         for line in f:
             if line.strip():
-                print('final ISQL log:',line)
+                print(line)
 
     act.expected_stdout = f"""
-        Final ISQL process terminated with retcode = 0
-        final ISQL log: ATT_PROT                        TCP
-        final ISQL log: WHO_AMI                         {act.db.user.upper()}
-        final ISQL log: EVT_NAME                        attach
-        final ISQL log: SWP_INTERVAL                    {SWP_INTERVAL_TO_CHECK}
+        Hanged ISQL process terminated with retcode = 1
+        Final ISQL process terminated
 
-        final ISQL log: ATT_PROT                        TCP
-        final ISQL log: WHO_AMI                         {act.db.user.upper()}
-        final ISQL log: EVT_NAME                        detach
-        final ISQL log: SWP_INTERVAL                    {SWP_INTERVAL_TO_CHECK}
+        ATT_PROT                        TCP
+        WHO_AMI                         {act.db.user.upper()}
+        EVT_NAME                        attach
 
-        final ISQL log: Records affected: 2
+        ATT_PROT                        TCP
+        WHO_AMI                         {act.db.user.upper()}
+        EVT_NAME                        detach
     """
 
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
-
-    # NB! We have to decrypt database now. Otherwise teardown will fail with:
-    #   firebird.driver.types.DatabaseError: Missing database encryption key for your attachment
-    #   -Plugin fbSampleDbCrypt:
-    #   -Crypt key not set
-    run_encr_decr(act, 'decrypt', MAX_WAITING_ENCR_FINISH, capsys)
