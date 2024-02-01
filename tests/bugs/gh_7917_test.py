@@ -46,6 +46,9 @@ NOTES:
         6.x: https://github.com/FirebirdSQL/firebird/commit/8295aeb26ccee4f9a644c6928e598abbe06c31c0
         5.x: https://github.com/FirebirdSQL/firebird/commit/6f393ba762f390f69f895acc091583a3e486f4d0
         4.x: https://github.com/FirebirdSQL/firebird/commit/4c21cae77886461e68c2cab68ec063b416492e61
+
+    [01.02.2024] pzotov
+    Added check for testing vanilla FB (temporary, until appropriate commits not merged with HQbird fork).
 """
 import os
 import time
@@ -166,6 +169,16 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
 @pytest.mark.encryption
 @pytest.mark.version('>=4.0.5')
 def test_1(act: Action, tmp_sql_file: Path, tmp_log_file: Path, tmp_gstat_log: Path, capsys):
+
+    is_hqbird = None
+    with act.db.connect() as con:
+        cur = con.cursor()
+        cur.execute("select g.rdb$config_id from rdb$database left join rdb$config g on upper(g.rdb$config_name) = upper('HQbirdVersionString')")
+        for r in cur:
+            is_hqbird = r[0]
+
+    if is_hqbird:
+        pytest.skip("Applied only to standard FB builds.")
 
     # Scan line-by-line through databases.conf, find line starting with REQUIRED_ALIAS and extract name of file that
     # must be created in the $(dir_sampleDb)/qa/ folder. This name will be used further as target database (tmp_fdb).
