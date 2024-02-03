@@ -70,31 +70,32 @@ from firebird.driver import *
 
 os.environ["ISC_USER"] = '{act.db.user}'
 os.environ["ISC_PASSWORD"] = '{act.db.password}'
-driver_config.fb_client_library.value = "{act.vars['fbclient']}"
+driver_config.fb_client_library.value = r"{act.vars['fbclient']}"
 
-with connect_server('localhost:service_mgr') as srv:
-    bin_isql="{act.vars['isql']}"
-    bin_gfix="{act.vars['gfix']}"
-    bin_gstat="{act.vars['gstat']}"
-    
-with connect('{act.db.dsn}') as con:
-    #print(f"Trying to run gfix -shut full -force 0 '{act.db.dsn}'")
-    subprocess.run( [bin_gfix, '-shut', 'full', '-force', '0', '{act.db.dsn}'] )
-    subprocess.run( [bin_gstat, '-h', '{act.db.db_path}'] )
-    #print(f"Trying to run gfix -online '{act.db.dsn}'")
-    subprocess.run( [bin_gfix, '-online', '{act.db.dsn}'] )
-    subprocess.run( [bin_gstat, '-h', '{act.db.db_path}'] )
+bin_isql = r"{act.vars['isql']}"
+bin_gfix = r"{act.vars['gfix']}"
+bin_gstat = r"{act.vars['gstat']}"
+db_conn = r'{act.db.dsn}'
+db_file = r'{act.db.db_path}'
+tmp_sql = r'{str(tmp_sql_py)}'
+
+with connect(db_conn) as con:
+    #print(f"Trying to run gfix -shut full -force 0 db_conn")
+    subprocess.run( [bin_gfix, '-shut', 'full', '-force', '0', db_conn] )
+    subprocess.run( [bin_gstat, '-h', db_file] )
+    #print(f"Trying to run gfix -online db_conn")
+    subprocess.run( [bin_gfix, '-online', db_conn] )
+    subprocess.run( [bin_gstat, '-h', db_file] )
 
 chk_sql='''
     set list on;
     set count on;
     select att_cnt from logger;
 '''
-with open('{str(tmp_sql_py)}', 'w') as f:
+with open(tmp_sql, 'w') as f:
     f.write(chk_sql)
 
-#subprocess.run( [bin_isql, '-q', '-i', '{str(tmp_sql_py)}', '-user', os.environ["ISC_USER"], '-pas',  os.environ["ISC_PASSWORD"], '{act.db.dsn}'] )
-subprocess.run( [bin_isql, '-q', '-i', '{str(tmp_sql_py)}', '{act.db.dsn}'] )
+subprocess.run( [bin_isql, '-q', '-i', tmp_sql, db_conn] )
 """
 
     tmp_run_py.write_text(py_source)
