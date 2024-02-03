@@ -2,8 +2,8 @@
 
 """
 ID:          issue-7979
-ISSUE:       Hang when database with disconnect trigger using MON$ tables is shutting down
-TITLE:       
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7979
+TITLE:       Hang when database with disconnect trigger using MON$ tables is shutting down
 DESCRIPTION:
 NOTES:
     [02.02.2024] pzotov
