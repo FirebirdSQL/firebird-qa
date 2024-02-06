@@ -8,7 +8,7 @@ NOTES:
     [06.02.2024] pzotov
     Confirmed bug on 6.0.0.247
     Checked on 6.0.0.249 -- all OK.
-    NB: 5.x is also affected and it looks a regression since 5.0.0.1292 (date of build: 04-dec-2023)
+    Checked on 5.0.1.1331 (commit 86902a69), 4.0.5.3054 (commit 147bff1a)
 """
 
 import pytest
@@ -43,7 +43,7 @@ expected_stdout = """
     Records affected: 1
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=4.0.5')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
