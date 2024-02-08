@@ -35,7 +35,7 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
        RemoteAccess = true
        DefaultDbCachePages = 256
    }
-   ``` 
+   ```
 
    This must be done only if you want to run some tests manually.
    Automated scenario for running tests will overwrite this file
@@ -85,7 +85,7 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
         DefaultDbCachePages = 10000
         MaxUnflushedWrites = -1
         MaxUnflushedWriteTime = -1
-     
+
         # number of seconds after which statement execution will be automatically cancelled
         # by the engine
         # can be very useful if some test will hang or become work extremely slow:
@@ -102,7 +102,6 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
         It is recommended to assign value like 'xnet_fb5x_qa' to IpcName.
 
         > [!NOTE]
-        >
         > Proper values of some parameters strongly depends on ServerMode and amount of
         > avaliable RAM.
         >
@@ -119,7 +118,7 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
 
 
     2. Changes in OS environment variables:
-        
+
        it is recommended to create variable `FIREBIRD_TMP` that will point to the pre-created directory
        on some fast drive (e.g. SSD or RAM). This drive must have at least 30 Gb free space.
        Once this variable is defined, one may not specify parameter 'TempDirectories'.
@@ -130,12 +129,12 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
 
             1. Configs:
 
-               ``` 
+               ```
                fbSampleKeyHolder.conf
                fbSampleDbCrypt.conf
-               ``` 
+               ```
             2. Binaries on Windows:
-               ```  
+               ```
                fbSampleDbCrypt.dll
                fbSampleKeyHolder.dll
                ```
@@ -146,7 +145,6 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
                ```
 
                > [!NOTE]
-               >
                > These files missed in Firebird 3.x but one may to use such files from any
                > recent FB 4.x snapshot.
                > Config parameter KeyHolderPlugin currently is 'fbSampleKeyHolder'.
@@ -189,7 +187,7 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
            set bail off;
            ```
            **Following must FAIL with:**
-           ``` 
+           ```
            -- Statement failed, SQLSTATE = 42000
            -- unsuccessful metadata update
            -- -ALTER DATABASE failed
@@ -284,7 +282,7 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
             --install-terminal    Use our own terminal reporter
    ```
    To run all tests (except slow ones) against local server use next command::
-   ``` 
+   ```
    pytest --server local ./tests
    ```
 
