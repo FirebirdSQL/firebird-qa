@@ -15,18 +15,19 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import sphinx_bootstrap_theme
+from firebird.qa.__about__ import __version__
 
 # -- Project information -----------------------------------------------------
 
 project = 'Firebird QA'
-copyright = '2021, Pavel Cisar'
+copyright = '2021-present, Pavel Císař'
 author = 'Pavel Císař'
 
 # The short X.Y version
-version = '0.17.2'
+version = __version__
 
 # The full version, including alpha/beta/rc tags
-release = '0.17.2'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
