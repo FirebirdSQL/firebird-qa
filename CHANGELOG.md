@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.19.1] - 2024-02-09
+
+### FIXED
+
+- Fix for #21. Dependency to pytest changed from `>=8.0.0` to `~=7.4`. Other dependecies
+  changed from `>=` to `~=`.
+
 ## [0.19.0] - 2024-02-08
 
 ### Changed
