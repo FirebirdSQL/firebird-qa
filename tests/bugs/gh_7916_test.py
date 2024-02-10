@@ -7,7 +7,7 @@ TITLE:       Query issue conversion error from string
 NOTES:
     [10.02.2024] pzotov
     Confirmed bug on 6.0.0.250
-    Checked on 6.0.0.257.
+    Checked on 6.0.0.257 -- all fine.
 """
 
 import pytest
