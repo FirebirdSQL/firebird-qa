@@ -4,6 +4,19 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+
+Version 0.19.1
+==============
+
+* Fix for `#21 <https://github.com/FirebirdSQL/firebird-qa/issues/21>`_. Dependency to pytest
+  changed from `>=8.0.0` to `~=7.4`. Other dependecies changed from `>=` to `~=`.
+
+Version 0.19.0
+==============
+
+* Switch from `setuptools` to `hatch`.
+* Updated dependencies.
+
 Version 0.18.0
 ==============
 
@@ -19,7 +32,7 @@ Version 0.18.0
 Version 0.17.3
 ==============
 
-* Added --driver-config option to specify different filename for driver configuration.
+* Added `--driver-config` option to specify different filename for driver configuration.
 
 Version 0.17.2
 ==============
