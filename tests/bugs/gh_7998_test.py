@@ -13,6 +13,9 @@ NOTES:
         Statement failed, SQLSTATE = 25000
         transaction marked invalid and cannot be committed
     Checked on 6.0.0.257 -- all fine.
+
+    [15.02.2024] pzotov
+    Checked on 5.0.1.1340 -- all fine. Reduced min_version.
 """
 
 import pytest
@@ -33,7 +36,7 @@ expected_stdout = """
     conversion error from string "2"
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
