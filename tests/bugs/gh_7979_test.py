@@ -13,6 +13,10 @@ NOTES:
     Because of that, this test creates temporary .py script which is launched further using subprocess.run( [ sys.executable ...] )
     Confirmed problem on 6.0.0.219: 'gfix -shut full -force 0' hangs.
     Checked on 6.0.0.244.
+
+    [15.02.2024] pzotov
+    Checked on 4.0.5.3059 (commit #a552f1f3), 5.0.1.1340 (commit #f7171b58).
+    NOTE: 3.0.123.3731 (dob=15.02.2024) does NOT pass this test.
 """
 import sys
 import subprocess
@@ -48,7 +52,7 @@ tmp_run_py = temp_file('tmp_7979_run_external.py')
 tmp_log_py = temp_file('tmp_7979_run_external.log')
 tmp_sql_py = temp_file('tmp_7979_check_result.sql')
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=4.0.5')
 def test_1(act: Action, tmp_run_py: Path, tmp_log_py: Path, tmp_sql_py: Path, capsys):
     if act.platform == 'Windows':
         pytest.skip('Could not reproduce bug on Windows')
