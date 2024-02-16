@@ -17,6 +17,15 @@ NOTES:
     [15.02.2024] pzotov
     Checked on 4.0.5.3059 (commit #a552f1f3), 5.0.1.1340 (commit #f7171b58).
     NOTE: 3.0.123.3731 (dob=15.02.2024) does NOT pass this test.
+
+    [16.02.2024] pzotov
+    Added [temporary] mark for SKIP this test when QA runs agains *fork* of standard FB because it hangs ('disabled_in_forks').
+    This mark will be removed after separating QA runs (executing tests against standard FB snapshot on DEDICATED machine).
+
+    NB-1. QA must use command like: 'pytest -m "not disabled_in_hqbird" ...' when check *fork* of standard FB.
+    NB-2. Unfortunately, nowadays QA runs for standard FB and its fork are performed at the same host.
+          Lagging problem exists with [back-]porting of some fixes/features into fork after implementation for the same FB-major version.
+          This can cause the whole QA-job to be incompleted and missed report for one of even several days.
 """
 import sys
 import subprocess
@@ -52,6 +61,7 @@ tmp_run_py = temp_file('tmp_7979_run_external.py')
 tmp_log_py = temp_file('tmp_7979_run_external.log')
 tmp_sql_py = temp_file('tmp_7979_check_result.sql')
 
+@pytest.mark.disabled_in_forks
 @pytest.mark.version('>=4.0.5')
 def test_1(act: Action, tmp_run_py: Path, tmp_log_py: Path, tmp_sql_py: Path, capsys):
     if act.platform == 'Windows':
@@ -60,6 +70,10 @@ def test_1(act: Action, tmp_run_py: Path, tmp_log_py: Path, tmp_sql_py: Path, ca
         pytest.skip('Applies only to SuperServer')
 
     py_run_ext = ' '.join( [ sys.executable, '-u', f'{str(tmp_run_py)}'] )
+
+    ##########################################################################################
+    ###   G E N E R A T I O N     O F    T E M P O R A R Y    P Y T H O N    S C R I P T   ###
+    ##########################################################################################
     py_source = f"""# -*- coding: utf-8 -*-
 # {py_run_ext}
 import os
@@ -101,6 +115,9 @@ with open(tmp_sql, 'w') as f:
 
 subprocess.run( [bin_isql, '-q', '-i', tmp_sql, db_conn] )
 """
+    ########################################################
+    ###   END OF GENERATION OF TEMPORARY PYTHON SCRIPT   ###
+    ########################################################
 
     tmp_run_py.write_text(py_source)
     with open(tmp_log_py, 'w') as f:
