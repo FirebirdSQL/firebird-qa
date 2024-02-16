@@ -16,6 +16,15 @@ NOTES:
 
     [15.02.2024] pzotov
     Checked on 5.0.1.1340 -- all fine. Reduced min_version.
+
+    [16.02.2024] pzotov
+    Added [temporary] mark for SKIP this test when QA runs agains *fork* of standard FB because it hangs ('disabled_in_forks').
+    This mark will be removed after separating QA runs (executing tests against standard FB snapshot on DEDICATED machine).
+
+    NB-1. QA must use command like: 'pytest -m "not disabled_in_hqbird" ...' when check *fork* of standard FB.
+    NB-2. Unfortunately, nowadays QA runs for standard FB and its fork are performed at the same host.
+          Lagging problem exists with [back-]porting of some fixes/features into fork after implementation for the same FB-major version.
+          This can cause the whole QA-job to be incompleted and missed report for one of even several days.
 """
 
 import pytest
@@ -36,6 +45,7 @@ expected_stdout = """
     conversion error from string "2"
 """
 
+@pytest.mark.disabled_in_forks
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
