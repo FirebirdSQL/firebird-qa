@@ -15,7 +15,6 @@ DESCRIPTION:
     * define type of every page starting from first PP for 'TEST' table and up to total pages of DB,
       and doing this for each subsequent page. Dictionary 'broken_pages_map' is used to store LIST of pages
       for each encountered page type;
-    * ENCRYPT database, see call of func 'run_encr_decr';
     * close connection;
     * open test DB file in binary mode for reading and writing, and:
         ** store previous content of .fdb in variable 'raw_db_content' (for further restore);
@@ -24,6 +23,7 @@ DESCRIPTION:
             **** if page_type is POINTER_PAGE or IDX_ROOT_PAGE - do nothing (we can get problems if these pages are broken);
             **** otherwise put 'garbage bytes' in each of these pages;
     * close DB file
+    * ENCRYPT database, see call of func 'run_encr_decr';
     * run 'gstat -e' and check its output for presense of several expected patterns:
         ** "Data pages: total encrypted, non-crypted"
         ** "Index pages: total encrypted, non-crypted"
@@ -451,12 +451,6 @@ def test_1(act: Action, capsys):
     #
     raw_db_content = act.db.db_path.read_bytes()
 
-
-    ############################################
-    ###   E N C R Y P T    D A T A B A S E   ###
-    ############################################
-    run_encr_decr(act, 'encrypt', MAX_WAITING_ENCR_FINISH, capsys)
-
     #################################################
     ###   P U T    G A R B A G E    I N     D B   ###
     #################################################
@@ -479,6 +473,11 @@ def test_1(act: Action, capsys):
                     w.seek(p * con.info.page_size)
                     w.write(garbage_bytes)
 
+
+    ############################################
+    ###   E N C R Y P T    D A T A B A S E   ###
+    ############################################
+    run_encr_decr(act, 'encrypt', MAX_WAITING_ENCR_FINISH, capsys)
 
     #################################################
     ###    P A R S E    G S T A T   O U T P U T   ###
