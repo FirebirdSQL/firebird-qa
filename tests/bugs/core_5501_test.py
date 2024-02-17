@@ -2,114 +2,225 @@
 
 """
 ID:          issue-5770
-ISSUE:       5770
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5770
 TITLE:       Unclear gstat's diagnostic when damaged page in DB file appears encrypted
 DESCRIPTION:
-  Test creates table 'TEST' with varchar and blob fields, + index on varchar, and add some data to it.
-  Blob field is filled by long values in order to prevent acomodation of its content within data pages.
-  As result, this table should have pages of three different types: DataPage, BTreePage and BlobPage.
+    Test creates table 'TEST' with varchar and blob fields, + index on varchar, and add some data to it.
+    Long data is added into BLOB column in order to prevent acomodation of its content within data page.
+    As result, this table should have pages of three different types: DataPage, BTreePage and BlobPage.
 
-  Then we find number of first PP of this table by scrolling RDB$PAGES join RDB$RELATIONS result set.
-  After this we:
-  * define type of every page starting from first PP for 'TEST' table and up to total pages of DB,
-    and doing this for each subsequent page, until ALL THREE different page types will be detected:
-    1) data page, 2) index B-Tree and 3) blob page.
-    These page numbers are stored in variables: (brk_datapage, brk_indxpage, brk_blobpage).
-    When all three page numbers are found, loop is terminated;
-  * close connection and open dB as binary file for reading and writing;
-  * store previous content of .fdb in variable 'raw_db_content' (for further restore);
-  * move file seek pointer at the beginning of every page from list: (brk_datapage, brk_indxpage, brk_blobpage);
-  * BREAK page content by writing invalid binary data in the header of page;
-    This invalid data are: bytes 0...7 ==> 0xFFAACCEEBB0000CC; bytes 8...15 ==> 0xDDEEAADDCC00DDEE;
-  * Close DB file handle and:
-  ** 1) run 'gstat -e';
-  ** 2) run online validation;
-  * open DB file again as binary and restore its content from var. 'raw_db_content' in order
-    fbtest framework could finish this test (by making connect and drop this database);
-
-  KEY POINTS:
-  * report of 'gstat -e' should contain line with text 'ENCRYPTED 3 (DB problem!)'
-    (number '3' should present becase we damaged pages of THREE diff. types: DP, BTree and Blob).
-  * report of online validation should contain lines with info about three diff. page types which have problems.
+    First, we obtain number of generators page (from rdb$pages).
+    Then we find number of first PP of 'TEST' table by scrolling RDB$PAGES join RDB$RELATIONS result set.
+    After this we:
+    * define type of every page starting from first PP for 'TEST' table and up to total pages of DB,
+      and doing this for each subsequent page. Dictionary 'broken_pages_map' is used to store LIST of pages
+      for each encountered page type;
+    * ENCRYPT database, see call of func 'run_encr_decr';
+    * close connection;
+    * open test DB file in binary mode for reading and writing, and:
+        ** store previous content of .fdb in variable 'raw_db_content' (for further restore);
+        ** for every page types that are stored in broken_pages_map.keys():
+            **** get list of pages of that type which must be broken;
+            **** if page_type is POINTER_PAGE or IDX_ROOT_PAGE - do nothing (we can get problems if these pages are broken);
+            **** otherwise put 'garbage bytes' in each of these pages;
+    * close DB file
+    * run 'gstat -e' and check its output for presense of several expected patterns:
+        ** "Data pages: total encrypted, non-crypted"
+        ** "Index pages: total encrypted, non-crypted"
+        ** "Blob pages: total encrypted, non-crypted"
+        ** "Generator pages: total encrypted, non-crypted"
+        ** "Other pages: total ENCRYPTED (DB problem!), non-crypted"
+    * run 'gfix -v -full' and check its log for presense of several expected patterns:
+        ** "(expected data"
+        ** "(expected index B-tree"
+        ** "(expected blob"
+        ** "(expected generators"
+    * open DB file again as binary and restore its content from var. 'raw_db_content'
 JIRA:        CORE-5501
 FBTEST:      bugs.core_5501
 NOTES:
-    [08.12.2021] pcisar
-      Reimplementation does not work as expected on Linux FB 4.0 and 3.0.8
-      gstat output:
-        Data pages: total 97, encrypted 0, non-crypted 97
-        Index pages: total 85, encrypted 0, non-crypted 85
-        Blob pages: total 199, encrypted 0, non-crypted 199
-        Generator pages: total 1, encrypted 0, non-crypted 1
-      Validation does not report BLOB page errors, only data and index corruptions.
+    [17.02.2024] pzotov
+    Test fully re-implemented:
+    * random data for inserting into TEST table not used anymore;
+    * database *will* be encrypted (previous version of this test did not that).
+    * because this test must be performed on FB-3.x, we have to check that encryption thread completed by parsing
+      of 'gstat -h' log for presense of line "Attributes encrypted, plugin {ENCRYPTION_PLUGIN}".
+      We can NOT use mon$database table: FB 3.x has no 'mon$crypt_state' column in it.
+    * content 'garbage bytes' that are written into DB pages is fixed;
+    * following page types will be fulfilled with 'garbage bytes': DATA_PAGE, IDX_B_TREE, BLOB_PAGE, GENS_PAGE;
+    * following page types will be *preserved* from damage: POINTER_PAGE, IDX_ROOT_PAGE;
+    * validation is performed using 'gfix -v -full' rather than online validation, otherwise info about broken
+      generators page not reported.
+    
+    Commits:
+        FB 4.x (was 'master' at that time): 10-mar-2017 17:08
+        https://github.com/FirebirdSQL/firebird/commit/8e865303b0afe00c28795d9f6ee9983d14d85e1a
+        Fixed CORE-5501: Unclear gstat's diagnostic when damaged page in DB file appears encrypted
 
-    [18.09.2022] pzotov
-    Probably old-style bytesarreay was the reason of why pages were not considered by gstat as of unknown type.
-    Decided to replace is with 'really random content, see 'os.urandom(<length>)'
-    This is the only change, and after it was done test works fine.
+        FB 3.x: 10-mar-2017 17:08
+        https://github.com/FirebirdSQL/firebird/commit/3e5ac855467fe334e2f350d5210cb237bcefe0a6
+        Backported fix for CORE-5501: Unclear gstat's diagnostic when damaged page in DB file appears encrypted
 
-    Checked on 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730 (SS/CS) - both Linux and Windows.
+    Checked on:
+        * 3.0.2.32962; output of 'gstat -e' contains only THREE lines in this snapshot ("Data pages"; "Index pages"; "Blob pages");
+        * 3.0.2.32963; line "Other pages: total ..., ENCRYPTED ... (DB problem!), non-crypted ..." appearted in the 'gstat -e' output since this snapshot;
+        * 3.0.12.33731, 4.0.5.3059, 5.0.1.1340, 6.0.0.264; line "Generator pages" presents in all these snapshots.
 """
-#from __future__ import annotations
+
 import os
 import time
+import datetime as py_dt
 from typing import Dict
 import pytest
 import re
+from difflib import unified_diff
 from struct import unpack_from
 from firebird.qa import *
 from firebird.driver import Connection
 
-init_script = """
+###########################
+###   S E T T I N G S   ###
+###########################
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+enc_settings = QA_GLOBALS['encryption']
+
+# ACHTUNG: this must be carefully tuned on every new host:
+#
+MAX_WAITING_ENCR_FINISH = int(enc_settings['MAX_WAIT_FOR_ENCR_FINISH_WIN' if os.name == 'nt' else 'MAX_WAIT_FOR_ENCR_FINISH_NIX'])
+assert MAX_WAITING_ENCR_FINISH > 0
+
+ENCRYPTION_PLUGIN = enc_settings['encryption_plugin'] # fbSampleDbCrypt
+ENCRYPTION_KEY = enc_settings['encryption_key'] # Red
+
+DB_PAGE_SIZE = 8192
+TXT_LEN = 500
+init_script = f"""
     alter database drop linger;
     commit;
 
-    create table test(s varchar(1000) unique using index test_s_unq, b blob);
+    create sequence g;
+    create table test(id int, s varchar({TXT_LEN}) unique using index test_s_unq, b blob);
     commit;
 
     set count on;
-    insert into test(s, b)
-    select
-        rpad( '',1000, uuid_to_char(gen_uuid()) ),
-        rpad( '',
-              10000, -- NB: blob should have a big size! It should NOT be stored withih a data page.
-              'qwertyuioplkjhgfdsazxcvbnm0987654321')
-    from rdb$types
-    rows 100;
+    set term ^;
+    execute block as
+        declare n_cnt int = 2000;
+        declare v_b blob;
+        declare v_c varchar({TXT_LEN});
+    begin
+        select left( list( r ), {DB_PAGE_SIZE}+1) from (select row_number()over() as r from rdb$types,rdb$types) into v_b;
+        v_c = rpad( '', {TXT_LEN} - 6, 'A');
+        while (n_cnt > 0) do
+        begin
+            insert into test(id, s, b) values(gen_id(g,1), rpad( '', {TXT_LEN}, 'QWERTYUIOPLKJHGFDSAZXCVBNM' || :n_cnt ), iif(:n_cnt = 1, :v_b, null));
+            n_cnt = n_cnt - 1;
+        end
+    end
+    ^
+    set term ;^
     commit;
 """
 
-db = db_factory(init=init_script)
+db = db_factory(init=init_script, page_size = DB_PAGE_SIZE)
 
 substitutions=[
                 ('total \\d+,', 'total'),
                 ('non-crypted \\d+', 'non-crypted'),
                 ('crypted \\d+', 'crypted'),
-                ('Other pages.*', ''),
+                ('ENCRYPTED \\d+', 'ENCRYPTED'),
               ]
 
 act = python_act('db', substitutions = substitutions)
 
-expected_stdout = """
-    Data pages: total 63, encrypted 0, non-crypted 63
-    Index pages: total 88, encrypted 0, non-crypted 88
-    Blob pages: total 199, encrypted 0, non-crypted 199
-    Other pages: total 115, ENCRYPTED 3 (DB problem!), non-crypted 112
-    Detected all THREE page types with problem => YES
-"""
+POINTER_PAGE = 4
+DATA_PAGE = 5
+IDX_ROOT_PAGE = 6
+IDX_B_TREE = 7
+BLOB_PAGE = 8
+GENS_PAGE = 9
 
-PAGE_TYPES = {0: "undef/free",
-              1: "DB header",
-              2: "PIP",
-              3: "TIP",
-              4: "Pntr Page",
-              5: "Data Page",
-              6: "Indx Root",
-              7: "Indx Data",
-              8: "Blob Page",
-              9: "Gens Page",
-              10: "SCN" # only for ODS>=12
+PAGE_TYPES = {0				: "undef/free",
+              1				: "DB header",
+              2				: "PIP",
+              3				: "TIP",
+              POINTER_PAGE	: "Pntr Page",
+              DATA_PAGE		: "Data Page",
+              IDX_ROOT_PAGE	: "Indx Root",
+              IDX_B_TREE	: "Indx Data",
+              BLOB_PAGE		: "Blob Page",
+              GENS_PAGE		: "Gens Page",
+              10			: "SCN" # only for ODS>=12
              }
+
+
+#-----------------------------------------------------------------------
+
+def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
+    if mode == 'encrypt':
+        # alter_db_sttm = f'alter database encrypt with "{ENCRYPTION_PLUGIN}"' # <<< ::: NB ::: DO NOT add '... key "{ENCRYPTION_KEY}"' here!
+        alter_db_sttm = f'alter database encrypt with "{ENCRYPTION_PLUGIN}" key "{ENCRYPTION_KEY}"'
+         
+        wait_for_state = 'Database encrypted'
+    elif mode == 'decrypt':
+        alter_db_sttm = 'alter database decrypt'
+        wait_for_state = 'Database not encrypted'
+
+    e_thread_finished = False
+
+    # 0 = non crypted;
+    # 1 = has been encrypted;
+    # 2 = is DEcrypting;
+    # 3 = is Encrypting;
+    #
+    # only since FB 4.x: REQUIRED_CRYPT_STATE = 1 if mode == 'encrypt' else 0
+    current_crypt_state = -1
+
+    REQUIRED_CRYPT_PAGE = 0
+    current_crypt_page = -1
+
+    d1 = py_dt.timedelta(0)
+    with act.db.connect() as con:
+        t1=py_dt.datetime.now()
+        try:
+            d1 = t1-t1
+            con.execute_immediate(alter_db_sttm)
+            con.commit()
+            time.sleep(1)
+
+            # Pattern to check for completed encryption thread:
+            completed_encr_pattern = re.compile(f'Attributes\\s+encrypted,\\s+plugin\\s+{ENCRYPTION_PLUGIN}', re.IGNORECASE)
+            while True:
+                t2=py_dt.datetime.now()
+                d1=t2-t1
+                if d1.seconds*1000 + d1.microseconds//1000 > max_wait_encr_thread_finish:
+                    break
+    
+                ######################################################
+                ###   C H E C K    M O N $ C R Y P T _ S T A T E   ###
+                ######################################################
+                # Invoke 'gstat -h' and read its ouput.
+                # Encryption can be considered as COMPLETED when we will found:
+                # "Attributes              encrypted, plugin fbSampleDbCrypt"
+                #
+                act.gstat(switches=['-h'])
+                for line in act.stdout.splitlines():
+                    if completed_encr_pattern.match(line.strip()):
+                        e_thread_finished = True
+                        break
+                if e_thread_finished:
+                    break
+                else:
+                    time.sleep(0.5)
+
+        except DatabaseError as e:
+            print( e.__str__() )
+
+    assert e_thread_finished, f'TIMEOUT EXPIRATION. Mode="{mode}" took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {max_wait_encr_thread_finish} ms; current_crypt_page={current_crypt_page}'
+
+#-----------------------------------------------------------------------
 
 def fill_dbo(con: Connection, map_dbo: Dict):
     cur = con.cursor()
@@ -141,10 +252,12 @@ def fill_dbo(con: Connection, map_dbo: Dict):
         where
             coalesce(r.rel_type,0) = 0 --  exclude views, GTT and external tables
             and r.sys_flag is distinct from 1
-"""
+    """
     cur.execute(sql)
     for r in cur:
         map_dbo[r[0], r[2]] = (r[1].strip(), r[3].strip())
+
+#-----------------------------------------------------------------------
 
 def parse_page_header(con: Connection, page_number: int, map_dbo: Dict):
     page_buffer = con.info.get_page_content(page_number)
@@ -187,7 +300,7 @@ def parse_page_header(con: Connection, page_number: int, map_dbo: Dict):
     ix_level = -1
     btr_len = -1
 
-    if page_type == 4:
+    if page_type == POINTER_PAGE:
         # POINTER pege:
         # *pag* dpg_header=16, SLONG dpg_sequence=4, SLONG ppg_next=4, USHORT ppg_count=2 ==> 16+4+4+2=26
         # struct pointer_page
@@ -202,7 +315,7 @@ def parse_page_header(con: Connection, page_number: int, map_dbo: Dict):
         #     SLONG ppg_page[1];    // Data page vector
         # };
         relation_id = unpack_from('<H', page_buffer, 26)[0] # 'H' ==> USHORT
-    elif page_type == 5:
+    elif page_type == DATA_PAGE:
         # DATA page:
         # *pag* dpg_header=16, SLONG dpg_sequence=4 ==> 16+4 = 20:
         # struct data_page
@@ -219,14 +332,14 @@ def parse_page_header(con: Connection, page_number: int, map_dbo: Dict):
         # };
         relation_id = unpack_from('<H', page_buffer, 20)[0] # 'H' ==> USHORT
         segment_cnt = unpack_from('<H', page_buffer, 22)[0]
-    elif page_type == 6:
+    elif page_type == IDX_ROOT_PAGE:
         # Index root page
         # struct index_root_page
         # {
         #     pag irt_header;
         #     USHORT irt_relation;            // relation id (for consistency)
         relation_id = unpack_from('<H', page_buffer, 16)[0] # 'H' ==> USHORT
-    elif page_type == 7:
+    elif page_type == IDX_B_TREE:
         # B-tree page ("bucket"):
         # struct btree_page
         # {
@@ -251,7 +364,7 @@ def parse_page_header(con: Connection, page_number: int, map_dbo: Dict):
         #page_info = ''.join((PAGE_TYPES[page_type].ljust(9), ', ', u[1].strip(), ', data_len=', str(btr_len), ', lev=', str(ix_level))) # 'Indx Page, <index_name>, <length of data in bucket>'
     elif (relation_id, -1) in map_dbo:
         u = map_dbo[ relation_id, -1 ]
-        if page_type == 5:
+        if page_type == DATA_PAGE:
             page_info = f'{PAGE_TYPES[page_type].ljust(9)}, {u[0].strip()}, segments on page: {segment_cnt}'
             #page_info = ''.join( ( PAGE_TYPES[page_type].ljust(9),', ',u[0].strip(),', segments on page: ',str(segment_cnt) ) ) # '<table_name>, segments on page: NNN' - for Data page
         else:
@@ -264,102 +377,181 @@ def parse_page_header(con: Connection, page_number: int, map_dbo: Dict):
         #page_info = ''.join( ('UNKNOWN; ',PAGE_TYPES[page_type].ljust(9),'; relation_id ', str(relation_id), '; index_id ', str(index_id)) )
     return (page_type, relation_id, page_info)
 
+
+################################
+###    M A I N    C O D E    ###
+################################
+
+@pytest.mark.encryption
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action, capsys):
     map_dbo = {}
-    sql = """
+
+    # Query to find first generators page number:
+    first_gens_page_sql = f"""
+        select p.rdb$page_number
+        from rdb$pages p
+        where p.rdb$page_type = {GENS_PAGE}
+        order by p.rdb$page_number desc
+        rows 1
+    """
+
+    # Query to find relation_id and first PP for 'TEST' table:
+    first_pp_sql = f"""
         select p.rdb$relation_id, p.rdb$page_number
         from rdb$pages p
         join rdb$relations r on p.rdb$relation_id = r.rdb$relation_id
-        where r.rdb$relation_name=upper('TEST') and p.rdb$page_type = 4
+        where r.rdb$relation_name=upper('TEST') and p.rdb$page_type = {POINTER_PAGE}
         order by p.rdb$page_number
         rows 1
     """
+
+    broken_pages_map = { POINTER_PAGE : [], DATA_PAGE : [], IDX_ROOT_PAGE : [], IDX_B_TREE : [], BLOB_PAGE : [], GENS_PAGE : [] }
     with act.db.connect() as con:
         fill_dbo(con, map_dbo)
         c = con.cursor()
-        rel_id, pp1st = c.execute(sql).fetchone()
+
+        broken_pages_map[GENS_PAGE] = [c.execute(first_gens_page_sql).fetchone()[0],]
+
+        test_rel_id, test_rel_first_pp = c.execute(first_pp_sql).fetchone()
+
         # Found first page for each of three types: Data, Index and Blob
         # (loop starts from first PointerPage of table 'TEST')
         brk_datapage = brk_indxpage = brk_blobpage = -1
-        for i in range(pp1st, con.info.pages_allocated):
-            page_type, relation_id, page_info = parse_page_header(con, i, map_dbo)
-            #print('page:',i, '; page_type:',page_type, '; rel_id:',relation_id,';',  page_info)
-            if relation_id == 128 and page_type == 5:
-                brk_datapage = i
-            elif relation_id == 128 and page_type == 7:
-                brk_indxpage = i
-            elif page_type == 8:
-                brk_blobpage = i
-            if brk_datapage > 0 and brk_indxpage > 0 and brk_blobpage > 0:
+
+        for page_no in range(test_rel_first_pp, con.info.pages_allocated):
+            page_type, relation_id, page_info = parse_page_header(con, page_no, map_dbo)
+            #print('page:',page_no, '; page_type:',page_type, '; test_rel_id:',relation_id,';',  page_info)
+            if relation_id == test_rel_id and page_type == POINTER_PAGE:
+                brk_datapage = page_no
+                broken_pages_map[POINTER_PAGE].append(page_no)
+            elif relation_id == test_rel_id and page_type == DATA_PAGE:
+                brk_datapage = page_no
+                broken_pages_map[DATA_PAGE].append(page_no)
+            elif relation_id == test_rel_id and page_type == IDX_ROOT_PAGE:
+                brk_indxpage = page_no
+                broken_pages_map[IDX_ROOT_PAGE].append(page_no)
+            elif relation_id == test_rel_id and page_type == IDX_B_TREE:
+                brk_indxpage = page_no
+                broken_pages_map[IDX_B_TREE].append(page_no)
+            elif page_type == BLOB_PAGE: #  relation_id == test_rel_id and
+                brk_blobpage = page_no
+                broken_pages_map[BLOB_PAGE].append(page_no)
+            
+            if min([ len(v) for v in broken_pages_map.values() ]) > 0:
                 break
 
-    # 3.0.8: 187; 184; 186
+            #if brk_datapage > 0 and brk_indxpage > 0 and brk_blobpage > 0:
+            #    break
+
+
+    assert min([ len(v) for v in broken_pages_map.values() ]) > 0, f'At least one of required page types was not found: broken_pages_map = {broken_pages_map}'
+
+    # Preserve binary content of .fdb for futher restore:
     #
-    # Store binary content of .fdb for futher restore
     raw_db_content = act.db.db_path.read_bytes()
 
-    # Make pages damaged: put random 16 bytes at the start of every page that we found:
-    bw = bytearray(os.urandom(16))
+
+    ############################################
+    ###   E N C R Y P T    D A T A B A S E   ###
+    ############################################
+    run_encr_decr(act, 'encrypt', MAX_WAITING_ENCR_FINISH, capsys)
+
+    #################################################
+    ###   P U T    G A R B A G E    I N     D B   ###
+    #################################################
+    # DO NOT!! >>> garbage_bytes = bytearray(os.urandom(16)) -- this can cause missed 'Other pages:' line in the 'gstat -e' output
+    garbage_bytes = bytearray(b'\x1e\xaa\\,es\x06\x92B3\x0c\xa7e\xa6\x04\x0f') # <<< this value WILL CAUSE appearance of line 'Other pages' in the 'gstat -e' output'
     with open(act.db.db_path, 'r+b') as w:
-        for brk_page in (brk_datapage, brk_indxpage, brk_blobpage):
-            w.seek(brk_page * con.info.page_size)
-            w.write(bw)
-    
-    #time.sleep(2) # ?!
+        for pg_type, pg_no_lst in broken_pages_map.items():
+            # See letters to Vlad, 17-feb-2024.
+            # We have to PRESERVE from damage TWO page types: POINTER_PAGE and IDX_ROOT_PAGE.
+            # If we preserve from damage only POINTER_PAGE then
+            # 5.0.1.1340 and 6.0.0.264 will crash during validation via TCP.
+            # 3.0.12.33791 and 4.0.5.3059 will perform validation but DB remains opened and second call to validation fails with
+            #     bad parameters on attach or create database
+            #     -secondary server attachments cannot validate databases
+            # Also, if IDX_ROOT_PAGE is damaged then b-tree pages will not be handled during validation (no messages in firebird.log about them).
+            if pg_type in (POINTER_PAGE,IDX_ROOT_PAGE):
+                 pass
+            else:
+                for p in pg_no_lst:
+                    w.seek(p * con.info.page_size)
+                    w.write(garbage_bytes)
 
-    # Validate DB - ensure that there are errors in pages
-    # RESULT: validation log should contain lines with problems about three diff. page types:
-    # expected data encountered unknown
-    # expected index B-tree encountered unknown
-    # expected blob encountered unknown
-    with act.connect_server() as srv:
-        srv.database.validate(database=act.db.db_path, lock_timeout=1)
-        validation_log = srv.readlines()
 
-    # gstat
+    #################################################
+    ###    P A R S E    G S T A T   O U T P U T   ###
+    #################################################
     act.gstat(switches=['-e'])
-
-    pattern = re.compile('(data|index|blob|other)\\s+pages[:]{0,1}\\s+total[:]{0,1}\\s+\\d+[,]{0,1}\\s+encrypted[:]{0,1}\\s+\\d+.*[,]{0,1}non-crypted[:]{0,1}\\s+\\d+.*', re.IGNORECASE)
+    pattern = re.compile('(data|index|blob|generator|other)\\s+page(s)?(:)?', re.IGNORECASE)
     for line in act.stdout.splitlines():
         if pattern.match(line.strip()):
             print(line.strip())
-
-    # Process validation log
-    data_page_problem = indx_page_problem = blob_page_problem = False
-    for line in validation_log:
-        if 'expected data' in line:
-            data_page_problem = True
-        elif 'expected index B-tree' in line:
-            indx_page_problem = True
-        elif 'expected blob' in line:
-            blob_page_problem = True
-
-    final_msg='Detected all THREE page types with problem => '
-    if data_page_problem and indx_page_problem and blob_page_problem:
-        final_msg += 'YES'
-        print(final_msg)
-    else:
-        final_msg += 'NO'
-        print(final_msg)
-        print('Check output of "gstat -e":')
-        for line in act.stdout.splitlines():
-            print(line)
-            #print(line.replace(' ','.'))
-        print('-' * 50)
-
-        print(f'Check validation log ({len(validation_log)} lines):')
-        for line in validation_log:
-            print(line)
-        print('-' * 50)
-
-        print(f'brk_datapage = {brk_datapage}, brk_indxpage = {brk_indxpage}, brk_blobpage = {brk_blobpage}')
-        print(f'data_page_problem = {data_page_problem}, indx_page_problem = {indx_page_problem}, blob_page_problem = {blob_page_problem}')
-
-    # restore DB content
-    act.db.db_path.write_bytes(raw_db_content)
-
-    act.reset()
-    act.expected_stdout = expected_stdout
+    
+    # Check-1. Output of 'gstat -e' must contain lines:
+    #
+    act.expected_stdout = """
+        Data pages: total encrypted, non-crypted
+        Index pages: total encrypted, non-crypted
+        Blob pages: total encrypted, non-crypted
+        Generator pages: total encrypted, non-crypted
+        Other pages: total ENCRYPTED (DB problem!), non-crypted
+    """
+    
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
+
+    # Check-2 [optional].
+    ############################################
+    ###    G F I X  - V A L I D A T I O N    ###
+    ############################################
+    # Get firebird.log content BEFORE running validation
+    log_before = act.get_firebird_log()
+
+    # ::: NB :::
+    # do NOT use online validation: it does not check generators page.
+    #
+    act.gfix(switches=['-v', '-full', act.db.dsn])
+
+    # Get firebird.log content AFTER running validation
+    log_after = act.get_firebird_log()
+
+    # Difference between old and new firebird.log should contain lines:
+    #   "(expected data"
+    #   "(expected index B-tree"
+    #   "(expected blob"
+    #   "(expected generators"
+    found_broken_types_map = { DATA_PAGE : 0, IDX_B_TREE : 0, BLOB_PAGE : 0, GENS_PAGE : 0 }
+    for line in unified_diff(log_before, log_after):
+        if line.startswith('+'):
+            if ' (expected data' in line:
+                found_broken_types_map[DATA_PAGE] = 1
+            elif ' (expected index B-tree' in line:
+                found_broken_types_map[IDX_B_TREE] = 1
+            elif ' (expected blob' in line:
+                found_broken_types_map[BLOB_PAGE] = 1
+            elif ' (expected generators' in line:
+                found_broken_types_map[GENS_PAGE] = 1
+
+    parse_validation_log_overall_msg = 'Result of parsing validation log:'
+    print(parse_validation_log_overall_msg)
+    for k,v in sorted( found_broken_types_map.items() ):
+        print(k, v)
+
+    act.expected_stdout = f"""
+        {parse_validation_log_overall_msg}
+        {DATA_PAGE} 1
+        {IDX_B_TREE} 1
+        {BLOB_PAGE} 1
+        {GENS_PAGE} 1
+    """
+
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
+    # restore NON-BROKEN DB content:
+    act.db.db_path.write_bytes(raw_db_content)
