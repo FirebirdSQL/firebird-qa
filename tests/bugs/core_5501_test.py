@@ -16,12 +16,12 @@ DESCRIPTION:
       and doing this for each subsequent page. Dictionary 'broken_pages_map' is used to store LIST of pages
       for each encountered page type;
     * close connection;
-    * open test DB file in binary mode for reading and writing, and:
+    * open test DB file in binary mode for writing and:
         ** store previous content of .fdb in variable 'raw_db_content' (for further restore);
         ** for every page types that are stored in broken_pages_map.keys():
-            **** get list of pages of that type which must be broken;
-            **** if page_type is POINTER_PAGE or IDX_ROOT_PAGE - do nothing (we can get problems if these pages are broken);
-            **** otherwise put 'garbage bytes' in each of these pages;
+            *** get list of pages of that type which must be broken;
+            *** if page_type is POINTER_PAGE or IDX_ROOT_PAGE - do nothing (we can get problems if these pages are broken);
+            *** otherwise put 'garbage bytes' in each of these pages (multiple pages for each type will be damaged);
     * close DB file
     * ENCRYPT database, see call of func 'run_encr_decr';
     * run 'gstat -e' and check its output for presense of several expected patterns:
