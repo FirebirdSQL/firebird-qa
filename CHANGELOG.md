@@ -4,9 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.19.2] - 2024-02-20
+
+### Fixed
+
+- Remove fix for #21. The error was not caused by pytest 8.0, but by `Error` exception from
+  `firebird-base` package that masked the absence of `__notes__` attribute from `pytest`.
+  Dependency to pytest reverted to `>=7.4`.
+
+### Changed
+
+- Updated documentation.
+
 ## [0.19.1] - 2024-02-09
 
-### FIXED
+### Fixed
 
 - Fix for #21. Dependency to pytest changed from `>=8.0.0` to `~=7.4`. Other dependecies
   changed from `>=` to `~=`.

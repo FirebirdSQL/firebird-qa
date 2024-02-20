@@ -4,6 +4,14 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.19.2
+==============
+
+* Remove fix for `#21 <https://github.com/FirebirdSQL/firebird-qa/issues/21>`_. The error
+  was not caused by pytest 8.0, but by `Error` exception from `firebird-base` package that
+  masked the absence of `__notes__` attribute from `pytest`. Dependency to pytest reverted
+  to `>=7.4`.
+* Updated documentation.
 
 Version 0.19.1
 ==============

@@ -32,10 +32,10 @@ classifiers = [
     "Framework :: Pytest",
     ]
 dependencies = [
-    "firebird-base~=1.7.1",
-    "firebird-driver~=1.10.1",
-    "pytest~=7.4",
-    "psutil~=5.9.8",
+    "firebird-base>=1.7.2",
+    "firebird-driver~=1.10",
+    "pytest>=7.4",
+    "psutil~=5.9",
     ]
 
 [project.urls]

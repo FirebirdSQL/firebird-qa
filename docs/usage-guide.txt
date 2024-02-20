@@ -1,4 +1,3 @@
-
 ===========
 Usage Guide
 ===========
@@ -30,56 +29,64 @@ Requirements
 ------------
 
 1. Requires Python_ 3.8 or newer.
-2. Requires `pip` installer. You may check it's availability from command line with::
+2. Requires pytest_ 7.4 or newer.
+3. If you want to develop the Firebird QA plugin itself, you'll also need Hatch_ 1.9 or newer.
+4. It's **recommended** to use the pipx_ tool to install and manage `firebird-qa` and `hatch`,
+   or at least use the separate Python virtual environment to install and run the QA suite,
+   especially on Linux where Python `site-packages` are managed by Linux distribution package
+   manager.
 
-   > pip --help
+Installing pipx
+---------------
 
-   If `pip` is not installed, you may install it with::
+You can install `pipx` using `pip` in command prompt / terminal with::
 
-   > python -m ensurepip
+   python -m pip install pipx
 
-3. It's **recommended** to create separate Python virtual environment to install and run
-   the QA suite, especially on Linux where Python `site-packages` are managed by Linux
-   distribution package manager.
+or by using other suitable method listed at pipx_ website.
 
-   There are multiple ways how to create and manage Python virtual environments, but we
-   recommend to use virtualenv_, together with virtualenvwrapper_ (for Linux) or
-   virtualenvwrapper-win_ (for Windows).
+.. note::
 
-   On Linux, the `virtualenv` and `virtualenvwrapper` are typically available for installation
-   from ditribution repository via package manager, which is also the preferred way to
-   install them on this platform.
+   Don't forget to run::
 
-   On Windows, you should install `virtualenv` and `virtualenvwrapper-win` via `pip`.
+     pipx ensurepath
 
-Installation
-------------
+   once after installation to ensure that tools installed via `pipx` will be available on
+   search path.
 
-1. Open the command prompt / terminal.
+Installing QA tools for regular use
+-----------------------------------
 
-2. Clone the firebird-qa repository::
+From command prompt / terminal execute::
 
-   > git clone https://github.com/FirebirdSQL/firebird-qa.git
+  pipx install --include-deps firebird-qa
 
-3. Activate the Python virtual environment you created for QA, or skip this step if you
-   want to install everything into main site-packages.
+If you want to install specific version, you can use version specification. For example::
 
-4. Switch to directory with cloned `firebird-qa` repository.
+  pipx install --include-deps firebird-qa==0.19.0
 
-   .. note::
+will install `firebird-qa` version 0.19.0.
 
-      We'll refer to this directory as `QA root directory`.
+Installing QA tools for plugin development
+------------------------------------------
 
-5. Install the plugin with pip, running::
+Open the command prompt / terminal, switch to QA root directory and execute::
 
-   > pip install -e .
+  pipx install --include-deps -e .
 
-   This will install Firebird QA plugin for `pytest`, along with required dependencies.
 
-   .. important::
+Upgrading QA tools
+------------------
 
-      You must re-install the plugin every time you see that `git pull` updated
-      the `setup.cfg` file!
+You can upgrade your installation to latest published version using::
+
+  pipx upgrade firebird-qa
+
+Alternativelly, you can reinstall it using::
+
+  pipx reinstall firebird-qa
+
+The reinstallation will also upgrade all dependencies.
 
 
 Configuration
@@ -150,7 +157,8 @@ Basics
 
 1. Open the terminal / command-line.
 
-2. If you installed Firebird QA in Python virtual environment, **activate it**.
+2. If you DID NOT USED `pipx`, but installed Firebird QA in Python virtual environment you
+   created manually, **activate it**.
 
 3. Switch to QA root directory.
 
@@ -189,17 +197,20 @@ Example::
 
    > pytest
    ====================================================== test session starts =======================================================
-   platform linux -- Python 3.8.12, pytest-7.0.0, pluggy-1.0.0 -- /home/job/python/envs/qa/bin/python
+   platform linux -- Python 3.11.8, pytest-8.0.1, pluggy-1.4.0 -- /home/pcisar/.local/pipx/venvs/firebird-qa/bin/python
    cachedir: .pytest_cache
    System:
      encodings: sys:utf-8 locale:UTF-8 filesystem:utf-8
    Firebird:
-     server: local [v3.0.9.33562, SuperServer, Firebird/Linux/AMD/Intel/x64]
+     configuration: firebird-driver.conf
+     ODS: 13.1
+     server: local [v5.0.0.1306, SuperServer, Firebird/Linux/AMD/Intel/x64]
      home: /opt/firebird
      bin: /opt/firebird/bin
      client library: libfbclient.so.2
-   rootdir: /home/job/python/projects/firebird-qa, configfile: pytest.ini, testpaths: tests
-   plugins: firebird-qa-0.12.1
+   rootdir: /home/job/python/projects/firebird-qa
+   configfile: pytest.ini
+   plugins: firebird-qa-0.19.2
    collected 2385 items / 475 deselected / 1910 selected
 
    issue.full-join-push-where-predicate PASSED                                                                           [   1/1910]
@@ -928,3 +939,6 @@ How to use temporary files
 .. _Python package: https://docs.python.org/3/tutorial/modules.html#packages
 .. _module: https://docs.python.org/3/tutorial/modules.html
 .. _docstring: https://docs.python.org/3/glossary.html#term-docstring
+.. _pipx: https://pipx.pypa.io
+.. _venv: https://docs.python.org/3/library/venv.html
+.. _hatch: https://hatch.pypa.io

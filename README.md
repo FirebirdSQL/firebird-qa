@@ -1,6 +1,6 @@
 # Firebird QA
 
-This package contains:
+This repository contains:
 
 - pytest plugin that provides support for testing the Firebird engine. It uses new Python
   driver for Firebird (`firebird-driver`).
@@ -13,12 +13,28 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
 
 ## Quickstart
 
-
 1. Clone the git repository
 
-2. Install the plugin and required dependencies by running next command from repo. directory::
+2. If you don't have `pipx` tool installed, install it using::
 
-   pip install -e .
+   ```
+   python -m pip install pipx
+   ```
+
+   Or you can use any other method listed at [pipx website](https://pipx.pypa.io).
+
+   > Don't forget to run:
+   >
+   >  pipx ensurepath
+   >
+   > once after installation to ensure that tools installed via `pipx` will be available on
+   > search path.
+
+3. Install the plugin and required dependencies by running next command:
+
+   ```
+   pipx install --include-deps firebird-qa
+   ```
 
 3. Adjust Firebird server configuration.
 
