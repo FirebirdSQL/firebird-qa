@@ -5,7 +5,7 @@ ID:          issue-7997
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7997
 TITLE:       Unexpected results when comparing integer with string containing value out of range of that integer datatype
 NOTES:
-    [11.03.2024] pzotov
+    [11.03.2024] pzotov.
     Confirmed problem in 6.0.0.274: some expressions fail with "SQLSTATE = 22003 / ... / -numeric value is out of range".
     Checked 6.0.0.276 -- all fine.
 """
