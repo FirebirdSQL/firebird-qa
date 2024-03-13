@@ -8,6 +8,7 @@ NOTES:
     [11.03.2024] pzotov.
     Confirmed problem in 6.0.0.274: some expressions fail with "SQLSTATE = 22003 / ... / -numeric value is out of range".
     Checked 6.0.0.276 -- all fine.
+    Checked 5.0.1.1358 (25a643a).
 """
 
 import pytest
@@ -85,7 +86,7 @@ expected_stdout = """
     Records affected: 0
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
