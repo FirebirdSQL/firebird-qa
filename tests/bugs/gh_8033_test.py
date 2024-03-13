@@ -8,6 +8,9 @@ NOTES:
     [11.03.2024] pzotov.
     Confirmed bug in 6.0.0.276.
     Checked 6.0.0.278 -- all fine.
+
+    [13.03.2024] pzotov
+    Checked on 5.0.1.1358 (commt #b0c846ae) - reduced min_version to 5.0.1.
 """
 
 import pytest
@@ -36,7 +39,7 @@ expected_stdout = """
     Records affected: 1
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
