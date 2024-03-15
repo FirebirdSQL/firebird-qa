@@ -2,14 +2,17 @@
 
 """
 ID:          issue-6802
-ISSUE:       6802
-TITLE:       When the statement timeout is set, it causes the lock manager to delay
-  reporting deadlocks until timeout is expired
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6802
+TITLE:       When the statement timeout is set, it causes the lock manager to delay reporting deadlocks until timeout is expired
 DESCRIPTION:
-NOTES:
-[20.05.2021]
-  adjusted expected_stderr for case-2: non-suppressed exception raises instead of issuing gdscode.
 FBTEST:      bugs.gh_6802
+NOTES:
+    [20.05.2021] pcizar
+    adjusted expected_stderr for case-2: non-suppressed exception raises instead of issuing gdscode.
+
+    [15.03.2024] pzotov
+    Added combine_output in order to see concrete case where test fails.
+    Checked on Windows, ServerMode = CS/SS: 4.0.5.3077, 5.0.1.1360, 6.0.0.288
 """
 
 import pytest
@@ -168,7 +171,7 @@ test_script = """
 
 
     -- #######################
-    -- ###  c a s e   N 3  ###
+    -- ###  c a s e   N 4  ###
     -- #######################
     -- Initial state:
     --    * statement_timeout  > 0 (no matter greater or less than deadlocktimeout);
@@ -209,31 +212,28 @@ test_script = """
 act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
 expected_stdout = """
-    RAISED_GDS_01                   335544336
-    WAITING_TIME_01                 Acceptable.
+    RAISED_GDS_01 335544336
+    WAITING_TIME_01 Acceptable.
 
-    WAITING_TIME_02                 Acceptable.
-
-    WAITING_TIME_03                 Acceptable.
-
-    RAISED_GDS_04                   335544336
-    WAITING_TIME_04                 Acceptable.
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = HY008
-    operation was cancelled
-    -Attachment level timeout expired.
 
     Statement failed, SQLSTATE = HY008
     operation was cancelled
     -Attachment level timeout expired.
+    WAITING_TIME_02 Acceptable.
+    
+
+    Statement failed, SQLSTATE = HY008
+    operation was cancelled
+    -Attachment level timeout expired.
+    WAITING_TIME_03 Acceptable.
+
+
+    RAISED_GDS_04 335544336
+    WAITING_TIME_04 Acceptable.
 """
 
-@pytest.mark.version('>=5.0')
+@pytest.mark.version('>=4.0.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
