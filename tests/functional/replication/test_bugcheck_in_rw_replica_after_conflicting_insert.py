@@ -28,9 +28,13 @@ DESCRIPTION:
     and  create new databases after that - see call of reset_replication().
 
 NOTES:
+    [14.03.2024] pzotov
     ::: ACHTUNG :::
     If test runs against FB service then make sure that its recovery option does NOT set to 'Restart'!
     Otherwise every FB restart will cause bugcheck at first connection to replica DB with infinite restarts.
+
+    Added temporary mark 'disabled_in_forks' to SKIP this test when QA runs agains *fork* of standard FB.
+    Reason: infinite bugchecks and possible disk overflow if dumps creation enabled.
 
     Confirmed problem and bugcheck on:
         6.0.0.286 (12.03.2024), 5.0.1.1358 (13.03.2024), 4.0.5.3066  (regular sapshot, date: 13.03.2024):
@@ -415,6 +419,7 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
 
 #--------------------------------------------
 
+@pytest.mark.disabled_in_forks
 @pytest.mark.replication
 @pytest.mark.version('>=4.0.5')
 def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
