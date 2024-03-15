@@ -10,6 +10,9 @@ DESCRIPTION:
 
   Before 2.0, Firebird did stop checking order possibilties above 7 relations.
 FBTEST:      functional.arno.optimizer.opt_inner_join_03
+NOTES:
+    [15.03.2024] pzotov
+    Adjusted expected plan for FB 3.x after #8030 (discussed with dimitr).
 """
 
 import pytest
@@ -113,7 +116,7 @@ act = isql_act('db', test_script, substitutions=[('=.*', '')])
 
 # version: 3.0
 
-expected_stdout_1 = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T5K INDEX (PK_TABLE_5K), T4K INDEX (PK_TABLE_4K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
+expected_stdout_1 = """PLAN JOIN (T1 NATURAL, T1K INDEX (PK_TABLE_1K), T2K INDEX (PK_TABLE_2K), T3K INDEX (PK_TABLE_3K), T4K INDEX (PK_TABLE_4K), T5K INDEX (PK_TABLE_5K), T6K INDEX (PK_TABLE_6K), T8K INDEX (PK_TABLE_8K), T10K INDEX (PK_TABLE_10K))
 
        COUNT
 ============
