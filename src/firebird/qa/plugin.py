@@ -602,7 +602,7 @@ def pytest_assertrepr_compare(config: Config, op: str, left: object, right: obje
         # is right side, e.g: assert act.clean_stdout == act.clean_expected_stdout
         # This requirement is CRUCIAL if we use ndiff() instead of default pytest comparison method!
         #
-        return ndiff(right_lines, left_lines)
+        return list(ndiff(right_lines, left_lines))
 
     return None
 
