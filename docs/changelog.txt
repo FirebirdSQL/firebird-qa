@@ -4,6 +4,11 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.19.3
+==============
+
+* Fixed problem with ndiff in assert.
+
 Version 0.19.2
 ==============
 

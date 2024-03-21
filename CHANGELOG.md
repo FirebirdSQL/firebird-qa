@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.19.3] - 2024-03-21
+
+### Fixed
+
+- Problem with ndiff in assert
+
 ## [0.19.2] - 2024-02-20
 
 ### Fixed
