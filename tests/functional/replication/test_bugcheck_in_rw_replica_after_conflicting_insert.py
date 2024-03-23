@@ -23,7 +23,7 @@ DESCRIPTION:
     Check that every part of error message appears at least two times is poerformed in check_repl_log() function.
 
     ::: NB :::
-    We must NOT call drop_db_objects() function on master because replication does not work at that point!
+    We must NOT call 'drop_db_objects' function on master because replication does not work at that point!
     Rather, we have immediately change DB state to shutdown (for both master and replica), DROP them and segments,
     and  create new databases after that - see call of reset_replication().
 
