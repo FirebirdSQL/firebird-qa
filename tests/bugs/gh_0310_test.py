@@ -1622,6 +1622,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                BREAK
     RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                BTRIM
+    RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                BY
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                CALL
@@ -2008,6 +2010,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                LPARAM
     RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                LTRIM
+    RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                MAKE_DBKEY
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                MANUAL
@@ -2294,6 +2298,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                RSA_VERIFY_HASH
     RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                RTRIM
+    RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                SALT_LENGTH
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                SAVEPOINT
@@ -2517,7 +2523,7 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
 
-    Records affected: 500
+    Records affected: 503
 """
 
 @pytest.mark.version('>=5.0')
