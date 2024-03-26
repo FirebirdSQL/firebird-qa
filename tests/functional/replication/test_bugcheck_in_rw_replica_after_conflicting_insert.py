@@ -4,7 +4,7 @@
 ID:          replication.bugcheck_in_rw_replica_after_conflicting_insert
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8040
 TITLE:       Bugcheck 183 (wrong record length) could happen on replica database after UK violation on insert
-DESCRIPTION:
+DESCRIPTION
     Test temporary changes mode of replica to READ-WRITE.
 
     We create table 'PERF_AGG' on master with PK-column and UNIQUE constraint for other several columns (<S>)
@@ -13,19 +13,8 @@ DESCRIPTION:
 
     Then we change mode of replica to *READ-WRITE* and add record in its 'PERF_AGG' table.
     After this, we add record in master 'PERF_AGG' with same values in <S> (but value in PK differs from replica one).
-    This causes violation of UNIQUE index in replica and replication.log must contain message:
-        ERROR: attempt to store duplicate value (visible to active transactions) in unique index "PERF_AGG_UNQ"
-        Problematic key value is (... values of <S> columns ...)
-        At segment ..., offset ...
-    We have to wait until this message appears TWO times in replication.log.
-    Before this bug has been fixed, error did appear only ONCE and second attempt to apply such data caused BUGCHECK.
-    If error message appears TWICE then we can assume that there is no bug and revert replica DB to initial state.
-    Check that every part of error message appears at least two times is poerformed in check_repl_log() function.
-
-    ::: NB :::
-    We must NOT call 'drop_db_objects' function on master because replication does not work at that point!
-    Rather, we have immediately change DB state to shutdown (for both master and replica), DROP them and segments,
-    and  create new databases after that - see call of reset_replication().
+    This causes violation of UNIQUE index in replica DB but no error must raise (UPDATE should be with warning).
+    We monintor replication.log until appropriate message appear in it.
 
 NOTES:
     [14.03.2024] pzotov
@@ -35,13 +24,27 @@ NOTES:
 
     Added temporary mark 'disabled_in_forks' to SKIP this test when QA runs agains *fork* of standard FB.
     Reason: infinite bugchecks and possible disk overflow if dumps creation enabled.
-
     Confirmed problem and bugcheck on:
         6.0.0.286 (12.03.2024), 5.0.1.1358 (13.03.2024), 4.0.5.3066  (regular sapshot, date: 13.03.2024):
         E firebird.driver.types.DatabaseError: Unable to complete network request to host "localhost".
         E -Failed to establish a connection.
     Checked on Windows:
         6.0.0.288 eee5704, 5.0.1.1360 055b53b, 4.0.5.3077 (regular sapshot, date: 14.03.2024)
+
+    [26.03.2024] pzotov
+    1. BEFORE 6.0.0.293 (commit #62f4c5a7, "Improvement #8042 : Improve conflict resolution...") we had to wait until
+       message "ERROR: attempt to store duplicate value" will appear TWO times (it proved that there was no bugcheck).
+       SINCE 6.0.0.293 error does not raise. Rather, such data (with duplicated values for unique index) will cause
+       "Record being inserted ... already exists, updating instead".
+
+    2. Before commit #62f4c5a7 (fixed #8042), replication was no longer viable at the end of this test. Because of this,
+       we could not call drop_db_objects() function on master with assumption that changes will be transferred to replica.
+       This caused implementation of 'special version' of reset_replication() function: it immediately changes DB state
+       to 'full shutdown' for both databases and drop them.
+       Although this function can be replaced now to its 'usual' version (see another tests), I've decided to keep
+       its previous code (i.e. to keep the way it is).
+
+    Checked on 6.0.0.299 b1ba859 (SS/CS).
 """
 import os
 import shutil
@@ -185,78 +188,69 @@ def check_repl_log( act_db_main: Action, max_allowed_time_for_wait, expected_out
 
     replication_log = act_db_main.home_dir / 'replication.log'
 
-    replold_lines = []
+    init_replication_log = []
     with open(replication_log, 'r') as f:
-        replold_lines = f.readlines()
+        init_replication_log = f.readlines()
 
     # firebird.log must NOT contain line:
     # "internal Firebird consistency check (wrong record length (183), file: vio.cpp line: 1885)"
-    # Following three lines must appear at least TWO times in the replication.log.
+    # Following three lines must appear the replication.log for <max_allowed_time_for_wait> seconds:
+    # ------------------------------------------
+	# VERBOSE: Added 1 segment(s) to the queue
+	# WARNING: Record being inserted into table PERF_AGG already exists, updating instead
+	# VERBOSE: Segment 2 (447 bytes) is replicated in 0.016s, deleting
+    # ------------------------------------------
     # Otherwise it means that we have a problem:
-    # ------------------------------------------
-    # ERROR: attempt to store duplicate value (visible to active transactions) in unique index "PERF_AGG_UNQ"
-    # Problematic key value is ("UNIT" = 'sp_client_order', "FB_GDSCODE" = NULL, "EXC_UNIT" = NULL, "DTS_INTERVAL" = 10)
-    # At segment 2, offset 48
-    # ------------------------------------------
 
     result = ''
     with act_db_main.db.connect(no_db_triggers = True) as con:
         with con.cursor() as cur:
             cur.execute("select rdb$get_context('SYSTEM','REPLICATION_SEQUENCE') from rdb$database")
-            last_generated_repl_segment = cur.fetchone()[0]
+            last_generated_repl_segment = int(cur.fetchone()[0])
     
-            p_error_line_01 = re.compile('ERROR: attempt to store duplicate value')
-            p_error_line_02 = re.compile('Problematic key value is')
-            p_error_line_03 = re.compile(f'At segment {last_generated_repl_segment}, offset')
+            p_info_line_02 = re.compile('Added \\d+ segment\\(s\\) to the queue')
+            p_info_line_02 = re.compile('Record being inserted .* exists, updating instead')
+            p_info_line_03 = re.compile(f'Segment {last_generated_repl_segment} \\(\\d+ bytes\\) is replicated .* deleting')
+            info_01_lines_unq = set()
+            info_02_lines_unq = set()
+            info_03_lines_unq = set()
 
-            err_01_lines_unq = set()
-            err_02_lines_unq = set()
-            err_03_lines_unq = set()
             found_all = False
 
+            #	for i in range(0,max_allowed_time_for_wait):
             for i in range(0,max_allowed_time_for_wait):
 
                 time.sleep(1)
 
                 # Get content of fb_home/replication.log _after_ isql finish:
                 with open(replication_log, 'r') as f:
-                    diff_data = unified_diff(
-                        replold_lines,
-                        f.readlines()
-                      )
+                    diff_data = [x.strip() for x in unified_diff(init_replication_log,f.readlines())]
 
-                for k,d in enumerate(diff_data):
-                    expr = ''
-                    if p_error_line_01.search(d):
-                        err_01_lines_unq.add(k)
-                        expr = f"select {k} as err_01_line, '{d[:25]}' as err_01_text, {len(err_01_lines_unq)} as err_01_found from rdb$database"
-                    if p_error_line_02.search(d):
-                        err_02_lines_unq.add(k)
-                        expr = f"select {k} as err_02_line, '{d[:25]}' as err_02_text, {len(err_02_lines_unq)} as err_02_found from rdb$database"
-                    if p_error_line_03.search(d):
-                        err_03_lines_unq.add(k)
-                        expr = f"select {k} as err_03_line, '{d[:25]}' as err_03_text, {len(err_03_lines_unq)} as err_03_found from rdb$database"
+                for k,diff_line in enumerate(diff_data):
+                    expr = f"select {k} as iter, current_timestamp, q'<{diff_line}>' from rdb$database"
+                    if p_info_line_02.search(diff_line):
+                        info_01_lines_unq.add(k)
+                        expr = f"select {k} as info_01_line, q'<{diff_line}>' as info_01_text, {len(info_01_lines_unq)} as info_01_found, {len(info_02_lines_unq)} as info_02_found, {len(info_03_lines_unq)} as info_03_found from rdb$database"
+                    if p_info_line_02.search(diff_line):
+                        info_02_lines_unq.add(k)
+                        expr = f"select {k} as info_02_line, q'<{diff_line}>' as info_02_text, {len(info_02_lines_unq)} as info_02_found, {len(info_02_lines_unq)} as info_02_found, {len(info_03_lines_unq)} as info_03_found from rdb$database"
+                    if p_info_line_02.search(diff_line):
+                        info_03_lines_unq.add(k)
+                        expr = f"select {k} as info_03_line, q'<{diff_line}>' as info_03_text, {len(info_03_lines_unq)} as info_03_found, {len(info_02_lines_unq)} as info_02_found, {len(info_03_lines_unq)} as info_03_found from rdb$database"
 
-                    if expr:
-                        _dummy_ = cur.execute(expr).fetchone()
-
-
-                    if len(err_01_lines_unq) >= 2 and len(err_02_lines_unq) >= 2 and len(err_03_lines_unq) >= 2:
+                    # _dummy_ = cur.execute(expr).fetchone()
+                    if len(info_03_lines_unq) >= 1 and len(info_03_lines_unq) >= 1 and len(info_03_lines_unq) >= 1:
                         found_all = True
                         break
                         
                 if found_all:
                     break
-
             
             if not found_all:
-                result = f'UNEXPECTED: error message either absent or occurred only once for {max_allowed_time_for_wait} seconds.'
+                result = f'UNEXPECTED: messages about replicated segment {last_generated_repl_segment} did not appear for {max_allowed_time_for_wait} seconds.'
             else:
                 result = expected_output_str
             
-            cur.execute(f"select '{result}' from rdb$database")
-            _dummy_ = cur.execute(expr).fetchone()
-
     return result
 
 #--------------------------------------------
@@ -504,9 +498,9 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         except Exception as e:
             out_main = e.__str__()
 
-
     ########################################################################
 
+    
     # ::: NB :::
     # Replica DB now is in a state that does not allow its modification by any segment that comes from master.
     # Thus it is *useless* to call drop_db_objects() which changes master and then waits until replica will accept appropriate
@@ -516,7 +510,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     out_reset = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'])
 
 
-    if [ x for x in (out_prep, out_main, out_drop) if x.strip() ]:
+    if [ x for x in (out_prep, out_main, out_drop, out_reset) if x.strip() ]:
         # We have a problem either with DDL/DML.
         print('Problem(s) detected:')
         if out_prep.strip():
