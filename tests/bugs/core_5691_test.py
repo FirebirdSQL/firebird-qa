@@ -18,8 +18,14 @@ FBTEST:      bugs.core_5691
 NOTES:
     [29.11.2023] pzotov
     Checked on 6.0.0.157, 5.0.0.1280, 4.0.5.3031
-"""
 
+    [28.03.2024] pzotov
+    Added call os.system("chcp 65001") before invocation of VBS.
+    This is needed on machine with non-ascii system locale, e.g. ru-ru etc (i.e. when chcp output is 866 or 1251).
+    Otherwise VBS will not able to find attribute with name 'file description' (all of attributes will be returned in
+    localized form).
+"""
+import os
 from pathlib import Path
 import subprocess
 import time
@@ -173,11 +179,15 @@ def test_1(act: Action, tmp_vbs: Path, tmp_log: Path, capsys):
 
     #for x in sorted(f_list):
     #    print(act.vars['bin-dir'] / x)
-    
 
+    # Following is needed on machine with non-ascii system locale, e.g. ru-ru etc (i.e. when chcp output is 866 or 1251).
+    # Otherwise VBS will not able to find attribute with name 'file description' (all of attributes will be returned in
+    # localized form).
+    #
+    os.system("chcp 65001")
     with open(tmp_log,'w') as vbs_log:
         for x in sorted(f_list):
-            subprocess.call( [ 'cscript', '//nologo', str(tmp_vbs), act.vars['bin-dir'] / x  ], stdout = vbs_log, stderr = subprocess.STDOUT )
+            subprocess.call( [ 'cscript', '//nologo', str(tmp_vbs), act.vars['bin-dir'] / x  ], stdout = vbs_log, stderr = subprocess.STDOUT)
 
 
     with open( tmp_log,'r') as f:
