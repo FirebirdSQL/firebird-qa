@@ -7,6 +7,9 @@ TITLE:       System table with keywords
 DESCRIPTION:
 JIRA:        CORE-6482
 FBTEST:      bugs.core_6482
+NOTES:
+    [28.03.2024] pzotov
+    Added temporary mark 'disabled_in_forks' to SKIP this test when QA runs agains *fork* of standard FB.
 """
 
 import pytest
@@ -2526,6 +2529,7 @@ expected_stdout_6 = """
     Records affected: 503
 """
 
+@pytest.mark.disabled_in_forks
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_5 if act.is_version('<6') else expected_stdout_6
