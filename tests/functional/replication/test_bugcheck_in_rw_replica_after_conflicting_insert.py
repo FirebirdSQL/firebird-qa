@@ -4,7 +4,7 @@
 ID:          replication.bugcheck_in_rw_replica_after_conflicting_insert
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8040
 TITLE:       Bugcheck 183 (wrong record length) could happen on replica database after UK violation on insert
-DESCRIPTION
+DESCRIPTION:
     Test temporary changes mode of replica to READ-WRITE.
 
     We create table 'PERF_AGG' on master with PK-column and UNIQUE constraint for other several columns (<S>)
