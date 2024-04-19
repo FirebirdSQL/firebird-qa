@@ -6,9 +6,10 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8087
 TITLE:       AV when preparing a query with IN list that contains both literals and sub-query
 DESCRIPTION:
 NOTES:
-    [18.04.2024] pzotov
+    [19.04.2024] pzotov
+    Reduced min_version to 5.0.1 after backporting (commit #0e9ef69).
     Confirmed bug (AV) on 6.0.0.315
-    Checked on 6.0.0.321 #1d96c10 - all OK.
+    Checked on 6.0.0.321 #1d96c10, 5.0.1.1383 #0e9ef69 (intermediate snapshot) - all OK.
 """
 
 import pytest
@@ -31,7 +32,7 @@ expected_stdout = """
     Records affected: 0
 """
 
-@pytest.mark.version('>=6.0.0')
+@pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
