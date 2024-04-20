@@ -1,5 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 set -e
+shopt -s extglob
 
 mkdir /tmp/firebird-installer
 cd /tmp/firebird-installer
@@ -68,4 +69,4 @@ rm -r /tmp/firebird-installer
 mkdir /opt/firebird/examples/empbuild/qa
 chmod -R 777 /opt/firebird/examples/empbuild
 
-cp -rn /qa/* /qa-run/
+cp -rn /qa/!(out) /qa-run/

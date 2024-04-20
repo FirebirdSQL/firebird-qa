@@ -22,4 +22,4 @@ fi
 
 docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) --progress=plain -t firebird-qa $THIS_DIR
 mkdir -p $FBQA_OUT/tests
-docker run --user $(id -u) --rm -v `realpath $FBQA_OUT`:/qa-out -v `realpath $FBQA_OUT/tests`:/qa-run/out/tests -v `realpath $THIS_DIR`:/qa -v `realpath $FBQA_INSTALLER`:/firebird-installer.tar.gz firebird-qa "$@"
+docker run --user $(id -u) --rm -v `realpath $FBQA_OUT`:/qa-out -v `realpath $THIS_DIR`:/qa -v `realpath $FBQA_INSTALLER`:/firebird-installer.tar.gz firebird-qa "$@"
