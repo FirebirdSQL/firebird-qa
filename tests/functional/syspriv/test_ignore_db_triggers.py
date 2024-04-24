@@ -19,7 +19,7 @@ NOTES:
     [24.04.2024] pzotov
     This system privilege also is used in following tests:
         test_change_header_settings.py ; test_change_shutdown_mode.py ; test_use_gstat_utility.py
-    Checked on: 6.0.0.325, 5.0.1.1383, 4.0.5.3086.
+    Checked on: 6.0.0.325; 5.0.1.1383; 4.0.5.3086.
 """
 
 import locale
