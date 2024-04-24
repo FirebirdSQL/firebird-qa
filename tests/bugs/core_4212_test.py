@@ -2,7 +2,7 @@
 
 """
 ID:          issue-4537
-ISSUE:       4537
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4537
 TITLE:       Dropping FK on GTT crashes server
 DESCRIPTION:
 JIRA:        CORE-4212
