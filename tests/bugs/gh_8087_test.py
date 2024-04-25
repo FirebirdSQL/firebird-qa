@@ -8,7 +8,7 @@ DESCRIPTION:
 NOTES:
     [19.04.2024] pzotov
     Reduced min_version to 5.0.1 after backporting (commit #0e9ef69).
-    Confirmed bug (AV) on 6.0.0.315
+    Confirmed bug (AV) on 6.0.0.315.
     Checked on 6.0.0.321 #1d96c10, 5.0.1.1383 #0e9ef69 (intermediate snapshot) - all OK.
 """
 
