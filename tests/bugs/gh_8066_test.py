@@ -19,7 +19,7 @@ NOTES:
 
     [08.05.2024] pzotov
     Removed check of 'inet' (w/o digital suffix): value in mon$remote_process can be either 'TCPv4' or 'TCPv6'
-    depending on Control Panel\Network and Internet\Network Connections settings.
+    depending on Control Panel/Network and Internet/Network Connections settings.
     Connection to localhost *can* be established using IPv6 even if appropriate item has been disabled in
     network interface settings. 
     In this case 'connect inet://<alias>' causes mon$remote_address = 'TCPv4' - in contrary to 'TCPv6'
