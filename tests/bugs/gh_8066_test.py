@@ -16,6 +16,14 @@ DESCRIPTION:
 NOTES:
     [06.05.2024] pzotov
     Checked on 6.0.0.344, 5.0.1.1394, 4.0.5.3091.
+
+    [08.05.2024] pzotov
+    Removed check of 'inet' (w/o digital suffix): value in mon$remote_process can be either 'TCPv4' or 'TCPv6'
+    depending on Control Panel\Network and Internet\Network Connections settings.
+    Connection to localhost *can* be established using IPv6 even if appropriate item has been disabled in
+    network interface settings. 
+    In this case 'connect inet://<alias>' causes mon$remote_address = 'TCPv4' - in contrary to 'TCPv6'
+    when IPv6 is enabled.
 """
 
 import pytest
@@ -35,7 +43,7 @@ def test_1(act: Action, capsys):
     checked_dsn_column='checked_dsn_prefix'.upper()
     mon_remote_column='mon_remote_protocol'.upper()
     try:
-        protocols_list = [ NetProtocol.INET4, NetProtocol.INET, ]
+        protocols_list = [ NetProtocol.INET4, ]
 
         if act.platform == 'Windows':
             protocols_list.append(NetProtocol.XNET)
@@ -45,7 +53,7 @@ def test_1(act: Action, capsys):
         for p in protocols_list:
             for k in range(3):
                 protocol_str = p.name.lower() if k == 0 else p.name.upper() if k==1 else p.name.title()
-                mon_remote_value = 'TCPv4' if p.name.lower() == 'inet4' else  'TCPv6' if p.name.lower() == 'inet' else p.name.upper()
+                mon_remote_value = 'TCPv4' if p.name.lower() == 'inet4' else p.name.upper()
                 dsn = protocol_str + '://' + str(act.db.db_path) 
                 test_sql = f"""
                     set bail on;
