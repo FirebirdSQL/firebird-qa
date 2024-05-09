@@ -5,9 +5,21 @@ ID:          issue-8104
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8104
 TITLE:       Inefficient evaluation of expressions like rdb$db_key <= ? after mass delete
 DESCRIPTION:
+    Test does actions described in the ticket but operates with first PP of table instead of 20th
+    (see variable 'chk_pp').
+    Following query is performed two times (see variable 'read_records_for_chk_pp'):
+    =========
+    select ...
+    from t1
+    where
+        rdb$db_key >= make_dbkey({rel_id}, 0, 0, {chk_pp})
+        and rdb$db_key < make_dbkey({rel_id}, 0, 0, {chk_pp+1})
+    =========
+    We compare number of fetches in this query before and after bulk deletion ('fetches_1', 'fetches_2').
+    Value 'fetches_2' must be LESS than 'fetches_1' (before fix it was much greater).
 NOTES:
     [08.05.2024] pzotov
-    Confirmed problem on 6.0.0.344, 5.0.1.1394, 4.0.5.3091 (request #1: 47643; request #2: 115943).
+    Confirmed problem on 6.0.0.344, 5.0.1.1394, 4.0.5.3091 (fetches in request #1: 47643; in request #2: 115943).
     Checked on 6.0.0.345, 5.0.1.1395, 4.0.5.3092 (fetches in req #2 LESS than in req #1).
 """
 
