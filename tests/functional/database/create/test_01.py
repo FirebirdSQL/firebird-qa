@@ -25,14 +25,14 @@ DB_CHAR_SET                     UTF8
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     script = f"""
-    create database '{act.db.dsn}' user '{act.db.user}'
-      password '{act.db.password}' set names 'win1251' default character set utf8 ;
-    set list on ;
-    select c.rdb$character_set_name as client_char_set, r.rdb$character_set_name as db_char_set
-    from mon$attachments a join rdb$character_sets c on a.mon$character_set_id = c.rdb$character_set_id
-    cross join rdb$database r
-    where a.mon$attachment_id = current_connection ;
+        create database '{act.db.dsn}' user '{act.db.user}'
+          password '{act.db.password}' set names 'win1251' default character set utf8 ;
+        set list on ;
+        select c.rdb$character_set_name as client_char_set, r.rdb$character_set_name as db_char_set
+        from mon$attachments a join rdb$character_sets c on a.mon$character_set_id = c.rdb$character_set_id
+        cross join rdb$database r
+        where a.mon$attachment_id = current_connection ;
     """
     act.expected_stdout = expected_stdout
-    act.isql(switches=[], input=script, connect_db=False)
+    act.isql(switches = ['-q'], input=script, connect_db=False, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
