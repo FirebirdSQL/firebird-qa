@@ -512,6 +512,8 @@ def pytest_collection_modifyitems(session, config, items):
                     item.add_marker(version_skip)
                 else:
                     deselected.append(item)
+        elif platform_ok:
+            selected.append(item)
     items[:] = selected
     config.hook.pytest_deselected(items=deselected)
     # Add OUR OWN test metadata to Item
@@ -885,6 +887,38 @@ class Database:
         __tracebackhide__ = True
         with connect_server(_vars_['server']) as srv:
             srv.database.set_write_mode(database=self.db_path, mode=DbWriteMode.SYNC)
+
+def existing_db_factory(*, filename: str='test.fdb', charset: Optional[str]=None,
+                        user: Optional[str]=None, password: Optional[str]=None,
+                        config_name: str='pytest', utf8filename: bool=False):
+    """Factory function that returns :doc:`fixture <pytest:explanation/fixtures>` providing
+    the `Database` instance to existing database.
+
+    Arguments:
+        filename: Test database filename. It's also possible to specify database alias using
+            '#' as prefix, for example `#employee` means alias `employee`.
+            The database with this alias must be defined in `databases.conf`.
+        charset: Default charset for connections.
+        user: User name used to connect the test database. Default is taken from server configuration.
+        password: User password used to connect the test database. Default
+            is taken from server configuration.
+        config_name: Name for database configuration.
+        utf8filename: Use utf8filename DPB flag.
+
+    .. note::
+
+       The returned instance must be assigned to module-level variable. Name of this variable
+       is important, as it's used to reference the fixture in other fixture-factory functions
+       that use the database, and the test function itself.
+    """
+
+    @pytest.fixture
+    def existing_database_fixture(request: pytest.FixtureRequest) -> Database:
+        db = Database(_vars_['databases'], filename, user, password, charset, debug=str(request.module),
+                      config_name=config_name, utf8filename=utf8filename)
+        yield db
+
+    return existing_database_fixture
 
 def db_factory(*, filename: str='test.fdb', init: Optional[str]=None,
                from_backup: Optional[str]=None, copy_of: Optional[str]=None,
@@ -1779,7 +1813,7 @@ class Action:
         else:
             result: CompletedProcess = run(params, input=self.script,
                                            encoding=io_enc, capture_output=True)
-        if result.returncode and not bool(self.expected_stderr) and not combine_output:
+        if (result.returncode or result.stderr) and not bool(self.expected_stderr) and not combine_output:
             self._node.add_report_section('call', 'ISQL stdout', result.stdout)
             self._node.add_report_section('call', 'ISQL stderr', result.stderr)
             raise ExecutionError("Test script execution failed")
@@ -1893,7 +1927,7 @@ class Action:
         if connect_db:
             params.append(str(self.db.dsn))
         result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
-        if result.returncode and not bool(self.expected_stderr):
+        if (result.returncode or result.stderr) and not bool(self.expected_stderr):
             self._node.add_report_section('call', 'gstat stdout', result.stdout)
             self._node.add_report_section('call', 'gstat stderr', result.stderr)
             raise ExecutionError("gstat execution failed")
@@ -1957,7 +1991,7 @@ class Action:
             params.extend(['-user', self.db.user, '-password', self.db.password])
         result: CompletedProcess = run(params, input=input,
                                        encoding=io_enc, capture_output=True)
-        if result.returncode and not bool(self.expected_stderr):
+        if (result.returncode or result.stderr) and not bool(self.expected_stderr):
             self._node.add_report_section('call', 'gsec stdout', result.stdout)
             self._node.add_report_section('call', 'gsec stderr', result.stderr)
             raise ExecutionError("gsec execution failed")
@@ -2021,7 +2055,7 @@ class Action:
             result: CompletedProcess = run(params, encoding=io_enc, stdout=PIPE, stderr=STDOUT)
         else:
             result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
-        if result.returncode and not (bool(self.expected_stderr) or combine_output):
+        if (result.returncode or result.stderr) and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'gbak stdout', result.stdout)
             self._node.add_report_section('call', 'gbak stderr', result.stderr)
             raise ExecutionError("gbak execution failed")
@@ -2084,7 +2118,7 @@ class Action:
             result: CompletedProcess = run(params, encoding=io_enc, stdout=PIPE, stderr=STDOUT)
         else:
             result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
-        if result.returncode and not (bool(self.expected_stderr) or combine_output):
+        if (result.returncode or result.stderr) and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'nbackup stdout', result.stdout)
             self._node.add_report_section('call', 'nbackup stderr', result.stderr)
             raise ExecutionError("nbackup execution failed")
@@ -2148,7 +2182,7 @@ class Action:
             result: CompletedProcess = run(params, encoding=io_enc, stdout=PIPE, stderr=STDOUT)
         else:
             result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
-        if result.returncode and not (bool(self.expected_stderr) or combine_output):
+        if (result.returncode or result.stderr) and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'gfix stdout', result.stdout)
             self._node.add_report_section('call', 'gfix stderr', result.stderr)
             raise ExecutionError("gfix execution failed")
@@ -2226,7 +2260,7 @@ class Action:
         else:
             result: CompletedProcess = run(params, input=input,
                                            encoding=io_enc, capture_output=True)
-        if result.returncode and not (bool(self.expected_stderr) or combine_output):
+        if (result.returncode or result.stderr) and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'ISQL stdout', result.stdout)
             self._node.add_report_section('call', 'ISQL stderr', result.stderr)
             raise ExecutionError("ISQL execution failed")
@@ -2289,7 +2323,7 @@ class Action:
         if switches is not None:
             params.extend(switches)
         result: CompletedProcess = run(params, encoding=io_enc, capture_output=True)
-        if result.returncode and not bool(self.expected_stderr):
+        if (result.returncode or result.stderr) and not bool(self.expected_stderr):
             self._node.add_report_section('call', 'fbsvcmgr stdout', result.stdout)
             self._node.add_report_section('call', 'fbsvcmgr stderr', result.stderr)
             raise ExecutionError("fbsvcmgr execution failed")

@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.20.0] - 2024-05-09
+
+### Added
+
+- Fixture `existing_db_factory` to directly use database from `databases` subdirectory.
+  It's not intended for use in Firebird QA, but it's necessary for other plugin
+  users.
+
+### Fixed
+
+- Report test error also in cases when unexpected stderr is returned from tool execution
+  while `returncode` is zero.
+- Select test marked for current platform also when it's not marked for Firebird version.
+
 ## [0.19.3] - 2024-03-21
 
 ### Fixed

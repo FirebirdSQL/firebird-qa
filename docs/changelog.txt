@@ -4,6 +4,17 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.20.0
+==============
+
+* New `.existing_db_factory` firxture to directly use database from `databases` subdirectory.
+  It's not intended for use in Firebird QA, but it's necessary for other plugin
+  users.
+* Fix: Report test error also in cases when unexpected stderr is returned from tool execution
+  while `returncode` is zero.
+* Fix: Select test marked for current platform also when it's not marked for Firebird version.
+
+
 Version 0.19.3
 ==============
 
