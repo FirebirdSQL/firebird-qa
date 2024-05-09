@@ -182,7 +182,7 @@ def run_script(act: Action, tmp_file: Path):
     """
     tmp_file.write_text(script)
 
-    act.isql(switches=['-n'], input_file = tmp_file, connect_db = False, credentials = False)
+    act.isql(switches=['-n', '-q'], input_file = tmp_file, connect_db = False, credentials = False)
 
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
@@ -268,7 +268,7 @@ patterns_lin =  [re.compile('alter session reset', re.IGNORECASE),
 @pytest.mark.platform('Linux')
 def test_2(act: Action, test_role: Role, capsys):
     with act.trace(db_events=trace_lin):
-        act.isql(switches=['-n'], input=test_script_lin)
+        act.isql(switches=['-n', '-q'], input = test_script_lin)
 
     # process trace
     for line in act.trace_log:
