@@ -129,90 +129,94 @@ tmp_db = temp_file('tmp_addi_4933.fdb')
 
 @pytest.mark.version('>=3.0.6')
 def test_1(act: Action, addi_script: Path, main_script: Path, tmp_db: Path):
-    addi_script.write_text(f"""
-        create database 'localhost:{tmp_db}' user {act.db.user} password '{act.db.password}';
+    addi_script.write_text(
+        f"""
+            create database 'localhost:{tmp_db}' user {act.db.user} password '{act.db.password}';
 
-        recreate view v_check as
-        select
-             decode(t.mon$isolation_mode, 0,'consistency', 1,'snapshot', 2,'rc rec_vers', 3,'rc no_recv', 4,'rc read_cons', 'UNKNOWN') as tx_til_mon_trans,
-             rdb$get_context('SYSTEM', 'ISOLATION_LEVEL') as tx_til_rdb_get_context,
-             decode(t.mon$lock_timeout, -1, 'wait', 0, 'no_wait', 'timeout ' || t.mon$lock_timeout) as tx_lock_timeout_mon_trans,
-             rdb$get_context('SYSTEM', 'LOCK_TIMEOUT') as tx_lock_timeout_rdb_get_context,
-             iif(t.mon$read_only=1,'read_only','read_write') as tx_read_only_mon_trans,
-             rdb$get_context('SYSTEM', 'READ_ONLY') as tx_read_only_rdb_get_context,
-             t.mon$auto_undo as tx_autoundo_mon_trans
-            -- only in FB 4.x+: ,t.mon$auto_commit as tx_autocommit_mon_trans
-        from mon$transactions t
-        where t.mon$transaction_id = current_transaction;
-        commit;
+            recreate view v_check as
+            select
+                 decode(t.mon$isolation_mode, 0,'consistency', 1,'snapshot', 2,'rc rec_vers', 3,'rc no_recv', 4,'rc read_cons', 'UNKNOWN') as tx_til_mon_trans,
+                 rdb$get_context('SYSTEM', 'ISOLATION_LEVEL') as tx_til_rdb_get_context,
+                 decode(t.mon$lock_timeout, -1, 'wait', 0, 'no_wait', 'timeout ' || t.mon$lock_timeout) as tx_lock_timeout_mon_trans,
+                 rdb$get_context('SYSTEM', 'LOCK_TIMEOUT') as tx_lock_timeout_rdb_get_context,
+                 iif(t.mon$read_only=1,'read_only','read_write') as tx_read_only_mon_trans,
+                 rdb$get_context('SYSTEM', 'READ_ONLY') as tx_read_only_rdb_get_context,
+                 t.mon$auto_undo as tx_autoundo_mon_trans
+                -- only in FB 4.x+: ,t.mon$auto_commit as tx_autocommit_mon_trans
+            from mon$transactions t
+            where t.mon$transaction_id = current_transaction;
+            commit;
 
-        select 'addi_script: create_new_db' as msg, v.* from v_check v;
-        rollback;
+            select 'addi_script: create_new_db' as msg, v.* from v_check v;
+            rollback;
 
-        connect 'localhost:{tmp_db}' user {act.db.user} password '{act.db.password}';
-        select 'addi_script: reconnect' as msg, v.* from v_check v;
-        rollback;
+            connect 'localhost:{tmp_db}' user {act.db.user} password '{act.db.password}';
+            select 'addi_script: reconnect' as msg, v.* from v_check v;
+            rollback;
 
-        drop database;
-        """)
-    main_script.write_text(f"""
-        set list on;
-        connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
-        recreate view v_check as
-        select
-             decode(t.mon$isolation_mode, 0,'consistency', 1,'snapshot', 2,'rc rec_vers', 3,'rc no_recv', 4,'rc read_cons', 'UNKNOWN') as tx_til_mon_trans,
-             rdb$get_context('SYSTEM', 'ISOLATION_LEVEL') as tx_til_rdb_get_context,
-             decode(t.mon$lock_timeout, -1, 'wait', 0, 'no_wait', 'timeout ' || t.mon$lock_timeout) as tx_lock_timeout_mon_trans,
-             rdb$get_context('SYSTEM', 'LOCK_TIMEOUT') as tx_lock_timeout_rdb_get_context,
-             iif(t.mon$read_only=1,'read_only','read_write') as tx_read_only_mon_trans,
-             rdb$get_context('SYSTEM', 'READ_ONLY') as tx_read_only_rdb_get_context,
-             t.mon$auto_undo as tx_autoundo_mon_trans
-            -- only 4.x: ,t.mon$auto_commit as tx_autocommit_mon_trans
-        from mon$transactions t
-        where t.mon$transaction_id = current_transaction;
-        commit;
+            drop database;
+        """
+    )
+    main_script.write_text(
+        f"""
+            set list on;
+            connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
+            recreate view v_check as
+            select
+                 decode(t.mon$isolation_mode, 0,'consistency', 1,'snapshot', 2,'rc rec_vers', 3,'rc no_recv', 4,'rc read_cons', 'UNKNOWN') as tx_til_mon_trans,
+                 rdb$get_context('SYSTEM', 'ISOLATION_LEVEL') as tx_til_rdb_get_context,
+                 decode(t.mon$lock_timeout, -1, 'wait', 0, 'no_wait', 'timeout ' || t.mon$lock_timeout) as tx_lock_timeout_mon_trans,
+                 rdb$get_context('SYSTEM', 'LOCK_TIMEOUT') as tx_lock_timeout_rdb_get_context,
+                 iif(t.mon$read_only=1,'read_only','read_write') as tx_read_only_mon_trans,
+                 rdb$get_context('SYSTEM', 'READ_ONLY') as tx_read_only_rdb_get_context,
+                 t.mon$auto_undo as tx_autoundo_mon_trans
+                -- only 4.x: ,t.mon$auto_commit as tx_autocommit_mon_trans
+            from mon$transactions t
+            where t.mon$transaction_id = current_transaction;
+            commit;
 
-        select 'main_script: initial' as msg, v.* from v_check v;
-        commit;
+            select 'main_script: initial' as msg, v.* from v_check v;
+            commit;
 
-        set keep_tran on;
-        commit;
+            set keep_tran on;
+            commit;
 
-        set transaction read only read committed record_version lock timeout 5 no auto undo; -- only in 4.x: auto commit;
+            set transaction read only read committed record_version lock timeout 5 no auto undo; -- only in 4.x: auto commit;
 
-        select 'main_script: started Tx' as msg, v.* from v_check v;
+            select 'main_script: started Tx' as msg, v.* from v_check v;
 
-        commit; -------------------------------------------------------------------------------------- [ 1 ]
+            commit; -------------------------------------------------------------------------------------- [ 1 ]
 
-        select 'main_script: after_commit' as msg, v.* from v_check v;
+            select 'main_script: after_commit' as msg, v.* from v_check v;
 
-        rollback; ------------------------------------------------------------------------------------ [ 2 ]
+            rollback; ------------------------------------------------------------------------------------ [ 2 ]
 
-        select 'main_script: after_rollback' as msg, v.* from v_check v;
+            select 'main_script: after_rollback' as msg, v.* from v_check v;
 
-        rollback;
+            rollback;
 
-        connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}'; --------------------------- [ 3 ]
+            connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}'; --------------------------- [ 3 ]
 
-        select 'main_script: after_reconnect' as msg, v.* from v_check v;
-        rollback;
+            select 'main_script: after_reconnect' as msg, v.* from v_check v;
+            rollback;
 
-        --###################
-        in {addi_script};
-        --###################
+            --###################
+            in {addi_script};
+            --###################
 
-        connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}'; --------------------------- [ 5 ]
+            connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}'; --------------------------- [ 5 ]
 
-        select 'main_script: resume' as msg, v.* from v_check v;
-        rollback;
+            select 'main_script: resume' as msg, v.* from v_check v;
+            rollback;
 
-        set keep_tran off;
-        commit;
+            set keep_tran off;
+            commit;
 
-        select 'keep_tran: turned_off' as msg, v.* from v_check v;
-        commit;
-        """)
+            select 'keep_tran: turned_off' as msg, v.* from v_check v;
+            commit;
+        """
+    )
     # Check
     act.expected_stdout = expected_stdout
-    act.isql(switches=['-q'], input_file=main_script)
+    act.isql(switches = ['-q'], input_file = main_script, connect_db = False, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
