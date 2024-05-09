@@ -46,19 +46,22 @@ trace = ['time_threshold = 0',
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, temp_db: Path):
     sql_ddl = f"""
-    set list on;
-    set bail on;
-    create database 'localhost:{temp_db}';
-    select mon$database_name from mon$database;
-    commit;
-    drop database;
+        set list on;
+        set bail on;
+        create database 'localhost:{temp_db}';
+        select mon$database_name from mon$database;
+        commit;
+        drop database;
     """
     # Get content of firebird.log BEFORE test
     log_before = act.get_firebird_log()
+
     # Start trace
     with act.trace(db_events=trace, keep_log=False, database=temp_db.name):
-        act.isql(switches=[], input=sql_ddl)
+        act.isql(switches = ['-q'], input = sql_ddl, connect_db = False, combine_output = True)
+
     # Get content of firebird.log AFTER test
     log_after = act.get_firebird_log()
+
     # Check
     assert list(unified_diff(log_before, log_after)) == []
