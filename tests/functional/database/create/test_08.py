@@ -38,5 +38,5 @@ def test_1(act: Action):
     from rdb$files ;
     """
     act.expected_stdout = expected_stdout
-    act.isql(switches=[], input=script, connect_db=False)
+    act.isql(switches = ['-q'], input=script, connect_db=False, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
