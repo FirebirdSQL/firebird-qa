@@ -6,8 +6,7 @@ If you plan to use this plugin for personal purposes (not related to Firebird pr
 we recommend to use `pipx` to install `pytest` together with `firebird-qa` plugin:
 
 ```
-pipx install pytest
-pipx inject pytest firebird-qa
+pipx --include-deps firebird-qa
 ```
 
 ## Configuration
