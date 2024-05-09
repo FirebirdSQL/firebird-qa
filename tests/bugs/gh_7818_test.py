@@ -11,6 +11,20 @@ DESCRIPTION:
 NOTES:
     [01.11.2023] pzotov
     Checked on 6.0.0.104, 5.0.0.1259, 4.0.4.3009
+
+    [09.05.2024] pzotov
+    In firebird-driver 1.10.4+ obtaining version via 'con.info.firebird_version' returns
+    MULTI-LINED data, i.e. server plus network listener plus client info, like this is done
+    by 'show version' command, e.g.:
+    ========
+    WI-T6.0.0.348 Firebird 6.0 Initial
+    WI-T6.0.0.348 Firebird 6.0 Initial/tcp (HOME-AUX2)/P19:C
+    WI-T6.0.0.348 Firebird 6.0 Initial/tcp (HOME-AUX2)/P19:C
+    ========
+    Because of this, we have to take in account only first line of this data (split text using os.linesep).
+    See letter from pcisar:
+        subj: "fb_info_crypt_key: how it can be obtained using firebird-driver ? // GH-5978, 2018",
+        date: 07-may-2024 13:59.
 """
 import getpass
 import pytest
@@ -25,7 +39,7 @@ act = python_act('db')
 def test_1(act: Action, capsys):
     os_user = getpass.getuser()
     with act.db.connect() as con:
-        fb_vers = con.info.firebird_version
+        fb_vers = con.info.firebird_version.split('\n')[0]
         cur = con.cursor()
 
         test_sql = f"""
