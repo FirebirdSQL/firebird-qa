@@ -10,8 +10,8 @@ DESCRIPTION:
     https://firebird-driver.readthedocs.io/en/latest/usage-guide.html#firebird-array-type
 NOTES:
     [11.05.2024] pzotov
-    Confirmed problem on 6.0.0.344: got "ValueError: Incorrect ARRAY field value"
-    Checked on intermediate snapshot 6.0.0.345 #17b007d -- all OK.
+    Confirmed problem on 5.0.0.1391, 6.0.0.344: got "ValueError: Incorrect ARRAY field value"
+    Checked on 6.0.0.345 #17b007d, 5.0.1.1394 #aa3cafb - all OK.
 """
 
 import pytest
@@ -21,7 +21,7 @@ from firebird.qa import *
 db = db_factory()
 act = python_act('db', substitutions = [('[ \t]+', ' ')])
 
-@pytest.mark.version('>=6')
+@pytest.mark.version('>=5.0.1')
 def test_1(act: Action, capsys):
 
     with act.db.connect() as con:
