@@ -4,6 +4,7 @@
 ID:          issue-6288
 ISSUE:       6288
 TITLE:       Srp user manager sporadically creates users which can not attach
+DESCRIPTION:
   Explanation of bug nature was provided by Alex, see letter 05-jun-19 13:51.
   Some iteration failed with probability equal to occurence of 0 (zero) in the
   highest BYTE of some number. Byte is 8 bit ==> this probability is 1/256.
@@ -12,12 +13,10 @@ TITLE:       Srp user manager sporadically creates users which can not attach
   Because of time (speed) it was decided to run only 256 iterations. If bug
   will be 'raised' somewhere then this number is enough to catch it after 2-3
   times of test run.
-
+NOTES:
   Reproduced on WI-V3.0.5.33118, date: 11-apr-19 (got fails not late than on 250th iteration).
   Works fine on WI-V3.0.5.33139, date: 04-apr-19.
-NOTES:
   A new bug was found during this test implementation, affected 4.0 Classic only: CORE-6080.
-DESCRIPTION:
 JIRA:        CORE-6038
 FBTEST:      bugs.core_6038
 """
