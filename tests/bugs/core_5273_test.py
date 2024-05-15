@@ -3,8 +3,7 @@
 """
 ID:          issue-5551
 ISSUE:       5551
-TITLE:       Crash when attempt to create database with running trace ( internal Firebird
-  consistency check (cannot find tip page (165), file: tra.cpp line: 2233) )
+TITLE:       Attempt to create database with running trace leads to consistency check (cannot find tip page (165), file: tra.cpp line: 2233)
 DESCRIPTION:
     1. Get the content of firebird.log before test.
     2. Make config file and launch trace session, with separate logging of its STDOUT and STDERR.
@@ -43,6 +42,7 @@ trace = ['time_threshold = 0',
          'max_log_size = 5000000',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, temp_db: Path):
     sql_ddl = f"""

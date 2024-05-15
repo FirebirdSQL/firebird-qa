@@ -42,6 +42,7 @@ trace = ['time_threshold = 0',
          'log_statement_finish = true',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.2')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, tmp_file: Path, capsys):

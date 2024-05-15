@@ -98,6 +98,7 @@ expected_trace_log = """
     rdb$database /* ddl_3 line_8 */
 """
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action, tmp_file: Path, capsys):
     with act.trace(db_events=trace), act.db.connect() as con:

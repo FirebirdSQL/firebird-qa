@@ -77,6 +77,7 @@ expected_stderr_isql = """
 
 expected_stdout_trace = test_sql.replace('set list on;', '').replace(';','')
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.6')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, capsys):

@@ -184,6 +184,7 @@ def run_script(act: Action, tmp_file: Path):
 
     act.isql(switches=['-n', '-q'], input_file = tmp_file, connect_db = False, credentials = False)
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, test_role: Role, tmp_file: Path,  capsys):

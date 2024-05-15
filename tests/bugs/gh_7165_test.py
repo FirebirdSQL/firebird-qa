@@ -53,6 +53,7 @@ expected_stderr_isql = """
     Missing security context for TEST.FDB
 """
 
+@pytest.mark.trace
 @pytest.mark.version('>=5.0')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, capsys):

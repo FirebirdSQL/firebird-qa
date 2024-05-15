@@ -83,6 +83,7 @@ trace = ['log_transactions = true',
          'log_initfini = false',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
     expected_stdout = ''

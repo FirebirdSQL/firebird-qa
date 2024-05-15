@@ -225,6 +225,7 @@ def wait_for_record_become_locked(tx_monitoring, cur_monitoring, sql_to_lock_rec
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err: Path, capsys):
     sql_init = (act.files_dir / 'read-consist-sttm-restart-DDL.sql').read_text()

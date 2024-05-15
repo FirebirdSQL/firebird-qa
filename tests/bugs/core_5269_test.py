@@ -61,6 +61,7 @@ join rdb$roles r on p.rdb$relation_name = r.rdb$role_name
 where p.rdb$user = upper('TMP$C5269_2');
 """
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, user_a: User, user_b: User, test_role: Role):
     with act.db.connect() as con:

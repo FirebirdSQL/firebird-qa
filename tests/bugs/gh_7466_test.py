@@ -64,6 +64,7 @@ trace = ['log_initfini = false',
 allowed_patterns = [ ' ERROR AT ', 'Trigger TRG_', 'Procedure (SP_TEST|PG_TEST.PG_SP_WORKER)', 'Function (FN_TEST|PG_TEST.PG_FN_WORKER)' ]
 allowed_patterns = [ re.compile(r, re.IGNORECASE) for r in  allowed_patterns]
 
+@pytest.mark.trace
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 

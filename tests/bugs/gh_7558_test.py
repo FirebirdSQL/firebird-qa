@@ -35,6 +35,7 @@ substitutions = [('^((?!SQLSTATE|(I/O error)|(Error while)|335544344|335544734).
 act = python_act('db', substitutions = substitutions)
 act_non_existing_database = python_act('db_non_existing_database')
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0.3')
 def test_1(act: Action, act_non_existing_database: Action, tmp_user: User, tmp_role: Role, tmp_usr2: User, capsys):
   

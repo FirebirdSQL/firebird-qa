@@ -72,6 +72,7 @@ trace = ['time_threshold = 0',
          'log_statement_start = true',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3')
 def test_1(act: Action, capsys):
     with act.trace(db_events=trace):

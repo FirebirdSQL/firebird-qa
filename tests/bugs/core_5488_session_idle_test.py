@@ -86,6 +86,7 @@ trace = ['time_threshold = 0',
          'log_statement_finish = true',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
     trace_dts_pattern = re.compile('.*(ATTACH_DATABASE|START_TRANSACTION|EXECUTE_STATEMENT_FINISH|ROLLBACK_TRANSACTION|DETACH_DATABASE)')

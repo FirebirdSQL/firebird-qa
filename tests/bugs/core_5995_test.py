@@ -25,6 +25,7 @@ trace = ['log_initfini = false',
          'log_statement_finish = true',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.5')
 def test_1(act: Action):
     with act.trace(db_events=trace), act.connect_server() as srv:

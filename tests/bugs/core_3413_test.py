@@ -30,6 +30,7 @@ trace = ['time_threshold = 0',
            'log_statement_finish = foo'
            ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     with act.trace(db_events=trace):

@@ -95,6 +95,7 @@ trace = ['time_threshold = 0',
          'log_statement_finish = true',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action):
     act.isql(switches=[], input=async_init_script)

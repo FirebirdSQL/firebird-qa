@@ -57,6 +57,7 @@ database =
 }
 """
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action):
     log_before = act.get_firebird_log()

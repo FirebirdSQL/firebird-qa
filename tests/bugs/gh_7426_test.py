@@ -41,6 +41,7 @@ trace = ['log_initfini = false',
 allowed_patterns = [ ' ERROR AT ', 'Trigger TRG_ANY_DDL_STATEMENT_', ]
 allowed_patterns = [ re.compile(r, re.IGNORECASE) for r in  allowed_patterns]
 
+@pytest.mark.trace
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 

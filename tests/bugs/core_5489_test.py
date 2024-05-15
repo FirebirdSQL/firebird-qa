@@ -93,6 +93,7 @@ trace = ['time_threshold = 0',
          'log_initfini = false',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action):
 
