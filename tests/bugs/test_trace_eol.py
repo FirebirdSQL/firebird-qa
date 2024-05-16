@@ -10,7 +10,17 @@ DESCRIPTION:
     Finally we check whether trace log contains every DDL or not.
     Expected result: text of every DDL should be FOUND in the trace log.
 JIRA:        CORE-5470
-FBTEST:      bugs.core_5470
+NOTES:
+    On Windows print(act.trace_log) displays text with EOL containing space between CR and LF, i.e.: chr(13) + space + chr(10):
+    ['2024-05-16T12:42:17.8040 ... EXECUTE_STATEMENT_FINISH\r \n', '\tE:\\TEMP\\QA\\FBQA\\TEST_10\\TEST.FDB ... :::1/62705)\r \n', ]
+
+    Space between CR and LF likely is an artifact of list to string conversion done by print() using it's __str__ method.
+    Explanation see in reply from pcisar:
+    subj: "act.trace_log ends with strange EOL that is: CR + space + NL // Windows"; date: 05-MAR-2023
+    In order to get trace text with normal EOLs we have to do:
+    trace_txt = '\n'.join( [line.rstrip() for line in act.trace_log] )
+    
+    Confirmed bug on 4.0.0.483 (date of build: 05-jan-2017).
 """
 
 import pytest
@@ -88,21 +98,6 @@ def test_1(act: Action, capsys):
             print(x)
         print('----- trace finish ----')
 
-
-    '''
-    all_found = True
-    act.trace_to_stdout()
-    for cmd in chk_statements_lst:
-        #if act.stdout.find(cmd) <= 0:
-        #    all_found = False
-        #    print(f'{cmd=}')
-        #    print(f'{act.stdout=}')
-        #    print(f'{act.trace_log=}')
-        #    break
-    #    assert act.stdout.find(cmd) > 0
-    print(f'{all_found=}')
-    '''
-
-    act.expected_stdout = '' # expected_stdout
+    act.expected_stdout = ''
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
