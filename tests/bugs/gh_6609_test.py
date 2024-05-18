@@ -13,6 +13,7 @@ DESCRIPTION:
 NOTES:
     [18.05.2024] pzotov
     Confirmed bug on 3.0.7.33348 (17-JUL-2020), mon$memo_used ratio for CS: 1.63; SS: 1.26
+    Bug was fixed in: dde597e6ae8bbaac45df4f8b38faa9583cd946d4 (27-JUL-2020).
     Checked on:
         3.0.7.33350, mon$memo_used ratio for CS: 1.01; SS: 1.00
         4.0.5.3099,  mon$memo_used ratio for CS: 1.01; SS: 1.00
