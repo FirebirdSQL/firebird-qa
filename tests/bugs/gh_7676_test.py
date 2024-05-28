@@ -3,7 +3,7 @@
 """
 ID:          issue-7676
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7676
-TITLE:       Attempt to evaluate index expression recursively
+TITLE:       Invalid message when violating unique constraint ("Attempt to evaluate index expression recursively")
 DESCRIPTION:
 NOTES:
     [28.05.2024] pzotov
