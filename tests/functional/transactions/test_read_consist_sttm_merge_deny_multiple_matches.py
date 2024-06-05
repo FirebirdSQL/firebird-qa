@@ -185,6 +185,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                 using (
                     select s.id, s.x from {target_obj} as s
                     where s.id <= 1
+                    order by s.id DESC -- added only 05-jun-2024; thanks to Vlad.
                 ) s
                 on abs(t.id) = abs(s.id)
             when matched then
