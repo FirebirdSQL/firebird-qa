@@ -9,6 +9,9 @@ NOTES:
     [28.05.2024] pzotov
     Confirmed crash on 6.0.0.36, 5.0.1.1408
     Checked on 6.0.0.363-40d0b41, 5.0.1.1408-c432bd0
+
+    [09.06.2024] pzotov
+    Added temporary mark 'disabled_in_forks' to SKIP this test when QA verifies *fork* rather than standard FB.
 """
 
 import pytest
@@ -27,6 +30,7 @@ expected_stdout = """
     1
 """
 
+@pytest.mark.disabled_in_forks
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
