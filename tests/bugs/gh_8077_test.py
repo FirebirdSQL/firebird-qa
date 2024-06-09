@@ -14,6 +14,12 @@ NOTES:
     [27.05.2024] pzotov
     Time of ISQL execution is limited by MAX_WAIT_FOR_ISQL_TERMINATE seconds. Currently it is ~6s for SS and ~18s for CS.
 
+    [08.06.2024] pzotov
+    Added threshold in order to prevent infinite recursion in case of regression.
+    Otherwise this test can cause collapse of test machine because of infinite launch of firebird processes (in case of Classic).
+    See notes in the code below, variable 'STOP_RECURSIVE_ES_AFTER_ITER'.
+    Checked on snapshot 5.x that was not yet fixed.
+
     Checked on 6.0.0.362, 5.0.1.1408, 4.0.5.3103 (all SS/CS).
 """
 
@@ -28,9 +34,10 @@ import locale
 import firebird.driver
 from firebird.qa import *
 
-db = db_factory()
+db = db_factory(do_not_drop = True)
+#db = db_factory()
 substitutions = [
-                    ('^((?!(E|e)rror|statement|recursion|source|rdb_trg|trigger|ext_pool_active|isql_outcome).)*$', '')
+                    ('^((?!(E|e)rror|exception|statement|recursion|source|rdb_trg|trigger|ext_pool_active|isql_outcome).)*$', '')
                     ,('Execute statement error.*', 'Execute statement error')
                     ,('Firebird::.*', 'Firebird::')
                     ,('line(:)?\\s+\\d+.*', '')
@@ -44,6 +51,23 @@ tmp_log = temp_file('tmp_8077.log')
 MAX_WAIT_FOR_ISQL_BEGIN_WORK=0.5
 MAX_WAIT_FOR_ISQL_TERMINATE=30
 
+# ### NOTE ###
+# We have to define generator and increment it on each DB-level trigger invocation in order to prevent infinite loop
+# if its value will be greater than some threshold (in case if regression will occur and engine for some reason will
+# not able to detect too deep recursion).
+# Value of this generator will be compared with threshold ('STOP_RECURSIVE_ES_AFTER_ITER') and no further recursive
+# calls will be executed if generator exceeds this threshold.
+# But value of threshold STOP_RECURSIVE_ES_AFTER_ITER must NOT be too small.
+# Otherwise following message will be MESSED from output:
+#   Error at disconnect:
+#   Execute statement error
+#   335544830 : Too many recursion levels of EXECUTE STATEMENT
+#   Data source : Firebird::
+#   At trigger 'TRG_DETACH'
+# Currently last value of this sequence (after exception raising) is 99 for both SS and CS.
+#
+STOP_RECURSIVE_ES_AFTER_ITER = 101
+
 #--------------------------------------------------------------------
 
 @pytest.mark.version('>=4.0.5')
@@ -54,24 +78,42 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
         set bail on;
 
         set term ^;
+        create or alter trigger trg_detach on disconnect as begin end
+        ^
         create or alter trigger trg_attach on connect as begin end
         ^
-        recreate table log( att bigint default current_connection, event_name varchar(6) )
+        create sequence g_attach
+        ^
+        create sequence g_detach
+        ^
+        create sequence g_diff
+        ^
+        create exception exc_too_deep_recursion 'Execution terminated by @1: recursion depth exceeded the threshold @2 by @3'
+        ^
+        recreate table log(id int primary key, att bigint default current_connection, event_name varchar(6) )
         ^
         create or alter trigger trg_attach on connect as
             declare v_pool_size int;
         begin
-            in autonomous transaction do
-            insert into log(event_name) values ('attach');
+            if ( gen_id(g_attach,0) <= {STOP_RECURSIVE_ES_AFTER_ITER} ) then
+                in autonomous transaction do
+                insert into log(id, event_name) values (-gen_id(g_attach,1), 'attach');
+            else
+                exception exc_too_deep_recursion using ('trg_attach', {STOP_RECURSIVE_ES_AFTER_ITER}, gen_id(g_attach,1) - {STOP_RECURSIVE_ES_AFTER_ITER} - 1)
+                ;
         end
         ^
         create or alter trigger trg_detach on disconnect as
         begin
-            execute statement ('insert into log(event_name) values(?)') ('detach')
-            with autonomous transaction
-            on external 'localhost:' || rdb$get_context('SYSTEM', 'DB_NAME')
-                as user '{act.db.user}' password '{act.db.password}' role 'R' || replace(uuid_to_char(gen_uuid()),'-','')
-            ;
+            if ( gen_id(g_detach,0) <= {STOP_RECURSIVE_ES_AFTER_ITER} ) then
+                execute statement ('insert into log(id, event_name) values(?, ?)') (gen_id(g_detach,1), 'detach')
+                with autonomous transaction
+                on external 'localhost:' || rdb$get_context('SYSTEM', 'DB_NAME')
+                    as user '{act.db.user}' password '{act.db.password}' role 'R' || replace(uuid_to_char(gen_uuid()),'-','')
+                ;
+            else
+                exception exc_too_deep_recursion using ('trg_detach', {STOP_RECURSIVE_ES_AFTER_ITER}, gen_id(g_detach,1) - {STOP_RECURSIVE_ES_AFTER_ITER} - 1)
+                ;
         end
         ^
         set term ;^
@@ -84,7 +126,6 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
         order by rdb$trigger_name;
         rollback;
         connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
-        select cast(rdb$get_context('SYSTEM', 'EXT_CONN_POOL_SIZE') as int) as "ext_pool_size_1" from rdb$database;
         quit;
     """
     with open(tmp_sql, 'w') as f:
