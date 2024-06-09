@@ -165,6 +165,7 @@ expected_stdout = """
     DUP_CNT                         5
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     if int(act.get_config('ExtConnPoolSize')) < 6 or int(act.get_config('ExtConnPoolLifeTime')) < 10:

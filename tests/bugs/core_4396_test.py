@@ -73,6 +73,7 @@ expected_stdout = """
     CNT                             0
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

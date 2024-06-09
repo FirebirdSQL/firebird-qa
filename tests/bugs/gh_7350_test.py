@@ -448,6 +448,7 @@ expected_stdout = f"""
     ID=10
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 

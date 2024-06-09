@@ -166,6 +166,7 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
 
 #-----------------------------------------------------------------------
 
+@pytest.mark.es_eds
 @pytest.mark.encryption
 @pytest.mark.version('>=4.0.5')
 def test_1(act: Action, tmp_sql_file: Path, tmp_log_file: Path, tmp_gstat_log: Path, capsys):

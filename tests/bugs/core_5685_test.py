@@ -152,6 +152,7 @@ hang_stdout = temp_file('hang_script.out')
 hang_stderr = temp_file('hang_script.err')
 
 @pytest.mark.skipif(platform.system() != 'Windows', reason='FIXME: see notes')
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action, hang_script: Path, hang_stdout: Path, hang_stderr: Path,
            capsys):

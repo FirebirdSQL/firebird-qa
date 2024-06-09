@@ -70,6 +70,7 @@ STOP_RECURSIVE_ES_AFTER_ITER = 101
 
 #--------------------------------------------------------------------
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=4.0.5')
 def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
 

@@ -30,6 +30,7 @@ expected_stdout = """
 """
 
 @pytest.mark.skip("FIXME: see notes")
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0.1')
 def test_1(act: Action):
     sql_chk = f"""

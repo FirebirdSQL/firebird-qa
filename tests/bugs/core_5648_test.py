@@ -40,6 +40,7 @@ expected_stdout = """
 
 eds_script = temp_file('eds_script.sql')
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action, eds_script: Path):
     eds_sql = f"""

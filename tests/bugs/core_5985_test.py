@@ -85,6 +85,7 @@ expected_stdout = """
     WHATS_MY_ROLE                   WORKER
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, user_foo, user_bar):
     act.expected_stdout = expected_stdout

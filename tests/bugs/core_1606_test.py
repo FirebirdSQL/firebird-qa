@@ -120,6 +120,7 @@ expected_stdout = """
     PID                             1
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

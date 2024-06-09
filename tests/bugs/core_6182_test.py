@@ -105,7 +105,7 @@ def init_main_db(act: Action, eds_user: User):
 """
     act.isql(switches=[], input=ddl_script)
 
-
+@pytest.mark.es_eds
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, db_a: Database, db_b: Database, db_c: Database,
            db_d: Database, eds_user: User, capsys):

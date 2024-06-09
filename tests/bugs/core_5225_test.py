@@ -73,6 +73,7 @@ expected_stdout = """
     WHOAMI_SRP                      TMP$C5225
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0.1')
 def test_1(act: Action, user_srp: User, user_leg: User):
     act.expected_stdout = expected_stdout

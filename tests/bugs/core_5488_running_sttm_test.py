@@ -185,6 +185,7 @@ expected_stderr = """
     -Attachment level timeout expired.
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

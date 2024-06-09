@@ -68,6 +68,7 @@ expected_stdout = """
 hang_script_file = temp_file('hang_script.sql')
 hang_output = temp_file('hang_script.out')
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=2.5.5')
 def test_1(act: Action, hang_script_file: Path, hang_output: Path, capsys, request):
     # Fializer for FB4

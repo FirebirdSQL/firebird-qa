@@ -73,6 +73,7 @@ ADD_DELAY_FOR_RARE = 2
 #
 ITER_LOOP_CNT = 3
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_user_freq: User, tmp_user_rare: User, tmp_cleaner_role: Role, capsys):
 
@@ -242,14 +243,6 @@ def test_1(act: Action, tmp_user_freq: User, tmp_user_rare: User, tmp_cleaner_ro
         alter trigger trg_connect active;
         alter trigger trg_disconnect active;
         commit;
-    '''
-
-    '''
-    print(sql_init)
-    act.expected_stdout = ''
-    act.stdout = capsys.readouterr().out
-    assert act.clean_stdout == act.clean_expected_stdout
-    act.reset()
     '''
 
     act.expected_stdout = ''

@@ -35,6 +35,7 @@ substitutions=[ ('RUNNING_STT_ID[ ]+[0-9]+', 'RUNNING_STT_ID'),
 
 act = python_act('db', substitutions = substitutions)
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3')
 def test_1(act: Action):
 

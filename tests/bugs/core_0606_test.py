@@ -100,7 +100,7 @@ expected_stderr = """
     -At block line: 3, col: 7
 """
 
-
+@pytest.mark.es_eds
 @pytest.mark.version('>=3')
 def test_1(act: Action, cvc_user: User, for_role: Role, for_cvc_role: Role):
     act.expected_stdout = expected_stdout
