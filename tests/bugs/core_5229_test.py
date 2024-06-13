@@ -2,18 +2,28 @@
 
 """
 ID:          issue-5508
-ISSUE:       5508
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5508
 TITLE:       Allow to enforce IPv4 or IPv6 in URL-like connection strings
 DESCRIPTION:
-NOTES:
-[04.02.2022] pcisar
-  Test may fail with IPv6.
-  For example it fails on my Linux OpenSuSE Tumbleweed with regular setup (IPv6 should not be disabled).
-  Test should IMHO check IPv4/IPv6 availability on test host before runs inet6:// check.
 JIRA:        CORE-5229
 FBTEST:      bugs.core_5229
-"""
+NOTES:
+    [04.02.2022] pcisar
+        Test may fail with IPv6.
+        For example it fails on my Linux OpenSuSE Tumbleweed with regular setup (IPv6 should not be disabled).
+        Test should IMHO check IPv4/IPv6 availability on test host before runs inet6:// check.
+    [13.06.2024] pzotov
+        1. Added check for ability to use IPv6.
+        2. Attempt to specify explicitly IPv6 address "[::1]" in ES/EDS causes error:
+           ========
+           Statement failed, SQLSTATE = 42000
+           External Data Source provider 'inet6://[' not found
+           ========
+           Sent report to Vlad et al, waiting for fix.
+           Currently no concrete address is specified in ES/EDS.
 
+        Checked on 3.0.12.33744, 4.0.5.3103, 5.0.1.1411, 6.0.0.368
+"""
 import pytest
 from firebird.qa import *
 
@@ -21,25 +31,64 @@ db = db_factory()
 
 act = python_act('db')
 
-expected_stdout = """
-    PROCOTOL_WHEN_CONNECT_FROM_OS   TCPv4
-    PROCOTOL_WHEN_CONNECT_FROM_ISQL TCPv4
-    PROTOCOL_WHEN_CONNECT_BY_ES_EDS TCPv4
-    PROCOTOL_WHEN_CONNECT_FROM_ISQL TCPv6
-    PROTOCOL_WHEN_CONNECT_BY_ES_EDS TCPv6
-"""
+#------------------------------------------
+# https://stackoverflow.com/questions/66246308/detect-if-ipv6-is-supported-os-agnostic-no-external-program/66249915#66249915
+# https://stackoverflow.com/a/66249915
 
-@pytest.mark.skip("FIXME: see notes")
+def check_ipv6_avail():
+    import socket
+    import errno
+
+    # On Windows, the E* constants will use the WSAE* values
+    # So no need to hardcode an opaque integer in the sets.
+    _ADDR_NOT_AVAIL = {errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT}
+    _ADDR_IN_USE = {errno.EADDRINUSE}
+
+    res = -1
+    if not socket.has_ipv6:
+        # If the socket library has no support for IPv6, then the
+        # question is moot as we can't use IPv6 anyways.
+        return res
+
+    sock = None
+    try:
+        #with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+        #    sock.bind(("::1", 0))
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        sock.bind(("::1", 0))
+        #sock.shutdown(socket.SHUT_RDWR) # [Errno 107] Transport endpoint is not connected
+        sock.close()
+        res = 0
+    except socket.error as x:
+        # sysctl net.ipv6.conf.all.disable_ipv6=1
+        # sysctl net.ipv6.conf.default.disable_ipv6=1
+        # sock.bind(("::1", 0)) --> socket.error: [Errno 99] Cannot assign requested address
+        #print(x)
+        res = -2
+    except OSError as e:
+        if e.errno in _ADDR_NOT_AVAIL:
+            res = -3
+        elif e.errno in _ADDR_IN_USE:
+            # This point shouldn't ever be reached. But just in case...
+            res = -4
+        else:
+            # Other errors should be inspected
+            res = -5
+
+    return res
+#------------------------------------------
+
 @pytest.mark.es_eds
 @pytest.mark.version('>=3.0.1')
 def test_1(act: Action):
+    
+    if (res := check_ipv6_avail()) < 0:
+        pytest.skip(f"IPv6 not avail, retcode: {res}")
+
     sql_chk = f"""
         set list on;
-        select mon$remote_protocol as procotol_when_connect_from_os
-        from mon$attachments where mon$attachment_id = current_connection;
-
         commit;
-        connect 'inet4://{act.db.db_path}';
+        connect 'inet4://127.0.0.1/{act.db.db_path}';
 
         select mon$remote_protocol as procotol_when_connect_from_isql
         from mon$attachments where mon$attachment_id = current_connection;
@@ -50,7 +99,7 @@ def test_1(act: Action):
         begin
             for
                 execute statement (stt)
-                    on external 'inet4://{act.db.db_path}'
+                    on external 'inet4://127.0.0.1/{act.db.db_path}'
                     as user '{act.db.user}' password '{act.db.password}'
                 into protocol_when_connect_by_es_eds
             do
@@ -61,6 +110,8 @@ def test_1(act: Action):
         commit;
 
         -- since 27.10.2019:
+        -- inet6://[::1]/employee
+        -- connect 'inet6://[::1]/{act.db.db_path}';
         connect 'inet6://{act.db.db_path}';
 
         select mon$remote_protocol as procotol_when_connect_from_isql
@@ -72,6 +123,7 @@ def test_1(act: Action):
         begin
             for
                 execute statement (stt)
+                    --on external 'inet6://[::1]/{act.db.db_path}' -- currently fails with 
                     on external 'inet6://{act.db.db_path}'
                     as user '{act.db.user}' password '{act.db.password}'
                 into protocol_when_connect_by_es_eds
@@ -81,23 +133,16 @@ def test_1(act: Action):
         ^
         set term ;^
         commit;
+    """
 
-        --                                    ||||||||||||||||||||||||||||
-        -- ###################################|||  FB 4.0+, SS and SC  |||##############################
-        --                                    ||||||||||||||||||||||||||||
-        -- If we check SS or SC and ExtConnPoolLifeTime > 0 (config parameter FB 4.0+) then current
-        -- DB (bugs.core_NNNN.fdb) will be 'captured' by firebird.exe process and fbt_run utility
-        -- will not able to drop this database at the final point of test.
-        -- Moreover, DB file will be hold until all activity in firebird.exe completed and AFTER this
-        -- we have to wait for <ExtConnPoolLifeTime> seconds after it (discussion and small test see
-        -- in the letter to hvlad and dimitr 13.10.2019 11:10).
-        -- This means that one need to kill all connections to prevent from exception on cleanup phase:
-        -- SQLCODE: -901 / lock time-out on wait transaction / object <this_test_DB> is in use
-        -- #############################################################################################
-        delete from mon$attachments where mon$attachment_id != current_connection;
-        commit;
-        """
+    expected_stdout = """
+        PROCOTOL_WHEN_CONNECT_FROM_ISQL TCPv4
+        PROTOCOL_WHEN_CONNECT_BY_ES_EDS TCPv4
+        PROCOTOL_WHEN_CONNECT_FROM_ISQL TCPv6
+        PROTOCOL_WHEN_CONNECT_BY_ES_EDS TCPv6
+    """
+
     act.expected_stdout = expected_stdout
-    act.isql(switches=['-q', f'inet4://{act.db.db_path}'], input=sql_chk, connect_db=False)
+    act.isql(switches=['-q', f'inet://{act.db.db_path}'], input=sql_chk, connect_db=False)
     assert act.clean_stdout == act.clean_expected_stdout
 
