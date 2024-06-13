@@ -1265,17 +1265,24 @@ def trace_thread(act: Action, b: Barrier, cfg: List[str], output: List[str], kee
         role: User role
         stop: Event used to stop the trace thread
     """
-    with act.connect_server(encoding=encoding, encoding_errors=encoding_errors,
-                            user=user, password=password) as srv:
-        output.append(srv.trace.start(config='\n'.join(cfg)))
-        b.wait()
-        while not stop.is_set():
-            line = srv.readline_timed(1)
-            if line is not TIMEOUT:
-                if not line:
-                    stop.set()
-                elif keep_log:
-                    output.append(line)
+    connected = False
+    try:
+        with act.connect_server(encoding=encoding, encoding_errors=encoding_errors,
+                                user=user, password=password) as srv:
+            output.append(srv.trace.start(config='\n'.join(cfg)))
+            b.wait()
+            connected = True
+            while not stop.is_set():
+                line = srv.readline_timed(1)
+                if line is not TIMEOUT:
+                    if not line:
+                        stop.set()
+                    elif keep_log:
+                        output.append(line)
+    except:
+        if not connected:
+            b.wait()
+        raise
 
 class TraceSession:
     """Object to manage Firebird trace session.
