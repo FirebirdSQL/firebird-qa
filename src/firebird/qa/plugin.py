@@ -1340,12 +1340,10 @@ class TraceSession:
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         time.sleep(2)
         session = self.output.pop(0)
-        with self.act.connect_server() as srv:
-            srv.trace.stop(session_id=session)
-            self.stop_event.set()
-            self.trace_thread.join(5.0)
-            if self.trace_thread.is_alive():
-                pytest.fail('Trace thread still alive')
+        self.stop_event.set()
+        self.trace_thread.join(5.0)
+        if self.trace_thread.is_alive():
+            pytest.fail('Trace thread still alive')
         self.act.trace_log = self.output
 
 class ServerKeeper:
