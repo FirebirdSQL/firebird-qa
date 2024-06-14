@@ -14,15 +14,15 @@ NOTES:
         Test should IMHO check IPv4/IPv6 availability on test host before runs inet6:// check.
     [13.06.2024] pzotov
         1. Added check for ability to use IPv6.
-        2. Attempt to specify explicitly IPv6 address "[::1]" in ES/EDS causes error:
+        2. Attempt to specify explicitly IPv6 address "[::1]" in ES/EDS caused error:
            ========
            Statement failed, SQLSTATE = 42000
            External Data Source provider 'inet6://[' not found
            ========
-           Sent report to Vlad et al, waiting for fix.
-           Currently no concrete address is specified in ES/EDS.
-
-        Checked on 3.0.12.33744, 4.0.5.3103, 5.0.1.1411, 6.0.0.368
+           It was fixed in gh-8156.
+    [14.06.2024] pzotov
+        Checked "on external 'inet6://[::1]/{act.db.db_path}'" after fixed GH-8156, builds:
+        3.0.12.33757, 4.0.5.3112, 5.0.1.1416, 6.0.0.374
 """
 import pytest
 from firebird.qa import *
@@ -109,10 +109,8 @@ def test_1(act: Action):
         set term ;^
         commit;
 
-        -- since 27.10.2019:
-        -- inet6://[::1]/employee
-        -- connect 'inet6://[::1]/{act.db.db_path}';
-        connect 'inet6://{act.db.db_path}';
+        -- since 27.10.2019; checked again 13.06.2024
+        connect 'inet6://[::1]/{act.db.db_path}';
 
         select mon$remote_protocol as procotol_when_connect_from_isql
         from mon$attachments where mon$attachment_id = current_connection;
@@ -123,8 +121,8 @@ def test_1(act: Action):
         begin
             for
                 execute statement (stt)
-                    --on external 'inet6://[::1]/{act.db.db_path}' -- currently fails with 
-                    on external 'inet6://{act.db.db_path}'
+                    -- Failed before fix #8156 ("Can not specify concrete IPv6 address in ES/EDS connection string"):
+                    on external 'inet6://[::1]/{act.db.db_path}'
                     as user '{act.db.user}' password '{act.db.password}'
                 into protocol_when_connect_by_es_eds
             do
