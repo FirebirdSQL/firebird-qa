@@ -12,10 +12,7 @@ DESCRIPTION:
                 -> Nested Loop Join (inner)          <<<<<<<  no filter of "DP_REGISTRO" table
                     -> Table "DP_REGISTRO" Full Scan <<<<<<<  after it was scanned
                     -> Filter
-                        -> Table "DP_RECIBO" Access By ID
-                            -> Bitmap
-                                -> Index "UNQ1_DP_RECIBO" Range Scan (partial match: 1/2)
-
+                        ...
     Plan AFTER fix (confirmed on 4.0.0.313):
         ...
         Select Expression
@@ -23,11 +20,15 @@ DESCRIPTION:
                 -> Filter  <<<<<<<<<<<<<<<<<<<<<<<<<<<  EARLY FILTERING MUST BE HERE <<<<<
                     -> Table "DP_REGISTRO" Full Scan
                 -> Filter
-                    -> Table "DP_RECIBO" Access By ID
-                        -> Bitmap
-                            -> Index "UNQ1_DP_RECIBO" Range Scan (partial match: 1/2)
+                    ...
 JIRA:        CORE-5236
 FBTEST:      bugs.core_5236
+NOTES:
+    [16.06.2024] pzotov
+    Plan for FB 5.x and 6.x changed since 28-may-2024, build 6.0.0.363 #95442.
+    It was adjusted after talk with dimitr: must be the same for all FB versions
+    (with only difference: 'Sub-query' at the top line for FB 5.x+).
+    Changed filler character for show padding ('#' --> '.').
 """
 
 import pytest
@@ -68,7 +69,7 @@ act = python_act('db')
 
 #-----------------------------------------------------------
 
-def replace_leading(source, char="#"):
+def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
 
@@ -93,35 +94,36 @@ def test_1(act: Action, capsys):
 
     fb4x_expected_out = """
         Select Expression
-        ####-> Filter
-        ########-> Filter
-        ############-> Table "DP_REGISTRO_OEST" Access By ID
-        ################-> Bitmap
-        ####################-> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
+        ....-> Filter
+        ........-> Filter
+        ............-> Table "DP_REGISTRO_OEST" Access By ID
+        ................-> Bitmap
+        ....................-> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
         Select Expression
-        ####-> Nested Loop Join (inner)
-        ########-> Filter
-        ############-> Table "DP_REGISTRO" Full Scan
-        ########-> Filter
-        ############-> Table "DP_RECIBO" Access By ID
-        ################-> Bitmap
-        ####################-> Index "UNQ1_DP_RECIBO" Range Scan (partial match: 1/2)
+        ....-> Nested Loop Join (inner)
+        ........-> Filter
+        ............-> Table "DP_REGISTRO" Full Scan
+        ........-> Filter
+        ............-> Table "DP_RECIBO" Access By ID
+        ................-> Bitmap
+        ....................-> Index "UNQ1_DP_RECIBO" Range Scan (partial match: 1/2)
     """
 
     fb5x_expected_out = """
         Sub-query
-        ####-> Filter
-        ########-> Filter
-        ############-> Table "DP_REGISTRO_OEST" Access By ID
-        ################-> Bitmap
-        ####################-> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
+        ....-> Filter
+        ........-> Filter
+        ............-> Table "DP_REGISTRO_OEST" Access By ID
+        ................-> Bitmap
+        ....................-> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
         Select Expression
-        ####-> Filter
-        ########-> Hash Join (inner)
-        ############-> Table "DP_RECIBO" Full Scan
-        ############-> Record Buffer (record length: 25)
-        ################-> Filter
-        ####################-> Table "DP_REGISTRO" Full Scan
+        ....-> Nested Loop Join (inner)
+        ........-> Filter
+        ............-> Table "DP_REGISTRO" Full Scan
+        ........-> Filter
+        ............-> Table "DP_RECIBO" Access By ID
+        ................-> Bitmap
+        ....................-> Index "UNQ1_DP_RECIBO" Range Scan (partial match: 1/2)
     """
 
     with act.db.connect() as con:
