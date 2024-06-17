@@ -10,6 +10,9 @@ NOTES:
     Confirmed bug on 5.0.0.1305, 6.0.0.279
     Checked on 6.0.0.286 -- all OK.
     Thanks to dimitr for providing simplest test case.
+
+    [17.06.2024] pzotov
+    Reduced min_version to 5.0.1 after check on 5.0.1.1416-b4b3559.
 """
 
 import pytest
@@ -42,7 +45,7 @@ expected_stdout = """
     COUNT 1
 """
 
-@pytest.mark.version('>=6.0.0')
+@pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
