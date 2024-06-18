@@ -67,7 +67,7 @@ init_ddl = f"""
 db = db_factory(page_size = 8192, init = init_ddl, charset = 'win1251')
 act = python_act('db')
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 
     act.gstat(switches=['-r', '-t', 'TEST', '-user', act.db.user, '-pass', act.db.password])
