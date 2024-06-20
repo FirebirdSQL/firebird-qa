@@ -12,8 +12,13 @@ DESCRIPTION:
     Also, we suppress output of rows with 'line NNN, column NNN' (FB 5.x+) because they have no matter in this test.
 NOTES:
     [20.06.2024] pzotov
+    Despite that we use 'clean' (i.e. just restored) DB, back-versions CAN exists there for system tables,
+    particularly (for this .fbk) - in rdb$dependencies and rdb$procedures.
+    For that test not only back-versions but also blobs and fragments matter.
+    See letters from dimitr and hvlad: 20.06.2024 10:36, 10:39.
+
     Confirmed bug (regression) on 3.0.12.33735 (date of build: 09-mar-2024).
-    Checked on 3.0.12.33764, 4.0.5.3112, 5.0.1.1416, 6.0.0.374
+    Checked on 3.0.12.33764, 4.0.5.3112, 5.0.1.1416, 6.0.0.374.
 """
 import zipfile
 from pathlib import Path
