@@ -18,7 +18,7 @@ DESCRIPTION:
         Average record length: 32757.00, total records: 10000
         Average unpacked length: 32766.00, compression ratio: 1.00
         Pointer pages: 1, data page slots: 304
-        Data pages: 304, average fill: 87%
+        Data pages: 304, average fill: 87%.
 
     Test assumes that values returned for 5.x will not be change in too wide range for several upcoming years
     in any order - see MIN_* and MAX_* thresholds.
