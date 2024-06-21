@@ -45,6 +45,7 @@ NOTES:
        its previous code (i.e. to keep the way it is).
 
     Checked on 6.0.0.299 b1ba859 (SS/CS).
+    Checked on 4.0.5.3112-d2e612c, 5.0.1.1416-b4b3559, 6.0.0.374-0097d28
 """
 import os
 import shutil
@@ -62,6 +63,7 @@ from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, 
 repl_settings = QA_GLOBALS['replication']
 
 MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
+MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = 20
 MAIN_DB_ALIAS = repl_settings['main_db_alias']
 REPL_DB_ALIAS = repl_settings['repl_db_alias']
 RUN_SWEEP_AT_END = int(repl_settings['run_sweep_at_end'])
@@ -208,12 +210,12 @@ def check_repl_log( act_db_main: Action, max_allowed_time_for_wait, expected_out
             cur.execute("select rdb$get_context('SYSTEM','REPLICATION_SEQUENCE') from rdb$database")
             last_generated_repl_segment = int(cur.fetchone()[0])
     
-            p_info_line_02 = re.compile('Added \\d+ segment\\(s\\) to the queue')
-            p_info_line_02 = re.compile('Record being inserted .* exists, updating instead')
-            p_info_line_03 = re.compile(f'Segment {last_generated_repl_segment} \\(\\d+ bytes\\) is replicated .* deleting')
-            info_01_lines_unq = set()
-            info_02_lines_unq = set()
-            info_03_lines_unq = set()
+            ptn_repl_chk_01 = re.compile('Added \\d+ segment\\(s\\) to the queue')
+            ptn_repl_chk_02 = re.compile('Record being inserted .* exists, updating instead')
+            ptn_repl_chk_03 = re.compile(f'Segment {last_generated_repl_segment} \\(\\d+ bytes\\) is replicated .* deleting')
+            line_match_01 = set()
+            line_match_02 = set()
+            line_match_03 = set()
 
             found_all = False
 
@@ -228,18 +230,18 @@ def check_repl_log( act_db_main: Action, max_allowed_time_for_wait, expected_out
 
                 for k,diff_line in enumerate(diff_data):
                     expr = f"select {k} as iter, current_timestamp, q'<{diff_line}>' from rdb$database"
-                    if p_info_line_02.search(diff_line):
-                        info_01_lines_unq.add(k)
-                        expr = f"select {k} as info_01_line, q'<{diff_line}>' as info_01_text, {len(info_01_lines_unq)} as info_01_found, {len(info_02_lines_unq)} as info_02_found, {len(info_03_lines_unq)} as info_03_found from rdb$database"
-                    if p_info_line_02.search(diff_line):
-                        info_02_lines_unq.add(k)
-                        expr = f"select {k} as info_02_line, q'<{diff_line}>' as info_02_text, {len(info_02_lines_unq)} as info_02_found, {len(info_02_lines_unq)} as info_02_found, {len(info_03_lines_unq)} as info_03_found from rdb$database"
-                    if p_info_line_02.search(diff_line):
-                        info_03_lines_unq.add(k)
-                        expr = f"select {k} as info_03_line, q'<{diff_line}>' as info_03_text, {len(info_03_lines_unq)} as info_03_found, {len(info_02_lines_unq)} as info_02_found, {len(info_03_lines_unq)} as info_03_found from rdb$database"
+                    if ptn_repl_chk_01.search(diff_line):
+                        line_match_01.add(k)
+                        expr = f"select {k} as info_01_line, q'<{diff_line}>' as info_01_text, {len(line_match_01)} as info_01_found, {len(line_match_02)} as info_02_found, {len(line_match_03)} as info_03_found from rdb$database"
+                    if ptn_repl_chk_02.search(diff_line):
+                        line_match_02.add(k)
+                        expr = f"select {k} as info_02_line, q'<{diff_line}>' as info_02_text, {len(line_match_02)} as info_02_found, {len(line_match_02)} as info_02_found, {len(line_match_03)} as info_03_found from rdb$database"
+                    if ptn_repl_chk_03.search(diff_line):
+                        line_match_03.add(k)
+                        expr = f"select {k} as info_03_line, q'<{diff_line}>' as info_03_text, {len(line_match_03)} as info_03_found, {len(line_match_02)} as info_02_found, {len(line_match_03)} as info_03_found from rdb$database"
 
                     # _dummy_ = cur.execute(expr).fetchone()
-                    if len(info_03_lines_unq) >= 1 and len(info_03_lines_unq) >= 1 and len(info_03_lines_unq) >= 1:
+                    if len(line_match_01) >= 1 and len(line_match_02) >= 1 and len(line_match_03) >= 1:
                         found_all = True
                         break
                         
@@ -247,7 +249,11 @@ def check_repl_log( act_db_main: Action, max_allowed_time_for_wait, expected_out
                     break
             
             if not found_all:
-                result = f'UNEXPECTED: messages about replicated segment {last_generated_repl_segment} did not appear for {max_allowed_time_for_wait} seconds.'
+                unexp_msg = f'UNEXPECTED: messages about replicated segment {last_generated_repl_segment} did not appear for {max_allowed_time_for_wait} seconds.'
+                repllog_diff = '\n'.join( [ ('%4d ' %i) + r  for i,r in enumerate(diff_data) ] )
+                checked_ptn_msg = f'{ptn_repl_chk_01=}\n{ptn_repl_chk_02=}\n{ptn_repl_chk_03=}'
+                lines_match_msg = f'{line_match_01=}; {line_match_02=}; {line_match_03=}; '
+                result = '\n'.join( [unexp_msg, 'Lines in replication.log:', repllog_diff, 'Checked patterns:', checked_ptn_msg, 'Lines NN that match patterns:', lines_match_msg] )
             else:
                 result = expected_output_str
             
