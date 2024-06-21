@@ -51,7 +51,12 @@ NOTES:
     [23.11.2023] pzotov
     Make final SWEEP optional, depending on setting RUN_SWEEP_AT_END - see $QA_ROOT/files/test_config.ini.
 
-    Checked on Windows, 6.0.0.193, 5.0.0.1304, 4.0.5.3042 (SS/CS for all).
+    [21.06.2024] pzotov
+    Partially re-implemented:
+        * full replacement of func check_repl_log; its new name = 'wait_for_repl_err'
+        * added code for simplifying debug;
+        * removed check of capsys content from most places (replaced with comparison of result with empty string).
+    Checked on Windows, 4.0.5.3112-d2e612c, 5.0.1.1416-b4b3559, 6.0.0.374-0097d28 (SS and CS).
 """
 import os
 import shutil
@@ -72,6 +77,7 @@ repl_settings = QA_GLOBALS['replication']
 
 MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG = int(repl_settings['max_time_for_wait_segment_in_log'])
 MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
+
 MAIN_DB_ALIAS = repl_settings['main_db_alias']
 REPL_DB_ALIAS = repl_settings['repl_db_alias']
 RUN_SWEEP_AT_END = int(repl_settings['run_sweep_at_end'])
@@ -190,38 +196,19 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
 
 #--------------------------------------------
 
-def check_repl_log( act_db_main: Action, max_allowed_time_for_wait, prefix_msg = '' ):
+def wait_for_repl_err( act_db_main: Action, replold_lines, max_allowed_time_for_wait):
 
     replication_log = act_db_main.home_dir / 'replication.log'
-
-    replold_lines = []
-    with open(replication_log, 'r') as f:
-        replold_lines = f.readlines()
-
-    with act_db_main.db.connect(no_db_triggers = True) as con:
-        with con.cursor() as cur:
-            cur.execute("select rdb$get_context('SYSTEM','REPLICATION_SEQUENCE') from rdb$database")
-            last_generated_repl_segment = cur.fetchone()[0]
-
-    # VERBOSE: Segment 1 (2582 bytes) is replicated in 1 second(s), deleting the file
-    # VERBOSE: Segment 2 (200 bytes) is replicated in 82 ms, deleting the file
-    p_successfully_replicated = re.compile( f'\\+\\s+verbose:\\s+segment\\s+{last_generated_repl_segment}\\s+\\(\\d+\\s+bytes\\)\\s+is\\s+replicated.*deleting', re.IGNORECASE)
-
-    # VERBOSE: Segment 16 replication failure at offset 33628
-    p_replication_failure = re.compile('segment\\s+\\d+\\s+replication\\s+failure', re.IGNORECASE)
 
     # ERROR: Database is not in the replica mode
     p_database_not_replica = re.compile('ERROR:\\s+Database.* not.* replica', re.IGNORECASE)
 
     found_required_message = False
-    found_replfail_message = False
-    found_common_error_msg = False
-
+    found_required_line = ''
     for i in range(0,max_allowed_time_for_wait):
 
         time.sleep(1)
 
-        # Get content of fb_home/replication.log _after_ isql finish:
         with open(replication_log, 'r') as f:
             diff_data = unified_diff(
                 replold_lines,
@@ -229,39 +216,35 @@ def check_repl_log( act_db_main: Action, max_allowed_time_for_wait, prefix_msg =
               )
 
         for k,d in enumerate(diff_data):
-            if p_successfully_replicated.search(d):
-                # We FOUND phrase "VERBOSE: Segment <last_generated_repl_segment> ... is replicated ..." in the replication log.
-                # This is expected success, break!
-                print( (prefix_msg + ' ' if prefix_msg else '') + f'FOUND message about replicated segment N {last_generated_repl_segment}.' )
-                found_required_message = True
-                break
-
-            if p_replication_failure.search(d):
-                print( (prefix_msg + ' ' if prefix_msg else '') + 'SEGMENT_FAILURE: ' + d )
-                found_replfail_message = True
-                break
-
             if p_database_not_replica.search(d):
-                print( (prefix_msg + ' ' if prefix_msg else '') + 'EXPECTED_NOT_REPL')
                 found_required_message = True
                 break
 
-            if 'ERROR:' in d:
-                print( (prefix_msg + ' ' if prefix_msg else '') + 'COMMON_FAILURE: ' + d )
-                found_common_error_msg = True
-                break
-
-        if found_required_message or found_replfail_message or found_common_error_msg:
+        if found_required_message:
             break
 
     if not found_required_message:
-        print(f'UNEXPECTED RESULT: no message about replicating segment N {last_generated_repl_segment} for {max_allowed_time_for_wait} seconds.')
+        # ACHTUNG! This looks weird but we have to either re-read replication log now or wait at least <JOURNAL_ARCHIVE_TIMEOUT> seconds
+        # if we want to see FULL (actual) content of this log! Otherwise last part of log will be missed. I have no explanations for that :(
+        with open(replication_log, 'r') as f:
+            diff_data = unified_diff(
+                replold_lines,
+                f.readlines()
+              )
+        unexp_msg = f"Expected ERROR message was not found for {max_allowed_time_for_wait} seconds."
+        repllog_diff = '\n'.join( ( ('%4d ' %i) + r.rstrip() for i,r in enumerate(diff_data) ) )
+        result = '\n'.join( (unexp_msg, 'Lines in replication.log:', repllog_diff) )
+    else:
+        result = ''
+
+    return result
 
 #--------------------------------------------
 
 
 def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', isql_check_script = '', replica_expected_out = ''):
 
+    result = ''
     retcode = 1;
     ready_to_check = False
     if ddl_ready_query:
@@ -279,48 +262,49 @@ def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', i
     else:
         ready_to_check = True
 
+    msg = f'UNEXPECTED. Check query did not return any rows for {max_allowed_time_for_wait} seconds.'
+
     if not ready_to_check:
-        print( f'UNEXPECTED. Initial check query did not return any rows for {max_allowed_time_for_wait} seconds.' )
-        print('Initial check query:')
-        print(ddl_ready_query)
-        return
-    
-    final_check_pass = False
-    if isql_check_script:
-        retcode = 0
-        for i in range(max_allowed_time_for_wait):
-            a.reset()
-            a.expected_stdout = replica_expected_out
-            a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = True)
-
-            if a.return_code:
-                # "Token unknown", "Name longer than database column size" etc: we have to
-                # immediately break from this loop because isql_check_script is incorrect!
-                break
-            
-            if a.clean_stdout == a.clean_expected_stdout:
-                final_check_pass = True
-                break
-            if i < max_allowed_time_for_wait-1:
-                time.sleep(1)
-
-        if not final_check_pass:
-            print(f'UNEXPECTED. Final check query did not return expected dataset for {max_allowed_time_for_wait} seconds.')
-            print('Final check query:')
-            print(isql_check_script)
-            print('Expected output:')
-            print(a.clean_expected_stdout)
-            print('Actual output:')
-            print(a.clean_stdout)
-            print(f'ISQL return_code={a.return_code}')
-            print(f'Waited for {i} seconds')
-
-        a.reset()
-
+        result = '\n'.join((msg, 'ddl_ready_query:', ddl_ready_query))
     else:
-        final_check_pass = True
+        final_check_pass = False
+        if isql_check_script:
+            retcode = 0
+            for i in range(max_allowed_time_for_wait):
+                a.reset()
+                a.expected_stdout = replica_expected_out
+                a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = True)
 
-    return
+                if a.return_code:
+                    # "Token unknown", "Name longer than database column size" etc: we have to
+                    # immediately break from this loop because isql_check_script is incorrect!
+                    break
+                
+                if a.clean_stdout == a.clean_expected_stdout:
+                    final_check_pass = True
+                    break
+                if i < max_allowed_time_for_wait-1:
+                    time.sleep(1)
+
+            if not final_check_pass:
+                
+                result = '\n'.join( 
+                                    (  msg
+                                      ,'Final check query:'
+                                      ,isql_check_script
+                                      ,'Expected output:'
+                                      ,a.clean_expected_stdout
+                                      ,'Actual output:'
+                                      ,a.clean_stdout
+                                      ,f'ISQL return_code={a.return_code}'
+                                      ,f'Waited for {i} seconds'
+                                    )
+                                  )
+            a.reset()
+        else:
+            final_check_pass = True
+
+    return result
 
 #--------------------------------------------
 
@@ -330,6 +314,7 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
     # remove all DB objects (tables, views, ...):
     #
     db_main_meta, db_repl_meta = '', ''
+    result = ''
     for a in (act_db_main,act_db_repl):
         if a == act_db_main:
             sql_clean = (a.files_dir / 'drop-all-db-objects.sql').read_text()
@@ -342,7 +327,8 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
             if a.clean_stdout == a.clean_expected_stdout:
                 a.reset()
             else:
-                print(a.clean_expected_stdout)
+                result = a.clean_stdout
+                # print(a.clean_stdout)
                 a.reset()
                 break
 
@@ -388,10 +374,10 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
             ##############################################################################
             ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
             ##############################################################################
-            watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
+            result = watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
 
             # Must be EMPTY:
-            print(capsys.readouterr().out)
+            #print(capsys.readouterr().out)
 
             db_main_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
         else:
@@ -407,14 +393,17 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
             #
             a.gfix(switches=['-sweep', a.db.dsn])
 
-    # Final point: metadata must become equal:
-    #
-    diff_meta = ''.join(unified_diff( \
-                         [x for x in db_main_meta.splitlines() if 'CREATE DATABASE' not in x],
-                         [x for x in db_repl_meta.splitlines() if 'CREATE DATABASE' not in x])
-                       )
-    # Must be EMPTY:
-    print(diff_meta)
+    if result == '':
+        # Final point: metadata must become equal:
+        #
+        diff_meta = ''.join(unified_diff( \
+                             [x for x in db_main_meta.splitlines() if 'CREATE DATABASE' not in x],
+                             [x for x in db_repl_meta.splitlines() if 'CREATE DATABASE' not in x])
+                           )
+        # Must be EMPTY:
+        return diff_meta
+    else:
+        return result
 
 #--------------------------------------------
 
@@ -424,9 +413,14 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
 def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
 
     db_info = {}
-    out_prep, out_main, out_drop, out_reset = '', '', '', ''
-    smth_failed = None
+    out_prep = out_main = out_back = out_drop = out_reset = ''
 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    replication_log = act_db_main.home_dir / 'replication.log'
+    replold_lines = []
+    with open(replication_log, 'r') as f:
+        replold_lines = f.readlines()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     # Obtain full path + filename for DB_MAIN and DB_REPL aliases.
     # NOTE: we must NOT use 'a.db.db_path' for ALIASED databases!
@@ -456,6 +450,10 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
             insert into test(id, x) values(1, 100);
             commit;
         '''
+
+        # Applying script on master but replica will NOT accept it because its replication mode = NONE.
+        # Message "ERROR: Database is not in the replica mode" must appear after this ISQL call:
+        #
         act_db_main.isql(switches=['-q'], input = sql_init, combine_output = True)
         out_prep = act_db_main.clean_stdout
         act_db_main.reset()
@@ -463,28 +461,21 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     if out_prep:
         pass
     else:
+
+        # During next <MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG> seconds message
+        # "ERROR: Database is not in the replica mode" must appear in replication log
+
+        ##################################################################
+        ###  W A I T    F O R    E R R O R    I N    R E P L . L O G   ###
+        ##################################################################
+        out_main = wait_for_repl_err( act_db_main, replold_lines, MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG)
+
         try:
-            # During next <MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG> seconds message
-            # "ERROR: Database is not in the replica mode" must appear in replication log:
-
-            act_db_main.expected_stdout = 'EXPECTED_NOT_REPL'
-            ###############################################################
-            ###  W A I T   F O R   E R R O R    I N   R E P L . L O G   ###
-            ###############################################################
-            check_repl_log( act_db_main, MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG, '' )
-
-            act_db_main.stdout = capsys.readouterr().out
-            assert act_db_main.clean_stdout == act_db_main.clean_expected_stdout
-            act_db_main.reset()
-
-            #---------------------------------------------------
-
             # Return db_repl mode to 'read-only' (as it was before this test)
             # and wait after it for <MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG> seconds
             # for previously created segment be replicated:
             with act_db_repl.connect_server() as srv:
                 srv.database.set_replica_mode(database = act_db_repl.db.db_path, mode = ReplicaMode.READ_ONLY)
-
 
             # Query to be used for check that all DB objects present in replica (after last DML statement completed on master DB):
             ddl_ready_query = "select 1 from rdb$relations where rdb$relation_name = upper('test')"
@@ -511,22 +502,16 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
             ##############################################################################
             ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
             ##############################################################################
-            watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query, isql_check_script, isql_expected_out)
-
-            # Must be EMPTY:
-            out_main = capsys.readouterr().out
+            out_back = watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query, isql_check_script, isql_expected_out)
 
         except Exception as e:
-            out_main = e.__str__()
-
-
-        drop_db_objects(act_db_main, act_db_repl, capsys)
+            out_back = e.__str__()
 
         # Must be EMPTY:
-        out_drop = capsys.readouterr().out
+        out_drop = drop_db_objects(act_db_main, act_db_repl, capsys)
 
 
-    if [ x for x in (out_prep, out_main, out_drop) if x.strip() ]:
+    if [ x for x in (out_prep, out_main, out_back, out_drop) if x.strip() ]:
         # We have a problem either with DDL/DML or with dropping DB objects.
         # First, we have to RECREATE both master and slave databases
         # (otherwise further execution of this test or other replication-related tests most likely will fail):
@@ -541,6 +526,9 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         if out_main.strip():
             print('out_main:')
             print(out_main)
+        if out_back.strip():
+            print('out_back:')
+            print(out_back)
         if out_drop.strip():
             print('out_drop:')
             print(out_drop)
