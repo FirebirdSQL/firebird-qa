@@ -63,7 +63,7 @@ from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, 
 repl_settings = QA_GLOBALS['replication']
 
 MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
-MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = 20
+
 MAIN_DB_ALIAS = repl_settings['main_db_alias']
 REPL_DB_ALIAS = repl_settings['repl_db_alias']
 RUN_SWEEP_AT_END = int(repl_settings['run_sweep_at_end'])
