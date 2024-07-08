@@ -30,7 +30,7 @@ test_script = """
         -- Sufixes: 'Firebird' followed by space and at least one digit.
         ,iif( cast(mon$client_version as varchar(255) character set utf8) collate unicode_ci
               similar to
-              '(WI|LI|UI|UP|SI|SO|HU)[-](T|V){0,1}[0-9]+.[0-9]+.[0-9]+((.?[0-9]+)*)[[:WHITESPACE:]]+firebird[[:WHITESPACE:]]+[0-9]+((.?[0-9]+)*)%', 1, 0) is_client_version_valid
+              '(WI|LI|UI|UP|SI|SO|HU)[-](T|V){0,1}[0-9]+.[0-9]+.[0-9]+((.?[0-9]+)*)([-]dev)?[[:WHITESPACE:]]+firebird[[:WHITESPACE:]]+[0-9]+((.?[0-9]+)*)%', 1, 0) is_client_version_valid
     from mon$attachments
     where mon$attachment_id = current_connection;
 """
