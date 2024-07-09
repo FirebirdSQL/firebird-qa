@@ -44,6 +44,9 @@ NOTES:
         Can not reproduce fail when run this test 'separately': it passes, but lasts too longm, ~130 s.
         Test will be re-implemented.
         DEFERRED.
+    [09.07.2024] pzotov
+        Added item to substitutions related to 'port detached' message that raises in dev build.
+        Fixed wrong logic because of missed indentation, see hang_stderr.
 """
 import platform
 import pytest
@@ -54,8 +57,11 @@ from pathlib import Path
 from firebird.qa import *
 from firebird.driver import ShutdownMode, ShutdownMethod
 
-substitutions = [('.*After line.*', ''), ('.*Data source.*', '.*Data source'),
-                 ('.*HANGING_STATEMENT_BLOB_ID.*', '')]
+substitutions = [  ('.*After line.*', '')
+                   ,('.*Data source.*', '.*Data source')
+                   ,('.*HANGING_STATEMENT_BLOB_ID.*', '')
+                   ,('.*-port detached', '')
+                ]
 
 init_script = """
     create sequence g;
@@ -188,6 +194,7 @@ def test_1(act: Action, hang_script: Path, hang_stdout: Path, hang_stderr: Path,
             output.append(f'HANGED ATTACH, STDOUT: {line}')
     for line in hang_stderr.read_text().splitlines():
         if line.strip():
+            msg = ''
             if pattern_for_ignored_messages.search(line):
                 continue
             elif pattern_for_failed_statement.search(line):
@@ -196,12 +203,15 @@ def test_1(act: Action, hang_script: Path, hang_stdout: Path, hang_stderr: Path,
                 msg = '<found pattern about closed connection>'
             else:
                 msg = line
-        output.append(f'HANGED ATTACH, STDERR: {msg}')
+    
+            if msg.strip():
+                output.append(f'HANGED ATTACH, STDERR: {msg}')
+
     for step in killer_output:
         for line in act.clean_string(step).splitlines():
             if line.strip():
                 output.append(f"KILLER ATTACH, STDOUT: {' '.join(line.split())}")
-    # Check
+
     act.reset()
     act.expected_stdout = expected_stdout
     act.stdout = '\n'.join(output)
