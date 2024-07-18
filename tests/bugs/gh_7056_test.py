@@ -37,7 +37,7 @@ NOTES:
     3. Problem appeared only for column with width = 32765 characters, thus DB charset must be single-byte, e.g. win1251 etc.
        Otherwise (with default charset = 'utf8') this test will fail with:
        "SQLSTATE = 54000 / ... or string truncation / -Implementation limit exceeded"
-    4. We have to use ñustom driver-config object must be used for DPB because TWO protocols are checked here: LOCAL and REMOTE.
+    4. We have to use custom driver-config object must be used for DPB because TWO protocols are checked here: LOCAL and REMOTE.
 
     Checked on 6.0.0.396, 5.0.1.1440
 """
