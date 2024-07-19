@@ -42,6 +42,7 @@ N_WIDTH = 1
 LOOP_COUNT = 2
 BLOB_FLD_NAME = 'BINARY_DATA'
 
+@pytest.mark.scroll_cur
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
     
