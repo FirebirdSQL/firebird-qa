@@ -73,8 +73,6 @@ def test_1(act: Action, capsys):
         db_cfg_object.protocol.value = None if protocol_name == 'local' else NetProtocol.INET
         db_cfg_object.database.value = str(act.db.db_path)
 
-        db_con_string =  str(act.db.db_path) if protocol_name == 'local' else act.db.dsn
-
         success_msg = f'Protocol: {protocol_name} - COMPLETED.'
         expected_out += success_msg + '\n'
 
