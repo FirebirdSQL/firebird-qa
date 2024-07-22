@@ -7,6 +7,9 @@ TITLE:       Support auth_plugin_list dpb/spb item from application to client [C
 DESCRIPTION:
 NOTES:
     [22.07.2024] pzotov
+    Improvement appeared 28.08.2018 18:47, commit:
+    https://github.com/FirebirdSQL/firebird/commit/dc06a58a1a7923a5954f33c8c131ae3eaf59b907
+
     Checked on 6.0.0.396, 5.0.1.1440, 4.0.5.3127, 3.0.12.33765
 """
 import pytest
