@@ -30,6 +30,16 @@ NOTES:
 
     Confirmed bug on 6.0.0.389-cc71c6f (SS), 5.0.1.1432-9d5a60a (SS) - server hanged and did not allow to make new connections to test DB.
     Checked on 6.0.0.392-3fa8e6b, 5.0.1.1434-2593b3b.
+
+    [24.07.2024] pzotov
+    Checked fixed problem with hang on Windows, Servermode = CLASSIC
+    Commits:
+        https://github.com/FirebirdSQL/firebird/commit/fa90256cf080965f92eae11eba8d897c2d02e1b9
+            Merge pull request #8186 from FirebirdSQL/work/ProfilerIPC
+            Fixed a few issues with IPC used by remote profiler
+        https://github.com/FirebirdSQL/firebird/commit/f59905fc29f0b9288d61fc6113fd24301dce1327
+            Frontported PR #8186 : Fixed a few issues with IPC used by remote profiler
+    Snapshots: 6.0.0.398-f59905f, 5.0.1.1440-7b1b824
 """
 
 import pytest
@@ -100,9 +110,6 @@ act = python_act('db')
 @pytest.mark.disabled_in_forks
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action, tmp_worker_usr: User, tmp_profiler_usr: User, tmp_profiler_role: Role, capsys):
-
-    if act.vars['server-arch'] != 'SuperServer':
-        pytest.skip("SEE NOTES: currently Super only.")
 
     addi_script = f"""
         set wng off;
