@@ -30,6 +30,12 @@ NOTES:
     4. Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace it before every test session).
        Discussed with pcisar, letters since 30-may-2022 13:48, subject:
        "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
+    
+    [31.07.2024] pzotov
+    Replaced assert for ISQL output: added diff_patterns that must filter STDERR because we have to suppress message with text
+    "file ... is not a valid database" as it can be seen only in dev-builds.
+    Expected ISQL output must be compared with filtered capsys.readouterr().out rather than with act.stdout
+    Noted by Dimitry Sibiryakov, https://github.com/FirebirdSQL/firebird-qa/issues/27
 
     Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
 """
@@ -42,12 +48,15 @@ from difflib import unified_diff
 import pytest
 from firebird.qa import *
 
-substitutions = [('[ \t]+', ' '), ('file .* is not a valid database', 'file is not a valid database'), ]
+substitutions = [
+                    ('[ \t]+', ' ')
+                   ,('(-)?file .* is not a valid database', 'file is not a valid database')
+                ]
 
 REQUIRED_ALIAS = 'tmp_core_4964_alias'
 
 db = db_factory()
-act = python_act('db', substitutions=substitutions)
+act = python_act('db', substitutions = substitutions)
 tmp_user = user_factory('db', name='tmp$c4964', password='123', plugin = 'Srp')
 
 expected_stdout_isql = """
@@ -107,27 +116,63 @@ def test_1(act: Action, tmp_user: User, capsys):
     # POINT-1: check that ISQL raises:
     # "SQLSTATE = 08006 / Error occurred during login, please check server firebird.log ..."
     #
+
+    # release build:
+    # ==================================
+    # Statement failed, SQLSTATE = 08006
+    # Error occurred during login, please check server firebird.log for details
+    # ==================================
+
+    # dev-build:
+    # ==================================
+    # Statement failed, SQLSTATE = 08006
+    # Error occurred during login, please check server firebird.log for details
+    # -file ... is not a valid database
+    # ==================================
+    # Last line ("file ... is not a valid database") will be suppressed by substitutions set:
+    #
+
+    isql_err_diff_patterns = [
+         "Statement failed, SQLSTATE = 08006"
+        ,"Error occurred during login, please check server firebird.log for details"
+    ]
+    isql_err_diff_patterns = [re.compile(s) for s in isql_err_diff_patterns]
+    
     act.expected_stdout = expected_stdout_isql
     try:
         act.isql(switches = ['-q'], input = check_sql, connect_db=False, credentials = False, combine_output = True)
     finally:
         tmp_fdb.unlink()
 
+    # ::: NB :::
+    # Expected ISQL output must be compared with filtered capsys.readouterr().out rather than with act.stdout
+    for line in act.stdout.splitlines():
+        if act.match_any(line, isql_err_diff_patterns):
+            print(line)
+
+    act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
+
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     time.sleep(1) # Allow content of firebird log be fully flushed on disk.
     fblog_2 = act.get_firebird_log()
 
-    diff_patterns = [
-        "\\+\\s+Authentication error",
-        "\\+\\s+file .* is not a valid database",
+    fb_log_diff_patterns = [
+         "\\+\\s+Authentication error"
+        ,"\\+\\s+file .* is not a valid database"
     ]
-    diff_patterns = [re.compile(s) for s in diff_patterns]
+    fb_log_diff_patterns = [re.compile(s) for s in fb_log_diff_patterns]
     
+    # BOTH release and dev build will print in firebird.log:
+    # <hostname> <timestamp>
+    # Authentication error
+    # file .* is not a valid database
+    #
     for line in unified_diff(fblog_1, fblog_2):
         if line.startswith('+'):
-            if act.match_any(line, diff_patterns):
+            if act.match_any(line, fb_log_diff_patterns):
                 print(line.split('+')[-1])
                 
     ###############################################################################################################
@@ -138,3 +183,4 @@ def test_1(act: Action, tmp_user: User, capsys):
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
+
