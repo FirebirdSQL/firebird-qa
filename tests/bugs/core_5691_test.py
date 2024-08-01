@@ -22,8 +22,17 @@ NOTES:
     [28.03.2024] pzotov
     Removed loop with search for 'file description' attribute because it is useless in case when system locale
     differs from English (e.g. russian etc). Defined constant with value = 34.
+
+    [01.08.2024] pzotov
+    re.sub() calls must be applied to every obtained binary file description because it my contain "(NN-bit debug)"
+    suffix if we run test against dev-build, e.g.:
+        'fbclient.dll' :  firebird client library (64-bit debug)
+    We have to remove such suffix (together with "NN-bit" and parenthesis).
+    Noted by Dimitry Sibiryakov, https://github.com/FirebirdSQL/firebird-qa/issues/29
 """
+
 import os
+import re
 from pathlib import Path
 import subprocess
 import time
@@ -158,10 +167,11 @@ def test_1(act: Action, tmp_vbs: Path, tmp_log: Path, capsys):
         for x in sorted(f_list):
             subprocess.call( [ 'cscript', '//nologo', str(tmp_vbs), act.vars['bin-dir'] / x  ], stdout = vbs_log, stderr = subprocess.STDOUT)
 
-
+    # 'fbclient.dll' :  firebird client library (64-bit debug)
     with open( tmp_log,'r') as f:
         for line in f:
-            print( line.lower() )
+            # 01.08.2024: added 're.sub()' here, see notes:
+            print( re.sub(r'\s+\(\d+(\s+|-)bit debug\)', '', line.lower()) )
 
     expected_stdout = f"""
         'fb_lock_print.exe' 		: firebird lock print tool
