@@ -78,6 +78,9 @@ def test_1(act: Action, capsys):
     db_cfg_object.protocol.value = NetProtocol.INET
     db_cfg_object.database.value = REQUIRED_ALIAS
     for i in range(LOOP_LIMIT):
+        # ::: NB :::
+        # charset must be 'utf8' otherwise problem can not be reproduced!
+        # (see also note by the author of ticket in his starting message)
         with create_database(db_cfg_name, user = act.db.user, password = act.db.password, charset = 'utf8') as con:
             con.drop_database()
     
