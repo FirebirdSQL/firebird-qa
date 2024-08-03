@@ -81,7 +81,7 @@ except KeyError as e:
 
 db = db_factory()
 
-act = python_act('db')
+act = python_act('db', substitutions = [('[ \t]+', ' '), ])
 
 tmp_role = role_factory('db', name='TMP$R6469')
 tmp_file = temp_file('c6469_tmp.sql')
@@ -171,7 +171,9 @@ def run_script(act: Action, tmp_role: Role, tmp_file: Path):
 
         connect '{THIS_COMPUTER_NAME}:{act.db.db_path}' role {tmp_role.name};
 
-        select mon$user,mon$role,mon$auth_method from mon$attachments where mon$attachment_id = current_connection;
+        select upper(mon$user) as mon_user, upper(mon$role) as mon_role, mon$auth_method as mon_auth
+        from mon$attachments
+        where mon$attachment_id = current_connection;
         commit;
 
         set trusted role;
@@ -185,10 +187,11 @@ def run_script(act: Action, tmp_role: Role, tmp_file: Path):
     tmp_file.write_text(script)
 
     act.expected_stdout = f"""
-        MON$USER                        {THIS_COMPUTER_NAME}\\{CURRENT_WIN_ADMIN.upper()}
-        MON$ROLE                        {tmp_role.name.upper()}
-        MON$AUTH_METHOD                 Mapped from Win_Sspi
+        MON_USER {THIS_COMPUTER_NAME.upper()}\\{CURRENT_WIN_ADMIN.upper()}
+        MON_ROLE {tmp_role.name.upper()}
+        MON_AUTH Mapped from Win_Sspi
     """
+
     act.isql(switches=['-n', '-q'], input_file = tmp_file, connect_db = False, credentials = False, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
