@@ -22,7 +22,7 @@ NOTES:
     On Windows 10 usually ratio between cpu_times() medians of these two SPs is about 0.5 (before fix it was about 30).
 
     Confirmed bug on 6.0.0.405.
-    Checked on Windows, 6.0.0.406 (SS and CS).
+    Checked on Windows, 6.0.0.406, 5.0.1.1469, 4.0.5.3139 (SS and CS).
 """
 
 import psutil
