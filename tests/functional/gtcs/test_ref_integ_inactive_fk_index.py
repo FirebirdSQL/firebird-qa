@@ -4,9 +4,15 @@
 ID:          gtcs.ref_integ_inactive_fk_index
 TITLE:       Index that is used for FK should not be avail for INACTIVE
 DESCRIPTION:
-  Original test see in:
-  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/REF_INT.8.ISQL.script
+    Original test see in:
+    https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/REF_INT.8.ISQL.script
 FBTEST:      functional.gtcs.ref_integ_inactive_fk_index
+NOTES:
+    [07.08.2024] pzotov
+    Splitted expected* text because system triggers now are created in C++/GDML code
+    See https://github.com/FirebirdSQL/firebird/pull/8202
+    Commit (05-aug-2024 13:45):
+    https://github.com/FirebirdSQL/firebird/commit/0cc8de396a3c2bbe13b161ecbfffa8055e7b4929
 """
 import os
 import pytest
@@ -16,7 +22,11 @@ db = db_factory()
 
 act = python_act('db')
 
-test_expected_stderr = """
+test_expected_stdout = """
+    Records affected: 0
+"""
+
+expected_stderr_5x = """
     Statement failed, SQLSTATE = 27000
     unsuccessful metadata update
     -ALTER INDEX REF_KEY failed
@@ -29,8 +39,16 @@ test_expected_stderr = """
     -Problematic key value is ("DEPT_NO" = -1)
 """
 
-test_expected_stdout = """
-    Records affected: 0
+expected_stderr_6x = """
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -ALTER INDEX REF_KEY failed
+    -Cannot deactivate index used by an integrity constraint
+
+    Statement failed, SQLSTATE = 23000
+    violation of FOREIGN KEY constraint "REF_KEY" on table "EMPLOYEE"
+    -Foreign key reference target does not exist
+    -Problematic key value is ("DEPT_NO" = -1)
 """
 
 @pytest.mark.version('>=3.0')
@@ -49,7 +67,7 @@ def test_1(act: Action):
     '''
 
     act.expected_stdout = test_expected_stdout
-    act.expected_stderr = test_expected_stderr
+    act.expected_stderr = expected_stderr_5x if act.is_version('<6') else expected_stderr_6x
    
     act.isql(switches=['-q'], input = os.linesep.join( (sql_init, sql_addi) ) )
 
