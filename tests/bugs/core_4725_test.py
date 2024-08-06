@@ -7,6 +7,12 @@ TITLE:       Inconsistencies with ALTER DOMAIN and ALTER TABLE with DROP NOT NUL
 DESCRIPTION:
 JIRA:        CORE-4725
 FBTEST:      bugs.core_4725
+NOTES:
+    [07.08.2024] pzotov
+    Splitted expected* text because system triggers now are created in C++/GDML code
+    See https://github.com/FirebirdSQL/firebird/pull/8202
+    Commit (05-aug-2024 13:45):
+    https://github.com/FirebirdSQL/firebird/commit/0cc8de396a3c2bbe13b161ecbfffa8055e7b4929
 """
 
 import pytest
@@ -213,7 +219,7 @@ expected_stdout = """
     DM_06                           INTEGER Not Null
 """
 
-expected_stderr = """
+expected_stderr_5x = """
     Statement failed, SQLSTATE = 27000
     unsuccessful metadata update
     -ALTER TABLE TEST00 failed
@@ -239,10 +245,34 @@ expected_stderr = """
     validation error for column "TEST06"."X", value "*** null ***"
 """
 
+expected_stderr_6x = """
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -ALTER TABLE TEST00 failed
+    -Column used in a PRIMARY constraint must be NOT NULL.
+
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -ALTER TABLE TEST01 failed
+    -Column used in a PRIMARY constraint must be NOT NULL.
+
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -ALTER DOMAIN DM_03 failed
+    -Domain used in the PRIMARY KEY constraint of table TEST03 must be NOT NULL
+
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X of table TEST05 NOT NULL because there are NULLs present
+
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST06"."X", value "*** null ***"
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
+    act.expected_stderr = expected_stderr_5x if act.is_version('<6') else expected_stderr_6x
     act.execute()
     assert (act.clean_stderr == act.clean_expected_stderr and
             act.clean_stdout == act.clean_expected_stdout)
