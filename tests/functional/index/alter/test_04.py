@@ -37,7 +37,6 @@ expected_stdout_6x = """
     -Cannot deactivate index used by a PRIMARY/UNIQUE constraint
 """
 
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
