@@ -23,6 +23,10 @@ NOTES:
 
     Confirmed bug on 6.0.0.405.
     Checked on Windows, 6.0.0.406, 5.0.1.1469, 4.0.5.3139 (SS and CS).
+
+    [08.08.2024] pzotov
+    Separated definition of MAX_RATIO value, it depends on OS.
+    Linux results show that medians ratio is about 2.3 ... 2.6.
 """
 
 import psutil
@@ -50,8 +54,9 @@ N_COUNT_PER_MEASURE_GUID = 100000
 
 # Maximal value for ratio between maximal and minimal medians
 #
-MAX_RATIO = 1
-#############
+###########################################
+MAX_RATIO = 1.0 if os.name == 'nt' else 5.5
+###########################################
 
 init_script = \
 f'''
