@@ -28,7 +28,7 @@ NOTES:
     Separated definition of MAX_RATIO value, it depends on OS.
     Linux results show that medians ratio is about 2.3 ... 2.6.
 """
-
+import os
 import psutil
 import pytest
 from firebird.qa import *
