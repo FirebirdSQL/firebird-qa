@@ -7,6 +7,11 @@ TITLE:       Available indices are not used in some cases if ORDER BY expression
 DESCRIPTION:
 JIRA:        CORE-5481
 FBTEST:      bugs.core_5481
+NOTES:
+    [24.09.2023] pzotov
+    Execution plan changed in FB 5.x since build 5.0.0.1211 (14-sep-2023).
+    Expected output has been splitted on that remains actual for FB 4.x and one that issued for 5.x+.
+    Confirmed by dimitr, letter 24.09.2023 13:30
 """
 
 import pytest
@@ -59,14 +64,19 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
+expected_stdout_4x = """
     PLAN (V_TEST B ORDER BALANCES_BALANCEDATE_DESC INDEX (FK_BALANCES_ORGACCOUNTS))
+    PLAN (V_TEST B ORDER BALANCES_BALANCEDATE_DESC INDEX (FK_BALANCES_ORGACCOUNTS))
+"""
+
+expected_stdout_5x = """
+    PLAN SORT (V_TEST B INDEX (BALANCES_BALANCEDATE_ORGACCOUNT))
     PLAN (V_TEST B ORDER BALANCES_BALANCEDATE_DESC INDEX (FK_BALANCES_ORGACCOUNTS))
 """
 
 @pytest.mark.version('>=3.0.4')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
 

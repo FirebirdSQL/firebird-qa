@@ -133,6 +133,7 @@ trace = ['time_threshold = 0',
          'log_connections = true',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, sweep_log: Path, capsys):
 

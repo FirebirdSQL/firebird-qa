@@ -80,7 +80,6 @@ expected_stdout = """
     -At trigger 'PERSONS_REPLICATE'
 """
 
-##@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0.6')
 def test_1(act: Action, db_repl: Database, capsys):
     ddl_for_replication = f"""

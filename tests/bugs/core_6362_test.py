@@ -13,10 +13,15 @@ JIRA:        CORE-6362
 FBTEST:      bugs.core_6362
 NOTES:
     [20.06.2022] pzotov
-    See also bugs/gh_7165_test.py
-    Message about missed sec. context will raise if we make undefined ISC_* variables and try to connect.
-    Confirmed missed info in FB 3.0.6.33301: firebird.log remains unchanged (though ISQL issues expected message).
-    Checked on 4.0.1.2692, 3.0.8.33535.
+        See also bugs/gh_7165_test.py
+        Message about missed sec. context will raise if we make undefined ISC_* variables and try to connect.
+        Confirmed missed info in FB 3.0.6.33301: firebird.log remains unchanged (though ISQL issues expected message).
+        Checked on 4.0.1.2692, 3.0.8.33535.
+
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import os
@@ -33,7 +38,7 @@ for v in ('ISC_USER','ISC_PASSWORD'):
 
 db = db_factory()
 
-substitutions = [ ( '^((?!context).)*$', ''),
+substitutions = [ ( '^((?!SQLSTATE|context).)*$', ''),
                   ( 'Missing security context(\\(s\\))?( required)? for .*', 'Missing security context'),
                   ( 'Available context(\\(s\\))?(:)? .*', 'Available context'),
                   ( '[\t ]+', ' '),
@@ -41,15 +46,16 @@ substitutions = [ ( '^((?!context).)*$', ''),
 
 act = python_act('db', substitutions = substitutions)
 
+expected_isql = """
+    Statement failed, SQLSTATE = 28000
+    Missing security context for TEST.FDB
+"""
+
 expected_fb_log_diff = """
     + Missing security context
     + Available context
 """
 
-expected_stderr_isql = """
-    Statement failed, SQLSTATE = 28000
-    Missing security context for TEST.FDB
-"""
 @pytest.mark.version('>=3.0.7')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, capsys):
@@ -57,9 +63,9 @@ def test_1(act: Action, capsys):
         srv.info.get_log()
         fb_log_init = srv.readlines()
 
-    act.expected_stderr = expected_stderr_isql
-    act.isql(switches=['-q'], input = 'quit;', credentials = False)
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_isql
+    act.isql(switches=['-q'], input = 'quit;', credentials = False, combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
 
     with act.connect_server(encoding=locale.getpreferredencoding()) as srv:

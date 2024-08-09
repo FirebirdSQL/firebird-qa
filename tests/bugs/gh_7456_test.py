@@ -8,6 +8,11 @@ NOTES:
     [15.02.2023] pzotov
     Confirmed bug on 5.0.0.917
     Checked on 5.0.0.920, 4.0.3.2900, 3.0.11.33664 -- all fine.
+
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
+    i.e.
+    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
 """
 
 import pytest
@@ -61,7 +66,7 @@ test_script = """
         function func2() returns int;
     end
     ^
-    set term ^;
+    set term ;^
 
     execute procedure test_proc;
     select rdb$get_context('USER_SESSION','STANDALONE_PROC_DONE') as STANDALONE_PROC_DONE from rdb$database;
@@ -73,12 +78,8 @@ expected_stdout = """
     STANDALONE_PROC_DONE            1
 """
 
-expected_stderr = """
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout and act.clean_stderr == act.clean_expected_stderr
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout

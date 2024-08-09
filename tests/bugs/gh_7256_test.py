@@ -6,31 +6,34 @@ ISSUE:       7256
 TITLE:       Inconsistent conversion of non-TEXT blobs in BLOB_APPEND
 NOTES:
     [22.02.2023] pzotov
+        1. Test makes TWO subsequent connections:
+            1) to write blobs in the table using charset UTF8
+            2) to READ that table using charset NONE.
+        This must be done in order to see how rules for BLOB_APPEND() datatype and charset work.
+        Otherwise (without reconnect with charset = NONE) BLOB_APPEND() will always return blob with charset
+        that equals to charset of established connection, with one exception:
+        "if first non-NULL argument is [var]char with charset OCTETS, then create BLOB SUB_TYPE BINARY"
+        (rules for BLOB_APPEND() result have been discussed in the fb-devel, 14.08.2022 ... 16.08.2022).
 
-    1. Test makes TWO subsequent connections:
-        1) to write blobs in the table using charset UTF8
-        2) to READ that table using charset NONE.
-    This must be done in order to see how rules for BLOB_APPEND() datatype and charset work.
-    Otherwise (without reconnect with charset = NONE) BLOB_APPEND() will always return blob with charset
-    that equals to charset of established connection, with one exception:
-    "if first non-NULL argument is [var]char with charset OCTETS, then create BLOB SUB_TYPE BINARY"
-    (rules for BLOB_APPEND() result have been discussed in the fb-devel, 14.08.2022 ... 16.08.2022).
+        2. Non-ascii characters are used intentionally. But they all present in both UTF8 and ISO8859_1 charsets.
 
-    2. Non-ascii characters are used intentionally. But they all present in both UTF8 and ISO8859_1 charsets.
+        3. Statement 'select blob_append(<list of nuls>) from test' currently does not show <null> literal.
+           This is a bug and must/will be fixed. After that, test will be adjusted.
 
-    3. Statement 'select blob_append(<list of nuls>) from test' currently does not show <null> literal.
-       This is a bug and must/will be fixed. After that, test will be adjusted.
+        Thanks to Vlad for suggestions. Discussed 20-21 feb 2023.
+        Checked on 5.0.0.958.
 
-    Thanks to Vlad for suggestions. Discussed 20-21 feb 2023.
-    Checked on 5.0.0.958.
+        [03.03.2023] pzotov
+        Added 'set blob all' because result of blob_append(null, null) must be visible as literal '<null>'.
+        Added substitution for suppressing 'Nullable' flags in the SQLDA output: it is sufficient for this test
+        to check only datatypes of result.
+        Discussed with Vlad, letters 02-mar-2023 16:01 and 03-mar-2023 14:43.
 
-    [03.03.2023] pzotov
-    Added 'set blob all' because result of blob_append(null, null) must be visible as literal '<null>'.
-    Added substitution for suppressing 'Nullable' flags in the SQLDA output: it is sufficient for this test
-    to check only datatypes of result.
-    Discussed with Vlad, letters 02-mar-2023 16:01 and 03-mar-2023 14:43.
-
-    Checked on 5.0.0.967, 4.0.3.2904 (intermediate build 03-mar-2023 12:33)
+        Checked on 5.0.0.967, 4.0.3.2904 (intermediate build 03-mar-2023 12:33)
+    [14.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -103,7 +106,7 @@ test_script = """
     select blob_append(null, null, null) as blob_result_5 from test;
 """
 
-act = isql_act('db', test_script, substitutions = [('^((?!sqltype:|BLOB_RESULT).)*$', ''), ('BLOB Nullable', 'BLOB'), ('[ \t]+', ' ')])
+act = isql_act('db', test_script, substitutions = [('^((?!SQLSTATE|sqltype:|BLOB_RESULT).)*$', ''), ('BLOB Nullable', 'BLOB'), ('[ \t]+', ' ')])
 
 expected_stdout = """
     01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 1 OCTETS

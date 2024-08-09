@@ -7,10 +7,14 @@ TITLE:       AV in engine when attaching to the non-existing database and non-SY
 DESCRIPTION:
 NOTES:
     [22.05.2023] pzotov
-    Confirmed crash on 4.0.3.2933, got on attempt to make connection:
-        Error reading data from the connection.
-        (335544726,)
-    Checked on 4.0.3.2936 SS/CS - works OK, no crash.
+        Confirmed crash on 4.0.3.2933, got on attempt to make connection:
+            Error reading data from the connection.
+            (335544726,)
+        Checked on 4.0.3.2936 SS/CS - works OK, no crash.
+    [14.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -26,14 +30,14 @@ tmp_user = user_factory('db', name='tmp_syspriv_user', password='123')
 tmp_role = role_factory('db', name='tmp_role_trace_any_attachment')
 tmp_usr2 = user_factory('db', name='tmp_stock_manager', password='123')
 
-substitutions = [('^((?!(I/O error)|(Error while)|335544344|335544734).)*$', ''), ('CreateFile\\s+\\(open\\)', 'open')]
+substitutions = [('^((?!SQLSTATE|(I/O error)|(Error while)|335544344|335544734).)*$', ''), ('CreateFile\\s+\\(open\\)', 'open')]
 
 act = python_act('db', substitutions = substitutions)
 act_non_existing_database = python_act('db_non_existing_database')
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0.3')
 def test_1(act: Action, act_non_existing_database: Action, tmp_user: User, tmp_role: Role, tmp_usr2: User, capsys):
-
   
     init_script = f"""
         set wng off;
@@ -48,7 +52,9 @@ def test_1(act: Action, act_non_existing_database: Action, tmp_user: User, tmp_r
         grant default {tmp_role.name} to user {tmp_user.name};
         commit;
     """
-    act.isql(switches=['-q'], input=init_script)
+    act.isql(switches=['-q'], input=init_script, combine_output = True)
+    assert act.clean_stdout == ''
+    act.reset()
 
     trace_cfg_items = [
         'log_connections = true',

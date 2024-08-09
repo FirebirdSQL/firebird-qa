@@ -99,6 +99,7 @@ expected_stdout = """
     WHAT_PROTOCOL_IM_USING          <null>
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0.4')
 def test_1(act: Action, tmp_user, tmp_role):
     act.expected_stdout = expected_stdout

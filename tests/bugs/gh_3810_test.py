@@ -8,9 +8,11 @@ NOTES:
     [14.04.2023] pzotov
     Confirmed poor performance on 3.0.11.33678 (num of fetches = 10'099).
     Checked on 3.0.11.33681 -- all fine, fetches differ for less than 20.
-    [22.09.2023] Zuev
-    Index tmp_tbl1_fld2 was removed from the test because it does not refer to the fix, 
-    while the optimizer may produce a plan different from the expected one.
+
+    [22.09.2023] pzotov
+    Changed name of table to simpler. 
+    Removed usage of index test_fld2 after discuss with Anton Zuev (Red Soft) and dimitr,
+    see: https://github.com/FirebirdSQL/firebird-qa/pull/19
 """
 
 import pytest
@@ -20,8 +22,9 @@ db = db_factory()
 
 test_script = """
     set bail on;
-    create table tmp_tbl1 (fld1 integer, fld2 integer, fld3 integer);
-    create index tmp_tbl1_fld123 on tmp_tbl1(fld1, fld2, fld3);
+    create table test (fld1 integer, fld2 integer, fld3 integer);
+    create index test_fld123 on test(fld1, fld2, fld3);
+    -- create index test_fld2 on test(fld2);
     commit;
     set term ^;
     create or alter procedure tmp_sp1 as
@@ -30,7 +33,7 @@ test_script = """
         i=0;
         while ( i < 10000 ) do begin
             i=i+1;
-            insert into tmp_tbl1 values (1, :i, 2);
+            insert into test values (1, :i, 2);
         end
     end
     ^
@@ -38,7 +41,8 @@ test_script = """
     commit;
     execute procedure tmp_sp1;
     commit;
-    SET STATISTICS INDEX TMP_TBL1_FLD123;
+    SET STATISTICS INDEX test_fld123;
+    -- SET STATISTICS INDEX test_FLD2;
     commit;
 
     recreate view v_check as
@@ -59,7 +63,7 @@ test_script = """
     ^
     set plan on
     ^
-    select count(*) from tmp_tbl1 where fld1=1 and fld2 is null
+    select count(*) from test where fld1=1 and fld2 is null
     ^
     set plan off
     ^
@@ -94,7 +98,7 @@ test_script = """
 act = isql_act('db', test_script)
 
 expected_stdout = """
-    PLAN (TMP_TBL1 INDEX (TMP_TBL1_FLD123))
+    PLAN (TEST INDEX (TEST_FLD123))
     COUNT                           0
     FETCHES_DIFF                    OK, expected
 """

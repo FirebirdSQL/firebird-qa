@@ -4,19 +4,20 @@
 ID:          trigger.database.disconnect
 TITLE:       Trigger on database disconnect: check that exception that raised when trigger fires is written to firebird.log
 DESCRIPTION:
-  Discussed with Alex, 16.12.2020 functionality that was not specified in the documentation:
-      exception that raises in a trigger on DISCONNECT reflects in the firebird.log.
+    Test covers https://github.com/FirebirdSQL/firebird/issues/4282
+    Discussed with Alex, 16.12.2020 functionality that was not specified in the documentation:
+    exception that raises in a trigger on DISCONNECT reflects in the firebird.log.
 
-      Test creates trigger on disconnect and put in its body statement which always will fail: 1/0.
-      Then we get content of firebird.log before disconnect and after.
-      Finally we compare these logs and search in the difference lines about error message.
+    Test creates trigger on disconnect and put in its body statement which always will fail: 1/0.
+    Then we get content of firebird.log before disconnect and after.
+    Finally we compare these logs and search in the difference lines about error message.
 FBTEST:      functional.trigger.database.disconnect_01
 NOTES:
-[26.05.2022] pzotov
-  Re-implemented for work in firebird-qa suite. 
-  ACHTUNG: firebird.log may contain NON-ASCII characters if localized Windows is used!
-  Because of this, we have to add 'encoding=locale.getpreferredencoding()' to act.connect-server() call.
-  Checked on: 4.0.1.2692, 5.0.0.497
+    [26.05.2022] pzotov
+        Re-implemented for work in firebird-qa suite. 
+        ACHTUNG: firebird.log may contain NON-ASCII characters if localized Windows is used!
+        Because of this, we have to add 'encoding=locale.getpreferredencoding()' to act.connect-server() call.
+        Checked on: 4.0.1.2692, 5.0.0.497
 """
 
 import pytest

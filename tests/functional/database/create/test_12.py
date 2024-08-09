@@ -36,6 +36,7 @@ expected_stdout_2 = """
     PAGE_SIZE                       32768
 """
 
+@pytest.mark.skip("Replaced with functional/database/create/test_00.py")
 @pytest.mark.version('>=4')
 def test_2(act: Action):
     act.expected_stdout = expected_stdout_2

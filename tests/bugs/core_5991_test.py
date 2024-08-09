@@ -95,6 +95,7 @@ trace = ['{',
          '}'
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.5')
 def test_1(act: Action, capsys):
     trace.insert(0, f"database = '{act.db.db_path}'")

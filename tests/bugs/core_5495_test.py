@@ -17,38 +17,35 @@ NOTES:
 JIRA:        CORE-5495
 FBTEST:      bugs.core_5495
 """
+import locale
 
 import pytest
 from firebird.qa import *
 
 db = db_factory()
+act = python_act('db', substitutions = [('TCPv(4|6)', 'TCP'),('[ \t]+', ' ')])
 
-test_user = user_factory('db', name='tmp$c5495', password='123', plugin='Legacy_UserManager')
-
-test_script = """
-    set list on;
-    set bail on;
-    connect '$(DSN)' user tmp$c5495 password '123';
-    --select mon$user,mon$remote_address,mon$remote_protocol,mon$client_version,mon$remote_version,mon$auth_method from mon$attachments
-    select mon$user,mon$remote_protocol,mon$auth_method from mon$attachments
-    where mon$attachment_id=current_connection;
-    commit;
-    connect '$(DSN)' user SYSDBA password 'masterkey';
-    commit;
-"""
-
-act = isql_act('db', test_script, substitutions=[('TCPv.*', 'TCP'),
-                                                 ('Commit current transaction \\(y/n\\)\\?', '')])
-
-expected_stdout = """
-     MON$USER                        TMP$C5495
-     MON$REMOTE_PROTOCOL             TCP
-     MON$AUTH_METHOD                 Legacy_Auth
-"""
+tmp_user = user_factory('db', name='tmp$c5495', password='123', plugin='Legacy_UserManager')
 
 @pytest.mark.version('>=4.0')
-def test_1(act: Action, test_user: User):
+def test_1(act: Action, tmp_user: User):
+
+    test_script = f"""
+        set list on;
+        set bail on;
+        connect '{act.db.dsn}' user {tmp_user.name} password '{tmp_user.password}';
+        select mon$user,mon$remote_protocol,mon$auth_method from mon$attachments
+        where mon$attachment_id=current_connection;
+        commit;
+    """
+
+    expected_stdout = f"""
+         MON$USER                        {tmp_user.name.upper()}
+         MON$REMOTE_PROTOCOL             TCP
+         MON$AUTH_METHOD                 Legacy_Auth
+    """
+    
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.isql(switches = ['-q'], input = test_script, connect_db = False, combine_output = True, io_enc = locale.getpreferredencoding())
     assert act.clean_stdout == act.clean_expected_stdout
 

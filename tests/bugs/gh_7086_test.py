@@ -9,49 +9,30 @@ NOTES:
     Test verifies only example from doc/sql.extensions/README.profiler.md
     More complex checks will be implementer later.
     Checked on 5.0.0.958 SS/CS.
+
+    [01.12.2023] pzotov
+    New behaviour of ISQL was introduced after implementation of PR #7868: SET AUTOTERM.
+    Since that was implemented, ISQL handles comments (single- and multi-lined) as PART of statement that follows these comments.
+    In other words, ISQL in 6.x does not 'swallow' comments and sends them to engine together with statement that follows.
+    This means that comment PLUS statement can be 'unexpectedly' seen in PROFILER tables (plg$prof_record_source_stats_view in this test).
+
+    Currently this is not considered as a bug, see note by Adriano: https://groups.google.com/g/firebird-devel/c/AM8vlA3YJws
+    Because of this, we have (in this test) to either not use comments at all or filter them out by applying substitution which
+    will 'know' about some special text ('comment_tag') that must be suppressed.
+
+    Checked on 6.0.0.163, 5.0.0.1284
+
+    [09.04.2024] pzotov
+    Adjusted output for FB 6.x (changed since 6.0.0.273; discussed with Adriano).
 """
 
 import os
 import pytest
 from firebird.qa import *
 
-# Output contains lot of data with concrete values for attachment_id, timestamps etc.
-# We have to check only presense of such lines and ignore these values:
-ptn_list = [
-     'ATTACHMENT_ID'
-    ,'START_TIMESTAMP'
-    ,'FINISH_TIMESTAMP'
-    ,'SQL_TEXT'
-    ,'LINE_NUM'
-    ,'COLUMN_NUM'
-    ,'MIN_ELAPSED_TIME'
-    ,'MAX_ELAPSED_TIME'
-    ,'TOTAL_ELAPSED_TIME'
-    ,'AVG_ELAPSED_TIME'
-    ,'STATEMENT_ID'
-    ,'OPEN_MIN_ELAPSED_TIME'
-    ,'OPEN_MAX_ELAPSED_TIME'
-    ,'OPEN_TOTAL_ELAPSED_TIME'
-    ,'OPEN_AVG_ELAPSED_TIME'
-    ,'FETCH_COUNTER'
-    ,'FETCH_MIN_ELAPSED_TIME'
-    ,'FETCH_MAX_ELAPSED_TIME'
-    ,'FETCH_TOTAL_ELAPSED_TIME'
-    ,'FETCH_AVG_ELAPSED_TIME'
-    ,'OPEN_FETCH_TOTAL_ELAPSED_TIME'
-    ,'REQUEST_ID'
-    ,'STATEMENT_ID'
-    ,'CALLER_REQUEST_ID'
-    ,'START_TIMESTAMP'
-    ,'FINISH_TIMESTAMP'
-    ,'TOTAL_ELAPSED_TIME'
-]
-sub_list = [ (x+' .*', x) for x in ptn_list ]
-
-substitutions = [ ('[ \t]+', ' ') ] +  sub_list
-
 db = db_factory()
 
+COMMENT_TAG='DONT_SHOW_IN_OUTPUT'
 test_script = f"""
     set list on;
     create table tab (
@@ -81,9 +62,9 @@ test_script = f"""
     end^
     set term ;^
 
-    -- ######################################
-    -- ###    Start profiling, session 1  ###
-    -- ######################################
+    -- {COMMENT_TAG} ######################################
+    -- {COMMENT_TAG} ###    Start profiling, session 1  ###
+    -- {COMMENT_TAG} ######################################
     select rdb$profiler.start_session('profile session 1') from rdb$database;
 
     set term ^;
@@ -96,16 +77,16 @@ test_script = f"""
     end^
     set term ;^
 
-    -- ######################################
-    -- ###   Finish profiling session 1   ###
-    -- ######################################
+    -- {COMMENT_TAG} ######################################
+    -- {COMMENT_TAG} ###   Finish profiling session 1   ###
+    -- {COMMENT_TAG} ######################################
     execute procedure rdb$profiler.finish_session(true);
 
     execute procedure ins;
 
-    -- ######################################
-    -- ###    Start profiling, session 2  ###
-    -- ######################################
+    -- {COMMENT_TAG} ######################################
+    -- {COMMENT_TAG} ###    Start profiling, session 2  ###
+    -- {COMMENT_TAG} ######################################
     select rdb$profiler.start_session('profile session 2') from rdb$database;
 
     out {os.devnull};
@@ -117,9 +98,9 @@ test_script = f"""
       order by sum(val);
     out;
 
-    -- ######################################
-    -- ###   Finish profiling session 2   ###
-    -- ######################################
+    -- {COMMENT_TAG} ######################################
+    -- {COMMENT_TAG} ###   Finish profiling session 2   ###
+    -- {COMMENT_TAG} ######################################
     execute procedure rdb$profiler.finish_session(true);
 
 
@@ -263,9 +244,44 @@ test_script = f"""
     ;
 """
 
+# Output contains lot of data with concrete values for attachment_id, timestamps etc.
+# We have to check only presense of such lines and ignore these values:
+ptn_list = [
+     'ATTACHMENT_ID'
+    ,'START_TIMESTAMP'
+    ,'FINISH_TIMESTAMP'
+    ,'SQL_TEXT'
+    ,'LINE_NUM'
+    ,'COLUMN_NUM'
+    ,'MIN_ELAPSED_TIME'
+    ,'MAX_ELAPSED_TIME'
+    ,'TOTAL_ELAPSED_TIME'
+    ,'AVG_ELAPSED_TIME'
+    ,'STATEMENT_ID'
+    ,'OPEN_MIN_ELAPSED_TIME'
+    ,'OPEN_MAX_ELAPSED_TIME'
+    ,'OPEN_TOTAL_ELAPSED_TIME'
+    ,'OPEN_AVG_ELAPSED_TIME'
+    ,'FETCH_COUNTER'
+    ,'FETCH_MIN_ELAPSED_TIME'
+    ,'FETCH_MAX_ELAPSED_TIME'
+    ,'FETCH_TOTAL_ELAPSED_TIME'
+    ,'FETCH_AVG_ELAPSED_TIME'
+    ,'OPEN_FETCH_TOTAL_ELAPSED_TIME'
+    ,'REQUEST_ID'
+    ,'STATEMENT_ID'
+    ,'CALLER_REQUEST_ID'
+    ,'START_TIMESTAMP'
+    ,'FINISH_TIMESTAMP'
+    ,'TOTAL_ELAPSED_TIME'
+]
+sub_list = [ (x+' .*', x) for x in ptn_list ]
+
+substitutions = [ ('[ \t]+', ' '), (f'-- {COMMENT_TAG}.*', '') ] +  sub_list
+
 act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+fb5x_expected_out = """
     START_SESSION 1
     START_SESSION 2
     MSG --- [ 1: plg$prof_sessions ] ---
@@ -401,7 +417,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 2
     PARENT_RECORD_SOURCE_ID 1
-    ACCESS_PATH -> Table "RDB$DATABASE" Full Scan
+    ACCESS_PATH 84:1
+    -> Table "RDB$DATABASE" Full Scan
     OPEN_COUNTER 0
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -430,7 +447,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 1
     PARENT_RECORD_SOURCE_ID <null>
-    ACCESS_PATH Select Expression
+    ACCESS_PATH 84:0
+    Select Expression
     OPEN_COUNTER 0
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -464,7 +482,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 2
     PARENT_RECORD_SOURCE_ID 1
-    ACCESS_PATH -> Table "TAB" Full Scan
+    ACCESS_PATH 84:3
+    -> Table "TAB" Full Scan
     OPEN_COUNTER 1
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -498,7 +517,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 1
     PARENT_RECORD_SOURCE_ID <null>
-    ACCESS_PATH Select Expression (line 5, column 9)
+    ACCESS_PATH 84:2
+    Select Expression (line 5, column 9)
     OPEN_COUNTER 1
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -527,7 +547,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 2
     PARENT_RECORD_SOURCE_ID 1
-    ACCESS_PATH -> Table "RDB$DATABASE" Full Scan
+    ACCESS_PATH 84:5
+    -> Table "RDB$DATABASE" Full Scan
     OPEN_COUNTER 0
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -556,7 +577,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 1
     PARENT_RECORD_SOURCE_ID <null>
-    ACCESS_PATH Select Expression
+    ACCESS_PATH 84:4
+    Select Expression
     OPEN_COUNTER 0
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -590,7 +612,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 2
     PARENT_RECORD_SOURCE_ID 1
-    ACCESS_PATH -> Sort (record length: 44, key length: 12)
+    ACCESS_PATH 84:7
+    -> Sort (record length: 44, key length: 12)
     OPEN_COUNTER 1
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -624,7 +647,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 3
     PARENT_RECORD_SOURCE_ID 2
-    ACCESS_PATH -> Aggregate
+    ACCESS_PATH 84:8
+    -> Aggregate
     OPEN_COUNTER 1
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -658,7 +682,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 4
     PARENT_RECORD_SOURCE_ID 3
-    ACCESS_PATH -> Sort (record length: 44, key length: 8)
+    ACCESS_PATH 84:9
+    -> Sort (record length: 44, key length: 8)
     OPEN_COUNTER 1
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -692,7 +717,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 5
     PARENT_RECORD_SOURCE_ID 4
-    ACCESS_PATH -> Filter
+    ACCESS_PATH 84:a
+    -> Filter
     OPEN_COUNTER 1
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -726,7 +752,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 6
     PARENT_RECORD_SOURCE_ID 5
-    ACCESS_PATH -> Table "TAB" Full Scan
+    ACCESS_PATH 84:b
+    -> Table "TAB" Full Scan
     OPEN_COUNTER 1
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -760,7 +787,8 @@ expected_stdout = """
     CURSOR_COLUMN_NUM
     RECORD_SOURCE_ID 1
     PARENT_RECORD_SOURCE_ID <null>
-    ACCESS_PATH Select Expression
+    ACCESS_PATH 84:6
+    Select Expression
     OPEN_COUNTER 1
     OPEN_MIN_ELAPSED_TIME
     OPEN_MAX_ELAPSED_TIME
@@ -1010,8 +1038,758 @@ expected_stdout = """
     Records affected: 8
 """
 
+fb6x_expected_out = """
+    START_SESSION 1
+    START_SESSION 2
+    MSG --- [ 1: plg$prof_sessions ] ---
+    PROFILE_ID 1
+    ATTACHMENT_ID
+    USER_NAME SYSDBA
+    DESCRIPTION profile session 1
+    START_TIMESTAMP
+    FINISH_TIMESTAMP
+    MSG --- [ 1: plg$prof_sessions ] ---
+    PROFILE_ID 2
+    ATTACHMENT_ID
+    USER_NAME SYSDBA
+    DESCRIPTION profile session 2
+    START_TIMESTAMP
+    FINISH_TIMESTAMP
+    Records affected: 2
+    MSG --- [ 2: plg$prof_psql_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_TYPE BLOCK
+    SQL_TEXT
+    execute block
+    as
+    begin
+    execute procedure ins;
+    delete from tab;
+    end
+    LINE_NUM
+    COLUMN_NUM
+    COUNTER 1
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    AVG_ELAPSED_TIME
+    MSG --- [ 2: plg$prof_psql_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_TYPE BLOCK
+    SQL_TEXT
+    execute block
+    as
+    begin
+    execute procedure ins;
+    delete from tab;
+    end
+    LINE_NUM
+    COLUMN_NUM
+    COUNTER 1
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    AVG_ELAPSED_TIME
+    MSG --- [ 2: plg$prof_psql_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_TYPE PROCEDURE
+    SQL_TEXT
+    LINE_NUM
+    COLUMN_NUM
+    COUNTER 1
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    AVG_ELAPSED_TIME
+    MSG --- [ 2: plg$prof_psql_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_TYPE PROCEDURE
+    SQL_TEXT
+    LINE_NUM
+    COLUMN_NUM
+    COUNTER 1001
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    AVG_ELAPSED_TIME
+    MSG --- [ 2: plg$prof_psql_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_TYPE PROCEDURE
+    SQL_TEXT
+    LINE_NUM
+    COLUMN_NUM
+    COUNTER 1000
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    AVG_ELAPSED_TIME
+    MSG --- [ 2: plg$prof_psql_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_TYPE PROCEDURE
+    SQL_TEXT
+    LINE_NUM
+    COLUMN_NUM
+    COUNTER 500
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    AVG_ELAPSED_TIME
+    MSG --- [ 2: plg$prof_psql_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_TYPE PROCEDURE
+    SQL_TEXT
+    LINE_NUM
+    COLUMN_NUM
+    COUNTER 1000
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    AVG_ELAPSED_TIME
+    MSG --- [ 2: plg$prof_psql_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_TYPE FUNCTION
+    SQL_TEXT
+    LINE_NUM
+    COLUMN_NUM
+    COUNTER 500
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    AVG_ELAPSED_TIME
+    Records affected: 8
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select rdb$profiler.start_session('profile session 1') from rdb$database
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 2
+    PARENT_RECORD_SOURCE_ID 1
+    ACCESS_PATH 84:1
+    -> Table "RDB$DATABASE" Full Scan
+    OPEN_COUNTER 0
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select rdb$profiler.start_session('profile session 1') from rdb$database
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 1
+    PARENT_RECORD_SOURCE_ID <null>
+    ACCESS_PATH 84:0
+    Select Expression
+    OPEN_COUNTER 0
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    execute block
+    as
+    begin
+    execute procedure ins;
+    delete from tab;
+    end
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 2
+    PARENT_RECORD_SOURCE_ID 1
+    ACCESS_PATH 84:3
+    -> Table "TAB" Full Scan
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 1
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    execute block
+    as
+    begin
+    execute procedure ins;
+    delete from tab;
+    end
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 1
+    PARENT_RECORD_SOURCE_ID <null>
+    ACCESS_PATH 84:2
+    Select Expression (line 5, column 9)
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 2
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select rdb$profiler.start_session('profile session 2') from rdb$database
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 2
+    PARENT_RECORD_SOURCE_ID 1
+    ACCESS_PATH 84:5
+    -> Table "RDB$DATABASE" Full Scan
+    OPEN_COUNTER 0
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 2
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select rdb$profiler.start_session('profile session 2') from rdb$database
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 1
+    PARENT_RECORD_SOURCE_ID <null>
+    ACCESS_PATH 84:4
+    Select Expression
+    OPEN_COUNTER 0
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 2
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select mod(id, 5),
+    sum(val)
+    from tab
+    where id <= 50
+    group by mod(id, 5)
+    order by sum(val)
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 2
+    PARENT_RECORD_SOURCE_ID 1
+    ACCESS_PATH 84:7
+    -> Sort (record length: 44, key length: 12)
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 2
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select mod(id, 5),
+    sum(val)
+    from tab
+    where id <= 50
+    group by mod(id, 5)
+    order by sum(val)
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 3
+    PARENT_RECORD_SOURCE_ID 2
+    ACCESS_PATH 84:8
+    -> Aggregate
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 2
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select mod(id, 5),
+    sum(val)
+    from tab
+    where id <= 50
+    group by mod(id, 5)
+    order by sum(val)
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 4
+    PARENT_RECORD_SOURCE_ID 3
+    ACCESS_PATH 84:9
+    -> Sort (record length: 44, key length: 8)
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 2
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select mod(id, 5),
+    sum(val)
+    from tab
+    where id <= 50
+    group by mod(id, 5)
+    order by sum(val)
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 5
+    PARENT_RECORD_SOURCE_ID 4
+    ACCESS_PATH 84:a
+    -> Filter
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 2
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select mod(id, 5),
+    sum(val)
+    from tab
+    where id <= 50
+    group by mod(id, 5)
+    order by sum(val)
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 6
+    PARENT_RECORD_SOURCE_ID 5
+    ACCESS_PATH 84:b
+    -> Table "TAB" Full Scan
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 3: plg$prof_record_source_stats_view ] ---
+    PROFILE_ID 2
+    STATEMENT_ID
+    STATEMENT_TYPE BLOCK
+    PACKAGE_NAME <null>
+    ROUTINE_NAME <null>
+    PARENT_STATEMENT_ID
+    PARENT_STATEMENT_TYPE <null>
+    PARENT_ROUTINE_NAME <null>
+    SQL_TEXT
+    select mod(id, 5),
+    sum(val)
+    from tab
+    where id <= 50
+    group by mod(id, 5)
+    order by sum(val)
+    CURSOR_ID 1
+    CURSOR_NAME <null>
+    CURSOR_LINE_NUM
+    CURSOR_COLUMN_NUM
+    RECORD_SOURCE_ID 1
+    PARENT_RECORD_SOURCE_ID <null>
+    ACCESS_PATH 84:6
+    Select Expression
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    OPEN_AVG_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    FETCH_AVG_ELAPSED_TIME
+    OPEN_FETCH_TOTAL_ELAPSED_TIME
+    Records affected: 12
+    MSG --- [ 4: plg$prof_requests ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    STATEMENT_ID
+    CALLER_REQUEST_ID
+    START_TIMESTAMP
+    FINISH_TIMESTAMP
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 4: plg$prof_requests ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    STATEMENT_ID
+    CALLER_REQUEST_ID
+    START_TIMESTAMP
+    FINISH_TIMESTAMP
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 4: plg$prof_requests ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    STATEMENT_ID
+    CALLER_REQUEST_ID
+    START_TIMESTAMP
+    FINISH_TIMESTAMP
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 4: plg$prof_requests ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    STATEMENT_ID
+    CALLER_REQUEST_ID
+    START_TIMESTAMP
+    FINISH_TIMESTAMP
+    TOTAL_ELAPSED_TIME
+    Records affected: 4
+    MSG --- [ 5: plg$prof_psql_stats join plg$prof_sessions ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    LINE_NUM
+    COLUMN_NUM
+    STATEMENT_ID
+    COUNTER 1
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 5: plg$prof_psql_stats join plg$prof_sessions ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    LINE_NUM
+    COLUMN_NUM
+    STATEMENT_ID
+    COUNTER 1
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 5: plg$prof_psql_stats join plg$prof_sessions ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    LINE_NUM
+    COLUMN_NUM
+    STATEMENT_ID
+    COUNTER 1
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 5: plg$prof_psql_stats join plg$prof_sessions ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    LINE_NUM
+    COLUMN_NUM
+    STATEMENT_ID
+    COUNTER 1001
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 5: plg$prof_psql_stats join plg$prof_sessions ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    LINE_NUM
+    COLUMN_NUM
+    STATEMENT_ID
+    COUNTER 1000
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 5: plg$prof_psql_stats join plg$prof_sessions ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    LINE_NUM
+    COLUMN_NUM
+    STATEMENT_ID
+    COUNTER 500
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 5: plg$prof_psql_stats join plg$prof_sessions ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    LINE_NUM
+    COLUMN_NUM
+    STATEMENT_ID
+    COUNTER 1000
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    MSG --- [ 5: plg$prof_psql_stats join plg$prof_sessions ] ---
+    PROFILE_ID 1
+    REQUEST_ID
+    LINE_NUM
+    COLUMN_NUM
+    STATEMENT_ID
+    COUNTER 500
+    MIN_ELAPSED_TIME
+    MAX_ELAPSED_TIME
+    TOTAL_ELAPSED_TIME
+    Records affected: 8
+    MSG --- [ 6: plg$prof_record_source_stats ] ---
+    PROFILE_ID 2
+    REQUEST_ID
+    CURSOR_ID 1
+    RECORD_SOURCE_ID 1
+    STATEMENT_ID
+    OPEN_COUNTER 0
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 6: plg$prof_record_source_stats ] ---
+    PROFILE_ID 2
+    REQUEST_ID
+    CURSOR_ID 1
+    RECORD_SOURCE_ID 2
+    STATEMENT_ID
+    OPEN_COUNTER 0
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 6: plg$prof_record_source_stats ] ---
+    PROFILE_ID 2
+    REQUEST_ID
+    CURSOR_ID 1
+    RECORD_SOURCE_ID 1
+    STATEMENT_ID
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 6: plg$prof_record_source_stats ] ---
+    PROFILE_ID 2
+    REQUEST_ID
+    CURSOR_ID 1
+    RECORD_SOURCE_ID 2
+    STATEMENT_ID
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 6: plg$prof_record_source_stats ] ---
+    PROFILE_ID 2
+    REQUEST_ID
+    CURSOR_ID 1
+    RECORD_SOURCE_ID 3
+    STATEMENT_ID
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 6: plg$prof_record_source_stats ] ---
+    PROFILE_ID 2
+    REQUEST_ID
+    CURSOR_ID 1
+    RECORD_SOURCE_ID 4
+    STATEMENT_ID
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 6: plg$prof_record_source_stats ] ---
+    PROFILE_ID 2
+    REQUEST_ID
+    CURSOR_ID 1
+    RECORD_SOURCE_ID 5
+    STATEMENT_ID
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    MSG --- [ 6: plg$prof_record_source_stats ] ---
+    PROFILE_ID 2
+    REQUEST_ID
+    CURSOR_ID 1
+    RECORD_SOURCE_ID 6
+    STATEMENT_ID
+    OPEN_COUNTER 1
+    OPEN_MIN_ELAPSED_TIME
+    OPEN_MAX_ELAPSED_TIME
+    OPEN_TOTAL_ELAPSED_TIME
+    FETCH_COUNTER
+    FETCH_MIN_ELAPSED_TIME
+    FETCH_MAX_ELAPSED_TIME
+    FETCH_TOTAL_ELAPSED_TIME
+    Records affected: 8
+"""
+
+
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = fb5x_expected_out if act.is_version('<6') else fb6x_expected_out
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

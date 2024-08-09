@@ -2,15 +2,19 @@
 
 """
 ID:          issue-4740
-ISSUE:       4740
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4740
 TITLE:       Regression: Can not run ALTER TABLE DROP CONSTRAINT <FK_name> after recent changes in svn
-DESCRIPTION: Added some extra DDL statements to be run within single Tx and then to be rollbacked.
+DESCRIPTION:
 JIRA:        CORE-4418
 FBTEST:      bugs.core_4418
-
 NOTES:
-[28.04.2022] pzotov
+    [28.04.2022] pzotov
+    Comfirmed problem on 3.0.0.31099.
     Checked on 5.0.0.488, 4.0.1.2692, 3.0.8.33535.
+
+    [05.10.2023] pzotov
+    Removed SHOW command. It is enough for this test just to show 'Completed' message when all FK have been dropped because set bail = ON.
+    Checked on 6.0.0.66, 5.0.0.1235, 4.0.4.2998, 3.0.12.33713.
 """
 
 import pytest
@@ -25,6 +29,10 @@ substitutions = [
 db = db_factory(charset='UTF8')
 
 test_script = """
+    set bail on;
+    set heading off;
+
+    /*
     create or alter view v_coll_info as
     select
         rc.rdb$collation_name
@@ -40,34 +48,10 @@ test_script = """
         rc.rdb$system_flag is distinct from 1
     ;
     commit;
-
-    recreate table td(id int);
-    recreate table tm(id int);
-    commit;
-
-    set term ^;
-    execute block as
-    begin
-      begin
-        execute statement 'drop domain dm_ids';
-      when any do begin end
-      end
-      begin
-        execute statement 'drop domain dm_nums';
-      when any do begin end
-      end
-      begin
-        execute statement 'drop collation nums_coll';
-      when any do begin end
-      end
-    end
-    ^set term ;^
-    commit;
+    */
 
     create collation nums_coll for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
-    commit;
     create domain dm_nums as varchar(20) character set utf8 collate nums_coll;
-    commit;
     create domain dm_ids as bigint;
     commit;
 
@@ -91,56 +75,20 @@ test_script = """
     alter table td drop constraint td_fk;
     alter table td drop constraint td_pk;
     alter table tm drop constraint tm_pk;
-    drop table td;
-    drop table tm;
-    drop domain dm_nums;
-    drop domain dm_ids;
-    drop collation nums_coll;
+    commit;
 
-    rollback;
-
-    show table tm;
-    show table td;
-    show domain dm_ids;
-    show domain dm_nums;
-
-    set list on;
-    select * from v_coll_info;
+    select 'Completed.' from rdb$database;
 """
 
 act = isql_act('db', test_script, substitutions=substitutions)
 
 expected_stdout = """
-    ID                              (DM_IDS) BIGINT Not Null
-    NM                              (DM_NUMS) VARCHAR(20) CHARACTER SET UTF8 Nullable
-                                     COLLATE NUMS_COLL
-    CONSTRAINT TM_PK:
-      Primary key (ID)
-    ID                              (DM_IDS) BIGINT Not Null
-    PID                             (DM_IDS) BIGINT Nullable
-    NM                              (DM_NUMS) VARCHAR(20) CHARACTER SET UTF8 Nullable
-                                     COLLATE NUMS_COLL
-    CONSTRAINT TD_FK:
-      Foreign key (PID)    References TM (ID)
-    CONSTRAINT TD_PK:
-      Primary key (ID)
-    DM_IDS                          BIGINT Nullable
-    DM_NUMS                         VARCHAR(20) CHARACTER SET UTF8 Nullable
-                                     COLLATE NUMS_COLL
-    
-    RDB$COLLATION_NAME              NUMS_COLL
-    RDB$COLLATION_ATTRIBUTES        3
-    RDB$BASE_COLLATION_NAME         UNICODE
-    SPECIFIC_ATTR_BLOB_ID           0:3
-    COLL-VERSION=58.0.6.50;NUMERIC-SORT=1
-    RDB$CHARACTER_SET_NAME          UTF8
-    RDB$NUMBER_OF_CHARACTERS        <null>
-    RDB$BYTES_PER_CHARACTER         4
+    Completed.
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 

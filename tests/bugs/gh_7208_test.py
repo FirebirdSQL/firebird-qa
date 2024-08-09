@@ -271,6 +271,7 @@ commit
 0 records fetched
 """
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0.2')
 def test_1(act: Action, capsys):
 

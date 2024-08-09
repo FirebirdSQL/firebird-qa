@@ -209,6 +209,7 @@ expected_stderr_2 = """
     -At block line
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stderr = expected_stderr_2

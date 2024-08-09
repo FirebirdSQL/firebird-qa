@@ -3,11 +3,15 @@
 """
 ID:          issue-6598
 ISSUE:       6598
-TITLE:       LEAD() and LAG() do not allow to specify 3rd argument ("DEFAULT" value when
-  pointer is out of scope) of INT128 datatype.
+TITLE:       LEAD() and LAG() do not allow to specify 3rd argument ("DEFAULT" value when pointer is out of scope) of INT128 datatype.
 DESCRIPTION:
 JIRA:        CORE-6357
 FBTEST:      bugs.core_6357
+NOTES:
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -47,8 +51,7 @@ test_script = """
     select a as field_a, lag(a, 1, 9.999999999999999999999999999999999e6144)over(order by a) lag_for_decfloat_4 from test4;
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype|FIELD_A|LAG_FOR|LEAD_FOR).)*$', ''),
-                                                 ('[ \t]+', ' ')])
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype|FIELD_A|LAG_FOR|LEAD_FOR).)*$', ''), ('[ \t]+', ' ')])
 
 expected_stdout = """
     01: sqltype: 500 SHORT Nullable scale: 0 subtype: 0 len: 2
@@ -136,5 +139,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

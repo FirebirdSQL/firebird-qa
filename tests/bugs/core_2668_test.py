@@ -63,6 +63,7 @@ select '-- shutdown me now --' from rdb$database;
 
 tmp_script = temp_file('work_script.sql')
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3')
 def test_1(act: Action, tmp_script: Path):
     tmp_script.write_text(test_script)

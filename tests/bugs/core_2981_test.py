@@ -127,6 +127,7 @@ trace = ['include_filter = %(SELECT|INSERT|UPDATE|DELETE)%',
            'max_arg_count = 30',
            ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     # Get content of firebird.log BEFORE test

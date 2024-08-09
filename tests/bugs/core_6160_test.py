@@ -12,6 +12,11 @@ DESCRIPTION:
   'charset: 2 ASCII' --> 'charset: ASCII'
 JIRA:        CORE-6160
 FBTEST:      bugs.core_6160
+NOTES:
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -27,7 +32,7 @@ test_script = """
     select substring(current_date from 1 for 1) from rdb$database;
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!charset).)*$', ''), ('[ \t]+', ' '),
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|charset).)*$', ''), ('[ \t]+', ' '),
                                                  ('.*charset: [\\d]+', 'charset:')])
 
 expected_stdout = """
@@ -38,5 +43,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

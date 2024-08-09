@@ -41,6 +41,7 @@ svc_items = [
                 'log_errors = true',
             ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3')
 def test_1(act: Action, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
     #print( os.environ.get('ISC_USER', 'UNKNOWN_ISC_USR') )

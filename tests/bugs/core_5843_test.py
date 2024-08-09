@@ -7,6 +7,9 @@ TITLE:       Wrong handling of failures of TRANSACTION START trigger
 DESCRIPTION:
 JIRA:        CORE-5843
 FBTEST:      bugs.core_5843
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -112,7 +115,7 @@ test_script = """
         c = rdb$set_context('USER_SESSION', 'tx_abort', 1); -- flag to raise error on next tx start
     end
     ^
-    set term ^;
+    set term ;^
     commit;
 
     select 'test_1, point-2' as msg, v.* from rdb$database cross join v_mon v; -- it start transaction
@@ -134,7 +137,7 @@ test_script = """
         c = rdb$set_context('USER_SESSION', 'tx_trig_log', ascii_char(10) || 'start: tx=' || current_transaction ); -- start logging
     end
     ^
-    set term ^;
+    set term ;^
     commit;
 
     select 'test2, point-a' as msg, v.* from rdb$database cross join v_mon v;

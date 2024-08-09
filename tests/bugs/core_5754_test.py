@@ -7,6 +7,9 @@ TITLE:       ALTER TRIGGER check privilege for alter database instead of table
 DESCRIPTION:
 JIRA:        CORE-5754
 FBTEST:      bugs.core_5754
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -54,7 +57,7 @@ test_script = """
            new.id = gen_id(g, 1);
     end
     ^
-    set term ^;
+    set term ;^
     commit;
 
     commit;

@@ -14,6 +14,9 @@ DESCRIPTION:
   Confirmed lock of rdb$database record (which leads to inability to establish new connect) on WI-V3.0.3.32837.
 JIRA:        CORE-5704
 FBTEST:      bugs.core_5704
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
 """
 
 import pytest
@@ -41,6 +44,7 @@ eds_output = temp_file('eds_script.out')
 new_diff_file = temp_file('_new_diff_5704.tmp')
 new_main_file = temp_file('new_main_5704.tmp')
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action, eds_script: Path, eds_output: Path, new_diff_file: Path,
            new_main_file: Path):
@@ -64,7 +68,7 @@ def test_1(act: Action, eds_script: Path, eds_output: Path, new_diff_file: Path,
        suspend;
     end
     ^
-    set term ^;
+    set term ;^
 
     commit;
     set transaction read committed no record_version lock timeout 1;

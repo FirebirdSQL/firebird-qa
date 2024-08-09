@@ -5,109 +5,94 @@ ID:          issue-6520
 ISSUE:       6520
 TITLE:       Efficient table scans for DBKEY-based range conditions
 DESCRIPTION:
-  We create table with very wide column and add there about 300 rows from rdb$types, with random data
-  (in order to prevent RLE-compression which eventually can reduce number of data pages).
-  Then we extract all values of rdb$db_key from this table and take into processing two of them.
-  First value has 'distance' from starting db_key = 1/3 of total numbers of rows, second has similar
-  distance from final db_key.
-  Finally we launch trace and start query with SCOPED expression for RDB$DB_KEY:
-    select count(*) from tmp_test_6278 where rdb$db_key between ? and ?
-
-  Trace must contain after this explained plan with "lower bound, upper bound" phrase and table statistics
-  which shows number of reads = count of rows plus 1.
-
-  Before fix trace table statistics did not reflect scoped WHERE-expression on RDB$DB_KEY column.
 JIRA:        CORE-6278
 FBTEST:      bugs.core_6278
+NOTES:
+    [07.05.2024] pzotov
+    Test has been fully re-implemented.
+    We can NOT assume that rdb$db_key values will be increased (in ASCII representation) while adding data
+    into a table: smaller values of RDB$DB_KEY can appear *after* bigger ones (i.e. smaller RDB$DB_KEY will
+    be physically closer to the end of table than bigger).
+    Because of that, we check only EXPLAINED PLAN, without runtime statistics from trace log before.
+
+    On build 4.0.0.1865 (07-apr-2020) explained plan for scoped query (like 'rdb$db_key between ? and ?')
+    returned "Table ... Full Scan" - WITHOUT "(lower bound, upper bound)".
+
+    Since build 4.0.0.1869 (08-apr-2020) this opewration is: "Table "TEST" Full Scan (lower bound, upper bound)".
+    See commit:
+    https://github.com/FirebirdSQL/firebird/commit/3ce4605e3cc9960afcf0224ea40e04f508669eca
+
+    Checked on 5.0.1.1394, 6.0.0.345.
 """
 
 import pytest
 import re
 from firebird.qa import *
 
-db = db_factory()
+init_sql = f"""
+    create table test (s varchar(256));
+    commit;
+    insert into test select lpad('', 256, uuid_to_char(gen_uuid())) from rdb$types a;
+    commit;
+"""
 
+db = db_factory(init = init_sql)
 act = python_act('db')
 
-expected_stdout = """
-    -> Table "TMP_TEST_6278" Full Scan (lower bound, upper bound)
-    Reads difference: EXPECTED.
-"""
+#---------------------------------------------------------
 
-test_script = """
-    recreate table tmp_test_6278 (s varchar(32700)) ;
-    insert into tmp_test_6278 select lpad('', 32700, uuid_to_char(gen_uuid())) from rdb$types ;
-    commit ;
-    set heading off ;
-    set term ^ ;
-    execute block returns(
-       count_intermediate_rows int
-    ) as
-        declare dbkey_1 char(8) character set octets ;
-        declare dbkey_2 char(8) character set octets ;
-        declare sttm varchar(255) ;
-    begin
-       select max(iif( ri=1, dbkey, null)), max(iif( ri=2, dbkey, null))
-       from (
-           select dbkey, row_number()over(order by dbkey) ri
-           from (
-               select
-                   dbkey
-                  ,row_number()over(order by dbkey) ra
-                  ,row_number()over(order by dbkey desc) rd
-               from (select rdb$db_key as dbkey from tmp_test_6278)
-           )
-           where
-               ra = (ra+rd)/3
-               or rd = (ra+rd)/3
-       ) x
-       into dbkey_1, dbkey_2 ;
+def replace_leading(source, char="."):
+    stripped = source.lstrip()
+    return char * (len(source) - len(stripped)) + stripped
 
-       sttm = q'{select count(*) from tmp_test_6278 where rdb$db_key between ? and ?}' ;
-       execute statement (sttm) (dbkey_1, dbkey_2) into count_intermediate_rows ;
-       suspend ;
-    end ^
-    set term ; ^
-    commit ;
-"""
+#---------------------------------------------------------
 
-trace = ['log_statement_finish = true',
-         'print_plan = true',
-         'print_perf = true',
-         'explain_plan = true',
-         'time_threshold = 0',
-         'log_initfini = false',
-         'exclude_filter = "%(execute block)%"',
-         'include_filter = "%(select count)%"',
-         ]
-
-
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=4.0.0')
 def test_1(act: Action, capsys):
-    allowed_patterns = [re.compile(' Table "TMP_TEST_6278"', re.IGNORECASE),
-                        re.compile('TMP_TEST_6278\\s+\\d+', re.IGNORECASE)
-                        ]
-    # For yet unknown reason, trace must be read as in 'cp1252' (neither ascii or utf8 works)
-    with act.trace(db_events=trace, encoding='cp1252'):
-        act.isql(switches=['-q'], input=test_script)
-    # Process isql output
-    for line in act.clean_stdout.splitlines():
-        if elements := line.rstrip().split():
-            count_intermediate_rows = int(elements[0])
-            break
-    # Process trace
-    for line in act.trace_log:
-        for p in allowed_patterns:
-            if p.search(line):
-                if line.startswith('TMP_TEST_6278'):
-                    trace_reads_statistics = int(line.rstrip().split()[1])
-                    result = ('EXPECTED.' if (trace_reads_statistics - count_intermediate_rows) <= 1
-                              else f'UNEXPECTED: {trace_reads_statistics - count_intermediate_rows}')
-                    print(f'Reads difference: {result}')
-                else:
-                    print(line)
-    # Check
-    act.reset() # necessary to reset 'clean_stdout' !!
-    act.expected_stdout = expected_stdout
+
+    scoped_expr_lst = ('rdb$db_key > ? and rdb$db_key < ?', 'rdb$db_key >= ? and rdb$db_key <= ?', 'rdb$db_key between ? and ?', 'rdb$db_key > ?', 'rdb$db_key >= ?', 'rdb$db_key < ?', 'rdb$db_key <= ?')
+    with act.db.connect() as con:
+        cur = con.cursor()
+        for x in scoped_expr_lst:
+            with cur.prepare(f'select count(s) from test where {x}') as ps:
+                print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
+
+   
+    act.expected_stdout = """
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "TEST" Full Scan (lower bound, upper bound)
+
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "TEST" Full Scan (lower bound, upper bound)
+
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "TEST" Full Scan (lower bound, upper bound)
+
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "TEST" Full Scan (lower bound)
+
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "TEST" Full Scan (lower bound)
+
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "TEST" Full Scan (upper bound)
+
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "TEST" Full Scan (upper bound)
+    """
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout

@@ -44,6 +44,7 @@ expected_stdout_isql = """
     -At block line: 3, col: 13
 """
 
+@pytest.mark.trace
 @pytest.mark.version('>=3')
 def test_1(act: Action, capsys):
 

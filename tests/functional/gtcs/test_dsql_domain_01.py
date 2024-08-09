@@ -67,7 +67,7 @@ test_script = """
     select * from v_test order by dm_name;
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!Statement failed|SQL error code).)*$', ''),
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|SQL error code).)*$', ''),
                                                  (' = ', ' '), ('[ \t]+', ' ')])
 
 expected_stdout = """
@@ -305,5 +305,5 @@ expected_stdout = """
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

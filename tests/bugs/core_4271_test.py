@@ -2,8 +2,8 @@
 
 """
 ID:          issue-4595
-ISSUE:       4595
-TITLE:       Engine crashs in case of re-creation of an erratic package body
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4595
+TITLE:       Engine crashes in case of re-creation of an erratic package body
 DESCRIPTION:
 JIRA:        CORE-4271
 FBTEST:      bugs.core_4271
@@ -263,5 +263,5 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

@@ -167,8 +167,6 @@ expected_stdout = """
     privilege:exec : YES
 """
 
-#@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
-
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, non_acii_user: User, test_role: Role, capsys):
     act.isql(switches=['-b', '-q'], input=ddl_script)

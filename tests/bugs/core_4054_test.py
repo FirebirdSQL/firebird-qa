@@ -117,6 +117,7 @@ expected_stdout = """
     WHAT_I_SEE                      789654123
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

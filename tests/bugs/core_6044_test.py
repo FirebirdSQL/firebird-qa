@@ -44,7 +44,7 @@ test_script_ = """
 
 act = isql_act('db', test_script_, substitutions=substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
 	ДоменДляХраненияСтроковыхДанныхКоторыеПредставимыДляСортировкии
 	ИсключениеДляСообщенияПользователюОНевозможностиПреобразованияя; Msg: Ваша строка не может быть преобразована в число.
 	КоллацияДляСортировкиСтроковыхДанныхКоторыеПредставимыКакЧислаа, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, 'COLL-VERSION=153.88;NUMERIC-SORT=1'
@@ -56,8 +56,19 @@ expected_stdout = """
 	Primary key (СтолбецКоторыйВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю)
 """
 
+expected_stdout_6x = """
+    ДоменДляХраненияСтроковыхДанныхКоторыеПредставимыДляСортировкии
+    ИсключениеДляСообщенияПользователюОНевозможностиПреобразованияя; Msg: Ваша строка не может быть преобразована в число.
+    КоллацияДляСортировкиСтроковыхДанныхКоторыеПредставимыКакЧислаа, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, '<attr>
+    ТаблицаКотораяВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю
+    Generator ГенераторКоторыйДолженСодержатьНомераПоследнихУдаленнДокументов, current value
+    СтолбецКоторыйВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю (ДоменДляХраненияСтроковыхДанныхКоторыеПредставимыДляСортировкии) VARCHAR(160) CHARACTER SET UTF8 COLLATE КоллацияДляСортировкиСтроковыхДанныхКоторыеПредставимыКакЧислаа Not Null
+    CONSTRAINT ПервичныйКлючНаТаблицуКотораяВсегдаДолжнаСодержатьСвежайшуюИнфу:
+    Primary key (СтолбецКоторыйВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю)
+"""
+
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(charset='utf8')
     assert act.clean_stdout == act.clean_expected_stdout

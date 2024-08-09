@@ -143,6 +143,7 @@ expected_stderr = """
     335544878 : concurrent transaction number is 806
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, user_1_ro: User, user_1_ud: User):
     act.expected_stdout = expected_stdout

@@ -4,6 +4,43 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.20.0
+==============
+
+* New `.existing_db_factory` firxture to directly use database from `databases` subdirectory.
+  It's not intended for use in Firebird QA, but it's necessary for other plugin
+  users.
+* Fix: Report test error also in cases when unexpected stderr is returned from tool execution
+  while `returncode` is zero.
+* Fix: Select test marked for current platform also when it's not marked for Firebird version.
+
+
+Version 0.19.3
+==============
+
+* Fixed problem with ndiff in assert.
+
+Version 0.19.2
+==============
+
+* Remove fix for `#21 <https://github.com/FirebirdSQL/firebird-qa/issues/21>`_. The error
+  was not caused by pytest 8.0, but by `Error` exception from `firebird-base` package that
+  masked the absence of `__notes__` attribute from `pytest`. Dependency to pytest reverted
+  to `>=7.4`.
+* Updated documentation.
+
+Version 0.19.1
+==============
+
+* Fix for `#21 <https://github.com/FirebirdSQL/firebird-qa/issues/21>`_. Dependency to pytest
+  changed from `>=8.0.0` to `~=7.4`. Other dependecies changed from `>=` to `~=`.
+
+Version 0.19.0
+==============
+
+* Switch from `setuptools` to `hatch`.
+* Updated dependencies.
+
 Version 0.18.0
 ==============
 
@@ -19,7 +56,7 @@ Version 0.18.0
 Version 0.17.3
 ==============
 
-* Added --driver-config option to specify different filename for driver configuration.
+* Added `--driver-config` option to specify different filename for driver configuration.
 
 Version 0.17.2
 ==============

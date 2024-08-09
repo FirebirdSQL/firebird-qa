@@ -6,6 +6,11 @@ ISSUE:       6816
 TITLE:       Illegal output length in base64/hex_encode/decode functions
 DESCRIPTION:
 FBTEST:      bugs.gh_6816
+NOTES:
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -22,7 +27,7 @@ test_script = """
     -- produces lengths 12 & 8 with 3 & 2 expected
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!(sqltype)).)*$', ''), ('[ \t]+', ' ')])
+act = isql_act('db', test_script, substitutions=[('^((?!(SQLSTATE|sqltype)).)*$', ''), ('[ \t]+', ' ')])
 
 expected_stdout = """
     01: sqltype: 448 VARYING scale: 0 subtype: 0 len: 10 charset: 2 ASCII
@@ -34,5 +39,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

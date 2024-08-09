@@ -167,6 +167,7 @@ expected_stdout_trace = """
     FOUND line with execution statistics
 """
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.8')
 def test_1(act: Action, capsys):
 

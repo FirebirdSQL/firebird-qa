@@ -42,6 +42,7 @@ trace_conf = ['database=(%[\\\\/](\\{{core_5907.[[:DIGIT:]]{{2}}\\}}).fdb)',
               '}'
               ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
     with act.trace(config=trace_conf):

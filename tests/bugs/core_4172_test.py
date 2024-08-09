@@ -74,9 +74,6 @@ expected_stderr_1 = """
 temp_db_1_a = temp_file('tmp_4172_1.fdb')
 temp_db_1_b = temp_file('tmp_4172_2.fdb')
 
-#@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
-# C:\TEMP\PYTEST-OF-ZOTOV\PYTEST-32\TEST_10\TEST.FDB
-
 @pytest.mark.version('>=3.0,<4')
 def test_1(act_1: Action, temp_db_1_a: Path, temp_db_1_b: Path):
     test_script = f"""

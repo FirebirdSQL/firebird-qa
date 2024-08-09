@@ -94,5 +94,5 @@ def test_1(act: Action):
     # Check 2
     act.reset()
     act.expected_stdout = expected_stdout
-    act.isql(switches=[], input=test_script, charset='utf8')
+    act.isql(switches=[], input=test_script, combine_output = True, charset='utf8')
     assert act.clean_stdout == act.clean_expected_stdout

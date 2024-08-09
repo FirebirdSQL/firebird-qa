@@ -2,7 +2,7 @@
 
 """
 ID:          issue-5377
-ISSUE:       5377
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5377
 TITLE:       ISQL extract command looses COMPUTED BY field types
 DESCRIPTION:
   Test creates database with empty table T1 that has computed by fileds with DDL appopriate to the ticket issues.
@@ -80,14 +80,14 @@ def test_1(act: Action):
     initial_sqlda = act.stdout.splitlines()
     # Apply extracted metadata
     act.reset()
-    act.isql(switches=[], input='\n'.join(initial_metadata))
+    act.isql(switches=[], input='\n'.join(initial_metadata), combine_output = True)
     # New metadata
     act.reset()
     act.isql(switches=['-x'])
     new_metadata = act.stdout.splitlines()
     # SQLDA new
     act.reset()
-    act.isql(switches=['-q', '-m'], input=sqlda_check)
+    act.isql(switches=['-q', '-m'], input=sqlda_check, combine_output = True)
     new_sqlda = act.stdout.splitlines()
     # Check
     assert list(unified_diff(initial_sqlda, new_sqlda)) == []

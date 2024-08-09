@@ -3,8 +3,7 @@
 """
 ID:          issue-5606
 ISSUE:       5606
-TITLE:       Trace session leads FB 4.0 to hang after 2nd launch of trivial .sql script.
-  Neither attach to any database nor regular restart of FB service can be done.
+TITLE:       Trace session leads FB 4.0 to hang after 2nd launch of trivial .sql script. Neither attach to any database nor regular restart of FB service can be done.
 DESCRIPTION:
   Ticket issue was reproduced on trivial trace config with single line ("enabled = true").
   We prepare such config, launch trace session in async mode and run THREE times isql with logging its output.
@@ -87,6 +86,7 @@ trace = ['database=',
          '}']
 
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
     with act.trace(config=trace, keep_log=False):

@@ -24,9 +24,13 @@ NOTES:
         Checked on 5.0.0.623, 4.0.1.2692.
     [04.03.2023] pzotov
         Computer name must be converted to UPPERCASE, otherwise test fails.
+    [02.08.2024] pzotov
+        One need to check for admin rights of current OS user (noted by Dimitry Sibiryakov).
+        Checked on Windows 6.0.0.406, 5.0.1.1469, 4.0.5.3139
 """
 
 import os
+import ctypes
 import socket
 import getpass
 
@@ -48,11 +52,29 @@ act = python_act('db', substitutions=[('\t+', ' '), ('TCPv(4|6)', 'TCP')])
 tmp_role_senior = role_factory('db', name='tmp_role_5887_senior')
 tmp_role_junior = role_factory('db', name='tmp_role_5887_junior')
 
+#----------------------------------------------------------
+
+def is_admin():
+    # https://serverfault.com/questions/29659/crossplatform-way-to-check-admin-rights-in-python-script
+    # Checked on Windows 10.
+    try:
+        is_admin = os.getuid() == 0
+    except AttributeError:
+        is_admin = ctypes.windll.shell32.IsUserAnAdmin()
+
+    return is_admin
+
+#----------------------------------------------------------
+
 @pytest.mark.version('>=4.0')
 @pytest.mark.platform('Windows')
 def test_1(act: Action, tmp_role_junior: Role, tmp_role_senior: Role, capsys):
 
+    if not is_admin():
+        pytest.skip("Current OS user must have admin rights.")
+
     sql_init = f"""
+        set bail on;
         create table test(id int);
         grant select on test to role {tmp_role_senior.name};
         commit;
@@ -61,23 +83,25 @@ def test_1(act: Action, tmp_role_junior: Role, tmp_role_senior: Role, capsys):
         -- Statement failed, SQLSTATE = 28000 /Missing security context for <test_database>
         -- on connect statement which specifies COMPUTERNAME:USERNAME instead path to DB:
         create or alter mapping trusted_auth using plugin win_sspi from any user to user;
-
+        commit;
         -- We have to use here "create mapping win_admins ... DOMAIN_ANY_RID_ADMINS" otherwise get
         -- Statement failed, SQLSTATE = 0P000 / Your attachment has no trusted role
 
         create or alter mapping win_admins1 using plugin win_sspi from predefined_group domain_any_rid_admins to role {tmp_role_junior.name};
-        commit;
+
         create view v_info as
         select a.mon$user, a.mon$role, a.mon$remote_protocol, a.mon$auth_method from mon$attachments a where mon$attachment_id = current_connection
         ;
         grant select on v_info to public;
         commit;
     """
-    act.isql(switches=['-q'], input = sql_init)
+
+    act.isql(switches=['-q'], input = sql_init, combine_output = True)
     assert act.clean_stdout == ''
     act.reset()
 
     sql_check = f"""
+        -- DO NOT add 'set bail' here!
         -- This will make connection with tole = {tmp_role_junior.name}
         connect '{THIS_COMPUTER_NAME}:{act.db.db_path}';
 
@@ -104,17 +128,22 @@ def test_1(act: Action, tmp_role_junior: Role, tmp_role_senior: Role, capsys):
 
         select 'point-2' as msg, v.* from v_info v;
 
+        set bail on;
         set term ^;
         execute block as
         begin
             -- Following statement:
             -- 1) must pass without any error;
             -- 2) leads to change effective role from  {tmp_role_junior.name} to {tmp_role_senior.name}:
+            -- NB: if current OS user has no admin rights then following error will raise at this point:
+            -- Statement failed, SQLSTATE = 0P000
+            -- Your attachment has no trusted role
             set trusted role;
         end
         ^
         set term ;^
         commit;
+        set bail off;
 
         select 'point-3' as msg, v.* from v_info v;
         -- this MUST PASS because of trusted role {tmp_role_senior.name} whic has needed access rights:

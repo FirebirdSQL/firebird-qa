@@ -25,9 +25,6 @@ test_script = """
     SHOW SYSTEM FUNCTIONS;
 """
 
-#E         - CP943C_UNICODE, CHARACTER SET CP943C, PAD SPACE, SYSTEM
-#E         + CP943C_UNICODE, CHARACTER SET CP943C, PAD SPACE, 'COLL-VERSION=58.0.6.50', SYSTEM
-
 substitutions = \
     [
         ("'COLL-VERSION=\\d+.\\d+(;ICU-VERSION=\\d+.\\d+)?.*'(, )?", '')

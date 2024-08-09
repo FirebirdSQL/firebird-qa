@@ -91,6 +91,7 @@ expected_stdout = """
     LNAME                           Zeppelin
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_user: User):
     act.expected_stdout = expected_stdout

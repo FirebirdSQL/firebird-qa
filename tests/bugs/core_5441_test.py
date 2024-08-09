@@ -64,6 +64,7 @@ trace = ['time_threshold = 0',
          'include_filter = "%(select % from test where x = ?)%"',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action, capsys):
     with act.trace(db_events=trace), act.db.connect() as con:

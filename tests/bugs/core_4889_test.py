@@ -54,7 +54,7 @@ trace = [
          'log_errors = true',
          ]
 
-##@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
+@pytest.mark.trace
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
     with act.trace(db_events=trace):

@@ -46,6 +46,18 @@ NOTES:
     5.  Initial discussion: https://groups.google.com/g/firebird-devel/c/dWIgSIemys4/m/TzUWYwmVAQAJ?pli=1
 
     Checked on 5.0.0.1169.
+
+    [29.09.2023] pzotov
+    Replaces expected output to be matched to current FB 5.x and 6.x snapshots.
+    Added substitution to disable output of BLOB_ID values because access_path type is BLOB since 19-sep-2023
+    (see https://github.com/FirebirdSQL/firebird/commit/39b019574a7eb23eff92ee71121043d9a9c8371f )
+
+    [19-dec-2023] pzotov
+    Removed 'rand()' in order to have predictable values in table column. Use mod() instead.
+    Unstable outcomes started since 6.0.0.180 (18.12.2023).
+    It seems that following commits caused this:
+        https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83 // 5.x
+        https://github.com/FirebirdSQL/firebird/commit/f647dfd757de3c4065ef2b875c95d19311bb9691 // 6.x
 """
 
 import os
@@ -53,17 +65,23 @@ import pytest
 from firebird.qa import *
 
 db = db_factory()
-act = python_act('db') #, substitutions=[('[ \t]+', ' ')])
+act = python_act('db', substitutions=[('=', ''), ('ACCESS_PATH_BLOB_ID.*', '')])
 
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 
     test_sql = f"""
-        create table tmain(id int primary key using index tmain_pk, x int);
-        create table tdetl(id int primary key using index tdetl_pk, pid int references tmain using index tdetl_fk, y int, z int);
-        insert into tmain(id,x) select row_number()over(), -100 + rand()*200 from rdb$types rows 100;
-        insert into tdetl(id, pid, y,z) select row_number()over(), 1+rand()*99, rand()*1000, rand()*1000 from rdb$types;
+        recreate table tdetl(id int);
+        recreate table tmain(id int primary key using index tmain_pk, x int);
+        recreate table tdetl(id int primary key using index tdetl_pk, pid int references tmain using index tdetl_fk, y int, z int);
+
+        insert into tmain(id,x)
+        select i, -100 + mod(i,200) from (select row_number()over() i from rdb$types rows 200);
+
+        insert into tdetl(id, pid, y,z)
+        select i, 1+mod(i,10), mod(i,30), mod(i,70) from (select row_number()over() i from rdb$types,rdb$types rows 1000);
         commit;
+
         create index tmain_x on tmain(x);
         create index tdetl_y on tdetl(y);
         create index tdetl_z on tdetl(z);
@@ -71,7 +89,7 @@ def test_1(act: Action, capsys):
         set statistics index tdetl_fk;
         commit;
         
-        out nul;
+        out {os.devnull};
         -- This is needed in order to create view based on snapshot 'plg$prof_*' tables:
         select rdb$profiler.start_session('profile session 0') from rdb$database;
         out;
@@ -106,7 +124,7 @@ def test_1(act: Action, capsys):
         ) d4
         where exists(select count(*) from tdetl dy group by dy.pid having count(*) > 2);
 
-        out nul;
+        out {os.devnull};
         select rdb$profiler.start_session('profile session 1') from rdb$database;
         -- Test query for which we want to see data in the profiler tables:
         -- ##########
@@ -117,8 +135,7 @@ def test_1(act: Action, capsys):
 
         set transaction read committed;
         set count on;
-        set list off;
-        set heading off;
+        set list on;
 
         -- ##############################################
         -- Output data from profiler.
@@ -139,27 +156,27 @@ def test_1(act: Action, capsys):
             from vp_rec_stats t
             join r on t.sttm_id = r.sttm_id and t.ranked_level = r.ranked_level  + 1 and r.rec_id = t.par_id
         )
-        select acc_path from r;
+        select acc_path as access_path_blob_id from r;
     """
 
     act.expected_stdout = f"""
-        #Select Expression                                                                                                                                                                                                                                                                                                               
-        #    -> Filter (preliminary)                                                                                                                                                                                                                                                                                                     
-        #        -> Nested Loop Join (inner)                                                                                                                                                                                                                                                                                             
-        #            -> Table "TMAIN" as "V_TEST M4" Full Scan                                                                                                                                                                                                                                                                           
-        #            -> Filter                                                                                                                                                                                                                                                                                                           
+        #Select Expression
+        #    -> Filter (preliminary)
+        #        -> Nested Loop Join (inner)
+        #            -> Table "TMAIN" as "V_TEST M4" Full Scan
+        #            -> Filter
         #                -> Table "TDETL" as "V_TEST D4 DX" Access By ID
         #                    -> Bitmap And
-        #                        -> Bitmap
-        #                            -> Index "TDETL_FK" Range Scan (full match)
-        #                        -> Bitmap
-        #                            -> Index "TDETL_Y" Range Scan (upper bound: 1/1) 
-        #Sub-query (invariant)                                                                                                                                                                                                                                                                                                           
-        #    -> Filter                                                                                                                                                                                                                                                                                                                   
-        #        -> Aggregate                                                                                                                                                                                                                                                                                                            
+        #                        -> Bitmap And
+        #                            -> Bitmap
+        #                                -> Index "TDETL_Z" Range Scan (lower bound: 1/1)
+        #                            -> Bitmap
+        #
+        #Sub-query (invariant)
+        #    -> Filter
+        #        -> Aggregate
         #            -> Table "TDETL" as "V_TEST DY" Access By ID
-        #                -> Index "TDETL_FK" Full Scan                                                                                                                                                                                                                         
-
+        #                -> Index "TDETL_FK" Full Scan
         Records affected: 10
     """
     act.isql(input = test_sql, combine_output = True)

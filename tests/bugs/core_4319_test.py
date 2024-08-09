@@ -52,6 +52,8 @@ trace_conf = """
 """.split('\n')
 
 NO_SUCH_ALIAS = 'n0_$uch_f1le'
+
+@pytest.mark.trace
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
 

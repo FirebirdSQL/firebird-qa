@@ -58,4 +58,4 @@ act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.execute()
+    act.execute(combine_output = True)

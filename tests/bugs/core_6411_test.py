@@ -73,7 +73,6 @@ expected_stdout = """
 isql_script = temp_file('test-script-6411.sql')
 
 
-#@pytest.mark.skipif(platform.system() == 'Windows', reason='FIXME: see notes')
 @pytest.mark.version('>=3.0.7')
 def test_1(act: Action, isql_script: Path, capsys):
     for step in range(0,2):

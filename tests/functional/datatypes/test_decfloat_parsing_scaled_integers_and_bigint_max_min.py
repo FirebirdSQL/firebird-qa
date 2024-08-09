@@ -4,23 +4,27 @@
 ID:          decfloat.parsing-scaled-integers-and-bigint-max-min
 TITLE:       Interpretation of DECFLOAT values as BIGINT
 DESCRIPTION:
-  Check commit: "Fixed parsing of scaled integers and MAX/MIN INT64", 2017-05-28
-  See: github.com/FirebirdSQL/firebird/commit/1278d0692b535f69c7f9e208aad9682980ed9c59
-NOTES:
-[10.12.2019]
-  Updated syntax for SET BIND command because it was changed in 11-nov-2019.
-[30.12.2019]
-  Updated code and expected_stdout - get it from Alex, see letter 30.12.2019 16:15.
-[25.06.2020]
-  changed types in SQLDA from numeric to int128 // after discuss with Alex about CORE-6342.
-[01.07.2020]
-  adjusted expected output ('subtype' values).
-  Removed unnecessary lines from output and added substitution section for result to be properly filtered.
-
-  Found a problem with interpreting values
-  170141183460469231731687303715884105727 and -170141183460469231731687303715884105728
-  Sent letter to Alex (01.07.2020 13:55), waiting for fix. Check of bind DECFLOAT to INT128 was deferred.
+    Check commit: "Fixed parsing of scaled integers and MAX/MIN INT64", 2017-05-28
+    See: github.com/FirebirdSQL/firebird/commit/1278d0692b535f69c7f9e208aad9682980ed9c59
 FBTEST:      functional.datatypes.decfloat_parsing_scaled_integers_and_bigint_max_min
+NOTES:
+    [10.12.2019]
+        Updated syntax for SET BIND command because it was changed in 11-nov-2019.
+    [30.12.2019]
+        Updated code and expected_stdout - get it from Alex, see letter 30.12.2019 16:15.
+    [25.06.2020]
+        Changed types in SQLDA from numeric to int128 // after discuss with Alex about CORE-6342.
+    [01.07.2020]
+        Adjusted expected output ('subtype' values).
+        Removed unnecessary lines from output and added substitution section for result to be properly filtered.
+
+        Found a problem with interpreting values
+        170141183460469231731687303715884105727 and -170141183460469231731687303715884105728
+        Sent letter to Alex (01.07.2020 13:55), waiting for fix. Check of bind DECFLOAT to INT128 was deferred.
+    [16.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -47,10 +51,9 @@ test_script = """
      set sqlda_display off;
 
      select * from  v_test;
-
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype|BEHIND_BIGINT_|BIGINT_|DROB1).)*$', ''),
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype|BEHIND_BIGINT_|BIGINT_|DROB1).)*$', ''),
                                                  ('[ \t]+', ' ')])
 
 expected_stdout = """
@@ -79,5 +82,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

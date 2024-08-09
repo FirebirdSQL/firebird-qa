@@ -87,6 +87,7 @@ expected_stdout = """
     GDS_ON_SELECT_WITH_LOCK         335544336
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

@@ -6,6 +6,11 @@ TITLE:       Check ability of outer join simplification.
 DESCRIPTION:
   Use null-rejected predicate in WHERE filtering leads to replacement of TWO outer joins.
 FBTEST:      functional.tabloid.join_transformation_002
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
+    i.e.
+    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
 """
 
 import pytest
@@ -66,9 +71,7 @@ test_script = """
         end
     end
     ^
-    set term ^;
-
-
+    set term ;^
 """
 
 act = isql_act('db', test_script)
@@ -80,5 +83,5 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

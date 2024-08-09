@@ -43,6 +43,7 @@ act = python_act('db')
 
 #expected_stdout = 'SUCCESS: found expected line format in the trace log: <USER>:<ROLE>'
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_user: User, tmp_role:Role, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
 

@@ -142,6 +142,7 @@ expected_stdout = """
     MINE_F01                        300
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_user: User):
     act.expected_stdout = expected_stdout

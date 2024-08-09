@@ -2,24 +2,32 @@
 
 """
 ID:          issue-441
-ISSUE:       441
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/441
 TITLE:       Numeric div in dialect 3 mangles data
 DESCRIPTION:
 NOTES:
-  Results for FB 4.0 become differ from old one. Discussed with Alex, 30.10.2019.
-  Precise value of 70000 / 1.95583 is: 35790.431683735296 (checked on https://www.wolframalpha.com )
-  Section 'expected-stdout' was adjusted to be match for results that are issued in recent FB.
-  Discuss with Alex see in e-mail, letters 30.10.2019.
-[21.06.2020] 4.0.0.2068 (see also: CORE-6337):
-  changed subtype from 0 to 1 for cast (-70000 as numeric (18,5)) / cast (1.95583 as numeric (18,5))
-  (after discuss with dimitr, letter 21.06.2020 08:43).
-[25.06.2020] 4.0.0.2076: changed types in SQLDA from numeric to int128 // after discuss with Alex about CORE-6342.
-[27.07.2021] adjusted expected* sections to results in current snapshots FB 4.x and 5.x: this is needed since fix #6874
-  ("Literal 65536 (interpreted as int) can not be multiplied by itself w/o cast if result more than 2^63-1") because
-  division -4611686018427387904/-0.5 does not issue error since this fix.
-  Checked on 5.0.0.113, 4.0.1.2539.
+    Results for FB 4.0 become differ from old one. Discussed with Alex, 30.10.2019.
+    Precise value of 70000 / 1.95583 is: 35790.431683735296 (checked on https://www.wolframalpha.com )
+    Section 'expected-stdout' was adjusted to be match for results that are issued in recent FB.
 JIRA:        CORE-119
 FBTEST:      bugs.core_0119
+NOTES:
+    Discussed with Alex see in e-mail, letters 30.10.2019.
+    [21.06.2020] pzotov
+        4.0.0.2068 (see also: CORE-6337):
+        changed subtype from 0 to 1 for cast (-70000 as numeric (18,5)) / cast (1.95583 as numeric (18,5))
+        (after discuss with dimitr, letter 21.06.2020 08:43).
+    [25.06.2020] pzotov
+        4.0.0.2076: changed types in SQLDA from numeric to int128 // after discuss with Alex about CORE-6342.
+    [27.07.2021] pzotov
+        adjusted expected* sections to results in current snapshots FB 4.x and 5.x: this is needed since fix #6874
+        ("Literal 65536 (interpreted as int) can not be multiplied by itself w/o cast if result more than 2^63-1") because
+        division -4611686018427387904/-0.5 does not issue error since this fix.
+        Checked on 5.0.0.113, 4.0.1.2539.
+    [10.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -61,9 +69,10 @@ def test_1(act_1: Action):
 
 # version: 4.0
 
-substitutions_2 = [('^((?!(sqltype|DIV_RESULT)).)*$', ''), ('[ \t]+', ' '), ('.*alias.*', '')]
+substitutions_2 = [('^((?!(SQLSTATE|sqltype|DIV_RESULT)).)*$', ''), ('[ \t]+', ' '), ('.*alias.*', '')]
 
 test_script_2 = """
+    set bail on;
     set list on;
     set sqlda_display on;
     select cast (-70000 as numeric (18,5)) / cast (1.95583 as numeric (18,5)) as div_result_1 from rdb$database;
@@ -92,5 +101,5 @@ expected_stdout_2 = """
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2
-    act_2.execute()
+    act_2.execute(combine_output = True)
     assert act_2.clean_stdout == act_2.clean_expected_stdout

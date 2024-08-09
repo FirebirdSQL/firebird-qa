@@ -8,6 +8,12 @@ NOTES:
     [14.09.2023] pzotov
     Confirmed problem on 5.0.0.1209, 4.0.4.2986, 3.0.12.33707
     Checked on 5.0.0.1211, 4.0.4.2988 (intermediate snapshots), SS/CS.
+
+    [17.02.2024] pzotov
+    Added call to sweep(): test sometimes can fail if background garbage collection does not complete
+    its job after 'select * from t1_blob' and before get_statistics() on iter #2
+    (detected several times on Linux).
+    Checked again on Windows, builds 5.0.0.1209 and 5.0.0.1211 (confirmed problem and fix).
 """
 import re
 
@@ -103,6 +109,7 @@ def test_1(act: Action, capsys):
             pass
 
     with act.connect_server() as srv:
+        srv.database.sweep(database=act.db.db_path) # <<< 17.02.2024. Force GC.
         srv.database.get_statistics(database=act.db.db_path, flags=SrvStatFlag.RECORD_VERSIONS)
         stats = srv.readlines()
 

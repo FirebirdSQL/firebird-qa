@@ -66,6 +66,7 @@ trace = ['time_threshold = 0',
          'log_trigger_finish = true',
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
      # How many rows must be inserted to the test table:

@@ -107,6 +107,7 @@ trace = ['time_threshold = 0',
          # 2) 335544913 : value exceeds the range for valid timestamps
          ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
     with act.trace(db_events=trace):

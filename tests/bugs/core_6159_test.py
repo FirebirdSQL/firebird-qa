@@ -7,6 +7,11 @@ TITLE:       SUBSTRING SIMILAR is described with wrong data type in DSQL
 DESCRIPTION:
 JIRA:        CORE-6159
 FBTEST:      bugs.core_6159
+NOTES:
+    [13.12.2023] pzotov
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
 """
 
 import pytest
@@ -26,10 +31,9 @@ test_script = """
     set count on;
     select x from (select substring( s similar 'c#"harc#"har' escape '#') x from test ) where x is not null;
     select x from (select substring( b similar 'b#"lobb#"lob' escape '#') x from test ) where x is not null;
-
 """
 
-act = isql_act('db', test_script, substitutions=[('^((?!sqltype|harc|lobb|affected).)*$', ''),
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype|harc|lobb|affected).)*$', ''),
                                                  ('[ \t]+', ' '), ('Nullable.*', 'Nullable')])
 
 expected_stdout = """
@@ -45,5 +49,5 @@ expected_stdout = """
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

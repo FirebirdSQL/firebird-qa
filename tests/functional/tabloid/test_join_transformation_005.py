@@ -9,6 +9,11 @@ DESCRIPTION:
         A inner join B inner join C
      -- if join-expression of 'B left join C' is null-rejecting.
 FBTEST:      functional.tabloid.join_transformation_005
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
+    i.e.
+    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
 """
 
 import pytest
@@ -72,9 +77,7 @@ test_script = """
         end
     end
     ^
-    set term ^;
-
-
+    set term ;^
 """
 
 act = isql_act('db', test_script)
@@ -86,5 +89,5 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

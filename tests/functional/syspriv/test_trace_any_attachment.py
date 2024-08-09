@@ -29,6 +29,7 @@ tmp_usr2 = user_factory('db', name='tmp_stock_manager', password='123')
 
 act = python_act('db')
 
+@pytest.mark.trace
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_user: User, tmp_role: Role, tmp_usr2: User, capsys):
 

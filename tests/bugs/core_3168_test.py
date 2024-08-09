@@ -29,6 +29,7 @@ trace = ['log_services = true',
 
 temp_file = temp_file('test-file')
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, temp_file):
     with act.trace(svc_events=trace), act.connect_server() as srv:

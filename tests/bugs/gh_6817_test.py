@@ -18,15 +18,14 @@ act = python_act('db')
 
 passfile = temp_file('tmp_gh_6817.dat')
 
-#@pytest.mark.skip('FIXME: Not IMPLEMENTED')
-@pytest.mark.version('>=3.0.8')
+@pytest.mark.version('>=3.0.7')
 def test_1(act: Action, passfile: Path):
     passfile.write_text(act.db.password)
-    act.gfix(switches=['-user', act.db.user, '-fetch_password', str(passfile), act.db.dsn, '-w', 'async'],
+    act.gfix(switches=['-user', act.db.user, '-fetch_password', passfile, act.db.dsn, '-w', 'async'],
              credentials=False)
-    act.gfix(switches=['-fetch_password', str(passfile), act.db.dsn, '-user', act.db.user, '-w', 'async'],
+    act.gfix(switches=['-fetch_password', passfile, act.db.dsn, '-user', act.db.user, '-w', 'async'],
              credentials=False)
-    act.gfix(switches=['-user', act.db.user, act.db.dsn, '-fetch_password', str(passfile), '-w', 'async'],
+    act.gfix(switches=['-user', act.db.user, act.db.dsn, '-fetch_password', passfile, '-w', 'async'],
              credentials=False)
-    act.gfix(switches=[act.db.dsn, '-fetch_password', str(passfile), '-user', act.db.user, '-w', 'async'],
+    act.gfix(switches=[act.db.dsn, '-fetch_password', passfile, '-user', act.db.user, '-w', 'async'],
              credentials=False)

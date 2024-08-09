@@ -48,7 +48,7 @@ LOOP_CNT = 10
 tmp_user = user_factory('db', name='tmp$core_6142', password='123', plugin = 'Srp')
 db = db_factory()
 
-act = python_act('db', substitutions=[('[ \t]+', ' '), ('^((?!OVERALL RESULT).)*$', '')])
+act = python_act('db', substitutions=[('[ \t]+', ' '), ('^((?!SQLCODE|SQLSTATE|[Cc]onnection|OVERALL RESULT).)*$', '')])
 
 #---------------------
 def showtime():

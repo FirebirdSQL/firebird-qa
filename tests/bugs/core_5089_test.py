@@ -3,17 +3,19 @@
 """
 ID:          issue-5374
 ISSUE:       5374
-TITLE:       Metadata extration (ISQL -X): "CREATE PROCEDURE/FUNCTION" statement contains
-  reference to column of table(s) that not yet exists if this procedure had parameter
-  of such type when it was created
+TITLE:       Metadata extration (ISQL -X): "CREATE PROCEDURE/FUNCTION" statement contains reference to column of table(s) that not yet exists if this procedure had parameter of such type when it was created
 DESCRIPTION:
-  Test creates database with table 'TEST' and standalone and packaged procedures and functions which have parameters or variables
-  with referencing to the table 'TEST' column. Also, there are DB-level and DDL-level triggers with similar references.
-  Then we extract metadata and save it into file as 'initial' text.
-  After this we drop all objects and make attempt to APPLY just extracted metadata script. It should perform without errors.
-  Finally, we extract metadata again and do COMPARISON of their current content and those which are stored 'initial' file.
+    Test creates database with table 'TEST' and standalone and packaged procedures and functions which have parameters or variables
+    with referencing to the table 'TEST' column. Also, there are DB-level and DDL-level triggers with similar references.
+    Then we extract metadata and save it into file as 'initial' text.
+    After this we drop all objects and make attempt to APPLY just extracted metadata script. It should perform without errors.
+    Finally, we extract metadata again and do COMPARISON of their current content and those which are stored 'initial' file.
 JIRA:        CORE-5089
 FBTEST:      bugs.core_5089
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
+    i.e.
+    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
 """
 
 import pytest
@@ -150,7 +152,7 @@ init_script = """
     end
     ^
 
-    set term ^;
+    set term ;^
     commit;
 """
 
@@ -172,18 +174,23 @@ ddl_clear_all = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
     # Extract metadata
-    act.isql(switches=['-x'])
+    act.isql(switches=['-x'], combine_output = True)
     initial_metadata = act.stdout
     # Clear all
     act.reset()
-    act.isql(switches=[], input=ddl_clear_all)
+
+    act.isql(switches=[], input=ddl_clear_all, combine_output = True)
     # Apply extracted metadata
     act.reset()
-    act.isql(switches=[], input=initial_metadata)
+
+    act.isql(switches=[], input=initial_metadata, combine_output = True)
     # Extract new metadata
     act.reset()
-    act.isql(switches=['-x'])
+
+    act.isql(switches=['-x'], combine_output = True)
     new_metadata = act.stdout
+
     # Check
     assert list(unified_diff(initial_metadata, new_metadata)) == []

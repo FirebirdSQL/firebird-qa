@@ -38,6 +38,7 @@ def check_sweep(act: Action, log_sweep: bool):
     with act.trace(db_events=cfg), act.connect_server() as srv:
         srv.database.sweep(database=act.db.db_path)
 
+@pytest.mark.trace
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     # Case 1 - sweep logged

@@ -136,6 +136,7 @@ trace = ['log_transactions = true',
            'log_initfini = false',
            ]
 
+@pytest.mark.trace
 @pytest.mark.version('>=3')
 def test_1(act: Action, capsys):
     NUM_ROWS_TO_BE_ADDED = 45000

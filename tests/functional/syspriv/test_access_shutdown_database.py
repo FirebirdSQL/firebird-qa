@@ -62,6 +62,7 @@ expected_stdout_isql = """
     -At block line
 """
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
 

@@ -7,6 +7,11 @@ TITLE:       Parameters order of EXECUTE BLOCK statement is reversed if called f
 DESCRIPTION:
 JIRA:        CORE-2036
 FBTEST:      bugs.core_2036
+NOTES:
+    [25.11.2023] pzotov
+    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
+    i.e.
+    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
 """
 
 import pytest
@@ -32,7 +37,7 @@ test_script = """
         suspend;
     end
     ^
-    set term ^;
+    set term ;^
 """
 
 act = isql_act('db', test_script)
