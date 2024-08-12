@@ -3,8 +3,7 @@
 """
 ID:          issue-6717
 ISSUE:       6717
-TITLE:       FETCH ABSOLUTE and RELATIVE beyond bounds of cursor should always position
-  immediately before-first or after-last
+TITLE:       FETCH ABSOLUTE and RELATIVE beyond bounds of cursor should always position immediately before-first or after-last
 DESCRIPTION:
 JIRA:        CORE-6487
 FBTEST:      bugs.core_6487
