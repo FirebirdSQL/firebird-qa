@@ -2,11 +2,14 @@
 
 """
 ID:          issue-6483
-ISSUE:       6483
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6483
 TITLE:       Procedures and EXECUTE BLOCK without RETURNS should not be allowed to use SUSPEND
 DESCRIPTION:
 JIRA:        CORE-6239
 FBTEST:      bugs.core_6239
+NOTES:
+   Fix was done by commit https://github.com/FirebirdSQL/firebird/commit/b2b5f9a87cea26a9f12fa231804dba9d0426d3fa
+   (can be checked by 4.0.0.1763+, date of build since 05-feb-2020).
 """
 
 import pytest
