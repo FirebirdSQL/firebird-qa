@@ -6,9 +6,8 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8213
 TITLE:       WHEN NOT MATCHED BY SOURCE - does not work with a direct table as source
 DESCRIPTION:
 NOTES:
-    [18.08.2024] pzotov
-    Checked on 5.0.2.1479.
-    NB: 6.x not yet has fix, waiting for front-porting.
+    [20.08.2024] pzotov
+    Checked on 6.0.0.438-d40d01b, 5.0.2.1479-47aa3b1
 """
 
 import pytest
@@ -272,10 +271,6 @@ expected_stdout = """
 
 @pytest.mark.version('>=5.0.2')
 def test_1(act: Action):
-    
-    if act.is_version('>=6'):
-        pytest.skip('NOTE: 6.x not yet fixed, waiting for front-porting.')
-
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
