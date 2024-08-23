@@ -7,45 +7,45 @@ TITLE:       Allow usage of functions in LIST delimiter parameter
 DESCRIPTION:
 JIRA:        CORE-1443
 FBTEST:      bugs.core_1453
+NOTES:
+    [23.08.2024] pzotov
+    Reimplemented: we have to avoid to show result of LIST() call because unpredictable order of its tokens.
+    This can cause fail if we change OptimizeForFirstRows = true config parameter.
+    Instead, test apply char_len() to the result of list(<...>, <func>).
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """CREATE TABLE T1 (ID INTEGER, NAME CHAR(20));
-COMMIT;
-INSERT INTO T1 (ID,NAME) VALUES (1,'ORANGE');
-INSERT INTO T1 (ID,NAME) VALUES (1,'APPLE');
-INSERT INTO T1 (ID,NAME) VALUES (1,'LEMON');
-INSERT INTO T1 (ID,NAME) VALUES (2,'ORANGE');
-INSERT INTO T1 (ID,NAME) VALUES (2,'APPLE');
-INSERT INTO T1 (ID,NAME) VALUES (2,'PEAR');
-COMMIT;
+init_script = """
+    create table t1 (id integer, name char(20));
+    commit;
+    insert into t1 (id,name) values (1,'orange');
+    insert into t1 (id,name) values (1,'apple');
+    insert into t1 (id,name) values (1,'lemon');
+    insert into t1 (id,name) values (2,'orange');
+    insert into t1 (id,name) values (2,'apple');
+    insert into t1 (id,name) values (2,'pear');
+    commit;
 """
 
 db = db_factory(init=init_script)
 
-test_script = """select ID,  LIST( trim(NAME), ASCII_CHAR(35) )
-from T1
-group by 1;
+test_script = """
+    set list on;
+    select id, char_length(list( trim(name), ascii_char(35) )) chr_len
+    from t1
+    group by id
+    order by id;
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script, substitutions = [ ('[ \t]+', ' '), ])
 
 expected_stdout = """
-          ID              LIST
-============ =================
-           1               0:1
-==============================================================================
-LIST:
-ORANGE#LEMON#APPLE
-==============================================================================
-           2               0:2
-==============================================================================
-LIST:
-PEAR#ORANGE#APPLE
-==============================================================================
-
+    ID                              1
+    CHR_LEN                         18
+    ID                              2
+    CHR_LEN                         17
 """
 
 @pytest.mark.version('>=2.5.0')
