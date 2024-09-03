@@ -6,11 +6,9 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8225
 TITLE:       Problematic queries when SubQueryConversion = true
 DESCRIPTION:
 NOTES:
-    [23.08.2024] pzotov
-    1. Explained plan output temporary disabled: there is question about missed(?) indentation after 'Refetch'.
-       Sent letter to dimitr, 23.08.2024 21:42.
-    2. Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
-       Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
+    [03.09.2024] pzotov
+    Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
+    Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
 
     Confirmed bug on 5.0.2.1479-adfe97a.
     Checked on 5.0.2.1482-604555f.
@@ -94,15 +92,36 @@ def test_1(act: Action, capsys):
                 print(r[0],r[1])
 
             ps = cur.prepare(test_sql)
-            # temporary, until question with indentation will be solved by dimitr -- print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
             for r in cur.execute(ps):
                 print(r[0],r[1])
             con.rollback()
 
     act.expected_stdout = f"""
         SubQueryConversion true
+
+        Select Expression
+        ....-> First N Records
+        ........-> Filter
+        ............-> Hash Join (semi)
+        ................-> Refetch
+        ....................-> Sort (record length: 28, key length: 8)
+        ........................-> Table "DEPARTMENT" as "D" Full Scan
+        ................-> Record Buffer (record length: 25)
+        ....................-> Table "EMPLOYEE" as "E" Full Scan
         2 d2
+
         SubQueryConversion false
+
+        Sub-query
+        ....-> Filter
+        ........-> Table "EMPLOYEE" as "E" Full Scan
+        Select Expression
+        ....-> First N Records
+        ........-> Refetch
+        ............-> Sort (record length: 28, key length: 8)
+        ................-> Filter
+        ....................-> Table "DEPARTMENT" as "D" Full Scan
         2 d2
     """
     act.stdout = capsys.readouterr().out
