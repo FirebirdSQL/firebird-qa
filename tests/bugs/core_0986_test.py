@@ -2,7 +2,7 @@
 
 """
 ID:          issue-1393
-ISSUE:       1393
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1393
 TITLE:       Non-ASCII quoted identifiers are not converted to metadata (UNICODE_FSS) charset
 DESCRIPTION:
 JIRA:        CORE-986
@@ -62,8 +62,7 @@ non_ascii_ddl='''
      create role "манагер";
      create role "начсклд";
 
-     -- TEMPLY COMMENTED UNTIL CORE-5209 IS OPEN:
-     -- ISQL -X ignores connection charset for text of EXCEPTION message (restoring it in initial charset when exception was created)
+     -- enabled since CORE-5209 was fixed:
      recreate exception "Невзлет" 'Запись обломалась, ваши не пляшут. Но не стесняйтесь и обязательно заходите еще, мы всегда рады видеть вас. До скорой встречи, товарищ!';
      commit;
 
@@ -206,5 +205,3 @@ def test_1(act: Action, tmp_file: Path):
     act.reset()
     act.isql(switches=['-q'], input_file=tmp_file, charset='win1251', io_enc='cp1251')
     assert act.clean_stdout.endswith('Metadata created OK.')
-
-
