@@ -9,6 +9,8 @@ NOTES:
     [04.09.2024] pzotov
     The issue seems to be fixed long ago.
     Old FB versions can not be checked on current firebird QA.
+    ISQL must work with charset = utf8. Otherwise 'Expected end of statement, encountered EOF' will raise on Linux.
+
     Checked on all recent 3.x ... 6.x -- all fine.
 """
 
@@ -92,6 +94,6 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute(charset = 'win1252')
+    act.execute(charset = 'utf8')
     assert act.clean_stdout == act.clean_expected_stdout
 
