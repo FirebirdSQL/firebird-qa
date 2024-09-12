@@ -17,7 +17,7 @@ NOTES:
 
     Requested by dimitr, letters with subj 'core_5118_test', since 11.09.2024 17:26.
 
-    Checked on 6.0.0.452, 5.0.2.1493, 4.0.5.3136, 3.0.13.33789
+    Checked on 6.0.0.452, 5.0.2.1493, 4.0.5.3136, 3.0.13.33789.
 """
 
 import pytest
