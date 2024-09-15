@@ -2,8 +2,8 @@
 
 """
 ID:          issue-5588
-ISSUE:       5588
-TITLE:       upport full SQL standard binary string literal syntax
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5588
+TITLE:       Support full SQL standard binary string literal syntax [CORE5311]
 DESCRIPTION:
 JIRA:        CORE-5311
 FBTEST:      bugs.gh_5588
