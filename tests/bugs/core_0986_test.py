@@ -9,7 +9,7 @@ JIRA:        CORE-986
 FBTEST:      bugs.core_0986
 NOTES:
     [25.11.2023] pzotov
-    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc)
 """
 
 import pytest
