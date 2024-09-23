@@ -32,6 +32,7 @@ act = python_act('db', substitutions=[('[ \t]+', ' '), ('After line \\d+.*', '')
 
 tmp_sql = temp_file('tmp_8255_non_ascii_ddl.sql')
 
+@pytest.mark.skipif(platform.system() != 'Windows', reason='See ticket note.')
 @pytest.mark.version('>=4.0.6')
 def test_1(act: Action, tmp_sql: Path, capsys):
 
