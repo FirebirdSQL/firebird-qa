@@ -13,6 +13,14 @@ NOTES:
         https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83 // FB 5.x
         ("More realistic cardinality adjustments for unmatchable booleans, this should also fix #7904: FB5 bad plan for query")
     Letter from dimitr, 15.12.2023 10:05.
+
+    [24.09.2024] pzotov
+    Changed substitutions: one need to suppress '(keys: N, total key length: M)' in FB 6.x (and ONLY there),
+    otherwise actual and expected output become differ.
+    Commit: https://github.com/FirebirdSQL/firebird/commit/c50b0aa652014ce3610a1890017c9dd436388c43
+    ("Add key info to the hash join plan output", 23.09.2024 18:26)
+    Discussed with dimitr.
+    Checked on 6.0.0.467-cc183f5, 5.0.2.1513
 """
 
 import pytest
@@ -308,7 +316,12 @@ init_script = """
 db = db_factory(init=init_script)
 
 
-substitutions = [('record length:\\s+\\d+', 'record length'), ('key length:\\s+\\d+', 'key length') ]
+substitutions = \
+    [
+        ( r'\(record length: \d+, key length: \d+\)', '' ) # (record length: 132, key length: 16)
+       ,( r'\(keys: \d+, total key length: \d+\)', '' )    # (keys: 1, total key length: 2)
+    ]
+
 act = python_act('db', substitutions = substitutions)
 
 #----------------------------------------------------------
