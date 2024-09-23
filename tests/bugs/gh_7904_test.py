@@ -8,6 +8,14 @@ DESCRIPTION:
 NOTES:
     Confirmed problem on 5.0.0.1291 (for UMOWA_ROWS = 700K number of fetches = 6059386, elapsed time = 9.609s)
     Checked on 5.0.0.1303, 6.0.0.180 (for UMOWA_ROWS = 700K number of fetches = 270208, elapsed time = 0.741s)
+
+    [24.09.2024] pzotov
+    Changed substitutions: one need to suppress '(keys: N, total key length: M)' in FB 6.x (and ONLY there),
+    otherwise actual and expected output become differ.
+    Commit: https://github.com/FirebirdSQL/firebird/commit/c50b0aa652014ce3610a1890017c9dd436388c43
+    ("Add key info to the hash join plan output", 23.09.2024 18:26)
+    Discussed with dimitr.
+    Checked on 6.0.0.467-cc183f5, 5.0.2.1513
 """
 
 import pytest
@@ -15,6 +23,7 @@ from firebird.qa import *
 
 UMOWA_ROWS = 7000
 ROZL_MULTIPLIER = 10
+
 
 init_sql = f"""
     set bail on;
@@ -178,8 +187,19 @@ init_sql = f"""
     commit;
 
 """
+#-----------------------------------------------------------
 
 db = db_factory(init = init_sql)
+
+substitutions = \
+    [
+        ( r'\(record length: \d+, key length: \d+\)', '' ) # (record length: 132, key length: 16)
+       ,( r'\(keys: \d+, total key length: \d+\)', '' )    # (keys: 1, total key length: 2)
+    ]
+
+act = python_act('db', substitutions = substitutions)
+
+#-----------------------------------------------------------
 
 query_lst = [
     # Query from https://github.com/FirebirdSQL/firebird/issues/7904:
@@ -206,9 +226,6 @@ query_lst = [
             , q1_rozl.rozlicz_rodz_dzial_id
     """,
 ]
-
-substitutions = [ ('record length: \\d+.*', 'record length'), ('key length: \\d+.*', 'key length') ]
-act = python_act('db', substitutions = substitutions)
 
 #---------------------------------------------------------
 def replace_leading(source, char="."):
