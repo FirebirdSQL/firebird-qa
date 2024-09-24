@@ -30,7 +30,7 @@ from pathlib import Path
 import pytest
 from firebird.qa import *
 
-REQUIRED_ALIAS = 'tmp_gh_8062_alias'
+REQUIRED_ALIAS = 'tmp_gh_8253_alias'
 
 db = db_factory()
 
