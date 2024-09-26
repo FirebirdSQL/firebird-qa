@@ -3,7 +3,7 @@
 """
 ID:          issue-8233
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8233
-TITLE:       SubQueryConversion = true --multiple rows in singleton select
+TITLE:       SubQueryConversion = true - multiple rows in singleton select
 DESCRIPTION:
 NOTES:
     [27.08.2024] pzotov
