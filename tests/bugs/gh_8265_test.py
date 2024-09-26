@@ -9,6 +9,7 @@ NOTES:
     [26.09.2024] pzotov
     0. ::: NB ::: This test probably will be reimplemented later, see note by dimitr in the ticket:
        "In the future this heuristics should be replaced with a cost-based approach between hash and nested loop semi-join"
+       (https://github.com/FirebirdSQL/firebird/issues/8265#issue-2546991823)
     1. Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
        Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
     2. Custom driver config objects are created here, one with SubQueryConversion = true and second with false.
