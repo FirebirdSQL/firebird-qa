@@ -10,6 +10,7 @@ NOTES:
     1. Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
        Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
     2. Custom driver config object is created here for using 'SubQueryConversion = true'.
+    3. Additional test was made for this issue: tests/functional/tabloid/test_aae2ae32.py
 
     Confirmed bug on 5.0.2.1497.
     Checked on 5.0.2.1499-5fa4ae6.
