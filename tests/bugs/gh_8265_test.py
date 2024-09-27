@@ -106,8 +106,8 @@ def test_1(act: Action, capsys):
 
 
     for sq_conv in ('true','false',):
-        srv_cfg = driver_config.register_server(name = f'srv_cfg_aae2ae32_{sq_conv}', config = '')
-        db_cfg_name = f'db_cfg_aae2ae32_{sq_conv}'
+        srv_cfg = driver_config.register_server(name = f'srv_cfg_8265_{sq_conv}', config = '')
+        db_cfg_name = f'db_cfg_8265_{sq_conv}'
         db_cfg_object = driver_config.register_database(name = db_cfg_name)
         db_cfg_object.server.value = srv_cfg.name
         db_cfg_object.database.value = str(act.db.db_path)
