@@ -6,6 +6,11 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7118
 TITLE:       Chained JOIN .. USING across the same column names may be optimized badly
 NOTES:
     [01.03.2023] pzotov
+    Commit related to this test:
+    https://github.com/FirebirdSQL/firebird/commit/1b192404d43a15d403b5ff92760bc5df9d3c89c3
+    (13.09.2022 19:17, "More complete solution for #3357 and #7118")
+    One more test that attempts to verify this commit: bugs/gh_7398_test.py
+
     Checked on 3.0.11.33665, 4.0.3.2904, 5.0.0.964
 """
 
