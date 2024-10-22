@@ -13,6 +13,7 @@ DESCRIPTION:
 NOTES:
     [25.11.2023] pzotov
     Checked on 6.0.0.150.
+    See also: gh_8249_test.py
 """
 
 import pytest
