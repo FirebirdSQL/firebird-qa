@@ -7,7 +7,7 @@ DESCRIPTION:
 NOTES:
     Restore must use gbak utility, target DB must be prefixed by 'localhost:'.
 
-    Confirmed bug on 6.0.0.447, 5.0.2.1487
+    Confirmed bug on 6.0.0.447, 5.0.2.1487.
     Checked on 6.0.0.450-8591572, 5.0.2.1493-eb720e8.
 """
 
