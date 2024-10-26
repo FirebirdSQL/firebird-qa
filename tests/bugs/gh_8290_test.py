@@ -65,6 +65,10 @@ def test_1(act: Action, capsys):
             print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
             print('')
 
+            # 26.10.2024. ::: ACHTUNG :::
+            # MANDATORY OTHERWISE PYTEST WILL HANG AT FINAL POINT:
+            ps.free()
+
             
     expected_out = f"""
         {qry_map[0]}
