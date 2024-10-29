@@ -13,11 +13,16 @@ DESCRIPTION:
     * 6.x: https://github.com/FirebirdSQL/firebird/commit/6b445c0dc53f1c5778258bd673c0b61f6dd93a69 (20-sep-2024)
 NOTES:
     [23.09.2024] pzotov
-    Initially query containing 15'000 terms in "+1+1...+1" expression used to check.
+    Initially query contained expression of 15'000 terms ("1+1+1...+1") was used to check.
     This query causes 'stack overflow' only in FB 5.x and 6.x.
     But in FB 4.0.6.3156 it successfully COMPLETES calculation and issues result.
     For FB 4.x this 'threshold' is 16'287 (last number of terms where FB can evaluate result w/o 'stack overflow').
-    Because of this, it was decided to increase number of terms to 50'000.
+    Because of this, it was decided to increase number of terms to 100'000.
+
+    ::: NB :::
+    Fix currently exists only for Windows, see:
+    https://github.com/FirebirdSQL/firebird/pull/8255#issuecomment-2354781108
+    On Linux this query still crashes server.
 
     Checked on 6.0.0.466, 5.0.2.1513, 4.0.6.3156
 """
@@ -32,7 +37,7 @@ act = python_act('db', substitutions=[('[ \t]+', ' '), ('After line \\d+.*', '')
 
 tmp_sql = temp_file('tmp_8255_non_ascii_ddl.sql')
 
-@pytest.mark.skipif(platform.system() != 'Windows', reason='See ticket note.')
+@pytest.mark.skipif(platform.system() != 'Windows', reason='See ticket note: fix was only for Windows.')
 @pytest.mark.version('>=4.0.6')
 def test_1(act: Action, tmp_sql: Path, capsys):
 
