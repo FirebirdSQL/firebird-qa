@@ -21,6 +21,9 @@ NOTES:
     ("Add key info to the hash join plan output", 23.09.2024 18:26)
     Discussed with dimitr.
     Checked on 6.0.0.467-cc183f5, 5.0.2.1513
+
+    [30.10.2024] pzotov
+    Splitted expected_out : added separate block for FB 5.x after discuss with dimitr.
 """
 
 import pytest
@@ -326,7 +329,7 @@ act = python_act('db', substitutions = substitutions)
 
 #----------------------------------------------------------
 
-def replace_leading(source, char="#"):
+def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
 
@@ -355,31 +358,44 @@ def test_1(act: Action, capsys):
 
     expected_stdout_4x = """
         Select Expression
-        ####-> Sort (record length: 150, key length: 44)
-        ########-> Nested Loop Join (inner)
-        ############-> Filter
-        ################-> Table "COUNTRIES" as "C" Access By ID
-        ####################-> Bitmap
-        ########################-> Index "I_COUNTRYNAME" Unique Scan
-        ############-> Filter
-        ################-> Table "RELATIONS" as "R" Access By ID
-        ####################-> Bitmap
-        ########################-> Index "FK_RELATIONS_COUNTRIES" Range Scan (full match)
+        ....-> Sort (record length: 150, key length: 44)
+        ........-> Nested Loop Join (inner)
+        ............-> Filter
+        ................-> Table "COUNTRIES" as "C" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "I_COUNTRYNAME" Unique Scan
+        ............-> Filter
+        ................-> Table "RELATIONS" as "R" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "FK_RELATIONS_COUNTRIES" Range Scan (full match)
     """
 
     expected_stdout_5x = """
         Select Expression
-        ####-> Sort (record length: 150, key length: 44)
-        ########-> Filter
-        ############-> Hash Join (inner)
-        ################-> Table "RELATIONS" as "R" Full Scan
-        ################-> Record Buffer (record length: 81)
-        ####################-> Filter
-        ########################-> Table "COUNTRIES" as "C" Access By ID
-        ############################-> Bitmap
-        ################################-> Index "I_COUNTRYNAME" Unique Scan
+        ....-> Sort (record length: 150, key length: 44)
+        ........-> Filter
+        ............-> Hash Join (inner)
+        ................-> Table "RELATIONS" as "R" Full Scan
+        ................-> Record Buffer (record length: 81)
+        ....................-> Filter
+        ........................-> Table "COUNTRIES" as "C" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "I_COUNTRYNAME" Range Scan (full match)
     """
 
-    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x
+    expected_stdout_6x = """
+        Select Expression
+        ....-> Sort (record length: 150, key length: 44)
+        ........-> Filter
+        ............-> Hash Join (inner)
+        ................-> Table "RELATIONS" as "R" Full Scan
+        ................-> Record Buffer (record length: 81)
+        ....................-> Filter
+        ........................-> Table "COUNTRIES" as "C" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "I_COUNTRYNAME" Unique Scan
+    """
+
+    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
