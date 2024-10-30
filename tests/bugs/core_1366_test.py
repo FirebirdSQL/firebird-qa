@@ -23,6 +23,7 @@ db = db_factory(charset='ISO8859_1')
 act = isql_act('db', substitutions=[('=.*', ''), ('[ \\t]+', ' ')])
 tmp_sql = temp_file('tmp_core_1366.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0.0')
 def test_1(act: Action, tmp_sql: Path):
 

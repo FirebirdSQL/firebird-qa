@@ -28,6 +28,7 @@ act = isql_act('db', substitutions = [ ('[ \\t]+', ' '), ('TCPv(4|6)', 'TCP') ])
 
 tmp_sql = temp_file('tmp_core_2227.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0.0')
 def test_1(act: Action, tmp_sql: Path):
     test_script = f"""

@@ -9,7 +9,7 @@ JIRA:        CORE-857
 FBTEST:      bugs.core_0857
 NOTES:
     [31.10.2024] pzotov
-    Bug was fixed for too old FB (2.0 RC4 / 2.1 ALpha 1), firebird-driver and/or QA-plugin
+    Bug was fixed for too old FB (2.0 RC4 / 2.1 Alpha 1), firebird-driver and/or QA-plugin
     will not able to run on this version in order to reproduce problem.
 
     Checked on 6.0.0.511 (Windows/Linux); 5.0.2.1550;  4.0.6.3165; 3.0.2.32670, 3,0,1,32609
@@ -23,6 +23,7 @@ db = db_factory(charset='WIN1252')
 act = isql_act('db', substitutions=[('[ \\t]+', ' ')])
 tmp_sql = temp_file('tmp_core_0857.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0.0')
 def test_1(act: Action, tmp_sql: Path):
 

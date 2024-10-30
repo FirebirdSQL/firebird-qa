@@ -39,6 +39,7 @@ act = isql_act('db', substitutions = [('TCPv(4|6)', 'TCP')])
 
 tmp_sql = temp_file('tmp_core_5464.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0.1')
 def test_1(act: Action, tmp_sql: Path, capsys):
 

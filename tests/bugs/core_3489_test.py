@@ -47,6 +47,7 @@ expected_stdout = """
 
 tmp_sql = temp_file('tmp_core_3489.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0.0')
 def test_1(act: Action, tmp_sql: Path):
     tmp_sql.write_text(
