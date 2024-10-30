@@ -9,8 +9,8 @@ JIRA:        CORE-3489
 FBTEST:      bugs.core_3489
 NOTES:
     [30.10.2024] pzotov
-    Bug was fixed for too old FB (3.0 Alpha 1), firebird-driver and/or QA-plugin will not able to run on this version.
-    to check this version in order to reproduce problem.
+    Bug was fixed for too old FB (3.0 Alpha 1), firebird-driver and/or QA-plugin
+    will not able to run on this version in order to reproduce problem.
     Source for this test was taken from ticket almost w/o changes. Only aux view has been added ('v_conn_cset') for
     showing current connection protocol and character set - we make query to this view two twice: one for TCP and then
     for local protocol.
