@@ -25,7 +25,7 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[ ('[ \\t]+', ' ') ])
 
-@pytest.mark.version('>=4.0.6')
+@pytest.mark.version('>=6.0')
 def test_1(act: Action):
 
     expected_stdout = f"""
