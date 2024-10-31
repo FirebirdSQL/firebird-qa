@@ -20,14 +20,9 @@ NOTES:
     Confirmed bug (regression) on 3.0.12.33735 (date of build: 09-mar-2024).
     Checked on 3.0.12.33764, 4.0.5.3112, 5.0.1.1416, 6.0.0.374.
 
-    [25.10.2024] pzotov
-    Splitted expected_out after fixed #8290: 'Index "RDB$INDEX_nn" Range Scan (full match)' must appear in explained plan)
-    for RDB$PROCEDURES table (index on columns: RDB$PACKAGE_NAME,RDB$PROCEDURE_NAME - is unique and at least one of these
-    columns allow NULLs).
-    Checked on 6.0.0.502-d2f4cf6, 5.0.2.1542-ab50e20 (intermediate builds).
-
-    [30.10.2024] pzotov
-    Splitted expected_out again: added separate block for FB 5.x after discuss with dimitr.
+    [31.10.2024] pzotov
+    Adjusted expected_out discuss with dimitr (explained plans for FB 3.x ...6.x now are identical).
+    Checked on 3.0.13.33794, 4.0.6.3165, 5.0.2.1551, 6.0.0.515
 """
 import zipfile
 from pathlib import Path
@@ -88,7 +83,7 @@ def test_1(act: Action, tmp_fbk: Path, capsys):
         ps = cur.prepare(test_sql)
         print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
 
-    expected_stdout_4x = """
+    expected_stdout = """
         Select Expression
         ....-> Singularity Check
         ........-> Aggregate
@@ -101,46 +96,6 @@ def test_1(act: Action, tmp_fbk: Path, capsys):
         ....................-> Table "RDB$PROCEDURES" as "PRC" Access By ID
         ........................-> Bitmap
         ............................-> Index "RDB$INDEX_nn" Unique Scan
-        Select Expression
-        ....-> Filter
-        ........-> Table "RDB$RELATION_FIELDS" as "X" Access By ID
-        ............-> Bitmap
-        ................-> Index "RDB$INDEX_nn" Range Scan (full match)
-    """
-
-    expected_stdout_5x = """
-        Select Expression
-        ....-> Singularity Check
-        ........-> Aggregate
-        ............-> Nested Loop Join (inner)
-        ................-> Filter
-        ....................-> Table "RDB$DEPENDENCIES" as "DEP" Access By ID
-        ........................-> Bitmap
-        ............................-> Index "RDB$INDEX_nn" Range Scan (full match)
-        ................-> Filter
-        ....................-> Table "RDB$PROCEDURES" as "PRC" Access By ID
-        ........................-> Bitmap
-        ............................-> Index "RDB$INDEX_nn" Unique Scan
-        Select Expression
-        ....-> Filter
-        ........-> Table "RDB$RELATION_FIELDS" as "X" Access By ID
-        ............-> Bitmap
-        ................-> Index "RDB$INDEX_nn" Range Scan (full match)
-    """
-
-    expected_stdout_6x = """
-        Select Expression
-        ....-> Singularity Check
-        ........-> Aggregate
-        ............-> Nested Loop Join (inner)
-        ................-> Filter
-        ....................-> Table "RDB$DEPENDENCIES" as "DEP" Access By ID
-        ........................-> Bitmap
-        ............................-> Index "RDB$INDEX_nn" Range Scan (full match)
-        ................-> Filter
-        ....................-> Table "RDB$PROCEDURES" as "PRC" Access By ID
-        ........................-> Bitmap
-        ............................-> Index "RDB$INDEX_nn" Range Scan (full match)
         Select Expression
         ....-> Filter
         ........-> Table "RDB$RELATION_FIELDS" as "X" Access By ID
@@ -148,6 +103,6 @@ def test_1(act: Action, tmp_fbk: Path, capsys):
         ................-> Index "RDB$INDEX_nn" Range Scan (full match)
     """
     
-    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
