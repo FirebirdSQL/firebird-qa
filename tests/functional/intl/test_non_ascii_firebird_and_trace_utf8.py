@@ -41,6 +41,7 @@ substitutions = [ ('.* FAILED EXECUTE_TRIGGER_FINISH', 'FAILED EXECUTE_TRIGGER_F
 
 act = python_act('db', substitutions = substitutions)
 
+@pytest.mark.intl
 @pytest.mark.trace
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_worker: User, capsys):
