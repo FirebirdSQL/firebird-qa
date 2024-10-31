@@ -22,8 +22,9 @@ NOTES:
     Discussed with dimitr.
     Checked on 6.0.0.467-cc183f5, 5.0.2.1513
 
-    [30.10.2024] pzotov
-    Splitted expected_out : added separate block for FB 5.x after discuss with dimitr.
+    [31.10.2024] pzotov
+    Adjusted expected_out discuss with dimitr. Explained plans for 5.x and 6.x are now identical.
+    Checked on 3.0.13.33794, 4.0.6.3165, 5.0.2.1551, 6.0.0.515
 """
 
 import pytest
@@ -383,19 +384,6 @@ def test_1(act: Action, capsys):
         ................................-> Index "I_COUNTRYNAME" Range Scan (full match)
     """
 
-    expected_stdout_6x = """
-        Select Expression
-        ....-> Sort (record length: 150, key length: 44)
-        ........-> Filter
-        ............-> Hash Join (inner)
-        ................-> Table "RELATIONS" as "R" Full Scan
-        ................-> Record Buffer (record length: 81)
-        ....................-> Filter
-        ........................-> Table "COUNTRIES" as "C" Access By ID
-        ............................-> Bitmap
-        ................................-> Index "I_COUNTRYNAME" Unique Scan
-    """
-
-    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
