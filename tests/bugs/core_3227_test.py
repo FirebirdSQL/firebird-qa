@@ -32,6 +32,7 @@ ASCII_VAL
 
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

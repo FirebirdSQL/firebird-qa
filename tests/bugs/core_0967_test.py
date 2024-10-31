@@ -22,6 +22,7 @@ db = db_factory(init=init_script)
 
 act = python_act('db')
 
+@pytest.mark.intl
 @pytest.mark.version('>=2.1')
 def test_1(act: Action):
     with act.db.connect() as con:

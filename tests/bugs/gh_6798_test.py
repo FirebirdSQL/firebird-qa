@@ -99,6 +99,7 @@ expected_stderr = """
     -Integer overflow.  The result of an integer operation caused the most significant bit of the result to carry.
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

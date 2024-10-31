@@ -2267,6 +2267,7 @@ expected_stdout_2 = """
 	S_WHITE_SPACE                   0
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     act_2.expected_stdout = expected_stdout_2

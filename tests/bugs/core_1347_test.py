@@ -57,6 +57,7 @@ where pr.rdb$procedure_source containing '1'
 and pr.rdb$procedure_name = upper('sp_test');
 '''
 
+@pytest.mark.intl
 @pytest.mark.version('>=3')
 def test_1(act: Action, tmp_file: Path):
     tmp_file.write_bytes(sql_txt.encode('cp1251'))
