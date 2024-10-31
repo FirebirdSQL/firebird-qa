@@ -25,6 +25,7 @@ db = db_factory()
 
 act = python_act('db')
 
+@pytest.mark.intl
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
     with act.db.connect(charset='iso8859_1') as con:

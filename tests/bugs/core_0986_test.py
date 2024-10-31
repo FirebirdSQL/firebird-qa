@@ -188,6 +188,7 @@ non_ascii_ddl='''
 
 tmp_file = temp_file('tmp_0986_non_ascii_ddl.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_file: Path):
     tmp_file.write_bytes(non_ascii_ddl.encode('cp1251'))

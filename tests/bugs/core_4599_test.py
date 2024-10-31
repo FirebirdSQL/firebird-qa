@@ -835,6 +835,7 @@ expected_stdout = """
 	OVERLAY_UTF8_TO_ASCII_LO        1
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

@@ -34,6 +34,7 @@ expected_stdout = """
 	C_LEN_UTF8_MIXED                16383
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     script_file = Path(act.files_dir / 'core_4881.zip', at='core_4881_script.sql')

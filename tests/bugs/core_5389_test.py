@@ -45,6 +45,7 @@ test_script = """
 
 script_file = temp_file('test-script.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, script_file: Path):
     script_file.write_text(test_script, encoding='cp1251')

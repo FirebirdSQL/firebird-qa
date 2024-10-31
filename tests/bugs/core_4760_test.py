@@ -39,6 +39,7 @@ expected_stdout=f"""
     WHOAMI : {NON_ASCII_NAME}
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, non_ascii_user: User, capsys):
     with act.db.connect(user=non_ascii_user.name, password=non_ascii_user.password) as con:

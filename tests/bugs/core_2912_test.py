@@ -74,6 +74,7 @@ expected_stdout = """
     CU                              FAÿ
 """
 
+@pytest.mark.intl
 @pytest.mark.platform('Windows')
 @pytest.mark.version('>=3')
 def test_1(act: Action):

@@ -62,6 +62,7 @@ remove_metadata = """
         r.rdb$system_flag is distinct from 1;
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     #

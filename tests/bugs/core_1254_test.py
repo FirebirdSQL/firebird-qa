@@ -101,6 +101,7 @@ expected_stdout = """
     case_SENSITIVE_distinct_gr_4    1
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

@@ -62,6 +62,7 @@ expected_stdout = """
     é alguém do Brasil
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, user_a: User, user_b: User):
     act.expected_stdout = expected_stdout

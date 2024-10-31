@@ -36,6 +36,7 @@ ddl_script = """
     select rdb$role_name as r_name from rdb$roles where rdb$system_flag is distinct from 1;
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.isql(switches=[], input=ddl_script)
