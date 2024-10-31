@@ -21,7 +21,10 @@ NOTES:
     Checked on 3.0.12.33764, 4.0.5.3112, 5.0.1.1416, 6.0.0.374.
 
     [31.10.2024] pzotov
-    Adjusted expected_out discuss with dimitr (explained plans for FB 3.x ...6.x now are identical).
+    Adjusted expected_out discuss with dimitr: explained plan for FB 6.x became identical to FB 5.x and earlier after
+    https://github.com/FirebirdSQL/firebird/commit/e7e9e01fa9d7c13d8513fcadca102d23ad7c5e2a
+    ("Rework fix for #8290: Unique scan is incorrectly reported in the explained plan for unique index and IS NULL predicate")
+    
     Checked on 3.0.13.33794, 4.0.6.3165, 5.0.2.1551, 6.0.0.515
 """
 import zipfile
