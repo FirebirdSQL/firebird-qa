@@ -28,7 +28,7 @@ act = python_act('db')
 tmp_fbk = temp_file('gh_7269.tmp.fbk')
 tmp_fdb = temp_file('gh_7269.tmp.fdb')
 
-@pytest.mark.version('>=4.0.0')
+@pytest.mark.version('>=5.0.2')
 def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
     zipped_fbk_file = zipfile.Path(act.files_dir / 'gh_7269.zip', at = 'gh-7269-unrecoverable.fbk')
     tmp_fbk.write_bytes(zipped_fbk_file.read_bytes())
