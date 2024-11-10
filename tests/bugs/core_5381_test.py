@@ -1774,37 +1774,51 @@ def test_1(act: Action, capsys):
         ....-> Aggregate
         ........-> Filter
         ............-> Hash Join (inner)
-        ................-> Table "RDB_FLDS" as "A D5" Full Scan
+        ................-> Filter
+        ....................-> Table "RDB_FLDS" as "A D5" Full Scan
         ................-> Record Buffer (record length: 25)
-        ....................-> Table "RDB_DEPS" as "D3" Full Scan
+        ....................-> Filter
+        ........................-> Table "RDB_DEPS" as "D3" Full Scan
         ................-> Record Buffer (record length: 25)
-        ....................-> Table "RDB_DEPS" as "A D3" Full Scan
+        ....................-> Filter
+        ........................-> Table "RDB_DEPS" as "A D3" Full Scan
         ................-> Record Buffer (record length: 25)
-        ....................-> Table "RDB_TYPES" as "D1" Full Scan
+        ....................-> Filter
+        ........................-> Table "RDB_TYPES" as "D1" Full Scan
         ................-> Record Buffer (record length: 25)
-        ....................-> Table "RDB_COLLS" as "A D4" Full Scan
+        ....................-> Filter
+        ........................-> Table "RDB_COLLS" as "A D4" Full Scan
         ................-> Record Buffer (record length: 25)
-        ....................-> Table "RDB_TYPES" as "A D1" Full Scan
+        ....................-> Filter
+        ........................-> Table "RDB_TYPES" as "A D1" Full Scan
         ................-> Record Buffer (record length: 25)
-        ....................-> Table "RDB_RELS" as "D2" Full Scan
+        ....................-> Filter
+        ........................-> Table "RDB_RELS" as "D2" Full Scan
         ................-> Record Buffer (record length: 25)
-        ....................-> Table "RDB_RELS" as "A D2" Full Scan
+        ....................-> Filter
+        ........................-> Table "RDB_RELS" as "A D2" Full Scan
         ................-> Record Buffer (record length: 359)
         ....................-> Filter
         ........................-> Nested Loop Join (outer)
         ............................-> Filter
         ................................-> Hash Join (inner)
-        ....................................-> Table "RDB_FLDS" as "A INNER_VIEW G5" Full Scan
+        ....................................-> Filter
+        ........................................-> Table "RDB_FLDS" as "A INNER_VIEW G5" Full Scan
         ....................................-> Record Buffer (record length: 25)
-        ........................................-> Table "RDB_DEPS" as "A INNER_VIEW G3" Full Scan
+        ........................................-> Filter
+        ............................................-> Table "RDB_DEPS" as "A INNER_VIEW G3" Full Scan
         ....................................-> Record Buffer (record length: 25)
-        ........................................-> Table "RDB_COLLS" as "A INNER_VIEW G4" Full Scan
+        ........................................-> Filter
+        ............................................-> Table "RDB_COLLS" as "A INNER_VIEW G4" Full Scan
         ....................................-> Record Buffer (record length: 25)
-        ........................................-> Table "RDB_TYPES" as "A INNER_VIEW G1" Full Scan
+        ........................................-> Filter
+        ............................................-> Table "RDB_TYPES" as "A INNER_VIEW G1" Full Scan
         ....................................-> Record Buffer (record length: 25)
-        ........................................-> Table "RDB_CSETS" as "A INNER_VIEW G6" Full Scan
+        ........................................-> Filter
+        ............................................-> Table "RDB_CSETS" as "A INNER_VIEW G6" Full Scan
         ....................................-> Record Buffer (record length: 25)
-        ........................................-> Table "RDB_RELS" as "A INNER_VIEW G2" Full Scan
+        ........................................-> Filter
+        ............................................-> Table "RDB_RELS" as "A INNER_VIEW G2" Full Scan
         ....................................-> Record Buffer (record length: 208)
         ........................................-> Nested Loop Join (inner)
         ............................................-> Nested Loop Join (outer)
