@@ -31,7 +31,24 @@ NOTES:
         ...
     Table statistics same for 3.x ... 6.x.
 
-    Checked on 3.0.13.33794, 4.0.6.3165, 5.0.2.1553, 6.0.0.520
+    [10.11.2024] pzotov
+    Explained plan in FB 4.x changed since 4.0.6.3168:
+    Was:
+        -> Hash Join (inner)
+            -> Table "RDB_FLDS" as "A D5" Full Scan
+            -> Record Buffer (record length: 25)
+                -> Table "RDB_DEPS" as "D3" Full Scan
+        ...
+    Now:
+        -> Hash Join (inner)
+            -> Filter
+                -> Table "RDB_FLDS" as "A D5" Full Scan
+            -> Record Buffer (record length: 25)
+                -> Filter
+                    -> Table "RDB_DEPS" as "D3" Full Scan
+        ...
+
+    Checked on 3.0.13.33794, 4.0.6.3168, 5.0.2.1553, 6.0.0.520
 """
 
 import pytest
