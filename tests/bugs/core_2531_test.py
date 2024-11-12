@@ -45,6 +45,7 @@ expected_stdout = """
     Records affected: 1
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     non_ascii_query = "select 'gång' as non_ascii_literal from rdb$database"

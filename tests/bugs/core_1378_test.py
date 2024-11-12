@@ -88,6 +88,7 @@ expected_stdout = """
     RDB$COLLATION_NAME              вид прописи
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3')
 def test_1(act: Action, tmp_file: Path):
     tmp_file.write_bytes(sql_txt.encode('cp1251'))

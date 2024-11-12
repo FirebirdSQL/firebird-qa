@@ -41,24 +41,22 @@ test_script = """
     join rdb$types rt on
         rd.rdb$depended_on_type = rt.rdb$type
         and rt.rdb$type_name containing upper('COLLATION')
-    order by 1;
-
+    order by dep_name, dep_on
+    ;
 """
 
 act = isql_act('db', test_script)
 
 expected_stdout = """
-DEP_NAME                        P1
-DEP_ON                          WIN1250
-DEP_ON_TYPE                     COLLATION
-
-DEP_NAME                        P1
-DEP_ON                          UTF8
-DEP_ON_TYPE                     COLLATION
-
-DEP_NAME                        P2
-DEP_ON                          WIN1250
-DEP_ON_TYPE                     COLLATION
+    DEP_NAME                        P1
+    DEP_ON                          UTF8
+    DEP_ON_TYPE                     COLLATION
+    DEP_NAME                        P1
+    DEP_ON                          WIN1250
+    DEP_ON_TYPE                     COLLATION
+    DEP_NAME                        P2
+    DEP_ON                          WIN1250
+    DEP_ON_TYPE                     COLLATION
 """
 
 @pytest.mark.version('>=3.0')

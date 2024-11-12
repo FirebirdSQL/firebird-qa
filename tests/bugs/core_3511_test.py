@@ -37,6 +37,7 @@ tmp_role2 = role_factory('db', name = '"Groß"')
 
 act = python_act('db')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_user: User, tmp_role1: Role, tmp_role2: Role, capsys):
     init_script = f"""

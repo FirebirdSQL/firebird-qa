@@ -6,12 +6,17 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/3357
 TITLE:       Bad execution plan if some stream depends on multiple streams via a function [CORE2975]
 NOTES:
     [04.03.2023] pzotov
-        Discussed with dimitr, letters 01-mar-2023 18:37 and 04-mar-2023 10:38.
+     1. Discussed with dimitr, letters 01-mar-2023 18:37 and 04-mar-2023 10:38.
         Test must verify that execution plan uses NESTED LOOPS rather than HASH JOIN.
         Because of this, tables must be filled with approximately equal volume of data.
         Confirmed bug on 3.0.9.33548 (28-dec-2021), plan was:
             PLAN HASH (JOIN (T1 INDEX (T1_COL), T2 INDEX (T2_ID)), T3 NATURAL)
-        Checked on 5.0.0.970, 4.0.3.2904, 3.0.11.33665.
+     2. Commit related to this test:
+        https://github.com/FirebirdSQL/firebird/commit/1b192404d43a15d403b5ff92760bc5df9d3c89c3
+        (13.09.2022 19:17, "More complete solution for #3357 and #7118")
+        One more test that attempts to verify this commit: bugs/gh_7398_test.py
+
+     Checked on 5.0.0.970, 4.0.3.2904, 3.0.11.33665.
 """
 
 import pytest

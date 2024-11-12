@@ -67,6 +67,7 @@ expected_stdout = """
 	Records affected: 1
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

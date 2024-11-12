@@ -20,6 +20,18 @@ NOTES:
            External Data Source provider 'inet6://[' not found
            ========
            It was fixed in gh-8156.
+        3. On Windows there is no way to make IPv6 'fully disabled': address '::1' remains active.
+           According to https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/configure-ipv6-in-windows
+           "You cannot completely disable IPv6 as IPv6 is used internally on the system for many TCPIP tasks.
+           For example, you will still be able to run ping ::1 after configuring this setting"
+
+           We can turn off listening of '::1' by FB server if do following:
+               * run PowerShell and type there: Enable-NetAdapterBinding -Name "*" -ComponentID ms_tcpip6
+               * chcp 65001, then: ipconfig /all | findstr /i /r /c:" IPv6.*(preferred)"
+               * save somewhere IPv6 address from previous command (e.g. 'fe80::f53c:9ecf:aad:4761%14')
+               * change in firebird.conf: RemoteBindAddress = fe80::f53c:9ecf:aad:4761
+           But this requires RESTART of FB server thus cannot be used in QA.
+           Discussed with Vlad 13-jun-2024.
     [14.06.2024] pzotov
         Checked "on external 'inet6://[::1]/{act.db.db_path}'" after fixed GH-8156, builds:
         3.0.12.33757, 4.0.5.3112, 5.0.1.1416, 6.0.0.374

@@ -2,14 +2,14 @@
 
 """
 ID:          issue-1393
-ISSUE:       1393
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1393
 TITLE:       Non-ASCII quoted identifiers are not converted to metadata (UNICODE_FSS) charset
 DESCRIPTION:
 JIRA:        CORE-986
 FBTEST:      bugs.core_0986
 NOTES:
     [25.11.2023] pzotov
-    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
+    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc)
 """
 
 import pytest
@@ -23,18 +23,18 @@ act = python_act('db', substitutions=[('in file .*', 'in file XXX')])
 expected_stdout_a = """create collation "Циферки" for utf8 from unicode case insensitive 'NUMERIC-SORT=1';"""
 
 expected_stderr_a_40 = """
-Statement failed, SQLSTATE = 22018
-arithmetic exception, numeric overflow, or string truncation
--Cannot transliterate character between character sets
-After line 4 in file non_ascii_ddl.sql
+    Statement failed, SQLSTATE = 22018
+    arithmetic exception, numeric overflow, or string truncation
+    -Cannot transliterate character between character sets
+    After line 4 in file non_ascii_ddl.sql
 """
 
 expected_stderr_a_30 = """
-Statement failed, SQLSTATE = 22000
-unsuccessful metadata update
--CREATE COLLATION Циферки failed
--Malformed string
-After line 4 in file non_ascii_ddl.sql
+    Statement failed, SQLSTATE = 22000
+    unsuccessful metadata update
+    -CREATE COLLATION Циферки failed
+    -Malformed string
+    After line 4 in file non_ascii_ddl.sql
 """
 
 non_ascii_ddl='''
@@ -62,8 +62,7 @@ non_ascii_ddl='''
      create role "манагер";
      create role "начсклд";
 
-     -- TEMPLY COMMENTED UNTIL CORE-5209 IS OPEN:
-     -- ISQL -X ignores connection charset for text of EXCEPTION message (restoring it in initial charset when exception was created)
+     -- enabled since CORE-5209 was fixed:
      recreate exception "Невзлет" 'Запись обломалась, ваши не пляшут. Но не стесняйтесь и обязательно заходите еще, мы всегда рады видеть вас. До скорой встречи, товарищ!';
      commit;
 
@@ -171,8 +170,6 @@ non_ascii_ddl='''
      ';
      --------------------------------------------------
      commit;
-     --/*
-     --TEMPLY COMMENTED UNTIL CORE-5221 IS OPEN:
      set echo on;
      show collation;
      show domain;
@@ -183,27 +180,29 @@ non_ascii_ddl='''
      show view;
      show procedure;
      show role;
-     --*/
      set list on;
      set echo off;
      select 'Metadata created OK.' as msg from rdb$database;
  '''
 
 
-tmp_file = temp_file('non_ascii_ddl.sql')
+tmp_file = temp_file('tmp_0986_non_ascii_ddl.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_file: Path):
     tmp_file.write_bytes(non_ascii_ddl.encode('cp1251'))
+
     # run without specifying charset
+    ################################
     act.expected_stdout = expected_stdout_a
     act.expected_stderr = expected_stderr_a_40 if act.is_version('>=4.0') else expected_stderr_a_30
     act.isql(switches=['-q'], input_file=tmp_file, charset=None, io_enc='cp1251')
     assert (act.clean_stdout == act.clean_expected_stdout and
             act.clean_stderr == act.clean_expected_stderr)
-    # run with charset
+
+    # run _with_ charset
+    ####################
     act.reset()
     act.isql(switches=['-q'], input_file=tmp_file, charset='win1251', io_enc='cp1251')
     assert act.clean_stdout.endswith('Metadata created OK.')
-
-

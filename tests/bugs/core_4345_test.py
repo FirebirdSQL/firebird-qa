@@ -101,7 +101,7 @@ def test_1(act: Action):
 """
     # Case 1: Trace functions enabled
     with act.trace(db_events=trace):
-        act.isql(switches=['-n', '-q'], input=func_script % (123, 456))
+        act.isql(switches=['-n', '-q'], input=func_script % (123, 456), combine_output = True)
     #
     for line in act.trace_log:
         if (func_start_ptn.search(line)
@@ -112,7 +112,7 @@ def test_1(act: Action):
     # Case 2: Trace functions disabled
     act.trace_log.clear()
     with act.trace(db_events=trace[:-2]):
-        act.isql(switches=['-n', '-q'], input=func_script % (789, 987))
+        act.isql(switches=['-n', '-q'], input=func_script % (789, 987), combine_output = True)
     #
     for line in act.trace_log:
         if (func_start_ptn.search(line)

@@ -50,6 +50,7 @@ expected_stdout_b = """
     VARC1_ASCII                     A.
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.script = test_script

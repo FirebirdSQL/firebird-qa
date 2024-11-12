@@ -20,6 +20,13 @@ NOTES:
     or
     AttributeError: 'iUtil_v2' object has no attribute 'decode_timestamp_tz'
 
+    [01.09.2024]
+    On Linux argument of tzfile is shown with prefix ("/usr/share/zoneinfo/"), so we have to remove it:
+        <class 'dateutil.tz.tz.tzfile'>:
+        Windows = tzfile('Indian/Cocos')
+        Linux = tzfile('/usr/share/zoneinfo/Indian/Cocos')
+    This is done by extracting '_timezone_' property of this instance.
+
     Checked on 6.0.0.396, 5.0.1.1440, 4.0.5.3127
 """
 import pytest
@@ -104,7 +111,7 @@ def test_1(act: Action, capsys):
         cur = con.cursor()
         cur.execute('select current_timestamp from rdb$database')
         for r in cur:
-            print(r[0].tzinfo)
+            print(r[0].tzinfo._timezone_)
         cur.close()
 
         # The value set through the DPB should survive an `alter session reset`
@@ -114,11 +121,14 @@ def test_1(act: Action, capsys):
         cur = con.cursor()
         cur.execute('select current_timestamp from rdb$database')
         for r in cur:
-            print(r[0].tzinfo)
-
+            # class 'dateutil.zoneinfo.tzfile'
+            tzfile_nfo = r[0].tzinfo # <class 'dateutil.tz.tz.tzfile'>: Windows = tzfile('Indian/Cocos'); Linux = tzfile('/usr/share/zoneinfo/Indian/Cocos')
+            # tzfile_arg = tzfile_nfo._filename # <class 'str'>: Windows = 'Indian/Cocos'; Linux = '/usr/share/zoneinfo/Indian/Cocos'
+            print(tzfile_nfo._timezone_) # Windows: 'Indian/Cocos'; Linux: 'Indian/Cocos'
+            
     act.expected_stdout = f"""
-        tzfile('{SELECTED_TIMEZONE}')
-        tzfile('{SELECTED_TIMEZONE}')
+        {SELECTED_TIMEZONE}
+        {SELECTED_TIMEZONE}
     """
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout

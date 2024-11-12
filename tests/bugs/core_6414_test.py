@@ -3,8 +3,7 @@
 """
 ID:          issue-6652
 ISSUE:       6652
-TITLE:       Error message "expected length N, actual M" contains wrong value of M when
-  charset UTF8 is used in the field declaration of a table
+TITLE:       Error message "expected length N, actual M" contains wrong value of M when charset UTF8 is used in the field declaration of a table
 DESCRIPTION:
   All attempts to create/alter table with not-null column with size that not enough space to fit default value must fail.
   Length of such column can be declared either directly or via domain - and both of these ways must fail.
@@ -133,6 +132,7 @@ expected_stderr = """
 	-expected length 1, actual 8
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stderr = expected_stderr

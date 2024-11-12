@@ -2,15 +2,15 @@
 
 """
 ID:          issue-5510
-ISSUE:       5510
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5510
 TITLE:       EXECUTE STATEMENT: BLR error if more than 256 output parameters exist
 DESCRIPTION:
-  We define here number of output args for which one need to made test - see var 'sp_args_count'.
-  Then we open .sql file and GENERATE it content based on value of 'sp_args_count' (procedure will
-  have header and body with appropriate number of arguments and statement to be executed).
-  Finally, we run ISQL subprocess with giving to it for execution just generated .sql script.
-  ISQL should _not_ issue any error and all lines of its STDOUT should start from the names of
-  output arguments (letter 'O': O1, O2, ... O5000).
+    We define here number of output args for which one need to made test - see var 'sp_args_count'.
+    Then we open .sql file and GENERATE it content based on value of 'sp_args_count' (procedure will
+    have header and body with appropriate number of arguments and statement to be executed).
+    Finally, we run ISQL subprocess with giving to it for execution just generated .sql script.
+    ISQL should _not_ issue any error and all lines of its STDOUT should start from the names of
+    output arguments (letter 'O': O1, O2, ... O5000).
 JIRA:        CORE-5231
 FBTEST:      bugs.core_5231
 """
@@ -71,5 +71,5 @@ def build_script(ddl_script: Path):
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, ddl_script: Path):
     build_script(ddl_script)
-    act.isql(switches=[], input_file=ddl_script, charset='NONE')
+    act.isql(switches=[], input_file=ddl_script, charset='NONE', combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout

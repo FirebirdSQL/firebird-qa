@@ -48,6 +48,7 @@ After line 4 in file /tmp/pytest-of-pcisar/pytest-559/test_10/test_script.sql
 
 script_file = temp_file('test_script.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3')
 def test_1(act: Action, script_file: Path):
     script_file.write_text("""

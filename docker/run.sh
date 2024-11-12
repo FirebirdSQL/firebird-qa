@@ -21,5 +21,5 @@ pytest \
 	--md-report-output /qa-out/md_report.md \
 	--ignore=tests/functional/replication \
 	--ignore=tests/functional/basic/isql/test_08.py \
-	-m "not replication" \
+	-m "not replication and not encryption" \
 	"$@"

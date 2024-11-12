@@ -13,6 +13,21 @@ NOTES:
         https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83 // FB 5.x
         ("More realistic cardinality adjustments for unmatchable booleans, this should also fix #7904: FB5 bad plan for query")
     Letter from dimitr, 15.12.2023 10:05.
+
+    [24.09.2024] pzotov
+    Changed substitutions: one need to suppress '(keys: N, total key length: M)' in FB 6.x (and ONLY there),
+    otherwise actual and expected output become differ.
+    Commit: https://github.com/FirebirdSQL/firebird/commit/c50b0aa652014ce3610a1890017c9dd436388c43
+    ("Add key info to the hash join plan output", 23.09.2024 18:26)
+    Discussed with dimitr.
+    Checked on 6.0.0.467-cc183f5, 5.0.2.1513
+
+    [31.10.2024] pzotov
+    Adjusted expected_out discuss with dimitr: explained plan for FB 6.x became identical to FB 5.x and earlier after
+    https://github.com/FirebirdSQL/firebird/commit/e7e9e01fa9d7c13d8513fcadca102d23ad7c5e2a
+    ("Rework fix for #8290: Unique scan is incorrectly reported in the explained plan for unique index and IS NULL predicate")
+
+    Checked on 3.0.13.33794, 4.0.6.3165, 5.0.2.1551, 6.0.0.515
 """
 
 import pytest
@@ -308,12 +323,17 @@ init_script = """
 db = db_factory(init=init_script)
 
 
-substitutions = [('record length:\\s+\\d+', 'record length'), ('key length:\\s+\\d+', 'key length') ]
+substitutions = \
+    [
+        ( r'\(record length: \d+, key length: \d+\)', '' ) # (record length: 132, key length: 16)
+       ,( r'\(keys: \d+, total key length: \d+\)', '' )    # (keys: 1, total key length: 2)
+    ]
+
 act = python_act('db', substitutions = substitutions)
 
 #----------------------------------------------------------
 
-def replace_leading(source, char="#"):
+def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
 
@@ -342,29 +362,29 @@ def test_1(act: Action, capsys):
 
     expected_stdout_4x = """
         Select Expression
-        ####-> Sort (record length: 150, key length: 44)
-        ########-> Nested Loop Join (inner)
-        ############-> Filter
-        ################-> Table "COUNTRIES" as "C" Access By ID
-        ####################-> Bitmap
-        ########################-> Index "I_COUNTRYNAME" Unique Scan
-        ############-> Filter
-        ################-> Table "RELATIONS" as "R" Access By ID
-        ####################-> Bitmap
-        ########################-> Index "FK_RELATIONS_COUNTRIES" Range Scan (full match)
+        ....-> Sort (record length: 150, key length: 44)
+        ........-> Nested Loop Join (inner)
+        ............-> Filter
+        ................-> Table "COUNTRIES" as "C" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "I_COUNTRYNAME" Unique Scan
+        ............-> Filter
+        ................-> Table "RELATIONS" as "R" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "FK_RELATIONS_COUNTRIES" Range Scan (full match)
     """
 
     expected_stdout_5x = """
         Select Expression
-        ####-> Sort (record length: 150, key length: 44)
-        ########-> Filter
-        ############-> Hash Join (inner)
-        ################-> Table "RELATIONS" as "R" Full Scan
-        ################-> Record Buffer (record length: 81)
-        ####################-> Filter
-        ########################-> Table "COUNTRIES" as "C" Access By ID
-        ############################-> Bitmap
-        ################################-> Index "I_COUNTRYNAME" Unique Scan
+        ....-> Sort (record length: 150, key length: 44)
+        ........-> Filter
+        ............-> Hash Join (inner)
+        ................-> Table "RELATIONS" as "R" Full Scan
+        ................-> Record Buffer (record length: 81)
+        ....................-> Filter
+        ........................-> Table "COUNTRIES" as "C" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "I_COUNTRYNAME" Range Scan (full match)
     """
 
     act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x

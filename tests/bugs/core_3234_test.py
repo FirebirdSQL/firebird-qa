@@ -203,6 +203,7 @@ expected_stdout = """
 	TRIMMED_CHAR_LEN                11
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout

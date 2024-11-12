@@ -32,6 +32,7 @@ expected_stdout = """
 
 test_script = temp_file('test_script.sql')
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0.4')
 def test_1(act: Action, test_script: Path):
     if act.is_version('<4'):

@@ -5,21 +5,33 @@ ID:          issue-5978
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5978
 TITLE:       Access to the name of DB encryption key [CORE5712]
 DESCRIPTION:
-     Test creates temporary user with system privilege GET_DBCRYPT_INFO in order to allow him to obtain encryption info.
-     Then we run following:
-         1) encrypt DB using plugin 'fbSampleDbCrypt' provided in every FB 4.x+ snapshot;
-         2) make connection as SYSDBA and ask DB-crypt info (DbInfoCode.CRYPT_PLUGIN and DbInfoCode.CRYPT_KEY)
-         3) decrypt DB
-     After this we repeat these actions, except that in "2)" we use temporary user ('tmp_senior') instead of SYSDBA
-     (he must get same info as was obtained in previous step for SYSDBA).
+    Test uses Firebird built-in encryption plugin wich actually does encryption using trivial algorithm.
+    Before running this test following prerequisites must be met:
+       1. Files fbSampleKeyHolder.conf, fbSampleKeyHolder.dll, fbSampleDbCrypt.conf and fbSampleDbCrypt.dll 
+          must be copied from $FB_HOME/examples/prebuilt/plugins/ to $FB_HOME/plugins/
+          (on Linux name of binaries are: libfbSampleDbCrypt.so and libfbSampleKeyHolder.so)
+       2. File fbSampleKeyHolder.conf must contain lines: Auto = true and KeyRed = <any number>
+       3. File $QA_HOME/pytest.ini must contain line with 'encryption' marker declaration.
+
+    We create temporary user with system privilege GET_DBCRYPT_INFO in order to allow him to obtain encryption info.
+    Then we run following:
+        1) encrypt DB using plugin 'fbSampleDbCrypt' provided in every FB 4.x+ snapshot;
+        2) make connection as SYSDBA and ask DB-crypt info (DbInfoCode.CRYPT_PLUGIN and DbInfoCode.CRYPT_KEY)
+        3) decrypt DB
+    After this we repeat these actions, except that in "2)" we use temporary user ('tmp_senior') instead of SYSDBA
+    (he must get same info as was obtained in previous step for SYSDBA).
 NOTES:
-     [08.05.2024] pzotov
+    [08.05.2024] pzotov
 
-     ### ACHTUNG ### TEST REQUIRES FIREBIRD-DRIVER VERSION 1.10.4+ (date: 07-may-2024).
-     See reply from pcisar, letters with subj: "fb_info_crypt_key: how it can be obtained using firebird-driver ? // GH-5978, 2018"
+    ### ACHTUNG ### TEST REQUIRES FIREBIRD-DRIVER VERSION 1.10.4+ (date: 07-may-2024).
+    Thanks to pcisar for explanation of DbInfoCode usage.
+    See letters with subj "fb_info_crypt_key: how it can be obtained using firebird-driver ? // GH-5978, 2018" (27.04.2024 14:55).
 
-     Checked on 4.0.5.3092, 5.0.1.1395, 6.0.0.346.
-     FB 3.x is not checked.
+    Firebird 3.x can not be checked. Exception:
+       raise NotSupportedError(f"Info code {info_code} not supported by engine version {self.__engine_version}")
+       firebird.driver.types.NotSupportedError: Info code 138 not supported by engine version 3.0
+
+    Checked on 4.0.5.3092, 5.0.1.1395, 6.0.0.346.
 """
 import os
 import locale
