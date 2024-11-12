@@ -7,7 +7,7 @@ TITLE:       Regression: could not execute query (select from view with nested v
 DESCRIPTION:
     Test uses queries from ticket but creates user tables instead of rdb$ ones.
     We ask FB to show explained plan for query.
-    Before fix this caused to '335544382 : request size limit exceeded'
+    Before fix this caused to '335544382 : request size limit exceeded'.
 JIRA:        CORE-5381
 FBTEST:      bugs.core_5381
 NOTES:
