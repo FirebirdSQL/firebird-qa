@@ -7,6 +7,7 @@ TITLE:       SET AUTOTERM ON/OFF. Basic test.
 DESCRIPTION:
 NOTES:
     Checked on 6.0.0.139 (intermediate snapshot of 23-nov-2023).
+    Adjusted expected output after check on 6.0.0.530.
 """
 
 import pytest
