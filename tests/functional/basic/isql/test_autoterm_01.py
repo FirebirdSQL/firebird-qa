@@ -57,6 +57,7 @@ def test_1(act: Action):
         !
         Print statistics: OFF
         Print per-table stats: OFF
+        Print wire stats: OFF
         Echo commands: OFF
         List format: ON
         Show Row Count: OFF
