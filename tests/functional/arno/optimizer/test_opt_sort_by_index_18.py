@@ -9,10 +9,9 @@ DESCRIPTION:
 FBTEST:      functional.arno.optimizer.opt_sort_by_index_18
 NOTES:
     [17.11.2024] pzotov
-    Re-implemented after https://github.com/FirebirdSQL/firebird/commit/26e64e9c08f635d55ac7a111469498b3f0c7fe81
-    ( Cost-based decision between ORDER and SORT plans (#8316) ).
-    Execution plan was replaced with explained. Plans are splitted for versions up to 5.x and 6.x+.
-    Discussed with dimitr, letters 16.11.2024.
+    Query text was replaced after https://github.com/FirebirdSQL/firebird/commit/26e64e9c08f635d55ac7a111469498b3f0c7fe81
+    ( Cost-based decision between ORDER and SORT plans (#8316) ): 'OPTIMIZE FOR FIRST ROWS' is used for 6.x
+    Suggested by dimitr, letter 16.11.2024 15:15
 
     Checked on 6.0.0.532; 5.0.2.1567; 4.0.6.3168; 3.0.13.33794.
 """
@@ -72,8 +71,7 @@ def replace_leading(source, char="."):
 @pytest.mark.version('>=3')
 def test_1(act: Action, capsys):
 
-    # opt_clause = '' if act.is_version('<5') else 'optimize for first rows' if act.is_version('<6') else ''
-    opt_clause = ''
+    OPT_CLAUSE = '' if act.is_version('<6') else 'optimize for first rows'
 
     test_sql = f"""
         select
@@ -84,7 +82,7 @@ def test_1(act: Action, capsys):
             t53.id1 = 30
         order by
             t53.id2 asc
-        {opt_clause}
+        {OPT_CLAUSE}
     """
 
     with act.db.connect() as con:
@@ -115,9 +113,9 @@ def test_1(act: Action, capsys):
 
     expected_stdout_6x = """
         Select Expression
-        ....-> Sort (record length: NN, key length: MM)
-        ........-> Filter
-        ............-> Table "TABLE_53" as "T53" Access By ID
+        ....-> Filter
+        ........-> Table "TABLE_53" as "T53" Access By ID
+        ............-> Index "I_TABLE_53_ID2_ASC" Full Scan
         ................-> Bitmap
         ....................-> Index "I_TABLE_53_ID1_ASC" Range Scan (full match)
     """
