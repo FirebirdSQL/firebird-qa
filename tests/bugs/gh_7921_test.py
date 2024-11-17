@@ -9,6 +9,13 @@ NOTES:
     Confirmed problem on 5.0.0.1303.
     Checked on 6.0.0.180 (intermediate build 18.12.2023).
     Checked on 5.0.1.1322 after backporting (commit fef5af38, 23.01.2024).
+
+    [17.11.2024] pzotov
+    Query text was replaced after https://github.com/FirebirdSQL/firebird/commit/26e64e9c08f635d55ac7a111469498b3f0c7fe81
+    ( Cost-based decision between ORDER and SORT plans (#8316) ): 'OPTIMIZE FOR FIRST ROWS' is used for 6.x
+    Suggested by dimitr, letter 16.11.2024 15:15
+
+    Checked on 6.0.0.532; 5.0.2.1567
 """
 
 import pytest
@@ -182,21 +189,6 @@ init_sql = f"""
 
 db = db_factory(init = init_sql)
 
-query_lst = [
-    """
-        select
-            q2_rozl.dyr_id as "dyrekcja"
-            ,count(*) as "q2_rozl"
-        from
-            rozliczenie q2_rozl
-        where
-            q2_rozl.okres_numer = '15'
-            and q2_rozl.dok_rozliczeniowy_id in ('1')
-        group by
-            q2_rozl.dyr_id
-    """,
-]
-
 act = python_act('db')
 
 #---------------------------------------------------------
@@ -207,6 +199,24 @@ def replace_leading(source, char="."):
 
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action, capsys):
+
+    OPT_CLAUSE = '' if act.is_version('<6') else 'optimize for first rows'
+    query_lst = [
+        f"""
+            select
+                q2_rozl.dyr_id as "dyrekcja"
+                ,count(*) as "q2_rozl"
+            from
+                rozliczenie q2_rozl
+            where
+                q2_rozl.okres_numer = '15'
+                and q2_rozl.dok_rozliczeniowy_id in ('1')
+            group by
+                q2_rozl.dyr_id
+            {OPT_CLAUSE}
+        """,
+    ]
+    
     with act.db.connect() as con:
         cur = con.cursor()
         for q in query_lst:
