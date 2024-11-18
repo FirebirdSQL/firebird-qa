@@ -2,7 +2,7 @@
 
 """
 ID:          issue-7853
-ISSUE:       7853
+ISSUE:       https://github.com/FirebirdSQL/firebird/pull/7853
 TITLE:       Do not consider non-deterministic expressions as invariants in pre-filters
 DESCRIPTION:
     Change in FB 5.x was pushed 14.12.2023 20:06:
@@ -29,6 +29,10 @@ NOTES:
 
     Checked on 5.0.0.1304
     ::: NB ::: Build 6.0.0.180 - FAILS because this PR still not pushed in master branch. Waiting for commit.
+
+    [18.11.2024] pzotov
+    Remove upper bound for version after this feature was front-ported to 6.x in commit 0d72b8097c292dabb5c9a257a157f20d9362ab26 (16.11.23).
+    Checked on 6.0.0.532.
 """
 
 import pytest
@@ -63,40 +67,40 @@ act = python_act('db')
 
 expected_stdout = """
     Select Expression
-    ####-> Aggregate
-    ########-> Filter
-    ############-> Table "TMAIN" as "M0" Full Scan
+    ....-> Aggregate
+    ........-> Filter
+    ............-> Table "TMAIN" as "M0" Full Scan
 
     Select Expression
-    ####-> Aggregate
-    ########-> Filter
-    ############-> Table "TMAIN" as "M1" Full Scan
+    ....-> Aggregate
+    ........-> Filter
+    ............-> Table "TMAIN" as "M1" Full Scan
 
     Select Expression
-    ####-> Aggregate
-    ########-> Filter
-    ############-> Table "TMAIN" as "M2" Full Scan
+    ....-> Aggregate
+    ........-> Filter
+    ............-> Table "TMAIN" as "M2" Full Scan
 
     Select Expression
-    ####-> Aggregate
-    ########-> Filter
-    ############-> Table "TMAIN" as "M3" Full Scan
+    ....-> Aggregate
+    ........-> Filter
+    ............-> Table "TMAIN" as "M3" Full Scan
 
     Sub-query (invariant)
-    ####-> Singularity Check
-    ########-> Aggregate
-    ############-> Table "TDETL" as "D" Full Scan
+    ....-> Singularity Check
+    ........-> Aggregate
+    ............-> Table "TDETL" as "D" Full Scan
     Select Expression
-    ####-> Aggregate
-    ########-> Filter
-    ############-> Table "TMAIN" as "M4" Full Scan
+    ....-> Aggregate
+    ........-> Filter
+    ............-> Table "TMAIN" as "M4" Full Scan
 """
 #---------------------------------------------------------
-def replace_leading(source, char="#"):
+def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
 #---------------------------------------------------------
-@pytest.mark.version('>=5.0,<6')
+@pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
