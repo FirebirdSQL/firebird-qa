@@ -9,7 +9,7 @@ NOTES:
     [18.11.2024] pzotov
     ::: NB ::: Currently the ticket is incompletely checked.
     Test verifies only ability to obtain in ISQL wire counters and statistics as described in the doc.
-    More complex test(s) will be implemented after firevird-driver become to recognize appropriate API changes.
+    More complex test(s) will be implemented after firebird-driver become to recognize appropriate API changes.
 
     Checked on 6.0.0.532; 5.0.2.1567.
 """
