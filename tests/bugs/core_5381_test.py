@@ -11,9 +11,11 @@ JIRA:        CORE-5381
 FBTEST:      bugs.core_5381
 NOTES:
     [17.11.2024] pzotov
-    
     Re-implemented. No sense to check execution time or execution plan.
     We have to ensure only ability of engine to complete prerape_statement.
+
+    [19.11.2024] pzotov
+    Added max allowed time for prepare duration and appropriate check (suggested by dimitr).
 
     Confirmed bug on 3.0.1.32609 (27-sep-2016), got in trace:
         2024-11-08T00:42:49.8710 ERROR AT JStatement::prepare
@@ -21,10 +23,16 @@ NOTES:
 
     Checked on 3.0.13.33794, 4.0.6.3168, 5.0.2.1553, 6.0.0.520
 """
+import datetime as py_dt
+from datetime import timedelta
 
 import pytest
 from firebird.qa import *
 from firebird.driver import DatabaseError
+
+###################
+MAX_PREPARE_TIME_MS=1000
+###################
 
 init_sql = """
     recreate view test_view as select 1 x from rdb$database;
@@ -120,12 +128,15 @@ def test_1(act: Action, capsys):
         where a.id = 1
         ;
     """
-
+    td = 86400000
     with act.db.connect() as con:
         cur = con.cursor()
         ps = None
         try:
+            t1=py_dt.datetime.now()
             ps = cur.prepare(test_sql)
+            t2=py_dt.datetime.now()
+            td = int((t2-t1).total_seconds() * 1000) # milliseconds
             print('Completed.')
         except DatabaseError as e:
             print(e.__str__())
@@ -135,6 +146,7 @@ def test_1(act: Action, capsys):
                 ps.free()
 
     act.expected_stdout = 'Completed.'
-
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
+    assert td < MAX_PREPARE_TIME_MS, f'Prepare time: {td} ms - greater than max allowed {MAX_PREPARE_TIME_MS} ms.'
+
