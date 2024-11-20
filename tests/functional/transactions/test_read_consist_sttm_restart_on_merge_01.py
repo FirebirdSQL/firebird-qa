@@ -142,6 +142,16 @@ NOTES:
     [25.11.2023] pzotov
     Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
     Merge expression defined in 'SQL_TO_BE_RESTARTED' must NOT end with semicolon!
+
+    [20.11.2024] pzotov
+    ::: ACHTUNG ::: ENGINE MUST NOT USE 'PLAN SORT' IN THE QUERY WHICH HAS TO BE RESTARTED IN THIS TEST!
+    Number of statement restarts CAN BE GREATER than expected! This occurs if a table (which is handled) has no appropriate index or if optimizer decides to use
+    external sort (e.g. 'PLAN SORT') instead of index navigation. This affects only FB 6.x and can be seen on snapshots since 14.11.2024, see:
+    https://github.com/FirebirdSQL/firebird/commit/26e64e9c08f635d55ac7a111469498b3f0c7fe81 ("Cost-based decision between ORDER and SORT plans (#8316)").
+    This result was explained by Vlad (letter 19.11.2024 09:59): external sort forces engine to materialize cursor resultset. In such state, in turn, cursor can not
+    see records which not fall to this cursor expression or did not exist when cursor started its job.
+    Because of that, SQL_TO_BE_RESTARTED expression was changed: 'ROWS 10' was added after 'ORDER BY' clause to make optimizer choose 'PLAN ORDER' every time.
+    Perhaps, this change is temporary solution.
 """
 
 import subprocess
@@ -226,7 +236,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
 
         SQL_TO_BE_RESTARTED = f"""
             merge /* {SQL_TAG_THAT_WE_WAITING_FOR} */ into {target_obj} t
-            using (select * from {target_obj} order by id) s on s.id=t.id
+            using (select * from {target_obj} order by id ROWS 10) s on s.id=t.id
             when matched then
                 update set t.id = -t.id, t.x = -s.x
             when not matched then
