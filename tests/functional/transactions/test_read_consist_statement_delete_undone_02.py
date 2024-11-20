@@ -126,6 +126,16 @@ NOTES:
            NB! Worker transaction must running in WAIT mode - in contrary to Tx that we start in our monitoring loop.
 
         Checked on WI-T6.0.0.48, WI-T5.0.0.1211, WI-V4.0.4.2988.
+
+    [20.11.2024] pzotov
+    ::: ACHTUNG ::: ENGINE MUST NOT USE 'PLAN SORT' IN THE QUERY WHICH HAS TO BE RESTARTED IN THIS TEST!
+    Number of statement restarts CAN BE GREATER than expected! This occurs if a table (which is handled) has no appropriate index or if optimizer decides to use
+    external sort (e.g. 'PLAN SORT') instead of index navigation. This affects only FB 6.x and can be seen on snapshots since 14.11.2024, see:
+    https://github.com/FirebirdSQL/firebird/commit/26e64e9c08f635d55ac7a111469498b3f0c7fe81 ("Cost-based decision between ORDER and SORT plans (#8316)").
+    This result was explained by Vlad (letter 19.11.2024 09:59): external sort forces engine to materialize cursor resultset. In such state, in turn, cursor can not
+    see records which not fall to this cursor expression or did not exist when cursor started its job.
+    Because of that, SQL_TO_BE_RESTARTED expression was changed: 'ROWS 10' was added after 'ORDER BY' clause to make optimizer choose 'PLAN ORDER' every time.
+    Perhaps, this change is temporary solution.
 """
 
 import subprocess
@@ -211,7 +221,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
     for checked_mode in('table', 'view'):
         target_obj = 'test' if checked_mode == 'table' else 'v_test'
 
-        SQL_TO_BE_RESTARTED = f'delete /* {SQL_TAG_THAT_WE_WAITING_FOR} */ from {target_obj} where x not in (select x from {target_obj} where id >= 4) order by id desc'
+        SQL_TO_BE_RESTARTED = f'delete /* {SQL_TAG_THAT_WE_WAITING_FOR} */ from {target_obj} where x not in (select x from {target_obj} where id >= 4) order by id desc ROWS 10'
 
         # add rows with ID = 1,2,3,4,5:
         sql_addi='''
