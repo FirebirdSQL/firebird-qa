@@ -151,8 +151,19 @@ NOTES:
            NB! Worker transaction must running in WAIT mode - in contrary to Tx that we start in our monitoring loop.
 
         Checked on WI-T6.0.0.48, WI-T5.0.0.1211, WI-V4.0.4.2988.
+
+    [20.11.2024] pzotov
+    ::: ACHTUNG ::: ENGINE MUST NOT USE 'PLAN SORT' IN THE QUERY WHICH HAS TO BE RESTARTED IN THIS TEST!
+    Number of statement restarts CAN BE GREATER than expected! This occurs if a table (which is handled) has no appropriate index or if optimizer decides to use
+    external sort (e.g. 'PLAN SORT') instead of index navigation. This affects only FB 6.x and can be seen on snapshots since 14.11.2024, see:
+    https://github.com/FirebirdSQL/firebird/commit/26e64e9c08f635d55ac7a111469498b3f0c7fe81 ("Cost-based decision between ORDER and SORT plans (#8316)").
+    This result was explained by Vlad (letter 19.11.2024 09:59): external sort forces engine to materialize cursor resultset. In such state, in turn, cursor can not
+    see records which not fall to this cursor expression or did not exist when cursor started its job.
+    Because of that, SQL_TO_BE_RESTARTED expression was changed: 'ROWS 10' was added after 'ORDER BY' clause to make optimizer choose 'PLAN ORDER' every time.
+    Perhaps, this change is temporary solution.
 """
 
+import inspect
 import subprocess
 import re
 from pathlib import Path
@@ -187,11 +198,18 @@ def wait_for_record_become_locked(tx_monitoring, cur_monitoring, sql_to_lock_rec
     t1=py_dt.datetime.now()
     required_concurrent_found = None
     concurrent_tx_pattern = re.compile('concurrent transaction number is \\d+', re.IGNORECASE)
+
+    iter = 0
     while True:
         concurrent_tx_number = None
         concurrent_runsql = ''
         tx_monitoring.begin()
         try:
+            sql_tag_wait_for_lock_record = f'/* {inspect.stack()[0][3]}(), iter: {iter} */'
+            sql_words = sql_to_lock_record.split()
+            sql_words.insert(1, sql_tag_wait_for_lock_record)
+            sql_to_lock_record = ' '.join(sql_words)
+            iter += 1
             cur_monitoring.execute(sql_to_lock_record)
         except DatabaseError as exc:
             # Failed: SQL execution failed with: deadlock
@@ -206,7 +224,6 @@ def wait_for_record_become_locked(tx_monitoring, cur_monitoring, sql_to_lock_rec
                     if SQL_TAG_THAT_WE_WAITING_FOR in concurrent_runsql:
                         required_concurrent_found = 1
 
-            # pytest.fail(f"Can not upd, concurrent TX = {concurrent_tx_number}, sql: {concurrent_runsql}")
         finally:
             tx_monitoring.rollback()
         
@@ -233,7 +250,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
     for checked_mode in('table', 'view'):
         target_obj = 'test' if checked_mode == 'table' else 'v_test'
 
-        SQL_TO_BE_RESTARTED = f"update /* {SQL_TAG_THAT_WE_WAITING_FOR} */ {target_obj} set id = -id order by id"
+        SQL_TO_BE_RESTARTED = f"update /* {SQL_TAG_THAT_WE_WAITING_FOR} */ {target_obj} set id = -id order by id ROWS 10"
 
         # add rows with ID = 1, 2:
         sql_addi = f'''
@@ -277,7 +294,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                 ###  L O C K E R - 1  ###
                 #########################
 
-                con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = 2' )
+                con_lock_1.execute_immediate( f'update /* LOCKER-1 */ {target_obj} set id=id where id = 2' )
 
                 worker_sql = f'''
                     set list on;
@@ -298,7 +315,7 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     set wng off;
                     set count on;
 
-                    -- THIS MUST BE LOCKED:
+                    -- WORKER. THIS MUST BE LOCKED NOW BY LOCKER_i:
                     {SQL_TO_BE_RESTARTED};
 
                     -- check results:
@@ -340,11 +357,11 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     #########################
                     ###  L O C K E R - 2  ###
                     #########################
-                    con_lock_2.execute_immediate( f'insert into {target_obj}(id) values(110)' )
-                    con_lock_2.execute_immediate( f'insert into {target_obj}(id) values(-11)' )
+                    con_lock_2.execute_immediate( f'insert /* LOCKER-2 */ into {target_obj}(id) values(110)' )
+                    con_lock_2.execute_immediate( f'insert /* LOCKER-2 */ into {target_obj}(id) values(-11)' )
                     con_lock_2.commit()
-                    con_lock_2.execute_immediate( f'update {target_obj} set id=id where id = 110' )
-                    con_lock_2.execute_immediate( f'update {target_obj} set id=id where id = -11' )
+                    con_lock_2.execute_immediate( f'update /* LOCKER-2 */ {target_obj} set id=id where id = 110' )
+                    con_lock_2.execute_immediate( f'update /* LOCKER-2 */ {target_obj} set id=id where id = -11' )
 
                     #########################
                     ###  L O C K E R - 1  ###
@@ -356,11 +373,11 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     wait_for_record_become_locked(tx_monitoring, cur_monitoring, f'update {target_obj} set id=id where id=2', SQL_TAG_THAT_WE_WAITING_FOR)
                     # If we come here then it means that record with ID = 2 for sure is locked by WORKER.
 
-                    con_lock_1.execute_immediate( f'insert into {target_obj}(id) values(120)' )
-                    con_lock_1.execute_immediate( f'insert into {target_obj}(id) values(-12)' )
+                    con_lock_1.execute_immediate( f'insert /* LOCKER-1 */ into {target_obj}(id) values(120)' )
+                    con_lock_1.execute_immediate( f'insert /* LOCKER-1 */ into {target_obj}(id) values(-12)' )
                     con_lock_1.commit()
-                    con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = 120' )
-                    con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = -12' )
+                    con_lock_1.execute_immediate( f'update /* LOCKER-1 */ {target_obj} set id=id where id = 120' )
+                    con_lock_1.execute_immediate( f'update /* LOCKER-1 */ {target_obj} set id=id where id = -12' )
 
 
                     #########################
@@ -374,11 +391,11 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     # If we come here then it means that TWO records with ID = -11 and 110 for sure are locked by WORKER.
 
 
-                    con_lock_2.execute_immediate( f'insert into {target_obj}(id) values(130)' )
-                    con_lock_2.execute_immediate( f'insert into {target_obj}(id) values(-13)' )
+                    con_lock_2.execute_immediate( f'insert into /* LOCKER-2 */ {target_obj}(id) values(130)' )
+                    con_lock_2.execute_immediate( f'insert into /* LOCKER-2 */ {target_obj}(id) values(-13)' )
                     con_lock_2.commit()
-                    con_lock_2.execute_immediate( f'update {target_obj} set id=id where id = 130' )
-                    con_lock_2.execute_immediate( f'update {target_obj} set id=id where id = -13' )
+                    con_lock_2.execute_immediate( f'update /* LOCKER-2 */ {target_obj} set id=id where id = 130' )
+                    con_lock_2.execute_immediate( f'update /* LOCKER-2 */ {target_obj} set id=id where id = -13' )
 
                     #########################
                     ###  L O C K E R - 1  ###
@@ -391,11 +408,11 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     # If we come here then it means that TWO records with ID = -12 and 120 for sure are locked by WORKER.
 
 
-                    con_lock_1.execute_immediate( f'insert into {target_obj}(id) values(140)' )
-                    con_lock_1.execute_immediate( f'insert into {target_obj}(id) values(-14)' )
+                    con_lock_1.execute_immediate( f'insert /* LOCKER-1 */ into {target_obj}(id) values(140)' )
+                    con_lock_1.execute_immediate( f'insert /* LOCKER-1 */ into {target_obj}(id) values(-14)' )
                     con_lock_1.commit()
-                    con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = 140' )
-                    con_lock_1.execute_immediate( f'update {target_obj} set id=id where id = -14' )
+                    con_lock_1.execute_immediate( f'update /* LOCKER-1 */ {target_obj} set id=id where id = 140' )
+                    con_lock_1.execute_immediate( f'update /* LOCKER-1 */ {target_obj} set id=id where id = -14' )
 
                     #########################
                     ###  L O C K E R - 2  ###
@@ -429,32 +446,32 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
 
             expected_stdout_worker = f"""
                 checked_mode: {checked_mode}, STDLOG: Records affected: 10
-                checked_mode: {checked_mode}, STDLOG:      ID
-                checked_mode: {checked_mode}, STDLOG: =======
-                checked_mode: {checked_mode}, STDLOG:    -140
-                checked_mode: {checked_mode}, STDLOG:    -130
-                checked_mode: {checked_mode}, STDLOG:    -120
-                checked_mode: {checked_mode}, STDLOG:    -110
-                checked_mode: {checked_mode}, STDLOG:      -2
-                checked_mode: {checked_mode}, STDLOG:      -1
-                checked_mode: {checked_mode}, STDLOG:      11
-                checked_mode: {checked_mode}, STDLOG:      12
-                checked_mode: {checked_mode}, STDLOG:      13
-                checked_mode: {checked_mode}, STDLOG:      14
+                checked_mode: {checked_mode}, STDLOG: ID
+                checked_mode: {checked_mode}, STDLOG:
+                checked_mode: {checked_mode}, STDLOG: -140
+                checked_mode: {checked_mode}, STDLOG: -130
+                checked_mode: {checked_mode}, STDLOG: -120
+                checked_mode: {checked_mode}, STDLOG: -110
+                checked_mode: {checked_mode}, STDLOG: -2
+                checked_mode: {checked_mode}, STDLOG: -1
+                checked_mode: {checked_mode}, STDLOG: 11
+                checked_mode: {checked_mode}, STDLOG: 12
+                checked_mode: {checked_mode}, STDLOG: 13
+                checked_mode: {checked_mode}, STDLOG: 14
                 checked_mode: {checked_mode}, STDLOG: Records affected: 10
-                checked_mode: {checked_mode}, STDLOG:  OLD_ID OP              SNAP_NO_RANK
-                checked_mode: {checked_mode}, STDLOG: ======= ====== =====================
-                checked_mode: {checked_mode}, STDLOG:       1 UPD                        1
-                checked_mode: {checked_mode}, STDLOG:     -14 UPD                        2
-                checked_mode: {checked_mode}, STDLOG:     -13 UPD                        2
-                checked_mode: {checked_mode}, STDLOG:     -12 UPD                        2
-                checked_mode: {checked_mode}, STDLOG:     -11 UPD                        2
-                checked_mode: {checked_mode}, STDLOG:       1 UPD                        2
-                checked_mode: {checked_mode}, STDLOG:       2 UPD                        2
-                checked_mode: {checked_mode}, STDLOG:     110 UPD                        2
-                checked_mode: {checked_mode}, STDLOG:     120 UPD                        2
-                checked_mode: {checked_mode}, STDLOG:     130 UPD                        2
-                checked_mode: {checked_mode}, STDLOG:     140 UPD                        2
+                checked_mode: {checked_mode}, STDLOG: OLD_ID OP SNAP_NO_RANK
+                checked_mode: {checked_mode}, STDLOG:
+                checked_mode: {checked_mode}, STDLOG: 1 UPD 1
+                checked_mode: {checked_mode}, STDLOG: -14 UPD 2
+                checked_mode: {checked_mode}, STDLOG: -13 UPD 2
+                checked_mode: {checked_mode}, STDLOG: -12 UPD 2
+                checked_mode: {checked_mode}, STDLOG: -11 UPD 2
+                checked_mode: {checked_mode}, STDLOG: 1 UPD 2
+                checked_mode: {checked_mode}, STDLOG: 2 UPD 2
+                checked_mode: {checked_mode}, STDLOG: 110 UPD 2
+                checked_mode: {checked_mode}, STDLOG: 120 UPD 2
+                checked_mode: {checked_mode}, STDLOG: 130 UPD 2
+                checked_mode: {checked_mode}, STDLOG: 140 UPD 2
                 checked_mode: {checked_mode}, STDLOG: Records affected: 11
             """
 
