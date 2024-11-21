@@ -77,7 +77,7 @@ fb5x_checked_stdout = """
     SHOW     <object> [<name>] -- display system information
     <object> = CHECK, COLLATION, DATABASE, DOMAIN, EXCEPTION, FILTER, FUNCTION,
     GENERATOR, GRANT, INDEX, PACKAGE, PROCEDURE, ROLE, SQL DIALECT,
-    SYSTEM, TABLE, TRIGGER, VERSION, USERS, VIEW
+    SYSTEM, TABLE, TRIGGER, VERSION, USERS, VIEW, WIRE_STATISTICS
     EXIT                       -- exit and commit changes
     QUIT                       -- exit and roll back changes
     All commands may be abbreviated to letters in CAPitals
@@ -103,6 +103,7 @@ fb5x_checked_stdout = """
     SET TIME               -- toggle display of timestamp with DATE values
     SET TERM <string>      -- change statement terminator string
     SET WIDTH <col> [<n>]  -- set/unset print width to <n> for column <col>
+    SET WIRE_stats         -- toggle display of wire (network) statistics
     All commands may be abbreviated to letters in CAPitals
 """
 
