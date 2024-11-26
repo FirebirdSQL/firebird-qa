@@ -164,6 +164,9 @@ expected_stdout_5 = """
     RDB$KEYWORD_NAME                BLOB
     RDB$KEYWORD_RESERVED            <true>
 
+    RDB$KEYWORD_NAME                BLOBID
+    RDB$KEYWORD_RESERVED            <false>
+
     RDB$KEYWORD_NAME                BLOB_APPEND
     RDB$KEYWORD_RESERVED            <false>
 
@@ -1337,6 +1340,9 @@ expected_stdout_5 = """
     RDB$KEYWORD_NAME                TARGET
     RDB$KEYWORD_RESERVED            <false>
 
+    RDB$KEYWORD_NAME                TEMP
+    RDB$KEYWORD_RESERVED            <false>
+
     RDB$KEYWORD_NAME                TEMPORARY
     RDB$KEYWORD_RESERVED            <false>
 
@@ -1515,7 +1521,7 @@ expected_stdout_5 = """
     RDB$KEYWORD_RESERVED            <false>
 
 
-    Records affected: 496
+    Records affected: 498
 """
 
 expected_stdout_6 = """
