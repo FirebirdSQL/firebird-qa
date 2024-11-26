@@ -1613,6 +1613,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                BLOB
     RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                BLOBID
+    RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                BLOB_APPEND
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                BLOCK
@@ -2407,6 +2409,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                TARGET
     RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                TEMP
+    RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                TEMPORARY
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                THEN
@@ -2526,7 +2530,7 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
 
-    Records affected: 503
+    Records affected: 505
 """
 
 @pytest.mark.disabled_in_forks
