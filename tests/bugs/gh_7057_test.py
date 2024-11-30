@@ -98,10 +98,25 @@ def test_1(act: Action, capsys):
         con.commit()
 
         cur = con.cursor()
-        cur.open('select id from ts')
+        cur.open('select id from ts for update')
+        cur.set_cursor_name('X')
 
         for row in cur:
             print_row(row)
+
+# Check for error states:
+# Cursor is not positioned on valid record
+        try:
+            con.execute_immediate('update ts set id = -id where current of X')
+        except Exception as err:
+            print(err)
+# Cursor is closed
+        cur.close()
+        try:
+            con.execute_immediate('update ts set id = -id where current of X')
+        except Exception as err:
+            print(err)
+        con.commit()
 
     act.stdout = capsys.readouterr().out
     act.expected_stdout = """
@@ -148,5 +163,11 @@ def test_1(act: Action, capsys):
         8
         9
         -10
+        Dynamic SQL Error
+        -Cursor X is not positioned in a valid record
+        Dynamic SQL Error
+        -SQL error code = -504
+        -Invalid cursor reference
+        -Cursor X is not found in the current context
     """
     assert act.clean_stdout == act.clean_expected_stdout
