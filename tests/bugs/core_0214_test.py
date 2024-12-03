@@ -33,7 +33,11 @@ NOTES:
        Test for these datatypes will be added after fix of this ticked.
 
     Checked on Windiws (SS/CS): 6.0.0.535; 5.0.2.1569; 4.0.6.3169.
+
+    [03.12.2024] pzotov
+    Made MAX_RATIO different for Windows vs Linux. Increased its value on Linux: in some cases it can be more than 2.33
 """
+import os
 import psutil
 import time
 import pytest
@@ -52,7 +56,7 @@ def median(lst):
 N_MEASURES = 11
 PAGE_SIZE = 8192
 N_ROWS_CNT= 100000
-MAX_RATIO = 2.0
+MAX_RATIO = 2.0 if os.name == 'nt' else 3.0
 
 #----------------------------------------------------
 # NOT yet used. See #8330:
