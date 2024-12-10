@@ -65,11 +65,11 @@ DESCRIPTION:
 
 NOTES:
     [10.12.2024] pzotov
-    Checked on Windows, 5.0.2.1569 (SS/CS).
-    
-    :::: NOTE :::
-    Temporary marked as to be SKIPPED on 4.x and 6.x until back- and front-port will be done.
-
+    Confirmed bug on 5.0.2.1567-9fbd574 (16.11.2024 20:15).
+    Checked on Windows:
+        5.0.2.1569-684bb87 (27.11.2024 20:40).
+        4.0.6.3170-cc44002 (10.12.2024 07:02)
+        6.0.0.548-a8c5b9f  (10.12.2024 10:13)
     Great thanks to dimitr for suggestions about test implementation.
 """
 import os
@@ -429,7 +429,7 @@ def get_repl_log(act_db_main: Action):
 #--------------------------------------------
 
 @pytest.mark.replication
-@pytest.mark.version('>=5.0.1,<6')
+@pytest.mark.version('>=4.0.6')
 def test_1(act_db_main: Action,  act_db_repl: Action, db_nbk0: Path, capsys):
 
     FLD_WIDTH = 500
@@ -508,8 +508,9 @@ def test_1(act_db_main: Action,  act_db_repl: Action, db_nbk0: Path, capsys):
             replold_lines = get_repl_log(act_db_main)
 
             try:
-                cur_oat.execute(f"insert /* trace_tag OAT */ into test(s) select lpad('', {FLD_WIDTH}, uuid_to_char(gen_uuid())) from rdb$types,rdb$types rows {ADD_ROWS_IN_OAT} returning id")
-                cur_oat.fetchall() # mandatory!
+                cur_oat.execute(f"insert /* trace_tag OAT */ into test(s) select lpad('', {FLD_WIDTH}, uuid_to_char(gen_uuid())) from rdb$types,rdb$types rows {ADD_ROWS_IN_OAT}")
+                cur_oat.execute('select max(id) from test')
+                cur_oat.fetchone()
             except DatabaseError as e:
                 run_errors_map['main_oat_init_err'] = e.__str__()
         
