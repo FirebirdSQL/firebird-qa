@@ -72,7 +72,7 @@ expected_stdout = """
     07: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 252 charset: 4 UTF8
     : name: OBJECT_NAME alias: OBJECT_NAME
 
-    08: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 252 charset: 4 UTF8
+    08: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 1020 charset: 4 UTF8 
     : name: ALIAS alias: ALIAS
 
     09: sqltype: 480 DOUBLE Nullable scale: 0 subtype: 0 len: 8
