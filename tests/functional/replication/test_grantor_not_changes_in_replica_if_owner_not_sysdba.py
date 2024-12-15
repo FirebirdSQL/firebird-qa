@@ -15,12 +15,16 @@ DESCRIPTION:
             select 1 from rdb$user_privileges p where p.rdb$relation_name = upper('test') and p.rdb$privilege = upper('D')
         );
     Outcome of this query on REPLICA database must become empty for no more than MAX_TIME_FOR_WAIT_DATA_IN_REPLICA seconds.
-    Otherwise test is considered as failed.
-
-    We have to restore owner = SYSDBA for db_main, so we call 'reset_replication' function second time at final point.
+    Otherwise test is considered as failed. 
 
 NOTES:
     [15.12.2024] pzotov
+    Before fix, following messages did appear in replication log:
+        ERROR: unsuccessful metadata update
+        REVOKE failed
+        <db_main_owner> is not grantor of DELETE on TEST to <db_main_owner>.
+
+    We have to restore owner = SYSDBA for db_main, so we call 'reset_replication' function second time at final point.
     Test execution time is about 7...8 seconds (for snapshots that have fix).
 
     Confirmed bug on 6.0.0.299, 5.0.1.1371, 4.0.5.3082
