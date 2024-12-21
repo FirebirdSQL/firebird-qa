@@ -16,6 +16,10 @@ NOTES:
     [19.12.2024] pzotov
     Confirmed ticket issue on 6.0.0.552: N_COUNT > 1 are shown for both SYSDBA and non-dba users when they make more than one attachment.
     Checked on 6.0.0.553-7ebb66b, 5.0.2.1580-7961de2, 4.0.6.3172-4119f625: every user is specified only once, i.e. N_COUNT = 1
+
+    [21.12.2024] pzotov
+    Added pytest.skip() directive if ServerMode is not Super because there is no way to get info about other users for NON-dba.
+    See letter from Vlad, 21.12.2024 13:07.
 """
 
 import pytest
@@ -39,6 +43,9 @@ tmp_user_srp = user_factory('db', name = TMP_USER_NAME, password = '456', plugin
 
 @pytest.mark.version('>=4.0.6')
 def test_1(act: Action, tmp_user_leg: User, tmp_user_srp: User, capsys):
+
+    if act.vars['server-arch'] != 'SuperServer':
+        pytest.skip("Can not be checked on CS/SC.")
 
     try:
         with act.db.connect() as con1, \
