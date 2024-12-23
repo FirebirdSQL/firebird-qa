@@ -6,7 +6,7 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6915
 TITLE:       Performance effect of applying 'DISABLE-COMPRESSIONS=1' in UNICODE collation for LOCALE=cs_CZ
 DESCRIPTION:
     Test verifies only PERFORMANCE issues referred to in the ticket #6915. Correctness of ORDER BY is not checked.
-    A pre-build database is used for check, see: files/gh_6915.zip (it was created in FB 4.x with date ~aug-2021).
+    A pre-build database is used for check, see: files/gh_6915_cs_cz.zip (it was created in FB 4.x with date ~aug-2021).
     SQL script that was used to fulfill test DB see in the end of this file.
     We decompress .fbk, restore from it and check that for every testing queries number of indexed reads will not
     exceed threshold, see 'MAX_IDX_READS_THRESHOLD' (con.info.get_table_access_stats() is used for that).
@@ -125,7 +125,7 @@ test_sql = """
 @pytest.mark.version('>=5.0.0')
 def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
 
-    zipped_fbk_file = zipfile.Path(act.files_dir / 'gh_6915.zip', at = 'gh_6915.fbk')
+    zipped_fbk_file = zipfile.Path(act.files_dir / 'gh_6915_cs_cz.zip', at = 'gh_6915_cs_cz.fbk')
     tmp_fbk.write_bytes(zipped_fbk_file.read_bytes())
 
     act.gbak(switches = ['-rep', str(tmp_fbk), str(tmp_fdb)], combine_output = True, io_enc = locale.getpreferredencoding())
