@@ -277,6 +277,7 @@ expected_stdout = """
     Records affected: 0
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=5.0.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
