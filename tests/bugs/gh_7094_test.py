@@ -70,6 +70,7 @@ expected_stdout = """
     C2                              ch
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=4.0.2')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
