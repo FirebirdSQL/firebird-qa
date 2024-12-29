@@ -4,7 +4,11 @@
 ID:          alter-database-02
 TITLE:       Alter database: adding secondary file with alternate keyword
 DESCRIPTION: Adding secondary file with alternate keyword for database.
-FBTEST:      functional.database.alter.02
+NOTES:
+    [29.12.2024] pzotov
+    Added restriction for FB 6.x: this test now must be skipped, see:
+    https://github.com/FirebirdSQL/firebird/commit/f0740d2a3282ed92a87b8e0547139ba8efe61173
+    ("Wipe out multi-file database support (#8047)")
 """
 
 import pytest
@@ -19,7 +23,7 @@ expected_stdout = """CAST                                                       
 C:\\JOB\\QA\\FBTEST\\TMP\\TEST.G00                                                                                                                          1                 10000          0
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=3.0,<6')
 def test_1(act: Action, capsys):
     with act.db.connect() as con:
         with con.cursor() as c:
