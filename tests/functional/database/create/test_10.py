@@ -4,7 +4,11 @@
 ID:          create-database-10
 TITLE:       Create database: Multi file DB - starting
 DESCRIPTION: Database with four files. Additional files specified by STARTING AT.
-FBTEST:      functional.database.create.10
+NOTES:
+    [29.12.2024] pzotov
+    Added restriction for FB 6.x: this test now must be skipped, see:
+    https://github.com/FirebirdSQL/firebird/commit/f0740d2a3282ed92a87b8e0547139ba8efe61173
+    ("Wipe out multi-file database support (#8047)")
 """
 
 import pytest
@@ -29,7 +33,7 @@ expected_stdout = """
     RDB$FILE_LENGTH       0
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=3.0,<6')
 def test_1(act: Action):
     script = f"""
     create database '{act.db.dsn}' user '{act.db.user}'
