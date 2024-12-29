@@ -122,6 +122,7 @@ test_sql = """
     ;
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=5.0.0')
 def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
 
