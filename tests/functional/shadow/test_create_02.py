@@ -2,9 +2,13 @@
 
 """
 ID:          shadow.create-02
-TITLE:       CREATE SHADOW
+TITLE:       CREATE SHADOW: check usage with presense of 'FILE <...>' clause.
 DESCRIPTION:
-FBTEST:      functional.shadow.create_02
+NOTES:
+    [29.12.2024] pzotov
+    Added restriction for FB 6.x: this test now must be skipped, see:
+    https://github.com/FirebirdSQL/firebird/commit/f0740d2a3282ed92a87b8e0547139ba8efe61173
+    ("Wipe out multi-file database support (#8047)")
 """
 
 import pytest
@@ -47,7 +51,7 @@ expected_stdout = """
     Records affected: 2
 """
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=3,<6')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute()
