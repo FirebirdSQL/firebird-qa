@@ -85,6 +85,7 @@ expected_stdout = """
     Duration ratio: acceptable.
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=4.0.1')
 def test_1(act: Action, capsys):
 
