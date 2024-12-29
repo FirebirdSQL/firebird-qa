@@ -51,6 +51,7 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
+@pytest.mark.intl
 @pytest.mark.version('>=4.0.1')
 def test_1(act: Action):
     act.execute()
