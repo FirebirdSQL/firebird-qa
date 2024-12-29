@@ -51,6 +51,7 @@ expected_stdout = """
     PLAN SORT (T NATURAL)
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
