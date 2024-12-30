@@ -5,8 +5,11 @@ ID:          issue-6915
 ISSUE:       6915
 TITLE:       Allow attribute DISABLE-COMPRESSIONS in UNICODE collations
 DESCRIPTION:
-  Only ability to use 'DISABLE-COMPRESSION' in attributes list is checked here.
-  Performance comparison with and without this attribute will be checked in separate test.
+    Original discussion:
+    https://sourceforge.net/p/firebird/mailman/firebird-devel/thread/9361c612-d720-eb76-d412-7101518ca60d%40ibphoenix.cz/
+
+    Only ability to use 'DISABLE-COMPRESSION' in attributes list is checked here.
+    Performance comparison with and without this attribute will be checked in separate test.
 NOTES:
     [24.12.2024] pzotov
     Several tests have been added in order to check PERFORMANCE affect of 'DISABLE-COMPRESSIONS=1':
