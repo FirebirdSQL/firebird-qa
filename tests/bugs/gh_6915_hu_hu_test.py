@@ -5,6 +5,8 @@ ID:          issue-6915-hu-hu
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6915
 TITLE:       Performance effect of applying 'DISABLE-COMPRESSIONS=1' in UNICODE collation for LOCALE=hu_HU
 DESCRIPTION:
+    Original discussion:
+    https://sourceforge.net/p/firebird/mailman/firebird-devel/thread/9361c612-d720-eb76-d412-7101518ca60d%40ibphoenix.cz/
     Test verifies only PERFORMANCE issues referred to in the ticket #6915. Correctness of ORDER BY is not checked.
     A pre-build database is used for check, see: files/gh_6915_hu_hu.zip (it was created in FB 4.x with date 31-jul-2021).
     Hungarian alphabet uses several digraphs and one trigraph: cs,dz,dzs,gy,ly,ny,sz,ty,zs.
