@@ -26,6 +26,17 @@ NOTES:
     Explanation by Alex with example: letter 06.03.2023 18:58
     Confirmed problem on 5.0.0.376 (with user name 'test-user')
     Checked on 5.0.0.379, 5.0.0.970, 4.0.3.2904, 3.0.11.33665 -- all OK.
+
+    [31.12.2024] pzotov
+    User names with delimiting character must be enclosed in double quotes since 6.0.0.570 otherwise we get
+    "SQLSTATE = 08006 / Error occurred during login, please check server firebird.log for details" and firebird.log
+    will contain:
+        Authentication error cannot attach to password database
+        Error in isc_compile_request() API call when working 
+        with legacy security database table PLG$USERS is not defined
+
+    Parsing problem appeared on 6.0.0.0.570 after d6ad19aa07deeaac8107a25a9243c5699a3c4ea1
+    ("Refactor ISQL creating FrontendParser class").
 """
 
 import os
@@ -161,23 +172,23 @@ def test_1(act: Action, capsys):
 
 
     for use_connect_sttm in (True,False,):
-        for u in CHECKED_NAMES:
+        for u_name in CHECKED_NAMES:
             isql_connect_sttm = \
                 '\n'.join( ( 'set bail on;',
                              'set heading off;',
-                             f"connect 'localhost:{REQUIRED_ALIAS}' user {u} password '123';" if use_connect_sttm else "",
+                             f"""connect 'localhost:{REQUIRED_ALIAS}' user "{u_name}" password '123';""" if use_connect_sttm else "",
                              'select mon$user from mon$attachments a where a.mon$attachment_id = current_connection;'
                            )
                          )
 
-            act.expected_stdout = u
+            act.expected_stdout = u_name
             if use_connect_sttm:
                 # Try to make connection using isql CONNECT operator:
                 act.isql(switches = ['-q'], input = isql_connect_sttm, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 # try to make connection via command-line argument "-user ...":
-                act.isql(switches = ['-q', '-user', u, '-pas', '123', f'localhost:{REQUIRED_ALIAS}'], input = isql_connect_sttm, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
-            assert act.clean_stdout == act.clean_expected_stdout, f'User "{u}" could not make connection using isql {"" if use_connect_sttm else " -user ... -pas ..."} and script:\n{isql_connect_sttm}'
+                act.isql(switches = ['-q', '-user', f'"{u_name}"', '-pas', '123', f'localhost:{REQUIRED_ALIAS}'], input = isql_connect_sttm, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
+            assert act.clean_stdout == act.clean_expected_stdout, f'User "{u_name}" could not make connection using isql {"" if use_connect_sttm else " -user ... -pas ..."} and script:\n{isql_connect_sttm}'
             act.reset()
 
     act.gfix(switches = [ '-shut', 'full', '-force', '0', f'localhost:{REQUIRED_ALIAS}', '-user', act.db.user, '-pas', act.db.password ], credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
