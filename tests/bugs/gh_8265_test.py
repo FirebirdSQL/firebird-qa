@@ -17,6 +17,38 @@ NOTES:
     
     Confirmed problem on 5.0.2.1516-fe6ba50 (23.09.2024).
     Checked on 5.0.2.1516-92316F0 (25.09.2024).
+
+    [15.01.2025] pzotov
+
+    ### CRITICAL ISSUE ### PROBABLY MUST BE APPLIED TO ALL TESTS WITH SIMILAR BEHAVOUR ###
+
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises.
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+
+    Example of broken pytest log when AV occurs:
+    ==========
+        tests/bugs/gh_8265_test.py::test_1 Windows fatal exception: access violation
+
+        Current thread 0x0000385c (most recent call first):
+          Garbage-collecting
+          File "C:/Python3x/Lib/site-packages/firebird/driver/interfaces.py", line 831 in free
+          File "C:/Python3x/Lib/site-packages/firebird/driver/core.py", line 2736 in free
+          ...
+          File "C:/Python3x/Scripts/pytest.exe/__main__.py", line 7 in <module>
+          File "<frozen runpy>", line 88 in _run_code
+          File "<frozen runpy>", line 198 in _run_module_as_main
+        PASSED                           [1773/2565]
+    ==========
+    The reason of that was explained by Vlad, letter 26.10.24 17:42
+    (subject: "oddities when use instances of selective statements"):
+    * line 'cur1.execute(ps1)' creates a new cursor but looses reference on it;
+    * but this cursor is linked with instance of ps1 which *has* reference on that cursor;
+    * call 'ps1.free()' delete this anonimous cursor but Python runtime
+      (or - maybe - code that makes connection cleanup) does not know about it
+      and tries to delete this anon cursor AGAIN when code finishes 'with' block.
+      This attempt causes AV.
 """
 
 import pytest
@@ -117,24 +149,33 @@ def test_1(act: Action, capsys):
 
         with connect(db_cfg_name, user = act.db.user, password = act.db.password) as con:
             for idx, test_sql in enumerate(test_query_lst):
+                ps,rs = None, None
                 try:
                     cur = con.cursor()
                     cur.execute("select g.rdb$config_name, g.rdb$config_value from rdb$database r left join rdb$config g on g.rdb$config_name = 'SubQueryConversion'")
                     for r in cur:
                         print(r[0],r[1])
 
+                    
                     ps = cur.prepare(test_sql)
 
                     print(f'\nExample {idx+1}')
                     # Print explained plan with padding eash line by dots in order to see indentations:
                     print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
 
-                    # Print data:
-                    for r in cur.execute(ps):
+                    # explained by hvlad, 26.10.24 17:42
+                    rs = cur.execute(ps)
+                    for r in rs:
+                        # Print data:
                         print(r[0])
                 except DatabaseError as e:
                     print(e.__str__())
                     print(e.gds_codes)
+                finally:
+                    if rs:
+                        rs.close()
+                    if ps:
+                        ps.free()
 
     act.expected_stdout = f"""
         SubQueryConversion true
