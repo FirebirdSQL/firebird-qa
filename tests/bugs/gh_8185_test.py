@@ -48,7 +48,7 @@ init_sql = """
 db = db_factory(init = init_sql)
 act = python_act('db')
 
-@pytest.mark.version('>=5.0.0')
+@pytest.mark.version('>=5.0.1')
 def test_1(act: Action, capsys):
 
     srv_cfg = driver_config.register_server(name = 'test_srv_gh_8185', config = '')
