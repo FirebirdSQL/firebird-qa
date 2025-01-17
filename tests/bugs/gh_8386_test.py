@@ -110,8 +110,10 @@ act = isql_act('db', test_script, substitutions = [('[ \t]+', ' ')])
 
 @pytest.mark.version('>=5.0.2,<6')
 def test_1(act: Action):
-    if act.vars['server-arch'] != 'SuperServer':
-        pytest.skip("Only SuperServer affected")
+
+    # DISABLED 17.01.2025 13:35, requested by dimitr:
+    #if act.vars['server-arch'] != 'SuperServer':
+    #    pytest.skip("Only SuperServer affected")
 
     act.expected_stdout = 'MSG Completed'
     act.execute(combine_output = True)
