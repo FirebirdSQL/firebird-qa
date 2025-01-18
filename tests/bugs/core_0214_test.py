@@ -36,6 +36,13 @@ NOTES:
 
     [03.12.2024] pzotov
     Made MAX_RATIO different for Windows vs Linux. Increased its value on Linux: in some cases it can be more than 2.33
+
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
 import os
 import psutil
@@ -218,9 +225,17 @@ def test_1(act: Action, capsys):
                     psc = ps1 if c == cur1 else ps2
                     for i in range(0, N_MEASURES):
                         fb_info_init = psutil.Process(fb_pid).cpu_times()
+
+                        # ::: NB ::: 'psc' returns data, i.e. this is SELECTABLE expression.
+                        # We have to store result of cur.execute(<psInstance>) in order to
+                        # close it explicitly.
+                        # Otherwise AV can occur during Python garbage collection and this
+                        # causes pytest to hang on its final point.
+                        # Explained by hvlad, email 26.10.24 17:42
                         rs = c.execute(psc)
                         c.fetchall()
-                        rs.close()
+                        rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+
                         fb_info_curr = psutil.Process(fb_pid).cpu_times()
                         cpu_usage_values.append( max(fb_info_curr.user - fb_info_init.user, 0.000001) )
 
