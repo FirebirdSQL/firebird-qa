@@ -6,12 +6,9 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8386
 TITLE:       Crash when creating index on table that uses UDR and ParallelWorkers > 1
 DESCRIPTION: 
 NOTES:
-    [17.01.2025] pzotov
-    Currenty fix presents only in 5.x (commit 4ddbb69). Because of that, 6.x not checked (but it is also affected).
-
-    Confirmed bug on 5.0.2.1589, got: "SQLSTATE = 08006 / Error reading data from the connection".
-    Checked on 5.0.2.1592 -- all fine.
-    WAITING FOR FRONT-PORT FIX INTO FB 6.X.
+    [18.01.2025] pzotov
+    Confirmed bug on 5.0.2.1589, 6.0.0.584 - got: "SQLSTATE = 08006 / Error reading data ...".
+    Checked on 5.0.2.1592-2d11769, 6.0.0.585-6f17277 -- all fine.
 """
 
 import pytest
@@ -108,7 +105,7 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions = [('[ \t]+', ' ')])
 
-@pytest.mark.version('>=5.0.2,<6')
+@pytest.mark.version('>=5.0.2')
 def test_1(act: Action):
 
     # DISABLED 17.01.2025 13:35, requested by dimitr:
