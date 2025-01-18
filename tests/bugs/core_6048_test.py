@@ -33,6 +33,13 @@ NOTES:
 
     ::: NB-2 :::
     Careful tuning required on each tesing box for this test.
+
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
 
 import os
@@ -125,39 +132,59 @@ def test_1(act: Action, capsys):
             print( e.__str__() )
 
         cur2 = con2.cursor()
-        ps = cur2.prepare('select mon$crypt_page, mon$crypt_state from mon$database')
+        ps, rs = None, None
 
-        # This will store different number of pages which are currently encrypted.
-        # When length of this set will exceed ENCRYPTING_PAGES_MIN_CNT then we break from loop:
-        #
-        encrypting_pages_set = set()
-        waiting_in_loop = -1
-        while encryption_started:
-            t2=py_dt.datetime.now()
-            d1=t2-t1
-            waiting_in_loop = d1.seconds*1000 + d1.microseconds//1000
-            if waiting_in_loop > MAX_WAITING_ENCR_FINISH:
-                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAITING_ENCR_FINISH} ms.')
-                break
+        try:
+            ps = cur2.prepare('select mon$crypt_page, mon$crypt_state from mon$database')
 
-            cur2.execute(ps)
-            crypt_page, crypt_state = cur2.fetchone()
-            con2.commit()
+            # This will store different number of pages which are currently encrypted.
+            # When length of this set will exceed ENCRYPTING_PAGES_MIN_CNT then we break from loop:
+            #
+            encrypting_pages_set = set()
+            waiting_in_loop = -1
+            while encryption_started:
+                t2=py_dt.datetime.now()
+                d1=t2-t1
+                waiting_in_loop = d1.seconds*1000 + d1.microseconds//1000
+                if waiting_in_loop > MAX_WAITING_ENCR_FINISH:
+                    print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAITING_ENCR_FINISH} ms.')
+                    break
 
-            # 0 = non crypted;
-            # 1 = has been encrypted;
-            # 2 = is DEcrypting;
-            # 3 = is Encrypting;
-            if crypt_state == RUNNING_ENCRYPTING_STATE:
-                encrypting_pages_set.add(crypt_page,)
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur2.execute(ps)
+                for r in rs:
+                    crypt_page, crypt_state = r[:2]
+    
+                con2.commit()
 
-            if crypt_state == COMPLETED_ENCRYPTION_STATE:
-                encryption_finished = True
-                break
-            elif len(encrypting_pages_set) > ENCRYPTING_PAGES_MIN_CNT:
-                break
-            else:
-                time.sleep(0.5)
+                # 0 = non crypted;
+                # 1 = has been encrypted;
+                # 2 = is DEcrypting;
+                # 3 = is Encrypting;
+                if crypt_state == RUNNING_ENCRYPTING_STATE:
+                    encrypting_pages_set.add(crypt_page,)
+
+                if crypt_state == COMPLETED_ENCRYPTION_STATE:
+                    encryption_finished = True
+                    break
+                elif len(encrypting_pages_set) > ENCRYPTING_PAGES_MIN_CNT:
+                    break
+                else:
+                    time.sleep(0.1)
+
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if rs:
+                rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+            if ps:
+                ps.free()
 
         # ---------------------------------------------------------
         
