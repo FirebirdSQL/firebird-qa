@@ -36,7 +36,6 @@ NOTES:
     3. In case of regression caused by that bug, we have to be ready that FB will hang on this test!
 
     Great thanks to Alex for suggestions (discussion started 13.12.2023 13:18).
-
     Confirmed bug on 6.0.0.173.
     
     [30.01.2024] pzotov
@@ -49,6 +48,14 @@ NOTES:
 
     [01.02.2024] pzotov
     Added check for testing vanilla FB (temporary, until appropriate commits not merged with HQbird fork).
+
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+   
 """
 import os
 import time
@@ -134,10 +141,10 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
     d1 = py_dt.timedelta(0)
     with act.db.connect() as con:
         cur = con.cursor()
-        ps = cur.prepare('select mon$crypt_state from mon$database')
-
-        t1=py_dt.datetime.now()
+        ps, rs = None, None
         try:
+            ps = cur.prepare('select mon$crypt_state from mon$database')
+            t1=py_dt.datetime.now()
             d1 = t1-t1
             con.execute_immediate(alter_db_sttm)
             con.commit()
@@ -147,11 +154,18 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
                 if d1.seconds*1000 + d1.microseconds//1000 > max_wait_encr_thread_finish:
                     break
     
-                ######################################################
-                ###   C H E C K    M O N $ C R Y P T _ S T A T E   ###
-                ######################################################
-                cur.execute(ps)
-                current_crypt_state = cur.fetchone()[0]
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur.execute(ps)
+                for r in rs:
+                    ######################################################
+                    ###   C H E C K    M O N $ C R Y P T _ S T A T E   ###
+                    ######################################################
+                    current_crypt_state = r[0]
                 con.commit()
                 if current_crypt_state == REQUIRED_CRYPT_STATE:
                     e_thread_finished = True
@@ -160,6 +174,13 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
                     time.sleep(0.5)
         except DatabaseError as e:
             print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if rs:
+                rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+            if ps:
+                ps.free()
+
 
     assert e_thread_finished, f'TIMEOUT EXPIRATION. Mode="{mode}" took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {max_wait_encr_thread_finish} ms; current_crypt_state={current_crypt_state}'
 
