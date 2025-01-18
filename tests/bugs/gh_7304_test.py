@@ -32,8 +32,24 @@ JIRA:        CORE-2668
 FBTEST:      bugs.core_2668
 NOTES:
     [07.11.2024] pzotov
-    Confirmed absense of lines marked as '<worker' in the trace log for snapshot 5.0.0.731 (15.09.2022).
+    Confirmed absense of lines marked as "<Worker>" in the trace log for snapshot 5.0.0.731 (15.09.2022).
     Checked on 5.0.0.733 (16.09.2022); 5.0.2.1553, 6.0.0.515
+
+    [18.01.2025] pzotov
+    ### CRITICAL ISSUE ### PROBABLY MUST BE APPLIED TO ALL TESTS WITH SIMILAR BEHAVOUR ###
+
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises.
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, letter 26.10.24 17:42
+    (subject: "oddities when use instances of selective statements"):
+    * line 'cur1.execute(ps1)' creates a new cursor but looses reference on it;
+    * but this cursor is linked with instance of ps1 which *has* reference on that cursor;
+    * call 'ps1.free()' delete this anonimous cursor but Python runtime
+      (or - maybe - code that makes connection cleanup) does not know about it
+      and tries to delete this anon cursor AGAIN when code finishes 'with' block.
+      This attempt causes AV.
 """
 
 import time
@@ -159,10 +175,15 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
                 i = 0
                 da = dt.now()
                 while True:
-                    cur_watcher.execute(ps)
+                    # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                    # We have to store result of cur.execute(ps) in order to close it
+                    # *explicitly* otherwise AV can occur when Python collects garbage.
+                    # Explained by hvlad, email 26.10.24 17:42
+                    rs = cur_watcher.execute(ps)
                     mon_result = -1
                     for r in cur_watcher:
                         mon_result = r[0]
+                    rs.close() # <<< EXPLICIT CLOSE RESULT OF CURSOR.
 
                     tx_watcher.commit()
                     db = dt.now()
