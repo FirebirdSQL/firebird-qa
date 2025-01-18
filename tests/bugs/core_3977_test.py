@@ -20,6 +20,13 @@ NOTES:
        mon$sql_text contains some KNOWN phrase - see 'HEAVY_TAG'. See function check_mon_for_pid_appearance()
 
     Checked on 3.0.12.33725, 4.0.5.3040, 5.0.0.1294, 6.0.0.172 
+
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
 
 import os
@@ -64,32 +71,49 @@ def check_mon_for_pid_appearance(act: Action, p_async_launched: subprocess.Compl
     found_in_mon_tables = False
     with act.db.connect() as con_watcher:
 
-        custom_tpb = tpb(isolation = Isolation.SNAPSHOT, lock_timeout = -1)
-        tx_watcher = con_watcher.transaction_manager(custom_tpb)
-        cur_watcher = tx_watcher.cursor()
+        ps, rs = None, None
+        try:
+            custom_tpb = tpb(isolation = Isolation.SNAPSHOT, lock_timeout = -1)
+            tx_watcher = con_watcher.transaction_manager(custom_tpb)
+            cur_watcher = tx_watcher.cursor()
 
-        ps = cur_watcher.prepare(chk_mon_sql)
+            ps = cur_watcher.prepare(chk_mon_sql)
 
-        i = 0
-        da = dt.now()
-        while True:
-            cur_watcher.execute(ps, (p_async_launched.pid, HEAVY_TAG,) )
-            mon_result = -1
-            for r in cur_watcher:
-                mon_result = r[0]
+            i = 0
+            da = dt.now()
+            while True:
+                mon_result = -1
 
-            tx_watcher.commit()
-            db = dt.now()
-            diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
-            if mon_result == 1:
-                found_in_mon_tables = True
-                break
-            elif diff_ms > MAX_WAIT_FOR_ISQL_PID_APPEARS_MS:
-                break
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur_watcher.execute(ps, (p_async_launched.pid, HEAVY_TAG,) )
+                for r in rs:
+                    mon_result = r[0]
 
-            time.sleep(0.1)
+                tx_watcher.commit()
+                db = dt.now()
+                diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
+                if mon_result == 1:
+                    found_in_mon_tables = True
+                    break
+                elif diff_ms > MAX_WAIT_FOR_ISQL_PID_APPEARS_MS:
+                    break
+                time.sleep(0.1)
 
-        ps.free()
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if rs:
+                rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+            if ps:
+                ps.free()
+
+
 
     assert found_in_mon_tables, f'Could not find attachment in mon$ tables for {MAX_WAIT_FOR_ISQL_PID_APPEARS_MS} ms.'
 
