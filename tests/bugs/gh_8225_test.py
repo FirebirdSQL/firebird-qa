@@ -10,13 +10,20 @@ NOTES:
     Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
     Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
 
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+    
     Confirmed bug on 5.0.2.1479-adfe97a.
     Checked on 5.0.2.1482-604555f.
 """
 
 import pytest
 from firebird.qa import *
-from firebird.driver import driver_config, connect
+from firebird.driver import driver_config, connect, DatabaseError
 
 init_script = """
     create domain dm_emp_id smallint;
@@ -91,10 +98,30 @@ def test_1(act: Action, capsys):
             for r in cur:
                 print(r[0],r[1])
 
-            ps = cur.prepare(test_sql)
-            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
-            for r in cur.execute(ps):
-                print(r[0],r[1])
+            ps, rs = None, None
+            try:
+                ps = cur.prepare(test_sql)
+                print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur.execute(ps)
+                for r in rs:
+                    print(r[0],r[1])
+
+            except DatabaseError as e:
+                print(e.__str__())
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
+
             con.rollback()
 
     act.expected_stdout = f"""
