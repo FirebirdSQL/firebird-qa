@@ -6,6 +6,13 @@ ISSUE:       7863
 TITLE:       Non-correlated sub-query is evaluated multiple times if it is based on a VIEW rathe than on appropriate derived table.
 DESCRIPTION:
 NOTES:
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+   
     Confirmed bug on 6.0.0.222
     Checked on 6.0.0.223, 5.0.1.1322.
 """
@@ -58,12 +65,21 @@ def test_1(act: Action, capsys):
         result_map = {}
 
         for qry_txt in q_map.keys():
-            with cur.prepare(qry_txt) as ps:
+            ps, rs = None, None
+            try:
+                ps = cur.prepare(qry_txt)
                 q_map[qry_txt] = ps.detailed_plan
                 for tab_nm,tab_id in t_map.items():
                     tabstat1 = [ p for p in con.info.get_table_access_stats() if p.table_id == tab_id ]
-                    cur.execute(qry_txt)
-                    for r in cur:
+            
+                    # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                    # We have to store result of cur.execute(<psInstance>) in order to
+                    # close it explicitly.
+                    # Otherwise AV can occur during Python garbage collection and this
+                    # causes pytest to hang on its final point.
+                    # Explained by hvlad, email 26.10.24 17:42
+                    rs = cur.execute(ps)
+                    for r in rs:
                         pass
                     tabstat2 = [ p for p in con.info.get_table_access_stats() if p.table_id == tab_id ]
 
@@ -77,6 +93,14 @@ def test_1(act: Action, capsys):
                         seq -= (tabstat1[0].sequential if tabstat1[0].sequential else 0)
                         idx -= (tabstat1[0].indexed if tabstat1[0].indexed else 0)
                         result_map[qry_txt, tab_nm] = (seq, idx)
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
 
         for k,v in result_map.items():
             print(k[0]) # query
