@@ -7,11 +7,19 @@ TITLE:       Support for partial indices
 DESCRIPTION:
     Additional test to check misc datatypes in partial indices.
 NOTES:
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+    
     Checked on 6.0.0.409, 5.0.1.1469
 """
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 from decimal import Decimal
 
 db = db_factory()
@@ -78,16 +86,32 @@ def run_ddl_dml(act, capsys, dtype, v_chk, v_max, use_rand = True):
                 con.commit()
 
         for x in [p for p in dml.split('^') if p.strip()]:
-            ps = cur.prepare(x)
-            for s in ps.detailed_plan.split('\n'):
-                print( replace_leading(s) )
+            ps, rs = None, None
+            try:
+                ps = cur.prepare(x)
+                for s in ps.detailed_plan.split('\n'):
+                    print( replace_leading(s) )
 
-            cur.execute(ps)
-            cur_cols = cur.description
-            for r in cur:
-                for i in range(0,len(cur_cols)):
-                    print( cur_cols[i][0], ':', r[i] )
-            con.commit()
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur.execute(ps)
+                cur_cols = cur.description
+                for r in rs:
+                    for i in range(0,len(cur_cols)):
+                        print( cur_cols[i][0], ':', r[i] )
+                con.commit()
+            except DatabaseError as e:
+                print(e.__str__())
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
 
         act.expected_stdout = f"""
             Select Expression
