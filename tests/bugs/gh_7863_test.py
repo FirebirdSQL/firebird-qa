@@ -17,9 +17,11 @@ NOTES:
     Checked on 6.0.0.223, 5.0.1.1322.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 init_sql = """
     create view v_test_nr as select 1 i from rdb$fields rows 50;
