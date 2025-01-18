@@ -5,87 +5,92 @@ ID:          issue-5912
 ISSUE:       5912
 TITLE:       Parse error when compiling a statement causes memory leak until attachment is disconnected
 DESCRIPTION:
-  Test uses DDL and query for well known Einstein task.
-  SQL query for solution of this task is quite complex and must consume some memory resources.
-  This query intentionally is made non-compilable, so actually it will not ever run.
-  We query mon$memory_usage before running this query and after it, with storing values mon$memory* fields in the dictionary.
-  We do <N_MEASURES> runs and after this evaluate differences of comsumed memory for each run.
-  Build 4.0.0.483 (05-jan-2017) shows that:
-      * mon$memory_used increased for ~227 Kb each run;
-      * mon$memory_allocated increased for ~960Kb.
-  Build 4.0.0.840 (02-jan-2018) shows that mon$memory_used increased for 2Kb - but only at FIRST measure.
-  Since 2nd measure memory consumption did not increase (neither mon$memory_used nor mon$memory_allocated).
-  But mon$max_memory_used can slightly increase, only ONCE, at 3rd run, for about 1Kb.
+    Test uses DDL and query for well known Einstein task.
+    SQL query for solution of this task is quite complex and must consume some memory resources.
+    This query intentionally is made non-compilable, so actually it will not ever run.
+    We query mon$memory_usage before running this query and after it, with storing values mon$memory* fields in the dictionary.
+    We do <N_MEASURES> runs and after this evaluate differences of comsumed memory for each run.
+    Build 4.0.0.483 (05-jan-2017) shows that:
+        * mon$memory_used increased for ~227 Kb each run;
+        * mon$memory_allocated increased for ~960Kb.
+    Build 4.0.0.840 (02-jan-2018) shows that mon$memory_used increased for 2Kb - but only at FIRST measure.
+    Since 2nd measure memory consumption did not increase (neither mon$memory_used nor mon$memory_allocated).
+    But mon$max_memory_used can slightly increase, only ONCE, at 3rd run, for about 1Kb.
 
-  Test evaluates MEDIANS for differences of mon$memory* fields.
-  All these medians must be ZERO otherwise test is considered as failed.
+    Test evaluates MEDIANS for differences of mon$memory* fields.
+    All these medians must be ZERO otherwise test is considered as failed.
 
 JIRA:        CORE-5646
 FBTEST:      bugs.core_5646
 NOTES:
     [27.11.2023] pzotov
-    commit to FB 4.x: 26-nov-2017
-        https://github.com/FirebirdSQL/firebird/commit/5e1b5e172e95388f8f2f236b89295bb915aef397
+        commit to FB 4.x: 26-nov-2017
+            https://github.com/FirebirdSQL/firebird/commit/5e1b5e172e95388f8f2f236b89295bb915aef397
 
-    commit to FB 3.x: 06-oct-2021
-        https://github.com/FirebirdSQL/firebird/commit/ed585ab09fdad63551c48d1ce392c810b5cef4a8
-        (since build 3.0.8.33519, date: 07-oct-2021)
+        commit to FB 3.x: 06-oct-2021
+            https://github.com/FirebirdSQL/firebird/commit/ed585ab09fdad63551c48d1ce392c810b5cef4a8
+            (since build 3.0.8.33519, date: 07-oct-2021)
 
-    4.0.0.483, 05-jan-2017
-    ======================
-    absolute values:
-    1  ::: (2329392, 2818048, 2569880, 2818048)
-    2  ::: (2565264, 4456448, 3380832, 4653056)
-    3  ::: (2565264, 4456448, 3380832, 4653056)
-    4  ::: (2798240, 5373952, 3614280, 5636096)
-    5  ::: (2798240, 5373952, 3614280, 5636096)
-    6  ::: (3031216, 6356992, 3846784, 6619136)
-    7  ::: (3031216, 6356992, 3846784, 6619136)
-    8  ::: (3264192, 7340032, 4079760, 7602176)
-    9  ::: (3264192, 7340032, 4079760, 7602176)
-    10 ::: (3497400, 8323072, 4312968, 8585216)
-    11 ::: (3497400, 8323072, 4312968, 8585216)
-    12 ::: (3730376, 9240576, 4545944, 9502720)
-    13 ::: (3730376, 9240576, 4545944, 9502720)
-    14 ::: (3963352, 10223616, 4778920, 10485760)
-    15 ::: (3963352, 10223616, 4778920, 10485760)
-    16 ::: (4196328, 11141120, 5011896, 11403264)
-    17 ::: (4196328, 11141120, 5011896, 11403264)
-    18 ::: (4429304, 12124160, 5244872, 12386304)
-    19 ::: (4429304, 12124160, 5244872, 12386304)
-    20 ::: (4662280, 13041664, 5477848, 13303808)
-    21 ::: (4662280, 13041664, 5477848, 13303808)
-    22 ::: (4895256, 14024704, 5710824, 14286848)
+        4.0.0.483, 05-jan-2017
+        ======================
+        absolute values:
+        1  ::: (2329392, 2818048, 2569880, 2818048)
+        2  ::: (2565264, 4456448, 3380832, 4653056)
+        3  ::: (2565264, 4456448, 3380832, 4653056)
+        4  ::: (2798240, 5373952, 3614280, 5636096)
+        5  ::: (2798240, 5373952, 3614280, 5636096)
+        6  ::: (3031216, 6356992, 3846784, 6619136)
+        7  ::: (3031216, 6356992, 3846784, 6619136)
+        8  ::: (3264192, 7340032, 4079760, 7602176)
+        9  ::: (3264192, 7340032, 4079760, 7602176)
+        10 ::: (3497400, 8323072, 4312968, 8585216)
+        11 ::: (3497400, 8323072, 4312968, 8585216)
+        12 ::: (3730376, 9240576, 4545944, 9502720)
+        13 ::: (3730376, 9240576, 4545944, 9502720)
+        14 ::: (3963352, 10223616, 4778920, 10485760)
+        15 ::: (3963352, 10223616, 4778920, 10485760)
+        16 ::: (4196328, 11141120, 5011896, 11403264)
+        17 ::: (4196328, 11141120, 5011896, 11403264)
+        18 ::: (4429304, 12124160, 5244872, 12386304)
+        19 ::: (4429304, 12124160, 5244872, 12386304)
+        20 ::: (4662280, 13041664, 5477848, 13303808)
+        21 ::: (4662280, 13041664, 5477848, 13303808)
+        22 ::: (4895256, 14024704, 5710824, 14286848)
 
-    differences:
-     0 ::: [235872, 1638400, 810952, 1835008]
-     1 ::: [232976,  917504, 233448,  983040]
-     2 ::: [232976,  983040, 232504,  983040]
-     3 ::: [232976,  983040, 232976,  983040]
-     4 ::: [233208,  983040, 233208,  983040]
-     5 ::: [232976,  917504, 232976,  917504]
-     6 ::: [232976,  983040, 232976,  983040]
-     7 ::: [232976,  917504, 232976,  917504]
-     8 ::: [232976,  983040, 232976,  983040]
-     9 ::: [232976,  917504, 232976,  917504]
-    10 ::: [232976,  983040, 232976,  983040]
-
+        differences:
+         0 ::: [235872, 1638400, 810952, 1835008]
+         1 ::: [232976,  917504, 233448,  983040]
+         2 ::: [232976,  983040, 232504,  983040]
+         3 ::: [232976,  983040, 232976,  983040]
+         4 ::: [233208,  983040, 233208,  983040]
+         5 ::: [232976,  917504, 232976,  917504]
+         6 ::: [232976,  983040, 232976,  983040]
+         7 ::: [232976,  917504, 232976,  917504]
+         8 ::: [232976,  983040, 232976,  983040]
+         9 ::: [232976,  917504, 232976,  917504]
+        10 ::: [232976,  983040, 232976,  983040]
 
     4.0.0.840, 02-jan-2018
     ======================
-    differences:
-     0 ::: [2896, 65536, 876800, 1966080]
-     1 ::: [   0,     0,      0,       0]
-     2 ::: [   0,     0,      0,       0]
-     3 ::: [   0,     0,      0,       0]
-     4 ::: [   0,     0,      0,       0]
-     5 ::: [   0,     0,      0,       0]
-     6 ::: [   0,     0,      0,       0]
-     7 ::: [   0,     0,      0,       0]
-     8 ::: [   0,     0,      0,       0]
-     9 ::: [   0,     0,      0,       0]
-    10 ::: [   0,     0,      0,       0]
+        differences:
+         0 ::: [2896, 65536, 876800, 1966080]
+         1 ::: [   0,     0,      0,       0]
+         2 ::: [   0,     0,      0,       0]
+         3 ::: [   0,     0,      0,       0]
+         4 ::: [   0,     0,      0,       0]
+         5 ::: [   0,     0,      0,       0]
+         6 ::: [   0,     0,      0,       0]
+         7 ::: [   0,     0,      0,       0]
+         8 ::: [   0,     0,      0,       0]
+         9 ::: [   0,     0,      0,       0]
+        10 ::: [   0,     0,      0,       0]
 
+    [18.01.2025] pzotov
+        Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+        in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+        Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+        This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+        The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
 
 import pytest
@@ -418,29 +423,44 @@ def test_1(act: Action, capsys):
         """
 
         with con_worker.cursor() as cur_worker, con_dba.cursor() as cur_dba:
-            
-            ps = cur_dba.prepare(sql_memory_usage)
-            for i in range(N_MEASURES):
+            ps, rs = None, None
+            try:
+                ps = cur_dba.prepare(sql_memory_usage)
+                for i in range(N_MEASURES):
 
-                cur_dba.execute(ps)
-                for r in cur_dba:
-                    memory_diff[ i ] = r[1:]
-                 
-                try:
-                    # nb: EVERY run we force engine to compile NEW query because of changing 'i':
-                    px = cur_worker.prepare(bad_sql % locals())
-                except DatabaseError as e:
-                    pass
+                    # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                    # We have to store result of cur.execute(<psInstance>) in order to
+                    # close it explicitly.
+                    # Otherwise AV can occur during Python garbage collection and this
+                    # causes pytest to hang on its final point.
+                    # Explained by hvlad, email 26.10.24 17:42
+                    rs = cur_dba.execute(ps)
+                    for r in rs:
+                        memory_diff[ i ] = r[1:]
+                     
+                    try:
+                        # nb: EVERY run we force engine to compile NEW query because of changing 'i':
+                        px = cur_worker.prepare(bad_sql % locals())
+                    except DatabaseError as x:
+                        pass
 
-                con_dba.commit()
-                cur_dba.execute(ps)
-                for r in cur_dba:
-                    # Make subtraction for elements with same indices.
-                    # This is DIFFERENCE between values in mon$memory_usage columns
-                    # gathered after and before each measure:
-                    #
-                    memory_diff[ i ] = [a - b for a, b in zip(r[1:], memory_diff[ i ])]
+                    con_dba.commit()
+                    rs = cur_dba.execute(ps)
+                    for r in rs:
+                        # Make subtraction for elements with same indices.
+                        # This is DIFFERENCE between values in mon$memory_usage columns
+                        # gathered after and before each measure:
+                        #
+                        memory_diff[ i ] = [a - b for a, b in zip(r[1:], memory_diff[ i ])]
 
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
 
     memo_used_diff_list = [ v[0] for v in memory_diff.values() ]
     memo_allo_diff_list = [ v[1] for v in memory_diff.values() ]
