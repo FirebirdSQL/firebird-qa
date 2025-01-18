@@ -12,6 +12,13 @@ NOTES:
     2. Custom driver config object is created here for using 'SubQueryConversion = true'.
     3. Additional test was made for this issue: tests/functional/tabloid/test_aae2ae32.py
 
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+
     Confirmed bug on 5.0.2.1497.
     Checked on 5.0.2.1499-5fa4ae6.
 """
@@ -65,11 +72,23 @@ def test_1(act: Action, capsys):
             print(r[0],r[1])
 
         ps = cur.prepare(test_sql)
+        # Show explained plan:
         print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
-        for r in cur.execute(ps):
-            print(r[0])
-        con.rollback()
 
+        # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+        # We have to store result of cur.execute(<psInstance>) in order to
+        # close it explicitly.
+        # Otherwise AV can occur during Python garbage collection and this
+        # causes pytest to hang on its final point.
+        # Explained by hvlad, email 26.10.24 17:42
+        rs = cur.execute(ps)
+        for r in rs:
+            print(r[0])
+
+        rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+        ps.free()
+        
+        con.rollback()
 
     act.expected_stdout = """
         SubQueryConversion true
