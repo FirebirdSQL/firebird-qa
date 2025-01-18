@@ -22,7 +22,6 @@ DESCRIPTION:
         * every worker log must contain text 'SQLSTATE = 08003';
         * no alive ISQL processes remain after issuing 'delete from mon$..' statements.
 JIRA:        CORE-3323
-FBTEST:      bugs.core_3323
 NOTES:
     [17.11.2021] pcisar
         This test is too complicated and fragile (can screw the test environment)
@@ -35,6 +34,13 @@ NOTES:
     or some trouble occurs with deleting from mon$attachments.
 
     Checked on 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730 (SS/CS) - both Linux and Windows.
+
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
 import time
 import datetime as py_dt
@@ -46,6 +52,7 @@ from pathlib import Path
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 ###########################
 ###   S E T T I N G S   ###
@@ -65,7 +72,7 @@ MAX_WAIT_FOR_ISQL_START_MS = 3000
 # because we kill its attachment (see 'p_isql.wait(...)'), seconds.
 # See also: https://docs.python.org/3/library/subprocess.html#subprocess.Popen.wait
 #
-MAX_WAIT_FOR_ISQL_FINISH_S = 5
+MAX_WAIT_FOR_ISQL_FINISH_S = 10
 
 init_ddl = f"""
     recreate table test(id int primary key using descending index test_id_desc);
@@ -102,15 +109,16 @@ def test_1(act: Action, tmp_isql_cmds: List[Path], tmp_isql_logs: List[Path], ca
             where s.mon$attachment_id <> current_connection and s.mon$sql_text containing cast(? as varchar(20))
         """
         with con.cursor() as cur:
-            ps = cur.prepare(sql_check_appearance)
-            worker_att_list = []
-            worker_log_list = []
-            worker_pid_list = []
-
-            for worker_i in range(0, CONCURRENT_ATT_CNT):
-                worker_log_list.append( open(tmp_isql_logs[worker_i], 'w') )
-
+            ps, rs = None, None
             try:
+                ps = cur.prepare(sql_check_appearance)
+                worker_att_list = []
+                worker_log_list = []
+                worker_pid_list = []
+
+                for worker_i in range(0, CONCURRENT_ATT_CNT):
+                    worker_log_list.append( open(tmp_isql_logs[worker_i], 'w') )
+
 
                 for worker_i in range(0, CONCURRENT_ATT_CNT):
                     if worker_i < CONCURRENT_ATT_CNT-1:
@@ -147,7 +155,16 @@ def test_1(act: Action, tmp_isql_cmds: List[Path], tmp_isql_logs: List[Path], ca
                             print(f'TIMEOUT EXPIRATION: waiting for ISQL process on iter {worker_i} took {dd} ms which exceeds limit = {MAX_WAIT_FOR_ISQL_START_MS} ms.')
                             break
 
-                        worker_att = cur.execute(ps, (f'TAG_{worker_i}',)).fetchone()
+                        # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                        # We have to store result of cur.execute(<psInstance>) in order to
+                        # close it explicitly.
+                        # Otherwise AV can occur during Python garbage collection and this
+                        # causes pytest to hang on its final point.
+                        # Explained by hvlad, email 26.10.24 17:42
+                        rs = cur.execute(ps, (f'TAG_{worker_i}',))
+                        for r in rs:
+                            worker_att = r
+
                         con.commit()
 
                         if worker_att:
@@ -159,22 +176,31 @@ def test_1(act: Action, tmp_isql_cmds: List[Path], tmp_isql_logs: List[Path], ca
 
                 # result: all ISQLs are launched and their attachments are visible in mon$attachments (and can be traversed via worker_att_list)
 
-                ps = cur.prepare('delete from mon$attachments a where a.mon$attachment_id = ?')
+                kill_sttm = cur.prepare('delete from mon$attachments a where a.mon$attachment_id = ?')
 
                 ###################################################################
                 ###   k i l l    a t t a c h m e n t s    o n e - b y - o n e   ###
                 ###################################################################
                 for worker_id in reversed(worker_att_list):
-                    cur.execute(ps, (worker_id,))
+                    cur.execute(kill_sttm, (worker_id,))
+
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
 
             finally:
-            
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
+
                 for i,p_isql in enumerate(worker_pid_list):
                     p_isql.wait(MAX_WAIT_FOR_ISQL_FINISH_S)
                     print(f'returncode for ISQL worker #{i}:',p.poll())
-                
                 for f in worker_log_list:
                     f.close()
+
+
 
             # All worker logs must contain 'SQLSTATE = 08003' pattern (i.e. 'connection shutdown'):
             p_shutdown = re.compile('SQLSTATE\\s+=\\s+08003', re.IGNORECASE)
@@ -185,8 +211,9 @@ def test_1(act: Action, tmp_isql_cmds: List[Path], tmp_isql_logs: List[Path], ca
                         pass
                     else:
                         print('Pattern ',p_shutdown,' NOT FOUND in the log ',g.name,':')
+                        print('=== beg of log ===')
                         print(txt)
-                        print('='*50)
+                        print('=== end of log ===')
             con.commit()
 
             # NO any ISQL worker must be alive now:
