@@ -37,6 +37,13 @@ NOTES:
     Increased number of inserted rows (from 100'000 to 200'000) and indexed column width (from 700 to 800).
     Otherwise test could fail because encryption thread completes too fast (encountered under Linux).
     Loop that checks for appearance of encryption state = 3 must have delay much less than one second (changed it from 1 to 0.1).
+
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
 
 import datetime as py_dt
@@ -128,34 +135,48 @@ def test_1(act: Action, act_tmp: Action, tmp_sql: Path, tmp_log: Path, capsys):
     
         encryption_started = False
         with act_tmp.db.connect() as con_watcher:
+            
+            ps, rs = None, None
+            try:
+                custom_tpb = tpb(isolation = Isolation.SNAPSHOT, lock_timeout = -1)
+                tx_watcher = con_watcher.transaction_manager(custom_tpb)
+                cur_watcher = tx_watcher.cursor()
 
-            custom_tpb = tpb(isolation = Isolation.SNAPSHOT, lock_timeout = -1)
-            tx_watcher = con_watcher.transaction_manager(custom_tpb)
-            cur_watcher = tx_watcher.cursor()
+                # 0 = non-encrypted; 1 = encrypted; 2 = is DEcrypting; 3 - is Encrypting
+                ps = cur_watcher.prepare('select mon$crypt_state from mon$database')
 
-            # 0 = non-encrypted; 1 = encrypted; 2 = is DEcrypting; 3 - is Encrypting
-            ps = cur_watcher.prepare('select mon$crypt_state from mon$database')
+                i = 0
+                da = dt.now()
+                while True:
+                    # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                    # We have to store result of cur.execute(<psInstance>) in order to
+                    # close it explicitly.
+                    # Otherwise AV can occur during Python garbage collection and this
+                    # causes pytest to hang on its final point.
+                    # Explained by hvlad, email 26.10.24 17:42
+                    rs = cur_watcher.execute(ps)
+                    for r in rs:
+                        db_crypt_state = r[0]
 
-            i = 0
-            da = dt.now()
-            while True:
-                cur_watcher.execute(ps)
-                for r in cur_watcher:
-                    db_crypt_state = r[0]
+                    tx_watcher.commit()
+                    db = dt.now()
+                    diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
+                    if db_crypt_state == IS_ENCRYPTING_STATE:
+                        encryption_started = True
+                        cur_watcher.call_procedure('sp_debug', ('encryption_started',))
+                        break
+                    elif diff_ms > MAX_WAIT_FOR_ENCRYPTION_START_MS:
+                        break
+                    time.sleep(0.1)
 
-                tx_watcher.commit()
-                db = dt.now()
-                diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
-                if db_crypt_state == IS_ENCRYPTING_STATE:
-                    encryption_started = True
-                    cur_watcher.call_procedure('sp_debug', ('encryption_started',))
-                    break
-                elif diff_ms > MAX_WAIT_FOR_ENCRYPTION_START_MS:
-                    break
-
-                time.sleep(0.1)
-
-            ps.free()
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
 
         assert encryption_started, f'Could not find start of encryption process for {MAX_WAIT_FOR_ENCRYPTION_START_MS} ms.'
 
