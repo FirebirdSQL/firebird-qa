@@ -28,6 +28,13 @@ NOTES:
     [11.03.2023] pzotov
     Marked as SKIPPED because covered by core_6048_test.
     Probably will be deleted soon.
+
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
 import os
 import datetime as py_dt
@@ -118,38 +125,57 @@ def test_1(act: Action, capsys):
         cur = con.cursor()
         cu2 = con.cursor()
 
-        ps = cur.prepare('select mon$crypt_page from mon$database')
-
-        while encryption_started:
-            t2=py_dt.datetime.now()
-            d1=t2-t1
-            if d1.seconds*1000 + d1.microseconds//1000 > MAX_WAITING_ENCR_FINISH:
-                print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAITING_ENCR_FINISH} ms.')
-                break
-
-            cur.execute(ps)
-            p = cur.fetchone()[0]
-            cu2.callproc('sp_tmp', [ p, ] )
-            con.commit()
-
-            if p > 0:
-                encrypted_pages_set.add(p)
-                if len(encrypted_pages_set) >= MIN_DISTINCT_ENCRYPTED_PAGES:
-                    # We got enough data from mon$database to conclude that encryption is in PROGRESS.
+        ps, rs = None, None
+        try:
+            ps = cur.prepare('select mon$crypt_page from mon$database')
+            while encryption_started:
+                t2=py_dt.datetime.now()
+                d1=t2-t1
+                if d1.seconds*1000 + d1.microseconds//1000 > MAX_WAITING_ENCR_FINISH:
+                    print(f'TIMEOUT EXPIRATION: encryption took {d1.seconds*1000 + d1.microseconds//1000} ms which exceeds limit = {MAX_WAITING_ENCR_FINISH} ms.')
                     break
 
-            # Possible output:
-            #     Database not encrypted
-            #     Database encrypted, crypt thread not complete
-            act.isql(switches=['-q'], input = 'show database;', combine_output = True)
-            if 'Database encrypted' in act.stdout:
-                if 'not complete' in act.stdout:
-                    pass
-                else:
-                    encryption_finished = True
-                    break
-            act.reset()
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur.execute(ps)
+                for r in rs:
+                    p = r[0]
 
+                cu2.callproc('sp_tmp', [ p, ] )
+                con.commit()
+
+                if p > 0:
+                    encrypted_pages_set.add(p)
+                    if len(encrypted_pages_set) >= MIN_DISTINCT_ENCRYPTED_PAGES:
+                        # We got enough data from mon$database to conclude that encryption is in PROGRESS.
+                        break
+
+                # Possible output:
+                #     Database not encrypted
+                #     Database encrypted, crypt thread not complete
+                act.isql(switches=['-q'], input = 'show database;', combine_output = True)
+                if 'Database encrypted' in act.stdout:
+                    if 'not complete' in act.stdout:
+                        pass
+                    else:
+                        encryption_finished = True
+                        break
+                act.reset()
+
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if rs:
+                rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+            if ps:
+                ps.free()
+
+    
     if encryption_started:
         if len(encrypted_pages_set) >= MIN_DISTINCT_ENCRYPTED_PAGES:
             print(expected_stdout)
