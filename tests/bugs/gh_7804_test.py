@@ -29,9 +29,19 @@ NOTES:
             More realistic cardinality adjustments for unmatchable booleans, this should also fix #7904: FB5 bad plan for query
 
         Output for FB 6.x will be changed later (letter from dimitr, 16.12.2023 10:32)
+
+    [18.01.2025] pzotov
+    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
+
 import pytest
+
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 init_script = """
     recreate table test(x smallint);
@@ -51,7 +61,7 @@ act = python_act('db')
 
 #----------------------------------------------------------
 
-def replace_leading(source, char="#"):
+def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
 
@@ -82,10 +92,19 @@ def test_1(act: Action, capsys):
         result_map = {}
 
         for x in q_list:
-            with cur.prepare(x) as ps:
+            ps, rs = None, None
+            try:
+                ps = cur.prepare(x)
                 tabstat1 = [ p for p in con.info.get_table_access_stats() if p.table_id == test_rel_id ]
-                cur.execute(x)
-                for r in cur:
+            
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur.execute(ps)
+                for r in rs:
                     pass
                 tabstat2 = [ p for p in con.info.get_table_access_stats() if p.table_id == test_rel_id ]
 
@@ -101,10 +120,21 @@ def test_1(act: Action, capsys):
                            tabstat2[0].sequential if tabstat2[0].sequential else 0
                           ,tabstat2[0].indexed if tabstat2[0].indexed else 0
                         )
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
 
     for k,v in result_map.items():
         print('Query:', k[0])
-        print( '\n'.join([replace_leading(s) for s in k[1].split('\n')]) ) # explained plan, with preserving indents by replacing leading spaces with '#'
+        
+        # Show explained plan, with preserving indents by replacing leading spaces with '.':
+        print( '\n'.join([replace_leading(s) for s in k[1].split('\n')]) )
+
         print('NR:', v[0])
         print('IR:', v[1])
         print('')
@@ -114,109 +144,109 @@ def test_1(act: Action, capsys):
     expected_fb5x = f"""
         Query: {q_list[0]}
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap
-        ################-> Index "TEST_X_ASC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap
+        ................-> Index "TEST_X_ASC" Range Scan (full match)
         NR: 0
         IR: 1000
 
         Query: select * from test where x = 3 or x = 2
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap
-        ####################-> Index "TEST_X_ASC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_ASC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap
+        ....................-> Index "TEST_X_ASC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_ASC" Range Scan (full match)
         NR: 0
         IR: 2000
 
         Query: select * from test where x = 2 or x = 3 or x = 1
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap Or
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_ASC" Range Scan (full match)
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_ASC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_ASC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_ASC" Range Scan (full match)
         NR: 0
         IR: 3000
 
         Query: select * from test where x = 2 or x is null or x = 3 or x = 1
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap Or
-        ####################-> Bitmap Or
-        ########################-> Bitmap
-        ############################-> Index "TEST_X_ASC" Range Scan (full match)
-        ########################-> Bitmap
-        ############################-> Index "TEST_X_ASC" Range Scan (full match)
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_ASC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_ASC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "TEST_X_ASC" Range Scan (full match)
+        ........................-> Bitmap
+        ............................-> Index "TEST_X_ASC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_ASC" Range Scan (full match)
         NR: 0
         IR: 4000
 
         Query: select * from test where x = 5
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap
-        ################-> Index "TEST_X_DEC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap
+        ................-> Index "TEST_X_DEC" Range Scan (full match)
         NR: 0
         IR: 1000
 
         Query: select * from test where x = 6 or x = 5
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap
-        ####################-> Index "TEST_X_DEC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_DEC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap
+        ....................-> Index "TEST_X_DEC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_DEC" Range Scan (full match)
         NR: 0
         IR: 2000
 
         Query: select * from test where x = 5 or x = 4 or x = 6
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap Or
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_DEC" Range Scan (full match)
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_DEC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_DEC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_DEC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_DEC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_DEC" Range Scan (full match)
         NR: 0
         IR: 3000
 
         Query: select * from test where x = 6 or x is null or x = 4 or x = 5
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap Or
-        ####################-> Bitmap Or
-        ########################-> Bitmap
-        ############################-> Index "TEST_X_DEC" Range Scan (full match)
-        ########################-> Bitmap
-        ############################-> Index "TEST_X_DEC" Range Scan (full match)
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_DEC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_DEC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "TEST_X_DEC" Range Scan (full match)
+        ........................-> Bitmap
+        ............................-> Index "TEST_X_DEC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_DEC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_DEC" Range Scan (full match)
         NR: 0
         IR: 4000
     """
@@ -225,91 +255,91 @@ def test_1(act: Action, capsys):
     expected_fb6x = f"""
         Query: {q_list[0]}
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap
-        ################-> Index "TEST_X_ASC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap
+        ................-> Index "TEST_X_ASC" Range Scan (full match)
         NR: 0
         IR: 1000
 
         Query: {q_list[1]}
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap
-        ####################-> Index "TEST_X_ASC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_ASC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap
+        ....................-> Index "TEST_X_ASC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_ASC" Range Scan (full match)
         NR: 0
         IR: 2000
         
         Query: {q_list[2]}
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap Or
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_ASC" Range Scan (full match)
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_ASC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_ASC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_ASC" Range Scan (full match)
         NR: 0
         IR: 3000
         
         Query: {q_list[3]}
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap
-        ################-> Index "TEST_X_ASC" Full Scan
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap
+        ................-> Index "TEST_X_ASC" Full Scan
         NR: 0
         IR: 4000
         
         Query: {q_list[4]}
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap
-        ################-> Index "TEST_X_DEC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap
+        ................-> Index "TEST_X_DEC" Range Scan (full match)
         NR: 0
         IR: 1000
         
         Query: {q_list[5]}
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap
-        ####################-> Index "TEST_X_DEC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_DEC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap
+        ....................-> Index "TEST_X_DEC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_DEC" Range Scan (full match)
         NR: 0
         IR: 2000
         
         Query: {q_list[6]}
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap Or
-        ################-> Bitmap Or
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_DEC" Range Scan (full match)
-        ####################-> Bitmap
-        ########################-> Index "TEST_X_DEC" Range Scan (full match)
-        ################-> Bitmap
-        ####################-> Index "TEST_X_DEC" Range Scan (full match)
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_DEC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_DEC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TEST_X_DEC" Range Scan (full match)
         NR: 0
         IR: 3000
         
         Query: {q_list[7]}
         Select Expression
-        ####-> Filter
-        ########-> Table "TEST" Access By ID
-        ############-> Bitmap
-        ################-> Index "TEST_X_DEC" Full Scan
+        ....-> Filter
+        ........-> Table "TEST" Access By ID
+        ............-> Bitmap
+        ................-> Index "TEST_X_DEC" Full Scan
         NR: 0
         IR: 4000
     """
