@@ -89,7 +89,7 @@ def test_1(act: Action, capsys):
                 rs = cur.execute(ps)
                 for r in rs:
                     print(r[0])
-            except:
+            except DatabaseError as e:
                 print(e.__str__())
                 print(e.gds_codes)
             finally:
