@@ -162,6 +162,7 @@ def test_1(act: Action, tmp_isql_cmds: List[Path], tmp_isql_logs: List[Path], ca
                         # causes pytest to hang on its final point.
                         # Explained by hvlad, email 26.10.24 17:42
                         rs = cur.execute(ps, (f'TAG_{worker_i}',))
+                        worker_att = None
                         for r in rs:
                             worker_att = r
 
