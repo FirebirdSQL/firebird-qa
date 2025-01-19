@@ -31,11 +31,15 @@ NOTES:
         Output for FB 6.x will be changed later (letter from dimitr, 16.12.2023 10:32)
 
     [18.01.2025] pzotov
-    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
-    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
-    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
-    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
-    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+        Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+        in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+        Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+        This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+        The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+
+    [19.01.2025] pzotov
+        Result in 6.x became equal to 5.x. Removed separation of expected* output
+        Checked on 6.0.0.587-90401f7
 """
 
 import pytest
@@ -141,7 +145,7 @@ def test_1(act: Action, capsys):
 
     #--------------------------------------------------------------------
 
-    expected_fb5x = f"""
+    expected_out = f"""
         Query: {q_list[0]}
         Select Expression
         ....-> Filter
@@ -251,99 +255,6 @@ def test_1(act: Action, capsys):
         IR: 4000
     """
 
-
-    expected_fb6x = f"""
-        Query: {q_list[0]}
-        Select Expression
-        ....-> Filter
-        ........-> Table "TEST" Access By ID
-        ............-> Bitmap
-        ................-> Index "TEST_X_ASC" Range Scan (full match)
-        NR: 0
-        IR: 1000
-
-        Query: {q_list[1]}
-        Select Expression
-        ....-> Filter
-        ........-> Table "TEST" Access By ID
-        ............-> Bitmap Or
-        ................-> Bitmap
-        ....................-> Index "TEST_X_ASC" Range Scan (full match)
-        ................-> Bitmap
-        ....................-> Index "TEST_X_ASC" Range Scan (full match)
-        NR: 0
-        IR: 2000
-        
-        Query: {q_list[2]}
-        Select Expression
-        ....-> Filter
-        ........-> Table "TEST" Access By ID
-        ............-> Bitmap Or
-        ................-> Bitmap Or
-        ....................-> Bitmap
-        ........................-> Index "TEST_X_ASC" Range Scan (full match)
-        ....................-> Bitmap
-        ........................-> Index "TEST_X_ASC" Range Scan (full match)
-        ................-> Bitmap
-        ....................-> Index "TEST_X_ASC" Range Scan (full match)
-        NR: 0
-        IR: 3000
-        
-        Query: {q_list[3]}
-        Select Expression
-        ....-> Filter
-        ........-> Table "TEST" Access By ID
-        ............-> Bitmap
-        ................-> Index "TEST_X_ASC" Full Scan
-        NR: 0
-        IR: 4000
-        
-        Query: {q_list[4]}
-        Select Expression
-        ....-> Filter
-        ........-> Table "TEST" Access By ID
-        ............-> Bitmap
-        ................-> Index "TEST_X_DEC" Range Scan (full match)
-        NR: 0
-        IR: 1000
-        
-        Query: {q_list[5]}
-        Select Expression
-        ....-> Filter
-        ........-> Table "TEST" Access By ID
-        ............-> Bitmap Or
-        ................-> Bitmap
-        ....................-> Index "TEST_X_DEC" Range Scan (full match)
-        ................-> Bitmap
-        ....................-> Index "TEST_X_DEC" Range Scan (full match)
-        NR: 0
-        IR: 2000
-        
-        Query: {q_list[6]}
-        Select Expression
-        ....-> Filter
-        ........-> Table "TEST" Access By ID
-        ............-> Bitmap Or
-        ................-> Bitmap Or
-        ....................-> Bitmap
-        ........................-> Index "TEST_X_DEC" Range Scan (full match)
-        ....................-> Bitmap
-        ........................-> Index "TEST_X_DEC" Range Scan (full match)
-        ................-> Bitmap
-        ....................-> Index "TEST_X_DEC" Range Scan (full match)
-        NR: 0
-        IR: 3000
-        
-        Query: {q_list[7]}
-        Select Expression
-        ....-> Filter
-        ........-> Table "TEST" Access By ID
-        ............-> Bitmap
-        ................-> Index "TEST_X_DEC" Full Scan
-        NR: 0
-        IR: 4000
-    """
-
-    act.expected_stdout = expected_fb5x if act.is_version('<6') else expected_fb6x
+    act.expected_stdout = expected_out
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
