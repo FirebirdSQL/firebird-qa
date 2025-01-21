@@ -10,7 +10,7 @@ NOTES:
     After fix parameters type '[va]rchar(N) character set octets' is shown in the trace as '[var]binary(N)'.
 
     Confirmed problem on 6.0.0.585: parameter values in the trace are shown in binary (non-readable) form.
-    Checked on 6.0.0.590-7e96b33 - all fine.
+    Checked on 6.0.0.590-7e96b33, 5.0.2.1597-4fa00f1 - all fine.
 """
 import re
 
@@ -54,7 +54,7 @@ trace_events_lst = \
     ]
 
 @pytest.mark.trace
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.2')
 def test_1(act: Action, capsys):
 
     with act.trace(db_events = trace_events_lst):
