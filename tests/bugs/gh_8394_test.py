@@ -19,6 +19,7 @@ db = db_factory(page_size = 8192)
 substitutions = [
     ( r'Blobs:\s+\d+,\s+total\s+length:\s+\d+,\s+blob\s+pages:\s+\d+', 'Blobs: N, total length: M, blob pages: P')
    ,( r'\d+,\s+total\s+length: \d+,\s+blob\s+pages:\s+\d+', 'X, total length: M, blob pages: P')
+   ,( r'Table\s+size:\s+\d+\s+bytes', 'Table size: N bytes')
 ]
 act = python_act('db', substitutions = substitutions)
 
@@ -74,6 +75,7 @@ def test_1(act: Action, capsys):
 
     blob_overall_info_ptn = re.compile( r'Blobs:\s+\d+,\s+total\s+length:\s+\d+,\s+blob\s+pages', re.IGNORECASE )
     blob_level_info_ptn = re.compile( r'Level\s+\d+: \d+,\s+total\s+length: \d+,\s+blob\s+pages', re.IGNORECASE )
+    table_size_ptn = re.compile( r'Table\s+size:\s+\d+\s+bytes', re.IGNORECASE )
 
     act.gstat(switches=['-r'])
     blob_overall_found = False
@@ -84,6 +86,8 @@ def test_1(act: Action, capsys):
         if blob_overall_found:
            if blob_level_info_ptn.search(line):
                print(line)
+           if table_size_ptn.search(line):
+               print(line)
 
 
     act.expected_stdout = """
@@ -91,6 +95,7 @@ def test_1(act: Action, capsys):
         Level 0: X, total length: M, blob pages: P
         Level 1: X, total length: M, blob pages: P
         Level 2: X, total length: M, blob pages: P
+        Table size: N bytes
     """
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
