@@ -24,8 +24,8 @@ NOTES:
        "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
     4. Value of DefaultDBCachePages must be LESS than result of division restored_file_size/PAGE_SIZE otherwise fix can not be observed.
 
-    Confirmed problem on 6.0.0.584 (only when Servermode = 'Super'; SC and CS not affected).
-    Checked on 6.0.0.590 -- all OK.
+    Confirmed problem on 6.0.0.584, 5.0.2.1592 (only when Servermode = 'Super'; SC and CS not affected).
+    Checked on 6.0.0.590, 5.0.2.1601 -- all OK; 4.x. seems not affected (checked on 4.0.6.3174-ffd396f, date: 23-dec-2024).
 """
 
 import locale
@@ -47,7 +47,7 @@ act = python_act('db', substitutions = substitutions)
 tmp_fbk = temp_file('tmp_gh_8391.restored.fbk')
 tmp_log = temp_file('tmp_gh_8391.restored.log')
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=4.0.6')
 def test_1(act: Action, tmp_fbk: Path, tmp_log: Path, capsys):
     
     if act.get_server_architecture() != 'SuperServer':
