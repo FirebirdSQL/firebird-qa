@@ -6,7 +6,7 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/commit/5df6668c7bf5a4b27e15
 TITLE:       Allow computable but non-invariant lists to be used for index lookup
 DESCRIPTION:
 NOTES:
-    [08.09.2023]
+    [08.09.2023] pzotov
     Before improvement explained plan was:
     =======
         Sub-query
@@ -32,6 +32,11 @@ NOTES:
     (it is desirable to leading indents).
 
     Checked on 5.0.0.1190.
+
+    [04.02.2025] pzotov
+    Adjusted execution plan for EXISTS() part of recursive query: "List Scan" was replaced with "Range Scan" for 
+    "where b.x in (a.x, 2*a.x, 3*a.x)". This change caused by commit 0cc77c89 ("Fix #8109: Plan/Performance regression ...")
+    Checked on 6.0.0.607-1985b88, 5.0.2.1610-5e63ad0
 """
 
 import pytest
@@ -50,7 +55,7 @@ db = db_factory(init = init_sql)
 
 act = python_act('db')
 
-def replace_leading(source, char="#"):
+def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
 
@@ -63,19 +68,28 @@ def test_1(act: Action, capsys):
         where exists(
             select *
             from t1 b
+            -- 04-feb-2025: bitmap_Or for three values will be used here since commit
+            -- 0cc77c89 ('Fix #8109: Plan/Performance regression ...')
+            -- Before this change plan has: 'Index "T1_X" List Scan (full match)'
             where b.x in (a.x, 2*a.x, 3*a.x)
         )
     """
 
     act.expected_stdout = """
         Sub-query
-        ####-> Filter
-        ########-> Table "T1" as "B" Access By ID
-        ############-> Bitmap
-        ################-> Index "T1_X" List Scan (full match)
+        ....-> Filter
+        ........-> Table "T1" as "B" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap
+        ........................-> Index "T1_X" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "T1_X" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "T1_X" Range Scan (full match)
         Select Expression
-        ####-> Filter
-        ########-> Table "T1" as "A" Full Scan
+        ....-> Filter
+        ........-> Table "T1" as "A" Full Scan
     """
     with act.db.connect() as con:
         cur = con.cursor()
