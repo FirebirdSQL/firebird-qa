@@ -46,6 +46,9 @@ NOTES:
         https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83 // 5.x
         https://github.com/FirebirdSQL/firebird/commit/f647dfd757de3c4065ef2b875c95d19311bb9691 // 6.x
 
+    [04-feb-2025]
+    Adjusted execution plan for EXISTS() part of recursive query: "List Scan" was replaced with "Range Scan" for 
+    "and m0a.x in (dx.y, dx.z)". This change caused by commit 0cc77c89 ("Fix #8109: Plan/Performance regression ...")
 """
 import locale
 import re
@@ -136,8 +139,10 @@ def test_1(act: Action, capsys):
                        -- https://github.com/FirebirdSQL/firebird/commit/5df6668c7bf5a4b27e15f687f8c6cc40e260ced8
                        -- (Allow computable but non-invariant lists to be used for index lookup)
                        -- See also: tests/functional/tabloid/test_e260ced8.py
-                       -- Here "Index "TMAIN_X" List Scan (full match)" will be!
-                       -- Old: "Index "TMAIN_X" Range Scan (full match)"
+                       -- ########################################################################################
+                       -- NOTE!
+                       -- Before 03-feb-2025 "Index "TMAIN_X" List Scan (full match)" was here, but since 0cc77c89
+                       -- bitmap_Or for two scans will be performed ("Index "TMAIN_X" Range Scan (full match)").
                        and m0a.x in (dx.y, dx.z) -- ### ATTENTION ###
                )
             )
@@ -217,8 +222,11 @@ def test_1(act: Action, capsys):
         Sub-query
         ....-> Filter
         ........-> Table "TMAIN" as "R M0A" Access By ID
-        ............-> Bitmap
-        ................-> Index "TMAIN_X" List Scan (full match)
+        ............-> Bitmap Or
+        ................-> Bitmap
+        ....................-> Index "TMAIN_X" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "TMAIN_X" Range Scan (full match)
         Select Expression(line, column)
         ....-> Singularity Check
         ........-> Aggregate
