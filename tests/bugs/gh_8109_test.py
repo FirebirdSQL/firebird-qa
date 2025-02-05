@@ -44,7 +44,7 @@ def replace_leading(source, char="."):
 
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=5.0.2')
 def test_1(act: Action, capsys):
     queries_map = { i : x for i,x in enumerate
                       (
