@@ -2,7 +2,7 @@
 
 """
 ID:          issue-3955
-ISSUE:       3955
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/3955
 TITLE:       Incorrect TEXT BLOB charset transliteration on VIEW with trigger
 DESCRIPTION:
   Test verifies that all OK when connection charset = UTF8
@@ -281,7 +281,7 @@ test_script = """
 	from v_t_test;
 """
 
-act = isql_act('db', test_script, substitutions=[('MEMO_UTF8.*', 'MEMO_UTF8')])
+act = isql_act('db', test_script, substitutions=[ ('MEMO_UTF8.*', 'MEMO_UTF8'), ('MEMO_WIN1250.*', 'MEMO_WIN1250') ])
 
 expected_stdout = """
 	ID                              1
