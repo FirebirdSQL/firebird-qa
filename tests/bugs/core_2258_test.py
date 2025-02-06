@@ -2,7 +2,7 @@
 
 """
 ID:          issue-2684
-ISSUE:       2684
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/2684
 TITLE:       Internal error when select upper(<blob>) from union
 DESCRIPTION:
 JIRA:        CORE-2258
@@ -14,53 +14,40 @@ from firebird.qa import *
 
 db = db_factory()
 
-test_script = """SELECT * FROM
-  (
-   SELECT CAST('123' AS BLOB SUB_TYPE TEXT) FROM RDB$DATABASE
-   UNION ALL
-   SELECT CAST('123' AS BLOB SUB_TYPE TEXT) FROM RDB$DATABASE
-   ) AS R (BLOB_FIELD)
-;
+test_script = """
+    set list on;
+    set count on;
+    select * from
+    (
+        select cast('123' as blob sub_type text) from rdb$database
+        union all
+        select cast('123' as blob sub_type text) from rdb$database
+    ) as r (blob_field_id)
+    ;
 
-SELECT UPPER(BLOB_FIELD) FROM
-  (
-   SELECT CAST('123' AS BLOB SUB_TYPE TEXT) FROM RDB$DATABASE
-   UNION ALL
-   SELECT CAST('123' AS BLOB SUB_TYPE TEXT) FROM RDB$DATABASE
-   ) AS R (BLOB_FIELD)
-;
+    select upper(blob_field) from
+    (
+        select cast('123' as blob sub_type text) from rdb$database
+        union all
+        select cast('123' as blob sub_type text) from rdb$database
+    ) as r (blob_field)
+    ;
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script, substitutions = [('BLOB_FIELD_ID .*', 'BLOB_FIELD_ID'), ('UPPER.*', 'UPPER')])
 
 expected_stdout = """
-       BLOB_FIELD
-=================
-              0:1
-==============================================================================
-BLOB_FIELD:
-123
-==============================================================================
-              0:2
-==============================================================================
-BLOB_FIELD:
-123
-==============================================================================
+    BLOB_FIELD_ID                   0:1
+    123
+    BLOB_FIELD_ID                   0:3
+    123
+    Records affected: 2
 
-
-            UPPER
-=================
-              0:7
-==============================================================================
-UPPER:
-123
-==============================================================================
-              0:a
-==============================================================================
-UPPER:
-123
-==============================================================================
-
+    UPPER                           0:7
+    123
+    UPPER                           0:b
+    123
+    Records affected: 2
 """
 
 @pytest.mark.version('>=3.0')
