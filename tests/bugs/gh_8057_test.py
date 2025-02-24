@@ -55,6 +55,10 @@ NOTES:
     Checked on 6.0.0.295-ef66a9b (22-mar-2024 13:48): all OK,every of checked system tables has non-zero statistics for its indices.
     Test executiuon time: ~8...10 seconds.
 
+    [24.02.2025]
+    Changed offset calculations according to #93db88: ODS14: header page refactoring (#8401)
+    See: https://github.com/FirebirdSQL/firebird/commit/93db88084d5a04aaa3f98179e76cdfa092431fa8
+
     Thanks to Vlad for explanations.
 """
 import sys
@@ -260,6 +264,47 @@ def parse_index_root_page(db_file, pg_size, rel_name, irt_page_number, rel_sel_m
 
         # https://firebirdsql.org/file/documentation/html/en/firebirddocs/firebirdinternals/firebird-internals.html#fbint-page-6
         # https://docs.python.org/3/library/struct.html#format-characters
+        """
+            See src/jrd/ods.h, https://github.com/FirebirdSQL/firebird/pull/8340
+            *** BEFORE ***
+            struct index_root_page
+            {
+                pag irt_header;
+                USHORT irt_relation;
+                USHORT irt_count;
+                struct irt_repeat {
+                    SLONG irt_root;
+                    union {
+                        float irt_selectivity;
+                        SLONG irt_transaction;
+                    } irt_stuff;
+                    USHORT irt_desc;
+                    UCHAR irt_keys;
+                    UCHAR irt_flags;
+                } irt_rpt[1];
+            };
+
+            *** AFTER ***
+            struct index_root_page
+            {
+                pag irt_header;
+                USHORT irt_relation;            // 2 relation id (for consistency)
+                USHORT irt_count;               // 2 number of indices
+                ULONG irt_dummy;                // 4 so far used as a padding to ensure the same alignment in 32-bit and 64-bit builds
+                struct irt_repeat
+                {
+                    FB_UINT64 irt_transaction;  // 8 transaction in progress
+                    ULONG irt_page_num;         // 4 page number
+                    ULONG irt_page_space_id;    // 4 page space
+                    USHORT irt_desc;            // 2 offset to key descriptions
+                    USHORT irt_flags;           // 2 index flags
+                    UCHAR irt_state;            // 1 index state
+                    UCHAR irt_keys;             // 1 number of keys in index
+                    USHORT irt_dummy;           // 2 alignment to 8-byte boundary
+                } irt_rpt[1];
+            };
+
+        """
 
         # Two bytes, UNsigned. Offset 0x10 on the page. The relation id. This is the value of RDB$RELATIONS.RDB$RELATION_ID.
         irt_relation = struct.unpack_from('@H', page_content[0x10:0x12])[0] # (128,) --> 128
@@ -267,25 +312,37 @@ def parse_index_root_page(db_file, pg_size, rel_name, irt_page_number, rel_sel_m
         # Two bytes, UNsigned. Offset 0x12 on the page. The number of indices defined for this table. 
         irt_count = struct.unpack_from('@H', page_content[0x12:0x14])[0]
 
+        # 24.02.2025
+        irt_dummy = struct.unpack_from('@H', page_content[0x14:0x18])[0]
+
         if verbose:
             print(f'{irt_relation=}, {rel_name.strip()=}, {irt_count=}')
 
         for i in range(irt_count):
-            # 4+4+2+1+1 = 12
 
-            irt_root_offset_i = i * 12 + int(0x14)
-            irt_tran_offset_i = i * 12 + int(0x18)
-            irt_desc_offset_i = i * 12 + int(0x1c)
-            irt_keys_offset_i = i * 12 + int(0x1e)
-            irt_flags_offset_i = i * 12 + int(0x1f)
+            ###################
+            IRT_REPEAT_LEN = 24
+            ###################
+
+            irt_tran_offset_i = i * IRT_REPEAT_LEN + int(0x18)
+            irt_page_num_offset = i * IRT_REPEAT_LEN + int(0x26)        # 18 + 8
+            irt_page_space_id_offset = i * IRT_REPEAT_LEN + int(0x30)   # 26 + 4
+            irt_desc_offset_i = i * IRT_REPEAT_LEN + int(0x34)          # 30 + 4
+            irt_flags_offset_i = i * IRT_REPEAT_LEN + int(0x36)         # 34 + 2
+            irt_state_offset_i = i * IRT_REPEAT_LEN + int(0x38)         # 36 + 2
+            irt_keys_offset_i = i * IRT_REPEAT_LEN + int(0x39)          # 38 + 1
+            irt_dummy_offset =  i * IRT_REPEAT_LEN + int(0x40)          # 39 + 1
+
 
             # Four bytes, SIGNED. Offset 0x00 in each descriptor array entry.
             # This field is the page number where the root page for the individual index (page type 0x07) is located.
-            irt_root_i = struct.unpack_from('@i', page_content[irt_root_offset_i : irt_root_offset_i + 4])[0]
+            # 24.02.2025: this field no more exists in new ODS:
+            irt_root_i = -1 # before 24.02.2025: struct.unpack_from('@i', page_content[irt_root_offset_i : irt_root_offset_i + 4])[0]
 
-            # Four bytes, SIGNED. Offset 0x04 in each descriptor array entry.
             # Normally this field will be zero but if an index is in the process of being created, the transaction id will be found here.
-            irt_tran_i = struct.unpack_from('@i', page_content[irt_tran_offset_i : irt_tran_offset_i + 4])[0]
+            # irt_tran_i = struct.unpack_from('@i', page_content[irt_tran_offset_i : irt_tran_offset_i + 4])[0]
+            # 24.02.2025: this field now is FB_UINT64, i.e 8 bytes:
+            irt_tran_i = struct.unpack_from('@i', page_content[irt_tran_offset_i : irt_tran_offset_i + 8])[0]
 
             # Two bytes, UNsigned. Offset 0x08 in each descriptor array entry. This field holds the offset, from the start of the page,
             # to the index field descriptors which are located at the bottom end (ie, highest addresses) of the page.
@@ -310,7 +367,7 @@ def parse_index_root_page(db_file, pg_size, rel_name, irt_page_number, rel_sel_m
                 print(f'  {i=} ::: {irt_root_i=}, {irt_tran_i=}, {irt_desc_i=}, {irt_keys_i=}, {irt_flags_i=}, bin(irt_flags_i)=','{0:08b}'.format(irt_flags_i))
 
             for j in range(irt_keys_i):
-                # 2+2+4 = 8
+
                 # Two bytes, UNsigned. Offset 0x00 in each field descriptor. This field defines the field number of the table that makes up 'this' field in the index.
                 # This number is equivalent to RDB$RELATION_FIELDS.RDB$FIELD_ID.
                 irtd_field = struct.unpack_from('@H', page_content[ j*8 + irt_desc_i : j*8 + irt_desc_i + 2])[0]
