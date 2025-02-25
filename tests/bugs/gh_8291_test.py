@@ -11,14 +11,14 @@ NOTES:
     [25.10.2024] pzotov
     Confirmed problem on 6.0.0.485, 5.0.2.1519.
     Checked on 6.0.0.502-d2f4cf6, 5.0.2.1542-ab50e20 (intermediate builds).
+
+    [25.02.2025] pzotov
+    Splitted code that defines value of MAX_ALLOWED_IDX_READS: for 6.x it can be safely reduced to 6...10 since commit #5767b9.
+    Checked on intermediate snapshot 6.0.0.654-5767b9e.
 """
 
 import pytest
 from firebird.qa import *
-
-############################
-MAX_ALLOWED_IDX_READS = 1000
-############################
 
 init_sql = """
     create table test (id int);
@@ -48,6 +48,20 @@ act = python_act('db')
 
 @pytest.mark.version('>=5.0.2')
 def test_1(act: Action, capsys):
+
+    # ::::::::::::::::::::::::::::::
+    # :::    T H R E S H O L D   :::
+    # ::::::::::::::::::::::::::::::
+    if act.is_version('<6'):
+        MAX_ALLOWED_IDX_READS = 1000
+    else:
+        # NB. For the query that is used here number of indexed reads have been drastically reduced
+        # since #5767b9 (Ignore NULLs (if desired) while scanning keys during index navigation (#8446)).
+        # https://github.com/FirebirdSQL/firebird/commit/5767b9e522aa0b0ef36790f041a26bfd4f2fe738
+        # https://github.com/FirebirdSQL/firebird/pull/8446
+        # For 6.0.0.652 this value is 3 (three), so we can safely set it to 6...10
+        MAX_ALLOWED_IDX_READS = 6
+    
     msg_prefix = 'Number of indexed reads:'
     expected_txt = 'EXPECTED'
     idx_reads = {}
