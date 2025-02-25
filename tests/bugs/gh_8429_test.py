@@ -231,8 +231,6 @@ def test_1(act_a: Action, act_b: Action, act_c: Action, usr_x: User, usr_y: User
             ^
             grant execute on procedure sp_a to public
             ^
-            alter database set linger to 0
-            ^
         """
         for x in sql.split('^'):
             if (s := x.strip()):
@@ -249,8 +247,6 @@ def test_1(act_a: Action, act_b: Action, act_c: Action, usr_x: User, usr_y: User
             end
             ^
             grant execute on procedure sp_b to public
-            ^
-            alter database set linger to 0
             ^
         """
         for x in sql.split('^'):
@@ -269,8 +265,6 @@ def test_1(act_a: Action, act_b: Action, act_c: Action, usr_x: User, usr_y: User
             end
             ^
             grant execute on procedure sp_c to public
-            ^
-            alter database set linger to 0
             ^
         """
         for x in sql.split('^'):
@@ -291,11 +285,23 @@ def test_1(act_a: Action, act_b: Action, act_c: Action, usr_x: User, usr_y: User
         for r in cur:
             print(r[0])
 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # this caused crash before fix:
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     with act_a.db.connect() as con_a:
         cur = con_a.cursor()
         cur.execute(f"select o_info from sp_a('{usr_y.name.lower()}')")
         for r in cur:
             print(r[0])
+        
+    #########
+    # CLEANUP
+    #########
+    for a in (act_a, act_b, act_c):
+        with a.db.connect() as con:
+            con.execute_immediate('ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL')
+            con.commit()
+            con.drop_database()
 
     act_a.expected_stdout = f"""
         {usr_x.name.lower()}
