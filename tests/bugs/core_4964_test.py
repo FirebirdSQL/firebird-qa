@@ -38,8 +38,24 @@ NOTES:
     Noted by Dimitry Sibiryakov, https://github.com/FirebirdSQL/firebird-qa/issues/27
 
     Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535 - both on Windows and Linux.
-"""
 
+    [26.02.2025] pzotov
+    Old alias renamed to 'tmp_core_4964_alias_5x' - it will be used only for FB 3.x ... 5.x.
+    For 6.x+: added two aliases (for Windows and Linux) in the preliminary created databases.conf: 'tmp_core_4964_alias_win' and 'tmp_core_4964_alias_nix'.
+    Both contain SecurityDatabase that points to library fbSampleDbCrypt.dll (Linux: libfbSampleDbCrypt.so) which is binary file and its signature DIFFERS
+    from firebird.msg which was in use before.
+    The problem appeared since 6.0.0.647 (21.02.2025) when ODS was changed. Among other changes, FB does not do additional check for header, i.e.:
+        *** WAS: ***
+            if (header->hdr_header.pag_type != pag_header || header->hdr_sequence)
+               ERR_post;
+        *** NOW: ***
+            if (header->hdr_header.pag_type != pag_header)
+               ERR_post;
+        (field 'header->hdr_sequence' no more exists).
+    But firebird.msg  starting byte is 0x01 - and this is equal to pag_header, thus firebird.msg is no more suitable for this test in 6.x.
+    Explained by dimitr, letter 25.02.2025 22:45
+"""
+import os
 import re
 import time
 from pathlib import Path
@@ -52,8 +68,6 @@ substitutions = [
                     ('[ \t]+', ' ')
                    ,('(-)?file .* is not a valid database', 'file is not a valid database')
                 ]
-
-REQUIRED_ALIAS = 'tmp_core_4964_alias'
 
 db = db_factory()
 act = python_act('db', substitutions = substitutions)
@@ -71,6 +85,11 @@ expected_stdout_log_diff = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_user: User, capsys):
+
+    if act.is_version('<6'):
+        REQUIRED_ALIAS = 'tmp_core_4964_alias_5x'
+    else:
+        REQUIRED_ALIAS = 'tmp_core_4964_alias_win' if os.name == 'nt' else 'tmp_core_4964_alias_nix'
 
     fblog_1 = act.get_firebird_log()
 
