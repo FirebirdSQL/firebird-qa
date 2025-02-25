@@ -53,6 +53,13 @@ NOTES:
            Because of this, subprocess.run() is used to invoke fbsvcmgr
 
     Checked on Windows and Linux, 4.0.1.2692 (SS/CS), 5.0.0.736 (SS/CS).
+
+    [25.02.2025] pzotov
+        Order of attributes changed since 93db88 ("ODS14: header page refactoring (#8401)"):
+        mon_read_only is displayed now PRIOR to mon_shutdown_mode.
+        Re-implmented code for building 'Attributes' line using mon$database values, see func check_db_hdr_info.
+        Checked on Windows, 6.0.0.652, 5.0.3.1622
+
 JIRA:        CORE-6248
 FBTEST:      bugs.core_6248
 """
@@ -64,7 +71,8 @@ import time
 import platform
 from pathlib import Path
 #from difflib import unified_diff
-#from firebird.driver import SrvRepairFlag
+
+from firebird.driver import connect
 
 import pytest
 from firebird.qa import *
@@ -82,48 +90,40 @@ def check_db_hdr_info(act: Action, db_file_chk:Path, interested_patterns, capsys
     # 1. Obtain attributes from mon$database: get page buffers, 'build' attributes row and get sweep interval.
     #    These values will be displayed in the form of three separate LINES, without column names.
     #    Content of this output must be equal to gstat filtered values, with exception of leading spaces:
-    sql_txt = f"""
-        set list on;
 
-        -- Make connect using local protocol.
-        -- NOTE: 'command error' raises here if length of '{db_file_chk}' (including qutes!) greater than 255.
-        connect '{db_file_chk}' user {act.db.user};
-
-        select
-            'Page buffers ' || mon$page_buffers as " "
-           ,'Attributes ' || iif(trim(attr_list) = '', '', substring(attr_list from 2))
-            as "  "
-           ,'Sweep interval: ' || mon$sweep_interval as "   "
-        from (
+    expected_attr_from_mon_db = ''
+    with connect(str(db_file_chk), user = act.db.user) as con:
+        cur = con.cursor()
+        sql = """
             select
-                mon$page_buffers
-               ,mon$forced_writes
-               ,mon$backup_state
-               ,mon$reserve_space
-               ,mon$shutdown_mode
-               ,mon$read_only
-               ,mon$replica_mode
-               ,mon$sweep_interval
-               ,iif(mon$forced_writes      = 1,  ', force write', '')
-                || iif(mon$reserve_space   = 0,  ', no reserve', '')
-                || decode(mon$backup_state,  2,  ', merge',              1, ', backup lock', '')
-                || decode(mon$shutdown_mode, 3,  'full shutdown',        2, ', single-user maintenance', 1, ', multi-user maintenance',  '')
-                -- !! NEED TRIM() !! otherwise 10 spaces will be inserted if mon$read_only=0.
-                -- Discussed with Vladet al, letters since 23.09.2022 10:57.
-                || trim(iif(mon$read_only<>0,    ', read only', ''))
-                || decode(mon$replica_mode,  2,  ', read-write replica', 1, ', read-only replica',  '')
-                as attr_list
+                rdb$get_context('SYSTEM', 'ENGINE_VERSION') as engine_ver
+               ,mon$page_buffers as mon_page_buffers
+               ,mon$sweep_interval as mon_sweep_interval
+               ,trim(iif(mon$forced_writes = 1, ', force write', '')) as mon_force_write
+               ,trim(iif(mon$reserve_space = 0, ', no reserve', '')) as mon_reserve_space
+               ,trim(decode(mon$backup_state,  2, ', merge', 1, ', backup lock', '')) as mon_backup_state
+               ,trim(decode(mon$shutdown_mode, 3, 'full shutdown', 2,', single-user maintenance', 1,', multi-user maintenance',  '')) as mon_shutdown_mode
+                -- ::: NEED TRIM() ::: otherwise 10 spaces will be inserted if mon$read_only=0.
+                -- Discussed with Vlad et al, letters since 23.09.2022 10:57.
+               ,trim(iif(mon$read_only = 1, ', read only', '')) as mon_read_only
+               ,trim(decode(mon$replica_mode, 2,', read-write replica', 1,', read-only replica',  '')) as mon_replica_mode
             from mon$database
-        );
-        commit;
-    """
-    # Example of output:
-    #    Page buffers            3791
-    #    Attributes              force write, no reserve, single-user maintenance, read only, read-write replica
-    #    Sweep interval:         5678
+        """
+        cur.execute(sql)
+        for r in cur:
+            engine_ver, mon_page_buffers, mon_sweep_interval, mon_force_write, mon_reserve_space, mon_backup_state, mon_shutdown_mode, mon_read_only, mon_replica_mode = r[:9]
 
-    act.isql(switches = ['-q'], input = sql_txt, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
-    expected_attr_from_mon_db = act.stdout
+            expected_attr_from_mon_db += f'Page buffers {mon_page_buffers}'
+            if act.is_version('<6'):
+                attr_list = f'{mon_force_write}{mon_reserve_space}{mon_backup_state}{mon_shutdown_mode}{mon_read_only}{mon_replica_mode}'
+            else:
+                ### ACHTUNG, SINCE 6.0.0.647 2025.02.21 ###
+                # Order of attributes has changed since #93db88 ("ODS14: header page refactoring (#8401)"), 20-feb-2025:
+                # mon_read_only is displayed now PRIOR to mon_shutdown_mode:
+                attr_list = f'{mon_force_write}{mon_reserve_space}{mon_backup_state}{mon_read_only}{mon_shutdown_mode}{mon_replica_mode}'
+
+            expected_attr_from_mon_db += f'\nAttributes {attr_list[2:]}'
+            expected_attr_from_mon_db += f'\nSweep interval: {mon_sweep_interval}'
     
     #------------------------------------------------------
 
@@ -157,6 +157,7 @@ def check_db_hdr_info(act: Action, db_file_chk:Path, interested_patterns, capsys
         for line in act.stdout.split('\n'):
             print('gstat output: ',line)
         assert db_found,'COULD NOT FIND NAME OF DATABASE IN THE GSTAT HEADER'
+
     # 3. Return GUID of database (can be compared after b/r with GUID of restored database: they always must differ):
     return db_guid
 
@@ -176,17 +177,17 @@ def test_1(act: Action, tmp_file:Path, capsys):
     # All these (cuted) strings have length = 254 bytes and do NOT contain ending double quote.
     # Because of this, we must include this character into the pattern only as OPTIONAL, i.e.: |'Database\s+"\S+(")?'|
     #
-    interested_patterns = ( 'Database\s+"\S+(")?', '[\t ]*Attributes([\t ]+\w+)?', '[\t ]*Page buffers([\t ]+\d+)', '[\t ]*Sweep interval(:)?([\t ]+\d+)', 'Database GUID')
+    interested_patterns = ( r'Database\s+"\S+(")?', r'[\t ]*Attributes([\t ]+\w+)?', r'[\t ]*Page buffers([\t ]+\d+)', r'[\t ]*Sweep interval(:)?([\t ]+\d+)', 'Database GUID')
     interested_patterns = [re.compile(p, re.IGNORECASE) for p in interested_patterns]
     protocol_list = ('', 'inet://', 'xnet://') if os.name == 'nt' else ('', 'inet://',)
     
     full_str = str(tmp_file.absolute())
 
-    for utility in ('gfix', 'fbsvcmgr'):
+    for chk_mode in ('fb_util', 'fbsvcmgr'):
         for protocol_prefix in protocol_list:
 
             # NB: most strict limit for DB filename length origins from isql 'CONNECT' command:
-            # 'command error' raises there if length of '{db_file_chk}' (including qutes!) greater than 255.
+            # 'command error' raises there if length of '{db_file_chk}' including qutes greater than 255.
             # Because of this, we can not operate with files with length of full name greater than 253 bytes.
             #
             db_file_len = 253 - len(protocol_prefix)
@@ -195,9 +196,11 @@ def test_1(act: Action, tmp_file:Path, capsys):
             db_file_dif = Path(os.path.splitext(db_file_chk)[0] + '.dif')
             db_file_fbk = Path(os.path.splitext(db_file_chk)[0] + '.fbk')
 
+            db_file_dif.unlink(missing_ok = True)
+
             db_file_dsn = ''
             svc_call_starting_part = []
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 db_file_dsn = protocol_prefix + str(db_file_chk)
             else:
                 db_file_dsn = db_file_chk
@@ -222,7 +225,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             act.reset()
 
             svc_retcode = 0
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gfix(switches=['-buffers', '3791', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_properties', 'prp_page_buffers', '3791', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -231,7 +234,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             act.reset()
 
 
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gfix(switches=['-write','sync', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_properties', 'prp_write_mode', 'prp_wm_sync', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -240,7 +243,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             act.reset()
 
 
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gfix(switches=['-housekeeping','5678', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_properties', 'prp_sweep_interval', '5678', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -249,7 +252,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             act.reset()
 
 
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gfix(switches=['-use','full', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_properties', 'prp_reserve_space', 'prp_res_use_full', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -258,7 +261,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             act.reset()
 
             
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gfix(switches=['-sweep', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_repair', 'rpr_sweep_db', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -267,7 +270,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             act.reset()
 
             if act.is_version('>=4'):
-                if utility == 'gfix':
+                if chk_mode == 'fb_util':
                     act.gfix(switches=['-replica','read_write', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
                 else:
                     svc_retcode = (subprocess.run( svc_call_starting_part + ['action_properties', 'prp_replica_mode', 'prp_rm_readwrite', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -278,31 +281,38 @@ def test_1(act: Action, tmp_file:Path, capsys):
 
             sql_txt = f"""
                 -- Make connect using local protocol.
-                -- NOTE: 'command error' raises here if length of '{db_file_chk}' (including qutes!) greater than 255.
+                -- NOTE: 'command error' raises here if length of '{db_file_chk}' including qutes greater than 255.
                 connect '{db_file_chk}' user {act.db.user};
                 alter database add difference file '{db_file_dif}';
                 alter database begin backup;
-                alter database set linger to 100;
+                -- alter database set linger to 100;
             """
+            
+            # Page buffers 3791
+            # Attributes  force write, no reserve, backup lock, read-write replica
+            # Sweep interval: 5678
+            #
             act.isql(switches = ['-q'], input = sql_txt, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
             assert act.clean_stdout == act.clean_expected_stdout
+            
+            # WRONG for 4.x ... 5.x: assert '' == act.stdout -- noise characters are in output:
+            # "SQL> SQL> SQL> SQL> Database: ..."
+
             act.reset()
             _ = check_db_hdr_info(act, db_file_chk, interested_patterns, capsys)
 
-
             sql_txt = f"""
                 -- Make connect using local protocol.
-                -- NOTE: 'command error' raises here if length of '{db_file_chk}' (including qutes!) greater than 255.
+                -- NOTE: 'command error' raises here if length of '{db_file_chk}' including qutes greater than 255.
                 connect '{db_file_chk}' user {act.db.user};
-                alter database set linger to 0;
+                -- alter database set linger to 0;
                 alter database end backup;
             """
             act.isql(switches = ['-q'], input = sql_txt, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
             assert act.clean_stdout == act.clean_expected_stdout
             act.reset()
 
-
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gfix(switches=['-mode','read_only', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_properties', 'prp_access_mode', 'prp_am_readonly', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -312,7 +322,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             _ = check_db_hdr_info(act, db_file_chk, interested_patterns, capsys)
 
 
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gfix(switches=['-shut','single', '-at', '20', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_properties', 'prp_shutdown_mode', 'prp_sm_single', 'prp_deny_new_attachments', '20', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -323,7 +333,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             src_guid = check_db_hdr_info(act, db_file_chk, interested_patterns, capsys)
 
 
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gfix(switches=['-online', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_properties', 'prp_online_mode', 'prp_sm_normal', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -332,7 +342,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             act.reset()
 
 
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gfix(switches=['-v', '-full', db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_repair', 'rpr_validate_db', 'rpr_full', 'dbname', db_file_chk], stderr = subprocess.STDOUT)).returncode
@@ -341,7 +351,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             act.reset()
 
 
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gbak(switches=['-b', db_file_dsn, db_file_fbk], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_backup', 'dbname', db_file_chk, 'bkp_file', db_file_fbk], stderr = subprocess.STDOUT)).returncode
@@ -350,7 +360,7 @@ def test_1(act: Action, tmp_file:Path, capsys):
             act.reset()
 
 
-            if utility == 'gfix':
+            if chk_mode == 'fb_util':
                 act.gbak(switches=['-rep', db_file_fbk, db_file_dsn], combine_output = True, io_enc = locale.getpreferredencoding())
             else:
                 svc_retcode = (subprocess.run( svc_call_starting_part + ['action_restore', 'dbname', db_file_chk, 'bkp_file', db_file_fbk, 'res_replace' ], stderr = subprocess.STDOUT)).returncode
