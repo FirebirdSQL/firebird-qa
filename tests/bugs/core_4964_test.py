@@ -97,7 +97,7 @@ def test_1(act: Action, tmp_user: User, capsys):
     #
     tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
     
-    # PermissionError: [Errno 13] Permission denied --> probably because
+    # Permiss. Error: [Errno 13] Permiss. denied --> probably because
     # Firebird was started by root rather than current (non-privileged) user.
     #
     tmp_fdb.write_bytes(act.db.db_path.read_bytes())
