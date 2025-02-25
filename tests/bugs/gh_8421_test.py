@@ -30,13 +30,14 @@ DESCRIPTION:
         good_ratios = [2.0357142857142856, 2.08187134502924, 1.9438202247191012, 2.066473988439306, 1.9713286713286713, 2.0503724725079815, 2.0278546712802767]
         stdev(good_ratios) = 0.05031744060704646
 NOTES:
-    [24.01.2025] pzotov
-    Commit that fixed problem:
+    [25.01.2025] pzotov
+    Commits that fixed problem:
         6.x: https://github.com/FirebirdSQL/firebird/commit/8d6c46e0e1f8eec374008e5ded6be119264ed3a6
+        5.x: https://github.com/FirebirdSQL/firebird/commit/00b699cc085278c26734bcfb4329d89a49d5d1e8
 
     Test executes for ~30s.
     Confirmed problem on 6.0.0.647-9fccb55.
-    Checked on intermediate snapshot: 6.0.0.652-58633c8.
+    Checked on intermediate snapshots: 6.0.0.652-58633c8 (24.02.2025); 5.0.3.1624-00b699c (25.02.2025)
 """
 
 from statistics import stdev
@@ -53,7 +54,7 @@ act = python_act('db')
 MAX_STD_DEV = 0.5
 #################
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.3')
 def test_1(act: Action, capsys):
     ddl_lst = []
     ddl_lst.extend(
