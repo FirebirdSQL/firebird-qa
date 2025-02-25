@@ -27,6 +27,9 @@ NOTES:
     3) Third database (defined by 'gh_8429_alias_c') must be encrypted in FB-6.x in order to reproduce bug.
     4) All databases are created here by explicit 'create_database()' call and their deletion does NOT perform.
        This was done intentionally in order to suppress appearance of any encryption-related errors that do not matter.
+    5) Method 'create_database()' uses LOCAL protocol if $QA_ROOT/firebir-driver.conf has no section [firebird.server.defaults]
+       It can be empty but it MUST present if we want database to be created using prefix 'inet://' for its DSN.
+       Because of that, encryption of db_file_c will be done at exclusive connection, see reduced indent for 'run_encr_decr()' call.
 
     Great thanks to Alex for provided scenario for this test (letter 10-feb-2025 20:43) ans lot of suggestions.
 
@@ -197,6 +200,11 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
 @pytest.mark.version('>=4.0.6')
 def test_1(act_a: Action, act_b: Action, act_c: Action, usr_x: User, usr_y: User, usr_z: User, capsys):
 
+    # ::: NB :::
+    # Encryption required for db_file_c in order to reproduce problem on FB 6.x
+    # Because of that, this DB can be inaccessibe something was wrong in previous run of this test.
+    # Thus we have to create all databases now (rather than use previously created):
+    #
     dbfile_a = get_filename_by_alias(act_a)
     dbfile_b = get_filename_by_alias(act_b)
     dbfile_c = get_filename_by_alias(act_c)
@@ -205,10 +213,14 @@ def test_1(act_a: Action, act_b: Action, act_c: Action, usr_x: User, usr_y: User
     dbfile_b.unlink(missing_ok = True)
     dbfile_c.unlink(missing_ok = True)
 
+    # ::: NB :::
+    # 'create_database()' will use LOCAL protocol if $QA_ROOT/firebir-driver.conf has no section [firebird.server.defaults]
+    # It can be empty but it MUST present if we want database to be created using prefix 'inet://' for its DSN.
+    #
     with create_database(act_a.db.db_path, user = act_a.db.user, password = act_a.db.password) as con_a, \
         create_database(act_b.db.db_path, user = act_b.db.user, password = act_b.db.password) as con_b, \
         create_database(act_c.db.db_path, user = act_c.db.user, password = act_c.db.password) as con_c:
-
+        
         sql = f"""        
             create procedure sp_a (a_who varchar(31)) returns (o_info varchar(512)) as
             begin
@@ -265,14 +277,13 @@ def test_1(act_a: Action, act_b: Action, act_c: Action, usr_x: User, usr_y: User
             if (s := x.strip()):
                 con_c.execute_immediate(s)
         con_c.commit()
-
-        ############################################
-        ###   E N C R Y P T    D A T A B A S E   ###
-        ############################################
-        run_encr_decr(act_c, 'encrypt', MAX_WAITING_ENCR_FINISH, capsys)
-
-        # ..................................................
-
+    # < close all connections
+    
+    ############################################
+    ###   E N C R Y P T    D A T A B A S E   ###
+    ############################################
+    # Run encryption. No concurrent connection must be here to db_file_c:
+    run_encr_decr(act_c, 'encrypt', MAX_WAITING_ENCR_FINISH, capsys)
 
     with act_a.db.connect() as con_a:
         cur = con_a.cursor()
