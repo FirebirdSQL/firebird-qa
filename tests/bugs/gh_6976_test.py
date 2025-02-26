@@ -21,7 +21,6 @@ FBTEST:      bugs.gh_6976
 
 NOTES:
     [20.07.2022] pzotov
-
     Bug reproduced on 4.0.1.2606 but only when it is tested just after 5.0.0.591.
     In that case firebird.log will have following messages:
 
@@ -48,7 +47,6 @@ NOTES:
         [localized message can be here]: "operation completed successfully"
 
     NB: time interval between 01:25:17 and 01:27:07 is exactly 110 seconds.
-
     On recent FB 4.x and 5.x median duration for delivering error to client must be about 80 ms.
     On 4.0.1.2606 this was about 640 ms (in case when it was tested without previous 5.x test).
 
@@ -56,12 +54,14 @@ NOTES:
     Recent FB build show that time to wait exception with expected gdscode = 335544344 must be
     less than 300 ms but it depends on ServerMode (for Classic it is about 2x more than for Super).
     Median value will be compared with THRESHOLD_FOR_MAKE_CONNECT_MS variable..
-
     Each attempt to connect top broken DB must bring stack with TWO gdscodes:
         isc_io_error = 335544344;
         isc_io_read_err = 335544736;
-
     Checked on Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730
+
+    [26.02.2025] pzotov
+    Increased valueTHRESHOLD_FOR_MAKE_CONNECT_MS for servermode = 'Super': on poor hardware
+    previous value was not enough. Problem appeared on 6.0.0.655, Windows 10, build 19045.3086.
 """
 
 import os
@@ -150,7 +150,7 @@ def try_cuted_off_db(act_source, act_broken, db_page_size, db_pages_cnt, cut_off
 @pytest.mark.platform('Windows')
 def test_1(act_source: Action, act_broken: Action, capsys):
 
-    THRESHOLD_FOR_MAKE_CONNECT_MS = 250 if 'classic' in act_source.vars['server-arch'].lower() else 100
+    THRESHOLD_FOR_MAKE_CONNECT_MS = 250 if 'classic' in act_source.vars['server-arch'].lower() else 150
 
     with act_source.db.connect() as con:
         db_page_size = con.info.page_size
