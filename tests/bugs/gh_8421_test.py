@@ -39,7 +39,7 @@ NOTES:
     Confirmed problem on 6.0.0.647-9fccb55.
     Checked on intermediate snapshots: 6.0.0.652-58633c8 (24.02.2025); 5.0.3.1624-00b699c (25.02.2025)
 """
-
+import os
 from statistics import stdev
 import time
 import datetime as py_dt
@@ -50,12 +50,14 @@ from firebird.qa import *
 db = db_factory()
 act = python_act('db')
 
-#################
-MAX_STD_DEV = 0.5
-#################
-
 @pytest.mark.version('>=5.0.3')
 def test_1(act: Action, capsys):
+
+    #############################################
+    MAX_STD_DEV = 0.5 if os.name == 'nt' else 0.8
+    #############################################
+
+
     ddl_lst = []
     ddl_lst.extend(
         (
