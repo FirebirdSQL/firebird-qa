@@ -29,7 +29,7 @@ expected_stdout = """
     gbak:adjusting the ONLINE and FORCED WRITES flags
 """
 
-@pytest.mark.version('>=5.0.3')
+@pytest.mark.version('>=6.0')
 def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
     zipped_fbk_file = zipfile.Path(act.files_dir / 'gh_8444.zip', at = 'gh_8444.fbk')
     tmp_fbk.write_bytes(zipped_fbk_file.read_bytes())
