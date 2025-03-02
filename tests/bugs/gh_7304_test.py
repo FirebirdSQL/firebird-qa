@@ -7,7 +7,7 @@ TITLE:       Events in system attachments (like garbage collector) are not trace
 DESCRIPTION:
     Test changes sweep interval to some low value (see SWEEP_GAP) and runs TX_COUNT transactions which
     lead difference between OST and OIT to exceed given sweep interval. These transactions are performed
-    by ISQL which is launched as child process. SQL script uses table with record that is locked at the 
+    by ISQL which is launched as child process. SQL script uses table with record that is locked at the
     beginning of script and execute block with loop of TX_COUNT statements which insert new records.
     After this loop finish, we make ISQL to hang by forcing it to update first record (see LOCKED_ROW).
     Then we change DB state to full shutdown and wait until ISQL will be terminated.
@@ -50,6 +50,11 @@ NOTES:
       (or - maybe - code that makes connection cleanup) does not know about it
       and tries to delete this anon cursor AGAIN when code finishes 'with' block.
       This attempt causes AV.
+
+   [02.03.2025] pzotov
+   Active trace session must present before DB state will be changed on online: call to srv.database.bring_online()
+   causes sweep itself, no need to establish one more connection. This change must fix unstable results on Linux.
+   Checked again on 5.0.0.731 (15.09.2022) and 5.0.0.733 (16.09.2022) -  Windows; 6.0.0.656 (Linux) - Linux.
 """
 
 import time
@@ -71,6 +76,7 @@ act = python_act('db', substitutions = [('\\(ATT_\\d+', '(ATT_N')])
 ################
 SWEEP_GAP = 100
 TX_COUNT = 150
+#TX_COUNT = 5000
 LOCKED_ROW = -1
 MAX_WAIT_FOR_ISQL_PID_APPEARS_MS = 5000
 WATCH_FOR_PTN = re.compile( r'\(ATT_\d+,\s+<Worker>,\s+NONE,\s+<internal>\)', re.IGNORECASE)
@@ -79,7 +85,7 @@ WATCH_FOR_PTN = re.compile( r'\(ATT_\d+,\s+<Worker>,\s+NONE,\s+<internal>\)', re
 tmp_sql = temp_file('tmp_2668.sql')
 tmp_log = temp_file('tmp_2668.log')
 
-@pytest.mark.es_eds
+@pytest.mark.trace
 @pytest.mark.version('>=5.0.0')
 def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
 
@@ -105,8 +111,9 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
         set bail on;
         connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
 
-        recreate table test(id int primary key);
+        recreate table test(id int primary key, s varchar(2000) unique);
         insert into test(id) values({LOCKED_ROW});
+        insert into test(id, s) select row_number()over(), lpad('', 2000, uuid_to_char(gen_uuid())) from rdb$types rows {TX_COUNT};
         commit;
 
         set transaction read committed WAIT;
@@ -118,9 +125,13 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
             declare v_role varchar(31);
         begin
             while (n > 0) do
+            begin
                 in autonomous transaction do
-                insert into test(id) values(:n)
-                returning :n-1 into n;
+                delete from test where id = :n;
+                n = n - 1;
+                --insert into test(id) values(:n)
+                -- returning :n-1 into n;
+            end
 
             v_role = left(replace( uuid_to_char(gen_uuid()), '-', ''), 31);
 
@@ -141,14 +152,14 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
         set heading off;
         select '-- shutdown me now --' from rdb$database;
     """
-    
+
     tmp_sql.write_text(test_script)
     with act.connect_server() as srv:
         ##############################
         ### reduce SWEEEP interval ###
         ##############################
         srv.database.set_sweep_interval(database = act.db.db_path, interval = SWEEP_GAP)
-        srv.database.set_write_mode(database=act.db.db_path, mode=DbWriteMode.ASYNC)
+        srv.database.set_write_mode(database=act.db.db_path, mode=DbWriteMode.SYNC)
 
         with open(tmp_log,'w') as f_log:
             p_work_sql = subprocess.Popen([act.vars['isql'], '-q', '-i', str(tmp_sql)], stdout = f_log, stderr = subprocess.STDOUT)
@@ -201,16 +212,14 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
             assert found_in_mon_tables, f'Could not find attachment in mon$ tables for {MAX_WAIT_FOR_ISQL_PID_APPEARS_MS} ms.'
 
             try:
-                ##############################################
-                ###   f u l l     s h u t d o w n    D B   ###
-                ##############################################
+                #############################################
+                ###   f u l l    s h u t d o w n    D B   ###
+                #############################################
                 srv.database.shutdown(database=act.db.db_path, mode=ShutdownMode.FULL,
                                       method=ShutdownMethod.FORCED, timeout=0)
             finally:
                 p_work_sql.terminate()
         # < with open(tmp_log,'w') as f_log
-
-        srv.database.bring_online(database=act.db.db_path)
 
     trace_options = \
         [
@@ -222,14 +231,26 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
             ,'log_sweep = true'
         ]
 
-    with act.trace(db_events = trace_options, encoding='utf8', encoding_errors='utf8'):
-        with act.db.connect() as con_for_sweep_start:
-            time.sleep(2)
+    act.trace_log.clear()
+    with act.trace(db_events = trace_options, encoding='utf8', encoding_errors='utf8'), \
+         act.connect_server() as srv:
+        # ################################
+        # This will cause AUTOSWEEP start:
+        # ################################
+        srv.database.bring_online(database=act.db.db_path)
 
-
+    num_found = 0
+    out_lst = []
     for line in act.trace_log:
         if WATCH_FOR_PTN.search(line):
-            print(WATCH_FOR_PTN.search(line).group())
+            out_lst.append( WATCH_FOR_PTN.search(line).group() )
+            num_found += 1
+
+    if num_found == 2:
+        print( '\n'.join( out_lst ) )
+    else:
+        print(f'ERROR: pattern "{WATCH_FOR_PTN}" was not found in any line of trace log:')
+        print( '\n'.join( act.trace_log ) )
 
     act.expected_stdout = """
         (ATT_N, <Worker>, NONE, <internal>)
