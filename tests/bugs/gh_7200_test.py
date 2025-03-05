@@ -1,3 +1,4 @@
+
 #coding:utf-8
 
 """
@@ -5,220 +6,136 @@ ID:          issue-7200
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7200
 TITLE:       DROP DATABASE lead FB to hang if it is issued while DB encrypting/decrypting is in progress
 DESCRIPTION:
-  Test creates database that will be droppped MANUALLY (i.e. by this test itself, not by fixture).
-  This database will contain table with wide indexed column and add some data to it, and its FW will be set to ON.
-  Volume of data must be big enough so that the encryption thread will not complete instantly.
+    Test does exactly what is described in the ticket: creates DB, does not add anydata to it, runs encryption
+    ('alter database encrypt ...' using fbSampleDbCrypt plugin) and *immediately* attempts to drop this DB.
+    Only encryption is checked (i.e. no decrypt).
 
-  Then 'ALTER DATABASE ENCRYPT...' is issued by ISQL which is launched ASYNCHRONOUSLY, and we start
-  loop with query: 'select mon$crypt_state from mon$database'.
-  As far as query will return column mon$crypt_state = 3 ("is encrypting") - we break from loop and try to DROP database.
-  Attempt to drop database during incompleted (running) encryption must raise exception:
-      lock time-out on wait transaction
-      -object is in use
-  Test verifies that this exception actually raises (i.e. this is EXPECTED behaviour).
+    The key issue: no delay must be added between encryption command and drop DB attempt.
+    Problem can be reproduced on snapshot 4.0.1.2692 (at least on Windows): FB hangs.
+    After this bug was fixed, client received exception:
+        SQLSTATE = 42000 / unsuccessful metadata update / -object DATABASE is in use
+    - and terminates itself (without need to do this forcibly via subprocess terminate() call).
+    
+    But it must be remembered that encryption command works in asynchronous mode, so it can be the case when
+    DROP database starts to execute *before* encryption thread, as it was noted by Alex:
+        https://github.com/FirebirdSQL/firebird/issues/7200#issuecomment-1147672310
+    This means that client can get NO exception at all and database will be 'silently' dropped eventually.
+    Because of this, we must *not* wait for exception delivering to client and check its presense.
+    Rather, we must only to ensure that client can make some FURTHER actions after DROP command, e.g.
+    it can try to create ANOTHER database.
+    This caused us to use TWO databases for this test: one for purpose to check ability to DROP it and second
+    to ensure that client does not hang and can do something after finish with first DB (see 'act1' and 'act2').
+    Both databases are created and dropped 'manually', i.e. w/o fixture.
 
-  ::: NB ::: 03-mar-2023.
-  We have to run second ISQL for DROP DATABASE (using 'act_tmp.isql(...)' for that).
-  Attempt to use drop_database() of class Connection behaves strange on Classic: it does not return exception 'obj in use'
-  and silently allows code to continue. The reason currently is unknown. To be discussed with pcisar/alex et al.
+    Summary, the test should check two things:
+    1) self-termination of client process for reasonable time (see setting MAX_WAIT_FOR_ISQL_TERMINATE);
+    2) ability of client to create another DB after the one that was dropped.
+    Code related to these requirements operates with 'EXPECTED_MSG_1' and 'EXPECTED_MSG_2' variables: we check in
+    stdout presense of the text which they store.
 
 NOTES:
     [03.03.2023] pzotov
-    0. On SuperServer FB 4.0.2.2772 hanged. On Classic another problem did exist: DROP DATABASE could start only after encryption
-       completed (i.e. until value MON$CRYPT_STATE will not changed from 3 to 1).
-    1. Settings for encryption are taken from act.files_dir/'test_config.ini' file.
+    1. Settings for encryption are taken from act.files_dir/test_config.ini file.
     2. We have to avoid usage of act_tmp.db.drop_database() because it suppresses any occurring exception.
-    3. Confirmed problem on 4.0.2.2772 SS (02-jun-2022), 5.0.0.236 SS (30-sep-2021) - test hangs.
-       ::: NB :::
-       FB 5.x seems to be escaped this problem much earlier than FB 4.x. Build 5.0.0.240 (01-oct-2021) altready NOT hangs.
-       Checked on 5.0.0.961 SS, 4.0.3.2903 SS - all fine.
 
-    [07.12.2023] pzotov
-    Increased number of inserted rows (from 100'000 to 200'000) and indexed column width (from 700 to 800).
-    Otherwise test could fail because encryption thread completes too fast (encountered under Linux).
-    Loop that checks for appearance of encryption state = 3 must have delay much less than one second (changed it from 1 to 0.1).
-
-    [18.01.2025] pzotov
-    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
-    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
-    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
-    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
-    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+    Checked on Linux: 6.0.0.660; 5.0.3.1628; 4.0.6.3190 (SS and CS).
+    Checked on Windows: 6.0.0.658; 5.0.3.1624; 4.0.6.3189 (SS).
 """
 
-import datetime as py_dt
 from pathlib import Path
 import subprocess
 import time
-from datetime import datetime as dt
 
 import pytest
 from firebird.qa import *
-from firebird.driver import DatabaseError, tpb, Isolation, TraLockResolution, DatabaseError
+from firebird.driver import DatabaseError
 
-FLD_LEN =   800
-N_ROWS = 200000
-MAX_WAIT_FOR_ENCRYPTION_START_MS = 30000
+#########################
+###  S E T T I N G S  ###
+#########################
 
-# Value in mon$crypt_state for "Database is currently encrypting"
-IS_ENCRYPTING_STATE = 3
+MAX_WAIT_FOR_ISQL_TERMINATE = 5
 
-db = db_factory(page_size = 16384)
-tmp_fdb = db_factory(filename = 'tmp_gh_7200.tmp.fdb')
-tmp_sql = temp_file(filename = 'tmp_gh_7200.tmp.sql')
-tmp_log = temp_file(filename = 'tmp_gh_7200.tmp.log')
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings from $QA_ROOT/test_config.ini:
+enc_settings = QA_GLOBALS['encryption']
 
-act = python_act('db', substitutions=[('[ \t]+', ' ')])
-act_tmp = python_act('tmp_fdb', substitutions=[ ('[ \t]+', ' '), ('-object .* is in use', '-object is in use'), ('(After|(-)?At) line \\d+.*', '') ])
+encryption_plugin = enc_settings['encryption_plugin'] # fbSampleDbCrypt
+encryption_holder  = enc_settings['encryption_holder'] # fbSampleKeyHolder
+encryption_key = enc_settings['encryption_key'] # Red
 
+EXPECTED_MSG_1 = f'EXPECTED: ISQL process has terminated for less than {MAX_WAIT_FOR_ISQL_TERMINATE} second(s).'
+EXPECTED_MSG_2 = "EXPECTED: script could continue after 'DROP DATABASE'"
+
+db1 = db_factory(filename = 'tmp_gh_7200.tmp.fdb', do_not_create = True, do_not_drop = True)
+db2 = db_factory(filename = 'tmp_gh_7200.tmp2.fdb', do_not_create = True, do_not_drop = True)
+
+act1 = python_act('db1', substitutions = [('[ \t]+', ' '), ('^((?!(EXPECTED:|ISQL_LOG:)).)*$', '')])
+act2 = python_act('db2')
+
+tmp_run_encrypt_sql = temp_file(filename = 'tmp_gh_7200-run-encr.sql')
+tmp_run_encrypt_log = temp_file(filename = 'tmp_gh_7200-run-encr.log')
 
 @pytest.mark.encryption
-@pytest.mark.version('>=4.0.2')
-def test_1(act: Action, act_tmp: Action, tmp_sql: Path, tmp_log: Path, capsys):
+@pytest.mark.version('>=4.0.1')
+def test_1(act1: Action, act2: Action, tmp_run_encrypt_sql: Path, tmp_run_encrypt_log: Path, capsys):
 
-    init_sql = f"""
-        recreate table test(s varchar({FLD_LEN}));
-        commit;
-        set term ^;
-        execute block as
-            declare n int = {N_ROWS};
-        begin
-            while (n>0) do
-            begin
-                insert into test(s) values(lpad('', {FLD_LEN}, uuid_to_char(gen_uuid())));
-                n = n - 1;
-            end
-        end
-        ^
-        -- for debug, trace must be started with log_proc = true:
-        create procedure sp_debug (a_point varchar(50)) as
-        begin
-            -- nop --
-        end
-        ^
-        set term ;^
-        commit;
-        create index test_s on test(s);
+
+    act1.db.db_path.unlink(missing_ok = True)
+    act2.db.db_path.unlink(missing_ok = True)
+
+    sttm = f"""
+        set list on;
+        create database '{act1.db.dsn}';
+        alter database encrypt with "{encryption_plugin}" key "{encryption_key}";
+        drop database;
+        rollback;
+        create database '{act2.db.dsn}';
+        select iif(mon$database_name containing '{act2.db.db_path}', q'[{EXPECTED_MSG_2}]', 'UNEXPECTED value of mon$database_name = ' || mon$database_name) as " " from mon$database;
     """
-    act_tmp.isql(switches=['-q'], input = init_sql, combine_output = True)
-    assert act_tmp.clean_stdout == ''
-    act_tmp.reset()
+    tmp_run_encrypt_sql.write_bytes(sttm.encode('utf-8'))
 
-    #############################################
-    ###   c h a n g e     F W    t o    O N   ###
-    #############################################
-    act_tmp.db.set_sync_write()
-
-
-    # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
-    # from act.files_dir/'test_config.ini':
-    enc_settings = QA_GLOBALS['encryption']
-
-    encryption_plugin = enc_settings['encryption_plugin'] # fbSampleDbCrypt
-    encryption_holder  = enc_settings['encryption_holder'] # fbSampleKeyHolder
-    encryption_key = enc_settings['encryption_key'] # Red
-
-    sttm = f'alter database encrypt with "{encryption_plugin}" key "{encryption_key}";'
-    tmp_sql.write_bytes(sttm.encode('utf-8'))
-
-    with tmp_log.open('w') as f_log:
-       
-        p = subprocess.Popen( [ act_tmp.vars['isql'],
+    with tmp_run_encrypt_log.open('w') as f_log:
+        p_isql_encr = subprocess.Popen( [ act1.vars['isql'],
                                 '-q',
-                                '-user', act_tmp.db.user,
-                                '-password', act_tmp.db.password,
-                                act_tmp.db.dsn,
-                                '-i', tmp_sql
-                              ], 
+                                '-user', act1.db.user,
+                                '-password', act1.db.password,
+                                '-i', tmp_run_encrypt_sql
+                              ],
                               stdout = f_log, stderr = subprocess.STDOUT
                             )
-    
-        encryption_started = False
-        with act_tmp.db.connect() as con_watcher:
-            
-            ps, rs = None, None
+
+        time.sleep(1)
+        if p_isql_encr:
             try:
-                custom_tpb = tpb(isolation = Isolation.SNAPSHOT, lock_timeout = -1)
-                tx_watcher = con_watcher.transaction_manager(custom_tpb)
-                cur_watcher = tx_watcher.cursor()
+                p_isql_encr.wait(MAX_WAIT_FOR_ISQL_TERMINATE)
+                print(EXPECTED_MSG_1)
+                with tmp_run_encrypt_log.open('r') as f_log:
+                    isql_log = f_log.read()
+                if EXPECTED_MSG_2 in isql_log:
+                    print(EXPECTED_MSG_2)
+                else:
+                    # Statement failed, SQLSTATE = 42000
+                    # unsuccessful metadata update
+                    # -object DATABASE is in use
+                    for line in isql_log.splitlines():
+                        if line.split():
+                            print(f'ISQL_LOG: {line}')
 
-                # 0 = non-encrypted; 1 = encrypted; 2 = is DEcrypting; 3 - is Encrypting
-                ps = cur_watcher.prepare('select mon$crypt_state from mon$database')
+            except subprocess.TimeoutExpired:
+                p_isql_encr.terminate()
+                print(f'UNEXPECTED: ISQL process WAS NOT completed in {MAX_WAIT_FOR_ISQL_TERMINATE=} second(s) and was forcibly terminated.')
 
-                i = 0
-                da = dt.now()
-                while True:
-                    # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
-                    # We have to store result of cur.execute(<psInstance>) in order to
-                    # close it explicitly.
-                    # Otherwise AV can occur during Python garbage collection and this
-                    # causes pytest to hang on its final point.
-                    # Explained by hvlad, email 26.10.24 17:42
-                    rs = cur_watcher.execute(ps)
-                    for r in rs:
-                        db_crypt_state = r[0]
+    try:
+        act1.db.db_path.unlink(missing_ok = True)
+    except PermissionError as e:
+        print(f'UNEXPECTED: Could not remove file {act1.db.db_path}')
+        print(f'UNEXPECTED: {e.__class__=}, {e.errno=}')
 
-                    tx_watcher.commit()
-                    db = dt.now()
-                    diff_ms = (db-da).seconds*1000 + (db-da).microseconds//1000
-                    if db_crypt_state == IS_ENCRYPTING_STATE:
-                        encryption_started = True
-                        cur_watcher.call_procedure('sp_debug', ('encryption_started',))
-                        break
-                    elif diff_ms > MAX_WAIT_FOR_ENCRYPTION_START_MS:
-                        break
-                    time.sleep(0.1)
+    act2.db.db_path.unlink(missing_ok = True)
 
-            except DatabaseError as e:
-                print( e.__str__() )
-                print(e.gds_codes)
-            finally:
-                if rs:
-                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
-                if ps:
-                    ps.free()
-
-        assert encryption_started, f'Could not find start of encryption process for {MAX_WAIT_FOR_ENCRYPTION_START_MS} ms.'
-
-        #-----------------------------------------------------------------
-
-        drop_db_when_running_encryption_sql = f"""
-            set list on;
-            select mon$crypt_state from mon$database;
-            commit;
-            set echo on;
-            DROP DATABASE;
-            set echo off;
-            select lower(rdb$get_context('SYSTEM', 'DB_NAME')) as db_name from rdb$database;
-        """
-        tmp_sql.write_text(drop_db_when_running_encryption_sql)
-
-        drop_db_expected_stdout = f"""
-            MON$CRYPT_STATE {IS_ENCRYPTING_STATE}
-            DROP DATABASE;
-            Statement failed, SQLSTATE = 42000
-            unsuccessful metadata update
-            -object is in use
-            set echo off;
-            DB_NAME {str(act_tmp.db.db_path).lower()}
-        """
-
-        act_tmp.expected_stdout = drop_db_expected_stdout
-
-        # Get current state of encryption (again, just for additional check)
-        # and attempt to DROP database:
-        ###############################
-        act_tmp.isql(switches=['-q', '-n'], input_file = tmp_sql, combine_output=True)
-
-        # If following assert fails then act_tmp.db.db_path was unexpectedly removed from disk:
-        assert act_tmp.clean_stdout == act_tmp.clean_expected_stdout
-        act_tmp.reset()
-
-    #< with tmp_log.open('w') as f_log
-
-    #with tmp_log.open('r') as f:
-    #    print(f.read())
-    #
-    #act.expected_stdout = ''
-    #act.stdout = capsys.readouterr().out
-    #assert act.clean_stdout == act.clean_expected_stdout
+    act1.expected_stdout = f"""
+        {EXPECTED_MSG_1}
+        {EXPECTED_MSG_2}
+    """
+    act1.stdout = capsys.readouterr().out
+    assert act1.clean_stdout == act1.clean_expected_stdout
