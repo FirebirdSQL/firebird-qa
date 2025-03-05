@@ -129,7 +129,9 @@ def test_1(act: Action, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
     if not found_in_trc_list:
         print('Check result of fbsvcmgr action_trace_list:')
         with tmp_trace_log.open('r') as f:
-            print(f.read())
+            trace_lines = [ x for x in f.read().splitlines() if x.split() ]
+            for i, x in enumerate(trace_lines):
+                print(f'line {i}, length = {len(x.rstrip())}: >' + x.rstrip() + '<')
 
     act.expected_stdout = f"""
         {EXPECTED_MSG1}
