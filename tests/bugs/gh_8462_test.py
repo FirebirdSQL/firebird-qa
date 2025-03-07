@@ -20,7 +20,7 @@ tmp_role = role_factory('db', name = 'role_8462')
 
 act = python_act('db')
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=5.0.3')
 def test_1(act: Action, tmp_user: User, tmp_role: Role):
 
     test_sql = f"""
