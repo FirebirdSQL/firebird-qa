@@ -63,7 +63,7 @@ from datetime import datetime as dt
 import re
 from pathlib import Path
 from difflib import unified_diff
-from firebird.driver import DatabaseError, tpb, Isolation, TraLockResolution, DbWriteMode, ShutdownMode, ShutdownMethod
+from firebird.driver import DatabaseError, tpb, Isolation, DbWriteMode, ShutdownMode, ShutdownMethod
 
 import pytest
 from firebird.qa import *
@@ -159,7 +159,7 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
         ### reduce SWEEEP interval ###
         ##############################
         srv.database.set_sweep_interval(database = act.db.db_path, interval = SWEEP_GAP)
-        srv.database.set_write_mode(database=act.db.db_path, mode=DbWriteMode.SYNC)
+        srv.database.set_write_mode(database = act.db.db_path, mode = DbWriteMode.SYNC)
 
         with open(tmp_log,'w') as f_log:
             p_work_sql = subprocess.Popen([act.vars['isql'], '-q', '-i', str(tmp_sql)], stdout = f_log, stderr = subprocess.STDOUT)
@@ -232,12 +232,24 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
         ]
 
     act.trace_log.clear()
-    with act.trace(db_events = trace_options, encoding='utf8', encoding_errors='utf8'), \
-         act.connect_server() as srv:
+
+    #with act.trace(db_events = trace_options, encoding='utf8', encoding_errors='utf8'), \
+    #     act.connect_server() as srv:
+    #    # ################################
+    #    # This will cause AUTOSWEEP start:
+    #    # ################################
+    #    srv.database.bring_online(database=act.db.db_path)
+
+    fblog_1 = act.get_firebird_log()
+    with act.trace(db_events = trace_options, encoding='utf8', encoding_errors='utf8'):
         # ################################
         # This will cause AUTOSWEEP start:
         # ################################
-        srv.database.bring_online(database=act.db.db_path)
+        #srv.database.bring_online(database=act.db.db_path)
+        act.gfix(switches=['-online', act.db.dsn])
+
+    time.sleep(1) # Allow content of firebird log be fully flushed on disk.
+    fblog_2 = act.get_firebird_log()
 
     num_found = 0
     out_lst = []
@@ -249,8 +261,29 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
     if num_found == 2:
         print( '\n'.join( out_lst ) )
     else:
-        print(f'ERROR: pattern "{WATCH_FOR_PTN}" was not found in any line of trace log:')
-        print( '\n'.join( act.trace_log ) )
+        print(f'ERROR: pattern "{WATCH_FOR_PTN}" was not found in any line of trace.')
+        print('\nCheck trace log:')
+        for line in act.trace_log:
+            if (s := line.strip() ):
+                print(s)
+
+
+        # Sweep is started by SWEEPER
+        # Database "C:\TEMP\PYTEST\TEST_10\TEST.FDB" 
+        # OIT 8, OAT 167, OST 167, Next 168
+        # Sweep is finished
+        # Database "C:\TEMP\PYTEST\TEST_10\TEST.FDB" 
+        # 2 workers, time 0.047 sec 
+        # OIT 168, OAT 169, OST 169, Next 170
+	    
+        fb_log_diff_patterns = [r'Sweep(\s+is)?\s+(started|finished)', r'Database\s+', r'OIT\s+\d+,\s+OAT\s+\d+,\s+OST\s+\d+,\s+Next\s+\d+', r'\d+ worker(s)?,\s+time']
+        fb_log_diff_patterns = [re.compile(s, re.IGNORECASE) for s in fb_log_diff_patterns]
+        print('\nCheck diff in firebird.log:')
+        for line in unified_diff(fblog_1, fblog_2):
+            if line.startswith('+'):
+                if act.match_any(line, fb_log_diff_patterns):
+                    print(line.split('+')[-1])
+
 
     act.expected_stdout = """
         (ATT_N, <Worker>, NONE, <internal>)
