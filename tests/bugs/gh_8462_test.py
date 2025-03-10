@@ -8,7 +8,7 @@ DESCRIPTION:
 NOTES:
     [07.03.2025] pzotov
     Confirmed issue on 6.0.0.658.
-    Checked on 6.0.0.660-6cbd3aa -- all OK.
+    Checked on 6.0.0.660-6cbd3aa; 5.0.3.1630-81e0de9; 4.0.6.3190 -- all OK.
 """
 
 import pytest
@@ -20,7 +20,7 @@ tmp_role = role_factory('db', name = 'role_8462')
 
 act = python_act('db')
 
-@pytest.mark.version('>=5.0.3')
+@pytest.mark.version('>=4.0.6')
 def test_1(act: Action, tmp_user: User, tmp_role: Role):
 
     test_sql = f"""
