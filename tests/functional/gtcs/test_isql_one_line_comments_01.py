@@ -8,7 +8,7 @@ DESCRIPTION:
     https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/CF_ISQL_19.script
 NOTES:
     [12.03.2025] pzotov
-    Checked on 6.0.0.660; 5.0.3.1630; 4.0.6.3190; 3.0.13.33798
+    Checked on 6.0.0.660; 5.0.3.1630; 4.0.6.3190; 3.0.13.33798.
 """
 
 import pytest
