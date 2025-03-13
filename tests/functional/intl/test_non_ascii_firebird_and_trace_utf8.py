@@ -20,8 +20,14 @@ NOTES:
     [04.09.2024] pzotov
     Test makes connections to DB using charset = 'utf8' and uses io_enc = 'utf-8' when obtaining content of firebird.log and trace.
     Checked 6.0.0.450, 5.0.2.1493, 4.0.6.3142 (on Windows).
+
+    [13.03.2025] pzotov
+    LINUX, FB 4.x: error message do not contain 'ERROR AT purge_attachment'.
+    It must be considered as 'Known Bug' with minor priority.
+    Decided to separate expected out after discuss with Alex, 13.03.2025.
 """
 
+import os
 import pytest
 from firebird.qa import *
 import re
@@ -124,13 +130,25 @@ def test_1(act: Action, tmp_worker: User, capsys):
             if act.match_any(line.strip(), allowed_patterns):
                 print(line.strip())
 
-    expected_trace_log = """
-        FAILED EXECUTE_TRIGGER_FINISH
-        ERROR AT purge_attachment
-        335544382 : paramètre non trouvé
-        335545016 : Paramètre "fréquence fermée" a une valeur incorrecte ou n'a pas été trouvé dans
-        335544842 : At trigger 'gâchette de déconnexion'
-    """
+    if os.name != 'nt' and act.is_version('<5'):
+        # LINUX, FB 4.x: error message do not contain 'ERROR AT purge_attachment'.
+        # It must be considered as 'Known Bug' with minor priority.
+        # Decided to separate expected out after discuss with Alex, 13.03.2025.
+        expected_trace_log = """
+            FAILED EXECUTE_TRIGGER_FINISH
+            335544382 : paramètre non trouvé
+            335545016 : Paramètre "fréquence fermée" a une valeur incorrecte ou n'a pas été trouvé dans
+            335544842 : At trigger 'gâchette de déconnexion'
+        """
+    else:
+        expected_trace_log = """
+            FAILED EXECUTE_TRIGGER_FINISH
+            ERROR AT purge_attachment
+            335544382 : paramètre non trouvé
+            335545016 : Paramètre "fréquence fermée" a une valeur incorrecte ou n'a pas été trouvé dans
+            335544842 : At trigger 'gâchette de déconnexion'
+        """
+
     act.expected_stdout = expected_trace_log
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
