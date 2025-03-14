@@ -14,6 +14,9 @@ NOTES:
         ("Replace 'upper' with 'nearest' rounding for the user-specified page size").
         Now, if we specify page_size = 16383 then actual page size must be 16384 (previously it was 8192).
         Checked on 6.0.0.663-d7a0e69 (letter from dimitr, 12.03.2025 19:52).
+    [13.03.2025] pzotov
+        Changed expected out for 6.x after fixed https://github.com/FirebirdSQL/firebird/issues/8470.
+        Question about 'page size NULL' and 'page size DEFAULT' not yet resolved: whether they allowed or no.
 """
 
 import pytest
@@ -323,67 +326,35 @@ def test_1(act: Action, capsys):
     else:
         expected_stdout = """
             create database ... page_size 9223372036854775809 default character set win1251
-            Statement failed, SQLSTATE = 42000
-            Dynamic SQL Error
-            -SQL error code = -104
-            -Token unknown
-            -9223372036854775809
+            DB created. Actual page_size: 32768
             create database ... page_size 9223372036854775809
             DB created. Actual page_size: 32768
             create database ... page_size 9223372036854775808 default character set win1251
-            Statement failed, SQLSTATE = 42000
-            Dynamic SQL Error
-            -SQL error code = -104
-            -Token unknown
-            -9223372036854775808
+            DB created. Actual page_size: 32768
             create database ... page_size 9223372036854775808
             DB created. Actual page_size: 32768
             create database ... page_size 9223372036854775807 default character set win1251
-            Statement failed, SQLSTATE = 42000
-            Dynamic SQL Error
-            -SQL error code = -104
-            -Token unknown
-            -9223372036854775807
+            DB created. Actual page_size: 32768
             create database ... page_size 9223372036854775807
             DB created. Actual page_size: 32768
             create database ... page_size 4294967297 default character set win1251
-            Statement failed, SQLSTATE = 42000
-            Dynamic SQL Error
-            -SQL error code = -104
-            -Token unknown
-            -4294967297
+            DB created. Actual page_size: 32768
             create database ... page_size 4294967297
             DB created. Actual page_size: 32768
             create database ... page_size 4294967296 default character set win1251
-            Statement failed, SQLSTATE = 42000
-            Dynamic SQL Error
-            -SQL error code = -104
-            -Token unknown
-            -4294967296
+            DB created. Actual page_size: 32768
             create database ... page_size 4294967296
             DB created. Actual page_size: 32768
             create database ... page_size 4294967295 default character set win1251
-            Statement failed, SQLSTATE = 42000
-            Dynamic SQL Error
-            -SQL error code = -104
-            -Token unknown
-            -4294967295
+            DB created. Actual page_size: 32768
             create database ... page_size 4294967295
             DB created. Actual page_size: 32768
             create database ... page_size 2147483649 default character set win1251
-            Statement failed, SQLSTATE = 42000
-            Dynamic SQL Error
-            -SQL error code = -104
-            -Token unknown
-            -2147483649
+            DB created. Actual page_size: 32768
             create database ... page_size 2147483649
             DB created. Actual page_size: 32768
             create database ... page_size 2147483648 default character set win1251
-            Statement failed, SQLSTATE = 42000
-            Dynamic SQL Error
-            -SQL error code = -104
-            -Token unknown
-            -2147483648
+            DB created. Actual page_size: 32768
             create database ... page_size 2147483648
             DB created. Actual page_size: 32768
             create database ... page_size 2147483647 default character set win1251
