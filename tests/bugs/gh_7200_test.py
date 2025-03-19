@@ -84,13 +84,17 @@ def test_1(act1: Action, act2: Action, tmp_run_encrypt_sql: Path, tmp_run_encryp
     act2.db.db_path.unlink(missing_ok = True)
 
     sttm = f"""
-        set list on;
         create database '{act1.db.dsn}';
         alter database encrypt with "{encryption_plugin}" key "{encryption_key}";
         drop database;
         rollback;
         create database '{act2.db.dsn}';
-        select iif(mon$database_name containing '{act2.db.db_path}', q'[{EXPECTED_MSG_2}]', 'UNEXPECTED value of mon$database_name = ' || mon$database_name) as " " from mon$database;
+        set headinf off;
+        select iif(  mon$database_name containing '{act2.db.db_path}'
+                    ,q'[{EXPECTED_MSG_2}]'
+                    ,'UNEXPECTED value of mon$database_name = ' || mon$database_name
+                  ) as result_for_check from mon$database
+        ;
     """
     tmp_run_encrypt_sql.write_bytes(sttm.encode('utf-8'))
 
