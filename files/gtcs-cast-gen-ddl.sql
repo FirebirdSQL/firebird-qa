@@ -391,6 +391,7 @@ commit;
 
 -- set heading off;
 set bail off;
-set list on;
-select txt as " " from sp_gen_code;
+set list off;
+set heading off;
+select txt from sp_gen_code;
 commit;
