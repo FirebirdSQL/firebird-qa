@@ -444,6 +444,9 @@ def get_replication_log(a: Action):
 @pytest.mark.version('>=4.0.1')
 def test_1(act_db_main: Action,  act_db_repl: Action, tmp_oltp_build_sql: Path, tmp_oltp_build_log: Path, capsys):
 
+    if act_db_main.is_version('>=6.0'):
+        pytest.skip('Since #8473 empty columns not allowed')
+
     tmp_oltp_sql_files = []
     
     out_prep, out_init, out_main, out_drop = '', '', '', ''
