@@ -302,6 +302,7 @@ test_expected_stdout = """
 test_expected_stderr = ""
 tmp_init_run = temp_file('tmp_cast_misc_datatypes_autogen.sql')
 
+@pytest.mark.skip("DUPLICATES test_cast_datatypes.py")
 @pytest.mark.version('>=3.0.6')
 def test_1(act: Action, tmp_init_run: Path):
 
