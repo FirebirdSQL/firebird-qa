@@ -272,7 +272,7 @@ expected_stdout = """
     varchar(30)_float               80.445 
     varchar(30)_int                 -2147483648 
     varchar(30)_nchar(30)           81985529216487135 
-    varchar(30)_numeric(5,2)        80.45 
+    varchar(30)_numeric(5,2)        80.45
     varchar(30)_smallint            32767 
     varchar(30)_time                01:02:03.4560 
 """
@@ -280,28 +280,13 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
     
-    sql_gen_ddl = act.files_dir / 'gtcs-cast-gen-ddl.sql'
-
-    act.expected_stderr = ' ' # Need to add a space symbol as an expected error to prevent raising of the exception "ISQL execution failed"
-
-    act.isql(switches=['-q'], input_file=sql_gen_ddl)
+    act.isql(switches=['-q'], input_file = act.files_dir / 'gtcs-cast-gen-ddl.sql')
     init_script = act.stdout
     init_err = act.stderr
-
+    assert init_err == ''
     act.reset()
     
     act.expected_stdout = expected_stdout
-    act.expected_stderr = ' ' # Need to add a space symbol as an expected error to prevent raising of the exception "ISQL execution failed"
-
-    act.isql(switches=['-q'], input=init_script)
-    cast_err = act.stderr
-    
+    act.isql(switches=['-q'], input = init_script, combine_output= True)
     assert act.clean_stdout == act.clean_expected_stdout
-   
-    for err in ((init_err, 'init'), (cast_err, 'cast_err')):
-        for line in err[0].split('\n'):
-            if line.split():
-                print('UNEXPECTED OUTPUT in ' + err[1] + ': ' + line, file=sys.stderr)
-
-    act.stderr = capsys.readouterr().err
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.reset()
