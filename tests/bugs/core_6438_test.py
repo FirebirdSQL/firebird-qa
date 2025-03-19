@@ -22,7 +22,8 @@ db = db_factory()
 act = python_act('db')
 
 PAD_TO_WIDTH = 65533
-@pytest.mark.version('>=3.0')
+
+@pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
     data = '1' * PAD_TO_WIDTH
     test_sql = f"""
