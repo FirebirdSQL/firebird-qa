@@ -2,9 +2,30 @@
 
 """
 ID:          gtcs.cast-datatypes
-TITLE:       GTCS/tests/PROC_CAST1_ISQL.script ... PROC_CAST10_ISQL.script
+TITLE:       Check result or CAST() for misc agruments // from GTCS.
 DESCRIPTION: 
-FBTEST:      functional.gtcs.cast-datatypes
+    Original tests see in:
+    https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROC_CAST1_ISQL.script
+    https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROC_CAST2_ISQL.script
+    ...
+    https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/PROC_CAST10_ISQL.script
+
+    This test uses pre-created script ( <QA_ROOT>/files/gtcs-cast-gen-ddl.sql ) which produces
+    syntactically correct SQL code for further applying against test DB. This auto-generated
+    SQL code contains of lot of 'CREATE PROCEDURE' statements which create stored procedures
+    with accepting single input parameter and making cast of this argument to other type and 
+    returning it to caller. All possible combinations of datatypes are covered in such manner.
+    Cast is performed mostly IMPLICITLY, with exception for DATE/TIME literals such as 'TODAY',
+    'TOMORROW' and 'YESTERDAY'.
+    Names of auto-generated stored procedures have form '<FromDatatype>_<ToDatatype>', e.g.:
+        create or alter procedure "bigint_char(10)" ( a bigint )
+        returns ( b char(10) ) as
+        begin
+            b = 1608.90*a/100.00;
+            suspend;
+        end
+NOTES:
+    Checked on 4.0.1.2692.
 """
 
 import pytest
