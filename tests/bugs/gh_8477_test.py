@@ -9,6 +9,9 @@ NOTES:
     [19.03.2025] pzotov
     Confirmed bug (wrong data in 'error_sum' field) on 6.0.0.680-90d2983 (18-mar-2025 20:23).
     Checked on intermediate snapshot 6.0.0.680-9178ee6 (19-mar-2025 15:23) -- all fine.
+
+    [20.03.2025] pzotov
+    Checked on 5.0.3.1633-25a0817, 4.0.6.3192-91e3c11; reduced min_version to '4.0.6'.
 """
 
 import pytest
@@ -72,7 +75,7 @@ expected_stdout = """
     LIKE_ERROR_SUM 150
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=4.0.6')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
