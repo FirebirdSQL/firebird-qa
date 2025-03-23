@@ -7,6 +7,11 @@ TITLE:       Unnecessary index scan happens when the same index is mapped to bot
 DESCRIPTION:
 JIRA:        CORE-1550
 FBTEST:      bugs.core_1550_postfix
+NOTES:
+    [23.03.2025] pzotov
+    Separated output because plans differ on 6.x vs previous versions since commit fc12c0ef
+    ("Unnest IN/ANY/EXISTS subqueries and optimize them using semi-join algorithm (#8061)").
+    Checked on 6.0.0.687-730aa8f; 5.0.3.1633-25a0817 
 """
 
 import pytest
@@ -71,17 +76,23 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    PLAN (D ORDER TD_PK)
-    PLAN (M NATURAL)
-
-    PLAN (D ORDER TD_F01_F02_UNQ)
-    PLAN (M NATURAL)
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+    if act.is_version('<6'):
+        expected_stdout = """
+            PLAN (D ORDER TD_PK)
+            PLAN (M NATURAL)
+
+            PLAN (D ORDER TD_F01_F02_UNQ)
+            PLAN (M NATURAL)
+        """
+    else:
+        expected_stdout = """
+            PLAN HASH (M NATURAL, D ORDER TD_PK)
+            PLAN HASH (M NATURAL, D ORDER TD_F01_F02_UNQ)
+        """
+
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
