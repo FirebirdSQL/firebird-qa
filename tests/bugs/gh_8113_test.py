@@ -43,6 +43,7 @@ def test_1(act: Action, capsys):
     nat_reads = {}
     with act.db.connect() as con:
         cur = con.cursor()
+
         cur.execute("select rdb$relation_id from rdb$relations where rdb$relation_name = upper('test')")
         src_relation_id = cur.fetchone()[0]
         nat_reads[src_relation_id] = 0
@@ -51,7 +52,7 @@ def test_1(act: Action, capsys):
             if x_table.table_id == src_relation_id:
                 nat_reads[src_relation_id] = -x_table.sequential
 
-        cur.execute(f"select /* trace_tag */ x from v_test where x = {UNION_MEMBERS_CNT-1}")
+        cur.execute(f"select /* trace_me */ x from v_test where x = {UNION_MEMBERS_CNT-1}")
         data = cur.fetchall()
 
         for x_table in con.info.get_table_access_stats():
@@ -62,6 +63,12 @@ def test_1(act: Action, capsys):
             print(f'{msg_prefix} {expected_txt}')
         else:
             print(f'{msg_prefix} UNEXPECTED: {nat_reads[src_relation_id]} - greater than threshold = {MAX_ALLOWED_NAT_READS}.')
+            print('Check view source:')
+            cur.execute("select rdb$view_source from rdb$relations where rdb$relation_name = upper('v_test')")
+            v_source = cur.fetchall()[0]
+            for line in v_source[0].split('\n'):
+                print(line)
+
 
     act.expected_stdout = f"""
         {msg_prefix} {expected_txt}
