@@ -143,6 +143,7 @@ def test_1(act: Action, capsys):
         ........-> Filter
         ............-> Table "DP_REGISTRO_OEST" Access By ID
         ................-> Bitmap
+        ....................-> Index "UNQ1_DP_REGISTRO_OEST" Unique Scan
     """
 
     with act.db.connect() as con:
