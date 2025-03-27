@@ -51,7 +51,12 @@ def test_1(act: Action, tmp_fbk: Path, capsys):
     act.reset()
 
     if act_retcode == 0:
+       gbak_output = ''
        try:
-            act.gbak(switches=['-b', '-se', 'localhost:service_mgr', str(act.db.db_path), str(tmp_fbk)], credentials=False)
+           act.gbak(switches=['-b', '-se', 'localhost:service_mgr', str(act.db.db_path), str(tmp_fbk)], credentials=False, combine_output = True)
+           gbak_output = act.clean_stdout
        finally:
            act.isql(switches=['-q'], input='drop global mapping tmp_mapping_6329;', combine_output = True)
+       
+       assert gbak_output == ''
+
