@@ -13,6 +13,7 @@ NOTES:
     Commit:
         https://github.com/FirebirdSQL/firebird/commit/bbd35ab07c129e9735f081fcd29172a8187aa8ab
         Avoid reading/hashing the inner stream(s) if the leader stream is empty
+    Checked on 6.0.0.457, 5.0.2.1499
 
     [18.01.2025] pzotov
     Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
@@ -20,8 +21,15 @@ NOTES:
     Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
     This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
     The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
-    
-    Checked on 6.0.0.457, 5.0.2.1499
+
+    [27.03.2025] pzotov
+    Explained plan for 6.x became the same as for 5.x, see commit:
+    https://github.com/FirebirdSQL/firebird/commit/6c21404c6ef800ceb7d3bb9c97dc8249431dbc5b
+    Comparison of actual output must be done with single expected_out in both 5.x and 6.x.
+    Plan for 5.x (with TWO 'Filter' clauses) must be considered as more effective.
+    Disussed with dimitr, letter 16.09.2024 17:55.
+
+    Checked on 6.0.0.698-6c21404.
 """
 import zipfile
 from pathlib import Path
@@ -56,7 +64,7 @@ def test_1(act: Action, tmp_fbk: Path, capsys):
     print(act.stdout) # must be empty
 
     test_sql = """
-        select aa.id, ab.CNP_USER, ab.ID_USER
+        select /* trace_me */ aa.id, ab.CNP_USER, ab.ID_USER
         from sal_inperioada2('7DC51501-0DF2-45BE-93E5-382A541505DE', '15.05.2024') aa
         left join user_cnp(aa.cnp, '15.05.2024') ab on ab.CNP_USER = aa.cnp
         where ab.ID_USER = '04B23787-2C7F-451A-A12C-309F79D6F13A'
@@ -82,13 +90,15 @@ def test_1(act: Action, tmp_fbk: Path, capsys):
         except DatabaseError as e:
             print(e.__str__())
             print(e.gds_codes)
+        except Error as x:
+            print(x)
         finally:
             if rs:
                 rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
             if ps:
                 ps.free()
 
-    expected_stdout_5x = """
+    expected_stdout = """
         Select Expression
         ....-> Nested Loop Join (inner)
         ........-> Procedure "SAL_INPERIOADA2" as "AA" Scan
@@ -100,19 +110,6 @@ def test_1(act: Action, tmp_fbk: Path, capsys):
         E574F734-CECB-4A8F-B9BE-FAF51BC61FAD
         04B23787-2C7F-451A-A12C-309F79D6F13A
     """
-
-    expected_stdout_6x = """
-        Select Expression
-        ....-> Filter
-        ........-> Nested Loop Join (inner)
-        ............-> Procedure "SAL_INPERIOADA2" as "AA" Scan
-        ............-> Filter
-        ................-> Procedure "USER_CNP" as "AB" Scan
-        000DD4E1-B4D0-4D6E-9D9F-DE9A7D0D6492
-        E574F734-CECB-4A8F-B9BE-FAF51BC61FAD
-        04B23787-2C7F-451A-A12C-309F79D6F13A
-    """
-    
-    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
