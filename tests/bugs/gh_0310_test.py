@@ -2475,6 +2475,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                UNKNOWN
     RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                UNLIST
+    RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                UPDATE
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                UPDATING
@@ -2536,12 +2538,12 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
 
-    Records affected: 505
+    Records affected: 506
 """
 
 @pytest.mark.disabled_in_forks
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_5 if act.is_version('<6') else expected_stdout_6
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
