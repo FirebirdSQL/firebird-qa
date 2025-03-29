@@ -104,7 +104,7 @@ def test_1(act: Action, hang_script_file: Path, hang_output: Path, capsys, reque
       as user '{act.db.user}' password '{act.db.password}'
          role 'TMP$R4707' -- this will force to create new attachment, and its Tx will be paused on INFINITE time.
       ;
-      when any do begin end
+      -- COMMENTED 30.03.2025: we must know if some error occurred during infinite wait! --> when any do begin end
     end ^
     set term ;^
     select 'EB with pause finished.' as msg_2 from rdb$database;
