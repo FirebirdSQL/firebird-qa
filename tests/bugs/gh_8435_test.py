@@ -9,6 +9,7 @@ NOTES:
     [31.05.2025] pzotov
     Confirmed bug on 6.0.0.702.
     Checked on intermediate snapshot 6.0.0.707-487f423
+    Thanks to Adriano for provided example to reproduce bug.
 """
 import pytest
 from firebird.qa import *
