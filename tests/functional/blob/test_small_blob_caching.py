@@ -66,6 +66,10 @@ NOTES:
        Because of that, test intentionally uses GTT instead of permanent table to store blobs.
     
     Checked on intermediate snapshot 6.0.0.698-f5c7e57.
+
+    [02.04.2025] pzotov
+    Checked on 5.0.3.1639-f47fcd9 after commit 54c61058 ("Backported seek for cached blob (missed part of #8318)").
+    Reduced min_version to 5.0.3.
 """
 import os
 from pathlib import Path
@@ -98,7 +102,7 @@ act = python_act('db')
 
 tmp_blob_file = temp_file('tmp_small_blob.dat')
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.3')
 def test_1(act: Action, tmp_blob_file: Path, capsys):
     with act.db.connect() as con:
         cur1 = con.cursor()
