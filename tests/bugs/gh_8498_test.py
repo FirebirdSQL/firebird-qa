@@ -109,7 +109,7 @@ test_script = f"""
     -- Range-based FOR BY argument must be positive
     -- Raises to STDOUT:
     -- COUNTER_3                       4
-    -- RAISED_GDS                      335545314
+    -- RAISED_GDS                      335545314 // isc_range_for_by_should_be_positive (see src/include/gen/Firebird.pas)
     execute block returns(counter_3 smallint, raised_gds int) as
        declare x smallint = 0;
     begin
