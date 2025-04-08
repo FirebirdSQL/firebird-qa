@@ -70,7 +70,7 @@ expected_stdout = """
     EB2_OUT 8
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=6.0')
 def test_1(act: Action):
     test_sql = """
         set list on;
