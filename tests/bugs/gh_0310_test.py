@@ -1811,6 +1811,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                DOUBLE
     RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                DOWNTO
+    RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                DROP
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                ELSE
@@ -2538,7 +2540,7 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
 
-    Records affected: 506
+    Records affected: 507
 """
 
 @pytest.mark.disabled_in_forks
