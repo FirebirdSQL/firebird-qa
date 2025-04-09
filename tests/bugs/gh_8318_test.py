@@ -18,6 +18,9 @@ NOTES:
     Thanks to Vlad for suggestion about this test implementation.
     Confirmed poor network statistics (RATIO between rountrips) for 6.0.0.607-1985b88 (03.02.2025).
     Checked on 6.0.0.656-25fb454 - all fine.
+
+    [09.04.2025] pzotov
+    Checked on 5.0.3.1639-f47fcd9 (intermediate snapshot). Reduced min_version to 5.0.3.
 """
 
 import os
@@ -82,7 +85,7 @@ act = python_act('db') # , substitutions = [(r'record length: \d+, key length: \
 
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=6')
+@pytest.mark.version('>=5.0.3')
 def test_1(act: Action, capsys):
     test_sql = f"""
         rollback;
