@@ -88,9 +88,9 @@ def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
         for q in chk_qry_map.keys():
-            ps = cur.prepare(q)
-            print( q )
-            print( ps.plan )
+            with cur.prepare(q) as ps:
+                print( q )
+                print( ps.plan )
     
     act.expected_stdout = '\n'.join(expected_plans_lst)
     act.stdout = capsys.readouterr().out
