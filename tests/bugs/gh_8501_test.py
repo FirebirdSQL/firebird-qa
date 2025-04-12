@@ -80,7 +80,7 @@ act = python_act('db')
 
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=6.0')
 def test_1(act: Action, capsys):
     with act.db.connect() as con:
 
