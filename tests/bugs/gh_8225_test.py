@@ -67,6 +67,11 @@ init_script = """
 
 db = db_factory(init=init_script)
 
+
+# Substitusions are needed here in order to ignore concrete numbers in explained plan parts, e.g.:
+# Hash Join (semi) (keys: 1, total key length: 4)
+# Sort (record length: 28, key length: 8)
+# Record Buffer (record length: 25)
 substitutions = [
      (r'Hash Join \(semi\) \(keys: \d+, total key length: \d+\)','Hash Join (semi)')
     ,(r'record length: \d+', 'record length: NN')
