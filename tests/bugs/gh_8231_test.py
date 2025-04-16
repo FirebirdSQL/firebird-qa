@@ -3,7 +3,7 @@
 """
 ID:          issue-8231
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8231
-TITLE:       SubQueryConversion = true --request size limit exceeded / Unsuccessful execution caused by an unavailable resource. unable to allocate memory from operating system
+TITLE:       SubQueryConversion = true causes "request size limit exceeded" / "... unavailable resource. Unable to allocate memory ..."
 DESCRIPTION:
 NOTES:
     [26.08.2024] pzotov
@@ -21,6 +21,10 @@ NOTES:
     The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
     
     Thanks to dimitr for the advice on implementing the test.
+
+    [16.04.2025] pzotov
+    Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
+    Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
 """
 
 import pytest
@@ -48,7 +52,7 @@ def replace_leading(source, char="."):
 
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=5.0.2,<6')
+@pytest.mark.version('>=5.0.2')
 def test_1(act: Action, capsys):
 
     test_sql = """
@@ -57,65 +61,51 @@ def test_1(act: Action, capsys):
         where exists (select 1 from t2 where t1.fld = t2.fld)
     """
 
-    for sq_conv in ('true','false',):
-        srv_cfg = driver_config.register_server(name = f'srv_cfg_8231_{sq_conv}', config = '')
-        db_cfg_name = f'db_cfg_8231_{sq_conv}'
-        db_cfg_object = driver_config.register_database(name = db_cfg_name)
-        db_cfg_object.server.value = srv_cfg.name
-        db_cfg_object.database.value = str(act.db.db_path)
+    srv_cfg = driver_config.register_server(name = f'srv_cfg_8231', config = '')
+    db_cfg_name = f'db_cfg_8231'
+    db_cfg_object = driver_config.register_database(name = db_cfg_name)
+    db_cfg_object.server.value = srv_cfg.name
+    db_cfg_object.database.value = str(act.db.db_path)
+    if act.is_version('<6'):
         db_cfg_object.config.value = f"""
-            SubQueryConversion = {sq_conv}
+            SubQueryConversion = true
         """
 
-        with connect(db_cfg_name, user = act.db.user, password = act.db.password) as con:
-            cur = con.cursor()
-            cur.execute("select g.rdb$config_name, g.rdb$config_value from rdb$database r left join rdb$config g on g.rdb$config_name = 'SubQueryConversion'")
-            for r in cur:
-                print(r[0],r[1])
+    with connect(db_cfg_name, user = act.db.user, password = act.db.password) as con:
+        cur = con.cursor()
+        ps, rs = None, None
+        try:
+            ps = cur.prepare(test_sql)
 
-            ps, rs = None, None
-            try:
-                ps = cur.prepare(test_sql)
+            # Print explained plan with padding eash line by dots in order to see indentations:
+            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
 
-                # Print explained plan with padding eash line by dots in order to see indentations:
-                print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+            # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+            # We have to store result of cur.execute(<psInstance>) in order to
+            # close it explicitly.
+            # Otherwise AV can occur during Python garbage collection and this
+            # causes pytest to hang on its final point.
+            # Explained by hvlad, email 26.10.24 17:42
+            rs = cur.execute(ps)
+            for r in rs:
+                print(r[0])
+        except DatabaseError as e:
+            print(e.__str__())
+            print(e.gds_codes)
+        finally:
+            if rs:
+                rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+            if ps:
+                ps.free()
 
-                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
-                # We have to store result of cur.execute(<psInstance>) in order to
-                # close it explicitly.
-                # Otherwise AV can occur during Python garbage collection and this
-                # causes pytest to hang on its final point.
-                # Explained by hvlad, email 26.10.24 17:42
-                rs = cur.execute(ps)
-                for r in rs:
-                    print(r[0])
-            except DatabaseError as e:
-                print(e.__str__())
-                print(e.gds_codes)
-            finally:
-                if rs:
-                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
-                if ps:
-                    ps.free()
-
-            con.rollback()
+        con.rollback()
 
     act.expected_stdout = f"""
-        SubQueryConversion true
         Select Expression
         ....-> Nested Loop Join (semi)
         ........-> Table "T1" Full Scan
         ........-> Filter
         ............-> Table "T2" Full Scan
-        1
-
-        SubQueryConversion false
-        Sub-query
-        ....-> Filter
-        ........-> Table "T2" Full Scan
-        Select Expression
-        ....-> Filter
-        ........-> Table "T1" Full Scan
         1
     """
     act.stdout = capsys.readouterr().out
