@@ -154,7 +154,6 @@ def test_1(act: Action, tmp_sql: Path, capsys):
                 SubQueryConversion = true
             """
 
-        # with act.db.connect() as con:
         with connect(db_cfg_name, user = act.db.user, password = act.db.password) as con:
             cur = con.cursor()
             for q_idx, q_tuple in query_map.items():
