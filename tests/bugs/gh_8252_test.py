@@ -21,6 +21,10 @@ NOTES:
 
     Confirmed bug on 5.0.2.1497.
     Checked on 5.0.2.1499-5fa4ae6.
+
+    [16.04.2025] pzotov
+    Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
+    Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
 """
 
 import pytest
@@ -53,7 +57,7 @@ def replace_leading(source, char="."):
 
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=5.0.2,<6')
+@pytest.mark.version('>=5.0.2')
 def test_1(act: Action, capsys):
 
     srv_cfg = driver_config.register_server(name = 'test_srv_gh_8252', config = '')
@@ -61,16 +65,13 @@ def test_1(act: Action, capsys):
     db_cfg_object = driver_config.register_database(name = db_cfg_name)
     db_cfg_object.server.value = srv_cfg.name
     db_cfg_object.database.value = 'employee'
-    db_cfg_object.config.value = f"""
-        SubQueryConversion = true
+    if act.is_version('<6'):
+        db_cfg_object.config.value = f"""
+            SubQueryConversion = true
     """
 
     with connect(db_cfg_name, user = act.db.user, password = act.db.password) as con:
         cur = con.cursor()
-        cur.execute("select g.rdb$config_name, g.rdb$config_value from rdb$database r left join rdb$config g on g.rdb$config_name = 'SubQueryConversion'")
-        for r in cur:
-            print(r[0],r[1])
-
         ps = cur.prepare(test_sql)
         # Show explained plan:
         print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
@@ -91,7 +92,6 @@ def test_1(act: Action, capsys):
         con.rollback()
 
     act.expected_stdout = """
-        SubQueryConversion true
         Sub-query
         ....-> Filter
         ........-> Table "CUSTOMER" as "C" Access By ID
