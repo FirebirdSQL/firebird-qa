@@ -12,7 +12,8 @@ NOTES:
     Thanks to Vlad for suggestion about this test implementation.
 
     Confirmed different BLOB_ID values on 6.0.0.722.
-    Checked on 6.0.0.734.
+    Reduced min_version to 5.0.3 (17.04.2025).
+    Checked on 6.0.0.734, 5.0.3.1647-475d999 (intermediate snapshot).
 """
 
 import os
@@ -28,7 +29,7 @@ act = python_act('db')
 msg_prefix = 'Total unique BLOB_ID values:'
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.3')
 def test_1(act: Action, capsys):
     test_sql = f"""
         set list on;
