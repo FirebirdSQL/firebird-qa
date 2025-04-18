@@ -135,8 +135,8 @@ def test_1(act: Action, tmp_sql: Path, capsys):
 
     if act.return_code == 0:
 
-        srv_cfg = driver_config.register_server(name = f'srv_cfg_8061', config = '')
-        db_cfg_name = f'db_cfg_8061'
+        srv_cfg = driver_config.register_server(name = f'srv_cfg_8061_addi', config = '')
+        db_cfg_name = f'db_cfg_8061_addi'
         db_cfg_object = driver_config.register_database(name = db_cfg_name)
         db_cfg_object.server.value = srv_cfg.name
         db_cfg_object.database.value = str(act.db.db_path)
