@@ -9,6 +9,10 @@ NOTES:
     [17.04.2025] pzotov
     Confirmed problem on 6.0.0.686 (20-mar-2025).
     Checked on 6.0.0.737-cf1d367 (intermediate snapshot).
+
+    [18.04.2025] pzotov
+    Reduced min_version after check on iontermediate snapshots:
+    5.0.3.1648-ca2f3e7; 4.0.6.3199-0503997; 3.0.13.33807-5d3394e7
 """
 
 import os
@@ -24,7 +28,7 @@ act = python_act('db')
 
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=3.0.13')
 def test_1(act: Action, capsys):
 
     srv_config = driver_config.register_server(name = 'test_8520_srv', config = '')
