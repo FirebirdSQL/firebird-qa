@@ -8,7 +8,7 @@ DESCRIPTION:
 NOTES:
     [17.04.2025] pzotov
     Confirmed problem on 6.0.0.686 (20-mar-2025).
-    Checked on 6.0.0.737-cf1d367 (intermediate snapshot).
+    Checked on 6.0.0.737-cf1d367, intermediate snapshot.
 
     [18.04.2025] pzotov
     Reduced min_version after check on iontermediate snapshots:
