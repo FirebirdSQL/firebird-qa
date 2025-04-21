@@ -61,6 +61,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import parse
 import time
 from datetime import datetime
+from dataclasses import dataclass
 from threading import Thread, Barrier, Event
 from firebird.driver import connect, connect_server, create_database, driver_config, \
      NetProtocol, Server, CHARSET_MAP, Connection, Cursor, \
@@ -2751,3 +2752,76 @@ def temp_files(filenames: List[Union[str, Path]]):
 
     return temp_files_fixture
 
+@dataclass
+class ConfigManagerBackup:
+    action: str
+    config_file: Path
+    backup_file: Path = None
+
+class ConfigManager:
+    """Object to replace specified server configuration file.
+
+    Arguments:
+        tmp_path: Path to directory where backup will be stored.
+        old_config: Old config file which will be keeped in backup (e.g. databases.conf)
+
+    .. important::
+
+        Do not create instances of this class directly! Use **only** fixtures created by `store_config`.
+    """
+
+    def __init__(self, tmp_path: Path):
+        self.__tmp_path = tmp_path
+        self.__bak_configs: Dict[str, ConfigManagerBackup] = {}
+
+    def _backup(self, config_name: str):
+        old_config = _vars_['home-dir'] / config_name
+        if config_name in self.__bak_configs:
+            return old_config
+        if old_config.exists():
+            backup = self.__tmp_path / (config_name.replace('/', '_') + '.bak')
+            if backup.exists():
+                backup.unlink()
+            shutil.copy(str(old_config), str(backup))
+            self.__bak_configs[config_name] = ConfigManagerBackup('replace', old_config, backup)
+        else:
+            self.__bak_configs[config_name] = ConfigManagerBackup('delete', old_config)
+        return old_config
+
+    def replace(self, config_name: str, new_config: Union[Path, str]):
+        """
+            config_name: Relative path to config in server
+            new_config: Path to new config or content of config
+        """
+        old_config = self._backup(config_name)
+        if isinstance(new_config, Path):
+            shutil.copy(str(new_config), str(old_config))
+        else:
+            with open(old_config, 'w') as old:
+                old.write(new_config)
+
+    def add(self, config_name: str, new_config: Union[Path, str]):
+        """
+            config_name: Relative path to config in server
+            new_config: Path to new config or content of config
+        """
+        old_config = self._backup(config_name)
+        new_content = new_config.read_text() if isinstance(new_config, Path) else new_config
+        with open(old_config, 'a') as old:
+            old.write(new_content)
+
+    def restore(self, final=False):
+        for backup in self.__bak_configs.values():
+            if backup.action == 'replace':
+                shutil.copy(str(backup.backup_file), str(backup.config_file))
+                if final:
+                    backup.backup_file.unlink()
+            elif backup.action == 'delete':
+                backup.config_file.unlink()
+        self.__bak_configs = {}
+
+@pytest.fixture
+def store_config(db_path) -> ConfigManager:
+    manager = ConfigManager(db_path)
+    yield manager
+    manager.restore(final=True)
