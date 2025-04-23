@@ -5,7 +5,7 @@ ID:          issue-8418
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8418
 TITLE:       UNLIST function. Check ability to use ascii_char(0) as delimiter.
 DESCRIPTION:
-    On 6.0.0.725-a2b05f4-x64 usage of ascii_char(0) as separator causes 100% CPU load and FB service could not be stopped.
+    On 6.0.0.725-a2b05f4-x64 usage of ascii_char(0) as separator causes 100% CPU load and FB service could not be stopped
     See: https://github.com/FirebirdSQL/firebird/pull/8418#issuecomment-2792358627
     Fixed 19.04.2025 20:36:
     https://github.com/FirebirdSQL/firebird/commit/33ad7e632ae073223f808c8fdc83673d6d04e454
