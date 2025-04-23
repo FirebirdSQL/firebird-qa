@@ -35,18 +35,14 @@ WRONG_DBCONF = """
 """
 
 @pytest.mark.version('>=3.0.13')
-def test_1(act: Action, tmp_file: Path, capsys):
+def test_1(act: Action, tmp_file: Path, store_config: ConfigManager, capsys):
 
+    store_config.replace('databases.conf', WRONG_DBCONF)
     try:
-        shutil.copy2(act.home_dir/'databases.conf', tmp_file)
-        with open(act.home_dir/'databases.conf', 'w') as f:
-            f.write(WRONG_DBCONF)
         act.isql(switches = ['-q'], input = f'connect {act.db.dsn};', combine_output = True)
     except Error as e:
         # Despite crash, no messages were issued here before fix.
         print(e)
-    finally:
-        shutil.copy2(tmp_file, act.home_dir/'databases.conf')
     
     for line in act.stdout.splitlines():
         if (pos := line.lower().find('databases.conf')) > 0:
