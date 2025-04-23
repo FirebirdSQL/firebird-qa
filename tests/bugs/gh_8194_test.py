@@ -23,6 +23,11 @@ NOTES:
     Confirmed bug on 6.0.0.403, got in firebird.log:
         internal Firebird consistency check (page in use during flush (210), file: cch.cpp line: 2827)
     Checked on 6.0.0.406 - all fine.
+
+    [23.04.2025] pzotov
+    Confirmed bug on 5.0.3.1648-ca2f3e7, got:
+        internal Firebird consistency check (page in use during flush (210), file: cch.cpp line: 2828)
+    Checked on 5.0.3.1649-afcfa1a (intermediate snapshot) - all OK. Reduced min_version to 5.0.3.
 """
 
 import re
@@ -39,7 +44,7 @@ SUCCESS_MSG = 'OK.'
 db = db_factory()
 act = python_act('db')
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.3')
 def test_1(act: Action, capsys):
     
     if act.get_server_architecture() != 'SuperServer':
