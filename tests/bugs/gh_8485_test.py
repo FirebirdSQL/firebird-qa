@@ -34,6 +34,7 @@ WRONG_DBCONF = """
 }
 """
 
+@pytest.mark.skip("INVESTIGATION NEEDED. Weird affecting on functional/syspriv/test_user_management_in_selfsec_db.py")
 @pytest.mark.version('>=3.0.13')
 def test_1(act: Action, tmp_file: Path, store_config: ConfigManager, capsys):
 
