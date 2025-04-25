@@ -13,6 +13,9 @@ NOTES:
     [18.03.2025] pzotov
     Confirmed crash on 3.0.13.33798; checked on 3.0.13.33804 after fix #e02eaffb.
     Reduced min_version from 4.0.6 to 3.0.13.
+
+    [25.04.2024] pzotov
+    Added temporary mark 'disabled_in_forks' to SKIP this test when QA runs agains *fork* of standard FB.
 """
 
 import pytest
@@ -31,6 +34,7 @@ expected_stdout = """
     1
 """
 
+@pytest.mark.disabled_in_forks
 @pytest.mark.version('>=3.0.13')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
