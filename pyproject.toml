@@ -32,7 +32,7 @@ classifiers = [
     "Framework :: Pytest",
     ]
 dependencies = [
-    "firebird-base>=1.8.0",
+    "firebird-base~=1.8",
     "firebird-driver~=1.10",
     "pytest>=7.4",
     "psutil~=5.9",
@@ -61,6 +61,11 @@ include = ["src"]
 packages = ["src/firebird"]
 
 [tool.hatch.envs.default]
+dependencies = [
+]
+
+[tool.hatch.envs.hatch-test]
+extra-args = ["-vv", "--server", "local"]
 dependencies = [
 ]
 
@@ -101,63 +106,13 @@ docset = [
   "cd docs; VERSION=`hatch version` ; tar --exclude='.DS_Store' -cvzf ../dist/firebird-qa-$VERSION-docset.tgz firebird-qa.docset",
 ]
 
-[tool.hatch.envs.lint]
-detached = true
-dependencies = [
-  "black>=23.1.0",
-  "mypy>=1.0.0",
-  "ruff>=0.0.243",
-]
-[tool.hatch.envs.lint.scripts]
-typing = "mypy --install-types --non-interactive {args:src/firebird/qa tests}"
-style = [
-  "ruff {args:.}",
-  "black --check --diff {args:.}",
-]
-fmt = [
-  "black {args:.}",
-  "ruff --fix {args:.}",
-  "style",
-]
-all = [
-  "style",
-  "typing",
-]
-
-[tool.black]
-target-version = ["py38"]
-line-length = 120
-skip-string-normalization = true
-
 [tool.ruff]
-target-version = "py38"
+target-version = "py311"
 line-length = 120
-select = [
-  "A",
-  "ARG",
-  "B",
-  "C",
-  "DTZ",
-  "E",
-  "EM",
-  "F",
-  "FBT",
-  "I",
-  "ICN",
-  "ISC",
-  "N",
-  "PLC",
-  "PLE",
-  "PLR",
-  "PLW",
-  "Q",
-  "RUF",
-  "S",
-  "T",
-  "TID",
-  "UP",
-  "W",
-  "YTT",
+
+[tool.ruff.lint]
+select = ["A", "ARG", "B", "C", "DTZ", "E", "EM", "F", "FBT", "I", "ICN", "ISC", "N",
+  "PLC", "PLE", "PLR", "PLW", "Q", "RUF", "S", "T", "TID", "UP", "W", "YTT",
 ]
 ignore = [
   # Allow non-abstract empty methods in abstract base classes
@@ -168,24 +123,35 @@ ignore = [
   "S105", "S106", "S107",
   # Ignore complexity
   "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+  #
+  "E741",
+  # Allow relative imports
+  "TID252",
+  # Allow literals in exceptions
+  "EM101", "EM102",
+  # Single quotes instead double
+  "Q000"
 ]
 unfixable = [
   # Don't touch unused imports
   "F401",
+  # Don't change single quotes to double
+  "Q000"
 ]
+exclude = ["*_pb2.py", "*.pyi", "tests/*", "docs/*", "personal/*"]
 
-[tool.ruff.isort]
-known-first-party = ["firebird.qa"]
+[tool.ruff.lint.isort]
+known-first-party = ["firebird.base"]
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
 "tests/**/*" = ["PLR2004", "S101", "TID252"]
 
 [tool.coverage.run]
-source_pkgs = ["firebird.qa", "tests"]
+source_pkgs = ["firebird.qa"]
 branch = true
 parallel = true
 omit = [
@@ -193,8 +159,8 @@ omit = [
 ]
 
 [tool.coverage.paths]
-firebird_qa = ["src/python", "*/python/src/firebird/qa"]
-tests = ["tests", "*/python/tests"]
+firebird_qa = ["*/src/firebird/qa"]
+tests = ["tests"]
 
 [tool.coverage.report]
 exclude_lines = [
