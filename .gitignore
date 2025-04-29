@@ -135,3 +135,9 @@ dmypy.json
 
 # Sphinx build
 docs/_build
+
+# Other local files
+/dbcache
+
+# Personal local files
+/personal
