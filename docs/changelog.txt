@@ -4,6 +4,12 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.20.1
+==============
+
+* Dependency on `firebird-base` changed to "~=1.8"
+* Updated `hatch` configuration
+
 Version 0.20.0
 ==============
 

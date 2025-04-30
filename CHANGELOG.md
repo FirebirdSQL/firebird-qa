@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.20.1] - 2025-04-29
+
+### Changed
+
+- Dependency on `firebird-base` changed to "~=1.8"
+- Updated `hatch` configuration
+
 ## [0.20.0] - 2024-05-09
 
 ### Added
