@@ -7,7 +7,7 @@ TITLE:       GREATEST and LEAST (SQL:2023 - T054)
 DESCRIPTION:
 NOTES:
     [30.04.2025] pzotov
-    Checked on 6.0.0.755-9d191e8 (intermediate snapshot).
+    Checked on 6.0.0.755-9d191e8 (intermediate snapshot)
 """
 
 import pytest
