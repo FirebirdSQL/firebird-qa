@@ -1901,6 +1901,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                GRANTED
     RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                GREATEST
+    RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                GROUP
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                HASH
@@ -1978,6 +1980,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                LEAD
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                LEADING
+    RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                LEAST
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                LEAVE
     RDB$KEYWORD_RESERVED            <false>
@@ -2540,7 +2544,7 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
 
-    Records affected: 507
+    Records affected: 509
 """
 
 @pytest.mark.disabled_in_forks
