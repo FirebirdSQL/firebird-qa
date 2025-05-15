@@ -7,6 +7,18 @@ TITLE:       Truncation error when using EXECUTE STATEMENT with a blob
 DESCRIPTION:
 JIRA:        CORE-4374
 FBTEST:      bugs.core_4374
+NOTES:
+    [05.05.2015] pzotov
+    ::: NB :::
+    Memory consumption of procedural objects under 64-bit environment is much bigger than on 32-bit one.
+    This test was retyped because it was encountered that previous limit for the size of BLR is too weak:
+    test failed at runtime with error "implementation limit exceeds".
+    New (more rigorous) limit was found by using 64-bit FB, build LI-T3.0.0.31822: BLR can not be larger
+    than ~2.35 Mb (previous: ~3.21 Mb)
+
+    [15.05.2025] pzotov
+    Removed output of approximate BLR length because its change can be valuable:
+    6.0.0.778 2025.05.07 d735e65a: 2097000 bytes instead of previous 2359000.
 """
 
 import pytest
@@ -15,12 +27,6 @@ from firebird.qa import *
 db = db_factory()
 
 test_script = """
-    -- ::: NB :::
-    -- Memory consumption of procedural objects under 64-bit environment is much bigger than on 32-bit one.
-    -- This test was retyped because it was encountered that previous limit for the size of BLR is too weak:
-    -- test failed at runtime with error "implementation limit exceeds".
-    -- New (more rigorous) limit was found by using 64-bit FB, build LI-T3.0.0.31822: BLR can not be larger
-    -- than ~2.35 Mb (previous: ~3.21 Mb)
 
     set list on;
     set term ^;
@@ -80,7 +86,7 @@ test_script = """
 
 
     set term ^;
-    execute block returns(returned_rows int, proc_ddl_length int, proc_src_length int, approx_blr_length int) as
+    execute block returns(returned_rows int, proc_ddl_length int, proc_src_length int) as
     begin
       execute statement 'select count(*) cnt from test_proc'
       into returned_rows;
@@ -91,32 +97,12 @@ test_script = """
       from rdb$procedures where rdb$procedure_name = upper('test_proc')
       into proc_src_length;
 
-      select round(octet_length(rdb$procedure_blr), -3)
-      from rdb$procedures where rdb$procedure_name = upper('test_proc')
-      into approx_blr_length;
-
       suspend;
 
     end
     ^
     set term ;^
     commit;
-
-    /**************************************
-
-    32 bit, WI-T3.0.0.31824
-    RETURNED_ROWS                   119154
-    PROC_DDL_LENGTH                 1072455
-    PROC_SRC_LENGTH                 1072395
-    APPROX_BLR_LENGTH               3217000
-
-    64 bit, LI-T3.0.0.31822
-    RETURNED_ROWS                   87379
-    PROC_DDL_LENGTH                 786480
-    PROC_SRC_LENGTH                 786420
-    APPROX_BLR_LENGTH               2359000
-
-    **************************************/
 """
 
 act = isql_act('db', test_script)
@@ -125,7 +111,6 @@ expected_stdout = """
     RETURNED_ROWS                   87379
     PROC_DDL_LENGTH                 786480
     PROC_SRC_LENGTH                 786420
-    APPROX_BLR_LENGTH               2359000
 """
 
 @pytest.mark.version('>=3.0')
