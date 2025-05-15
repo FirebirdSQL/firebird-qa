@@ -14,8 +14,8 @@ NOTES:
     Checked on 6.0.0.660; 5.0.3.1624; 4.0.6.3189; 3.0.13.33798
 
     [15.05.2025] pzotov
-    Splitted output for versions up to 5.x and 6.x+: privilege "GRANT CREATE DATABASE TO USER ..." has appeared
-    in the output since 6.0.0.778 2025.05.07 d735e65a.
+    Removed 'show grants' because its output very 'fragile' and can often change in master branch.
+    It is enough to use custom VIEW ('v_users') to check data.
 """
 import locale
 
@@ -29,8 +29,8 @@ substitutions = [('.*delete record.*', 'delete record'),
 
 db = db_factory()
 
-tmp_senior = user_factory('db', name='ozzy_osbourne', password='123', admin=True)
-tmp_junior = user_factory('db', name='bon_scott', password='456')
+tmp_senior = user_factory('db', name='tmp_4468_senior', password='123', admin=True)
+tmp_junior = user_factory('db', name='tmp_4468_junior', password='456')
 
 act = isql_act('db', substitutions=substitutions)
 
@@ -51,10 +51,20 @@ def test_1(act: Action, tmp_senior: User, tmp_junior: User):
         -- 'delete record error' = for Srp
         -- This is minor bug in Legacy_UserManager but it will be remain 'as is', see letter from Alex 03-jun-2015 19:51.
         recreate view v_users as
-        select current_user who_am_i, current_role whats_my_role, u.sec$user_name non_sysdba_user_name, u.sec$admin non_sysdba_has_admin_role
+        select
+             current_user who_am_i
+            ,current_role whats_my_role
+            ,u.sec$user_name user_name
+            ,u.sec$admin sec_admin
+            ,g.rdb$privilege is not null as rdb_admin
+            ,g.rdb$grant_option rdb_adm_grant_option
         from rdb$database
-        left join sec$users u on u.sec$user_name in ( upper('{tmp_senior.name}'), upper('{tmp_junior.name}') );
+        left join sec$users u on u.sec$user_name in ( upper('{tmp_senior.name}'), upper('{tmp_junior.name}') )
+        left join rdb$user_privileges g on u.sec$user_name = g.rdb$user and g.rdb$privilege = upper('m') and g.rdb$relation_name = upper('rdb$admin')
+        order by user_name
+        ;
         commit;
+
         grant select on v_users to public;
         commit;
 
@@ -86,26 +96,24 @@ def test_1(act: Action, tmp_senior: User, tmp_junior: User):
 
         alter user {tmp_junior.name} grant admin role;
         commit;
-        show grants;
-
+        
         select 'point-3' msg, v.* from v_users v;
 
         grant rdb$admin to {tmp_junior.name};
         commit;
 
-        show grants;
+        select 'point-4' msg, v.* from v_users v;
 
         alter user {tmp_junior.name} revoke admin role;
         commit;
 
-        select 'point-4' msg, v.* from v_users v;
+        select 'point-5' msg, v.* from v_users v;
         commit;
 
         revoke rdb$admin from {tmp_junior.name};
         commit;
-        show grants;
 
-        select 'point-5' msg, v.* from v_users v;
+        select 'point-6' msg, v.* from v_users v;
         commit;
 
         -- User removes admin role from himself:
@@ -122,9 +130,7 @@ def test_1(act: Action, tmp_senior: User, tmp_junior: User):
         alter user {tmp_senior.name} revoke admin role;
         commit;
 
-        show grants;
-
-        select 'point-6' msg, v.* from v_users v;
+        select 'point-7' msg, v.* from v_users v;
         commit;
 
         -- And after previous action he can not drop himself because now he is NOT member of admin role:
@@ -134,232 +140,152 @@ def test_1(act: Action, tmp_senior: User, tmp_junior: User):
         drop user {tmp_senior.name};
         commit;
 
-        select 'point-7' msg, v.* from v_users v;
+        select 'point-8' msg, v.* from v_users v;
         commit;
 
         -- Trying reconnect with role RDB$ADMIN:
         connect '{act.db.dsn}' user '{tmp_senior.name}' password '{tmp_senior.password}' role 'RDB$ADMIN';
         commit;
 
-        select 'point-8' msg, v.* from v_users v;
-        commit;
-
-        show grants;
+        select 'finish' msg, v.* from v_users v;
         commit;
     """
 
-    expected_5x = """
+    expected_out = f"""
         MSG                             start
-        WHO_AM_I                        SYSDBA
+        WHO_AM_I                        {act.db.user}
         WHATS_MY_ROLE                   NONE
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        USER_NAME                       {tmp_junior.name}
+        SEC_ADMIN                       <false>
+        RDB_ADMIN                       <false>
+        RDB_ADM_GRANT_OPTION            <null>
         MSG                             start
-        WHO_AM_I                        SYSDBA
+        WHO_AM_I                        {act.db.user}
         WHATS_MY_ROLE                   NONE
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <true>
+        RDB_ADMIN                       <false>
+        RDB_ADM_GRANT_OPTION            <null>
         Records affected: 2
         MSG                             point-1
-        WHO_AM_I                        SYSDBA
+        WHO_AM_I                        {act.db.user}
         WHATS_MY_ROLE                   NONE
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        USER_NAME                       {tmp_junior.name}
+        SEC_ADMIN                       <false>
+        RDB_ADMIN                       <false>
+        RDB_ADM_GRANT_OPTION            <null>
         MSG                             point-1
-        WHO_AM_I                        SYSDBA
+        WHO_AM_I                        {act.db.user}
         WHATS_MY_ROLE                   NONE
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <true>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
         Records affected: 2
         MSG                             point-2
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        USER_NAME                       {tmp_junior.name}
+        SEC_ADMIN                       <false>
+        RDB_ADMIN                       <false>
+        RDB_ADM_GRANT_OPTION            <null>
         MSG                             point-2
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <true>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
         Records affected: 2
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
         MSG                             point-3
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        USER_NAME                       {tmp_junior.name}
+        SEC_ADMIN                       <true>
+        RDB_ADMIN                       <false>
+        RDB_ADM_GRANT_OPTION            <null>
         MSG                             point-3
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <true>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
         Records affected: 2
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO BON_SCOTT GRANTED BY OZZY_OSBOURNE
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
         MSG                             point-4
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        USER_NAME                       {tmp_junior.name}
+        SEC_ADMIN                       <true>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
         MSG                             point-4
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <true>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
         Records affected: 2
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
         MSG                             point-5
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        USER_NAME                       {tmp_junior.name}
+        SEC_ADMIN                       <false>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
         MSG                             point-5
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <true>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
         Records affected: 2
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
         MSG                             point-6
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        USER_NAME                       {tmp_junior.name}
+        SEC_ADMIN                       <false>
+        RDB_ADMIN                       <false>
+        RDB_ADM_GRANT_OPTION            <null>
+        MSG                             point-6
+        WHO_AM_I                        {tmp_senior.name}
+        WHATS_MY_ROLE                   RDB$ADMIN
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <true>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
+        Records affected: 2
+        MSG                             point-7
+        WHO_AM_I                        {tmp_senior.name}
+        WHATS_MY_ROLE                   RDB$ADMIN
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <false>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
         Records affected: 1
         Statement failed, SQLSTATE = 28000
         delete record
         -no permission for DELETE access to TABLE PLG
-        MSG                             point-7
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-        Records affected: 1
         MSG                             point-8
-        WHO_AM_I                        OZZY_OSBOURNE
+        WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <false>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
         Records affected: 1
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
+        MSG                             finish
+        WHO_AM_I                        {tmp_senior.name}
+        WHATS_MY_ROLE                   RDB$ADMIN
+        USER_NAME                       {tmp_senior.name}
+        SEC_ADMIN                       <false>
+        RDB_ADMIN                       <true>
+        RDB_ADM_GRANT_OPTION            0
+        Records affected: 1
     """
 
-    expected_6x = """
-        MSG                             start
-        WHO_AM_I                        SYSDBA
-        WHATS_MY_ROLE                   NONE
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-        MSG                             start
-        WHO_AM_I                        SYSDBA
-        WHATS_MY_ROLE                   NONE
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-        Records affected: 2
-        MSG                             point-1
-        WHO_AM_I                        SYSDBA
-        WHATS_MY_ROLE                   NONE
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-        MSG                             point-1
-        WHO_AM_I                        SYSDBA
-        WHATS_MY_ROLE                   NONE
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-        Records affected: 2
-        MSG                             point-2
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-        MSG                             point-2
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-        Records affected: 2
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
-        MSG                             point-3
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-        MSG                             point-3
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-        Records affected: 2
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO BON_SCOTT GRANTED BY OZZY_OSBOURNE
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
-        MSG                             point-4
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-        MSG                             point-4
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-        Records affected: 2
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
-        MSG                             point-5
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
-        MSG                             point-5
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            BON_SCOTT
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-        Records affected: 2
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
-        MSG                             point-6
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-        Records affected: 1
-        Statement failed, SQLSTATE = 28000
-        delete record
-        -no permission for DELETE access to TABLE PLG
-        MSG                             point-7
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-        Records affected: 1
-        MSG                             point-8
-        WHO_AM_I                        OZZY_OSBOURNE
-        WHATS_MY_ROLE                   RDB$ADMIN
-        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
-        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
-        Records affected: 1
-        /* Grant permissions for this database */
-        GRANT SELECT ON V_USERS TO PUBLIC
-        GRANT RDB$ADMIN TO OZZY_OSBOURNE
-    """
-
-    act.expected_stdout = expected_5x if act.is_version('<6') else expected_6x
+    act.expected_stdout = expected_out # expected_5x if act.is_version('<6') else expected_6x
     act.isql(switches = ['-q'], input = test_sql, combine_output = True, io_enc = locale.getpreferredencoding())
     assert act.clean_stdout == act.clean_expected_stdout
