@@ -14,6 +14,10 @@ DESCRIPTION:
   * state of 'set exec_path_display blr' command will not change after reconnect.
     ( https://github.com/FirebirdSQL/firebird/commit/32c3cf573bf36f576b6116983786107df5a2cb33 )
 FBTEST:      bugs.gh_6910
+NOTES:
+    [15.05.2025] pzotov
+    Splitted expected_out for versions up to 5.x and 6.x+ (they become differ since 6.0.0.776).
+    Checked on 6.0.0.778
 """
 
 import pytest
@@ -39,9 +43,9 @@ test_script = """
     end^
 """
 
-act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
+act = isql_act('db', test_script) # , substitutions=[('[ \t]+', ' ')])
 
-expected_stdout = """
+expected_5x = """
     Execution path (BLR):
     0 blr_version5,
     1 blr_begin,
@@ -82,8 +86,31 @@ expected_stdout = """
     30 blr_eoc
 """
 
+expected_6x = """
+    Execution path (BLR):
+    0 blr_version5,
+    1 blr_begin,
+    2    blr_begin,
+    3       blr_label, 0,
+    5          blr_begin,
+    6             blr_end,
+    7       blr_end,
+    8    blr_end,
+    9 blr_eoc
+    Execution path (BLR):
+    0 blr_version5,
+    1 blr_begin,
+    2    blr_begin,
+    3       blr_label, 0,
+    5          blr_begin,
+    6             blr_end,
+    7       blr_end,
+    8    blr_end,
+    9 blr_eoc
+"""
+
 @pytest.mark.version('>=4.0.1')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    act.expected_stdout = expected_5x if act.is_version('<6') else expected_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
