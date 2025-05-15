@@ -9,20 +9,23 @@ DESCRIPTION:
     2) user;
     1) role.
 NOTES:
-    Checked on 5.0.0.1030.
+    [15.05.2025] pzotov
+    Additional subs for suppress excessive lines from 'show grants' output: remain only rows that contain prefix 'TMP_GH_7506_'.
+    Replaced expected-out text: use f-syntax with reference to user/role names provided by action instance instead of hardcoding them.
+    Checked on 6.0.0.778; 5.0.3.1649. Initial check was 24-apr-2023 on 5.0.0.1030.
 """
 import pytest
 from firebird.qa import *
 
-tmp_user_boss = user_factory('db', name='tmp$gh_7506_john', password='123', plugin = 'Srp')
-tmp_user_mngr = user_factory('db', name='tmp$gh_7506_mike', password='456', plugin = 'Srp')
+tmp_user_boss = user_factory('db', name='tmp_gh_7506_john', password='123', plugin = 'Srp')
+tmp_user_mngr = user_factory('db', name='tmp_gh_7506_mike', password='456', plugin = 'Srp')
 
-tmp_role_boss = role_factory('db', name='tmp$gh_7506_boss')
-tmp_role_mngr = role_factory('db', name='tmp$gh_7506_mngr')
+tmp_role_boss = role_factory('db', name='tmp_gh_7506_boss')
+tmp_role_mngr = role_factory('db', name='tmp_gh_7506_mngr')
 
 db = db_factory()
 
-act = python_act('db', substitutions=[('[ \t]+', ' ')])
+act = python_act('db', substitutions = [ ('[ \t]+', ' '), ('^((?!TMP_GH_7506_).)*$', '') ] )
 
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, tmp_user_boss: User, tmp_user_mngr: User, tmp_role_boss: Role, tmp_role_mngr: Role, capsys):
@@ -50,13 +53,11 @@ def test_1(act: Action, tmp_user_boss: User, tmp_user_mngr: User, tmp_role_boss:
     """
 
     act.expected_stdout = f"""
-        /* Grant permissions for this database */
         GRANT DELETE, INSERT, UPDATE (F01, F02, F03) ON TEST TO USER {tmp_user_boss.name.upper()}
         GRANT SELECT, UPDATE (F04, F05, F06) ON TEST TO USER {tmp_user_boss.name.upper()} WITH GRANT OPTION
         GRANT SELECT ON TEST TO USER {tmp_user_mngr.name.upper()} GRANTED BY {tmp_user_boss.name.upper()}
         GRANT UPDATE (F01, F03) ON TEST TO USER {tmp_user_mngr.name.upper()}
         GRANT UPDATE (F04, F05, F06) ON TEST TO USER {tmp_user_mngr.name.upper()} GRANTED BY {tmp_user_boss.name.upper()}
-        GRANT ALL ON TEST TO VIEW V_TEST
     """
     act.isql(input = test_user_sql, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
@@ -90,13 +91,12 @@ def test_1(act: Action, tmp_user_boss: User, tmp_user_mngr: User, tmp_role_boss:
     """
 
     act.expected_stdout = f"""
-        /* Grant permissions for this database */
-        GRANT DELETE, INSERT, UPDATE (F01, F02, F03) ON TEST TO ROLE TMP$GH_7506_BOSS
-        GRANT SELECT, UPDATE (F04, F05, F06) ON TEST TO ROLE TMP$GH_7506_BOSS WITH GRANT OPTION
-        GRANT SELECT ON TEST TO ROLE TMP$GH_7506_MNGR GRANTED BY TMP$GH_7506_JOHN
-        GRANT UPDATE (F01, F03) ON TEST TO ROLE TMP$GH_7506_MNGR
-        GRANT UPDATE (F04, F05, F06) ON TEST TO ROLE TMP$GH_7506_MNGR GRANTED BY TMP$GH_7506_JOHN
-        GRANT TMP$GH_7506_BOSS TO TMP$GH_7506_JOHN
+        GRANT DELETE, INSERT, UPDATE (F01, F02, F03) ON TEST TO ROLE {tmp_role_boss.name}
+        GRANT SELECT, UPDATE (F04, F05, F06) ON TEST TO ROLE {tmp_role_boss.name} WITH GRANT OPTION
+        GRANT SELECT ON TEST TO ROLE {tmp_role_mngr.name} GRANTED BY {tmp_user_boss.name}
+        GRANT UPDATE (F01, F03) ON TEST TO ROLE {tmp_role_mngr.name}
+        GRANT UPDATE (F04, F05, F06) ON TEST TO ROLE {tmp_role_mngr.name} GRANTED BY {tmp_user_boss.name}
+        GRANT {tmp_role_boss.name} TO {tmp_user_boss.name}
     """
     act.isql(input = test_role_sql, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
