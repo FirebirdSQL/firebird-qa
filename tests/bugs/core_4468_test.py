@@ -11,8 +11,11 @@ NOTES:
     1. Commented out (and will be deleted later) code that expected error when user who was granted role
        with admin option tries to revoke this role from himself. Seince fixed GH-8462 this is NOT so.
     2. Replaced hard-coded names/passwords with variables that are provided by fixtures (tmp_senior, tmp_junior).
-
     Checked on 6.0.0.660; 5.0.3.1624; 4.0.6.3189; 3.0.13.33798
+
+    [15.05.2025] pzotov
+    Splitted output for versions up to 5.x and 6.x+: privilege "GRANT CREATE DATABASE TO USER ..." has appeared
+    in the output since 6.0.0.778 2025.05.07 d735e65a.
 """
 import locale
 
@@ -145,7 +148,7 @@ def test_1(act: Action, tmp_senior: User, tmp_junior: User):
         commit;
     """
 
-    act.expected_stdout = """
+    expected_5x = """
         MSG                             start
         WHO_AM_I                        SYSDBA
         WHATS_MY_ROLE                   NONE
@@ -251,5 +254,112 @@ def test_1(act: Action, tmp_senior: User, tmp_junior: User):
         GRANT RDB$ADMIN TO OZZY_OSBOURNE
     """
 
+    expected_6x = """
+        MSG                             start
+        WHO_AM_I                        SYSDBA
+        WHATS_MY_ROLE                   NONE
+        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
+        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        MSG                             start
+        WHO_AM_I                        SYSDBA
+        WHATS_MY_ROLE                   NONE
+        NON_SYSDBA_USER_NAME            BON_SCOTT
+        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        Records affected: 2
+        MSG                             point-1
+        WHO_AM_I                        SYSDBA
+        WHATS_MY_ROLE                   NONE
+        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
+        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        MSG                             point-1
+        WHO_AM_I                        SYSDBA
+        WHATS_MY_ROLE                   NONE
+        NON_SYSDBA_USER_NAME            BON_SCOTT
+        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        Records affected: 2
+        MSG                             point-2
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
+        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        MSG                             point-2
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            BON_SCOTT
+        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        Records affected: 2
+        /* Grant permissions for this database */
+        GRANT SELECT ON V_USERS TO PUBLIC
+        GRANT RDB$ADMIN TO OZZY_OSBOURNE
+        MSG                             point-3
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
+        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        MSG                             point-3
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            BON_SCOTT
+        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        Records affected: 2
+        /* Grant permissions for this database */
+        GRANT SELECT ON V_USERS TO PUBLIC
+        GRANT RDB$ADMIN TO BON_SCOTT GRANTED BY OZZY_OSBOURNE
+        GRANT RDB$ADMIN TO OZZY_OSBOURNE
+        MSG                             point-4
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
+        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        MSG                             point-4
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            BON_SCOTT
+        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        Records affected: 2
+        /* Grant permissions for this database */
+        GRANT SELECT ON V_USERS TO PUBLIC
+        GRANT RDB$ADMIN TO OZZY_OSBOURNE
+        MSG                             point-5
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
+        NON_SYSDBA_HAS_ADMIN_ROLE       <true>
+        MSG                             point-5
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            BON_SCOTT
+        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        Records affected: 2
+        /* Grant permissions for this database */
+        GRANT SELECT ON V_USERS TO PUBLIC
+        GRANT RDB$ADMIN TO OZZY_OSBOURNE
+        MSG                             point-6
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
+        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        Records affected: 1
+        Statement failed, SQLSTATE = 28000
+        delete record
+        -no permission for DELETE access to TABLE PLG
+        MSG                             point-7
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
+        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        Records affected: 1
+        MSG                             point-8
+        WHO_AM_I                        OZZY_OSBOURNE
+        WHATS_MY_ROLE                   RDB$ADMIN
+        NON_SYSDBA_USER_NAME            OZZY_OSBOURNE
+        NON_SYSDBA_HAS_ADMIN_ROLE       <false>
+        Records affected: 1
+        /* Grant permissions for this database */
+        GRANT SELECT ON V_USERS TO PUBLIC
+        GRANT RDB$ADMIN TO OZZY_OSBOURNE
+    """
+
+    act.expected_stdout = expected_5x if act.is_version('<6') else expected_6x
     act.isql(switches = ['-q'], input = test_sql, combine_output = True, io_enc = locale.getpreferredencoding())
     assert act.clean_stdout == act.clean_expected_stdout
