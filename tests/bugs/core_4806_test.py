@@ -16,17 +16,20 @@ DESCRIPTION:
   Also, we do additional check for second user: try to connect WITHOUT specifying role
   and see/change sequence. Error must be in this case (SQLSTATE = 28000).
   Third user must NOT see neither value of generator nor to change it (SQLSTATE = 28000).
-NOTES:
-[18.08.2020]
-  FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
-  statement 'CREATE SEQUENCE <G>' will create generator with current value LESS FOR 1 then it was before.
-  Thus, 'create sequence g;' followed by 'show sequence;' will output "current value: -1" (!!) rather than 0.
-  See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
-
-  This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-  Because of this, it was decided to filter out concrete values that are produced in 'SHOW SEQUENCE' command.
 JIRA:        CORE-4806
 FBTEST:      bugs.core_4806
+NOTES:
+    [18.08.2020] pzotov
+    FB 4.x has incompatible behaviour with all previous versions since build 4.0.0.2131 (06-aug-2020):
+    statement 'CREATE SEQUENCE <G>' will create generator with current value LESS FOR 1 then it was before.
+    Thus, 'create sequence g;' followed by 'show sequence;' will output "current value: -1" (!!) rather than 0.
+    See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
+
+    This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
+    Because of this, it was decided to filter out concrete values that are produced in 'SHOW SEQUENCE' command.
+
+    [15.05.2025] pzotov
+    Removed 'show grants' because its output very 'fragile' and can often change in fresh FB versions.
 """
 
 import pytest
@@ -48,7 +51,6 @@ test_script = """
     grant usage on sequence g to role stockmgr;
     grant stockmgr to Bill_Junior;
     commit;
-    show grants;
 
     set list on;
 
@@ -101,53 +103,43 @@ test_script = """
     commit;
 """
 
-act = isql_act('db', test_script, substitutions=[('-Effective user is.*', ''),
-                                                 ('current value.*', 'current value')])
+substitutions = [  ('[ \t]+', ' ')
+                  ,('(-)?Effective user is.*', '')
+                  ,('current value.*', 'current value')
+                ]
 
-expected_stdout = """
-    /* Grant permissions for this database */
-    GRANT STOCKMGR TO BILL_JUNIOR
-    GRANT USAGE ON SEQUENCE G TO USER BIG_BROTHER
-    GRANT USAGE ON SEQUENCE G TO ROLE STOCKMGR
-
-    USER                            BIG_BROTHER
-    ROLE                            NONE
-    Generator G, current value: 0, initial value: 0, increment: 1
-    NEW_GEN                         -111
-
-    USER                            BILL_JUNIOR
-    ROLE                            STOCKMGR
-    Generator G, current value: -111, initial value: 0, increment: 1
-    NEW_GEN                         -333
-
-    USER                            BILL_JUNIOR
-    ROLE                            NONE
-
-    USER                            MAVERICK
-    ROLE                            NONE
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 28000
-    no permission for USAGE access to GENERATOR G
-    There is no generator G in this database
-
-    Statement failed, SQLSTATE = 28000
-    no permission for USAGE access to GENERATOR G
-
-    Statement failed, SQLSTATE = 28000
-    no permission for USAGE access to GENERATOR G
-    There is no generator G in this database
-
-    Statement failed, SQLSTATE = 28000
-    no permission for USAGE access to GENERATOR G
-"""
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, user_a: User, user_b: User, user_c: User, role_a: Role):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
 
+    act.expected_stdout = """
+        USER                            BIG_BROTHER
+        ROLE                            NONE
+        Generator G, current value: 0, initial value: 1, increment: 1
+        NEW_GEN                         -111
+        USER                            BILL_JUNIOR
+        ROLE                            STOCKMGR
+        Generator G, current value: -111, initial value: 1, increment: 1
+        NEW_GEN                         -333
+        USER                            BILL_JUNIOR
+        ROLE                            NONE
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR G
+        -Effective user is BILL_JUNIOR
+        There is no generator G in this database
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR G
+        -Effective user is BILL_JUNIOR
+        USER                            MAVERICK
+        ROLE                            NONE
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR G
+        -Effective user is MAVERICK
+        There is no generator G in this database
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR G
+        -Effective user is MAVERICK
+    """
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
