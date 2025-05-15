@@ -7,6 +7,10 @@ TITLE:       SHOW GRANTS does not display info about exceptions which were grant
 DESCRIPTION:
 JIRA:        CORE-4839
 FBTEST:      bugs.core_4839
+NOTES:
+    [15.05.2025] pzotov
+    Added substitutions in order to suppress excessive lines produced by 'SHOW GRANTS':
+    they may remain after some failed test teardown phases.
 """
 
 import pytest
@@ -28,17 +32,18 @@ test_script = """
     commit;
 """
 
-act = isql_act('db', test_script)
+substitutions = [('^((?!USAGE ON (SEQUENCE|EXCEPTION)).)*$', '')]
 
-expected_stdout = """
-    /* Grant permissions for this database */
-    GRANT USAGE ON SEQUENCE GEN_BAR TO USER TMP$C4839
-    GRANT USAGE ON EXCEPTION EXC_FOO TO USER TMP$C4839
-"""
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, test_user: User):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    expected_out = """
+        GRANT USAGE ON SEQUENCE GEN_BAR TO USER TMP$C4839
+        GRANT USAGE ON EXCEPTION EXC_FOO TO USER TMP$C4839
+    """
+    
+    act.expected_stdout = expected_out
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
