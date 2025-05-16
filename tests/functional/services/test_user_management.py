@@ -9,7 +9,7 @@ DESCRIPTION:
   2) Python firebird-driver functions (from class Server)
 
   NB.
-  User with name 'tmp_vaclav$' must NOT present in security_db.
+  User with name 'tmp_vaclav' must NOT present in security_db.
   Results are verified by attempts to make TCP connection to the test DB using login/password of this user.
 
   See doc:
