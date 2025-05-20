@@ -28,6 +28,9 @@ NOTES:
     Confirmed bug on 5.0.3.1648-ca2f3e7, got:
         internal Firebird consistency check (page in use during flush (210), file: cch.cpp line: 2828)
     Checked on 5.0.3.1649-afcfa1a (intermediate snapshot) - all OK. Reduced min_version to 5.0.3.
+
+    [20.05.2024] pzotov
+    Added temporary mark 'disabled_in_forks' to SKIP this test when QA runs agains *fork* of standard FB.
 """
 
 import re
@@ -44,6 +47,7 @@ SUCCESS_MSG = 'OK.'
 db = db_factory()
 act = python_act('db')
 
+@pytest.mark.disabled_in_forks
 @pytest.mark.version('>=5.0.3')
 def test_1(act: Action, capsys):
     
