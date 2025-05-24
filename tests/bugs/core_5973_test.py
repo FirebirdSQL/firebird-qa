@@ -9,7 +9,11 @@ NOTES:
 [05.03.2021]
   added subst.: max. floating point precision on Linux is 15 rather than on Windows (16 digits).
 JIRA:        CORE-5973
-FBTEST:      bugs.core_5973
+NOTES:
+    [24.05.2025] pzotov
+    Splitted expected* variables for versions up to 5.x and 6.x+
+    This is needed after 11d5d5 ("Fix for #8082 ... user buffers directly (#8145)") by Dmitry Sibiryakov.
+    Discussed in email 24.05.2025 22:06, subj: "one more consequence of 11d5d5 ..." (since 15.05.2025 17:25).
 """
 
 import pytest
@@ -66,39 +70,54 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('0.0000000000000000', '0.000000000000000')])
 
-expected_stdout = """
+expected_out_5x = """
+    Statement failed, SQLSTATE = 22003
+    Dynamic SQL Error
+    -SQL error code = -303
+    -Floating-point overflow.  The exponent of a floating-point operation is greater than the magnitude allowed.
+
+    Statement failed, SQLSTATE = 22003
+    Dynamic SQL Error
+    -SQL error code = -303
+    -Floating-point overflow.  The exponent of a floating-point operation is greater than the magnitude allowed.
+
+    Statement failed, SQLSTATE = 22003
+    Dynamic SQL Error
+    -SQL error code = -303
+    -Floating-point underflow.  The exponent of a floating-point operation is less than the magnitude allowed.
+
+    Statement failed, SQLSTATE = 22003
+    Dynamic SQL Error
+    -SQL error code = -303
+    -Floating-point underflow.  The exponent of a floating-point operation is less than the magnitude allowed.
+
     GREATEST_DF34_FOR_POS_SCOPE     Infinity
     GREATEST_DF34_FOR_NEG_SCOPE     -Infinity
-    APPROX_ZERO_DF34_FOR_POS_SCOPE  0.0000000000000000
-    APPROX_ZERO_DF34_FOR_NEG_SCOPE  0.0000000000000000
+    APPROX_ZERO_DF34_FOR_POS_SCOPE  0.000000000000000
+    APPROX_ZERO_DF34_FOR_NEG_SCOPE  0.000000000000000
 """
 
-expected_stderr = """
+expected_out_6x = """
     Statement failed, SQLSTATE = 22003
-    Dynamic SQL Error
-    -SQL error code = -303
-    -Floating-point overflow.  The exponent of a floating-point operation is greater than the magnitude allowed.
+    Floating-point overflow.  The exponent of a floating-point operation is greater than the magnitude allowed.
 
     Statement failed, SQLSTATE = 22003
-    Dynamic SQL Error
-    -SQL error code = -303
-    -Floating-point overflow.  The exponent of a floating-point operation is greater than the magnitude allowed.
+    Floating-point overflow.  The exponent of a floating-point operation is greater than the magnitude allowed.
 
     Statement failed, SQLSTATE = 22003
-    Dynamic SQL Error
-    -SQL error code = -303
-    -Floating-point underflow.  The exponent of a floating-point operation is less than the magnitude allowed.
+    Floating-point underflow.  The exponent of a floating-point operation is less than the magnitude allowed.
 
     Statement failed, SQLSTATE = 22003
-    Dynamic SQL Error
-    -SQL error code = -303
-    -Floating-point underflow.  The exponent of a floating-point operation is less than the magnitude allowed.
+    Floating-point underflow.  The exponent of a floating-point operation is less than the magnitude allowed.
+
+    GREATEST_DF34_FOR_POS_SCOPE     Infinity
+    GREATEST_DF34_FOR_NEG_SCOPE     -Infinity
+    APPROX_ZERO_DF34_FOR_POS_SCOPE  0.000000000000000
+    APPROX_ZERO_DF34_FOR_NEG_SCOPE  0.000000000000000
 """
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.expected_stdout = expected_out_5x if act.is_version('<6') else expected_out_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
