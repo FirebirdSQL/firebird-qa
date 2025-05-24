@@ -8,7 +8,7 @@ DESCRIPTION:
     Test creates table with columns belonging to "new datatypes" family: int128, decfloat and time[stamp] with time zone.
     Also, one record is added into this table with values which are valid for numeric types in FB 4.x+ (time zone fields
     can remain null or arbitrary).
-    This DB is them copied to another DB (using file-level call of shutil.copy2()).
+    Further, this DB is copied to another DB using file-level call of shutil.copy2().
     Another DB filename must match to the specified in the databases.conf (alias defined by 'REQUIRED_ALIAS' variable).
     Its alias has special value for DataTypeCompatibility parameter. Connection to this DB and query to a table with 'new datatypes'
     must return SQLDA with *old* types which are known for FB versions prior 4.x.
@@ -26,6 +26,11 @@ NOTES:
        (for LINUX this equality is case-sensitive, even when aliases are compared!)
 
     Checked on 6.0.0.438, 5.0.2.1479, 4.0.6.3142.
+
+    [24.05.2025] pzotov
+    Splitted expected* variables for versions up to 5.x and 6.x+
+    This is needed after 11d5d5 ("Fix for #8082 ... user buffers directly (#8145)") by Dmitry Sibiryakov.
+    Discussed in email 24.05.2025 22:06, subj: "one more consequence of 11d5d5 ..." (since 15.05.2025 17:25).
 """
 
 import re
@@ -100,7 +105,7 @@ def test_1(act: Action, capsys):
        from test;
     '''
 
-    act.expected_stdout = f"""
+    expected_out_5x = f"""
         01: sqltype: 500 SHORT Nullable scale: 0 subtype: 0 len: 2
         02: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
         03: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
@@ -114,6 +119,20 @@ def test_1(act: Action, capsys):
         -Floating-point overflow. The exponent of a floating-point operation is greater than the magnitude allowed.
     """
 
+    expected_out_6x = f"""
+        01: sqltype: 500 SHORT Nullable scale: 0 subtype: 0 len: 2
+        02: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
+        03: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
+        04: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
+        05: sqltype: 580 INT64 Nullable scale: 0 subtype: 1 len: 8
+        06: sqltype: 480 DOUBLE Nullable scale: 0 subtype: 0 len: 8
+        07: sqltype: 560 TIME Nullable scale: 0 subtype: 0 len: 4
+        08: sqltype: 510 TIMESTAMP Nullable scale: 0 subtype: 0 len: 8
+        Statement failed, SQLSTATE = 22003
+        Floating-point overflow. The exponent of a floating-point operation is greater than the magnitude allowed.
+    """
+
+    act.expected_stdout = expected_out_5x if act.is_version('<6') else expected_out_6x
     act.isql(switches = ['-q'], input = test_sql, combine_output = True, credentials = False, connect_db = False)
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
