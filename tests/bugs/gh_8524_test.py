@@ -47,8 +47,6 @@ NOTES:
 
 import os
 import random
-import win32gui
-import win32con
 import subprocess
 import time
 from pathlib import Path
@@ -194,6 +192,10 @@ def get_random_unicode(length):
 
 #-----------------------------------------------------------
 def send_keys_to_window(window_title, keys_to_send):
+
+    import win32gui
+    import win32con
+
     window_id = win32gui.FindWindow(None, window_title)
     assert window_id > 0, f"Window with title '{window_title}' not found. Script must run only when user is logged on."
 
