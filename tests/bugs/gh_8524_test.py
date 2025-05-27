@@ -12,13 +12,13 @@ DESCRIPTION:
     exit
     ==========
     This batch further is called as CHILD process via: 'cmd.exe /c start <this_batch>' which will launch ISQL. 
-    ISQL process will have console window (which will appear on screen) and we wioll try to paste some text in it.
+    ISQL process will have console window (which will appear on screen) and we will try to paste some text in it.
 
     Text may contain non-printable / non-readable characters, so we have to check not the result of pasting but
-    value of CHAR_LENGTH(<pasted_text>). This is done by creating a table and using INSERT command:
+    the value of CHAR_LENGTH(<pasted_text>). This is done by creating a table and using INSERT command:
     =========
     insert into test(s_utf8) values(
-        '{long_utf8_data}'
+        '<long_utf8_data>'
     ) returning char_length(s_utf8);
     =========
     Result of this command is redirected to log.
@@ -27,7 +27,8 @@ DESCRIPTION:
 NOTES:
     [27.05.2025] pzotov
     0. Package 'pywin32' must be installed for this test (pip install pywin32).
-    1. Test was added just to be able to check result of pasting long text in existing ISQL console.
+    1. Problem could be reproduced only on Windows. Emulation of PASTE required (PIPE will not show any problem).
+    2. Test was added just to be able to check result of pasting long text in existing ISQL console.
        This test will not able to create console window if python was launched by scheduler and
        appropriate task has not set to: "Run only when user is logged on".
        Because of that, this test has '@pytest.mark.skip' marker.
@@ -35,11 +36,11 @@ NOTES:
        REMOVE OR COMMENT OUT THIS MARKER TO RUN THIS TEST
        ##################################################
 
-    2. String that we want to be pasted into console must NOT have two adjacent characters, e.g. 'commit'.
+    3. String that we want to be pasted into console must NOT have two adjacent characters, e.g. 'commit'.
        Otherwise only first of them will be actually pasted but others will be 'swallowed' for unknown reason.
-    3. Every line of <send_sql> (i.e. text to be pasted in console of ISQL) must be prefixed with TWO characters: ascii_char(13) and ascii_char(10).
+    4. Every line of <send_sql> (i.e. text to be pasted in console of ISQL) must be prefixed with TWO characters: ascii_char(13) and ascii_char(10).
        It is NOT enough to use as prefix only CHR_10 at this case!
-    4. Command processor ('cmd.exe') must change code page to 65001 before running ISQL, thus we launch BATCH rather than just ISQL (as child process).
+    5. Command processor ('cmd.exe') must change code page to 65001 before running ISQL, thus we launch BATCH rather than just ISQL (as child process).
 
     Checked on 6.0.0.789.
 """
@@ -225,7 +226,7 @@ utf8_dat = temp_file('tmp_8524.dat') # for debug only
 expected_stdout = """
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=4.0.6')
 @pytest.mark.platform('Windows')
 @pytest.mark.skip("Can not run when user is logged out. Child process must run in console window.")
 
