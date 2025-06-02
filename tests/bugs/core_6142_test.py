@@ -21,18 +21,41 @@ JIRA:        CORE-6142
 FBTEST:      bugs.core_6142
 NOTES:
     [20.08.2022] pzotov
-    Confirmed again problem with 4.0.0.1598, 3.0.5.33166.
-    Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535
+        Confirmed again problem with 4.0.0.1598, 3.0.5.33166.
+        Checked on 5.0.0.591, 4.0.1.2692, 3.0.8.33535
+
+    [02.06.2025] pzotov
+        Re-implemented in order to see details about failed attachments (accumulate them in separate logs and print at final of test).
+        Checked on 6.0.0.795
+
+        ::: NB :::
+        Weird message after test summary if we try to raise connection problem using invalid password (in order to check output):
+        ==========
+        Exception ignored in atexit callback: <function _api_shutdown at 0x000001618D4240E0>
+        Traceback (most recent call last):
+          File "C:/Python3x/Lib/site-packages/firebird/driver/core.py", line 161, in _api_shutdown
+            provider.shutdown(0, -3) # fb_shutrsn_app_stopped
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+          File "C:/Python3x/Lib/site-packages/firebird/driver/interfaces.py", line 1315, in shutdown
+            self._check()
+          File "C:/Python3x/Lib/site-packages/firebird/driver/interfaces.py", line 113, in _check
+            raise self.__report(DatabaseError, self.status.get_errors())
+        firebird.driver.types.DatabaseError: connection shutdown
+        ==========
+        Problem exists on both SS and CS.
+        The reason currently remains unknown.
 """
 
 import os
 import threading
 import datetime as py_dt
+from typing import List
+from pathlib import Path
 import time
 
 import pytest
 from firebird.qa import *
-from firebird.driver import connect, driver_config, NetProtocol
+from firebird.driver import connect, driver_config, NetProtocol, DatabaseError
 
 ###########################
 ###    S E T T I N G S  ###
@@ -44,89 +67,95 @@ THREADS_CNT = 15
 # Number of iterations to make connect /  disconnect for every started thread:
 LOOP_CNT = 10
 
+##############################
+DEBUG_USE_INVALID_PASSWORD = 0
+##############################
+
+tmp_logs = temp_files( [ f'tmp_6142.{i}.log' for i in range(THREADS_CNT) ] )
 
 tmp_user = user_factory('db', name='tmp$core_6142', password='123', plugin = 'Srp')
 db = db_factory()
 
-act = python_act('db', substitutions=[('[ \t]+', ' '), ('^((?!SQLCODE|SQLSTATE|[Cc]onnection|OVERALL RESULT).)*$', '')])
+act = python_act('db')
 
 #---------------------
 def showtime():
-     return ''.join( (py_dt.datetime.now().strftime("%H:%M:%S.%f")[:11],'.') )
-
-#---------------------
-
-class workerThread(threading.Thread):
-   def __init__(self, db_cfg_object, thr_idx, threads_cnt, num_of_iterations, usr):
-      threading.Thread.__init__(self)
-      self.db_cfg_object = db_cfg_object
-      self.thr_idx = thr_idx
-      self.threads_cnt = threads_cnt
-      self.num_of_iterations = num_of_iterations
-      self.usr = usr
-
-      self.results_dict = { thr_idx : [0,0] }
-      #fb_cset_lst = ['dos437', 'dos850', 'dos865', 'dos852', 'dos857', 'dos860','dos861', 'dos863', 'dos737', 'dos775', 'dos858', 'dos862', 'dos864', 'dos866', 'dos869', 'win1250', 'win1251', 'win1252', 'win1253', 'win1254', 'win1255', 'win1256',  'win1257', 'iso_8859_1', 'iso_8859_2', 'iso_8859_3', 'iso_8859_4', 'iso_8859_5', 'iso_8859_6', 'iso_8859_7', 'iso_8859_8', 'iso_8859_9']
-      #self.db_cfg_object.charset.value = fb_cset_lst[thr_idx]
-      
-   def run(self):
-      print( showtime(), f"Starting thread {self.thr_idx} / {self.threads_cnt}" )
-      make_db_attach(self)
-      print( showtime(), f"Exiting thread {self.thr_idx} / {self.threads_cnt}" )
-
-   def show_results(self):
-       for k,v in sorted( self.results_dict.items() ):
-           print( "ID of thread: %3d. OVERALL RESULT: PASSED=%d, FAILED=%d" % ( k, v[0], v[1] ) )
+     return ''.join( (py_dt.datetime.now().strftime("%H:%M:%S.%f")[:11],'. ') )
 
 #---------------------
 
 def make_db_attach(thread_object):
 
-   i = 0
-   mon_sql = f"select count(*) from mon$attachments where mon$user = '{thread_object.usr.name.upper()}'"
+   mon_sql = f"select count(*) from mon$attachments where mon$user = '{thread_object.tmp_user.name.upper()}'"
 
-   while i < thread_object.num_of_iterations:
+   with open(thread_object.tmp_log,'a') as f_thread_log:
 
-      con = None
-      att = 0
+       for iter in range(thread_object.num_of_iterations):
+           msg_prefix = f"Thread {thread_object.thr_idx}, iter {iter}/{thread_object.num_of_iterations-1}"
+           f_thread_log.write( showtime() + f"{msg_prefix} - trying to make connection\n" )
+           con = None
+           try:
+               a_pass = thread_object.tmp_user.password
+               if DEBUG_USE_INVALID_PASSWORD and thread_object.thr_idx == 2 and iter % 3 == 0:
+                   a_pass = 't0ta11y@wrong'
 
-      msg_prefix = f"Thread {thread_object.thr_idx}, iter {i}/{thread_object.num_of_iterations-1}"
-      print( showtime(), f"{msg_prefix} - trying to connect" )
+               with connect( thread_object.db_cfg_object.name, user = thread_object.tmp_user.name, password = a_pass ) as con:
+                   f_thread_log.write( showtime() + f"{msg_prefix} - established, {con.info.id=}\n" )
 
-      try:
-          with connect( thread_object.db_cfg_object.name, user = thread_object.usr.name, password = thread_object.usr.password ) as con:
-              print( showtime(), f"{msg_prefix}: created att = {con.info.id}" ) # , charset = {con.charset}" )
+                   # Accumulate counter of SUCCESSFULY established attachments:
+                   thread_object.pass_lst.append(iter)
 
-              # Accumulate counter of SUCCESSFULY established attachments:
-              thread_object.results_dict[ thread_object.thr_idx ][0] += 1
+           except DatabaseError as e:
+               # Accumulate counter of FAILED attachments:
+               thread_object.fail_lst.append(iter)
+               f_thread_log.write(f'### EXCEPTION ###\n')
+               f_thread_log.write(e.__str__() + '\n')
+               for x in e.gds_codes:
+                   f_thread_log.write(str(x) + '\n')
 
-      except Exception as e:
-          # Accumulate counter of FAILED attachments:
-          thread_object.results_dict[ thread_object.thr_idx ][1] += 1
-          print(e)
-
-
-      i += 1
 #---------------------
 
+class workerThread(threading.Thread):
+   def __init__(self, db_cfg_object, thr_idx, threads_cnt, num_of_iterations, tmp_user, tmp_logs):
+       threading.Thread.__init__(self)
+       self.db_cfg_object = db_cfg_object
+       self.thr_idx = thr_idx
+       self.threads_cnt = threads_cnt
+       self.num_of_iterations = num_of_iterations
+       self.tmp_user = tmp_user
+       self.tmp_log = tmp_logs[thr_idx]
+
+       self.pass_lst = []
+       self.fail_lst = []
+
+   def run(self):
+       with open(self.tmp_log, 'w') as f_thread_log:
+           f_thread_log.write( showtime() + f"Starting thread {self.thr_idx} / {self.threads_cnt-1}\n" )
+       
+       make_db_attach(self)
+
+       with open(self.tmp_log, 'a') as f_thread_log:
+           f_thread_log.write( showtime() + f"Exiting thread {self.thr_idx} / {self.threads_cnt-1}\n" )
+
+#---------------------
 
 @pytest.mark.version('>=3.0.5')
 @pytest.mark.platform('Windows')
-def test_1(act: Action, tmp_user: User, capsys):
+def test_1(act: Action, tmp_user: User, tmp_logs: List[Path], capsys):
 
     srv_config = driver_config.register_server(name = 'test_srv_core_6142', config = '')
 
     # Create new threads:
     # ###################
     threads_list=[]
-    for thr_idx in range(0, THREADS_CNT):
+    for thr_idx in range(THREADS_CNT):
         
         db_cfg_object = driver_config.register_database(name = f'test_db_core_6142_{thr_idx}')
         db_cfg_object.database.value = str(act.db.db_path)
         db_cfg_object.server.value = 'test_srv_core_6142'
         db_cfg_object.protocol.value = NetProtocol.XNET
 
-        threads_list.append( workerThread( db_cfg_object, thr_idx, THREADS_CNT, LOOP_CNT, tmp_user ) )
+        threads_list.append( workerThread( db_cfg_object, thr_idx, THREADS_CNT, LOOP_CNT, tmp_user, tmp_logs ) )
 
     # Start new Threads
     # #################
@@ -137,12 +166,23 @@ def test_1(act: Action, tmp_user: User, capsys):
     for t in threads_list:
         t.join()
 
-    act.expected_stdout = ''
-    for t in threads_list:
-        t.show_results()
-        act.expected_stdout += 'ID of thread: %d. OVERALL RESULT: PASSED=%d, FAILED=%d\n' % (t.thr_idx, LOOP_CNT, 0)
+    # not helps -- time.sleep(151)
 
-    #print( showtime(), "##### Exiting Main Thread #####\\n")
-   
+    if set([len(t.pass_lst) for t in threads_list]) == set((LOOP_CNT,)):
+        # All threads could establish connections using XNET on <LOOP_CNT> iterations.
+        print('Expected.')
+    else:
+        for t in threads_list:
+            if t.fail_lst:
+                print(f'Thread {t.thr_idx} - failed attempts to make connection on iterations:')
+                print(t.fail_lst)
+                print('Check log:')
+                with open(t.tmp_log, 'r') as f:
+                    print(f.read())
+                print('*' * 50)
+
+    act.expected_stdout = """
+        Expected.
+    """
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
