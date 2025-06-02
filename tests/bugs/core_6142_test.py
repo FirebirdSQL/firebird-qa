@@ -29,7 +29,8 @@ NOTES:
         Checked on 6.0.0.795
 
         ::: NB :::
-        Weird message after test summary if we try to raise connection problem using invalid password (in order to check output):
+        Special setting DEBUG_KIND_OF_INVALID_DATA presents in this test in order to force connection to be failed and check output.
+        When this setting is 'invalid_pass' then weird message after test summary:
         ==========
         Exception ignored in atexit callback: <function _api_shutdown at 0x000001618D4240E0>
         Traceback (most recent call last):
@@ -42,7 +43,9 @@ NOTES:
             raise self.__report(DatabaseError, self.status.get_errors())
         firebird.driver.types.DatabaseError: connection shutdown
         ==========
-        Problem exists on both SS and CS.
+        Problem exists on 4.x ... 6.x (SS/CS).
+        No such message if we set DEBUG_KIND_OF_INVALID_DATA = 'not_valid_db' and try to make connection to some file that for is not valid .fdb
+
         The reason currently remains unknown.
 """
 
@@ -68,7 +71,9 @@ THREADS_CNT = 15
 LOOP_CNT = 10
 
 ##############################
-DEBUG_USE_INVALID_PASSWORD = 0
+DEBUG_KIND_OF_INVALID_DATA = '' # 'not_valid_db' / 'invalid_pass'
+#DEBUG_KIND_OF_INVALID_DATA = 'not_valid_db'
+#DEBUG_KIND_OF_INVALID_DATA = 'invalid_pass'
 ##############################
 
 tmp_logs = temp_files( [ f'tmp_6142.{i}.log' for i in range(THREADS_CNT) ] )
@@ -93,11 +98,17 @@ def make_db_attach(thread_object):
        for iter in range(thread_object.num_of_iterations):
            msg_prefix = f"Thread {thread_object.thr_idx}, iter {iter}/{thread_object.num_of_iterations-1}"
            f_thread_log.write( showtime() + f"{msg_prefix} - trying to make connection\n" )
-           con = None
+
+           db_bak = thread_object.db_cfg_object.database.value # need for DEBUG_KIND_OF_INVALID_DATA == 'not_valid_db'
            try:
                a_pass = thread_object.tmp_user.password
-               if DEBUG_USE_INVALID_PASSWORD and thread_object.thr_idx == 2 and iter % 3 == 0:
-                   a_pass = 't0ta11y@wrong'
+               if DEBUG_KIND_OF_INVALID_DATA and thread_object.thr_idx == 2 and iter % 3 == 0:
+                   if DEBUG_KIND_OF_INVALID_DATA == 'not_valid_db':
+                       thread_object.db_cfg_object.database.value = str(thread_object.tmp_act.vars['bin-dir'] / 'fbclient.dll')
+                   elif DEBUG_KIND_OF_INVALID_DATA == 'invalid_pass':
+                       a_pass = 't0ta11y@wrong'
+                   else:
+                       pass
 
                with connect( thread_object.db_cfg_object.name, user = thread_object.tmp_user.name, password = a_pass ) as con:
                    f_thread_log.write( showtime() + f"{msg_prefix} - established, {con.info.id=}\n" )
@@ -112,11 +123,13 @@ def make_db_attach(thread_object):
                f_thread_log.write(e.__str__() + '\n')
                for x in e.gds_codes:
                    f_thread_log.write(str(x) + '\n')
+           finally:
+               thread_object.db_cfg_object.database.value =  db_bak
 
 #---------------------
 
 class workerThread(threading.Thread):
-   def __init__(self, db_cfg_object, thr_idx, threads_cnt, num_of_iterations, tmp_user, tmp_logs):
+   def __init__(self, act: Action, db_cfg_object, thr_idx, threads_cnt, num_of_iterations, tmp_user, tmp_logs):
        threading.Thread.__init__(self)
        self.db_cfg_object = db_cfg_object
        self.thr_idx = thr_idx
@@ -125,6 +138,7 @@ class workerThread(threading.Thread):
        self.tmp_user = tmp_user
        self.tmp_log = tmp_logs[thr_idx]
 
+       self.tmp_act = act
        self.pass_lst = []
        self.fail_lst = []
 
@@ -155,7 +169,7 @@ def test_1(act: Action, tmp_user: User, tmp_logs: List[Path], capsys):
         db_cfg_object.server.value = 'test_srv_core_6142'
         db_cfg_object.protocol.value = NetProtocol.XNET
 
-        threads_list.append( workerThread( db_cfg_object, thr_idx, THREADS_CNT, LOOP_CNT, tmp_user, tmp_logs ) )
+        threads_list.append( workerThread( act, db_cfg_object, thr_idx, THREADS_CNT, LOOP_CNT, tmp_user, tmp_logs ) )
 
     # Start new Threads
     # #################
