@@ -4,6 +4,11 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.20.2
+==============
+
+* Fixed problem with utf8 db filenames in `Database`.
+
 Version 0.20.1
 ==============
 

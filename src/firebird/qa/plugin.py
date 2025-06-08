@@ -828,7 +828,7 @@ class Database:
 
         """
         __tracebackhide__ = True
-        with connect_server(_vars_['server']) as srv:
+        with connect_server(_vars_['server'], encoding='utf8' if self.utf8filename else None) as srv:
             srv.database.no_linger(database=self.db_path)
         self._make_config()
         with connect(self.config_name) as db:
@@ -881,12 +881,12 @@ class Database:
     def set_async_write(self) -> None:
         "Set the database to `async write` mode."
         __tracebackhide__ = True
-        with connect_server(_vars_['server']) as srv:
+        with connect_server(_vars_['server'], encoding='utf8' if self.utf8filename else None) as srv:
             srv.database.set_write_mode(database=self.db_path, mode=DbWriteMode.ASYNC)
     def set_sync_write(self) -> None:
         "Set the database to `sync write` mode."
         __tracebackhide__ = True
-        with connect_server(_vars_['server']) as srv:
+        with connect_server(_vars_['server'], encoding='utf8' if self.utf8filename else None) as srv:
             srv.database.set_write_mode(database=self.db_path, mode=DbWriteMode.SYNC)
 
 def existing_db_factory(*, filename: str='test.fdb', charset: Optional[str]=None,
