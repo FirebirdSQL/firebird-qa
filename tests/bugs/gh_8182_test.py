@@ -8,7 +8,7 @@ DESCRIPTION:
 NOTES:
     [15.06.2025] pzotov
     Confirmed bug on 6.0.0.835-3da8317; 5.0.3.1661-cfcf0e8
-    Checked on 6.0.0.838-0b49fa8; 5.0.3.1666-97178d0; 4.0.6.3213-f015c28
+    Checked on 6.0.0.838-0b49fa8; 5.0.3.1666-97178d0; 4.0.6.3213-f015c28; 3.0.13.33813-222a910
 """
 
 import pytest
@@ -36,7 +36,7 @@ expected_stdout = """
     SIGN 1
 """
 
-@pytest.mark.version('>=4.0.6')
+@pytest.mark.version('>=3.0.13')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
