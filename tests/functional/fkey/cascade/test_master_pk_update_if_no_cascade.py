@@ -4,7 +4,7 @@
 ID:          n/a
 TITLE:       Attempt to update PK column(s) in master must fail if there is FK record in detail and FK was declared without CASCADE option
 DESCRIPTION:
-    Test verifies RI mechanism when CASCADE option is used or missed: PK-column(s) in master may be updated
+    Test verifies RI mechanism when CASCADE option missed: PK-column(s) in master may be updated
     only if there is no appropriate record in detail, i.e. with value in FK column(s) equal to PK value(s) from master.
     Single- and multi-segmented PK/FK are checked.
     Work within a single transaction.

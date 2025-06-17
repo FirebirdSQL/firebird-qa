@@ -4,7 +4,7 @@
 ID:          n/a
 TITLE:       Attempt to update UK column(s) in master must fail if there is FK record in detail and FK was declared without CASCADE option
 DESCRIPTION:
-    Test verifies RI mechanism when CASCADE option is used or missed: key columns in master with UNIQUE constraint may be updated
+    Test verifies RI mechanism when CASCADE option missed: key columns in master with UNIQUE constraint may be updated
     only if there is no appropriate record in detail (with value in FK equal to UK value from master) or all key fields are NULL.
     Single- and multi-segmented PK/FK are checked.
     Work within a single transaction.

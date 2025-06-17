@@ -4,7 +4,7 @@
 ID:          n/a
 TITLE:       Attempt to delete record in master must fail if there is FK record in detail and FK was declared without CASCADE option
 DESCRIPTION:
-    Test verifies RI mechanism when CASCADE option is used or missed: record in master may be deleted 
+    Test verifies RI mechanism when CASCADE option missed: record in master may be deleted 
     only if there is no appropriate record in detail (with value in FK equal to PK value from master).
     Single- and multi-segmented PK/FK are checked.
     Work within a single transaction.
