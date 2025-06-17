@@ -73,8 +73,8 @@ def test_1(act: Action):
         delete from tmain where id = 1000; -- must FAIL
         delete from tmain where id = 2000; -- must PASS
         delete from tmain where id is null; -- must PASS
-        select id as remained_master_id from tmain;
-        select id as remained_detail_id from tdetl;
+        select id as remained_master_id from tmain order by id;
+        select id as remained_detail_id from tdetl order by id;
         commit;
         drop table tdetl;
         drop table tmain;

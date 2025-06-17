@@ -79,8 +79,8 @@ def test_1(act: Action):
         insert into tdetl(id, pid) values(101, null);
         delete from tmain where id = 1; -- must FAIL
         delete from tmain where id = 2; -- must PASS
-        select id as remained_master_id from tmain;
-        select id as remained_detail_id from tdetl;
+        select id as remained_master_id from tmain order by id;
+        select id as remained_detail_id from tdetl order by id;
         commit;
         drop table tdetl;
         drop table tmain;
@@ -94,8 +94,8 @@ def test_1(act: Action):
         insert into tdetl(id, pid1, pid2, pid3) values(101, 1, 1, null);
         delete from tmain where id1 = 1 and id2 = 1 and id3 = 1; -- must FAIL
         delete from tmain where id1 = 1 and id2 = 1 and id3 = 2; -- must PASS
-        select id1 as remained_master_id1, id2 as remained_master_id2, id3 as remained_master_id3 from tmain;
-        select id as remained_detail_id from tdetl;
+        select id1 as remained_master_id1, id2 as remained_master_id2, id3 as remained_master_id3 from tmain order by id1, id2, id3;
+        select id as remained_detail_id from tdetl order by id;
         commit;
         drop table tdetl;
         drop table tmain;

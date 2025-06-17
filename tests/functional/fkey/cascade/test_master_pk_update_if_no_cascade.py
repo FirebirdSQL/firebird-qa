@@ -47,8 +47,8 @@ expected_stdout = """
     violation of FOREIGN KEY constraint TDETL_FK on table TDETL
     -Foreign key references are present for the record
     -Problematic key value is (ID = 1)
-    REMAINED_MASTER_ID 1
     REMAINED_MASTER_ID -2
+    REMAINED_MASTER_ID 1
     REMAINED_DETAIL_ID 100
     REMAINED_DETAIL_ID 101
 
@@ -56,12 +56,12 @@ expected_stdout = """
     violation of FOREIGN KEY constraint TDETL_FK on table TDETL
     -Foreign key references are present for the record
     -Problematic key value is (ID1 = 1, ID2 = 1, ID3 = 1)
-    REMAINED_MASTER_ID1 1
-    REMAINED_MASTER_ID2 1
-    REMAINED_MASTER_ID3 1
     REMAINED_MASTER_ID1 -2
     REMAINED_MASTER_ID2 -2
     REMAINED_MASTER_ID3 -2
+    REMAINED_MASTER_ID1 1
+    REMAINED_MASTER_ID2 1
+    REMAINED_MASTER_ID3 1
     REMAINED_DETAIL_ID 100
     REMAINED_DETAIL_ID 101
 """
@@ -82,8 +82,8 @@ def test_1(act: Action):
         insert into tdetl(id, pid) values(101, null);
         update tmain set id = -id where id = 1; -- must FAIL
         update tmain set id = -id where id = 2; -- must PASS
-        select id as remained_master_id from tmain;
-        select id as remained_detail_id from tdetl;
+        select id as remained_master_id from tmain order by id;
+        select id as remained_detail_id from tdetl order by id;
         commit;
         drop table tdetl;
         drop table tmain;
@@ -99,8 +99,8 @@ def test_1(act: Action):
         insert into tdetl(id, pid1, pid2, pid3) values(101, 1, 1, null);
         update tmain set id1 = -1, id2 = -1, id3 = -1 where id1 = 1 and id2 = 1 and id3 = 1; -- must FAIL
         update tmain set id1 = -2, id2 = -2, id3 = -2 where id1 = 1 and id2 = 1 and id3 = 2; -- must PASS
-        select id1 as remained_master_id1, id2 as remained_master_id2, id3 as remained_master_id3 from tmain;
-        select id as remained_detail_id from tdetl;
+        select id1 as remained_master_id1, id2 as remained_master_id2, id3 as remained_master_id3 from tmain order by id1, id2, id3;
+        select id as remained_detail_id from tdetl order by id;
         commit;
         drop table tdetl;
         drop table tmain;
