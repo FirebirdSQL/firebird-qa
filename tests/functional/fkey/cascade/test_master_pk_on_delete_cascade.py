@@ -2,9 +2,11 @@
 
 """
 ID:          n/a
-TITLE:       Deleting record in master must cause deletions in appropriate detail if 'ON DELETE CASCADE' option is used
+TITLE:       Deleting record in master must cause deletions in appropriate detail if FK references to PK and 'ON DELETE CASCADE' option is used.
 DESCRIPTION:
     Test verifies RI mechanism when ON DELETE CASCADE option is used.
+    Parent table has PRIMARY KEY constraint.
+    Child table has column(s) on which FK is declared, with option ON DELETE CASCADE.
     Single- and multi-segmented PK/FK are checked.
     Work within a single transaction.
 NOTES:
