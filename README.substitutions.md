@@ -36,7 +36,7 @@ every such test has to be changed as follows:
           addi_subst="PUBLIC". "SYSTEM". " '
           ```
 
-      Applying of tokens from 'addi_subst' parameter to the 'substitutions' will lead to:
+      Applying of tokens from 'addi_subst' parameter to the 'substitutions' will chage it to follwing:
           ```
           substitutions = [ ( <optional: previous tuples>, ('"PUBLIC".', ''), ('"', ''), ("'", '') ]
           ```
