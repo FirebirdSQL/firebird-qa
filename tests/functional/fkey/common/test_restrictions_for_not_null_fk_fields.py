@@ -2,23 +2,17 @@
 
 """
 ID:          n/a
-TITLE:       FK definition: SET NULL clause should not lead FK-columns to have NULLs if parent record not exists or was removed
+TITLE:       FK definition: SET NULL clause should not lead FK-columns to have NULLs.
 DESCRIPTION:
+    Parent table has UNIQUE constraint declared for NULLABLE column(s).
+    Child table has column(s) on which FK is declared, with options: ON UPDATE SET NULL and ON DELETE SET NULL.
     Single- and multi-segmented PK/UK are checked.
     Work within a single transaction.
 NOTES:
-    [17.06.2025] pzotov
-    1. Extended 'subsitutions' list is used here to suppress "PUBLIC" schema prefix and remove single/double quotes from all object names. Need since 6.0.0.834.
-       ::: NB :::
-       File act.files_dir/'test_config.ini' must contain section:
-           [schema_n_quotes_suppress]
-           addi_subst="PUBLIC". " '
-       (this file is used in qa/plugin.py, see QA_GLOBALS dictionary).
-
-       Value of parameter 'addi_subst' is splitted on tokens using space character and we add every token to 'substitutions' list which
-       eventually will be like this:
-           substitutions = [ ( <optional: previous tuples>, ('"PUBLIC".', ''), ('"', ''), ("'", '') ]
-    2. Adjusted expected output: removed single quotes from DB object name(s).
+    [21.06.2025] pzotov
+    ::: NB :::
+    SQL schema name (6.x+), single and double quotes are suppressed in the output.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
 
     Discussed with Vlad, letters 16.06.2025 13:54 (subj: "#8598: ...")
     Checked on 6.0.0.838; 3.0.13.33813.
