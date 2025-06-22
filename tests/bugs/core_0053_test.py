@@ -25,12 +25,29 @@ DESCRIPTION:
     reset like this: c = gen_id(g_gather_stat, -gen_id(g_gather_stat, 0));
 JIRA:        CORE-53
 FBTEST:      bugs.core_0053
+NOTES:
+    [22.06.2025] pzotov
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
+
+    Checked on 6.0.0.853; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
 db = db_factory(from_backup='mon-stat-gathering-2_5.fbk')
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+substitutions = [ ('line: \\d+, col: \\d++', '') ]
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
 
 test_script = """
     set list on;
@@ -118,7 +135,7 @@ test_script = """
     -- on 2.5 = {5, 5}, on 3.0 = {5, 3} ==> ratio 3.00 should be always enough.
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
     PLAN (T ORDER TEST_F1_F2)
