@@ -73,10 +73,6 @@ test_script = """
     select * from test;
 """
 
-#act = isql_act('db', test_script,
-#               substitutions=[("-At trigger 'V_TEST_BIU' line.*", "-At trigger 'V_TEST_BIU' line")])
-
-
 substitutions=[("-At trigger 'V_TEST_BIU' line.*", "-At trigger 'V_TEST_BIU' line")]
 
 # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
