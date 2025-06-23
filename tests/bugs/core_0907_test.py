@@ -7,6 +7,12 @@ TITLE:       Server crash on violation of NOT NULL constraint
 DESCRIPTION:
 JIRA:        CORE-907
 FBTEST:      bugs.core_0907
+    [23.06.2025] pzotov
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
+
+    Checked on 6.0.0.853; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -56,29 +62,38 @@ test_script = """
     show table crash;
 """
 
-act = isql_act('db', test_script)
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+substitutions = [('[ \t]+', ' '), ('Table: .*', '')]
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    A1                              INTEGER Not Null
-    A2                              INTEGER Not Null
-    A3                              INTEGER Not Null
-    A4                              INTEGER Not Null
-    A5                              Computed by: (a2*a3*a4)
-"""
-
-expected_stderr = """
     Statement failed, SQLSTATE = 22006
     unsuccessful metadata update
     -Cannot make field A5 of table CRASH NOT NULL because there are NULLs present
     Statement failed, SQLSTATE = 23000
-    validation error for column "CRASH"."A1", value "*** null ***"
+    validation error for column CRASH.A1, value *** null ***
+
+    A1 INTEGER Not Null
+    A2 INTEGER Not Null
+    A3 INTEGER Not Null
+    A4 INTEGER Not Null
+    A5 Computed by: (a2*a3*a4)
+"""
+
+expected_stderr = """
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
