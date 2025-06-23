@@ -7,6 +7,13 @@ TITLE:       Removing a NOT NULL constraint is not visible until reconnect
 DESCRIPTION:
 JIRA:        CORE-866
 FBTEST:      bugs.core_0866
+NOTES:
+    [23.06.2025] pzotov
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
+
+    Checked on 6.0.0.853; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
