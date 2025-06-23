@@ -7,6 +7,7 @@ TITLE:       Server crash on violation of NOT NULL constraint
 DESCRIPTION:
 JIRA:        CORE-907
 FBTEST:      bugs.core_0907
+NOTES:
     [23.06.2025] pzotov
     ::: NB :::
     SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
