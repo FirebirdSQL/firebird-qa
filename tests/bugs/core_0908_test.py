@@ -11,7 +11,7 @@ DESCRIPTION:
     line is at 2.1.3 we can hope for proper fix in 2.1.4. It should work as intended in 2.5 line.
 JIRA:        CORE-908
 FBTEST:      bugs.core_0908
-FBTEST:      bugs.core_0907
+NOTES:
     [23.06.2025] pzotov
     ::: NB :::
     SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
