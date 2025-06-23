@@ -3,7 +3,7 @@
 """
 ID:          issue-1271
 ISSUE:       1271
-TITLE:       Problem when dropping column that is a primary key
+TITLE:       Column involved in the constraint (e.g. PK) could be dropped if constraint has user-defined name
 DESCRIPTION:
 JIRA:        CORE-878
 FBTEST:      bugs.core_0878
