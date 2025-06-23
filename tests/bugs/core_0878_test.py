@@ -2,8 +2,8 @@
 
 """
 ID:          issue-1271
-ISSUE:       1271
-TITLE:       Column involved in the constraint (e.g. PK) could be dropped if constraint has user-defined name
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1271
+TITLE:       Column involved in the constraint (e.g. PK) could NOT be dropped if constraint has user-defined name
 DESCRIPTION:
 JIRA:        CORE-878
 FBTEST:      bugs.core_0878
@@ -89,6 +89,6 @@ expected_stdout = """
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
