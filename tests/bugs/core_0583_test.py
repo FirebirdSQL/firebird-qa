@@ -7,6 +7,13 @@ TITLE:       Before triggers are firing after checks
 DESCRIPTION:
 JIRA:        CORE-583
 FBTEST:      bugs.core_0583
+NOTES:
+    [22.06.2025] pzotov
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
+
+    Checked on 6.0.0.853; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -40,26 +47,31 @@ test_script = """
     select * from test1;
 """
 
-act = isql_act('db', test_script, substitutions=[('-At trigger.*', '-At trigger')])
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+substitutions = [('[ \t]+', ' '), ('(-)?At trigger.*', 'At trigger')]
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = isql_act('db', test_script, substitutions = substitutions)
+
 
 expected_stdout = """
-    Records affected: 0
-    Records affected: 0
-    Records affected: 0
-    Records affected: 0
-"""
-
-expected_stderr = """
     Statement failed, SQLSTATE = 23000
     Operation violates CHECK constraint TEST1_CHK on view or table TEST1
-    -At trigger 'CHECK_3'
+    At trigger
+    Records affected: 0
+    Records affected: 0
+    Records affected: 0
+    Records affected: 0
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
-
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
