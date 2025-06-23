@@ -12,18 +12,14 @@ FBTEST:      bugs.core_0866
 import pytest
 from firebird.qa import *
 
-init_script = """
+
+test_script = """
     recreate table test (
         id integer not null,
         col varchar(20) not null
     );
     insert into test (id, col) values (1, 'data');
     commit;
-"""
-
-db = db_factory(init=init_script)
-
-test_script = """
     update rdb$relation_fields
       set rdb$null_flag = null
       where (rdb$field_name = upper('col')) and (rdb$relation_name = upper('test'));
@@ -32,9 +28,21 @@ test_script = """
     update test set col = null where id = 1;
 """
 
-act = isql_act('db', test_script)
+db = db_factory()
 
-expected_stderr = """
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+substitutions = [('[ \t]+', ' ')]
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = isql_act('db', test_script, substitutions = substitutions)
+
+expected_stdout = """
     Statement failed, SQLSTATE = 42000
     UPDATE operation is not allowed for system table RDB$RELATION_FIELDS
     Statement failed, SQLSTATE = 23000
@@ -43,7 +51,7 @@ expected_stderr = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
