@@ -6,53 +6,78 @@ FBTEST:      functional.gtcs.dsql_domain_22
 TITLE:       Verify result of ALTER DOMAIN with changing NOT NULL flag and CHECK constraints
   when a table exists with field based on this domain
 DESCRIPTION:
-  Original test see in:
-  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_22.script
+    Original test see in:
+    https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_22.script
 
-  Comment in GTCS:
-    test for error conditions when using the alter domain statement on domains
-    that are already in use in table definitions,
-    with domain defaults and check constraints.
+    Comment in GTCS:
+      test for error conditions when using the alter domain statement on domains
+      that are already in use in table definitions,
+      with domain defaults and check constraints.
 
-  Test creates domain with DEFAULT value and CHECK constraint.
-  Initially domain definition:
-  1) allows insertion of NULLs;
-  2) have DEFAULT value which meets CHECK requirements.
+    Test creates domain with DEFAULT value and CHECK constraint.
+    Initially domain definition:
+    1) allows insertion of NULLs;
+    2) have DEFAULT value which meets CHECK requirements.
 
-  Then we create table and insert one record with DEFAULT value (it must pass) and second record with NULL.
+    Then we create table and insert one record with DEFAULT value (it must pass) and second record with NULL.
 
-  After this we try to change domain definition by adding NOT NULL clause - and it must
-  fail because of existing record with null. Finally, we replace CHECK constraint so that
-  its new expression will opposite to previous one, and try again to insert record with DEFAULT value.
-  It must fail because of new domain CHECK violation.
+    After this we try to change domain definition by adding NOT NULL clause - and it must
+    fail because of existing record with null. Finally, we replace CHECK constraint so that
+    its new expression will opposite to previous one, and try again to insert record with DEFAULT value.
+    It must fail because of new domain CHECK violation.
 
-  This is performed separately for each datatype (smallint, int, ...).
+    This is performed separately for each datatype (smallint, int, ...).
 
-  ::: NB-1 :::
-  Test uses datatypes that did appear only in FB 4.0: INT128, DECFLOAT and
-  TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
+    ::: NB-1 :::
+    Test uses datatypes that did appear only in FB 4.0: INT128, DECFLOAT and
+    TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
 
-  ::: NB-2 :::
-  Domain CHECK constraint *can* be changed so that existing data will not satisfy new expression.
-  Only NOT NULL is verified against data that were inserted in the table.
-
+    ::: NB-2 :::
+    Domain CHECK constraint *can* be changed so that existing data will not satisfy new expression.
+    Only NOT NULL is verified against data that were inserted in the table.
 NOTES:
-[19.04.2022] pzotov
-  Manipulations with domain 'dom22_08' were changed: removed usage of EXP() to get value that is minimal
-  distinguish from zero (used before: exp(-745.NNNNN)). Reason: result is hardware-dependent (Intel vs AMD).
+    [19.04.2022] pzotov
+    Manipulations with domain 'dom22_08' were changed: removed usage of EXP() to get value that is minimal
+    distinguish from zero (used before: exp(-745.NNNNN)). Reason: result is hardware-dependent (Intel vs AMD).
 
+    [23.06.2025] pzotov
+    Fixed wrong value of charset that was used to connect: "utf-8". This caused crash of isql in recent 6.x.
+    https://github.com/FirebirdSQL/firebird/commit/5b41342b169e0d79d63b8d2fdbc033061323fa1b
+    Thanks to Vlad for solved problem.
+
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
+
+    Checked on 6.0.0.853; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 from pathlib import Path
 
-substitutions = [('After line.*', ''), ('X_BLOB_20.*', ''), ('X_BLOB_21.*', ''),
-                 ('X_BLOB_22.*', ''), ('DM_FVALID.*', ''), ('DM_FDEFAULT.*', ''),
-                 ('0.0000000000000000', '0.000000000000000'),
-                 ('X_DATE                          20.*', 'X_DATE 20'),
-                 ('validation error for column "TEST"."X_DATE", value .*',
-                  'validation error for column "TEST"."X_DATE"')]
+substitutions = [ 
+                  ('After line.*', ''),
+                  ('X_BLOB_20.*', ''),
+                  ('X_BLOB_21.*', ''),
+                  ('X_BLOB_22.*', ''),
+                  ('DM_FVALID.*', ''),
+                  ('DM_FDEFAULT.*', ''),
+                  ('0.0000000000000000', '0.000000000000000'),
+                  ('DATE_FROM_DOMAIN_DEFAULT .*', 'DATE_FROM_DOMAIN_DEFAULT'),
+                  ('"TEST"."X_DATE", value .*', 'TEST.X_DATE'),
+                ]
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = python_act('db', substitutions = substitutions)
 
 db = db_factory()
 
@@ -598,7 +623,7 @@ test_expected_stdout = """
 
     X_SML                           0
     X_INT                           500
-    X_DATE                          2021-04-20
+    DATE_FROM_DOMAIN_DEFAULT        2021-04-20
     X_CHAR                          Wisła
     X_VCHR                          Norrström
     X_NUM                           -327.68
@@ -651,6 +676,8 @@ test_script_1 = """
 
     create domain dom22_01 as smallint         default 0           check (value >= 0 and value < 100);
     create domain dom22_02 as integer          default 500         check (value >= 500);
+
+    -- NB: concrete value of date will be suppressed, see subst.:
     create domain dom22_03 as date             default 'TODAY'     check (value >= 'today');
 
     -- CHECK-expression of this domain will be changed to
@@ -754,7 +781,8 @@ test_script_1 = """
 
     recreate table test(x_date dom22_03); -- date             default 'TODAY'     check (value >= 'today');
 
-    insert into test default values returning x_date;
+    -- must pass and issue current date, values will be suppressed, see 'susbtitutions':
+    insert into test default values returning x_date as DATE_FROM_DOMAIN_DEFAULT;
     insert into test values(null);
     commit;
 
@@ -1079,7 +1107,7 @@ def test_1(act: Action, tmp_file: Path):
     act.expected_stdout = test_expected_stdout
     act.expected_stderr = test_expected_stderr
 
-    act.isql(switches=['-q'], input_file=tmp_file, charset='utf-8')
+    act.isql(switches=['-q'], input_file=tmp_file, charset='utf8')
     assert (act.clean_stdout == act.clean_expected_stdout and
             act.clean_stderr == act.clean_expected_stderr)
 
