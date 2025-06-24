@@ -24,16 +24,15 @@ DESCRIPTION:
 JIRA:        CORE-5236
 FBTEST:      bugs.core_5236
 NOTES:
-    [16.06.2024] pzotov
-    Plan for FB 5.x and 6.x changed since 28-may-2024, build 6.0.0.363 #95442.
-    It was adjusted after talk with dimitr: must be the same for all FB versions
-    (with only difference: 'Sub-query' at the top line for FB 5.x+).
-    Changed filler character for show padding ('#' --> '.').
+    [24.06.2025] pzotov
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    Also, for this test 'schema:' in SQLDA output is suppressed because as not relevant to check.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
 
-    [23.03.2025] pzotov
-    Separated expected_out because plans differ on 6.x vs previous versions since commit fc12c0ef
-    ("Unnest IN/ANY/EXISTS subqueries and optimize them using semi-join algorithm (#8061)").
-    Checked on 6.0.0.687-730aa8f; 5.0.3.1633-25a0817 
+    Adjusted explained plan in 6.x to actual.
+
+    Checked on 6.0.0.858; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -70,7 +69,18 @@ init_script = """
 
 db = db_factory(init=init_script)
 
-act = python_act('db')
+substitutions = []
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = python_act('db', substitutions=substitutions)
 
 #-----------------------------------------------------------
 
