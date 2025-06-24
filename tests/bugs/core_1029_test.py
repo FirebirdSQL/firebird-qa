@@ -2,61 +2,66 @@
 
 """
 ID:          issue-1444
-ISSUE:       1444
-TITLE:       ad plan in outer joins with IS NULL clauses (dependent on order of predicates)
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1444
+TITLE:       Bad plan in outer joins with IS NULL clauses (dependent on order of predicates)
 DESCRIPTION:
 JIRA:        CORE-1029
 FBTEST:      bugs.core_1029
+NOTES:
+    [24.06.2025] pzotov
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
+
+    Checked on 6.0.0.853; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """create table tb1 (id int, col int) ;
-create index tbi1 on tb1 (id) ;
-create index tbi2 on tb1 (col) ;
+db = db_factory()
 
-insert into tb1 values (1, 1) ;
-insert into tb1 values (2, 2) ;
-insert into tb1 values (1, null) ;
+test_script = """
+    create table tb1 (id int, col int) ;
 
-commit;
+    insert into tb1 values (1, 1) ;
+    insert into tb1 values (2, 2) ;
+    insert into tb1 values (1, null) ;
+    commit;
+    create index tbi1 on tb1 (id);
+    create index tbi2 on tb1 (col);
+    commit;
+
+    set planonly;
+    select * from tb1 a
+    left join tb1 b on a.id = b.id
+    where a.col is null and a.col+0 is null;
+
+    select * from tb1 a
+    left join tb1 b on a.id = b.id
+    where a.col+0 is null and a.col is null;
 """
 
-db = db_factory(init=init_script)
 
-test_script = """set plan on;
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
 
-select * from tb1 a
-  left join tb1 b on a.id = b.id
-  where a.col is null and a.col+0 is null;
+substitutions = [('[ \t]+', ' ')]
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
 
-select * from tb1 a
-  left join tb1 b on a.id = b.id
-  where a.col+0 is null and a.col is null;
-"""
+act = isql_act('db', test_script, substitutions = substitutions)
 
-act = isql_act('db', test_script)
-
-expected_stdout = """PLAN JOIN (A INDEX (TBI2), B INDEX (TBI1))
-
-          ID          COL           ID          COL
-============ ============ ============ ============
-           1       <null>            1            1
-           1       <null>            1       <null>
-
-PLAN JOIN (A INDEX (TBI2), B INDEX (TBI1))
-
-          ID          COL           ID          COL
-============ ============ ============ ============
-           1       <null>            1            1
-           1       <null>            1       <null>
-
+expected_stdout = """
+    PLAN JOIN (A INDEX (TBI2), B INDEX (TBI1))
+    PLAN JOIN (A INDEX (TBI2), B INDEX (TBI1))
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
