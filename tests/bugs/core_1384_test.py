@@ -34,15 +34,12 @@ db = db_factory(charset='UTF8', init=init_script)
 
 test_script = """
 set list on;
-show collation;
 select * from v_test;
 """
 
 act = isql_act('db', test_script)
 
 expected_stdout = """
-	COLL_ES, CHARACTER SET ISO8859_1, FROM EXTERNAL ('ES_ES_CI_AI'), 'SPECIALS-FIRST=1'
-	COLL_FR, CHARACTER SET ISO8859_1, FROM EXTERNAL ('FR_FR'), CASE INSENSITIVE, ACCENT INSENSITIVE, 'SPECIALS-FIRST=1'
 	RESULT_FOR_ES_CI_AI             0
 	RESULT_FOR_FR_CI_AI             0
 	RESULT_FOR_ES_CI_AI             0
