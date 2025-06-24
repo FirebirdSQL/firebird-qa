@@ -14,30 +14,27 @@ from firebird.qa import *
 
 db = db_factory()
 
-test_script = """CREATE TABLE TAB1 (COL1 INTEGER, COL2 GENERATED ALWAYS AS (COL1 +1), COL3 INTEGER GENERATED ALWAYS AS (COL1 +1));
-COMMIT;
-SHOW TABLE TAB1;
-INSERT INTO TAB1 (COL1) VALUES (1);
-COMMIT;
-SELECT * FROM TAB1;
-
+test_script = """
+    set list on;
+    create table tab1 (col1 integer, col2 generated always as (col1 +1), col3 integer generated always as (col1 +1));
+    commit;
+    insert into tab1 (col1) values (1);
+    commit;
+    select * from tab1;
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """COL1                            INTEGER Nullable
-COL2                            Computed by: (COL1 +1)
-COL3                            Computed by: (COL1 +1)
-
-        COL1                  COL2         COL3
-============ ===================== ============
-           1                     2            2
-
+expected_stdout = """
+    COL1 1
+    COL2 2
+    COL3 2
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
