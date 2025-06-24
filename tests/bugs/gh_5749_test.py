@@ -27,6 +27,11 @@ NOTES:
         -Token unknown - line 1, column 15
         -
     Checked on 5.0.0.742 - all OK.
+
+    [24.06.2025] pzotov
+    Fixed wrong value of charset that was used to connect: "utf-8". This caused crash of isql in recent 6.x.
+    https://github.com/FirebirdSQL/firebird/commit/5b41342b169e0d79d63b8d2fdbc033061323fa1b
+    Thanks to Vlad for solved problem.
 """
 
 import pytest
@@ -57,7 +62,6 @@ select 'u000D'\u000Dfrom rdb$database;
 def test_1(act: Action, tmp_file: Path):
 
     tmp_file.write_bytes(whitespace_sql.encode('utf-8'))
-
     act.expected_stdout = expected_stdout
-    act.isql(switches=['-q'], input_file=tmp_file, charset='utf-8', io_enc='utf-8', combine_output = True)
+    act.isql(switches=['-q'], input_file = tmp_file, charset = 'utf8', combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
