@@ -7,6 +7,15 @@ TITLE:       Easy metadata extract improvements
 DESCRIPTION: Domain DDL: move its CHECK clause from 'create' to 'alter' statement.
 JIRA:        CORE-800
 FBTEST:      bugs.core_0800
+NOTES:
+    [24.06.2025] pzotov
+    FB-6.x snapshot must be 6.0.0.854-10b585b or newer,
+    see: #8622 (Regression: ISQL crashes on attempt to extract metadata when domain with reference to user-defined collation presents.)
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
+
+    Checked on 6.0.0.858; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -43,7 +52,17 @@ init_script = """
 
 db = db_factory(charset='UTF8', init=init_script)
 
-act = python_act('db')
+substitutions = []
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = python_act('db', substitutions = substitutions)
 
 expected_stdout = """
     ALTER DOMAIN DM_TEST ADD CONSTRAINT
