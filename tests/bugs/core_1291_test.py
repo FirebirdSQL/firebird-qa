@@ -3,10 +3,14 @@
 """
 ID:          issue-1712
 ISSUE:       1712
-TITLE:       Can't transliterate character set when look at procedure text in database just created from script (and thus in ODS 11.1)
+TITLE:       Can't transliterate character set when look at procedure text in database just created from script
 DESCRIPTION:
 JIRA:        CORE-1291
 FBTEST:      bugs.core_1291
+NOTES:
+    [24.06.2025] pzotov
+    Added substitutions in orde to suppress output of procedure header info. This data irrelevant to the test.
+    Checked on 6.0.0.858; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -661,9 +665,10 @@ EXIT;
 
 db = db_factory(do_not_create=True)
 
-act = python_act('db')
+substitutions = [ ('Procedure: \\S+.*', ''), ('Procedure text:', '') ]
+act = python_act('db', substitutions = substitutions)
 
-expected_stdout = """Procedure text:
+expected_stdout = """
 =============================================================================
 DECLARE VARIABLE NDSDiv DOUBLE PRECISION;
 DECLARE VARIABLE ID_ExportFieldDoc Integer;
