@@ -2,78 +2,70 @@
 
 """
 ID:          issue-1504
-ISSUE:       1504
-TITLE:       User (not SYSDBA) what have privileges with grant option, can't revoke privileges, granted by other user or SYSDBA
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1504
+TITLE:       User (not SYSDBA) that have privileges with grant option, can't revoke privileges, granted by other user or SYSDBA
 DESCRIPTION:
 JIRA:        CORE-1083
 FBTEST:      bugs.core_1083
+NOTES:
+    [23.06.2025] pzotov
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
+
+    Checked on 6.0.0.853; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-substitutions = [('set echo .*', ''),
-                   ('-TMP\\$C1083 is not grantor of (UPDATE|Update|update) on TAB2 to ROLE1.',
-                    '-TMP$C1083 is not grantor of UPDATE on TAB2 to ROLE1.')]
-
 db = db_factory()
+tmp_user = user_factory('db', name='tmp$c1083', password='123')
+tmp_role = role_factory('db', name='dba_helper')
 
-test_script = """
-    -- Refactored 05-JAN-2016: removed dependency on recource 'test_user'.
-    -- Checked on WI-V3.0.0.32266 (SS/SC/CS).
-    -- Checked 06.08.2018: added 'substitutions' because different case if some words in error message
-    -- ('Update' in 3.0.x vs 'UPDATE' in 4.0)
-    -- 3.0.4.33021: OK, 1.563s.
-    -- 4.0.0.1143: OK, 2.703s.
+substitutions = []
 
-    create or alter user tmp$c1083 password 'QweRtyUioP';
-    commit;
-    recreate table tab1(col1 integer);
-    recreate table tab2(col2 integer);
-    commit;
-    create role role1;
-    grant update (col1) on tab1 to tmp$c1083 with grant option;
-    grant update (col2) on tab2 to role1;
-    commit;
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
 
-    connect 'localhost:$(DATABASE_LOCATION)test.fdb' user 'TMP$C1083' password 'QweRtyUioP';
-    --set bail on;
-    set echo on;
-    grant update(col1) on tab1 to role1;
-    revoke update(col1) on tab1 from role1;
-    revoke update(col2) on tab2 from role1;
-    set echo off;
-    commit;
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
 
-    connect 'localhost:$(DATABASE_LOCATION)test.fdb' user 'SYSDBA' password 'masterkey';
-    set echo on;
-    drop user tmp$c1083;
-    set echo off;
-    commit;
-    --  ('-TMP\\$C1083 is not grantor.*', '')
-"""
-
-act = isql_act('db', test_script, substitutions=substitutions)
-
-expected_stdout = """
-    grant update(col1) on tab1 to role1;
-    revoke update(col1) on tab1 from role1;
-    revoke update(col2) on tab2 from role1;
-    drop user tmp$c1083;
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -REVOKE failed
-    -TMP$C1083 is not grantor of UPDATE on TAB2 to ROLE1.
-"""
+act = isql_act('db', substitutions=substitutions)
 
 @pytest.mark.version('>=3.0')
-def test_1(act: Action):
+def test_1(act: Action, tmp_user: User, tmp_role: Role):
+
+    test_sql = f"""
+        recreate table tab1(col1 integer);
+        recreate table tab2(col2 integer);
+        commit;
+
+        grant update (col1) on tab1 to {tmp_user.name} with grant option;
+        grant update (col2) on tab2 to {tmp_role.name};
+        commit;
+
+        connect '{act.db.dsn}' user '{tmp_user.name}' password '{tmp_user.password}';
+        set echo on;
+        grant update(col1) on tab1 to {tmp_role.name};
+        revoke update(col1) on tab1 from {tmp_role.name};
+        revoke update(col2) on tab2 from {tmp_role.name};
+    """
+
+    expected_stdout = f"""
+        grant update(col1) on tab1 to {tmp_role.name.upper()};
+        revoke update(col1) on tab1 from {tmp_role.name.upper()};
+        revoke update(col2) on tab2 from {tmp_role.name.upper()};
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -REVOKE failed
+        -{tmp_user.name} is not grantor of UPDATE on TAB2 to {tmp_role.name.upper()}.
+    """
+
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.isql(switches = ['-q'], input = test_sql, combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
