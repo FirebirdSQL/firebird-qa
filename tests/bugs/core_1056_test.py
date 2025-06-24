@@ -7,6 +7,7 @@ TITLE:       A query could produce different results, depending on the presence 
 DESCRIPTION:
 JIRA:        CORE-1056
 FBTEST:      bugs.core_1056
+NOTES:
     [24.06.2025] pzotov
     ::: NB :::
     SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
