@@ -3,10 +3,18 @@
 """
 ID:          issue-1517
 ISSUE:       1517
-TITLE:       Support BETWEEN predicate for select expressions
+TITLE:       Support `BETWEEN` predicate for select expressions
 DESCRIPTION:
 JIRA:        CORE-1095
 FBTEST:      bugs.core_1095
+NOTES:
+    [24.06.2025] pzotov
+    ::: NB :::
+    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    Also, for this test 'schema:' in SQLDA output is suppressed because as not relevant to check.
+    See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
+
+    Checked on 6.0.0.858; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -40,7 +48,19 @@ test_script = """
     ;
 """
 
-act = isql_act('db', test_script)
+# NB: 'schema:' presents in the SQLDA output for FB 6.x, we can suppress it for *this* test:
+substitutions = [('[ \t]+', ' '), ('table: schema: owner:', 'table: owner:')]
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = isql_act('db', test_script, substitutions=substitutions)
 
 expected_stdout = """
     INPUT message field count: 2
