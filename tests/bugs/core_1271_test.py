@@ -56,8 +56,6 @@ expected_stdout_6x = """
     -index "PUBLIC"."TEST_F01" cannot be used in the specified plan
 """
 
-expected_stdout = ''
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
