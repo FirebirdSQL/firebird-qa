@@ -19,9 +19,6 @@ NOTES:
     https://github.com/FirebirdSQL/firebird/commit/9c6855b516de4e4aea78e7df782e297f4e220287
 
     Checked on 6.0.0.863; 3.0.13.33813.
-
-24.06.2025 DEFERRED, SENT Q TO ADRIANO
-
 """
 
 import pytest
