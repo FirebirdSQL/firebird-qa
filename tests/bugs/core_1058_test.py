@@ -11,18 +11,16 @@ NOTES:
     [05.10.2023] pzotov
     1. Removed SHOW command for check result because its output often changes.
        It is enough for this test to verify just absense of any error messages.
-    2. Changed test queries.
-    3. ::: NB ::: Have a question about case when we change table fields type using
-        alter table test
-            alter column fld_domain_defined type varchar(10) character set win1250
-           ,alter column fld_explicit_type1 type varchar(10) character set win1252
-           ,alter column fld_explicit_type2 type varchar(10) character set win1257
-        ;
-       Result shows that column types NOT changed in this case and remains previous
-          FLD_DOMAIN_DEFINED VARCHAR(10) CHARACTER SET UTF8 COLLATE UNICODE_CI_AI Nullable // why not win1250 ?
-          FLD_EXPLICIT_TYPE1 VARCHAR(10) CHARACTER SET WIN1257 COLLATE WIN1257_EE Nullable // why not win1252 ?
-          FLD_EXPLICIT_TYPE2 VARCHAR(10) CHARACTER SET UTF8 COLLATE UNICODE_CI Nullable    // why not win1257 ?
-       Sent report to Adriano, Dmitry et al, 05-oct-2023 08:18. Waiting for reply.
+    2. There was issue about wrong change of columns collation, see:
+       https://github.com/FirebirdSQL/firebird/issues/7924
+       Fixed in 6.0.0.219, commit:
+       https://github.com/FirebirdSQL/firebird/commit/11dec10f9fc079ed74d623211e01f465e45d6a7c
+
+    [25.06.2025] pzotov
+    Minimal snapshot number for 6.x: 6.0.0.863, see letter to Adriano, 24.06.2025 11:05. Fixed in commit:
+    https://github.com/FirebirdSQL/firebird/commit/cbbbf3b94e7508806142eea0cd330ed4eedbbcdc
+
+    Checked on 6.0.0.863; 3.0.13.33813.
 """
 
 import pytest
@@ -105,29 +103,6 @@ test_script = """
 
     select 'domain_info, point-2' as msg, v.* from v_domain_info v;
     select 'table info, point-2' as msg, v.* from v_fields_info v;
-
-    ---------------------------------------------------------------
-
-    /*
-      !!  TEMPORARY DISABLED. 
-      !!  LETTER TO ADRIANO, DIMITR ET AL, 05-OCT-2023 08:18.
-      !!  WAITING FOR REPLY.
-    
-    alter domain dm_test type varchar(10) character set win1253;
-    
-    alter table test
-        alter column fld_domain_defined type varchar(10) character set win1250
-       ,alter column fld_explicit_type1 type varchar(10) character set win1252
-       ,alter column fld_explicit_type2 type varchar(10) character set win1257
-    ;
-    commit;
-
-    connect '$(DSN)';
-
-    select 'domain_info, point-3' as msg, v.* from v_domain_info v;
-    select 'table info, point-3' as msg, v.* from v_fields_info v;
-    */
-
 """
 
 act = isql_act('db', test_script)
