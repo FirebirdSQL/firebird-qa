@@ -7,6 +7,12 @@ TITLE:       'There are <n> dependencies' error message shows the wrong count of
 DESCRIPTION:
 JIRA:        CORE-1689
 FBTEST:      bugs.core_1689
+NOTES:
+    [25.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.863; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -44,11 +50,14 @@ expected_stderr_1 = """
     -there are 4 dependencies
 """
 
+
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     act_1.expected_stderr = expected_stderr_1
     act_1.execute()
     assert act_1.clean_stderr == act_1.clean_expected_stderr
+
+#########################################################################################
 
 # version: 4.0
 
@@ -108,17 +117,26 @@ test_script_2 = """
 
 act_2 = isql_act('db_2', test_script_2)
 
-expected_stderr_2 = """
-    Statement failed, SQLSTATE = 38000
-    unsuccessful metadata update
-    -cannot delete
-    -Function UDR40_GETEXACTTIMESTAMPUTC
-    -there are 6 dependencies
-"""
-
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
-    act_2.expected_stderr = expected_stderr_2
-    act_2.execute()
-    assert act_2.clean_stderr == act_2.clean_expected_stderr
 
+    if act_2.is_version('<6'):
+        expected_stdout = """
+            Statement failed, SQLSTATE = 38000
+            unsuccessful metadata update
+            -cannot delete
+            -Function UDR40_GETEXACTTIMESTAMPUTC
+            -there are 6 dependencies
+        """
+    else:
+        expected_stdout  = """
+            Statement failed, SQLSTATE = 38000
+            unsuccessful metadata update
+            -cannot delete
+            -Function "PUBLIC"."UDR40_GETEXACTTIMESTAMPUTC"
+            -there are 6 dependencies
+        """
+
+    act_2.expected_stdout = expected_stdout
+    act_2.execute(combine_output = True)
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
