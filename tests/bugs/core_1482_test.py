@@ -7,6 +7,12 @@ TITLE:       Make optimizer to consider ORDER BY optimization when making decisi
 DESCRIPTION:
 JIRA:        CORE-1482
 FBTEST:      bugs.core_1482
+NOTES:
+    [25.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.863; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -59,18 +65,24 @@ test_script = """
     select * from tcolor m join thorses d on m.id = d.color_id order by d.id rows 1;
 """
 
-act = isql_act('db', test_script)
 
-expected_stdout = """
-    COLORS_CNT                      50
-    HORSES_CNT                      50000
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
+expected_stdout_5x = """
+    COLORS_CNT 50
+    HORSES_CNT 50000
     PLAN JOIN (D ORDER THORSES_ID, M INDEX (TCOLOR_ID))
+"""
+
+expected_stdout_6x = """
+    COLORS_CNT 50
+    HORSES_CNT 50000
+    PLAN JOIN ("D" ORDER "PUBLIC"."THORSES_ID", "M" INDEX ("PUBLIC"."TCOLOR_ID"))
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
