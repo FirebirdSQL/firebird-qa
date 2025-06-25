@@ -22,6 +22,7 @@ NOTES:
     2. ::: ACHTUNG :::
        We have to call <prepard_sttm_instance>.free() in order to prevent from pytest hanging after all tests completed.
        Workaround was provided by Vlad, letter 25.06.2025 13:36.
+       See also explaination by Vlad: 26.10.24 17:42 ("oddities when use instances of selective statements").
 
     3. Separated expected output for FB major versions prior/since 6.x.
        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
