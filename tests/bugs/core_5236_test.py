@@ -32,7 +32,7 @@ NOTES:
 
     Adjusted explained plan in 6.x to actual.
 
-    Checked on 6.0.0.858; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    Checked on 6.0.0.858; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest

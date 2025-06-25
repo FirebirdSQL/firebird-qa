@@ -15,7 +15,7 @@ NOTES:
     Minimal snapshot number for 6.x: 6.0.0.863, see letter from Adriano, 24.06.2025 23:24, commit:
     https://github.com/FirebirdSQL/firebird/commit/79ff650e5af7a0d6141e166b0cb8208ef211f0a7
 
-    Checked on 6.0.0.863; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    Checked on 6.0.0.863; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest

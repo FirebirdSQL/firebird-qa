@@ -14,7 +14,7 @@ NOTES:
     See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
 
     Previous test title: Error msg "Could not find UNIQUE INDEX" when in fact one is present [CORE1090]
-    Checked on 6.0.0.858; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    Checked on 6.0.0.858; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest

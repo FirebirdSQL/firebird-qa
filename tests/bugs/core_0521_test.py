@@ -9,7 +9,7 @@ JIRA:        CORE-521
 FBTEST:      bugs.core_0521
     [23.06.2025] pzotov
     Expected output was separated depending on FB version: we have to show SCHEMA name as prefix for DB object (since 6.0.0.834).
-    Checked on 6.0.0.853; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    Checked on 6.0.0.853; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest

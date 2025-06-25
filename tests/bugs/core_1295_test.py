@@ -13,7 +13,7 @@ NOTES:
     No substitutions are used to suppress schema name and quotes to enclosing object names.
     Discussed with dimitr, 24.06.2025 12:39.
 
-    Checked on 6.0.0.858; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    Checked on 6.0.0.858; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest

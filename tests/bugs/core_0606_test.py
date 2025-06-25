@@ -12,7 +12,7 @@ FBTEST:      bugs.core_0521
     Expected output was separated depending on FB version: we have to show SCHEMA name as prefix for DB object (since 6.0.0.834).
     Reimplemented: removed usage of hard-coded values for user and role name. Added substitutions to reduce irrelevant lines.
 
-    Checked on 6.0.0.853; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    Checked on 6.0.0.853; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest

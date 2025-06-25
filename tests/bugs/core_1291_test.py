@@ -10,7 +10,7 @@ FBTEST:      bugs.core_1291
 NOTES:
     [24.06.2025] pzotov
     Added substitutions in orde to suppress output of procedure header info. This data irrelevant to the test.
-    Checked on 6.0.0.858; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    Checked on 6.0.0.858; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest

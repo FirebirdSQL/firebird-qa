@@ -17,6 +17,9 @@ then this 'PLAN NATURAL' will be IGNORED until it is explicitly specified in the
 See below example #4 for view v_test1 defined as "select * from ... plan (t natural)".
 JIRA:        CORE-203
 FBTEST:      bugs.core_0203
+NOTES:
+    [22.06.2025] *** DEFERRED ***, SEE LETTER TO DIMITR AND ADRIANO.
+    https://github.com/FirebirdSQL/firebird/issues/8623
 """
 
 import pytest
@@ -56,8 +59,9 @@ test_script = """
     commit;
 
 
+    SET BAIL ON;
+    SET ECHO ON;
     set planonly;
-    --set echo on;
 
     select * from test t where x = 0 plan (t natural);                                              --  1
 
@@ -98,43 +102,19 @@ test_script = """
     select * from v_test4 v4 PLAN (V4 V_TEST3 T INDEX (TEST_X_Y));                                  -- 16
 """
 
-act = isql_act('db', test_script, substitutions=[('[ ]+', ' ')])
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+substitutions = [('[ \t]+', ' ')]
+#for p in addi_subst_tokens.split(' '):
+#    substitutions.append( (p, '') )
+
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    PLAN (T NATURAL)
-
-    PLAN (V1 T INDEX (TEST_X_ASC))
-
-    PLAN (V2 T INDEX (TEST_X_ASC))
-
-    PLAN (V1 T NATURAL)
-
-    PLAN (V2 T NATURAL)
-
-    PLAN (V1 T INDEX (TEST_X_DESC))
-
-    PLAN (V2 T INDEX (TEST_X_DESC))
-
-    PLAN (V1 T INDEX (TEST_X_Y))
-
-    PLAN (V2 T INDEX (TEST_Y_X))
-
-    PLAN (V1 T INDEX (TEST_X_Y))
-
-    PLAN (V2 T INDEX (TEST_X_Y))
-
-    PLAN (V1 T INDEX (TEST_SUM_X_Y))
-
-    PLAN (V2 T INDEX (TEST_SUB_X_Y))
-
-    PLAN (V3 T INDEX (TEST_X_ASC))
-
-    PLAN (V3 T INDEX (TEST_X_Y))
-
-    PLAN (V4 V_TEST3 T INDEX (TEST_X_ASC))
-
-    PLAN (V4 V_TEST3 T INDEX (TEST_X_Y))
-
 """
 
 @pytest.mark.version('>=3')

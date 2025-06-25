@@ -23,7 +23,7 @@ NOTES:
     Also, for this test 'schema:' in SQLDA output is suppressed because as not relevant to check.
     See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
 
-    Checked on 6.0.0.853; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    Checked on 6.0.0.853; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 JIRA:        CORE-501
 FBTEST:      bugs.core_0501
 """
