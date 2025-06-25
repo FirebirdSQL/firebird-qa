@@ -7,6 +7,12 @@ TITLE:       Unable to set FName, MName, LName fields in security to blank
 DESCRIPTION:
 JIRA:        CORE-856
 FBTEST:      bugs.core_0856
+NOTES:
+    [25.06.2025] pzotov
+    Minimal snapshot number for 6.x: 6.0.0.863, see letter to Adriano, 24.06.2025 16:01. Fixed in commit:
+    https://github.com/FirebirdSQL/firebird/commit/b3da90583735da2b01c8c8129240cfffced6c1dc
+
+    Checked on 6.0.0.863; 6.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -24,7 +30,7 @@ test_script = """
     set list on;
 
     select sec$user_name, sec$first_name, sec$middle_name, sec$last_name
-    from sec$users where upper(sec$user_name)=upper('tmp$c0856');
+    from sec$users where upper(sec$user_name) = upper('tmp$c0856');
 
     alter user tmp$c0856
     firstname ''
@@ -68,6 +74,6 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
