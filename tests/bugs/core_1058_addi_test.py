@@ -18,8 +18,14 @@ NOTES:
           FLD_DOMAIN_DEFINED VARCHAR(10) CHARACTER SET UTF8 COLLATE UNICODE_CI_AI Nullable // why not win1250 ?
           FLD_EXPLICIT_TYPE1 VARCHAR(10) CHARACTER SET WIN1257 COLLATE WIN1257_EE Nullable // why not win1252 ?
           FLD_EXPLICIT_TYPE2 VARCHAR(10) CHARACTER SET UTF8 COLLATE UNICODE_CI Nullable    // why not win1257 ?
-   Initially report was sent to Adriano, Dmitry et al, 05-oct-2023 08:18.
-   Fix 22-JAN-2024 17:42 in: https://github.com/FirebirdSQL/firebird/commit/11dec10f9fc079ed74d623211e01f465e45d6a7c
+    Initially report was sent to Adriano, Dmitry et al, 05-oct-2023 08:18.
+    Fix 22-JAN-2024 17:42 in: https://github.com/FirebirdSQL/firebird/commit/11dec10f9fc079ed74d623211e01f465e45d6a7c
+
+    [25.06.2025] pzotov
+    Minimal snapshot number for 6.x: 6.0.0.863, see letter to Adriano, 24.06.2025 11:05. Fixed in commit:
+    https://github.com/FirebirdSQL/firebird/commit/cbbbf3b94e7508806142eea0cd330ed4eedbbcdc
+
+    Checked on 6.0.0.863; 3.0.13.33813.
 """
 
 import pytest
