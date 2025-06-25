@@ -7,36 +7,78 @@ TITLE:       Incorrect "key size exceeds implementation restriction for index" e
 DESCRIPTION:
 JIRA:        CORE-1715
 FBTEST:      bugs.core_1715
+NOTES:
+    [26.06.2025] pzotov
+    Re-implemented: use max allowed values of key lengths for indices when 4 and 6 bytes are used per character.
+    See:
+        https://firebirdsql.org/file/documentation/html/en/refdocs/fblangref50/firebird-50-language-reference.html#fblangref50-ddl-idx-limits
+        ("Table 38. Maximum indexable (VAR)CHAR length")
+    Checked on 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
+    ::: NB :::
+    FB 6.x: it seems that since '4fe307: Improvement #8406 - Increase MIN_PAGE_SIZE to 8192' we can NOT create DB with any size except 8192.
+    Sent report to Adriano, 26.06.2025 00:13. WAITING FOR REPLY.
+    
+    ### QA TODO. DEFERRED FOR FB 6.X ###
+
 """
+from pathlib import Path
+import locale
 
 import pytest
 from firebird.qa import *
 
-init_script = """create table t1 (
-   t1_id integer not null
-   , vc_50_utf8_utf8 varchar(253) character set utf8 collate utf8
-   , vc_50_utf8_unicode varchar(169) character set utf8 collate unicode
-   , constraint pk_t1_id primary key (t1_id)
-);"""
+db = db_factory(charset='utf8')
 
-db = db_factory(charset='UTF8', init=init_script)
+substitutions = [('[ \t]+', ' ')]
+act = python_act('db', substitutions = substitutions)
 
-test_script = """create index i_vc_50_utf8_unicode on t1 (vc_50_utf8_unicode);
-create index i_vc_50_utf8_utf8 on t1 (vc_50_utf8_utf8);
-commit;
-show index;
-"""
+tmp_fdb = temp_file('tmp_core_1715.fdb')
 
-act = isql_act('db', test_script)
+@pytest.mark.version('>=3,<6')
+def test_1(act: Action, tmp_fdb: Path, capsys):
+    
+    utf8_max_key_size_map = {4096 : (253, 169), 8192 : (509,339), 16384 : (1021,681)}
+    if act.is_version('>=6'):
+         del utf8_max_key_size_map[4096]
+         utf8_max_key_size_map[32768] = (2045, 1363)
 
-expected_stdout = """I_VC_50_UTF8_UNICODE INDEX ON T1(VC_50_UTF8_UNICODE)
-I_VC_50_UTF8_UTF8 INDEX ON T1(VC_50_UTF8_UTF8)
-PK_T1_ID UNIQUE INDEX ON T1(T1_ID)
-"""
+    expected_lst = []
+    for pg_size, max_key_length_pair in utf8_max_key_size_map.items():
 
-@pytest.mark.version('>=3')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+        tmp_fdb.unlink(missing_ok = True)
+        
+        max_key_4_bytes_per_char, max_key_6_bytes_per_char = max_key_length_pair[:2]
+        passed_msg = f'Passed for {max_key_length_pair=}'
+
+        test_script = f"""
+            set bail on;
+            set list on;
+            create database 'localhost:{str(tmp_fdb)}'
+                page_size {pg_size}
+                default character set utf8
+            ;
+            select mon$page_size from mon$database;
+            commit;
+            create table test (
+                vc_utf8_utf8 varchar({max_key_4_bytes_per_char}) character set utf8 collate utf8
+               ,vc_utf8_unic varchar({max_key_6_bytes_per_char}) character set utf8 collate unicode
+            );
+            create index i_vc_utf8 on test (vc_utf8_utf8);
+            create index i_vc_unic on test (vc_utf8_unic);
+            commit;
+            set list off;
+            set heading off;
+            select '{passed_msg}' from rdb$database;
+            drop database;
+        """
+
+        act.isql(switches=['-q'], input = test_script, credentials = True, charset = 'utf8', connect_db = False, combine_output = True, io_enc = locale.getpreferredencoding())
+        print(act.clean_stdout)
+        act.reset()
+
+        expected_lst.extend( [f'mon$page_size {pg_size}'.upper(), passed_msg] )
+
+    act.expected_stdout = '\n'.join(expected_lst)
+    act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
-
