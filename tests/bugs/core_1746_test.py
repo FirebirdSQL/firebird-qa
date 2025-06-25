@@ -17,8 +17,10 @@ NOTES:
         On 2.5.3.26780 and 3.0.0.32483 statement 'create index' will pass (and this must be considered as problem).
         On 2.5.27020 and 3.0.1 such attempt leads to exception "-901 / object ... in use" - and this is expected.
         See also core_4386_test.py.
-
-    Checked on 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730 (SS/CS)
+        Checked on 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730 (SS/CS)
+    [25.06.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        Checked on 6.0.0.863; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -62,14 +64,22 @@ def test_1(act: Action, capsys):
                     print(e.__str__())
                     print(e.gds_codes)
 
-        expected_fail = """
-            lock conflict on no wait transaction
-            -unsuccessful metadata update
-            -object TABLE "TEST" is in use
-            (335544345, 335544351, 335544453)
-        """
+        if act.is_version('<6'):
+            expected_out = """
+                lock conflict on no wait transaction
+                -unsuccessful metadata update
+                -object TABLE "TEST" is in use
+                (335544345, 335544351, 335544453)
+            """
+        else:
+            expected_out = """
+                lock conflict on no wait transaction
+                -unsuccessful metadata update
+                -object TABLE "PUBLIC"."TEST" is in use
+                (335544345, 335544351, 335544453)
+            """
 
-        act.expected_stdout = expected_fail
+        act.expected_stdout = expected_out
         act.stdout = capsys.readouterr().out
         assert act.clean_stdout == act.clean_expected_stdout
         act.reset()
