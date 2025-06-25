@@ -63,13 +63,11 @@ def test_1(act: Action):
         """
     else:
         expected_stdout = """
-            PLAN (R RDB$DATABASE NATURAL)
-            PLAN HASH (R RDB$RELATIONS NATURAL, F NATURAL)
-
-            PLAN HASH (R RDB$RELATIONS NATURAL, R RDB$RELATIONS NATURAL, F NATURAL)
-
-            PLAN (R INDEX (RDB$INDEX_1))
-            PLAN (D RDB$DATABASE NATURAL, D RDB$DATABASE NATURAL)
+            PLAN ("R" "SYSTEM"."RDB$DATABASE" NATURAL)
+            PLAN HASH ("R" "SYSTEM"."RDB$RELATIONS" NATURAL, "F" NATURAL)
+            PLAN HASH ("R" "SYSTEM"."RDB$RELATIONS" NATURAL, "R" "SYSTEM"."RDB$RELATIONS" NATURAL, "F" NATURAL)
+            PLAN ("R" INDEX ("SYSTEM"."RDB$INDEX_1"))
+            PLAN ("D" "SYSTEM"."RDB$DATABASE" NATURAL, "D" "SYSTEM"."RDB$DATABASE" NATURAL)
         """
 
     act.expected_stdout = expected_stdout
