@@ -7,6 +7,13 @@ TITLE:       Include PLAN in mon$statements
 DESCRIPTION:
 JIRA:        CORE-2303
 FBTEST:      bugs.core_2303
+NOTES:
+    [26.06.2025] pzotov
+    Slightly refactored: made code more readable.
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -16,11 +23,6 @@ db = db_factory()
 act = python_act('db')
 
 TAG_TEXT = 'TAG_FOR_SEARCH'
-expected_stdout = f"""
-    select 1 /* {TAG_TEXT} */ from rdb$database
-    Select Expression
-        -> Table "RDB$DATABASE" Full Scan
-"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
@@ -32,6 +34,20 @@ def test_1(act: Action, capsys):
         for r in cur2:
             print(r[0])
             print(r[1])
+
+
+    expected_stdout_5x = f"""
+        select 1 /* {TAG_TEXT} */ from rdb$database
+        Select Expression
+            -> Table "RDB$DATABASE" Full Scan
+    """
+
+    expected_stdout_6x = f"""
+        select 1 /* {TAG_TEXT} */ from rdb$database
+        Select Expression
+        -> Table "SYSTEM"."RDB$DATABASE" Full Scan
+    """
+    expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
 
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
