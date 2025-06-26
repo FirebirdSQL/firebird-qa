@@ -13,14 +13,10 @@ NOTES:
     See:
         https://firebirdsql.org/file/documentation/html/en/refdocs/fblangref50/firebird-50-language-reference.html#fblangref50-ddl-idx-limits
         ("Table 38. Maximum indexable (VAR)CHAR length")
-    Checked on 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    Bug existed on 6.x since '4fe307: Improvement #8406 - Increase MIN_PAGE_SIZE to 8192': only page_size = 8K was avaliable for usage.
+    Fixed in https://github.com/FirebirdSQL/firebird/commit/6f6d16831919c4fa279189f02b93346c4d5ac1bf
 
-    ::: NB :::
-    FB 6.x: it seems that since '4fe307: Improvement #8406 - Increase MIN_PAGE_SIZE to 8192' we can NOT create DB with any size except 8192.
-    Sent report to Adriano, 26.06.2025 00:13. WAITING FOR REPLY.
-    
-    ### QA TODO. DEFERRED FOR FB 6.X ###
-
+    Checked on 6.0.0.876-6f6d168 ; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 from pathlib import Path
 import locale
@@ -35,7 +31,7 @@ act = python_act('db', substitutions = substitutions)
 
 tmp_fdb = temp_file('tmp_core_1715.fdb')
 
-@pytest.mark.version('>=3,<6')
+@pytest.mark.version('>=3')
 def test_1(act: Action, tmp_fdb: Path, capsys):
     
     utf8_max_key_size_map = {4096 : (253, 169), 8192 : (509,339), 16384 : (1021,681)}
