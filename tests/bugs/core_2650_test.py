@@ -858,309 +858,292 @@ fb5x_expected_out = f"""
 
 fb6x_expected_out = f"""
     1000
-    select txt_short from test a01 order by id
-    Must NOT use refetch because length of non-key column is less than threshold
+    {query_map[1000][0]}
+    {query_map[1000][1]}
     Select Expression
     ....-> Sort (record length: 1036, key length: 8)
-    ........-> Table "TEST" as "A01" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A01" Full Scan
     1010
-    select txt_broad from test a02 order by id
-    MUST use refetch because length of non-key column is greater than threshold
+    {query_map[1010][0]}
+    {query_map[1010][1]}
     Select Expression
     ....-> Refetch
     ........-> Sort (record length: 28, key length: 8)
-    ............-> Table "TEST" as "A02" Full Scan
+    ............-> Table "PUBLIC"."TEST" as "A02" Full Scan
     1020
-    select txt_short from test a03 order by id rows 1
-    MUST use refetch regardless on length of column because ROWS <N> presents
+    {query_map[1020][0]}
+    {query_map[1020][1]}
     Select Expression
     ....-> First N Records
     ........-> Refetch
     ............-> Sort (record length: 28, key length: 8)
-    ................-> Table "TEST" as "A03" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "A03" Full Scan
     2000
-    select id, computed_ts_dup from test order by id
-    Must NOT use refetch because computed column is based on txt_short with length < threshold
+    {query_map[2000][0]}
+    {query_map[2000][1]}
     Select Expression
     ....-> Sort (record length: 1036, key length: 8)
-    ........-> Table "TEST" Full Scan
+    ........-> Table "PUBLIC"."TEST" Full Scan
     2010
-    select id, computed_tb_dup from test order by id
-    MUST use refetch because computed column is based on txt_broad which has length >= threshold
+    {query_map[2010][0]}
+    {query_map[2010][1]}
     Select Expression
     ....-> Refetch
     ........-> Sort (record length: 28, key length: 8)
-    ............-> Table "TEST" Full Scan
+    ............-> Table "PUBLIC"."TEST" Full Scan
     3000
-    select id from test a04 where '' in (select txt_short from test x04 where txt_short = '' order by id)
-    *** not [yet] commented ***
+    {query_map[3000][0]}
+    {query_map[3000][1]}
     Sub-query (invariant)
     ....-> Filter
     ........-> Sort (record length: 1036, key length: 8)
     ............-> Filter
-    ................-> Table "TEST" as "X04" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "X04" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A04" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A04" Full Scan
     3010
-    select id from test a05 where '' in (select txt_broad from test x05 where txt_broad = '' order by id)
-    *** not [yet] commented ***
+    {query_map[3010][0]}
+    {query_map[3010][1]}
     Sub-query (invariant)
     ....-> Filter
     ........-> Refetch
     ............-> Sort (record length: 28, key length: 8)
     ................-> Filter
-    ....................-> Table "TEST" as "X05" Full Scan
+    ....................-> Table "PUBLIC"."TEST" as "X05" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A05" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A05" Full Scan
     3020
-    select id from test a06 where '' not in (select txt_short from test x06 where txt_short>'' order by id)
-    *** not [yet] commented ***
+    {query_map[3020][0]}
+    {query_map[3020][1]}
     Sub-query (invariant)
     ....-> Sort (record length: 1036, key length: 8)
     ........-> Filter
-    ............-> Table "TEST" as "X06" Full Scan
+    ............-> Table "PUBLIC"."TEST" as "X06" Full Scan
     Sub-query (invariant)
     ....-> Sort (record length: 1036, key length: 8)
     ........-> Filter
-    ............-> Table "TEST" as "X06" Full Scan
+    ............-> Table "PUBLIC"."TEST" as "X06" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A06" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A06" Full Scan
     3030
-    select id from test a07 where '' not in (select txt_broad from test x07 where txt_broad>'' order by id)
-    *** not [yet] commented ***
+    {query_map[3030][0]}
+    {query_map[3030][1]}
     Sub-query (invariant)
     ....-> Refetch
     ........-> Sort (record length: 28, key length: 8)
     ............-> Filter
-    ................-> Table "TEST" as "X07" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "X07" Full Scan
     Sub-query (invariant)
     ....-> Refetch
     ........-> Sort (record length: 28, key length: 8)
     ............-> Filter
-    ................-> Table "TEST" as "X07" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "X07" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A07" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A07" Full Scan
     3040
-    select id from test a08 where '' > all (select id from test x08 where txt_short>'' order by id)
-    *** not [yet] commented ***
+    {query_map[3040][0]}
+    {query_map[3040][1]}
     Sub-query (invariant)
     ....-> Filter
     ........-> Sort (record length: 1036, key length: 8)
     ............-> Filter
-    ................-> Table "TEST" as "X08" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "X08" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A08" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A08" Full Scan
     3050
-    select id from test a09 where '' > all (select id from test x09 where txt_broad>'' order by id)
-    *** not [yet] commented ***
+    {query_map[3050][0]}
+    {query_map[3050][1]}
     Sub-query (invariant)
     ....-> Filter
     ........-> Refetch
     ............-> Sort (record length: 28, key length: 8)
     ................-> Filter
-    ....................-> Table "TEST" as "X09" Full Scan
+    ....................-> Table "PUBLIC"."TEST" as "X09" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A09" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A09" Full Scan
     3060
-    select id from test a10 where '' <> any (select id from test x10 where txt_short>'' order by id)
-    *** not [yet] commented ***
+    {query_map[3060][0]}
+    {query_map[3060][1]}
     Sub-query (invariant)
     ....-> Filter
     ........-> Sort (record length: 1036, key length: 8)
     ............-> Filter
-    ................-> Table "TEST" as "X10" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "X10" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A10" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A10" Full Scan
     3070
-    select id from test a11 where '' <> any (select id from test x11 where txt_broad>'' order by id)
-    *** not [yet] commented ***
+    {query_map[3070][0]}
+    {query_map[3070][1]}
     Sub-query (invariant)
     ....-> Filter
     ........-> Refetch
     ............-> Sort (record length: 28, key length: 8)
     ................-> Filter
-    ....................-> Table "TEST" as "X11" Full Scan
+    ....................-> Table "PUBLIC"."TEST" as "X11" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A11" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A11" Full Scan
     4000
-    select id,txt_short from test a12 where exists(select 1 from test x12 where txt_short>'' order by id)
-    MUST use refetch: column x12.txt_short not present in order by
+    {query_map[4000][0]}
+    {query_map[4000][1]}
     Sub-query (invariant)
     ....-> Refetch
     ........-> Sort (record length: 28, key length: 8)
     ............-> Filter
-    ................-> Table "TEST" as "X12" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "X12" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A12" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A12" Full Scan
     4010
-    select id,txt_short from test a13 where exists(select 1 from test x13 where computed_id_dup > 0  order by id)
-    Must NOT use refetch: ORDER BY list contains the single element: ID, and it is base for x13.computed_id_dup column
+    {query_map[4010][0]}
+    {query_map[4010][1]}
     Sub-query (invariant)
     ....-> Sort (record length: 28, key length: 8)
     ........-> Filter
-    ............-> Table "TEST" as "X13" Full Scan
+    ............-> Table "PUBLIC"."TEST" as "X13" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A13" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A13" Full Scan
     4020
-    select id,txt_short from test a14 where exists(select 1 from test x14 where computed_id_dup > 0  order by computed_id_dup)
-    MUST use refetch! See letter from dimitr 28.12.2020 14:49
-    Sort procedure will get:
-    a KEY = result of evaluating 'computed_id_dup';
-    a VAL = value of the field 'ID' which is base for computing 'computed_id_dup'
-    Thus sorter will have a field which not equals to a key, which leads to refetch.
+    {query_map[4020][0]}
+    {query_map[4020][1]}
     Sub-query (invariant)
     ....-> Refetch
     ........-> Sort (record length: 36, key length: 12)
     ............-> Filter
-    ................-> Table "TEST" as "X14" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "X14" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A14" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A14" Full Scan
     4030
-    select id,txt_short from test a15 where exists(select 1 from test x15 where f02>0 and f01>0 order by f01, f02)
-    Must NOT use refetch: all persistent columns from WHERE expression (f01, f02) belong to ORDER BY list
+    {query_map[4030][0]}
+    {query_map[4030][1]}
     Sub-query (invariant)
     ....-> Sort (record length: 36, key length: 16)
     ........-> Filter
-    ............-> Table "TEST" as "X15" Full Scan
+    ............-> Table "PUBLIC"."TEST" as "X15" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A15" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A15" Full Scan
     4040
-    select id,txt_short from test a16 where exists(select 1 from test x16 where id>0 and f01>0 order by f01, f02)
-    Must use refetch: one of columns from WHERE expr (id) does not belong to ORDER BY list
+    {query_map[4040][0]}
+    {query_map[4040][1]}
     Sub-query (invariant)
     ....-> Refetch
     ........-> Sort (record length: 36, key length: 16)
     ............-> Filter
-    ................-> Table "TEST" as "X16" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "X16" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A16" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A16" Full Scan
     4050
-    select id,txt_short from test a17 where exists(select 1 from test x17 where computed_id_dup > 0 order by f01)
-    Must use refetch: computed column in WHERE expr does not belong to ORDER BY list
+    {query_map[4050][0]}
+    {query_map[4050][1]}
     Sub-query (invariant)
     ....-> Refetch
     ........-> Sort (record length: 28, key length: 8)
     ............-> Filter
-    ................-> Table "TEST" as "X17" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "X17" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A17" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A17" Full Scan
     4060
-    select id,txt_short from test a18 where exists(select 1 from test x18 where computed_guid > '' order by f01)
-    Must NOT use refetch: computed column x18.computed_guid does is evaluated via GUID and does not refer to any columns
+    {query_map[4060][0]}
+    {query_map[4060][1]}
     Sub-query (invariant)
     ....-> Sort (record length: 28, key length: 8)
     ........-> Filter
-    ............-> Table "TEST" as "X18" Full Scan
+    ............-> Table "PUBLIC"."TEST" as "X18" Full Scan
     Select Expression
     ....-> Filter (preliminary)
-    ........-> Table "TEST" as "A18" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A18" Full Scan
     4070
-    with recursive
-    r as (
-    select a19.id, a19.txt_short
-    from test a19
-    where not exists(select * from test x where x.txt_short < a19.txt_short order by id)
-    UNION ALL
-    select i.id, i.txt_short
-    from test i
-    join r on i.id > r.id
-    and not exists( select * from test x where x.txt_short between r.txt_short and i.txt_short order by id )
-    )
-    select * from r
-    MUST use refetch both in anchor and recursive parts
+    {query_map[4070][0]}
+    {query_map[4070][1]}
     Sub-query
     ....-> Refetch
     ........-> Sort (record length: 28, key length: 8)
     ............-> Filter
-    ................-> Table "TEST" as "R X" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "R" "X" Full Scan
     Sub-query
     ....-> Refetch
     ........-> Sort (record length: 28, key length: 8)
     ............-> Filter
-    ................-> Table "TEST" as "R X" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "R" "X" Full Scan
     Select Expression
     ....-> Recursion
     ........-> Filter
-    ............-> Table "TEST" as "R A19" Full Scan
+    ............-> Table "PUBLIC"."TEST" as "R" "A19" Full Scan
     ........-> Filter
-    ............-> Table "TEST" as "R I" Full Scan
+    ............-> Table "PUBLIC"."TEST" as "R" "I" Full Scan
     5000
-    select txt_broad from v_unioned v01 order by id
-    Must NOT use refetch because view DDL includes UNION
+    {query_map[5000][0]}
+    {query_map[5000][1]}
     Select Expression
     ....-> Sort (record length: 4044, key length: 8)
     ........-> First N Records
     ............-> Union
-    ................-> Table "TEST" as "V01 TEST" Full Scan
-    ................-> Table "RDB$DATABASE" as "V01 RDB$DATABASE" Full Scan
+    ................-> Table "PUBLIC"."TEST" as "V01" "PUBLIC"."TEST" Full Scan
+    ................-> Table "SYSTEM"."RDB$DATABASE" as "V01" "SYSTEM"."RDB$DATABASE" Full Scan
     6000
-    select left(txt_broad, 50) as txt from test a21 order by id
-    MUST use refetch because expression is based on column which has length >= threshold
-    (even if final length of expression result is much less than threshold)
+    {query_map[6000][0]}
+    {query_map[6000][1]}
     Select Expression
     ....-> Refetch
     ........-> Sort (record length: 28, key length: 8)
-    ............-> Table "TEST" as "A21" Full Scan
+    ............-> Table "PUBLIC"."TEST" as "A21" Full Scan
     6010
-    select left( txt_short || txt_short, 2000) as txt from test a22 order by id
-    Must NOT use refetch because expression is based on column which has length < threshold
-    (even if final length of expression result is much bigger than threshold)
+    {query_map[6010][0]}
+    {query_map[6010][1]}
     Select Expression
     ....-> Sort (record length: 1036, key length: 8)
-    ........-> Table "TEST" as "A22" Full Scan
+    ........-> Table "PUBLIC"."TEST" as "A22" Full Scan
     7000
-    select * from test_ns_01 a23 order by id
-    MUST use refetch
+    {query_map[7000][0]}
+    {query_map[7000][1]}
     Select Expression
     ....-> Refetch
     ........-> Sort (record length: 44, key length: 24)
-    ............-> Table "TEST_NS_01" as "A23" Full Scan
+    ............-> Table "PUBLIC"."TEST_NS_01" as "A23" Full Scan
     7010
-    select * from test_ns_02 a24 order by id
-    Must NOT refetch
+    {query_map[7010][0]}
+    {query_map[7010][1]}
     Select Expression
     ....-> Sort (record length: 1052, key length: 24)
-    ........-> Table "TEST_NS_02" as "A24" Full Scan
+    ........-> Table "PUBLIC"."TEST_NS_02" as "A24" Full Scan
     7020
-    select * from test_ns_03 order by id
-    MUST use refetch
+    {query_map[7020][0]}
+    {query_map[7020][1]}
     Select Expression
     ....-> Refetch
     ........-> Sort (record length: 36, key length: 12)
-    ............-> Table "TEST_NS_03" Full Scan
+    ............-> Table "PUBLIC"."TEST_NS_03" Full Scan
     7030
-    select * from test_ns_04 order by id
-    Must NOT use refetch
+    {query_map[7030][0]}
+    {query_map[7030][1]}
     Select Expression
     ....-> Sort (record length: 1036, key length: 12)
-    ........-> Table "TEST_NS_04" Full Scan
+    ........-> Table "PUBLIC"."TEST_NS_04" Full Scan
     7040
-    select * from test_ns_05 order by id
-    MUST use refetch
+    {query_map[7040][0]}
+    {query_map[7040][1]}
     Select Expression
     ....-> Refetch
     ........-> Sort (record length: 36, key length: 12)
-    ............-> Table "TEST_NS_05" Full Scan
+    ............-> Table "PUBLIC"."TEST_NS_05" Full Scan
     7050
-    select * from test_ns_06 order by id
-    Must NOT use refetch
+    {query_map[7050][0]}
+    {query_map[7050][1]}
     Select Expression
     ....-> Sort (record length: 1036, key length: 12)
-    ........-> Table "TEST_NS_06" Full Scan
+    ........-> Table "PUBLIC"."TEST_NS_06" Full Scan
 """
 
 act = python_act('db')
