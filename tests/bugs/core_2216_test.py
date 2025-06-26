@@ -15,6 +15,12 @@ DESCRIPTION:
     2. Run online validation of <nbk_level_0> - it sould NOT produce any errors.
 JIRA:        CORE-2216
 FBTEST:      bugs.core_2216
+NOTES:
+    [26.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -23,8 +29,8 @@ from firebird.qa import *
 from firebird.driver import SrvNBackupFlag
 
 substitutions = [('BLOB_ID.*', ''),
-                   ('[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9]', ''),
-                   ('Relation [0-9]{3,4}', 'Relation')]
+                   ('\\d\\d:\\d\\d:\\d\\d.\\d\\d', ''),
+                   ('Relation \\d{3,4}', 'Relation')]
 
 init_script = """
 create table test(id int, s varchar(10) unique using index test_s, t timestamp, b blob);
@@ -37,25 +43,36 @@ act = python_act('db', substitutions=substitutions)
 nbak_file_base = temp_file('nbak-file.fdb')
 nbak_file_add = temp_file('nbak-file.add')
 
-expected_stdout_a = """
-    ID                              1
-    S                               qwerty
-    T                               2013-12-11 14:15:16.1780
-    foo-rio-bar
-    Records affected: 1
-"""
-
-expected_stdout_b = """
-    Validation started
-    Relation (TEST)
-    process pointer page    0 of    1
-    Index 1 (TEST_S)
-    Relation (TEST) is ok
-    Validation finished
-"""
-
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, nbak_file_base: Path, nbak_file_add: Path):
+
+    expected_stdout_a = """
+        ID                              1
+        S                               qwerty
+        T                               2013-12-11 14:15:16.1780
+        foo-rio-bar
+        Records affected: 1
+    """
+
+    if act.is_version('<6'):
+        expected_stdout_b = """
+            Validation started
+            Relation (TEST)
+            process pointer page    0 of    1
+            Index 1 (TEST_S)
+            Relation (TEST) is ok
+            Validation finished
+        """
+    else:
+        expected_stdout_b = """
+            Validation started
+            Relation ("PUBLIC"."TEST")
+            process pointer page    0 of    1
+            Index 1 ("PUBLIC"."TEST_S")
+            Relation ("PUBLIC"."TEST") is ok
+            Validation finished
+        """
+
     with act.connect_server() as srv, act.db.connect() as con:
         # Backup base database
         srv.database.nbackup(database=act.db.db_path, backup=nbak_file_base,
