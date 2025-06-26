@@ -22,18 +22,26 @@ test_script = """
     show domain dm_dts;
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
 
-expected_stdout = """
-    DM_INT                          INTEGER Nullable
-                                    cHeCk(vAlUE<>0)
-    DM_DTS                          TIMESTAMP Nullable
-                                    cHeCk(valUe<>cUrrent_timEstamp)
+act = isql_act('db', test_script, substitutions = substitutions)
+
+expected_stdout_5x = """
+    DM_INT INTEGER Nullable
+    cHeCk(vAlUE<>0)
+    DM_DTS TIMESTAMP Nullable
+    cHeCk(valUe<>cUrrent_timEstamp)
+"""
+
+expected_stdout_6x = """
+    PUBLIC.DM_INT INTEGER Nullable
+    cHeCk(vAlUE<>0)
+    PUBLIC.DM_DTS TIMESTAMP Nullable
+    cHeCk(valUe<>cUrrent_timEstamp)
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
