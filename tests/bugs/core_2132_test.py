@@ -72,8 +72,6 @@ test_script = """
     select 'point-13' msg, t1.* from t1 where col = ( select col from p2(col) );
 """
 
-act = isql_act('db', test_script)
-
 substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
