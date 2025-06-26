@@ -7,6 +7,12 @@ TITLE:       Use of RDB$ADMIN role does not provide SYSDBA rights in GRANT/REVOK
 DESCRIPTION:
 JIRA:        CORE-2765
 FBTEST:      bugs.core_2765
+NOTES:
+    [26.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -111,6 +117,8 @@ def test_1(act_1: Action, user_admin: User, user_work1: User, user_work2: User):
     assert (act_1.clean_stderr == act_1.clean_expected_stderr and
             act_1.clean_stdout == act_1.clean_expected_stdout)
 
+#################################################################################
+
 # version: 4.0
 
 test_script_2 = """
@@ -162,44 +170,62 @@ test_script_2 = """
 
 act_2 = isql_act('db', test_script_2, substitutions=substitutions)
 
-expected_stdout_2 = """
-    WHO_AM_I                        TMP$C2765_ADMIN
-    WHAT_IS_MY_ROLE                 RDB$ADMIN
-
-    WHO_AM_I                        TMP$C2765_WORKER1
-    WHAT_IS_MY_ROLE                 NONE
-    ID                              1
-    X                               1000
-
-    Records affected: 1
-    Records affected: 1
-    Records affected: 1
-    Records affected: 1
-
-    WHO_AM_I                        TMP$C2765_ADMIN
-    WHAT_IS_MY_ROLE                 NONE
-
-    WHO_AM_I                        TMP$C2765_WORKER2
-    WHAT_IS_MY_ROLE                 NONE
-
-"""
-
-expected_stderr_2 = """
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -GRANT failed
-    -no SELECT privilege with grant option on table/view TEST
-    Statement failed, SQLSTATE = 28000
-    no permission for SELECT access to TABLE TEST
-    -Effective user is TMP$C2765_WORKER2
-"""
-
-
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action, user_admin: User, user_work1: User, user_work2: User):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.expected_stderr = expected_stderr_2
-    act_2.execute()
-    assert (act_2.clean_stderr == act_2.clean_expected_stderr and
-            act_2.clean_stdout == act_2.clean_expected_stdout)
+
+    expected_stdout_5x = f"""
+        WHO_AM_I                        {user_admin.name.upper()}
+        WHAT_IS_MY_ROLE                 RDB$ADMIN
+        WHO_AM_I                        {user_work1.name.upper()}
+        WHAT_IS_MY_ROLE                 NONE
+        ID                              1
+        X                               1000
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        WHO_AM_I                        {user_admin.name.upper()}
+        WHAT_IS_MY_ROLE                 NONE
+
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -GRANT failed
+        -no SELECT privilege with grant option on table/view TEST
+
+        WHO_AM_I                        {user_work2.name.upper()}
+        WHAT_IS_MY_ROLE                 NONE
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE TEST
+        -Effective user is {user_work2.name.upper()}
+    """
+
+    expected_stdout_6x = f"""
+        WHO_AM_I                        {user_admin.name.upper()}
+        WHAT_IS_MY_ROLE                 RDB$ADMIN
+        WHO_AM_I                        {user_work1.name.upper()}
+        WHAT_IS_MY_ROLE                 NONE
+        ID                              1
+        X                               1000
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        WHO_AM_I                        {user_admin.name.upper()}
+        WHAT_IS_MY_ROLE                 NONE
+
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -GRANT failed
+        -no SELECT privilege with grant option on table/view "PUBLIC"."TEST"
+
+        WHO_AM_I                        {user_work2.name.upper()}
+        WHAT_IS_MY_ROLE                 NONE
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE "PUBLIC"."TEST"
+        -Effective user is {user_work2.name.upper()}
+    """
+
+    act_2.expected_stdout = expected_stdout_5x if act_2.is_version('<6') else expected_stdout_6x
+    act_2.execute(combine_output = True)
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
 
