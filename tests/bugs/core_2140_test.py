@@ -28,6 +28,7 @@ substitutions = [
 
 act = isql_act('db', substitutions = substitutions)
 
+@pytest.mark.es_eds
 @pytest.mark.version('>=3')
 def test_1(act: Action):
 
