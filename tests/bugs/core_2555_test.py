@@ -61,7 +61,6 @@ test_script = """
     commit;
 
     set list on;
-	set plan on;
 
 	-- First, we check result of NATURAL scans:
     select rk from test group by ca,cb,rk;
@@ -78,7 +77,6 @@ test_script = """
 	create unique index test_unq2 on test(cb, rk, ca, id);
 	commit;
 
-	set plan on;
     select rk from test group by ca,cb,rk;
     select rk from test group by cb,rk,ca;
 """
@@ -87,7 +85,6 @@ act = isql_act('db', test_script)
 
 expected_stdout = """
 
-	PLAN SORT (TEST NATURAL)
 	RK                              a
 	RK                              c
 	RK                              d
@@ -97,7 +94,6 @@ expected_stdout = """
 	RK                              s
 	RK                              u
 
-	PLAN (TEST ORDER TEST_UNQ1)
 	RK                              a
 	RK                              c
 	RK                              d
@@ -107,7 +103,6 @@ expected_stdout = """
 	RK                              s
 	RK                              u
 
-	PLAN (TEST ORDER TEST_UNQ2)
 	RK                              a
 	RK                              c
 	RK                              d
