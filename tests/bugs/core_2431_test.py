@@ -7,6 +7,12 @@ TITLE:       String values in error messages are not converted to connection cha
 DESCRIPTION:
 JIRA:        CORE-2431
 FBTEST:      bugs.core_2431
+NOTES:
+    [26.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -31,26 +37,29 @@ test_script = """
     commit;
 """
 
-act = isql_act('db', test_script,
-                 substitutions=[('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
+substitutions = [ ('[ \t]+', ' '), ('-At block line: [\\d]+, col: [\\d]+', '-At block line')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
-    CONNECTION_CSET                 WIN1251
-"""
-
-expected_stderr = """
+expected_stdout_5x = """
+    CONNECTION_CSET WIN1251
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_BAD_REMAINDER
     -Новый остаток изделия будет отрицательным: -8
-    -At block line: 3, col: 7
+    -At block line
 """
 
-@pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute(charset='win1251')
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+expected_stdout_6x = """
+    CONNECTION_CSET WIN1251
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_BAD_REMAINDER"
+    -Новый остаток изделия будет отрицательным: -8
+    -At block line
+"""
 
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(charset='win1251', combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
