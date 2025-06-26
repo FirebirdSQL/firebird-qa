@@ -7,25 +7,29 @@ TITLE:       Possible index corruption with multiply updates of the same record 
 DESCRIPTION:
 JIRA:        CORE-1830
 FBTEST:      bugs.core_1830
+NOTES:
+    [26.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """
+db = db_factory()
+
+test_script = """
 	create table a(id char(1), name varchar(255));
 
 	create index idx_a on a (id);
-	create exception ex_perm 'Something wrong occurs...';
+	create exception exc_wrong 'Something wrong occurs...';
 	commit ;
 
 	insert into a (id) values ('1');
 	commit;
-"""
 
-db = db_factory(init=init_script)
-
-test_script = """
     set list on;
 	select * from a where id = '1';
 	set term ^;
@@ -33,46 +37,64 @@ test_script = """
 	begin
 	  update a set name = 'xxx';
 	  update a set id = '2';
-	  exception ex_perm;
+	  exception exc_wrong;
 	end ^
 	set term ; ^
-	select * from a ;
-	select * from a where id = '1' ;
-
+	set count on;
+	select 'point-1' as msg, a.* from a ;
+	select 'point-2' as msg, a.* from a where id = '1' ;
 	commit;
-	select * from a ;
+	select 'point-3' as msg, a.* from a ;
 """
 
-act = isql_act('db', test_script,
-                 substitutions=[('column.*', 'column x'), ('[ \t]+', ' '),
-                                ('-At block line: [\\d]+, col: [\\d]+', '')])
+substitutions = [ ('[ \t]+', ' '), ('column.*', 'column x'), ('-At block line: [\\d]+, col: [\\d]+', '')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
-	ID                              1
-	NAME                            <null>
+expected_stdout_5x = """
+    ID 1
+    NAME <null>
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -EXC_WRONG
+    -Something wrong occurs...
+    MSG point-1
+    ID 1
+    NAME <null>
+    Records affected: 1
 
-	ID                              1
-	NAME                            <null>
+    MSG point-2
+    ID 1
+    NAME <null>
+    Records affected: 1
 
-	ID                              1
-	NAME                            <null>
-
-	ID                              1
-	NAME                            <null>
+    MSG point-3
+    ID 1
+    NAME <null>
+    Records affected: 1
 """
-
-expected_stderr = """
-	Statement failed, SQLSTATE = HY000
-	exception 1
-	-EX_PERM
-	-Something wrong occurs...
+expected_stdout_6x = """
+    ID 1
+    NAME <null>
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EXC_WRONG"
+    -Something wrong occurs...
+    MSG point-1
+    ID 1
+    NAME <null>
+    Records affected: 1
+    MSG point-2
+    ID 1
+    NAME <null>
+    Records affected: 1
+    MSG point-3
+    ID 1
+    NAME <null>
+    Records affected: 1
 """
 
 @pytest.mark.version('>=2.5')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
-
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
