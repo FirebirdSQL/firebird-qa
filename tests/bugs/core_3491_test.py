@@ -7,43 +7,64 @@ TITLE:       Altering of a TYPE OF COLUMN parameter affects the original column
 DESCRIPTION:
 JIRA:        CORE-3491
 FBTEST:      bugs.core_3491
+NOTES:
+    [27.06.2025] pzotov
+    Removed 'SHOW' command. It is enough to check twise results of query to rdb$ tables - they must be same.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """create table aaa (a integer);
-commit;
-set term !!;
-create or alter procedure bbb
-returns (b type of column aaa.a)
-as
-begin
- suspend;
-end!!
-set term ;!!
-commit;
+db = db_factory()
+
+test_script = """
+    set list on;
+
+    create view v_info as
+    select rf.rdb$field_name fld_name, f.rdb$field_type fld_type, f.rdb$field_length fld_length, f.rdb$field_scale fld_scale
+    from rdb$relation_fields rf
+    left join rdb$fields f on rf.rdb$field_source = f.rdb$field_name
+    where rf.rdb$relation_name = upper('test');
+
+    create table test (f01 integer);
+    commit;
+    set term ^;
+    create or alter procedure sp_test returns (o_result type of column test.f01) as
+    begin
+        suspend;
+    end^
+    set term ;^
+    commit;
+
+    select 'point-1' as msg, v.* from v_info v;
+
+    set term ^;
+    create or alter procedure sp_test returns (o_result varchar(10)) as
+    begin
+        suspend;
+    end^
+    set term ;^
+    commit;
+
+    select 'point-2' as msg, v.* from v_info v;
 """
 
-db = db_factory(init=init_script)
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('Table: .*', '')])
 
-test_script = """show table aaa;
-set term !!;
-create or alter procedure bbb
-returns (b varchar(10))
-as
-begin
- suspend;
-end!!
-set term ;!!
-commit;
-show table aaa;
-"""
+expected_stdout = """
+    MSG                       point-1
+    FLD_NAME                      F01
+    FLD_TYPE                        8
+    FLD_LENGTH                      4
+    FLD_SCALE                       0
 
-act = isql_act('db', test_script)
-
-expected_stdout = """A                               INTEGER Nullable
-A                               INTEGER Nullable
+    MSG                       point-2
+    FLD_NAME                      F01
+    FLD_TYPE                        8
+    FLD_LENGTH                      4
+    FLD_SCALE                       0
 """
 
 @pytest.mark.version('>=3')
