@@ -7,6 +7,12 @@ TITLE:       Prohibit any improper mixture of explicit and implicit joins
 DESCRIPTION:
 JIRA:        CORE-2812
 FBTEST:      bugs.core_2812
+NOTES:
+    [27.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -36,8 +42,6 @@ init_script = """
     recreate table test(x int);
     insert into test values(1);
     commit;
-
-
 """
 
 db = db_factory(init=init_script)
@@ -121,53 +125,80 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script, substitutions=[('=.*', ''), ('-At line.*', '')])
+substitutions = [('[ \t]+', ' '), ('-At line.*', '')]
 
-expected_stdout = """
-    MSG                             case-2
-    A_ID                            111
-    MID_ID                          1
-    B_ID                            111
-    VAL                             0
+act = isql_act('db', test_script, substitutions = substitutions)
 
-    MSG                             case-2
-    A_ID                            999
-    MID_ID                          1
-    B_ID                            999
-    VAL                             123456789
-
-    MSG                             case-4
-    ID                              1
-
-    Z1                              1
-
-"""
-
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
     -Column unknown
     -L.ID
-
+    -At line 11, column 33
+    MSG                             case-2
+    A_ID                            111
+    MID_ID                          1
+    B_ID                            111
+    VAL                             0
+    MSG                             case-2
+    A_ID                            999
+    MID_ID                          1
+    B_ID                            999
+    VAL                             123456789
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
     -Column unknown
     -A.ID
-
+    -At line 4, column 24
+    MSG                             case-4
+    ID                              1
+    Z1                              1
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
-    -SQL error code
+    -SQL error code = -206
     -Column unknown
     -S.X
+    -At line 11, column 29
 """
 
-@pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42S22
+    Dynamic SQL Error
+    -SQL error code = -206
+    -Column unknown
+    -"L"."ID"
+    -At line 11, column 33
+    MSG                             case-2
+    A_ID                            111
+    MID_ID                          1
+    B_ID                            111
+    VAL                             0
+    MSG                             case-2
+    A_ID                            999
+    MID_ID                          1
+    B_ID                            999
+    VAL                             123456789
+    Statement failed, SQLSTATE = 42S22
+    Dynamic SQL Error
+    -SQL error code = -206
+    -Column unknown
+    -"A"."ID"
+    -At line 5, column 24
+    MSG                             case-4
+    ID                              1
+    Z1                              1
+    Statement failed, SQLSTATE = 42S22
+    Dynamic SQL Error
+    -SQL error code = -206
+    -Column unknown
+    -"S"."X"
+    -At line 12, column 29
+"""
 
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
