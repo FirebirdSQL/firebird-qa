@@ -12,6 +12,12 @@ NOTES:
     Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
     ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
     Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+
+    [27.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -42,14 +48,20 @@ test_script = """
 #
 act = isql_act('db', test_script, substitutions = [ ('^((?!(SQLSTATE|exceeds|maximum|limit|sqltype|literal)).)*$', ''), ('[ \t]+', ' ') ] )
 
-expected_stdout = """
+expected_stdout_5x = """
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32765 charset: 0 NONE
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32766 charset: 0 NONE
     01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32767 charset: 0 NONE
 """
 
+expected_stdout_6x = """
+    01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32765 charset: 0 SYSTEM.NONE
+    01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32766 charset: 0 SYSTEM.NONE
+    01: sqltype: 452 TEXT scale: 0 subtype: 0 len: 32767 charset: 0 SYSTEM.NONE
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
