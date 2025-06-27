@@ -10,6 +10,7 @@ FBTEST:      bugs.core_3491
 NOTES:
     [27.06.2025] pzotov
     Removed 'SHOW' command. It is enough to check twise results of query to rdb$ tables - they must be same.
+    Test script was checked on 2.5.0.26074 - bug has been confirmed.
 
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
