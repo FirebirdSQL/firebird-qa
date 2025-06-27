@@ -7,6 +7,11 @@ TITLE:       UTF8 UNICODE_CI collate can not be used in compound index
 DESCRIPTION:
 JIRA:        CORE-3239
 FBTEST:      bugs.core_3239
+NOTES:
+    [27.06.2025] pzotov
+    Suppressed name of altered view in order to have same expected* text for versions prior/since 6.x
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -63,27 +68,39 @@ test_script = """
     where a.bfield  = true;
 """
 
-act = isql_act('db', test_script)
+substitutions = [ ('[ \t]+', ' ') ] 
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+
+expected_out_5x = """
     PLAN (TEST INDEX (TEST_BOOL_CIAI_CI))
     RULE_ID                         2
     RULE_ID                         3
-
     PLAN (TEST INDEX (TEST_INT_CI_CIAI))
     RULE_ID                         1
-
     PLAN (TEST INDEX (TEST_BOOL_CIAI_CI))
     RULE_ID                         2
-
     PLAN JOIN (A INDEX (TEST_BOOL_CIAI_CI), B INDEX (TEST_INT_CI_CIAI))
     RULE_ID                         1
     RULE_ID                         4
 """
 
-@pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout
+expected_out_6x = """
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_BOOL_CIAI_CI"))
+    RULE_ID                         2
+    RULE_ID                         3
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_INT_CI_CIAI"))
+    RULE_ID                         1
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_BOOL_CIAI_CI"))
+    RULE_ID                         2
+    PLAN JOIN ("A" INDEX ("PUBLIC"."TEST_BOOL_CIAI_CI"), "B" INDEX ("PUBLIC"."TEST_INT_CI_CIAI"))
+    RULE_ID                         1
+    RULE_ID                         4
+"""
 
+@pytest.mark.intl
+@pytest.mark.version('>=3')
+def test_1(act: Action):
+    act.expected_stdout = expected_out_5x if act.is_version('<6') else expected_out_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
