@@ -7,6 +7,11 @@ TITLE:       Include expected and actual string lenght into error message for sq
 DESCRIPTION:
 JIRA:        CORE-3594
 FBTEST:      bugs.core_3594
+NOTES:
+    [27.06.2025] pzotov
+    Suppressed output of procedure name (no needed for this test).
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -50,25 +55,26 @@ test_script = """
     -- -string right truncation
 """
 
-act = isql_act('db', test_script, substitutions=[('line: .*', 'line'), ('col: .*', 'col')])
+substitutions=[('line: .*', 'line'), ('col: .*', 'col'), ('(-)?At procedure .*', 'At procedure')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stderr = """
+expected_stdout = """
     Statement failed, SQLSTATE = 22001
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -expected length 50, actual 60
-    -At procedure 'SP_OVERFLOWED_1' line: 3, col: 5
+    At procedure
 
     Statement failed, SQLSTATE = 22001
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -expected length 59, actual 60
-    -At procedure 'SP_OVERFLOWED_2' line: 3, col: 5
+    At procedure
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
