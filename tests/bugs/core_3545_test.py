@@ -7,6 +7,12 @@ TITLE:       Inconsistent domain's constraint validation in PSQL
 DESCRIPTION:
 JIRA:        CORE-3545
 FBTEST:      bugs.core_3545
+NOTES:
+    [27.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -117,49 +123,62 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
 
-expected_stdout = """
+expected_stdout_5x = """
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."N", value "399"
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."N", value "50"
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."N", value "399"
+    Statement failed, SQLSTATE = 23000
+    validation error for column "TEST"."N", value "50"
     ID                              1
     N                               4
-
     ID                              3
     N                               4
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."N", value "399"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."N", value "50"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."N", value "399"
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."N", value "50"
-
     Statement failed, SQLSTATE = 42000
     validation error for variable VAR2_ASSIGNMENT_WITHOUT_CAST, value "50"
-    -At block line: 4, col: 7
-
+    -At block line
     Statement failed, SQLSTATE = 42000
     validation error for variable VAR2_ASSIGNMENT_WITHOUT_CAST, value "399"
-    -At block line: 4, col: 7
-
+    -At block line
     Statement failed, SQLSTATE = 42000
     validation error for variable VAR2_CAST_INT_TO_DOMAIN, value "50"
-    -At block line: 4, col: 7
-
+    -At block line
     Statement failed, SQLSTATE = 42000
     validation error for variable VAR2_CAST_INT_TO_DOMAIN, value "399"
-    -At block line: 4, col: 7
+    -At block line
+"""
+
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 23000
+    validation error for column "PUBLIC"."TEST"."N", value "399"
+    Statement failed, SQLSTATE = 23000
+    validation error for column "PUBLIC"."TEST"."N", value "50"
+    Statement failed, SQLSTATE = 23000
+    validation error for column "PUBLIC"."TEST"."N", value "399"
+    Statement failed, SQLSTATE = 23000
+    validation error for column "PUBLIC"."TEST"."N", value "50"
+    ID                              1
+    N                               4
+    ID                              3
+    N                               4
+    Statement failed, SQLSTATE = 42000
+    validation error for variable "VAR2_ASSIGNMENT_WITHOUT_CAST", value "50"
+    -At block line
+    Statement failed, SQLSTATE = 42000
+    validation error for variable "VAR2_ASSIGNMENT_WITHOUT_CAST", value "399"
+    -At block line
+    Statement failed, SQLSTATE = 42000
+    validation error for variable "VAR2_CAST_INT_TO_DOMAIN", value "50"
+    -At block line
+    Statement failed, SQLSTATE = 42000
+    validation error for variable "VAR2_CAST_INT_TO_DOMAIN", value "399"
+    -At block line
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
-
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
