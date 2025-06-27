@@ -7,13 +7,18 @@ TITLE:       Recurse leads to hangs/crash server
 DESCRIPTION:
 JIRA:        CORE-3419
 FBTEST:      bugs.core_3419
+NOTES:
+    [27.06.2025] pzotov
+    Reimplemented: it is enought to check that first lines of error message appear, w/o name of trigger.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
+import locale
 import pytest
 from firebird.qa import *
 
 db = db_factory()
-
 test_script = """
     set autoddl off;
     commit;
@@ -21,7 +26,7 @@ test_script = """
     commit;
     set term ^;
     -- This trigger will fire 1001 times before exception raising:
-    create or alter trigger trg_trans_start
+    create or alter trigger tx_trg
     active on transaction start position 0
     as
     begin
@@ -34,39 +39,15 @@ test_script = """
     set transaction;
 """
 
-act = isql_act('db', test_script, substitutions=[('line: [0-9]+, col: [0-9]+', 'line: , col: ')])
+act = isql_act('db', substitutions=[('(-)?At trigger .*', '')])
 
-expected_stderr = """
+expected_out = f"""
     Statement failed, SQLSTATE = 54001
     Too many concurrent executions of the same request
-    -At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' line: 5, col: 9
-    At trigger 'TRG_TRANS_START' ...
 """
 
-@pytest.mark.version('>=3')
-def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute(charset='utf8')
-    assert act.clean_stderr == act.clean_expected_stderr
-
+@pytest.mark.version('>=3.0')
+def test_2(act: Action):
+    act.expected_stdout = expected_out
+    act.isql(switches=['-q'], input = test_script, combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
