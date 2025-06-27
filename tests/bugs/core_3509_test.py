@@ -51,10 +51,10 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
-    CREATE OR ALTER PROCEDURE DUPLICATE_OUTPUT_ARGS failed
+    CREATE OR ALTER PROCEDURE "PUBLIC"."DUPLICATE_OUTPUT_ARGS" failed
     -Dynamic SQL Error
     -SQL error code = -637
-    -duplicate specification of A_DUP - not supported
+    -duplicate specification of "A_DUP" - not supported
 """
 
 @pytest.mark.version('>=3.0')
