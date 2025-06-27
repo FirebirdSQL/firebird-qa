@@ -2,17 +2,23 @@
 
 """
 ID:          issue-4038
-ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4038
+ISSUE:       4038
 TITLE:       Wrong warning message for ambiguous query
-DESCRIPTION: SQL dialect 1 allows such queries for backward compatibility reasons
+DESCRIPTION: Check for dialect 3.
 JIRA:        CORE-3690
 FBTEST:      bugs.core_3690
+NOTES:
+    [27.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-db_3 = db_factory(sql_dialect=3)
+db = db_factory()
 
 test_script = """
     set list on;
@@ -20,11 +26,11 @@ test_script = """
     select 0*rdb$relation_id as id from rdb$database,rdb$database;
 """
 
-act_3 = python_act('db_3')
+substitutions = [('[ \t]+', ' ')]
+act = python_act('db', substitutions = substitutions)
 
-expected_stdout_3 = """
-    MON$SQL_DIALECT                 3
-
+expected_stdout_5x = """
+    MON$SQL_DIALECT 3
     Statement failed, SQLSTATE = 42702
     Dynamic SQL Error
     -SQL error code = -204
@@ -32,8 +38,17 @@ expected_stdout_3 = """
     -RDB$RELATION_ID
 """
 
+expected_stdout_6x = """
+    MON$SQL_DIALECT 3
+    Statement failed, SQLSTATE = 42702
+    Dynamic SQL Error
+    -SQL error code = -204
+    -Ambiguous field name between table "SYSTEM"."RDB$DATABASE" and table "SYSTEM"."RDB$DATABASE"
+    -RDB$RELATION_ID
+"""
+
 @pytest.mark.version('>=3')
-def test_dialect_3(act_3: Action):
-    act_3.expected_stdout = expected_stdout_3
-    act_3.isql(switches=['-q', '-sql_dialect', '3'], input=test_script, combine_output=True)
-    assert act_3.clean_stdout == act_3.clean_expected_stdout
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.isql(switches=['-q'], input=test_script, combine_output=True)
+    assert act.clean_stdout == act.clean_expected_stdout
