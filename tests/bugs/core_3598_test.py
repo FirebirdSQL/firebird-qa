@@ -17,32 +17,36 @@ DESCRIPTION:
 
   Finally (after ISQL will finish), we stop trace and parse its log.
   For *each* table TWO lines with performance statristics must exist: both for COMMIT and ROLLBACK events.
-[08.02.2022] pcisar
-  Fails on Windows 3.0.8 with unexpected additional output line:
-    + Statement statistics detected for ROLLBACK
-      Statement statistics detected for COMMIT
-      Statement statistics detected for COMMIT
-      Statement statistics detected for ROLLBACK
-      Found performance block header
-      Found table statistics for TFIX
-      Statement statistics detected for COMMIT
-      Statement statistics detected for ROLLBACK
-      Found performance block header
-      Found table statistics for GTT_SSN
-      Statement statistics detected for COMMIT
-      Statement statistics detected for ROLLBACK
-
-[04.03.2022] pzotov: RESOLVED.
-  Problem on Windows was caused by excessive query:
-      "select current_user, current_role from rdb$database"
-  -- which is done by ISQL 3.x when it gets commands from STDIN via PIPE mechanism.
-  Discussed with Alex et al, since 28-feb-2022 18:05 +0300.
-  Alex explanation: 28-feb-2022 19:52 +0300
-  subj: "Firebird new-QA: weird result for trivial test (outcome depends on presence of... running trace session!)"
-  
-
 JIRA:        CORE-3598
 FBTEST:      bugs.core_3598
+NOTES:
+    [08.02.2022] pcisar
+    Fails on Windows 3.0.8 with unexpected additional output line:
+      + Statement statistics detected for ROLLBACK
+        Statement statistics detected for COMMIT
+        Statement statistics detected for COMMIT
+        Statement statistics detected for ROLLBACK
+        Found performance block header
+        Found table statistics for TFIX
+        Statement statistics detected for COMMIT
+        Statement statistics detected for ROLLBACK
+        Found performance block header
+        Found table statistics for GTT_SSN
+        Statement statistics detected for COMMIT
+        Statement statistics detected for ROLLBACK
+
+    [04.03.2022] pzotov: RESOLVED.
+    Problem on Windows was caused by excessive query:
+        "select current_user, current_role from rdb$database"
+    -- which is done by ISQL 3.x when it gets commands from STDIN via PIPE mechanism.
+    Discussed with Alex et al, since 28-feb-2022 18:05 +0300.
+    Alex explanation: 28-feb-2022 19:52 +0300
+    subj: "Firebird new-QA: weird result for trivial test (outcome depends on presence of... running trace session!)"
+
+    [27.06.2025] pzotov
+    Added substitutions to suppress output of "PUBLIC" schema name in expected output (no needed for this test).
+    Added check for presence `"PUBLIC".` prefix in thetable statistics for table names that are used in this test.
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -57,7 +61,9 @@ init_script = """
 
 db = db_factory(init=init_script)
 
-act = python_act('db')
+substitutions = [('for \"PUBLIC\".\"TFIX\"', 'for TFIX'), ('for \"PUBLIC\".\"GTT_SSN\"', 'for GTT_SSN'), ]
+
+act = python_act('db', substitutions = substitutions)
 
 test_script = """
     set autoddl off;
@@ -135,6 +141,11 @@ def test_1(act: Action, capsys):
             print('Found performance block header')
         if line.startswith('TFIX') or line.startswith('GTT_SSN') or line.startswith('GTT_TRA'):
             print(f'Found table statistics for {line.split()[0]}')
+
+        # Added for FB 6.x: SCHEMA name presents since 6.0.0.834:
+        if line.startswith('"PUBLIC"."TFIX"') or line.startswith('"PUBLIC"."GTT_SSN"') or line.startswith('"PUBLIC"."GTT_TRA"'):
+            print(f'Found table statistics for {line.split()[0]}')
+    
     # Check
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
