@@ -35,33 +35,49 @@ db = db_factory(page_size=4096, sql_dialect=3, init=init_script)
 test_script = """
     set list on;
     set blob all;
-    select rdb$debug_info from rdb$procedures where upper(rdb$procedure_name) = upper('sp_test');
+    select rdb$debug_info as blob_id from rdb$procedures where upper(rdb$procedure_name) = upper('sp_test');
 """
 
-act = isql_act('db', test_script, substitutions=[('RDB\\$DEBUG_INFO', ''), ('-', ''),
-                                                   ('[0-9]+[ ]+[0-9]+[ ]+[0-9]+', '')])
+'''
+BLOB_ID                         1a:f0
+Parameters:
+Number Name                             Type
+--------------------------------------------------
+0 A_N                              INPUT
+0 N_FACT                           OUTPUT
+Variables:
+Number Name
+-------------------------------------------
+0 N_FACT
+BLR to Source mapping:
+BLR offset       Line     Column
+--------------------------------
+36          2          5
+38          3          9
+73          5          9
+92          6          9
+94          7         11
+116          8         11
+142         10          9
+'''
+
+substitutions=[ ('BLOB_ID .*', ''),
+                ('[ \t]+', ' '),
+                ('-', ''),
+                ('\\d+[ ]+\\d+[ ]+\\d+', '')
+              ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    RDB$DEBUG_INFO                  1a:f0
     Parameters:
-    Number Name                             Type
-    --------------------------------------------------
-    0 A_N                              INPUT
-    0 N_FACT                           OUTPUT
+    Number Name Type
+    0 A_N INPUT
+    0 N_FACT OUTPUT
     Variables:
     Number Name
-    -------------------------------------------
     0 N_FACT
     BLR to Source mapping:
-    BLR offset       Line     Column
-    --------------------------------
-    36          2          5
-    38          3          9
-    73          5          9
-    92          6          9
-    94          7         11
-    116         8         11
-    142        10          9
+    BLR offset Line Column
 """
 
 @pytest.mark.version('>=3.0')
