@@ -60,7 +60,7 @@ test_script = """
     alter domain dm_int set not null;
 """
 
-substitutions = [] # [ ('[ \t]+', ' ') ] 
+substitutions = [ ('[ \t]+', ' ') ] 
 act = isql_act('db', test_script, substitutions = substitutions)
 
 
