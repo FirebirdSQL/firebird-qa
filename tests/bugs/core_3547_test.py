@@ -15,8 +15,13 @@ NOTES:
         Added substitution in order to stop comparison after 15th digit ("COL = 0.000000000000000").
         We have to ensure that one can not insert duplicate (-0e0). It is enough to show concrete
         value of problematic key with accuracy 15 digits.
-
     Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.730 - both Linux and Windows
+
+    [27.06.2025] pzotov
+    Output of constraint name is suppressed (not needed for this test).
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
 """
 
 import pytest
@@ -56,7 +61,8 @@ test_script = """
     --                                                          ^
 """
 
-act = isql_act('db', test_script, substitutions = [(' = 0.0000000000000000', ' = 0.000000000000000')])
+substitutions = [ (' = 0.0000000000000000', ' = 0.000000000000000'), ('constraint .*', 'constraint') ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
     where id = 0                    1
