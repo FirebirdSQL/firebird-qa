@@ -11,8 +11,10 @@ NOTES:
     [31.10.2024] pzotov
     Bug was fixed for too old FB (2.1.6; 2.5.3; 3.0 Alpha 1), firebird-driver and/or QA-plugin
     will not able to run on this version in order to reproduce problem.
-
     Checked on 6.0.0.511 (Windows/Linux); 5.0.2.1551; 4.0.6.3165; 3.0.13.33794
+
+    [27.06.2025] pzotov
+    Removed 'set plan on' as irrelevant to this test.
 """
 from pathlib import Path
 
@@ -41,11 +43,7 @@ def test_1(act: Action, tmp_sql: Path):
         select c, upper(c) cu from test where c containing 'Faÿ';
         select c, upper(c) cu from test where c starting with 'Faÿ';
         select c, upper(c) cu from test where c like 'Faÿ%';
-        -- ### ACHTUNG ###
-        -- As of WI-V2.5.4.26857, following will FAILS if character class "alpha"
-        -- will be specified not in UPPER case (see note in CORE-4740  08/Apr/15 05:48 PM):
-        select c, upper(c) cu from test where c similar to '[[:ALPHA:]]{1,}ÿ%';
-        set plan on;
+        select c, upper(c) cu from test where c similar to '[[:alpha:]]{1,}ÿ%';
         select c from test where upper (c collate iso8859_1) =  upper('ÿ');
         select c, upper(c) cu from test where upper (c collate iso8859_1) starting with upper('Faÿ');
     """
@@ -67,9 +65,7 @@ def test_1(act: Action, tmp_sql: Path):
         CU                              FAÿ
         C                               Faÿ
         CU                              FAÿ
-        PLAN (TEST INDEX (TEST_CU))
         C                               ÿ
-        PLAN (TEST INDEX (TEST_CU))
         C                               Faÿ
         CU                              FAÿ
     """
