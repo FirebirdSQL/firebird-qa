@@ -10,12 +10,20 @@ FBTEST:      bugs.core_3064
 NOTES:
     [04.03.2023] pzotov
     Expected output was splitted because FB 5.x now *allows* execution w/o error.
+
+    [27.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """
+db = db_factory()
+
+test_script = """
     set term ^ ;
     create or alter procedure get_dates (
         adate_from date,
@@ -26,7 +34,7 @@ init_script = """
       declare variable d date;
     begin
       d = adate_from;
-      while (d<=adate_to) do
+      while (d <= adate_to) do
         begin
           out_date = d;
           suspend;
@@ -35,11 +43,7 @@ init_script = """
     end^
     set term ; ^
     commit;
-"""
 
-db = db_factory(init=init_script)
-
-test_script = """
     set planonly;
     select * from get_dates( 'yesterday', 'today' ) PLAN (GET_DATES NATURAL);
     select * from get_dates( 'yesterday', 'today' ) p PLAN (P NATURAL);
@@ -47,7 +51,7 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('offset .*', 'offset')])
 
-fb3x_expected_out = """
+expected_out_4x = """
     Statement failed, SQLSTATE = 42S02
     Dynamic SQL Error
     -SQL error code = -104
@@ -59,13 +63,18 @@ fb3x_expected_out = """
     -BLR syntax error: expected TABLE at offset 51, encountered 132
 """
 
-fb5x_expected_out = """
+expected_out_5x = """
     PLAN (GET_DATES NATURAL)
     PLAN (P NATURAL)
 """
 
+expected_out_6x = """
+    PLAN ("PUBLIC"."GET_DATES" NATURAL)
+    PLAN ("P" NATURAL)
+"""
+
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stdout = fb3x_expected_out if act.is_version('<5') else fb5x_expected_out
+    act.expected_stdout = expected_out_4x if act.is_version('<5') else expected_out_5x if act.is_version('<6') else expected_out_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
