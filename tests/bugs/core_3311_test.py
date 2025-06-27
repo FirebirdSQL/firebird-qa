@@ -7,6 +7,11 @@ TITLE:       Error "data type unknown" while preparing UPDATE/DELETE statements 
 DESCRIPTION:
 JIRA:        CORE-3311
 FBTEST:      bugs.core_3311
+NOTES:
+    [27.06.2025] pzotov
+    Reimplemented: it is enough to check only STDERR in this test rather that compare issued execution plans.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -48,20 +53,12 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    PLAN (TEST NATURAL)
-    PLAN (TEST ORDER TEST_ID)
-    PLAN (TEST NATURAL)
-    PLAN (TEST ORDER TEST_ID)
-    PLAN (TEST NATURAL)
-    PLAN (TEST ORDER TEST_ID)
-    PLAN JOIN (S TEST INDEX (TEST_ID), T INDEX (TEST_ID))
-    PLAN JOIN (S TEST ORDER TEST_ID, T INDEX (TEST_ID))
+expected_stderr = """
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout
+    act.expected_stderr = expected_stderr
+    act.execute() # ::: do not use 'combine_outpt = True! We have to check here only STDERR :::
+    assert act.clean_stderr == act.clean_expected_stderr
 
