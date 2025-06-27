@@ -7,39 +7,45 @@ TITLE:       DROP VIEW drops output parameters of used stored procedures
 DESCRIPTION:
 JIRA:        CORE-2930
 FBTEST:      bugs.core_2930
+NOTES:
+    [27.06.2025] pzotov
+    Removed 'SHOW' commands from test as they can be replaced with query to rdb$procedure_parameters.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """set term !;
-create procedure p1 returns (n integer) as begin suspend; end!
-create view v1 as select * from p1!
-commit!
-set term ;!
-"""
+db = db_factory()
 
-db = db_factory(charset='UTF8', init=init_script)
-
-test_script = """show procedure p1;
-drop view v1;
-show procedure p1;
+test_script = """
+    set list on;
+    set term ^;
+    create procedure sp_test returns (o_result integer) as
+    begin
+        o_result = 1;
+        suspend;
+    end ^
+    set term ;^
+    create view v1 as select * from sp_test;
+    commit;
+    drop view v1;
+    select
+        pp.rdb$parameter_name
+        ,pp.rdb$parameter_number
+        ,pp.rdb$parameter_type
+    from rdb$procedure_parameters pp where pp.rdb$procedure_name = upper('sp_test');
+    select * from sp_test;
 """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """Procedure text:
-=============================================================================
- begin suspend; end
-=============================================================================
-Parameters:
-N                                 OUTPUT INTEGER
-Procedure text:
-=============================================================================
- begin suspend; end
-=============================================================================
-Parameters:
-N                                 OUTPUT INTEGER
+expected_stdout = """
+    RDB$PARAMETER_NAME              O_RESULT
+    RDB$PARAMETER_NUMBER            0
+    RDB$PARAMETER_TYPE              1
+    O_RESULT                        1
 """
 
 @pytest.mark.version('>=3.0')
