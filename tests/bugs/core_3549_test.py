@@ -7,6 +7,11 @@ TITLE:       Database corruption after end of session : page xxx is of wrong typ
 DESCRIPTION:
 JIRA:        CORE-3549
 FBTEST:      bugs.core_3549
+NOTES:
+    [27.06.2025] pzotov
+    *** DEFERRED ***
+    Test failed since 6.0.0.834. PROBABLY NEEDS TO BE REFACTORED /  REIMPLEMENTED.
+    https://github.com/FirebirdSQL/firebird/issues/3905#issuecomment-826222236
 """
 
 import pytest
