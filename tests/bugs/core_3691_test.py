@@ -7,6 +7,10 @@ TITLE:       Missing constraint name in foreign key error message in FB 2.1.4
 DESCRIPTION:
 JIRA:        CORE-3691
 FBTEST:      bugs.core_3691
+NOTES:
+    [27.06.2025] pzotov
+    Added 'SCHEMA_PREFIX' to be substituted in expected_out on FB 6.x
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -29,16 +33,19 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 23000
-    violation of FOREIGN KEY constraint "TDETL_FK" on table "TDETL"
-    -Foreign key reference target does not exist
-    -Problematic key value is ("PID" = 2)
-"""
-
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+
+    SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 23000
+        violation of FOREIGN KEY constraint "TDETL_FK" on table {SCHEMA_PREFIX}"TDETL"
+        -Foreign key reference target does not exist
+        -Problematic key value is ("PID" = 2)
+    """
+
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
