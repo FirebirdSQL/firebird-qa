@@ -17,6 +17,12 @@ NOTES:
     Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
     ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
     Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+
+    [27.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -51,14 +57,19 @@ def test_1(act: Action):
 
 # version: 4.0
 
-expected_stdout_2 = """
+expected_out_5x = """
     01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 4 UTF8
     01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 4 UTF8
 """
 
+expected_out_6x = """
+    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 4 SYSTEM.UTF8
+    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 4 SYSTEM.UTF8
+"""
+
 @pytest.mark.version('>=4.0')
 def test_2(act: Action):
-    act.expected_stdout = expected_stdout_2
+    act.expected_stdout = expected_out_5x if act.is_version('<6') else expected_out_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
