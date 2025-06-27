@@ -7,17 +7,19 @@ TITLE:       DROP VIEW ignores the existing non-column dependencies
 DESCRIPTION:
 JIRA:        CORE-3502
 FBTEST:      bugs.core_3502
+NOTES:
+    [27.06.2025] pzotov
+    Added subst to suppress output: it is enough to display error message w/o concrete coulmn name for this test.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """
-    set autoddl on;
-    commit;
-    create or alter procedure p as begin end;
-    commit;
+db = db_factory()
 
+test_script = """
     create or alter view v (id) as select rdb$relation_id from rdb$database;
     commit;
 
@@ -29,29 +31,25 @@ init_script = """
     end^
     set term ;^
     commit;
-"""
 
-db = db_factory(init=init_script)
-
-test_script = """
     execute procedure p;
     commit;
+
     drop view v;
 """
 
-act = isql_act('db', test_script)
+act = isql_act('db', test_script, substitutions = [('(-)?COLUMN .*', 'COLUMN *')])
 
-expected_stderr = """
+expected_stdout = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
-    -COLUMN V.ID
+    COLUMN *
     -there are 1 dependencies
 """
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
-
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
