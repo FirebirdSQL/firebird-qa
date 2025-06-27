@@ -7,31 +7,39 @@ TITLE:       The new 2.5 feature to alter COMPUTED columns doesn't handle depend
 DESCRIPTION:
 JIRA:        CORE-2985
 FBTEST:      bugs.core_2985
+NOTES:
+    [27.06.2025] pzotov
+    Replaced 'SHOW' command with query to 't_dependant'.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """create table test (id numeric, f1 varchar(20));
-create table test1(id1 numeric, ff computed((select f1 from test where id=id1)));
-commit;
+db = db_factory()
+
+test_script = """
+    set list on;
+    create table t_source (id numeric, f1 varchar(20));
+    create table t_dependant(id1 numeric, ff computed( (select s.f1 from t_source s where s.id = id1) ) );
+    commit;
+    insert into t_dependant(id1) values(1);
+    commit;
+    alter table t_dependant alter ff computed(cast(null as varchar(20)));
+    drop table t_source;
+    commit;
+    set count on;
+    select * from t_dependant;
 """
 
-db = db_factory(init=init_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-test_script = """show table test1;
-alter table test1 alter ff computed(cast(null as varchar(20)));
-drop table test;
-commit;
-show table test1;
-"""
-
-act = isql_act('db', test_script)
-
-expected_stdout = """ID1                             NUMERIC(9, 0) Nullable
-FF                              Computed by: ((select f1 from test where id=id1))
-ID1                             NUMERIC(9, 0) Nullable
-FF                              Computed by: (cast(null as varchar(20)))
+expected_stdout = """
+    ID1                             1
+    FF                              <null>
+    Records affected: 1
 """
 
 @pytest.mark.version('>=3.0')
