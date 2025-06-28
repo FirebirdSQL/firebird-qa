@@ -17,6 +17,12 @@ DESCRIPTION:
   in UDR library "udf_compat", see it in folder: ../plugins/udr/
 JIRA:        CORE-3963
 FBTEST:      bugs.core_3963
+NOTES:
+    [28.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -106,6 +112,7 @@ def test_1(act_1: Action):
     assert (act_1.clean_stderr == act_1.clean_expected_stderr and
             act_1.clean_stdout == act_1.clean_expected_stdout)
 
+#############################################################################
 # version: 4.0
 
 test_script_2 = """
@@ -170,53 +177,64 @@ test_script_2 = """
 
 act_2 = isql_act('db', test_script_2)
 
-expected_stdout_2 = """
-
+expected_stdout_5x = """
     INPUT message field count: 0
-
     OUTPUT message field count: 1
     01: sqltype: 480 DOUBLE Nullable scale: 0 subtype: 0 len: 8
-      :  name: THE_FRAC  alias: THE_FRAC
-      : table:   owner:
-
+    :  name: THE_FRAC  alias: THE_FRAC
+    : table:   owner:
     THE_FRAC                        -0.1415926535897931
-
-
-
-    INPUT message field count: 0
-
-    OUTPUT message field count: 1
-    01: sqltype: 480 DOUBLE Nullable scale: 0 subtype: 0 len: 8
-      :  name: THE_FRAC  alias: THE_FRAC
-      : table:   owner:
-
-    THE_FRAC                        -0.1415926535897931
-
-"""
-
-expected_stderr_2 = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -CREATE FUNCTION THE_FRAC failed
     -Function THE_FRAC already exists
-
     Statement failed, SQLSTATE = 39000
     Dynamic SQL Error
     -SQL error code = -804
     -Function unknown
     -THE_FRAC
-
+    INPUT message field count: 0
+    OUTPUT message field count: 1
+    01: sqltype: 480 DOUBLE Nullable scale: 0 subtype: 0 len: 8
+    :  name: THE_FRAC  alias: THE_FRAC
+    : table:   owner:
+    THE_FRAC                        -0.1415926535897931
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -CREATE FUNCTION THE_FRAC failed
     -Function THE_FRAC already exists
 """
 
-@pytest.mark.version('>=4.0')
-def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.expected_stderr = expected_stderr_2
-    act_2.execute()
-    assert (act_2.clean_stderr == act_2.clean_expected_stderr and
-            act_2.clean_stdout == act_2.clean_expected_stdout)
+expected_stdout_6x = """
+    INPUT message field count: 0
+    OUTPUT message field count: 1
+    01: sqltype: 480 DOUBLE Nullable scale: 0 subtype: 0 len: 8
+    :  name: THE_FRAC  alias: THE_FRAC
+    : table:   schema:   owner:
+    THE_FRAC                        -0.1415926535897931
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -CREATE FUNCTION "PUBLIC"."THE_FRAC" failed
+    -Function "PUBLIC"."THE_FRAC" already exists
+    Statement failed, SQLSTATE = 39000
+    Dynamic SQL Error
+    -SQL error code = -804
+    -Function unknown
+    -"THE_FRAC"
+    INPUT message field count: 0
+    OUTPUT message field count: 1
+    01: sqltype: 480 DOUBLE Nullable scale: 0 subtype: 0 len: 8
+    :  name: THE_FRAC  alias: THE_FRAC
+    : table:   schema:   owner:
+    THE_FRAC                        -0.1415926535897931
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -CREATE FUNCTION "PUBLIC"."THE_FRAC" failed
+    -Function "PUBLIC"."THE_FRAC" already exists
+"""
 
+@pytest.mark.version('>=4.0')
+def test_1(act_2: Action):
+    act_2.expected_stdout = expected_stdout_5x if act_2.is_version('<6') else expected_stdout_6x
+    act_2.execute(combine_output = True)
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
