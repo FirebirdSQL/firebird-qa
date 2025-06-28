@@ -39,7 +39,6 @@ expected_stdout_6x = """
     PLAN JOIN ("T1" NATURAL, "T2" INDEX ("PUBLIC"."IT"))
 """
 
-@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x

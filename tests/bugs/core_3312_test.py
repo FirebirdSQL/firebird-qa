@@ -50,7 +50,6 @@ expected_out_6x = """
     PLAN JOIN ("R" INDEX ("SYSTEM"."RDB$INDEX_*", "SYSTEM"."RDB$INDEX_*"), "SC" INDEX ("SYSTEM"."RDB$INDEX_*", "SYSTEM"."RDB$INDEX_*"))
 """
 
-@pytest.mark.intl
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_out_5x if act.is_version('<6') else expected_out_6x
