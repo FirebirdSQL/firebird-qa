@@ -7,6 +7,10 @@ TITLE:       Extend the error reported for index/constraint violations to includ
 DESCRIPTION:
 JIRA:        CORE-3881
 FBTEST:      bugs.core_3881
+NOTES:
+    [27.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -52,31 +56,35 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('-At trigger.*', '')])
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TMAIN_PK" on table "TMAIN"
-    -Problematic key value is ("ID" = 300)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TMAIN_MKA_MKB_CONSTRAINT_UNQ" on table "TMAIN"
-    -Problematic key value is ("MKA" = NULL, "MKB" = 200)
-
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TMAIN_DIFFERENCE_UNQ_IDX"
-    -Problematic key value is (<expression> = 0)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TMAIN_MKA_MKB_CONSTRAINT_UNQ" on table "TMAIN"
-    -Problematic key value is ("MKA" = 200, "MKB" = 200)
-
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TMAIN_DIFFERENCE_UNQ_IDX"
-    -Problematic key value is (<expression> = 0)
-    -At trigger 'CHECK_2'
-"""
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
+    
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+
+    expected_stderr = f"""
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TMAIN_PK" on table {SQL_SCHEMA_PREFIX}"TMAIN"
+        -Problematic key value is ("ID" = 300)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TMAIN_MKA_MKB_CONSTRAINT_UNQ" on table {SQL_SCHEMA_PREFIX}"TMAIN"
+        -Problematic key value is ("MKA" = NULL, "MKB" = 200)
+
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {SQL_SCHEMA_PREFIX}"TMAIN_DIFFERENCE_UNQ_IDX"
+        -Problematic key value is (<expression> = 0)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TMAIN_MKA_MKB_CONSTRAINT_UNQ" on table {SQL_SCHEMA_PREFIX}"TMAIN"
+        -Problematic key value is ("MKA" = 200, "MKB" = 200)
+
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {SQL_SCHEMA_PREFIX}"TMAIN_DIFFERENCE_UNQ_IDX"
+        -Problematic key value is (<expression> = 0)
+        -At trigger 'CHECK_2'
+    """
+
     act.expected_stderr = expected_stderr
     act.execute()
     assert act.clean_stderr == act.clean_expected_stderr
