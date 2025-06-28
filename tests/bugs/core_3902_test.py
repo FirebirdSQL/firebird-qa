@@ -7,6 +7,12 @@ TITLE:       Derived fields may not be optimized via an index
 DESCRIPTION:
 JIRA:        CORE-3902
 FBTEST:      bugs.core_3902
+NOTES:
+    [28.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -28,16 +34,20 @@ select rdb$database.rdb$relation_id from rdb$database
 
 """
 
-act = isql_act('db', test_script)
+substitutions = [(r'RDB\$INDEX_\d+', 'RDB$INDEX_*')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
-PLAN JOIN (RDB$DATABASE NATURAL, TEMP RDB$RELATIONS INDEX (RDB$INDEX_1))
-PLAN JOIN (RDB$DATABASE NATURAL, TEMP RDB$RELATIONS INDEX (RDB$INDEX_1))
+expected_stdout_5x = """
+    PLAN JOIN (RDB$DATABASE NATURAL, TEMP RDB$RELATIONS INDEX (RDB$INDEX_1))
+    PLAN JOIN (RDB$DATABASE NATURAL, TEMP RDB$RELATIONS INDEX (RDB$INDEX_1))
+"""
+expected_stdout_6x = """
+    PLAN JOIN ("SYSTEM"."RDB$DATABASE" NATURAL, "TEMP" "SYSTEM"."RDB$RELATIONS" INDEX ("SYSTEM"."RDB$INDEX_1"))
+    PLAN JOIN ("SYSTEM"."RDB$DATABASE" NATURAL, "TEMP" "SYSTEM"."RDB$RELATIONS" INDEX ("SYSTEM"."RDB$INDEX_1"))
 """
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
