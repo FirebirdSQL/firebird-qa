@@ -9,9 +9,13 @@ JIRA:        CORE-3973
 FBTEST:      bugs.core_3973
 NOTES:
     [11.12.2023] pzotov
-    Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
-    ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
-    Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+        Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
+        ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
+        Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+    [28.06.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -32,14 +36,20 @@ act = isql_act('db', test_script, substitutions=[('^((?!(SQLSTATE|name|table)).)
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
 
-    expected_stdout = f"""
+    expected_stdout_5x = f"""
         :  name: RDB$RELATION_ID  alias: R_ID
         : table: RDB$DATABASE  owner: {act.db.user.upper()}
         :  name: RDB$CHARACTER_SET_NAME  alias: RDB$CHARACTER_SET_NAME
         : table: RDB$DATABASE  owner: {act.db.user.upper()}
     """
 
-    act.expected_stdout = expected_stdout
+    expected_stdout_6x = f"""
+        : name: RDB$RELATION_ID alias: R_ID
+        : table: RDB$DATABASE schema: SYSTEM owner: {act.db.user.upper()}
+        : name: RDB$CHARACTER_SET_NAME alias: RDB$CHARACTER_SET_NAME
+        : table: RDB$DATABASE schema: SYSTEM owner: {act.db.user.upper()}
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
