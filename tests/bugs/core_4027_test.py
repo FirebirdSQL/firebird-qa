@@ -9,6 +9,7 @@ JIRA:        CORE-4027
 FBTEST:      bugs.core_4027
 NOTES:
     [28.06.2025] pzotov
+    See also test for https://github.com/FirebirdSQL/firebird/issues/4402
     Replaced 'SHOW' command with query to RDB tables. Bug still can be seen in 2.5.9.27156.
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
