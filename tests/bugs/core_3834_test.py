@@ -14,6 +14,11 @@ NOTES:
     2. FB 5.0.0.455 and later: data sources with equal cardinality now present in the HASH plan in order they are specified in the query.
        Reversed  order was used before this build. Because of this, two cases of expected stdout must be taken in account, see variables
        'fb3x_checked_stdout' and 'fb5x_checked_stdout'.
+    [28.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -25,22 +30,29 @@ test_script = """
     set list on;
     set planonly;
     -- This query caused FB 2.5.0 to crash:
-    select * from (select * from mon$attachments a) a natural join mon$statements s where mon$stat_id = ?;
+    select *
+    from (select * from mon$attachments a_mon_att_inner)
+    a_mon_att_outer natural join mon$statements a_mon_sttm
+    where a_mon_sttm.mon$stat_id = ?;
     quit;
 """
 
 act = isql_act('db', test_script)
 
 fb3x_checked_stdout = """
-    PLAN HASH (S NATURAL, A A NATURAL)
+    PLAN HASH (A_MON_STTM NATURAL, A_MON_ATT_OUTER A_MON_ATT_INNER NATURAL)
 """
 
 fb5x_checked_stdout = """
-    PLAN HASH (A A NATURAL, S NATURAL)
+    PLAN HASH (A_MON_ATT_OUTER A_MON_ATT_INNER NATURAL, A_MON_STTM NATURAL)
+"""
+
+fb6x_checked_stdout = """
+    PLAN HASH ("A_MON_ATT_OUTER" "A_MON_ATT_INNER" NATURAL, "A_MON_STTM" NATURAL) 
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout
+    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout if act.is_version('<6') else fb6x_checked_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
