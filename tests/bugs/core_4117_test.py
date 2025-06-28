@@ -9,6 +9,12 @@ DESCRIPTION:
   value if this field is not a part of excpression
 JIRA:        CORE-4117
 FBTEST:      bugs.core_4117
+NOTES:
+    [28.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -79,24 +85,38 @@ test_script = """
     update test2 set id = 2;
 """
 
-act = isql_act('db', test_script, substitutions=[('line: [0-9]+, col: [0-9]+', '')])
+act = isql_act('db', test_script, substitutions=[('line: \\d+.*', '')])
 
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_BAD_COMPUTED_FIELD_VALUE
     -20
-    -At trigger 'TEST1_BU' line: 3, col: 7
+    -At trigger 'TEST1_BU'
+
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_BAD_COMPUTED_FIELD_VALUE
     -20
-    -At trigger 'TEST2_BU' line: 3, col: 7
+    -At trigger 'TEST2_BU'
 """
 
-@pytest.mark.version('>=3')
-def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_BAD_COMPUTED_FIELD_VALUE"
+    -20
+    -At trigger "PUBLIC"."TEST1_BU"
 
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_BAD_COMPUTED_FIELD_VALUE"
+    -20
+    -At trigger "PUBLIC"."TEST2_BU"
+"""
+
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
