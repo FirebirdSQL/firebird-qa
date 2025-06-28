@@ -7,6 +7,7 @@ TITLE:       Join using RDB$DB_KEY produce NATURAL plan
 DESCRIPTION:
 JIRA:        CORE-3997
 FBTEST:      bugs.core_3997
+NOTES:
     [28.06.2025] pzotov
     Separated expected output for FB major versions prior/since 6.x.
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
