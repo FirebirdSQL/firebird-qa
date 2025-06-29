@@ -69,14 +69,18 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     SET SQL DIALECT 3;
+    /* Schema definitions */
+    /* Schema: PUBLIC, Owner: SYSDBA */
+    CREATE OR ALTER SCHEMA PUBLIC;
+    COMMIT WORK;
     /*  Character sets */
-    ALTER CHARACTER SET ISO8859_1 SET DEFAULT COLLATION PT_BR;
+    ALTER CHARACTER SET SYSTEM.ISO8859_1 SET DEFAULT COLLATION SYSTEM.PT_BR;
     COMMIT WORK;
     COMMIT WORK;
     SET AUTODDL OFF;
     SET TERM ^ ;
     /* Stored procedures headers */
-    CREATE OR ALTER PROCEDURE TEST (P01 CHAR(10))
+    CREATE OR ALTER PROCEDURE PUBLIC.TEST (P01 CHAR(10))
     RETURNS (O01 VARCHAR(30))
     AS
     BEGIN EXIT; END ^
@@ -87,7 +91,7 @@ expected_stdout_6x = """
     SET AUTODDL OFF;
     SET TERM ^ ;
     /* Stored procedures bodies */
-    ALTER PROCEDURE TEST (P01 CHAR(10))
+    ALTER PROCEDURE PUBLIC.TEST (P01 CHAR(10))
     RETURNS (O01 VARCHAR(30))
     AS
     begin
@@ -96,6 +100,8 @@ expected_stdout_6x = """
     SET TERM ; ^
     COMMIT WORK;
     SET AUTODDL ON;
+    /* Grant permissions for this database */
+    GRANT USAGE ON SCHEMA PUBLIC TO USER PUBLIC;
 """
 
 @pytest.mark.version('>=3.0')
