@@ -7,6 +7,12 @@ TITLE:       Allow output to trace explain plan form.
 DESCRIPTION:
 JIRA:        CORE-4451
 FBTEST:      bugs.core_4451
+NOTES:
+    [29.06.2025] pzotov
+    Suppressed name of table because on 6.x it is prefixed by SQL schema and is enclosed in quotes.
+    For this test it is enough just to show that explained form of plan presents in the trace.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -18,7 +24,7 @@ init_script = """
 
 db = db_factory(init=init_script)
 
-act = python_act('db', substitutions=[('[ \t]+', ' '), ('[ \t]+[\\d]+[ \t]+ms', '')])
+act = python_act('db', substitutions=[('[ \t]+', ' '), ('[ \t]+[\\d]+[ \t]+ms', ''), ('Table.*', 'Table')])
 
 expected_stdout = """
     Select Expression
