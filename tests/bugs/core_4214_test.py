@@ -7,6 +7,12 @@ TITLE:       GTT should not reference permanent relation
 DESCRIPTION:
 JIRA:        CORE-4214
 FBTEST:      bugs.core_4214
+NOTES:
+    [29.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -31,19 +37,32 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = HY000
     unsuccessful metadata update
     -CREATE TABLE GTT_DETL failed
     -global temporary table "GTT_DETL" of type ON COMMIT DELETE ROWS cannot reference persistent table "FIX_MAIN"
+
     Statement failed, SQLSTATE = HY000
     unsuccessful metadata update
     -CREATE TABLE FIX_DETL failed
     -persistent table "FIX_DETL" cannot reference global temporary table "GTT_MAIN" of type ON COMMIT DELETE ROWS
 """
 
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = HY000
+    unsuccessful metadata update
+    -CREATE TABLE "PUBLIC"."GTT_DETL" failed
+    -global temporary table "PUBLIC"."GTT_DETL" of type ON COMMIT DELETE ROWS cannot reference persistent table "PUBLIC"."FIX_MAIN"
+
+    Statement failed, SQLSTATE = HY000
+    unsuccessful metadata update
+    -CREATE TABLE "PUBLIC"."FIX_DETL" failed
+    -persistent table "PUBLIC"."FIX_DETL" cannot reference global temporary table "PUBLIC"."GTT_MAIN" of type ON COMMIT DELETE ROWS
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
