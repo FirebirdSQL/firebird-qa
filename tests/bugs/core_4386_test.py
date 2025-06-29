@@ -9,32 +9,34 @@ JIRA:        CORE-4386
 FBTEST:      bugs.core_4386
 NOTES:
     [22.11.2021] pcisar
-    This test requires READ_COMMITTED_NO_RECORD_VERSION transaction to work, which
-    requires ReadConsistency disabled in FB 4. However, it does not work as expected
-    because all drop commands pass without exception even with ReadConsistency disabled.
-    The same happens under 3.0.8 (no errors raised).
+      This test requires READ_COMMITTED_NO_RECORD_VERSION transaction to work, which
+      requires ReadConsistency disabled in FB 4. However, it does not work as expected
+      because all drop commands pass without exception even with ReadConsistency disabled.
+      The same happens under 3.0.8 (no errors raised).
     [17.09.2022] pzotov
-    1. Test actually must work identical for *every* isolation mode of all possible set.
-    2. One need to be very careful with object that attempts to make COMMIT after DROP statement:
-       if we use custom TPB, start transaction explicitly and 'bind' DDL cursor to this transaction
-       then we have to run commit *exactly* by this TRANSACTION rather then connection whoch owns it!
-       See 'tx2.commit()' in the code. If we replace it with 'con2.commit()' then Tx2 will be 
-       *silently* rolled back (!!despite that we issued con.commit() !!) and we will not get any
-       error messages. I'm not sure whether this correct or no.
-    Checked on 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730
-
+      1. Test actually must work identical for *every* isolation mode of all possible set.
+      2. One need to be very careful with object that attempts to make COMMIT after DROP statement:
+         if we use custom TPB, start transaction explicitly and 'bind' DDL cursor to this transaction
+         then we have to run commit *exactly* by this TRANSACTION rather then connection whoch owns it!
+         See 'tx2.commit()' in the code. If we replace it with 'con2.commit()' then Tx2 will be 
+         *silently* rolled back (!!despite that we issued con.commit() !!) and we will not get any
+         error messages. I'm not sure whether this correct or no.
+      Checked on 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730
     [22.08.2024] pzotov
-    * Changed DDL because of SubQueryConversion config parameter appearance.
-      We have to AVOID usage of queries which have plan that can be changed when firebird.conf has
-      SubQueryConversion = true. In that case some index can be excluded from plan and thus
-      it can be dropped on first iteration of 'for x_isol in tx_isol_lst' loop. This causes unexpected
-      error 'index not found' for subsequent checks.
-    * Added check for error message when we try to drop standalone function.
-    * Assert moved out to the point after loop in order to show whole result in case of some error
-      (rather than only one message block for some particular x_isol).
-    * Excluded check of FB 3.x (this version no more changed).
+      * Changed DDL because of SubQueryConversion config parameter appearance.
+        We have to AVOID usage of queries which have plan that can be changed when firebird.conf has
+        SubQueryConversion = true. In that case some index can be excluded from plan and thus
+        it can be dropped on first iteration of 'for x_isol in tx_isol_lst' loop. This causes unexpected
+        error 'index not found' for subsequent checks.
+      * Added check for error message when we try to drop standalone function.
+      * Assert moved out to the point after loop in order to show whole result in case of some error
+        (rather than only one message block for some particular x_isol).
+      * Excluded check of FB 3.x (this version no more changed).
+      Checked on 6.0.0.442, 5.0.2.1479, 4.0.6.3142
 
-    Checked on 6.0.0.442, 5.0.2.1479, 4.0.6.3142
+    [29.06.2025] pzotov
+      Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+      Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -154,215 +156,216 @@ def test_1(act: Action, capsys):
                         print(e.__str__())
                         print(e.gds_codes)
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
     act.expected_stdout = f"""
         READ_COMMITTED_NO_RECORD_VERSION drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_TEST" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_WORKER" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION "FN_WORKER" is in use
+        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW "V_TEST" is in use
+        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE "TEST2" is in use
+        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST1_ID" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST2_X" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_TEST" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_WORKER" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION "FN_WORKER" is in use
+        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW "V_TEST" is in use
+        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE "TEST2" is in use
+        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST1_ID" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST2_X" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_TEST" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_WORKER" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION "FN_WORKER" is in use
+        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW "V_TEST" is in use
+        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE "TEST2" is in use
+        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST1_ID" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST2_X" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_TEST" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_WORKER" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION "FN_WORKER" is in use
+        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW "V_TEST" is in use
+        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE "TEST2" is in use
+        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST1_ID" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST2_X" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_TEST" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE "SP_WORKER" is in use
+        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION "FN_WORKER" is in use
+        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW "V_TEST" is in use
+        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE "TEST2" is in use
+        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST1_ID" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX "TEST2_X" is in use
+        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
         (335544345, 335544351, 335544453)
     """
                 
