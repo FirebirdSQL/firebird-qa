@@ -12,6 +12,10 @@ NOTES:
     Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
     ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
     Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+
+    [29.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -32,15 +36,18 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('^((?!(SQLSTATE|sqltype)).)*$', ''), ('[\t ]+', ' ')])
 
-expected_stdout = """
-    01: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 80 charset: 0 NONE
-    02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 80 charset: 0 NONE
-    03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 255 charset: 0 NONE
-    01: sqltype: 496 LONG scale: 0 subtype: 0 len: 4
-"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  'SYSTEM.'
+    expected_stdout = f"""
+        01: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 80 charset: 0 {SQL_SCHEMA_PREFIX}NONE
+        02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 80 charset: 0 {SQL_SCHEMA_PREFIX}NONE
+        03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 255 charset: 0 {SQL_SCHEMA_PREFIX}NONE
+        01: sqltype: 496 LONG scale: 0 subtype: 0 len: 4
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
