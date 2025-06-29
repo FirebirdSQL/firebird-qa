@@ -7,6 +7,12 @@ TITLE:       The parameterized exception does not accept not ASCII characters as
 DESCRIPTION:
 JIRA:        CORE-4160
 FBTEST:      bugs.core_4160
+NOTES:
+    [29.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -49,44 +55,78 @@ test_script = """
     execute procedure sp_alert('jp', -6);
 """
 
-act = isql_act('db', test_script, substitutions=[('-At procedure.*', '')])
+substitutions = [ (r'line(:)?\s+\d+.*', '') ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_NEGATIVE_REMAINDER
     - Czech: New Balance bude menší než nula (-1)
-
+    -At procedure 'SP_ALERT'
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_NEGATIVE_REMAINDER
     - Portuguese: New saldo será menor do que zero (-2)
-
+    -At procedure 'SP_ALERT'
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_NEGATIVE_REMAINDER
     - Danish: New Balance vil være mindre end nul (-3)
-
+    -At procedure 'SP_ALERT'
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_NEGATIVE_REMAINDER
     - Greek: Νέα ισορροπία θα είναι κάτω από το μηδέν (-4)
-
+    -At procedure 'SP_ALERT'
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_NEGATIVE_REMAINDER
     - French: Nouveau solde sera inférieur à zéro (-5)
-
+    -At procedure 'SP_ALERT'
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_NEGATIVE_REMAINDER
     - Russian: Новый остаток будет меньше нуля (-6)
+    -At procedure 'SP_ALERT'
+"""
+
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_NEGATIVE_REMAINDER"
+    - Czech: New Balance bude menší než nula (-1)
+    -At procedure "PUBLIC"."SP_ALERT"
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_NEGATIVE_REMAINDER"
+    - Portuguese: New saldo será menor do que zero (-2)
+    -At procedure "PUBLIC"."SP_ALERT"
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_NEGATIVE_REMAINDER"
+    - Danish: New Balance vil være mindre end nul (-3)
+    -At procedure "PUBLIC"."SP_ALERT"
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_NEGATIVE_REMAINDER"
+    - Greek: Νέα ισορροπία θα είναι κάτω από το μηδέν (-4)
+    -At procedure "PUBLIC"."SP_ALERT"
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_NEGATIVE_REMAINDER"
+    - French: Nouveau solde sera inférieur à zéro (-5)
+    -At procedure "PUBLIC"."SP_ALERT"
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_NEGATIVE_REMAINDER"
+    - Russian: Новый остаток будет меньше нуля (-6)
+    -At procedure "PUBLIC"."SP_ALERT"
 """
 
 @pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
-
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
