@@ -7,6 +7,10 @@ TITLE:       Preserve comments for output parameters after altering procedures
 DESCRIPTION:
 JIRA:        CORE-4210
 FBTEST:      bugs.core_4210
+NOTES:
+    [29.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -76,24 +80,26 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    Before altering proc:
-
-    COMMENT ON    PROCEDURE PARAMETER SP_TEST.A_ID1 IS input id1;
-    COMMENT ON    PROCEDURE PARAMETER SP_TEST.A_DTS1 IS input timestamp1;
-    COMMENT ON    PROCEDURE PARAMETER SP_TEST.O_ID1 IS output id1;
-    COMMENT ON    PROCEDURE PARAMETER SP_TEST.O_DTS1 IS output timestamp1;
-
-    After altering proc:
-
-    COMMENT ON    PROCEDURE PARAMETER SP_TEST.A_ID1 IS input id1;
-    COMMENT ON    PROCEDURE PARAMETER SP_TEST.A_DTS2 IS input timestamp2;
-    COMMENT ON    PROCEDURE PARAMETER SP_TEST.O_ID1 IS output id1;
-    COMMENT ON    PROCEDURE PARAMETER SP_TEST.O_DTS2 IS output timestamp2;
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  'PUBLIC.'
+    expected_stdout = f"""
+        Before altering proc:
+
+        COMMENT ON    PROCEDURE PARAMETER {SQL_SCHEMA_PREFIX}SP_TEST.A_ID1 IS input id1;
+        COMMENT ON    PROCEDURE PARAMETER {SQL_SCHEMA_PREFIX}SP_TEST.A_DTS1 IS input timestamp1;
+        COMMENT ON    PROCEDURE PARAMETER {SQL_SCHEMA_PREFIX}SP_TEST.O_ID1 IS output id1;
+        COMMENT ON    PROCEDURE PARAMETER {SQL_SCHEMA_PREFIX}SP_TEST.O_DTS1 IS output timestamp1;
+
+        After altering proc:
+
+        COMMENT ON    PROCEDURE PARAMETER {SQL_SCHEMA_PREFIX}SP_TEST.A_ID1 IS input id1;
+        COMMENT ON    PROCEDURE PARAMETER {SQL_SCHEMA_PREFIX}SP_TEST.A_DTS2 IS input timestamp2;
+        COMMENT ON    PROCEDURE PARAMETER {SQL_SCHEMA_PREFIX}SP_TEST.O_ID1 IS output id1;
+        COMMENT ON    PROCEDURE PARAMETER {SQL_SCHEMA_PREFIX}SP_TEST.O_DTS2 IS output timestamp2;
+    """
+
     act.expected_stdout = expected_stdout
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
