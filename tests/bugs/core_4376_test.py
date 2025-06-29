@@ -7,6 +7,12 @@ TITLE:       Preparation of erroneous DDL statement does not show the main comma
 DESCRIPTION:
 JIRA:        CORE-4376
 FBTEST:      bugs.core_4376
+NOTES:
+    [29.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -58,9 +64,10 @@ test_script = """
     ^
 """
 
-act = isql_act('db', test_script, substitutions=[('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+', '')])
+substitutions = [(r'^\s*(-)?At line.*', '')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42S02
     unsuccessful metadata update
     -CREATE OR ALTER PROCEDURE SP_TEST failed
@@ -68,7 +75,7 @@ expected_stderr = """
     -SQL error code = -204
     -Table unknown
     -TEST
-    -At line 3, column 26
+
     Statement failed, SQLSTATE = 42S22
     unsuccessful metadata update
     -RECREATE PACKAGE BODY PKG_TEST failed
@@ -76,12 +83,28 @@ expected_stderr = """
     -SQL error code = -206
     -Column unknown
     -NON_EXISTENT_FIELD
-    -At line 12, column 16
+"""
+
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42S02
+    unsuccessful metadata update
+    -CREATE OR ALTER PROCEDURE "PUBLIC"."SP_TEST" failed
+    -Dynamic SQL Error
+    -SQL error code = -204
+    -Table unknown
+    -"TEST"
+
+    Statement failed, SQLSTATE = 42S22
+    unsuccessful metadata update
+    -RECREATE PACKAGE BODY "PUBLIC"."PKG_TEST" failed
+    -Dynamic SQL Error
+    -SQL error code = -206
+    -Column unknown
+    -"NON_EXISTENT_FIELD"
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
-
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
