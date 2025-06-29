@@ -36,15 +36,20 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
+expected_stdout_5x = """
     PLAN (T ORDER T_X_DESC)
     PLAN (T ORDER T_X_DESC)
     PLAN (T ORDER T_C_DESC)
 """
 
+expected_stdout_6x = """
+    PLAN ("PUBLIC"."T" ORDER "PUBLIC"."T_X_DESC")
+    PLAN ("PUBLIC"."T" ORDER "PUBLIC"."T_X_DESC")
+    PLAN ("PUBLIC"."T" ORDER "PUBLIC"."T_C_DESC")
+"""
+
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
