@@ -10,6 +10,10 @@ FBTEST:      bugs.core_4280
 NOTES:
     [30.09.2023] pzotov
     Expected error message become differ in FB 6.x, added splitting.
+
+    [29.06.2025] pzotov
+    Expected output on FB 6.x now has to include name of SQL schema.
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -40,10 +44,10 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
-    CREATE FUNCTION PSQL_FUNC_TEST failed
+    CREATE FUNCTION "PUBLIC"."PSQL_FUNC_TEST" failed
     -Dynamic SQL Error
     -SQL error code = -637
-    -duplicate specification of A_X - not supported
+    -duplicate specification of "A_X" - not supported
 """
 
 @pytest.mark.version('>=3.0')
