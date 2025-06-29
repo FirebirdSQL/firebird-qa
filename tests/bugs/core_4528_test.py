@@ -125,9 +125,19 @@ fb5x_checked_stdout = """
     PLAN HASH (R TN NATURAL, S TN NATURAL)
 """
 
+fb6x_checked_stdout = """
+    PLAN HASH ("R" "PUBLIC"."TN" NATURAL, "S" "PUBLIC"."TN" NATURAL)
+    PLAN HASH ("R" "PUBLIC"."TN" NATURAL, "S" "PUBLIC"."TN" NATURAL, "T" "PUBLIC"."TN" NATURAL)
+    PLAN HASH ("R" "PUBLIC"."TN" NATURAL, "S" "PUBLIC"."TN" NATURAL)
+    PLAN HASH ("R" "PUBLIC"."TN" NATURAL, "S" "PUBLIC"."TN" NATURAL, "T" "PUBLIC"."TN" NATURAL)
+    PLAN HASH ("R" "PUBLIC"."TN" NATURAL, "S" "PUBLIC"."TN" NATURAL, "T" "PUBLIC"."TN" NATURAL, "U" "PUBLIC"."TN" NATURAL)
+    PLAN HASH ("R" "PUBLIC"."TN" NATURAL, "S" "PUBLIC"."TN" NATURAL)
+    PLAN HASH ("R" "PUBLIC"."TN" NATURAL, "S" "PUBLIC"."TN" NATURAL)
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout
-    act.execute()
+    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout if act.is_version('<6') else fb6x_checked_stdout
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
