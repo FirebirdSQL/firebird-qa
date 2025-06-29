@@ -59,12 +59,14 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 07001
-    Parameter mismatch for function FN_MULTIPLIER
+    Parameter mismatch for function "PUBLIC"."FN_MULTIPLIER"
     -Parameter A_TIMES has no default value and was not specified or was specified with DEFAULT
+
     Statement failed, SQLSTATE = 07001
-    Parameter mismatch for procedure SP_MULTIPLIER
+    Parameter mismatch for procedure "PUBLIC"."SP_MULTIPLIER"
     -Parameter A_TIMES has no default value and was not specified or was specified with DEFAULT
 """
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
