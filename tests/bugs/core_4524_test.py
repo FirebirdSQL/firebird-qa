@@ -27,8 +27,11 @@ NOTES:
     [21.09.2022] pzotov
     Test reads settings that are COMMON for all encryption-related tests and stored in act.files_dir/test_config.ini.
     QA-plugin prepares this by defining dictionary with name QA_GLOBALS which reads settings via ConfigParser mechanism.
-
     Checked on Linux and Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS)
+
+    [29.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 import os
 import binascii
@@ -268,15 +271,18 @@ def test_1(act_src: Action, act_res: Action, tmp_fbk:Path, capsys):
 
     # Final check: ensure that sequences have proper values:
     ##############
-    act_res.expected_stdout = """
-        Generator GEN_7FFFFFFF, current value: 2147483646, initial value: 2147483647, increment: 1
-        Generator GEN_BA0BAB, current value: 12192682, initial value: 12192683, increment: 1
-        Generator GEN_BADF00D, current value: 195948556, initial value: 195948557, increment: 1
-        Generator GEN_C0FFEE, current value: 12648429, initial value: 12648430, increment: 1
-        Generator GEN_CACA0, current value: 830623, initial value: 830624, increment: 1
-        Generator GEN_DEC0DE, current value: 14598365, initial value: 14598366, increment: 1
-        Generator GEN_DECADE, current value: 14600925, initial value: 14600926, increment: 1
+    SQL_SCHEMA_PREFIX = '' if act_res.is_version('<6') else  'PUBLIC.'
+    expected_stdout = f"""
+        Generator {SQL_SCHEMA_PREFIX}GEN_7FFFFFFF, current value: 2147483646, initial value: 2147483647, increment: 1
+        Generator {SQL_SCHEMA_PREFIX}GEN_BA0BAB, current value: 12192682, initial value: 12192683, increment: 1
+        Generator {SQL_SCHEMA_PREFIX}GEN_BADF00D, current value: 195948556, initial value: 195948557, increment: 1
+        Generator {SQL_SCHEMA_PREFIX}GEN_C0FFEE, current value: 12648429, initial value: 12648430, increment: 1
+        Generator {SQL_SCHEMA_PREFIX}GEN_CACA0, current value: 830623, initial value: 830624, increment: 1
+        Generator {SQL_SCHEMA_PREFIX}GEN_DEC0DE, current value: 14598365, initial value: 14598366, increment: 1
+        Generator {SQL_SCHEMA_PREFIX}GEN_DECADE, current value: 14600925, initial value: 14600926, increment: 1
     """
+
+    act_res.expected_stdout = expected_stdout
     act_res.isql(switches = ['-q'], input = 'show sequ;', combine_output = True, io_enc = locale.getpreferredencoding())
     assert act_res.clean_stdout == act_res.clean_expected_stdout
     act_res.reset()
