@@ -5,21 +5,29 @@ ID:          issue-1566
 ISSUE:       1566
 TITLE:       OR/IN predicates for RDB$DBKEY lead to NATURAL plan
 DESCRIPTION:
-NOTES:
-[25.11.2017]
-  Following query will not compile:
-    select 1 from rdb$relations a join rdb$relations b using ( rdb$db_key );
-    Statement failed, SQLSTATE = 42000 / -Token unknown /  -rdb$db_key ==> Why ?
 
-  Sent letter to dimitr, 25.11.2017 22:42. Waiting for reply.
-[27.12.2017] seems that this note will remain unresolved for undef. time.
 JIRA:        CORE-4492
 FBTEST:      bugs.core_4492
 NOTES:
+    [25.11.2017]
+    Following query will not compile:
+    select 1 from rdb$relations a join rdb$relations b using ( rdb$db_key );
+    Statement failed, SQLSTATE = 42000 / -Token unknown /  -rdb$db_key ==> Why ?
+    Sent letter to dimitr, 25.11.2017 22:42. Waiting for reply.
+
+    [27.12.2017]
+    Seems that this note will remain unresolved for undef. time.
+
     [07.04.2022] pzotov
     FB 5.0.0.455 and later: data sources with equal cardinality now present in the HASH plan in order they are specified in the query.
     Reversed order was used before this build. Because of this, two cases of expected stdout must be taken in account, see variables
     'fb3x_checked_stdout' and 'fb5x_checked_stdout'.
+
+    [29.06.2025] pzotov
+    Added branch in defintion of expected output for FB-6x.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
 """
 
 import pytest
@@ -74,9 +82,17 @@ fb5x_checked_stdout = """
     PLAN HASH (VU_A RDB$RELATIONS NATURAL, VU_A RDB$RELATIONS NATURAL, VU_B RDB$RELATIONS NATURAL, VU_B RDB$RELATIONS NATURAL)
 """
 
+fb6x_checked_stdout = """
+    PLAN ("RR0" INDEX ())
+    PLAN ("RR1" INDEX ())
+    PLAN ("VU" "SYSTEM"."RDB$RELATIONS" INDEX (), "VU" "SYSTEM"."RDB$RELATIONS" INDEX ())
+    PLAN JOIN ("RR_A" NATURAL, "RR_B" INDEX ())
+    PLAN HASH ("VU_A" "SYSTEM"."RDB$RELATIONS" NATURAL, "VU_A" "SYSTEM"."RDB$RELATIONS" NATURAL, "VU_B" "SYSTEM"."RDB$RELATIONS" NATURAL, "VU_B" "SYSTEM"."RDB$RELATIONS" NATURAL)
+"""
+
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action):
-    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout
-    act.execute()
+    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout if act.is_version('<6') else fb6x_checked_stdout
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
