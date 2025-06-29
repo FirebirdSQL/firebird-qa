@@ -16,6 +16,11 @@ NOTES:
     [15.05.2025] pzotov
     Removed 'show grants' because its output very 'fragile' and can often change in master branch.
     It is enough to use custom VIEW ('v_users') to check data.
+
+    [29.06.2025] pzotov
+    Added variable 'PLG_VIEW_NAME' with value depending on major FB version (on 6.x it is prefixed with SQL schema name).
+    This variable is substituted in expected output via f-notation.
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 import locale
 
@@ -23,8 +28,8 @@ import pytest
 from firebird.qa import *
 
 substitutions = [('.*delete record.*', 'delete record'),
-                 ('TABLE PLG\\$VIEW_USERS', 'TABLE PLG'),
-                 ('TABLE PLG\\$SRP_VIEW', 'TABLE PLG'),
+                 #('TABLE PLG\\$VIEW_USERS', 'TABLE PLG'),
+                 #('TABLE PLG\\$SRP_VIEW', 'TABLE PLG'),
                  ('-Effective user is.*', '')]
 
 db = db_factory()
@@ -151,6 +156,9 @@ def test_1(act: Action, tmp_senior: User, tmp_junior: User):
         commit;
     """
 
+    # 29.06.2025: name of view differs depending on major FB vefsion:
+    PLG_VIEW_NAME = 'PLG$SRP_VIEW' if act.is_version('<6') else '"PLG$SRP"."PLG$SRP_VIEW"'
+
     expected_out = f"""
         MSG                             start
         WHO_AM_I                        {act.db.user}
@@ -267,7 +275,7 @@ def test_1(act: Action, tmp_senior: User, tmp_junior: User):
         Records affected: 1
         Statement failed, SQLSTATE = 28000
         delete record
-        -no permission for DELETE access to TABLE PLG
+        -no permission for DELETE access to TABLE {PLG_VIEW_NAME}
         MSG                             point-8
         WHO_AM_I                        {tmp_senior.name}
         WHATS_MY_ROLE                   RDB$ADMIN
