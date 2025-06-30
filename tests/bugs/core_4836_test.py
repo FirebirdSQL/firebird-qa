@@ -12,6 +12,12 @@ NOTES:
     Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
     ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
     Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+
+    [30.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -49,15 +55,22 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|C4836|R4836).)*$', '')])
 
-expected_stdout = """
-    GRANT UPDATE (TEXT) ON TEST TO USER TMP$C4836 WITH GRANT OPTION
-    GRANT UPDATE (TEXT) ON TEST TO ROLE TMP$R4836 GRANTED BY TMP$C4836
-    GRANT UPDATE (TEXT) ON TEST TO USER TMP$C4836 WITH GRANT OPTION
-"""
-
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_user: User, tmp_role: Role):
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_5x = f"""
+        GRANT UPDATE (TEXT) ON TEST TO USER {tmp_user.name.upper()} WITH GRANT OPTION
+        GRANT UPDATE (TEXT) ON TEST TO ROLE {tmp_role.name.upper()} GRANTED BY {tmp_user.name.upper()}
+        GRANT UPDATE (TEXT) ON TEST TO USER {tmp_user.name.upper()} WITH GRANT OPTION
+    """
+
+    expected_stdout_6x = f"""
+        GRANT UPDATE (TEXT) ON PUBLIC.TEST TO {tmp_user.name.upper()} WITH GRANT OPTION
+        GRANT UPDATE (TEXT) ON PUBLIC.TEST TO ROLE {tmp_role.name.upper()} GRANTED BY {tmp_user.name.upper()}
+        GRANT UPDATE (TEXT) ON PUBLIC.TEST TO {tmp_user.name.upper()} WITH GRANT OPTION
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
