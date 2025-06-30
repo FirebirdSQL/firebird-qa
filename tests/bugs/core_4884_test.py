@@ -9,6 +9,10 @@ NOTES:
   Batch file that generates .sql with arbitrary level of begin..end statements can be seen in the traker.
 JIRA:        CORE-4884
 FBTEST:      bugs.core_4884
+NOTES:
+    [30.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -1568,16 +1572,19 @@ act = isql_act('db', test_script,
                substitutions=[('exception [0-9]+', 'exception'), ('time=.*', ''),
                               ('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
 
-expected_stderr = """
-    Statement failed, SQLSTATE = HY000
-    exception 4
-    -EX_TEST
-    -Hi from Mariana Trench, depth=511, time=2015-08-24 13:47:25.1330
-    -At block line: 1026, col: 5
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    EXCEPTION_NAME = 'EX_TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"EX_TEST"'
+    expected_stderr = f"""
+        Statement failed, SQLSTATE = HY000
+        exception 4
+        -{EXCEPTION_NAME}
+        -Hi from Mariana Trench, depth=511, time=2015-08-24 13:47:25.1330
+        -At block line: 1026, col: 5
+    """
+
     act.expected_stderr = expected_stderr
     act.execute()
     assert act.clean_stderr == act.clean_expected_stderr
