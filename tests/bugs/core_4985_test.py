@@ -9,7 +9,7 @@ JIRA:        CORE-4985
 FBTEST:      bugs.core_4985
 NOTES:
     [30.06.2025] pzotov
-    Added 'SQL_SCHEMA_PREFIX' and variables to store domain names - to be substituted in expected_* on FB 6.x
+    Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
     
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214.
 """
