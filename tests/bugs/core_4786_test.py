@@ -3,11 +3,14 @@
 """
 ID:          issue-5085
 ISSUE:       5085
-TITLE:       Problematic key value (when attempt to insert duplicate in PK/UK) is not shown
-  where length of key >= 127 characters
+TITLE:       Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters
 DESCRIPTION:
 JIRA:        CORE-4786
 FBTEST:      bugs.core_4786
+NOTES:
+    [30.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -68,71 +71,74 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_NONE_UNQ" on table "TEST_NONE"
-    -Problematic key value is ("S" = '01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234ABCD...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABCDEF')
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'ÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁ...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'ЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊ...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = '€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = '∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁ...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑Á...)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table "TEST_UTF8"
-    -Problematic key value is ("S" = 'Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑...)
-"""
-
+@pytest.mark.intl
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute(charset='utf8')
-    assert act.clean_stderr == act.clean_expected_stderr
+    
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
 
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_NONE_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_NONE"
+        -Problematic key value is ("S" = '01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234ABCD...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABCDEF')
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'ÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁÁ...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'ЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊЊ...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = '€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = '∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑∑...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á∑Á...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ∑ÁÁ...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ∑ÁÁÁ...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑∑ÁÁÁ∑...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁÁ∑ÁÁÁ...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑Á∑∑...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑∑∑Á∑...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑ÁÁ∑∑∑Á...)
+
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_CSET_UTF8_UNQ" on table {SQL_SCHEMA_PREFIX}"TEST_UTF8"
+        -Problematic key value is ("S" = 'Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑∑Á∑∑∑...)
+    """
+
+    act.expected_stdout = expected_stdout
+    act.execute(charset='utf8', combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
