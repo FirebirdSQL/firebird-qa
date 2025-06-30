@@ -7,6 +7,11 @@ TITLE:       ALTER DOMAIN ... TO <new_name> allows to specify <new_name> matchin
 DESCRIPTION:
 JIRA:        CORE-4917
 FBTEST:      bugs.core_4917
+NOTES:
+    [30.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' and variables to store domain names - to be substituted in expected_* on FB 6.x
+    Removed 'SHOW DOMAIN' command as its output has no matter for this test.
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -45,47 +50,41 @@ test_script = """
     -- this also should FAIL becase new domain name is written in UPPER case (despite quotes):
     alter domain "rdb$2" to "RDB$3";
 
-    show domain;
-
 """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    rdb$2
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE DOMAIN RDB$1 failed
-    -SQL error code = -637
-    -Implicit domain name RDB$1 not allowed in user created domain
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE DOMAIN RDB$2 failed
-    -SQL error code = -637
-    -Implicit domain name RDB$2 not allowed in user created domain
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -ALTER DOMAIN rdb$2 failed
-    -SQL error code = -637
-    -Implicit domain name RDB$3 not allowed in user created domain
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -ALTER DOMAIN rdb$2 failed
-    -SQL error code = -637
-    -Implicit domain name RDB$3 not allowed in user created domain
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    DOMAIN_1_UPPER = 'RDB$1' if act.is_version('<6') else '"RDB$1"'
+    DOMAIN_2_UPPER = 'RDB$2' if act.is_version('<6') else '"RDB$2"'
+    DOMAIN_2_LOWER = 'rdb$2' if act.is_version('<6') else '"rdb$2"'
+
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -CREATE DOMAIN {SQL_SCHEMA_PREFIX}{DOMAIN_1_UPPER} failed
+        -SQL error code = -637
+        -Implicit domain name {SQL_SCHEMA_PREFIX}{DOMAIN_1_UPPER} not allowed in user created domain
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -CREATE DOMAIN {SQL_SCHEMA_PREFIX}{DOMAIN_2_UPPER} failed
+        -SQL error code = -637
+        -Implicit domain name {SQL_SCHEMA_PREFIX}{DOMAIN_2_UPPER} not allowed in user created domain
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -ALTER DOMAIN {SQL_SCHEMA_PREFIX}{DOMAIN_2_LOWER} failed
+        -SQL error code = -637
+        -Implicit domain name RDB$3 not allowed in user created domain
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -ALTER DOMAIN {SQL_SCHEMA_PREFIX}{DOMAIN_2_LOWER} failed
+        -SQL error code = -637
+        -Implicit domain name RDB$3 not allowed in user created domain
+    """
+
+    act.expected_stdout = expected_stdout # _5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
