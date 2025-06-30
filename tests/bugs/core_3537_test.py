@@ -120,17 +120,6 @@ db = db_factory(page_size=4096, init=init_script)
 
 act = python_act('db')
 
-expected_stdout = """
-    Check ratio_fetches_to_datapages_for_GTT_DELETE_ROWS: OK
-    Check ratio_fetches_to_datapages_for_GTT_PRESERVE_ROWS: OK
-    Check ratio_fetches_to_row_count_for_GTT_DELETE_ROWS: OK
-    Check ratio_fetches_to_row_count_for_GTT_PRESERVE_ROWS: OK
-    Check ratio_marks_to_datapages_for_GTT_DELETE_ROWS: OK
-    Check ratio_marks_to_datapages_for_GTT_PRESERVE_ROWS: OK
-    Check ratio_marks_to_row_count_for_GTT_DELETE_ROWS: OK
-    Check ratio_marks_to_row_count_for_GTT_PRESERVE_ROWS: OK
-"""
-
 trace = ['log_transactions = true',
            'print_perf = true',
            'log_initfini = false',
@@ -219,6 +208,18 @@ def test_1(act: Action, capsys):
     if failed_flag:
         print('Trace for GTT PRESERVE rows: ' + gtt_sav_trace)
         print('Trace for GTT DELETE   rows: ' + gtt_del_trace)
+
+    expected_stdout = """
+        Check ratio_fetches_to_datapages_for_GTT_DELETE_ROWS: OK
+        Check ratio_fetches_to_datapages_for_GTT_PRESERVE_ROWS: OK
+        Check ratio_fetches_to_row_count_for_GTT_DELETE_ROWS: OK
+        Check ratio_fetches_to_row_count_for_GTT_PRESERVE_ROWS: OK
+        Check ratio_marks_to_datapages_for_GTT_DELETE_ROWS: OK
+        Check ratio_marks_to_datapages_for_GTT_PRESERVE_ROWS: OK
+        Check ratio_marks_to_row_count_for_GTT_DELETE_ROWS: OK
+        Check ratio_marks_to_row_count_for_GTT_PRESERVE_ROWS: OK
+    """
+
     # Check
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
