@@ -4,10 +4,14 @@
 ID:          issue-4804
 ISSUE:       4804
 TITLE:       Description (COMMENT ON) for package procedures and functions, and its parameters
-DESCRIPTION:
-  Test verifies ability to store comments and also to encode them in UTF8
+DESCRIPTION: Test verifies ability to store comments and also to encode them in UTF8
 JIRA:        CORE-4484
 FBTEST:      bugs.core_4484
+NOTES:
+    [30.06.2025] pzotov
+    Regression was found in FB 6.x. Fixed in:
+    https://github.com/FirebirdSQL/firebird/commit/f693bf4e72915534a0d45e9c4eec7a9f1959d2ee
+    Checked on 6.0.0.881; 5.0.3.1668
 """
 
 import pytest
@@ -102,35 +106,29 @@ test_script = """
 act = isql_act('db', test_script, substitutions=[('TEXT_BLOB.*', '')])
 
 expected_stdout = """
-	DESCR_FOR_WHAT                  package itself
-	OBJ_NAME                        PG_TEST
-	TEXT_BLOB                       0:3
-	MITÄ TÄMÄN
+    DESCR_FOR_WHAT                  package itself
+    OBJ_NAME                        PG_TEST
+    MITÄ TÄMÄN
 
-	DESCR_FOR_WHAT                  package proc
-	OBJ_NAME                        SP_TEST
-	TEXT_BLOB                       0:6
-	ÁÉÍÓÚÝ
+    DESCR_FOR_WHAT                  package proc
+    OBJ_NAME                        SP_TEST
+    ÁÉÍÓÚÝ
 
-	DESCR_FOR_WHAT                  package func
-	OBJ_NAME                        FN_TEST
-	TEXT_BLOB                       0:9
-	ÂÊÎÔÛ
+    DESCR_FOR_WHAT                  package func
+    OBJ_NAME                        FN_TEST
+    ÂÊÎÔÛ
 
-	DESCR_FOR_WHAT                  package proc pars
-	OBJ_NAME                        I_X
-	TEXT_BLOB                       0:c
-	ÃÑÕ ÄËÏÖÜŸ
+    DESCR_FOR_WHAT                  package proc pars
+    OBJ_NAME                        I_X
+    ÃÑÕ ÄËÏÖÜŸ
 
-	DESCR_FOR_WHAT                  package proc pars
-	OBJ_NAME                        O_Z
-	TEXT_BLOB                       0:f
-	ÇŠ ΔΘΛΞΣΨΩ
+    DESCR_FOR_WHAT                  package proc pars
+    OBJ_NAME                        O_Z
+    ÇŠ ΔΘΛΞΣΨΩ
 
-	DESCR_FOR_WHAT                  package func args
-	OBJ_NAME                        I_X
-	TEXT_BLOB                       0:12
-	ĄĘŁŹŻ ЙЁ ЊЋЏ ĂŞŢ
+    DESCR_FOR_WHAT                  package func args
+    OBJ_NAME                        I_X
+    ĄĘŁŹŻ ЙЁ ЊЋЏ ĂŞŢ
 """
 
 @pytest.mark.version('>=3.0')
@@ -138,4 +136,3 @@ def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
