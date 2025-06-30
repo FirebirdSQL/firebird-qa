@@ -3,11 +3,16 @@
 """
 ID:          issue-5116
 ISSUE:       5116
-TITLE:       EXECUTE PROCEDURE's RETURNING_VALUES and EXECUTE STATEMENT's INTO does not
-  check validity of assignments targets leading to bugcheck
+TITLE:       EXECUTE PROCEDURE's RETURNING_VALUES and EXECUTE STATEMENT's INTO does not check validity of assignments targets leading to bugcheck
 DESCRIPTION:
 JIRA:        CORE-4819
 FBTEST:      bugs.core_4819
+NOTES:
+    [30.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -108,7 +113,7 @@ test_script = """
               new.y as new_y;
 
     select
-        'after  update' msg,
+        'after update' msg,
         cast(rdb$get_context('USER_SESSION', 'X_TRG_AIUD1') as int) as X_TRG_AIUD1,
         cast(rdb$get_context('USER_SESSION', 'Y_TRG_AIUD1') as int) as Y_TRG_AIUD1,
         cast(rdb$get_context('USER_SESSION', 'X_TRG_AIUD2') as int) as X_TRG_AIUD2,
@@ -185,21 +190,28 @@ test_script = """
     rollback;
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+fb3x_checked_stdout = """
     MSG                             initial state
     ID                              1
     X                               3
     Y                               7
-
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column
     MSG                             after  delete
     X_TRG_AIUD1                     <null>
     Y_TRG_AIUD1                     <null>
     X_TRG_AIUD2                     <null>
     Y_TRG_AIUD2                     <null>
-
-    MSG                             after  update
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column
+    MSG                             after update
     X_TRG_AIUD1                     <null>
     Y_TRG_AIUD1                     <null>
     X_TRG_AIUD2                     <null>
@@ -207,71 +219,85 @@ expected_stdout = """
     ID                              1
     X                               3
     Y                               7
-"""
-
-# version: 3.0
-
-expected_stderr_1 = """
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column
-
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column
-
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column
 """
 
-@pytest.mark.version('>=3.0,<4.0')
+fb5x_checked_stdout = """
+    MSG                             initial state
+    ID                              1
+    X                               3
+    Y                               7
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column TEST.X
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column TEST.X
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column TEST.X
+    MSG                             after  delete
+    X_TRG_AIUD1                     <null>
+    Y_TRG_AIUD1                     <null>
+    X_TRG_AIUD2                     <null>
+    Y_TRG_AIUD2                     <null>
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column TEST.X
+    MSG                             after update
+    X_TRG_AIUD1                     <null>
+    Y_TRG_AIUD1                     <null>
+    X_TRG_AIUD2                     <null>
+    Y_TRG_AIUD2                     <null>
+    ID                              1
+    X                               3
+    Y                               7
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column TEST.X
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column CE.Y
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column CE.Y
+"""
+
+fb6x_checked_stdout = """
+    MSG                             initial state
+    ID                              1
+    X                               3
+    Y                               7
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column "PUBLIC"."TEST"."X"
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column "PUBLIC"."TEST"."X"
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column "PUBLIC"."TEST"."X"
+    MSG                             after  delete
+    X_TRG_AIUD1                     <null>
+    Y_TRG_AIUD1                     <null>
+    X_TRG_AIUD2                     <null>
+    Y_TRG_AIUD2                     <null>
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column "PUBLIC"."TEST"."X"
+    MSG                             after update
+    X_TRG_AIUD1                     <null>
+    Y_TRG_AIUD1                     <null>
+    X_TRG_AIUD2                     <null>
+    Y_TRG_AIUD2                     <null>
+    ID                              1
+    X                               3
+    Y                               7
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column "PUBLIC"."TEST"."X"
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column "CE"."Y"
+    Statement failed, SQLSTATE = 42000
+    attempted update of read-only column "CE"."Y"
+"""
+
+@pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr_1
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
-
-# version: 4.0
-
-expected_stderr_2 = """
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column TEST.X
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column TEST.X
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column TEST.X
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column TEST.X
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column TEST.X
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column CE.Y
-
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column CE.Y
-"""
-
-@pytest.mark.version('>=4.0')
-def test_2(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr_2
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.expected_stdout = fb3x_checked_stdout if act.is_version('<4') else fb5x_checked_stdout if act.is_version('<6') else fb6x_checked_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
