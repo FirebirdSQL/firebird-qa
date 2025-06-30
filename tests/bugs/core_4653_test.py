@@ -7,6 +7,13 @@ TITLE:       Crash on infinite mutual SP calls (instead of "Too many concurrent 
 DESCRIPTION:
 JIRA:        CORE-4653
 FBTEST:      bugs.core_4653
+NOTES:
+    [30.06.2025] pzotov
+    Part of call stack ('At procedure <SP_NAME> line X col Y') must be supressed because its length is limited to 1024 characters
+    and number of lines (together with interrupting marker '...') depends on length of procedure name that is called recursively.
+    Difference of transactions before and after call to recursive SP must be checked to be sure that there was no crash.
+
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -51,57 +58,30 @@ test_script = """
   -- Old stderr:
   -- Statement failed, SQLSTATE = HY001
   -- Stack overflow.  The resource requirements of the runtime stack have exceeded the memory available to it.
+  set list on;
+  set term ^;
+  execute block as
+  begin
+      rdb$set_context('USER_TRANSACTION', 'INIT_TX', current_transaction);
+  end ^
+  set term ;^
 
   select * from p01(1);
+  select current_transaction - cast( rdb$get_context('USER_TRANSACTION', 'INIT_TX') as int) as tx_diff from rdb$database;
 """
 
-act = isql_act('db', test_script, substitutions=[('=.*', ''), ('line.*', ''), ('col.*', '')])
+substitutions = [ ('^((?!(SQLSTATE|Too many concurrent executions|TX_DIFF)).)*$', ''), ('[ \t]+', ' ') ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-               Z
-    ============
-"""
-
-expected_stderr = """
     Statement failed, SQLSTATE = 54001
     Too many concurrent executions of the same request
-    -At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At procedure 'P02' line: 3, col: 3
-    At procedure 'P03' line: 3, col: 3
-    At p...
+    TX_DIFF 0
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
