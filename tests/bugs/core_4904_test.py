@@ -14,6 +14,10 @@ DESCRIPTION:
     4. Start validation of database: index should NOT be corrupted in its report.
 JIRA:        CORE-4904
 FBTEST:      bugs.core_4904
+NOTES:
+    [30.06.2025] pzotov
+    Test can not be executed on FB 6.x for suitable time because minimal page_size in this version is 8192.
+    Number of rows that is needed to be inserted in index with key length = ~2K is too large.
 """
 
 import pytest
@@ -61,7 +65,7 @@ expected_stdout = """
     Validation finished
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=3.0,<6')
 def test_1(act: Action, capsys):
     # Move database to FW = OFF in order to increase speed of insertions and output its header info:
     with act.connect_server() as srv:
