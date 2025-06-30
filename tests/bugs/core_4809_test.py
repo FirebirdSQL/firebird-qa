@@ -18,6 +18,12 @@ NOTES:
     result of HASH(A, B) is considered now as having greater cardinality than HASH(C).
     This causes optimizer to put HASH(A,B) as first source.
     Checked on 5.0.0.1149.
+
+    [30.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -227,9 +233,30 @@ fb5x_checked_stdout = """
     PLAN HASH (HASH (HASH (DATASOURCE_A TF NATURAL, DATASOURCE_B TF NATURAL), DATASOURCE_C TF NATURAL), DATASOURCE_D TF NATURAL)
 """
 
+fb6x_checked_stdout = """
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TK" NATURAL, "DATASOURCE_B" "PUBLIC"."TK" NATURAL)
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TK" NATURAL, "DATASOURCE_B" "PUBLIC"."TK" NATURAL, "DATASOURCE_C" "PUBLIC"."TK" NATURAL)
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TK" NATURAL, "DATASOURCE_B" "PUBLIC"."TK" NATURAL, "DATASOURCE_C" "PUBLIC"."TK" NATURAL, "DATASOURCE_D" "PUBLIC"."TK" NATURAL)
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TK" NATURAL, "DATASOURCE_B" "PUBLIC"."TK" NATURAL)
+    PLAN HASH (HASH ("DATASOURCE_A" "PUBLIC"."TK" NATURAL, "DATASOURCE_B" "PUBLIC"."TK" NATURAL), "DATASOURCE_C" "PUBLIC"."TK" NATURAL)
+    PLAN HASH (HASH (HASH ("DATASOURCE_A" "PUBLIC"."TK" NATURAL, "DATASOURCE_B" "PUBLIC"."TK" NATURAL), "DATASOURCE_C" "PUBLIC"."TK" NATURAL), "DATASOURCE_D" "PUBLIC"."TK" NATURAL)
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TK" NATURAL, "DATASOURCE_B" "PUBLIC"."TK" NATURAL)
+    PLAN HASH (HASH ("DATASOURCE_A" "PUBLIC"."TK" NATURAL, "DATASOURCE_B" "PUBLIC"."TK" NATURAL), "DATASOURCE_C" "PUBLIC"."TK" NATURAL)
+    PLAN HASH (HASH (HASH ("DATASOURCE_A" "PUBLIC"."TK" NATURAL, "DATASOURCE_B" "PUBLIC"."TK" NATURAL), "DATASOURCE_C" "PUBLIC"."TK" NATURAL), "DATASOURCE_D" "PUBLIC"."TK" NATURAL)
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TF" NATURAL, "DATASOURCE_B" "PUBLIC"."TF" NATURAL)
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TF" NATURAL, "DATASOURCE_B" "PUBLIC"."TF" NATURAL, "DATASOURCE_C" "PUBLIC"."TF" NATURAL)
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TF" NATURAL, "DATASOURCE_B" "PUBLIC"."TF" NATURAL, "DATASOURCE_C" "PUBLIC"."TF" NATURAL, "DATASOURCE_D" "PUBLIC"."TF" NATURAL)
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TF" NATURAL, "DATASOURCE_B" "PUBLIC"."TF" NATURAL)
+    PLAN HASH (HASH ("DATASOURCE_A" "PUBLIC"."TF" NATURAL, "DATASOURCE_B" "PUBLIC"."TF" NATURAL), "DATASOURCE_C" "PUBLIC"."TF" NATURAL)
+    PLAN HASH (HASH (HASH ("DATASOURCE_A" "PUBLIC"."TF" NATURAL, "DATASOURCE_B" "PUBLIC"."TF" NATURAL), "DATASOURCE_C" "PUBLIC"."TF" NATURAL), "DATASOURCE_D" "PUBLIC"."TF" NATURAL)
+    PLAN HASH ("DATASOURCE_A" "PUBLIC"."TF" NATURAL, "DATASOURCE_B" "PUBLIC"."TF" NATURAL)
+    PLAN HASH (HASH ("DATASOURCE_A" "PUBLIC"."TF" NATURAL, "DATASOURCE_B" "PUBLIC"."TF" NATURAL), "DATASOURCE_C" "PUBLIC"."TF" NATURAL)
+    PLAN HASH (HASH (HASH ("DATASOURCE_A" "PUBLIC"."TF" NATURAL, "DATASOURCE_B" "PUBLIC"."TF" NATURAL), "DATASOURCE_C" "PUBLIC"."TF" NATURAL), "DATASOURCE_D" "PUBLIC"."TF" NATURAL)
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = fb3x_checked_stdout if act.is_version('<4') else fb4x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout
+    act.expected_stdout = fb3x_checked_stdout if act.is_version('<4') else fb4x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout if act.is_version('<6') else fb6x_checked_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
