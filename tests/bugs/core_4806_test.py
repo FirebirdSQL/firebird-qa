@@ -30,6 +30,12 @@ NOTES:
 
     [15.05.2025] pzotov
     Removed 'show grants' because its output very 'fragile' and can often change in fresh FB versions.
+
+    [30.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -103,9 +109,9 @@ test_script = """
     commit;
 """
 
-substitutions = [  ('[ \t]+', ' ')
-                  ,('(-)?Effective user is.*', '')
-                  ,('current value.*', 'current value')
+substitutions = [ # ('[ \t]+', ' '),
+                  # ('(-)?Effective user is.*', ''),
+                  ('current value.*', 'current value')
                 ]
 
 act = isql_act('db', test_script, substitutions = substitutions)
@@ -113,33 +119,94 @@ act = isql_act('db', test_script, substitutions = substitutions)
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, user_a: User, user_b: User, user_c: User, role_a: Role):
 
-    act.expected_stdout = """
-        USER                            BIG_BROTHER
+    # user_a = user_factory('db', name='Maverick', password='123')
+    # user_b = user_factory('db', name='Big_Brother', password='456')
+    # user_c = user_factory('db', name='Bill_Junior', password='789')
+    # role_a = role_factory('db', name='stockmgr')
+
+    expected_stdout_3x = f"""
+        USER                            {user_b.name.upper()}
+        ROLE                            NONE
+        Generator G, current value
+        NEW_GEN                         -111
+        USER                            {user_c.name.upper()}
+        ROLE                            {role_a.name.upper()}
+        Generator G, current value
+        NEW_GEN                         -333
+        USER                            {user_c.name.upper()}
+        ROLE                            NONE
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR G
+        There is no generator G in this database
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR G
+        USER                            {user_a.name.upper()}
+        ROLE                            NONE
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR G
+        There is no generator G in this database
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR G
+    """
+
+    expected_stdout_5x = f"""
+        USER                            {user_b.name.upper()}
         ROLE                            NONE
         Generator G, current value: 0, initial value: 1, increment: 1
         NEW_GEN                         -111
-        USER                            BILL_JUNIOR
-        ROLE                            STOCKMGR
+        USER                            {user_c.name.upper()}
+        ROLE                            {role_a.name.upper()}
         Generator G, current value: -111, initial value: 1, increment: 1
         NEW_GEN                         -333
-        USER                            BILL_JUNIOR
+        USER                            {user_c.name.upper()}
         ROLE                            NONE
         Statement failed, SQLSTATE = 28000
         no permission for USAGE access to GENERATOR G
-        -Effective user is BILL_JUNIOR
+        -Effective user is {user_c.name.upper()}
         There is no generator G in this database
         Statement failed, SQLSTATE = 28000
         no permission for USAGE access to GENERATOR G
-        -Effective user is BILL_JUNIOR
-        USER                            MAVERICK
+        -Effective user is {user_c.name.upper()}
+        USER                            {user_a.name.upper()}
         ROLE                            NONE
         Statement failed, SQLSTATE = 28000
         no permission for USAGE access to GENERATOR G
-        -Effective user is MAVERICK
+        -Effective user is {user_a.name.upper()}
         There is no generator G in this database
         Statement failed, SQLSTATE = 28000
         no permission for USAGE access to GENERATOR G
-        -Effective user is MAVERICK
+        -Effective user is {user_a.name.upper()}
     """
+
+    expected_stdout_6x = f"""
+        USER                            {user_b.name.upper()}
+        ROLE                            NONE
+        Generator PUBLIC.G, current value
+        NEW_GEN                         -111
+        USER                            {user_c.name.upper()}
+        ROLE                            {role_a.name.upper()}
+        Generator PUBLIC.G, current value
+        NEW_GEN                         -333
+        USER                            {user_c.name.upper()}
+        ROLE                            NONE
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR "PUBLIC"."G"
+        -Effective user is {user_c.name.upper()}
+        There is no generator G in this database
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR "PUBLIC"."G"
+        -Effective user is {user_c.name.upper()}
+        USER                            {user_a.name.upper()}
+        ROLE                            NONE
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR "PUBLIC"."G"
+        -Effective user is {user_a.name.upper()}
+        There is no generator G in this database
+        Statement failed, SQLSTATE = 28000
+        no permission for USAGE access to GENERATOR "PUBLIC"."G"
+        -Effective user is {user_a.name.upper()}
+    """
+
+    act.expected_stdout = expected_stdout_3x if act.is_version('<4') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
