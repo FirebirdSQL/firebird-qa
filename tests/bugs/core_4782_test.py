@@ -47,6 +47,7 @@ expected_stdout_6x = """
     "ąčęėįšųūž"            VARCHAR(100) CHARACTER SET SYSTEM.UTF8 COLLATE PUBLIC.TEST_COLL Nullable
 """
 
+@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test(act: Action):
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
