@@ -5,13 +5,19 @@ ID:          issue-5073
 ISSUE:       5073
 TITLE:       Table aliasing is unnecessary required when doing UPDATE ... RETURNING RDB$ pseudo-columns
 DESCRIPTION:
-NOTES:
-  After fix #6815 execution plan contains 'Local_Table' (FB 5.0+) for DML with RETURNING clauses:
-  "When such a statement is executed, Firebird should execute the statement to completion
-  and collect all requested data in a type of temporary table, once execution is complete,
-  fetches are done against this temporary table"
 JIRA:        CORE-4774
 FBTEST:      bugs.core_4774
+NOTES:
+    After fix #6815 execution plan contains 'Local_Table' (FB 5.0+) for DML with RETURNING clauses:
+    "When such a statement is executed, Firebird should execute the statement to completion
+    and collect all requested data in a type of temporary table, once execution is complete,
+    fetches are done against this temporary table"
+
+    [30.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -33,36 +39,32 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-# version: 3.0
-
-expected_stdout_1 = """
+expected_stdout_4x = """
     PLAN (T NATURAL)
     PLAN (T NATURAL)
     PLAN (T NATURAL)
 """
 
-@pytest.mark.version('>=3.0,<5.0')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout_1
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout
-
-# version: 5.0
-
-expected_stdout_2 = """
+expected_stdout_5x = """
     PLAN (T NATURAL)
     PLAN (Local_Table NATURAL)
-
     PLAN (T NATURAL)
     PLAN (Local_Table NATURAL)
-
     PLAN (T NATURAL)
     PLAN (Local_Table NATURAL)
 """
 
-@pytest.mark.version('>=5.0')
-def test_2(act: Action):
-    act.expected_stdout = expected_stdout_2
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout
+expected_stdout_6x = """
+    PLAN ("PUBLIC"."T" NATURAL)
+    PLAN (Local_Table NATURAL)
+    PLAN ("PUBLIC"."T" NATURAL)
+    PLAN (Local_Table NATURAL)
+    PLAN ("PUBLIC"."T" NATURAL)
+    PLAN (Local_Table NATURAL)
+"""
 
+@pytest.mark.version('>=3.0')
+def test(act: Action):
+    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
