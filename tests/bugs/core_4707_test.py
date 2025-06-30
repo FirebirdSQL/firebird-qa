@@ -7,6 +7,12 @@ TITLE:       Implement ability to validate tables and indices online (without ex
 DESCRIPTION:
 JIRA:        CORE-4707
 FBTEST:      bugs.core_4707
+NOTES:
+    [30.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -43,33 +49,14 @@ init_script = """
 
 db = db_factory(init=init_script)
 
-act = python_act('db', substitutions=[('[\\d]{2}:[\\d]{2}:[\\d]{2}.[\\d]{2}', ''),
-                                      ('Relation [\\d]{3,4}', 'Relation')])
-
-expected_stdout = """
-    ISQL_MSG                        Starting EB with infinite pause.
-    08:37:01.14 Validation started
-    08:37:01.15 Relation 128 (TEST1)
-    08:37:02.15 Acquire relation lock failed
-    08:37:02.15 Relation 128 (TEST1) : 1 ERRORS found
-    08:37:02.15 Relation 129 (TEST2)
-    08:37:02.15   process pointer page    0 of    1
-    08:37:02.15 Index 1 (TEST2_PK)
-    08:37:02.15 Index 2 (TEST2_S)
-    08:37:02.15 Index 3 (TEST2_C)
-    08:37:02.15 Index 4 (TEST2_T)
-    08:37:02.17 Relation 129 (TEST2) is ok
-    08:37:02.17 Relation 130 (TEST3)
-    08:37:03.17 Acquire relation lock failed
-    08:37:03.17 Relation 130 (TEST3) : 1 ERRORS found
-    08:37:03.17 Validation finished
-"""
+substitutions=[ ('\\d{2}:\\d{2}:\\d{2}.\\d{2}', ''), ('Relation \\d{3,4}', 'Relation') ]
+act = python_act('db', substitutions = substitutions)
 
 hang_script_file = temp_file('hang_script.sql')
 hang_output = temp_file('hang_script.out')
 
 @pytest.mark.es_eds
-@pytest.mark.version('>=2.5.5')
+@pytest.mark.version('>=3.0')
 def test_1(act: Action, hang_script_file: Path, hang_output: Path, capsys, request):
     # Fializer for FB4
     def drop_connections():
@@ -125,6 +112,46 @@ def test_1(act: Action, hang_script_file: Path, hang_output: Path, capsys, reque
     #
     print(hang_output.read_text())
     print(act.stdout)
-    act.expected_stdout = expected_stdout
+
+
+    expected_stdout_5x = """
+        ISQL_MSG                        Starting EB with infinite pause.
+        Validation started
+        Relation (TEST1)
+        Acquire relation lock failed
+        Relation (TEST1) : 1 ERRORS found
+        Relation (TEST2)
+        process pointer page    0 of    1
+        Index 1 (TEST2_PK)
+        Index 2 (TEST2_S)
+        Index 3 (TEST2_C)
+        Index 4 (TEST2_T)
+        Relation (TEST2) is ok
+        Relation (TEST3)
+        Acquire relation lock failed
+        Relation (TEST3) : 1 ERRORS found
+        Validation finished
+    """
+
+    expected_stdout_6x = """
+        ISQL_MSG                        Starting EB with infinite pause.
+        Validation started
+        Relation ("PUBLIC"."TEST1")
+        Acquire relation lock failed
+        Relation ("PUBLIC"."TEST1") : 1 ERRORS found
+        Relation ("PUBLIC"."TEST2")
+        process pointer page    0 of    1
+        Index 1 ("PUBLIC"."TEST2_PK")
+        Index 2 ("PUBLIC"."TEST2_S")
+        Index 3 ("PUBLIC"."TEST2_C")
+        Index 4 ("PUBLIC"."TEST2_T")
+        Relation ("PUBLIC"."TEST2") is ok
+        Relation ("PUBLIC"."TEST3")
+        Acquire relation lock failed
+        Relation ("PUBLIC"."TEST3") : 1 ERRORS found
+        Validation finished
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
