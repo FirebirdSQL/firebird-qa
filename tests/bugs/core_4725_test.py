@@ -13,6 +13,12 @@ NOTES:
     See https://github.com/FirebirdSQL/firebird/pull/8202
     Commit (05-aug-2024 13:45):
     https://github.com/FirebirdSQL/firebird/commit/0cc8de396a3c2bbe13b161ecbfffa8055e7b4929
+
+    [30.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -185,95 +191,105 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
+expected_stdout_5x = """
+    Statement failed, SQLSTATE = 27000
+    unsuccessful metadata update
+    -ALTER TABLE TEST00 failed
+    -action cancelled by trigger (2) to preserve data integrity
+    -Column used in a PRIMARY constraint must be NOT NULL.
     INFO_00                         After try to drop NN on FIELD, NN was added by ALTER <C> SET NOT NULL
     X                               INTEGER Not Null
     CONSTRAINT T_PK:
-      Primary key (X)
-
+    Primary key (X)
+    Statement failed, SQLSTATE = 27000
+    unsuccessful metadata update
+    -ALTER TABLE TEST01 failed
+    -action cancelled by trigger (2) to preserve data integrity
+    -Column used in a PRIMARY constraint must be NOT NULL.
     INFO_01                         After try to drop NN on FIELD, NN was added directly in CREATE TABLE (<C> not null)
     X                               (DM_01) INTEGER Not Null
     CONSTRAINT TEST01_PK:
-      Primary key (X)
-
+    Primary key (X)
     INFO_02                         After try to drop NN on FIELD, NN was inherited from DOMAIN
     X                               (DM_02) INTEGER Not Null
     CONSTRAINT TEST02_PK:
-      Primary key (X)
-
+    Primary key (X)
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -ALTER DOMAIN DM_03 failed
+    -Domain used in the PRIMARY KEY constraint of table TEST03 must be NOT NULL
     INFO_03                         After try to drop NN on DOMAIN but dependent table exists
     DM_03                           INTEGER Not Null
     X                               (DM_03) INTEGER Not Null
     CONSTRAINT TEST03_PK:
-      Primary key (X)
-
+    Primary key (X)
     INFO_04                         After try to drop NN on FIELD based on not-null domain, but NN was also specified in the field DDL
     X                               (DM_04) INTEGER Not Null
     CONSTRAINT TEST04_PK:
-      Primary key (X)
-
+    Primary key (X)
+    Statement failed, SQLSTATE = 22006
+    unsuccessful metadata update
+    -Cannot make field X of table TEST05 NOT NULL because there are NULLs present
     INFO_05                         After try to set NN on DOMAIN when at least one table exists with NULL in its data
     DM_05                           INTEGER Nullable
-
     INFO_06                         After try to set NN on DOMAIN when NO table exists with NULL in its data
     DM_06                           INTEGER Not Null
-"""
-
-expected_stderr_5x = """
-    Statement failed, SQLSTATE = 27000
-    unsuccessful metadata update
-    -ALTER TABLE TEST00 failed
-    -action cancelled by trigger (2) to preserve data integrity
-    -Column used in a PRIMARY constraint must be NOT NULL.
-
-    Statement failed, SQLSTATE = 27000
-    unsuccessful metadata update
-    -ALTER TABLE TEST01 failed
-    -action cancelled by trigger (2) to preserve data integrity
-    -Column used in a PRIMARY constraint must be NOT NULL.
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -ALTER DOMAIN DM_03 failed
-    -Domain used in the PRIMARY KEY constraint of table TEST03 must be NOT NULL
-
-    Statement failed, SQLSTATE = 22006
-    unsuccessful metadata update
-    -Cannot make field X of table TEST05 NOT NULL because there are NULLs present
-
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST06"."X", value "*** null ***"
 """
 
-expected_stderr_6x = """
+expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
-    -ALTER TABLE TEST00 failed
+    -ALTER TABLE "PUBLIC"."TEST00" failed
     -Column used in a PRIMARY constraint must be NOT NULL.
-
+    INFO_00                         After try to drop NN on FIELD, NN was added by ALTER <C> SET NOT NULL
+    Table: PUBLIC.TEST00
+    X                               INTEGER Not Null
+    CONSTRAINT T_PK:
+    Primary key (X)
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
-    -ALTER TABLE TEST01 failed
+    -ALTER TABLE "PUBLIC"."TEST01" failed
     -Column used in a PRIMARY constraint must be NOT NULL.
-
+    INFO_01                         After try to drop NN on FIELD, NN was added directly in CREATE TABLE (<C> not null)
+    Table: PUBLIC.TEST01
+    X                               (PUBLIC.DM_01) INTEGER Not Null
+    CONSTRAINT TEST01_PK:
+    Primary key (X)
+    INFO_02                         After try to drop NN on FIELD, NN was inherited from DOMAIN
+    Table: PUBLIC.TEST02
+    X                               (PUBLIC.DM_02) INTEGER Not Null
+    CONSTRAINT TEST02_PK:
+    Primary key (X)
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
-    -ALTER DOMAIN DM_03 failed
-    -Domain used in the PRIMARY KEY constraint of table TEST03 must be NOT NULL
-
+    -ALTER DOMAIN "PUBLIC"."DM_03" failed
+    -Domain used in the PRIMARY KEY constraint of table "PUBLIC"."TEST03" must be NOT NULL
+    INFO_03                         After try to drop NN on DOMAIN but dependent table exists
+    PUBLIC.DM_03                    INTEGER Not Null
+    Table: PUBLIC.TEST03
+    X                               (PUBLIC.DM_03) INTEGER Not Null
+    CONSTRAINT TEST03_PK:
+    Primary key (X)
+    INFO_04                         After try to drop NN on FIELD based on not-null domain, but NN was also specified in the field DDL
+    Table: PUBLIC.TEST04
+    X                               (PUBLIC.DM_04) INTEGER Not Null
+    CONSTRAINT TEST04_PK:
+    Primary key (X)
     Statement failed, SQLSTATE = 22006
     unsuccessful metadata update
-    -Cannot make field X of table TEST05 NOT NULL because there are NULLs present
-
+    -Cannot make field "X" of table "PUBLIC"."TEST05" NOT NULL because there are NULLs present
+    INFO_05                         After try to set NN on DOMAIN when at least one table exists with NULL in its data
+    PUBLIC.DM_05                    INTEGER Nullable
+    INFO_06                         After try to set NN on DOMAIN when NO table exists with NULL in its data
+    PUBLIC.DM_06                    INTEGER Not Null
     Statement failed, SQLSTATE = 23000
-    validation error for column "TEST06"."X", value "*** null ***"
+    validation error for column "PUBLIC"."TEST06"."X", value "*** null ***"
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr_5x if act.is_version('<6') else expected_stderr_6x
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
-
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
