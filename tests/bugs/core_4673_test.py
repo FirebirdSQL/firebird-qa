@@ -7,6 +7,10 @@ TITLE:       Regression: computed index based on a computed column stores NULL f
 DESCRIPTION:
 JIRA:        CORE-4673
 FBTEST:      bugs.core_4673
+NOTES:
+    [30.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -47,9 +51,10 @@ test_script = """
   select count(*) from tc where '' || lpad('' || tc.z_expr, 10, 0) between '0000000302' and '0000000302';
 """
 
-act = isql_act('db', test_script)
+substitutions = [ ('[ \t]+', ' ') ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
   PLAN (TC INDEX (TC_LPAD_Z_NOEX), TC NATURAL, TC INDEX (TC_LPAD_Z_EXPR), TC NATURAL)
   CHECK_CNT                       1
   CHECK_CNT                       1
@@ -57,9 +62,16 @@ expected_stdout = """
   CHECK_CNT                       1
 """
 
+expected_stdout_6x = """
+    PLAN ("PUBLIC"."TC" INDEX ("PUBLIC"."TC_LPAD_Z_NOEX"), "PUBLIC"."TC" NATURAL, "PUBLIC"."TC" INDEX ("PUBLIC"."TC_LPAD_Z_EXPR"), "PUBLIC"."TC" NATURAL)
+    CHECK_CNT                       1
+    CHECK_CNT                       1
+    CHECK_CNT                       1
+    CHECK_CNT                       1
+"""
+
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
