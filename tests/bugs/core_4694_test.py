@@ -3,8 +3,7 @@
 """
 ID:          issue-5002
 ISSUE:       5002
-TITLE:       "Column unknown" error while preparing a recursive query if the recursive part
-  contains ALIASED datasource in the join with anchor table
+TITLE:       "Column unknown" error while preparing a recursive query if the recursive part contains ALIASED datasource in the join with anchor table
 DESCRIPTION:
 JIRA:        CORE-4694
 FBTEST:      bugs.core_4694
@@ -21,8 +20,6 @@ test_script = """
         ,xcaller_id int
     );
     commit;
-
-    set planonly;
 
     with recursive
     r as (
@@ -46,12 +43,11 @@ test_script = """
 act = isql_act('db', test_script)
 
 expected_stdout = """
-    PLAN (R C NATURAL, R C NATURAL)
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
