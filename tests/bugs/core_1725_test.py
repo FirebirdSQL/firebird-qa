@@ -46,6 +46,12 @@ NOTES:
 
     Checked on:
     6.0.0.511-c4bc943; 5.0.2.1547-1e08f5e; 4.0.0.1384-fea7c61 (17-jan-2019, just after fix); 3.0.13.33793-3e62713
+
+    [30.06.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import locale
@@ -306,89 +312,153 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
 
     ###########################################################################
 
-    act.expected_stdout = """
+    expected_stdout_5x = """
         restore_log
-            gbak:finishing, closing, and going home
-            gbak:adjusting the ONLINE and FORCED WRITES flags
-
+        gbak:finishing, closing, and going home
+        gbak:adjusting the ONLINE and FORCED WRITES flags
         check_metadata
-            RDB$INDEX_NAME                  TEST_X
-            RDB$INDEX_INACTIVE              1
-            RDB$INDEX_NAME                  TEST_Y
-            RDB$INDEX_INACTIVE              1
-            Records affected: 2
-
-            RDB$PACKAGE_NAME                <null>
-            SP_NAME                         SP_INIT
-            SP_VALID_BLR                    1
-            RDB$PACKAGE_NAME                <null>
-            SP_NAME                         SP_MAIN
-            SP_VALID_BLR                    1
-            RDB$PACKAGE_NAME                <null>
-            SP_NAME                         SP_WORKER
-            SP_VALID_BLR                    1
-            RDB$PACKAGE_NAME                PG_TEST
-            SP_NAME                         PG_SP_WORKER
-            SP_VALID_BLR                    1
-            Records affected: 4
-
-            RDB$PACKAGE_NAME                <null>
-            FN_NAME                         FN_INIT
-            FN_VALID_BLR                    1
-            RDB$PACKAGE_NAME                <null>
-            FN_NAME                         FN_MAIN
-            FN_VALID_BLR                    1
-            RDB$PACKAGE_NAME                <null>
-            FN_NAME                         FN_WORKER
-            FN_VALID_BLR                    1
-            RDB$PACKAGE_NAME                PG_TEST
-            FN_NAME                         PG_FN_WORKER
-            FN_VALID_BLR                    1
-            Records affected: 4
-
-            RDB$TRIGGER_NAME                TEST_BI
-            RDB$TRIGGER_INACTIVE            0
-            TG_VALID_BLR                    1
-            Records affected: 1
-
+        RDB$INDEX_NAME TEST_X
+        RDB$INDEX_INACTIVE 1
+        RDB$INDEX_NAME TEST_Y
+        RDB$INDEX_INACTIVE 1
+        Records affected: 2
+        RDB$PACKAGE_NAME <null>
+        SP_NAME SP_INIT
+        SP_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        SP_NAME SP_MAIN
+        SP_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        SP_NAME SP_WORKER
+        SP_VALID_BLR 1
+        RDB$PACKAGE_NAME PG_TEST
+        SP_NAME PG_SP_WORKER
+        SP_VALID_BLR 1
+        Records affected: 4
+        RDB$PACKAGE_NAME <null>
+        FN_NAME FN_INIT
+        FN_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        FN_NAME FN_MAIN
+        FN_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        FN_NAME FN_WORKER
+        FN_VALID_BLR 1
+        RDB$PACKAGE_NAME PG_TEST
+        FN_NAME PG_FN_WORKER
+        FN_VALID_BLR 1
+        Records affected: 4
+        RDB$TRIGGER_NAME TEST_BI
+        RDB$TRIGGER_INACTIVE 0
+        TG_VALID_BLR 1
+        Records affected: 1
         check_avail_db_objects
-            select * from v_worker;
-            Statement failed, SQLSTATE = 42000
-            invalid request BLR at offset 35
-            -there is no index TEST_Y for table TEST
-
-            execute procedure sp_main;
-            Statement failed, SQLSTATE = 2F000
-            Error while parsing procedure SP_MAIN's BLR
-            -Error while parsing procedure SP_WORKER's BLR
-            -invalid request BLR at offset 66
-            -there is no index TEST_X for table TEST
-
-            select fn_main() from rdb$database;
-            Statement failed, SQLSTATE = 2F000
-            Error while parsing function FN_MAIN's BLR
-            -Error while parsing function FN_WORKER's BLR
-            -invalid request BLR at offset 72
-            -there is no index TEST_X for table TEST
-
-            execute procedure pg_test.pg_sp_worker;
-            Statement failed, SQLSTATE = 2F000
-            Error while parsing procedure PG_TEST.PG_SP_WORKER's BLR
-            -invalid request BLR at offset 66
-            -there is no index TEST_X for table TEST
-
-            select pg_test.pg_fn_worker() from rdb$database;
-            Statement failed, SQLSTATE = 2F000
-            Error while parsing function PG_TEST.PG_FN_WORKER's BLR
-            -invalid request BLR at offset 72
-            -there is no index TEST_X for table TEST
-
-            insert into test(id, x, y) values(-1, -1, -1) returning id, x, y;
-            Statement failed, SQLSTATE = 42000
-            invalid request BLR at offset
-            -there is no index TEST_X for table TEST
+        select * from v_worker;
+        Statement failed, SQLSTATE = 42000
+        invalid request BLR at offset
+        -there is no index TEST_Y for table TEST
+        execute procedure sp_main;
+        Statement failed, SQLSTATE = 2F000
+        Error while parsing procedure SP_MAIN's BLR
+        -Error while parsing procedure SP_WORKER's BLR
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
+        select fn_main() from rdb$database;
+        Statement failed, SQLSTATE = 2F000
+        Error while parsing function FN_MAIN's BLR
+        -Error while parsing function FN_WORKER's BLR
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
+        execute procedure pg_test.pg_sp_worker;
+        Statement failed, SQLSTATE = 2F000
+        Error while parsing procedure PG_TEST.PG_SP_WORKER's BLR
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
+        select pg_test.pg_fn_worker() from rdb$database;
+        Statement failed, SQLSTATE = 2F000
+        Error while parsing function PG_TEST.PG_FN_WORKER's BLR
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
+        insert into test(id, x, y) values(-1, -1, -1) returning id, x, y;
+        Statement failed, SQLSTATE = 42000
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
     """
 
+    expected_stdout_6x = """
+        restore_log
+        gbak:finishing, closing, and going home
+        gbak:adjusting the ONLINE and FORCED WRITES flags
+        check_metadata
+        RDB$INDEX_NAME TEST_X
+        RDB$INDEX_INACTIVE 1
+        RDB$INDEX_NAME TEST_Y
+        RDB$INDEX_INACTIVE 1
+        Records affected: 2
+        RDB$PACKAGE_NAME <null>
+        SP_NAME SP_INIT
+        SP_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        SP_NAME SP_MAIN
+        SP_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        SP_NAME SP_WORKER
+        SP_VALID_BLR 1
+        RDB$PACKAGE_NAME PG_TEST
+        SP_NAME PG_SP_WORKER
+        SP_VALID_BLR 1
+        Records affected: 4
+        RDB$PACKAGE_NAME <null>
+        FN_NAME FN_INIT
+        FN_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        FN_NAME FN_MAIN
+        FN_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        FN_NAME FN_WORKER
+        FN_VALID_BLR 1
+        RDB$PACKAGE_NAME PG_TEST
+        FN_NAME PG_FN_WORKER
+        FN_VALID_BLR 1
+        Records affected: 4
+        RDB$TRIGGER_NAME TEST_BI
+        RDB$TRIGGER_INACTIVE 0
+        TG_VALID_BLR 1
+        Records affected: 1
+        check_avail_db_objects
+        select * from v_worker;
+        Statement failed, SQLSTATE = 42000
+        invalid request BLR at offset
+        -there is no index "PUBLIC"."TEST_Y" for table "PUBLIC"."TEST"
+        execute procedure sp_main;
+        Statement failed, SQLSTATE = 2F000
+        Error while parsing procedure "PUBLIC"."SP_MAIN"'s BLR
+        -Error while parsing procedure "PUBLIC"."SP_WORKER"'s BLR
+        invalid request BLR at offset
+        -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
+        select fn_main() from rdb$database;
+        Statement failed, SQLSTATE = 2F000
+        Error while parsing function "PUBLIC"."FN_MAIN"'s BLR
+        -Error while parsing function "PUBLIC"."FN_WORKER"'s BLR
+        invalid request BLR at offset
+        -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
+        execute procedure pg_test.pg_sp_worker;
+        Statement failed, SQLSTATE = 2F000
+        Error while parsing procedure "PUBLIC"."PG_TEST"."PG_SP_WORKER"'s BLR
+        invalid request BLR at offset
+        -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
+        select pg_test.pg_fn_worker() from rdb$database;
+        Statement failed, SQLSTATE = 2F000
+        Error while parsing function "PUBLIC"."PG_TEST"."PG_FN_WORKER"'s BLR
+        invalid request BLR at offset
+        -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
+        insert into test(id, x, y) values(-1, -1, -1) returning id, x, y;
+        Statement failed, SQLSTATE = 42000
+        invalid request BLR at offset
+        -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
+    """
+
+    
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
-    act.reset()
