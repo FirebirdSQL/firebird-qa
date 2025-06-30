@@ -7,6 +7,11 @@ TITLE:       Non-privileged user can implicitly count records in a restricted ta
 DESCRIPTION:
 JIRA:        CORE-4985
 FBTEST:      bugs.core_4985
+NOTES:
+    [30.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' and variables to store domain names - to be substituted in expected_* on FB 6.x
+    
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -38,29 +43,29 @@ test_script = """
     commit;
 """
 
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    Records affected: 7
-    WHO_AM_I                        TMP$C4985
-    Records affected: 1
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 28000
-    no permission for SELECT access to TABLE TEST
-    -Effective user is TMP$C4985
-
-    Statement failed, SQLSTATE = 28000
-    no permission for SELECT access to TABLE TEST
-    -Effective user is TMP$C4985
-"""
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_user: User):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TABLE_NAME = 'TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST"'
+    expected_stdout = f"""
+        Records affected: 7
+
+        WHO_AM_I                        {tmp_user.name.upper()}
+        Records affected: 1
+
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE {TABLE_NAME}
+        -Effective user is {tmp_user.name.upper()}
+
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE {TABLE_NAME}
+        -Effective user is {tmp_user.name.upper()}
+    """
+
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
