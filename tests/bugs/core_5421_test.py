@@ -7,6 +7,11 @@ TITLE:       Performance degradation in FB 3.0.2 compared to FB 2.5.7
 DESCRIPTION:
 JIRA:        CORE-5421
 FBTEST:      bugs.core_5421
+NOTES:
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -62,17 +67,23 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
     PLAN SORT (JOIN (C INDEX (C5421_TMAIN_EKEY), D INDEX (C5421_TDETL_DOC_ID)))
-    DOC_ID                          0
+    DOC_ID 0
+    Records affected: 1
+"""
+
+expected_stdout_6x = """
+    PLAN SORT (JOIN ("C" INDEX ("PUBLIC"."C5421_TMAIN_EKEY"), "D" INDEX ("PUBLIC"."C5421_TDETL_DOC_ID")))
+    DOC_ID 0
     Records affected: 1
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
-
