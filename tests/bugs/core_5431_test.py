@@ -12,6 +12,10 @@ NOTES:
     Adjusted expected_stderr according to notes in #7229. Removed unneeded substitutions and old comments.
     Confirmed problem on 5.0.0.573
     Checked on 5.0.0.958, 4.0.3.2903 - all OK.
+
+    [01.07.2025] pzotov
+    Refactored: suppress output of column name (TEST1.ID) related to validation error - it has no matter for this test.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -49,23 +53,21 @@ test_script = """
     insert into test1 default values returning id as test1_id;
 """
 
-act = isql_act('db', test_script)
+substitutions = [ ('[ \t]+', ' '), ('validation error for column .*', 'validation error for column') ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    IDENTITY_SEQUENCES_COUNT_1      1
-    TEST1_ID                        32767
-    IDENTITY_SEQUENCES_COUNT_2      0
-"""
-expected_stderr = """
+    IDENTITY_SEQUENCES_COUNT_1 1
+    TEST1_ID 32767
+    IDENTITY_SEQUENCES_COUNT_2 0
+    
     Statement failed, SQLSTATE = 23000
-    validation error for column "TEST1"."ID", value "*** null ***"
+    validation error for column
 """
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
