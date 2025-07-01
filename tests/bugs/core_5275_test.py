@@ -27,7 +27,6 @@ NOTES:
       gen_id(<seq_name>,1) will return 0 (ZERO!) rather than 1.
       See also CORE-6084 and its fix: https://github.com/FirebirdSQL/firebird/commit/23dc0c6297825b2e9006f4d5a2c488702091033d
       This is considered as *expected* and is noted in doc/README.incompatibilities.3to4.txt
-
       Because of this, it was decided to replace 'alter sequence restart...' with subtraction of two gen values:
       c = gen_id(<g>, -gen_id(<g>, 0)) -- see procedure sp_restart_sequences.
   [15.09.2022] pzotov
@@ -42,14 +41,18 @@ NOTES:
       This test FAILS on Linux when running against FB 4.x (almost every run on Classic, but also it can fail on Super).
       Connection that is waiting for COMMIT during index creation for some reason can finish its work successfully,
       despite the fact that we issue 'delete from mon$attachments' and all transactions have to be rolled back.
-      
       Issue that was described in the ticket can be reproduced if attachment will be killed during creation of SECOND
       (non-computed) index for big table within the same transaction that creates first (computed-by) index.
       Perhaps, one need to query IndexRoot Page in some other ('monitoring') connection and run 'delete from mon$attachments'
       command exactly at the moment when result of parsing shows that we have only 1st index for selected relation.
       Discussed with dimitr et al, letters ~20-mar-2023.
-
       Test needs to be fully re-implemented, but it remains avaliable for Windows because it shows stable results there.
+
+    [01.07.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
+    Separated expected output for FB major versions prior/since 6.x.
+    
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import platform
@@ -197,40 +200,6 @@ kill_att = """
     delete from mon$attachments where mon$attachment_id<>current_connection;
 """
 
-expected_stdout = """
-    0: BULK INSERTS LOG: BULK_INSERT_START
-    0: BULK INSERTS LOG: STATEMENT FAILED, SQLSTATE = 08003
-    0: BULK INSERTS LOG: CONNECTION SHUTDOWN
-    0: BULK INSERTS LOG: AFTER LINE
-    0: CREATE INDEX LOG: INSERTS_STATE                   OK, IS RUNNING
-    0: CREATE INDEX LOG: CREATE_INDX_START
-    0: CREATE INDEX LOG: SET TRANSACTION WAIT;
-    0: CREATE INDEX LOG: CREATE INDEX TEST_WAIT ON TEST COMPUTED BY('WAIT' || S);
-    0: CREATE INDEX LOG: SET ECHO OFF;
-    0: CREATE INDEX LOG: STATEMENT FAILED, SQLSTATE = 08003
-    0: CREATE INDEX LOG: CONNECTION SHUTDOWN
-    0: CREATE INDEX LOG: AFTER LINE
-    0: KILL ATTACH LOG: RECORDS AFFECTED:
-    1: BULK INSERTS LOG: BULK_INSERT_START
-    1: BULK INSERTS LOG: STATEMENT FAILED, SQLSTATE = 08003
-    1: BULK INSERTS LOG: CONNECTION SHUTDOWN
-    1: BULK INSERTS LOG: AFTER LINE
-    1: CREATE INDEX LOG: INSERTS_STATE                   OK, IS RUNNING
-    1: CREATE INDEX LOG: CREATE_INDX_START
-    1: CREATE INDEX LOG: SET TRANSACTION WAIT;
-    1: CREATE INDEX LOG: CREATE INDEX TEST_WAIT ON TEST COMPUTED BY('WAIT' || S);
-    1: CREATE INDEX LOG: SET ECHO OFF;
-    1: CREATE INDEX LOG: STATEMENT FAILED, SQLSTATE = 08003
-    1: CREATE INDEX LOG: CONNECTION SHUTDOWN
-    1: CREATE INDEX LOG: AFTER LINE
-    1: KILL ATTACH LOG: RECORDS AFFECTED:
-    VALIDATION STDOUT: 20:05:26.86 VALIDATION STARTED
-    VALIDATION STDOUT: 20:05:26.86 RELATION 128 (TEST)
-    VALIDATION STDOUT: 20:05:26.86   PROCESS POINTER PAGE    0 OF    1
-    VALIDATION STDOUT: 20:05:26.86 INDEX 1 (TEST_X)
-    VALIDATION STDOUT: 20:05:26.86 RELATION 128 (TEST) IS OK
-    VALIDATION STDOUT: 20:05:26.86 VALIDATION FINISHED
-"""
 
 def print_validation(line: str) -> None:
     if line.strip():
@@ -287,6 +256,45 @@ def test_1(act: Action, bulk_insert_script: Path, bulk_insert_output: Path,
     with act.connect_server() as srv:
         srv.database.validate(database=act.db.db_path, callback=print_validation)
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    TABLE_NAME = 'TEST' if act.is_version('<6') else  '"TEST"'
+    INDEX_NAME = 'TEST_X' if act.is_version('<6') else  '"TEST_X"'
+
+    expected_stdout = f"""
+        0: BULK INSERTS LOG: BULK_INSERT_START
+        0: BULK INSERTS LOG: STATEMENT FAILED, SQLSTATE = 08003
+        0: BULK INSERTS LOG: CONNECTION SHUTDOWN
+        0: BULK INSERTS LOG: AFTER LINE
+        0: CREATE INDEX LOG: INSERTS_STATE                   OK, IS RUNNING
+        0: CREATE INDEX LOG: CREATE_INDX_START
+        0: CREATE INDEX LOG: SET TRANSACTION WAIT;
+        0: CREATE INDEX LOG: CREATE INDEX TEST_WAIT ON TEST COMPUTED BY('WAIT' || S);
+        0: CREATE INDEX LOG: SET ECHO OFF;
+        0: CREATE INDEX LOG: STATEMENT FAILED, SQLSTATE = 08003
+        0: CREATE INDEX LOG: CONNECTION SHUTDOWN
+        0: CREATE INDEX LOG: AFTER LINE
+        0: KILL ATTACH LOG: RECORDS AFFECTED:
+        1: BULK INSERTS LOG: BULK_INSERT_START
+        1: BULK INSERTS LOG: STATEMENT FAILED, SQLSTATE = 08003
+        1: BULK INSERTS LOG: CONNECTION SHUTDOWN
+        1: BULK INSERTS LOG: AFTER LINE
+        1: CREATE INDEX LOG: INSERTS_STATE                   OK, IS RUNNING
+        1: CREATE INDEX LOG: CREATE_INDX_START
+        1: CREATE INDEX LOG: SET TRANSACTION WAIT;
+        1: CREATE INDEX LOG: CREATE INDEX TEST_WAIT ON TEST COMPUTED BY('WAIT' || S);
+        1: CREATE INDEX LOG: SET ECHO OFF;
+        1: CREATE INDEX LOG: STATEMENT FAILED, SQLSTATE = 08003
+        1: CREATE INDEX LOG: CONNECTION SHUTDOWN
+        1: CREATE INDEX LOG: AFTER LINE
+        1: KILL ATTACH LOG: RECORDS AFFECTED:
+        VALIDATION STDOUT: 20:05:26.86 VALIDATION STARTED
+        VALIDATION STDOUT: 20:05:26.86 RELATION 128 ({SQL_SCHEMA_PREFIX}{TABLE_NAME})
+        VALIDATION STDOUT: 20:05:26.86   PROCESS POINTER PAGE    0 OF    1
+        VALIDATION STDOUT: 20:05:26.86 INDEX 1 ({SQL_SCHEMA_PREFIX}{INDEX_NAME})
+        VALIDATION STDOUT: 20:05:26.86 RELATION 128 ({SQL_SCHEMA_PREFIX}{TABLE_NAME}) IS OK
+        VALIDATION STDOUT: 20:05:26.86 VALIDATION FINISHED
+    """
+    
     # Check
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
