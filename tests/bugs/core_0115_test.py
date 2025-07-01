@@ -53,7 +53,7 @@ test_script = """
 addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
 addi_subst_tokens = addi_subst_settings['addi_subst']
 
-substitutions = [ ('line: \\d+, col: \\d++', '') ]
+substitutions = [ ('line: \\d+, col: \\d+', '') ]
 for p in addi_subst_tokens.split(' '):
     substitutions.append( (p, '') )
 
