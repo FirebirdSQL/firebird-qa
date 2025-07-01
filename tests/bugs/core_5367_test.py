@@ -7,46 +7,38 @@ TITLE:       Regression: (boolean) parameters as search condition no longer allo
 DESCRIPTION:
 JIRA:        CORE-5367
 FBTEST:      bugs.core_5367
+NOTES:
+    [01.07.2025] pzotov
+    Refactored: we have to check only rows which contain either 'sqltype' or 'SQLSTATE'.
+    Added appropriate substitutions.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """
-    recreate table test(id int,boo boolean);
-"""
-
-db = db_factory(init=init_script)
+db = db_factory()
 
 test_script = """
+    recreate table test(id int, boo boolean);
     set sqlda_display on;
     set planonly;
     select * from test where ?;
-    set planonly;
 """
 
-act = isql_act('db', test_script)
+
+substitutions=[('^((?!(SQLSTATE|sqltype)).)*$', ''), ('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    INPUT message field count: 1
     01: sqltype: 32764 BOOLEAN scale: 0 subtype: 0 len: 1
-      :  name:   alias:
-      : table:   owner:
-
-    PLAN (TEST NATURAL)
-
-    OUTPUT message field count: 2
     01: sqltype: 496 LONG Nullable scale: 0 subtype: 0 len: 4
-      :  name: ID  alias: ID
-      : table: TEST  owner: SYSDBA
     02: sqltype: 32764 BOOLEAN Nullable scale: 0 subtype: 0 len: 1
-      :  name: BOO  alias: BOO
-      : table: TEST  owner: SYSDBA
 """
 
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout
 
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
