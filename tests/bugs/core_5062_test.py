@@ -61,8 +61,11 @@ def test_1(act: Action, capsys):
             if ps:
                 ps.free()
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TABLE_NAME = 'TEST_UUID' if act.is_version('<6') else '"TEST_UUID"'
+    INDEX_NAME = 'TEST_UUID_UNQ' if act.is_version('<6') else '"TEST_UUID_UNQ"'
     expected_stdout = f"""
-        PLAN (TEST_UUID INDEX (TEST_UUID_UNQ))
+        PLAN ({SQL_SCHEMA_PREFIX}{TABLE_NAME} INDEX ({SQL_SCHEMA_PREFIX}{INDEX_NAME}))
         1
     """
 
