@@ -3,8 +3,7 @@
 """
 ID:          issue-5864
 ISSUE:       5864
-TITLE:       Error "block size exceeds implementation restriction" while inner joining large
-  datasets with a long key using the HASH JOIN plan
+TITLE:       Error "block size exceeds implementation restriction" while inner joining large datasets with a long key using the HASH JOIN plan
 DESCRIPTION:
   Hash join have to operate with keys of total length >= 1 Gb if we want to reproduce runtime error
   "Statement failed, SQLSTATE = HY001 / unable to allocate memory from operating system"
@@ -30,7 +29,7 @@ NOTES:
     ========
         (Captured ISQL stderr call):
         Statement failed, SQLSTATE = 08001
-        I/O error during "CreateFile (create)" operation for file "R:\RAMDISK\fb_recbuf_py6oyh"
+        I/O error during "CreateFile (create)" operation for file "<path>\fb_recbuf_py6oyh"
         -Error while trying to create file
         -[ The system cannot find the path specified ] -- CAN BE LOCALIZED.
     ========
@@ -39,6 +38,12 @@ NOTES:
         act.isql(switches = ..., input = ..., charset = ..., io_enc=locale.getpreferredencoding())
     NOTE: specifying 'encoding_errors = ignore' in the DEFAULT section of firebird-driver.conf
     does not prevent from UnicodeDecode error in this case.
+
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -60,6 +65,10 @@ fb5x_checked_stdout = """
     PLAN HASH (A NATURAL, B NATURAL)
 """
 
+fb6x_checked_stdout = """
+    PLAN HASH ("A" NATURAL, "B" NATURAL)
+"""
+
 MIN_RECS_TO_ADD = 17000
 
 test_script = """
@@ -79,7 +88,7 @@ def test_1(act: Action):
         c.execute(f"insert into test(id, s) select row_number()over(), lpad('', 8191, 'Алексей, Łukasz, Máté, François, Jørgen, Νικόλαος') from rdb$types,rdb$types rows {MIN_RECS_TO_ADD}")
         con.commit()
 
-    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout
+    act.expected_stdout = fb3x_checked_stdout if act.is_version('<5') else fb5x_checked_stdout if act.is_version('<6') else fb6x_checked_stdout
 
     # NB: FIREBIRD_TMP must point do accessible directory here!
     act.isql(switches=['-q'], input=test_script, charset='UTF8', io_enc=locale.getpreferredencoding())
