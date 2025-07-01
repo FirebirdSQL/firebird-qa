@@ -14,10 +14,14 @@ NOTES:
     This is because of optimizer changed in 5.x and issues plan with only *one* occurrence of 'INDEX' for such cases.
     See: https://github.com/FirebirdSQL/firebird/pull/7707 - "Better processing and optimization if IN <list>".
     Commit: https://github.com/FirebirdSQL/firebird/commit/0493422c9f729e27be0112ab60f77e753fabcb5b, 04-sep-2023.
-
     Requested by dimitr, letters with subj 'core_5118_test', since 11.09.2024 17:26.
-
     Checked on 6.0.0.452, 5.0.2.1493, 4.0.5.3136, 3.0.13.33789.
+
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    
+    Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -47,20 +51,6 @@ db = db_factory(init = init_script)
 
 act = python_act('db', substitutions = [ ('[ \t]+',' ') ])
 
-expected_stdout = """
-    PLAN (TEST INDEX (TEST_CONCAT_TEXT))
-    CONCAT_TEXT nom1 prenom1
-    Records affected: 1
-
-    PLAN (TEST INDEX (TEST_CONCAT_TEXT))
-    CONCAT_TEXT nom2 prenom2
-    Records affected: 1
-
-    PLAN (TEST INDEX (TEST_CONCAT_TEXT))
-    CONCAT_TEXT nom3 prenom3
-    Records affected: 1
-"""
-
 test_sql = """
     set list on;
     set plan on;
@@ -77,6 +67,33 @@ def test_1(act: Action):
         srv.database.local_backup(database = act.db.db_path, backup_stream = backup)
         backup.seek(0)
         srv.database.local_restore(database = act.db.db_path, backup_stream=backup, flags = SrvRestoreFlag.REPLACE)
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_5x = """
+        PLAN (TEST INDEX (TEST_CONCAT_TEXT))
+        CONCAT_TEXT nom1 prenom1
+        Records affected: 1
+
+        PLAN (TEST INDEX (TEST_CONCAT_TEXT))
+        CONCAT_TEXT nom2 prenom2
+        Records affected: 1
+
+        PLAN (TEST INDEX (TEST_CONCAT_TEXT))
+        CONCAT_TEXT nom3 prenom3
+        Records affected: 1
+    """
+
+    expected_stdout_6x = """
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_CONCAT_TEXT"))
+        CONCAT_TEXT nom1 prenom1
+        Records affected: 1
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_CONCAT_TEXT"))
+        CONCAT_TEXT nom2 prenom2
+        Records affected: 1
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_CONCAT_TEXT"))
+        CONCAT_TEXT nom3 prenom3
+        Records affected: 1
+    """
+    
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.isql(switches=['-q'], input = test_sql, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
