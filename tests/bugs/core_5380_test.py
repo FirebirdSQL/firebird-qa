@@ -8,6 +8,12 @@ DESCRIPTION:
   We check not only ability of recursive calls but also max depth of them. It should be equal to 1000.
 JIRA:        CORE-5380
 FBTEST:      bugs.core_5380
+    [30.06.2025] pzotov
+    Part of call stack ('At sub function <FN_NAME> line X col Y') must be supressed because its length is limited to 1024 characters
+    and number of lines (together with interrupting marker '...') depends on length of function name that is called recursively.
+    It is enough for this test to check only presense of 'SQLSTATE = 54001' and 'Too many concurrent executions' in STDERR.
+
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -41,40 +47,18 @@ test_script = """
     -- (a1 + an) * n / 2
 """
 
-act = isql_act('db', test_script, substitutions=[('line:\\s[0-9]+,', 'line: x'),
-                                                 ('col:\\s[0-9]+', 'col: y')])
+substitutions = [ ('^((?!(SQLSTATE|Too many concurrent executions|ARITHMETIC_PROGRESSION_TOTAL)).)*$', ''), ('[ \t]+', ' ') ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    ARITHMETIC_PROGRESSION_TOTAL                                        501501
-"""
-
-expected_stderr = """
+    ARITHMETIC_PROGRESSION_TOTAL 501501
     Statement failed, SQLSTATE = 54001
     Too many concurrent executions of the same request
-    -At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY' line: 7, col: 13
-    At sub function 'GET_SUB_TOTAL_RECURSIVELY'...
 """
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
