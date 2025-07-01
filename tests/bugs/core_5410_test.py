@@ -7,6 +7,11 @@ TITLE:       Dependencies are not stored when using some type of contructions in
 DESCRIPTION:
 JIRA:        CORE-5410
 FBTEST:      bugs.core_5410
+NOTES:
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -109,18 +114,10 @@ test_script = """
     select pg_test.fn_outer_packaged() as min_f02 from rdb$database;
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
-    MAX_F01                         100
-    MIN_F01                         1
-
-    MAX_F02                         200
-    MIN_F02                         2
-
-"""
-
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
@@ -132,13 +129,35 @@ expected_stderr = """
     -cannot delete
     -COLUMN TEST_2.F02
     -there are 1 dependencies
+
+    MAX_F01 100
+    MIN_F01 1
+    MAX_F02 200
+    MIN_F02 2
+"""
+
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -cannot delete
+    -COLUMN "PUBLIC"."TEST_1"."F01"
+    -there are 2 dependencies
+
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -cannot delete
+    -COLUMN "PUBLIC"."TEST_2"."F02"
+    -there are 1 dependencies
+
+    MAX_F01 100
+    MIN_F01 1
+    MAX_F02 200
+    MIN_F02 2
 """
 
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
 
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
