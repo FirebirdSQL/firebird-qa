@@ -7,6 +7,12 @@ TITLE:       Provide location context (line/column numbers) for runtime errors r
 DESCRIPTION:
 JIRA:        CORE-5216
 FBTEST:      bugs.core_5216
+NOTES:
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    
+    Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -19,8 +25,8 @@ substitutions = [('exception [\\d]+', 'exception K'),
 db = db_factory()
 
 test_script = """
-    recreate exception rio 'Exception w/o parameter test. Invalid value detected';
-    recreate exception foo 'Exception with parameter test. Invalid value of BAR = @1';
+    recreate exception exc_no_param 'Exception w/o parameter test. Invalid value detected';
+    recreate exception exc_with_param 'Exception with parameter test. Invalid value: @1';
     recreate table test(id int constraint test_pk primary key using index test_pk, x int not null, y int not null);
     commit;
     insert into test(id, x, y) values(1, 100, 200);
@@ -165,7 +171,7 @@ test_script = """
                             x = x * 100;
                         when any do
                             begin
-                                exception rio;
+                                exception exc_no_param;
                             end
                         end
                     '''' into x; end
@@ -177,7 +183,7 @@ test_script = """
     ^
 
     --  -FOO
-    --  -Exception with parameter test. Invalid value of BAR = *** null ***
+    --  -Exception with parameter test. Invalid value: *** null ***
     execute block as
     begin
         execute statement
@@ -198,7 +204,7 @@ test_script = """
                                     x = 99999;
                                 when any do
                                     begin
-                                        exception foo using(:x);
+                                        exception exc_with_param using(:x);
                                     end
                                 end
                             ''''
@@ -215,68 +221,113 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 42S22
-    Dynamic SQL Error
-    -SQL error code = -206
-    -Column unknown
-    -NON_EXISTING_COLUMN
-    -At line 1, column 8
-    -At block line: 3, col: 9
-
-    Statement failed, SQLSTATE = 22012
-    arithmetic exception, numeric overflow, or string truncation
-    -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
-    -At block line: 1, col: 37
-    -At block line: 3, col: 9
-
-    Statement failed, SQLSTATE = 42000
-    validation error for variable R, value "*** null ***"
-    -At block line: 5, col: 17
-    -At block line: 3, col: 9
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."X", value "*** null ***"
-    -At block line: 4, col: 25
-    -At block line: 5, col: 17
-    -At block line: 3, col: 9
-
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."Y", value "*** null ***"
-    -At block line: 5, col: 25
-    -At block line: 5, col: 17
-    -At block line: 3, col: 9
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST_PK" on table "TEST"
-    -Problematic key value is ("ID" = 1)
-    -At block line: 4, col: 33
-    -At block line: 5, col: 25
-    -At block line: 5, col: 17
-    -At block line: 3, col: 9
-
-    Statement failed, SQLSTATE = HY000
-    exception 55
-    -RIO
-    -Exception w/o parameter test. Invalid value detected
-    -At block line: 8, col: 33
-    -At block line: 4, col: 27
-    -At block line: 5, col: 17
-    -At block line: 3, col: 9
-
-    Statement failed, SQLSTATE = HY000
-    exception 56
-    -FOO
-    -Exception with parameter test. Invalid value of BAR = *** null ***
-    -At block line: 8, col: 41
-    -At block line: 5, col: 29
-    -At block line: 5, col: 17
-    -At block line: 3, col: 9
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
 
+    expected_stdout_5x = f"""
+        Statement failed, SQLSTATE = 42S22
+        Dynamic SQL Error
+        -SQL error code = -206
+        -Column unknown
+        -NON_EXISTING_COLUMN
+        -At line N, column M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 22012
+        arithmetic exception, numeric overflow, or string truncation
+        -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 42000
+        validation error for variable R, value "*** null ***"
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 23000
+        validation error for column "TEST"."X", value "*** null ***"
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 23000
+        validation error for column "TEST"."Y", value "*** null ***"
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_PK" on table "TEST"
+        -Problematic key value is ("ID" = 1)
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = HY000
+        exception K
+        -EXC_NO_PARAM
+        -Exception w/o parameter test. Invalid value detected
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = HY000
+        exception K
+        -EXC_WITH_PARAM
+        -Exception with parameter test. Invalid value: *** null ***
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+    """
+
+    expected_stdout_6x = f"""
+        Statement failed, SQLSTATE = 42S22
+        Dynamic SQL Error
+        -SQL error code = -206
+        -Column unknown
+        -"NON_EXISTING_COLUMN"
+        -At line N, column M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 22012
+        arithmetic exception, numeric overflow, or string truncation
+        -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 42000
+        validation error for variable "R", value "*** null ***"
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 23000
+        validation error for column "PUBLIC"."TEST"."X", value "*** null ***"
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 23000
+        validation error for column "PUBLIC"."TEST"."Y", value "*** null ***"
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST_PK" on table "PUBLIC"."TEST"
+        -Problematic key value is ("ID" = 1)
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = HY000
+        exception K
+        -"PUBLIC"."EXC_NO_PARAM"
+        -Exception w/o parameter test. Invalid value detected
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        Statement failed, SQLSTATE = HY000
+        exception K
+        -"PUBLIC"."EXC_WITH_PARAM"
+        -Exception with parameter test. Invalid value: *** null ***
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+        At block line: N, col: M
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
