@@ -7,6 +7,11 @@ TITLE:       Direct system table modifications are not completely prohibited
 DESCRIPTION:
 JIRA:        CORE-5567
 FBTEST:      bugs.core_5567
+NOTES:
+    [01.07.2025] pzotov
+    Refactored: suppressed name of system table as it has no matter for this test.
+    Added appropriate substitutions.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -49,23 +54,18 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script, substitutions=[('line: [\\d]+, col: [\\d]+', ''), ('.*At block.*', '')])
+substitutions = [('[ \t]+', ' '), (r'line(:)?\s+\d+', ''), ('.*At block.*', ''), ('(-)?At sub procedure.*', ''), ('for system table .*', 'for system table')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    DOMAIN_PRECISION                -2
-"""
-
-expected_stderr = """
     Statement failed, SQLSTATE = 42000
-    UPDATE operation is not allowed for system table RDB$FIELDS
-    -At sub procedure 'HACK'
+    UPDATE operation is not allowed for system table
+    DOMAIN_PRECISION -2
 """
 
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
 
