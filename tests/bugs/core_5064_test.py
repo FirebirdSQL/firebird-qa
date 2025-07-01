@@ -7,6 +7,12 @@ TITLE:       Add datatypes (VAR)BINARY(n) and BINARY VARYING(n) as alias for (VA
 DESCRIPTION:
 JIRA:        CORE-5064
 FBTEST:      bugs.core_5064
+NOTES:
+    [01.07.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
+    Separated expected output for FB major versions prior/since 6.x.
+    
+    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -35,39 +41,65 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    INPUT message field count: 0
-
-    OUTPUT message field count: 3
-    01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
-      :  name: DB_KEY  alias: DB_KEY
-      : table: TEST  owner: SYSDBA
-    02: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
-      :  name: X  alias: X
-      : table: TEST  owner: SYSDBA
-    03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
-      :  name: Y  alias: Y
-      : table: TEST  owner: SYSDBA
-
-    INPUT message field count: 0
-
-    OUTPUT message field count: 2
-    01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
-      :  name: X  alias: X
-      : table:   owner:
-    02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
-      :  name: Y  alias: Y
-      : table:   owner:
-
-    X                               <null>
-    Y                               <null>
-"""
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_5x = """
+        INPUT message field count: 0
+
+        OUTPUT message field count: 3
+        01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
+          :  name: DB_KEY  alias: DB_KEY
+          : table: TEST  owner: SYSDBA
+        02: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
+          :  name: X  alias: X
+          : table: TEST  owner: SYSDBA
+        03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
+          :  name: Y  alias: Y
+          : table: TEST  owner: SYSDBA
+
+        INPUT message field count: 0
+
+        OUTPUT message field count: 2
+        01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
+          :  name: X  alias: X
+          : table:   owner:
+        02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8 charset: 1 OCTETS
+          :  name: Y  alias: Y
+          : table:   owner:
+
+        X                               <null>
+        Y                               <null>
+    """
+
+    expected_stdout_6x = """
+        INPUT message field count: 0
+        OUTPUT message field count: 3
+        01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 8 charset: 1 SYSTEM.OCTETS
+        :  name: DB_KEY  alias: DB_KEY
+        : table: TEST  schema: PUBLIC  owner: SYSDBA
+        02: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 8 charset: 1 SYSTEM.OCTETS
+        :  name: X  alias: X
+        : table: TEST  schema: PUBLIC  owner: SYSDBA
+        03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8 charset: 1 SYSTEM.OCTETS
+        :  name: Y  alias: Y
+        : table: TEST  schema: PUBLIC  owner: SYSDBA
+        INPUT message field count: 0
+        OUTPUT message field count: 2
+        01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 8 charset: 1 SYSTEM.OCTETS
+        :  name: X  alias: X
+        : table:   schema:   owner:
+        02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8 charset: 1 SYSTEM.OCTETS
+        :  name: Y  alias: Y
+        : table:   schema:   owner:
+        X                               <null>
+        Y                               <null>
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute()
     assert act.clean_stdout == act.clean_expected_stdout
 
