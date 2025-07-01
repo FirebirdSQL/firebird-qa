@@ -40,14 +40,16 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype).)*$', ''), ('[ \t]+', ' ')])
 
-expected_stdout = """
-    01: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 UTF8
-    02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 UTF8
-    03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 UTF8
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'SYSTEM.'
+    expected_stdout = f"""
+        01: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 {SQL_SCHEMA_PREFIX}UTF8
+        02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 {SQL_SCHEMA_PREFIX}UTF8
+        03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 8000 charset: 4 {SQL_SCHEMA_PREFIX}UTF8
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
