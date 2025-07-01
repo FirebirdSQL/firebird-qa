@@ -12,6 +12,12 @@ NOTES:
     Execution plan changed in FB 5.x since build 5.0.0.1211 (14-sep-2023).
     Expected output has been splitted on that remains actual for FB 4.x and one that issued for 5.x+.
     Confirmed by dimitr, letter 24.09.2023 13:30
+
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    
+    Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -74,9 +80,15 @@ expected_stdout_5x = """
     PLAN (V_TEST B ORDER BALANCES_BALANCEDATE_DESC INDEX (FK_BALANCES_ORGACCOUNTS))
 """
 
+expected_stdout_6x = """
+    PLAN SORT ("PUBLIC"."V_TEST" "B" INDEX ("PUBLIC"."BALANCES_BALANCEDATE_ORGACCOUNT"))
+    PLAN ("PUBLIC"."V_TEST" "B" ORDER "PUBLIC"."BALANCES_BALANCEDATE_DESC" INDEX ("PUBLIC"."FK_BALANCES_ORGACCOUNTS"))
+"""
+
+
 @pytest.mark.version('>=3.0.4')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x
-    act.execute()
+    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
