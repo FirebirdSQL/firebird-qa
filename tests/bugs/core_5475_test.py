@@ -25,6 +25,9 @@ NOTES:
   See letter from Vlad, 31-mar-2020 14:29.
 JIRA:        CORE-5475
 FBTEST:      bugs.core_5475
+NOTES:
+    [01.07.2025] pzotov
+    Adjusted "with pytest.raises(DatabaseError, '...')": skip check for matching table name (FB 6.x).
 """
 
 import pytest
@@ -118,7 +121,7 @@ def test_1(act: Action, capsys):
         #
         with act.db.connect(sql_dialect=1) as con:
             c = con.cursor()
-            with pytest.raises(DatabaseError, match='.*violation of PRIMARY or UNIQUE KEY constraint "TEST_PK" on table "TEST".*'):
+            with pytest.raises(DatabaseError, match='.*violation of PRIMARY or UNIQUE KEY constraint.*'):
                 c.execute('insert into test(id,tiny_num) values(?, ?)', [1, 1])
         #
         with act.db.connect(sql_dialect=1) as con:
