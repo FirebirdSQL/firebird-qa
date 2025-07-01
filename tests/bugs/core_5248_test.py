@@ -11,8 +11,11 @@ NOTES:
     2. Commented out (and will be deleted later) code that expected error when user who was granted role
        with admin option tries to revoke this role from himself. Seince fixed GH-8462 this is NOT so.
     3. Replaced hard-coded names/passwords with variables that are provided by fixtures (tmp_usr*, tmp_role*).
-
     Checked on 6.0.0.660; 5.0.3.1624; 4.0.6.3189.
+
+    [01.07.2025] pzotov
+    Added f-notation into expected_* in order to make proper content in FB 6.x (role name is enclosed in quotes there).
+    Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214.
 """
 
 import locale
@@ -180,7 +183,8 @@ def test_2(act: Action, tmp_usr0: User, tmp_usr1: User, tmp_usr2: User, tmp_usr3
     """
 
 
-    act.expected_stdout = """
+    ROLE_NAME = 'TMP_ROLE1' if act.is_version('<6') else '"TMP_ROLE1"'
+    act.expected_stdout = f"""
         MSG                             Point-1
         WHO_AM_I                        SYSDBA
         WHO_WAS_GRANTED                 TMP$C5248_USR1
@@ -246,7 +250,7 @@ def test_2(act: Action, tmp_usr0: User, tmp_usr1: User, tmp_usr2: User, tmp_usr3
         Statement failed, SQLSTATE = 28000
         unsuccessful metadata update
         -DROP ROLE TMP_ROLE1 failed
-        -no permission for DROP access to ROLE TMP_ROLE1
+        -no permission for DROP access to ROLE {ROLE_NAME}
         COUNT                           1
         MSG                             Point-6
         WHO_AM_I                        TMP$C5248_USR0
