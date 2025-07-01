@@ -135,11 +135,11 @@ def test_1(act: Action, capsys):
 
     expected_stdout_6x = """
         Select Expression
-        ....-> Sort (record length: 36, key length: 16)
+        ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "ZF" Access By ID
+        ............-> Table "PUBLIC"."ZF" Access By ID
         ................-> Bitmap
-        ....................-> Index "FK_ZF__K" Range Scan (full match)
+        ....................-> Index "PUBLIC"."FK_ZF__K" Range Scan (full match)
     """
 
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
