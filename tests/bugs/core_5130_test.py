@@ -8,6 +8,10 @@ TITLE:       Compiler issues message about "invalid request BLR" when attempt to
 DESCRIPTION:
 JIRA:        CORE-5130
 FBTEST:      bugs.core_5130
+NOTES:
+    [01.07.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -31,17 +35,19 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -ALTER VIEW V1 failed
-    -Dynamic SQL Error
-    -SQL error code = -607
-    -No subqueries permitted for VIEW WITH CHECK OPTION
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    VIEW_NAME = 'V1' if act.is_version('<6') else '"V1"'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -ALTER VIEW {SQL_SCHEMA_PREFIX}{VIEW_NAME} failed
+        -Dynamic SQL Error
+        -SQL error code = -607
+        -No subqueries permitted for VIEW WITH CHECK OPTION
+    """
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
