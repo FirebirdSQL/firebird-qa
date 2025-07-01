@@ -27,8 +27,10 @@ DESCRIPTION:
 JIRA:        CORE-5489
 FBTEST:      bugs.core_5489
 NOTES:
-    [25.11.2023] pzotov
-    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -115,6 +117,10 @@ def test_1(act: Action):
             for k in range(len(words)):
                 if words[k].startswith('fetch'):
                     num_of_fetches = int(words[k-1])
-    # Check
-    assert run_with_plan == 'PLAN (TEST ORDER TEST_F01_ID)'
+    if act.is_version('<6'):
+        expected_plan = 'PLAN (TEST ORDER TEST_F01_ID)'
+    else:
+        expected_plan = 'PLAN ("PUBLIC"."TEST" ORDER "PUBLIC"."TEST_F01_ID")'
+
+    assert run_with_plan == expected_plan
     assert num_of_fetches < FETCHES_THRESHOLD
