@@ -25,10 +25,10 @@ Value of fetches is compared with threshold (currently = 80) which was received 
 JIRA:        CORE-5435
 FBTEST:      bugs.core_5435
 NOTES:
-    [25.11.2023] pzotov
-    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
-    i.e.
-    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -39,10 +39,6 @@ db = db_factory(page_size=8192)
 act = python_act('db')
 
 FETCHES_THRESHOLD = 80
-
-expected_stdout = """
-    PLAN (TEST ORDER TEST_F01_ID)
-"""
 
 async_init_script = """
    recreate table test
@@ -115,6 +111,11 @@ def test_1(act: Action):
                     if words[k].startswith('fetch'):
                         num_of_fetches = int(words[k - 1])
                         break
-    # Check
-    assert run_with_plan == 'PLAN (TEST ORDER TEST_F01_ID)'
+
+    if act.is_version('<6'):
+        expected_plan = 'PLAN (TEST ORDER TEST_F01_ID)'
+    else:
+        expected_plan = 'PLAN ("PUBLIC"."TEST" ORDER "PUBLIC"."TEST_F01_ID")'
+
+    assert run_with_plan == expected_plan
     assert num_of_fetches < FETCHES_THRESHOLD
