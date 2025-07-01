@@ -17,6 +17,11 @@ NOTES:
         "OVERRIDING SYSTEM VALUE should be used to override the value of an identity column defined as 'GENERATED ALWAYS' in table/view ..."
     New text (after #7638 was fixed):
         "OVERRIDING clause should be used when an identity column defined as 'GENERATED ALWAYS' is present in the INSERT's field list for table table/view ..."
+
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -93,33 +98,41 @@ test_script = """
     insert into test_default(id_default) overriding user value values(-7654322) returning id_default; -- expected: -121
 """
 
-act = isql_act('db', test_script)
+substitutions = [ ('[ \t]+', ' ') ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
-    ID_DEFAULT                      -11
-    ID_ALWAYS                       11
-    ID_DEFAULT                      -7654321
-    ID_ALWAYS                       7654321
-    ID_DEFAULT                      -33
-    ID_DEFAULT                      -55
-"""
-
-expected_stderr = """
+expected_stdout_5x = """
+    ID_DEFAULT -11
+    ID_ALWAYS 11
     Statement failed, SQLSTATE = 42000
     OVERRIDING clause should be used when an identity column defined as 'GENERATED ALWAYS' is present in the INSERT's field list for table table/view TEST_ALWAYS
-
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST_DEFAULT"."ID_DEFAULT", value "*** null ***"
-
+    ID_DEFAULT -7654321
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST_ALWAYS"."ID_ALWAYS", value "*** null ***"
+    ID_ALWAYS 7654321
+    ID_DEFAULT -33
+    ID_DEFAULT -55
+"""
+
+expected_stdout_6x = """
+    ID_DEFAULT -11
+    ID_ALWAYS 11
+    Statement failed, SQLSTATE = 42000
+    OVERRIDING clause should be used when an identity column defined as 'GENERATED ALWAYS' is present in the INSERT's field list for table table/view "PUBLIC"."TEST_ALWAYS"
+    Statement failed, SQLSTATE = 23000
+    validation error for column "PUBLIC"."TEST_DEFAULT"."ID_DEFAULT", value "*** null ***"
+    ID_DEFAULT -7654321
+    Statement failed, SQLSTATE = 23000
+    validation error for column "PUBLIC"."TEST_ALWAYS"."ID_ALWAYS", value "*** null ***"
+    ID_ALWAYS 7654321
+    ID_DEFAULT -33
+    ID_DEFAULT -55
 """
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
-
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
