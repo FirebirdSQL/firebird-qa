@@ -5,11 +5,16 @@ ID:          issue-5677
 ISSUE:       5677
 TITLE:       Inconsistent column/line references when PSQL definitions return errors
 DESCRIPTION:
-  ### WARNING ###
-  Following code is intentionaly aborted in the middle point because some cases are not
-  covered by fix of this ticket (see also issue in the ticket, 22/Nov/16 06:10 PM).
+    ### WARNING ###
+    Following code is intentionaly aborted in the middle point because some cases are not
+    covered by fix of this ticket (see also issue in the ticket, 22/Nov/16 06:10 PM).
 JIRA:        CORE-5404
 FBTEST:      bugs.core_5404
+NOTES:
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -93,7 +98,7 @@ act = isql_act('db', test_script,
                substitutions=[('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+',
                                '-At line: column:')])
 
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -110,9 +115,25 @@ expected_stderr = """
     -At line 4, column 10
 """
 
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42000
+    Dynamic SQL Error
+    -SQL error code = -104
+    -Zero length identifiers are not allowed
+    -At line: column:
+
+    Statement failed, SQLSTATE = 42S22
+    unsuccessful metadata update
+    -CREATE OR ALTER PROCEDURE "PUBLIC"."DSQL_FIELD_ERR2" failed
+    -Dynamic SQL Error
+    -SQL error code = -206
+    -Column unknown
+    -"FOO"
+    -At line: column:
+"""
+
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
-
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
