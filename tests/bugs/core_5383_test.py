@@ -7,6 +7,11 @@ TITLE:       Dependencies in Package not recognised
 DESCRIPTION:
 JIRA:        CORE-5383
 FBTEST:      bugs.core_5383
+NOTES:
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -117,45 +122,63 @@ test_script = """
     execute procedure pg_03.p03(1);
 """
 
-act = isql_act('db', test_script)
+substitutions = [] # [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
-
-     RDB$DEPENDENT_NAME              PG_03
-     RDB$DEPENDED_ON_NAME            TEST01
-
-     RDB$DEPENDENT_NAME              PG_03
-     RDB$DEPENDED_ON_NAME            TEST02
-
-     RDB$DEPENDENT_NAME              PG_03
-     RDB$DEPENDED_ON_NAME            TEST03
-
-     Records affected: 3
-
-     O_Y                             111
-     O_Y                             222
-     O_Y                             333
-"""
-
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
     -COLUMN TEST01.ID1
     -there are 1 dependencies
-
+    
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
     -COLUMN TEST02.ID2
     -there are 1 dependencies
+    
+    RDB$DEPENDENT_NAME              PG_03
+    RDB$DEPENDED_ON_NAME            TEST01
+    RDB$DEPENDENT_NAME              PG_03
+    RDB$DEPENDED_ON_NAME            TEST02
+    RDB$DEPENDENT_NAME              PG_03
+    RDB$DEPENDED_ON_NAME            TEST03
+    Records affected: 3
+    
+    O_Y                             111
+    O_Y                             222
+    O_Y                             333
+"""
+
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -cannot delete
+    -COLUMN "PUBLIC"."TEST01"."ID1"
+    -there are 1 dependencies
+
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -cannot delete
+    -COLUMN "PUBLIC"."TEST02"."ID2"
+    -there are 1 dependencies
+
+    RDB$DEPENDENT_NAME              PG_03
+    RDB$DEPENDED_ON_NAME            TEST01
+    RDB$DEPENDENT_NAME              PG_03
+    RDB$DEPENDED_ON_NAME            TEST02
+    RDB$DEPENDENT_NAME              PG_03
+    RDB$DEPENDED_ON_NAME            TEST03
+    Records affected: 3
+
+    O_Y                             111
+    O_Y                             222
+    O_Y                             333
 """
 
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
-
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
