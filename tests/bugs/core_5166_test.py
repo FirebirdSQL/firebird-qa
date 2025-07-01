@@ -7,6 +7,12 @@ TITLE:       Wrong error message with UNIQUE BOOLEAN field
 DESCRIPTION:
 JIRA:        CORE-5166
 FBTEST:      bugs.core_5166
+NOTES:
+    [01.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    
+    Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -51,40 +57,56 @@ test_script = """
     update test2 set u=true, v=null, w=true where coalesce(u,v,w) is null rows 1;
 """
 
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    X                               <true>
-    Records affected: 0
-    Records affected: 1
-    Records affected: 1
-    Records affected: 1
-    Records affected: 1
-    Records affected: 1
-    Records affected: 1
-    Records affected: 0
-    Records affected: 0
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST1_X_UNQ" on table "TEST1"
-    -Problematic key value is ("X" = TRUE)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST2_UVW_UNQ" on table "TEST2"
-    -Problematic key value is ("U" = TRUE, "V" = TRUE, "W" = TRUE)
-
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST2_UVW_UNQ" on table "TEST2"
-    -Problematic key value is ("U" = TRUE, "V" = NULL, "W" = TRUE)
-"""
+substitutions = [] # [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
 
+    expected_stdout_5x = """
+        X                               <true>
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST1_X_UNQ" on table "TEST1"
+        -Problematic key value is ("X" = TRUE)
+        Records affected: 0
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST2_UVW_UNQ" on table "TEST2"
+        -Problematic key value is ("U" = TRUE, "V" = TRUE, "W" = TRUE)
+        Records affected: 0
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST2_UVW_UNQ" on table "TEST2"
+        -Problematic key value is ("U" = TRUE, "V" = NULL, "W" = TRUE)
+        Records affected: 0
+    """
+
+    expected_stdout_6x = """
+        X                               <true>
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST1_X_UNQ" on table "PUBLIC"."TEST1"
+        -Problematic key value is ("X" = TRUE)
+        Records affected: 0
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Records affected: 1
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST2_UVW_UNQ" on table "PUBLIC"."TEST2"
+        -Problematic key value is ("U" = TRUE, "V" = TRUE, "W" = TRUE)
+        Records affected: 0
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST2_UVW_UNQ" on table "PUBLIC"."TEST2"
+        -Problematic key value is ("U" = TRUE, "V" = NULL, "W" = TRUE)
+        Records affected: 0
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
