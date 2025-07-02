@@ -8,8 +8,14 @@ DESCRIPTION:
 JIRA:        CORE-6239
 FBTEST:      bugs.core_6239
 NOTES:
-   Fix was done by commit https://github.com/FirebirdSQL/firebird/commit/b2b5f9a87cea26a9f12fa231804dba9d0426d3fa
-   (can be checked by 4.0.0.1763+, date of build since 05-feb-2020).
+    [05.02.2020] pzotov
+    Fix was done by commit https://github.com/FirebirdSQL/firebird/commit/b2b5f9a87cea26a9f12fa231804dba9d0426d3fa
+    (can be checked by 4.0.0.1763+, date of build since 05-feb-2020).
+
+    [02.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -94,7 +100,7 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42000
     Dynamic SQL Error
     -SQL error code = -104
@@ -134,8 +140,43 @@ expected_stderr = """
     -SUSPEND could not be used without RETURNS clause in PROCEDURE or EXECUTE BLOCK
 """
 
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42000
+    Dynamic SQL Error
+    -SQL error code = -104
+    -SUSPEND could not be used without RETURNS clause in PROCEDURE or EXECUTE BLOCK
+    Statement failed, SQLSTATE = 42000
+    Dynamic SQL Error
+    -SQL error code = -104
+    -SUSPEND could not be used without RETURNS clause in PROCEDURE or EXECUTE BLOCK
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -CREATE OR ALTER PROCEDURE "PUBLIC"."SP_MISSED_RETURNS_IN_ITS_HEADER_1" failed
+    -Dynamic SQL Error
+    -SQL error code = -104
+    -SUSPEND could not be used without RETURNS clause in PROCEDURE or EXECUTE BLOCK
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -CREATE OR ALTER PROCEDURE "PUBLIC"."SP_MISSED_RETURNS_IN_ITS_HEADER_2" failed
+    -Dynamic SQL Error
+    -SQL error code = -104
+    -SUSPEND could not be used without RETURNS clause in PROCEDURE or EXECUTE BLOCK
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -CREATE OR ALTER PROCEDURE "PUBLIC"."SP_MISSED_RETURNS_IN_ITS_HEADER_3" failed
+    -Dynamic SQL Error
+    -SQL error code = -104
+    -SUSPEND could not be used without RETURNS clause in PROCEDURE or EXECUTE BLOCK
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -CREATE PACKAGE BODY "PUBLIC"."PG_TEST_1" failed
+    -Dynamic SQL Error
+    -SQL error code = -104
+    -SUSPEND could not be used without RETURNS clause in PROCEDURE or EXECUTE BLOCK
+"""
+
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
