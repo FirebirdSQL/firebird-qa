@@ -47,6 +47,10 @@ NOTES:
     [09.07.2024] pzotov
         Added item to substitutions related to 'port detached' message that raises in dev build.
         Fixed wrong logic because of missed indentation, see hang_stderr.
+    [01.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
+        Separated expected output for FB major versions prior/since 6.x.
+        Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 import platform
 import pytest
@@ -97,32 +101,6 @@ init_script = """
 db = db_factory(init=init_script)
 
 act = python_act('db', substitutions=substitutions)
-
-expected_stdout = """
-    HANGED ATTACH, STDOUT: Records affected: 0
-    HANGED ATTACH, STDERR: Statement failed, SQLSTATE = 42000
-    HANGED ATTACH, STDERR: Execute statement error at isc_dsql_fetch :
-    HANGED ATTACH, STDERR: <found pattern about closed connection>
-    HANGED ATTACH, STDERR: Statement : select u.unreachable_address from sp_unreachable as u
-    .*Data source
-    HANGED ATTACH, STDERR: -At procedure 'SP_GET_DATA' line: 3, col: 9
-    HANGED ATTACH, STDERR: <found pattern about failed statement>
-    HANGED ATTACH, STDERR: <found pattern about closed connection>
-    HANGED ATTACH, STDERR: <found pattern about failed statement>
-    HANGED ATTACH, STDERR: <found pattern about closed connection>
-    KILLER ATTACH, STDOUT: ITERATION_NO 1
-    KILLER ATTACH, STDOUT: HANGING_ATTACH_CONNECTION 1
-    KILLER ATTACH, STDOUT: HANGING_ATTACH_PROTOCOL TCP
-    KILLER ATTACH, STDOUT: HANGING_STATEMENT_STATE 1
-    KILLER ATTACH, STDOUT: select * from sp_get_data
-    KILLER ATTACH, STDOUT: Records affected: 1
-    KILLER ATTACH, STDOUT: ITERATION_NO 2
-    KILLER ATTACH, STDOUT: HANGING_ATTACH_CONNECTION <null>
-    KILLER ATTACH, STDOUT: HANGING_ATTACH_PROTOCOL <null>
-    KILLER ATTACH, STDOUT: HANGING_STATEMENT_STATE <null>
-    KILLER ATTACH, STDOUT: Records affected: 0
-"""
-
 
 kill_script = """
     set list on;
@@ -213,6 +191,34 @@ def test_1(act: Action, hang_script: Path, hang_stdout: Path, hang_stderr: Path,
                 output.append(f"KILLER ATTACH, STDOUT: {' '.join(line.split())}")
 
     act.reset()
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    STORED_PROC_NAME = "'SP_GET_DATA'" if act.is_version('<6') else '"SP_GET_DATA"'
+    expected_stdout = f"""
+        HANGED ATTACH, STDOUT: Records affected: 0
+        HANGED ATTACH, STDERR: Statement failed, SQLSTATE = 42000
+        HANGED ATTACH, STDERR: Execute statement error at isc_dsql_fetch :
+        HANGED ATTACH, STDERR: <found pattern about closed connection>
+        HANGED ATTACH, STDERR: Statement : select u.unreachable_address from sp_unreachable as u
+        .*Data source
+        HANGED ATTACH, STDERR: -At procedure {SQL_SCHEMA_PREFIX}{STORED_PROC_NAME} line: 3, col: 9
+        HANGED ATTACH, STDERR: <found pattern about failed statement>
+        HANGED ATTACH, STDERR: <found pattern about closed connection>
+        HANGED ATTACH, STDERR: <found pattern about failed statement>
+        HANGED ATTACH, STDERR: <found pattern about closed connection>
+        KILLER ATTACH, STDOUT: ITERATION_NO 1
+        KILLER ATTACH, STDOUT: HANGING_ATTACH_CONNECTION 1
+        KILLER ATTACH, STDOUT: HANGING_ATTACH_PROTOCOL TCP
+        KILLER ATTACH, STDOUT: HANGING_STATEMENT_STATE 1
+        KILLER ATTACH, STDOUT: select * from sp_get_data
+        KILLER ATTACH, STDOUT: Records affected: 1
+        KILLER ATTACH, STDOUT: ITERATION_NO 2
+        KILLER ATTACH, STDOUT: HANGING_ATTACH_CONNECTION <null>
+        KILLER ATTACH, STDOUT: HANGING_ATTACH_PROTOCOL <null>
+        KILLER ATTACH, STDOUT: HANGING_STATEMENT_STATE <null>
+        KILLER ATTACH, STDOUT: Records affected: 0
+    """
+
     act.expected_stdout = expected_stdout
     act.stdout = '\n'.join(output)
     assert act.clean_stdout == act.clean_expected_stdout
