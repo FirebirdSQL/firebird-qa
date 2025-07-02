@@ -7,6 +7,11 @@ TITLE:       GRANT OPTION is not checked for new object
 DESCRIPTION:
 JIRA:        CORE-5861
 FBTEST:      bugs.core_5861
+NOTES:
+    [02.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -124,60 +129,88 @@ test_script = """
     commit;*/
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
     RDB$ROLE_NAME                   ROLE1
     F                               <null>
     GEN_ID                          1
-"""
-
-expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -no CREATE privilege with grant option on DDL SQL$TABLES
-
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -no EXECUTE privilege with grant option on object P
-
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -no EXECUTE privilege with grant option on object F
-
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -no USAGE privilege with grant option on object G
-
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -no USAGE privilege with grant option on object E
-
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -no grant option for privilege SELECT on table/view TAB
-
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -no grant option for privilege UPDATE on column ID of table/view TAB
-
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -no EXECUTE privilege with grant option on object PAK
 """
 
+expected_stdout_6x = """
+    RDB$ROLE_NAME                   ROLE1
+    F                               <null>
+    GEN_ID                          1
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -no CREATE privilege with grant option on DDL "PUBLIC"."SQL$TABLES"
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -no EXECUTE privilege with grant option on object "PUBLIC"."P"
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -no EXECUTE privilege with grant option on object "PUBLIC"."F"
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -no USAGE privilege with grant option on object "PUBLIC"."G"
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -no USAGE privilege with grant option on object "PUBLIC"."E"
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -no grant option for privilege SELECT on table/view "PUBLIC"."TAB"
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -no grant option for privilege UPDATE on column "ID" of table/view "PUBLIC"."TAB"
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -no EXECUTE privilege with grant option on object "PUBLIC"."PAK"
+"""
+
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, user_1, user_2, user_3, role_1, role_2, role_3):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
