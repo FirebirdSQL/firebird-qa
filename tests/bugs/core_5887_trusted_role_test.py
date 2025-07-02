@@ -27,6 +27,9 @@ NOTES:
     [02.08.2024] pzotov
         One need to check for admin rights of current OS user (noted by Dimitry Sibiryakov).
         Checked on Windows 6.0.0.406, 5.0.1.1469, 4.0.5.3139
+    [01.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import os
@@ -151,6 +154,8 @@ def test_1(act: Action, tmp_role_junior: Role, tmp_role_senior: Role, capsys):
         commit;
     """
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TABLE_NAME = 'TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST"'
     expected_out = f"""
         MSG                             point-1
         MON$USER                        {THIS_COMPUTER_NAME}\\{CURRENT_WIN_ADMIN.upper()}
@@ -158,7 +163,7 @@ def test_1(act: Action, tmp_role_junior: Role, tmp_role_senior: Role, capsys):
         MON$REMOTE_PROTOCOL             TCP
         MON$AUTH_METHOD                 Mapped from Win_Sspi
         Statement failed, SQLSTATE = 28000
-        no permission for SELECT access to TABLE TEST
+        no permission for SELECT access to TABLE {TABLE_NAME}
         -Effective user is {THIS_COMPUTER_NAME}\\{CURRENT_WIN_ADMIN.upper()}
 
         MSG                             point-2
