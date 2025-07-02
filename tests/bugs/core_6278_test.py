@@ -14,15 +14,17 @@ NOTES:
     into a table: smaller values of RDB$DB_KEY can appear *after* bigger ones (i.e. smaller RDB$DB_KEY will
     be physically closer to the end of table than bigger).
     Because of that, we check only EXPLAINED PLAN, without runtime statistics from trace log before.
-
     On build 4.0.0.1865 (07-apr-2020) explained plan for scoped query (like 'rdb$db_key between ? and ?')
     returned "Table ... Full Scan" - WITHOUT "(lower bound, upper bound)".
-
     Since build 4.0.0.1869 (08-apr-2020) this opewration is: "Table "TEST" Full Scan (lower bound, upper bound)".
     See commit:
     https://github.com/FirebirdSQL/firebird/commit/3ce4605e3cc9960afcf0224ea40e04f508669eca
-
     Checked on 5.0.1.1394, 6.0.0.345.
+
+    [03.07.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214.
+
 """
 
 import pytest
@@ -57,42 +59,43 @@ def test_1(act: Action, capsys):
             with cur.prepare(f'select count(s) from test where {x}') as ps:
                 print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
 
-   
-    act.expected_stdout = """
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    act.expected_stdout = f"""
         Select Expression
         ....-> Aggregate
         ........-> Filter
-        ............-> Table "TEST" Full Scan (lower bound, upper bound)
+        ............-> Table {SQL_SCHEMA_PREFIX}"TEST" Full Scan (lower bound, upper bound)
 
         Select Expression
         ....-> Aggregate
         ........-> Filter
-        ............-> Table "TEST" Full Scan (lower bound, upper bound)
+        ............-> Table {SQL_SCHEMA_PREFIX}"TEST" Full Scan (lower bound, upper bound)
 
         Select Expression
         ....-> Aggregate
         ........-> Filter
-        ............-> Table "TEST" Full Scan (lower bound, upper bound)
+        ............-> Table {SQL_SCHEMA_PREFIX}"TEST" Full Scan (lower bound, upper bound)
 
         Select Expression
         ....-> Aggregate
         ........-> Filter
-        ............-> Table "TEST" Full Scan (lower bound)
+        ............-> Table {SQL_SCHEMA_PREFIX}"TEST" Full Scan (lower bound)
 
         Select Expression
         ....-> Aggregate
         ........-> Filter
-        ............-> Table "TEST" Full Scan (lower bound)
+        ............-> Table {SQL_SCHEMA_PREFIX}"TEST" Full Scan (lower bound)
 
         Select Expression
         ....-> Aggregate
         ........-> Filter
-        ............-> Table "TEST" Full Scan (upper bound)
+        ............-> Table {SQL_SCHEMA_PREFIX}"TEST" Full Scan (upper bound)
 
         Select Expression
         ....-> Aggregate
         ........-> Filter
-        ............-> Table "TEST" Full Scan (upper bound)
+        ............-> Table {SQL_SCHEMA_PREFIX}"TEST" Full Scan (upper bound)
     """
+
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
