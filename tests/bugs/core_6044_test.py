@@ -7,13 +7,19 @@ TITLE:       ISQL issues with increased identifier length
 DESCRIPTION:
 JIRA:        CORE-6044
 FBTEST:      bugs.core_6044
+NOTES:
+    [02.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214
 """
 
 import pytest
 from firebird.qa import *
 
 substitutions = [  ('current value.*', 'current value')
-                  ,('COLL-VERSION=\\d+.\\d+(;ICU-VERSION=\\d+.\\d+)?.*', '<attr>')
+                  ,("'COLL-VERSION.*", "'<attr>'")
+                  #,('COLL-VERSION=\\d+.\\d+(;ICU-VERSION=\\d+.\\d+)?.*', '<attr>')
                 ]
 
 db = db_factory(charset='UTF8')
@@ -57,14 +63,16 @@ expected_stdout_5x = """
 """
 
 expected_stdout_6x = """
-    ДоменДляХраненияСтроковыхДанныхКоторыеПредставимыДляСортировкии
-    ИсключениеДляСообщенияПользователюОНевозможностиПреобразованияя; Msg: Ваша строка не может быть преобразована в число.
-    КоллацияДляСортировкиСтроковыхДанныхКоторыеПредставимыКакЧислаа, CHARACTER SET UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, '<attr>
-    ТаблицаКотораяВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю
-    Generator ГенераторКоторыйДолженСодержатьНомераПоследнихУдаленнДокументов, current value
-    СтолбецКоторыйВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю (ДоменДляХраненияСтроковыхДанныхКоторыеПредставимыДляСортировкии) VARCHAR(160) CHARACTER SET UTF8 COLLATE КоллацияДляСортировкиСтроковыхДанныхКоторыеПредставимыКакЧислаа Not Null
-    CONSTRAINT ПервичныйКлючНаТаблицуКотораяВсегдаДолжнаСодержатьСвежайшуюИнфу:
-    Primary key (СтолбецКоторыйВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю)
+    PUBLIC."ДоменДляХраненияСтроковыхДанныхКоторыеПредставимыДляСортировкии"
+    PUBLIC."ИсключениеДляСообщенияПользователюОНевозможностиПреобразованияя"; Msg: Ваша строка не может быть преобразована в число.
+    PUBLIC."КоллацияДляСортировкиСтроковыхДанныхКоторыеПредставимыКакЧислаа", CHARACTER SET SYSTEM.UTF8, FROM EXTERNAL ('UNICODE'), PAD SPACE, CASE INSENSITIVE, '<attr>'
+    PUBLIC."ТаблицаКотораяВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю"
+    Generator PUBLIC."ГенераторКоторыйДолженСодержатьНомераПоследнихУдаленнДокументов", current value
+    Table: PUBLIC."ТаблицаКотораяВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю"
+    "СтолбецКоторыйВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю" (PUBLIC."ДоменДляХраненияСтроковыхДанныхКоторыеПредставимыДляСортировкии") VARCHAR(160) CHARACTER SET SYSTEM.UTF8 COLLATE PUBLIC."КоллацияДляСортировкиСтроковыхДанныхКоторыеПредставимыКакЧислаа" Not Null
+    CONSTRAINT "ПервичныйКлючНаТаблицуКотораяВсегдаДолжнаСодержатьСвежайшуюИнфу":
+    Primary key ("СтолбецКоторыйВсегдаДолжнаСодержатьТолькоСамуюСвежуюИнформациюю")
+
 """
 
 @pytest.mark.version('>=4.0')
