@@ -17,6 +17,9 @@ NOTES:
         Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+    [03.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214
 """
 
 import pytest
@@ -34,14 +37,16 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|charset).)*$', ''), ('[ \t]+', ' '),
                                                  ('.*charset: [\\d]+', 'charset:')])
-
-expected_stdout = """
-    charset: ASCII
-    charset: ASCII
-"""
-
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'SYSTEM.'
+    expected_stdout = f"""
+        charset: {SQL_SCHEMA_PREFIX}ASCII
+        charset: {SQL_SCHEMA_PREFIX}ASCII
+    """
+
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
