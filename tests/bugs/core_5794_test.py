@@ -13,6 +13,11 @@ DESCRIPTION:
   "Since Firebird3 <..> cursor doesn't see the changes made by "inner" statements."
 JIRA:        CORE-5794
 FBTEST:      bugs.core_5794
+NOTES:
+    [02.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -67,30 +72,41 @@ test_script = """
     select mon$variable_name as ctx_var, mon$variable_value as ctx_value from mon$context_variables;
 """
 
-act = isql_act('db', test_script, substitutions=[('line:\\s[0-9]+,', 'line: x'),
-                                                 ('col:\\s[0-9]+', 'col: y')])
+substitutions = [ ('[ \t]+', ' '), ( r'line(:)?\s+\d+.*', '' ) ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
-    CTX_VAR                         TRIGGER_OLD_ID
-    CTX_VALUE                       1
-
-    CTX_VAR                         TRIGGER_OLD_VAL
-    CTX_VALUE                       10
-"""
-
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = HY000
     exception 1
     -TEST_EXCEPTION
     -it is forbidden to delete row with val>0 (id = 1, val=10)
-    -At trigger 'TEST_TABLE_BD' line: 6, col: 9
-    At block line: 16, col: 9
+    -At trigger 'TEST_TABLE_BD'
+    At block
+
+    CTX_VAR TRIGGER_OLD_ID
+    CTX_VALUE 1
+
+    CTX_VAR TRIGGER_OLD_VAL
+    CTX_VALUE 10
+"""
+
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."TEST_EXCEPTION"
+    -it is forbidden to delete row with val>0 (id = 1, val=10)
+    -At trigger "PUBLIC"."TEST_TABLE_BD"
+    At block
+
+    CTX_VAR TRIGGER_OLD_ID
+    CTX_VALUE 1
+
+    CTX_VAR TRIGGER_OLD_VAL
+    CTX_VALUE 10
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
