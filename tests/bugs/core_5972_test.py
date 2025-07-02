@@ -21,28 +21,17 @@ DESCRIPTION:
     335544382 : COMP
     336397208 : At line 1, column 57
     Statement : insert into "PERSONS" ("ID", "NAME", "ADDRESS", "INFO", "COMP") values (?, ?, ?, ?, ?)
-    Data source : Firebird::C:\\FBTESTING\\qa\\misc\\tmprepl.fdb
+    Data source : Firebird::<path-to-db>
     -At block line: ...
     -At trigger 'PERSONS_REPLICATE'
 
   We expect appearing of this exception (see try/except block): check its class and content of message.
-NOTES:
-  [08.02.2022] pcisar
-  Fails on Windows 3.0.8 due to malformed error message:
-        Got exception: <class 'firebird.driver.types.DatabaseError'>
-      + Execute statement error at isc_dsql_prepare :335544359 : attempted update of read-only column
-      - Execute statement error at isc_dsql_prepare :
-      - 335544359 : attempted update of read-only column
-        Statement
-      - Data source
-       -At block line: 9, col: 5
-        -At trigger 'PERSONS_REPLICATE'
-   [08.04.2022] pzotov
-   CAN NOT REPRODUCE FAIL!
-   Test PASSES on FB 3.0.8 Rls, 4.0.1 RLs and 5.0.0.467.
-
 JIRA:        CORE-5972
 FBTEST:      bugs.core_5972
+NOTES:
+    [02.07.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -50,10 +39,11 @@ import platform
 from firebird.qa import *
 from firebird.driver import DatabaseError
 
-substitutions = [('[ \t]+', ' '), ('.* At block line.*', 'At block'),
-                 ('read-only column.*', 'read-only column'),
-                 ('Statement.*', 'Statement'), ('Data source.*', 'Data source'),
-                 ('.* At trigger.*', 'At trigger')]
+substitutions = [ ('[ \t]+', ' '),
+                  ('(-)?At block line.*', 'At block'),
+                  ('read-only column.*', 'read-only column'),
+                  ('Statement.*', 'Statement'), ('Data source.*', 'Data source'),
+                ]
 
 init_script = """
     create table persons (
@@ -69,16 +59,6 @@ db = db_factory(init=init_script)
 db_repl = db_factory(init=init_script, filename='core_5972_repl.fdb')
 
 act = python_act('db', substitutions=substitutions)
-
-expected_stdout = """
-    Got exception: <class 'firebird.driver.types.DatabaseError'>
-    Execute statement error at isc_dsql_prepare :
-    335544359 : attempted update of read-only column PERSONS.COMP
-    Statement : insert into "PERSONS" ("ID", "NAME", "ADDRESS", "INFO", "COMP") values (?, ?, ?, ?, ?)
-    Data source : Firebird::C:\\FBTESTING\\qa\\fbt-repo\\tmp\\tmp_5972_repl.fdb
-    -At block line: 9, col: 5
-    -At trigger 'PERSONS_REPLICATE'
-"""
 
 @pytest.mark.version('>=3.0.6')
 def test_1(act: Action, db_repl: Database, capsys):
@@ -118,6 +98,20 @@ def test_1(act: Action, db_repl: Database, capsys):
         act.isql(switches=['-q'], input='ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL;')
     #
     act.reset()
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TRIGGER_NAME = "'PERSONS_REPLICATE'" if act.is_version('<6') else '"PERSONS_REPLICATE"'
+
+    expected_stdout = f"""
+        Got exception: <class 'firebird.driver.types.DatabaseError'>
+        Execute statement error at isc_dsql_prepare :
+        335544359 : attempted update of read-only column PERSONS.COMP
+        Statement : insert into "PERSONS" ("ID", "NAME", "ADDRESS", "INFO", "COMP") values (?, ?, ?, ?, ?)
+        Data source : Firebird::
+        -At block line: 9, col: 5
+        -At trigger {SQL_SCHEMA_PREFIX}{TRIGGER_NAME}
+    """
+
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
