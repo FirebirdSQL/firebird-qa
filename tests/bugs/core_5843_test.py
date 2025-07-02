@@ -8,17 +8,14 @@ DESCRIPTION:
 JIRA:        CORE-5843
 FBTEST:      bugs.core_5843
 NOTES:
-    [25.11.2023] pzotov
-    Writing code requires more care since 6.0.0.150: ISQL does not allow specifying duplicate delimiters without any statements between them (two semicolon, two carets etc).
+    [02.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
 from firebird.qa import *
-
-substitutions = [('line[:]{0,1}[\\s]+[\\d]+.*', 'line'),
-                 ('transaction[\\s]+[\\d]+[\\s]+aborted', 'transaction aborted'),
-                 ('tx=[\\d]+', 'tx='), ('TX_ID[\\s]+[\\d]+', 'TX_ID'),
-                 ('exception[\\s]+[\\d]+.*', 'exception')]
 
 init_script = """
     --set echo on;
@@ -157,50 +154,79 @@ test_script = """
 
 """
 
+substitutions = [('[ \t]+', ' '),
+                 ('line[:]{0,1}[\\s]+[\\d]+.*', 'line'),
+                 ('transaction[\\s]+[\\d]+[\\s]+aborted', 'transaction aborted'),
+                 ('tx=[\\d]+', 'tx='), ('TX_ID[\\s]+[\\d]+', 'TX_ID'),
+                 ('exception[\\s]+[\\d]+.*', 'exception')]
+
 act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
     MSG                             test_1, point-1
+    TX_ID                           19
+    TX_STATE                        1
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -EX_TRA_START
+    -transaction 20 aborted
+    -At trigger 'TX_START' line: 10, col: 13
+    MSG                             test_1, point-3
     TX_ID                           22
     TX_STATE                        1
-
-    MSG                             test_1, point-3
-    TX_ID                           25
-    TX_STATE                        1
     Records affected: 1
-
     MSG                             test2, point-a
-    TX_ID                           28
+    TX_ID                           24
     TX_STATE                        1
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -EX_TRA_START
+    -transaction 25 aborted
+    -At trigger 'TX_START' line: 10, col: 13
+    At procedure 'SP_USE_ATX' line: 5, col: 9
     RDB$GET_CONTEXT
-    start: tx=26
-    trigger on commit, current tx=26
-    trigger on transaction start, current tx=28
-    sp_use_atx, point_a, current tx=28
-    trigger on transaction start, current tx=29
-    exception on tx start, current tx=29
-
+    start: tx=23
+    trigger on commit, current tx=23
+    trigger on transaction start, current tx=24
+    sp_use_atx, point_a, current tx=24
+    trigger on transaction start, current tx=25
+    exception on tx start, current tx=25
 """
 
-expected_stderr = """
+expected_stdout_6x = """
+    MSG                             test_1, point-1
+    TX_ID                           19
+    TX_STATE                        1
     Statement failed, SQLSTATE = HY000
     exception 1
-    -EX_TRA_START
-    -transaction 23 aborted
-    -At trigger 'TX_START' line
-
+    -"PUBLIC"."EX_TRA_START"
+    -transaction 20 aborted
+    -At trigger "PUBLIC"."TX_START" line: 10, col: 13
+    MSG                             test_1, point-3
+    TX_ID                           22
+    TX_STATE                        1
+    Records affected: 1
+    MSG                             test2, point-a
+    TX_ID                           24
+    TX_STATE                        1
     Statement failed, SQLSTATE = HY000
     exception 1
-    -EX_TRA_START
-    -transaction 29 aborted
-    -At trigger 'TX_START' line
-    At procedure 'SP_USE_ATX' line
+    -"PUBLIC"."EX_TRA_START"
+    -transaction 25 aborted
+    -At trigger "PUBLIC"."TX_START" line: 10, col: 13
+    At procedure "PUBLIC"."SP_USE_ATX" line: 5, col: 9
+    RDB$GET_CONTEXT
+    start: tx=23
+    trigger on commit, current tx=23
+    trigger on transaction start, current tx=24
+    sp_use_atx, point_a, current tx=24
+    trigger on transaction start, current tx=25
+    exception on tx start, current tx=25
 """
 
 @pytest.mark.version('>=3.0.4')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
