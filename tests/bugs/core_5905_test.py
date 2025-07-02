@@ -19,6 +19,11 @@ DESCRIPTION:
   (4.x - output phrase "UDF THE_FRAC" instead of "Function THE_FRAC" on attempt to drop function).
 JIRA:        CORE-5905
 FBTEST:      bugs.core_5905
+NOTES:
+    [02.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -113,6 +118,7 @@ def test_1(act_1: Action):
     assert (act_1.clean_stderr == act_1.clean_expected_stderr and
             act_1.clean_stdout == act_1.clean_expected_stdout)
 
+##########################################################################
 # version: 4.0
 
 test_script_2 = """
@@ -185,40 +191,57 @@ test_script_2 = """
     commit;
 """
 
-act_2 = isql_act('db', test_script_2)
+substitutions = [('[ \t]+', ' ')]
+act_2 = isql_act('db', test_script_2, substitutions = substitutions)
 
-expected_stdout_2 = """
+expected_stdout_5x = """
     THE_FRAC_1                      -0.1415926535897931
-
     FUNC_NAME                       THE_FRAC
     LEGACY_FLAG                     0
 
-    FUNC_NAME                       THE_FRAC
-    LEGACY_FLAG                     0
-
-    THE_FRAC_2                      7.062513305931052
-
-    THE_FRAC_3                      -0.1415926535897931
-"""
-
-expected_stderr_2 = """
     Statement failed, SQLSTATE = 38000
     unsuccessful metadata update
     -cannot delete
     -Function THE_FRAC
     -there are 1 dependencies
 
+    FUNC_NAME                       THE_FRAC
+    LEGACY_FLAG                     0
+    THE_FRAC_2                      7.062513305931052
+    THE_FRAC_3                      -0.1415926535897931
+
     Statement failed, SQLSTATE = 38000
     unsuccessful metadata update
     -cannot delete
     -Function THE_FRAC
+    -there are 1 dependencies
+"""
+
+expected_stdout_6x = """
+    THE_FRAC_1                      -0.1415926535897931
+    FUNC_NAME                       THE_FRAC
+    LEGACY_FLAG                     0
+
+    Statement failed, SQLSTATE = 38000
+    unsuccessful metadata update
+    -cannot delete
+    -Function "PUBLIC"."THE_FRAC"
+    -there are 1 dependencies
+
+    FUNC_NAME                       THE_FRAC
+    LEGACY_FLAG                     0
+    THE_FRAC_2                      7.062513305931052
+    THE_FRAC_3                      -0.1415926535897931
+
+    Statement failed, SQLSTATE = 38000
+    unsuccessful metadata update
+    -cannot delete
+    -Function "PUBLIC"."THE_FRAC"
     -there are 1 dependencies
 """
 
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.expected_stderr = expected_stderr_2
-    act_2.execute()
-    assert (act_2.clean_stderr == act_2.clean_expected_stderr and
-            act_2.clean_stdout == act_2.clean_expected_stdout)
+    act_2.expected_stdout = expected_stdout_5x if act_2.is_version('<6') else expected_stdout_6x
+    act_2.execute(combine_output = True)
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
