@@ -25,7 +25,6 @@ NOTES:
         Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
-NOTES:
     [02.07.2025] pzotov
     Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
     Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214
