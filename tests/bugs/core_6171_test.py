@@ -37,8 +37,6 @@ test_script = """
     commit;
 
     set heading off;
-    set plan on;
-
     select r.s
     from tmain r
     where
@@ -55,9 +53,6 @@ test_script = """
 act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
 expected_stdout = """
-    PLAN (D NATURAL)
-    PLAN (R NATURAL)
-
     foo
     bar
     rio
@@ -67,5 +62,5 @@ expected_stdout = """
 @pytest.mark.version('>=3.0.5')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
