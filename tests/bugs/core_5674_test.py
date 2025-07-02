@@ -9,12 +9,15 @@ JIRA:        CORE-5674
 FBTEST:      bugs.core_5674
 NOTES:
     [19.07.2023] pzotov
-    Adjusted expected error text for FB 4.x and 5.x: it now contains not only errors but also warnings about non-used CTEs.
+        Adjusted expected error text for FB 4.x and 5.x: it now contains not only errors but also warnings about non-used CTEs.
     [12.08.2023] pzotov
-    Adjusted expected error text for FB 3.0.12: now it is the same as for FB 4.x+
-
-    Change caused by commit "Print warnings occurred during commit", date: 07-jul-2023, started on builds 4.0.3.2958 and 5.0.0.1101.
-    Discussed with Vlad, 10-jul-2023.
+        Adjusted expected error text for FB 3.0.12: now it is the same as for FB 4.x+
+        Change caused by commit "Print warnings occurred during commit", date: 07-jul-2023, started on builds 4.0.3.2958 and 5.0.0.1101.
+        Discussed with Vlad, 10-jul-2023.
+    [02.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -109,15 +112,14 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script,
-               substitutions=[('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+',
-                               '-At line: column:')])
+substitutions = [ ('[ \t]+', ' '), ('(-)?At line \\d+.*', '') ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    Y                               2
-    X                               4
+    Y 2
+    X 4
 
-    X                               0
+    X 0
 """
 
 @pytest.mark.version('>=3.0.3')
@@ -146,7 +148,7 @@ def test_1(act: Action):
             -SQL error code = -104
             -CTE 'C' has cyclic dependencies
         """
-    else:
+    elif act.is_version('<6'):
         act.expected_stderr = """
             SQL warning code = -104
             -CTE "X" is not used in query
@@ -171,6 +173,33 @@ def test_1(act: Action):
             Dynamic SQL Error
             -SQL error code = -104
             -CTE 'C' has cyclic dependencies
+            SQL warning code = -104
+            -CTE "B" is not used in query
+            -CTE "C" is not used in query
+        """
+    else:
+        act.expected_stderr = """
+            SQL warning code = -104
+            -CTE "X" is not used in query
+            -CTE "Y" is not used in query
+            SQL warning code = -104
+            -CTE "B" is not used in query
+            -CTE "C" is not used in query
+            -CTE "D" is not used in query
+
+            Statement failed, SQLSTATE = 42S02
+            Dynamic SQL Error
+            -SQL error code = -204
+            -Table unknown
+            -"FOO"
+            SQL warning code = -104
+            -CTE "B" is not used in query
+            -CTE "C" is not used in query
+
+            Statement failed, SQLSTATE = 42000
+            Dynamic SQL Error
+            -SQL error code = -104
+            -CTE '"C"' has cyclic dependencies
             SQL warning code = -104
             -CTE "B" is not used in query
             -CTE "C" is not used in query
