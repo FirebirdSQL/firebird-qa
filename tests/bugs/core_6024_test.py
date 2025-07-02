@@ -7,6 +7,11 @@ TITLE:       FB3.0.4.33063 vs FB3.0.5.33100 manual plan cause "index cannot be u
 DESCRIPTION:
 JIRA:        CORE-6024
 FBTEST:      bugs.core_6024
+NOTES:
+    [02.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
 """
 
 import pytest
@@ -81,13 +86,19 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
+expected_stdout_5x = """
     PLAN SORT (W INDEX (IXA_WPLATA__KONTRAHENT__PK))
     PLAN (W ORDER PK_WPLATA INDEX (IXA_WPLATA__KONTRAHENT__PK))
 """
 
+expected_stdout_6x = """
+    PLAN SORT ("W" INDEX ("PUBLIC"."IXA_WPLATA__KONTRAHENT__PK"))
+    PLAN ("W" ORDER "PUBLIC"."PK_WPLATA" INDEX ("PUBLIC"."IXA_WPLATA__KONTRAHENT__PK"))
+"""
+
 @pytest.mark.version('>=3.0.5')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
