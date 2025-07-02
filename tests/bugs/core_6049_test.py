@@ -5,11 +5,11 @@ ID:          issue-6299
 ISSUE:       6299
 TITLE:       Builtin functions converting binary string to hexadecimal representation and vice versa
 DESCRIPTION:
-  Test may need to be more complex. Currently only basic operations are checked:
-  * ability to insert into binary field result of hex_decode()
-  * result of double conversion: bin_data -> base64_encode -> base64_decode
-    - must be equal to initial bin_data (and similar for bin_data -> hex_encode -> hex_decode)
-  We get columns type details using sqlda_display in order to fix them in expected_stdout.
+    Test may need to be more complex. Currently only basic operations are checked:
+    * ability to insert into binary field result of hex_decode()
+    * result of double conversion: bin_data -> base64_encode -> base64_decode
+      - must be equal to initial bin_data (and similar for bin_data -> hex_encode -> hex_decode)
+    We get columns type details using sqlda_display in order to fix them in expected_stdout.
 JIRA:        CORE-6049
 FBTEST:      bugs.core_6049
 NOTES:
@@ -25,6 +25,10 @@ NOTES:
         Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+NOTES:
+    [02.07.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214
 """
 
 import pytest
@@ -70,26 +74,28 @@ COMMON_OUTPUT = """
     hex_dec(hex_enc(uid)) result    <true>
 """
 
-expected_stdout = f"""
-    01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 20 charset: 1 OCTETS
-    :  name: UID  alias: UID
-    02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 28 charset: 2 ASCII
-    :  name: BASE64_ENCODE  alias: b64_encode(uid)
-    03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 21 charset: 1 OCTETS
-    :  name: BASE64_DECODE  alias: b64_decode(b64_encode(uid))
-    04: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 40 charset: 2 ASCII
-    :  name: HEX_ENCODE  alias: hex_encode(uid)
-    05: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 20 charset: 1 OCTETS
-    :  name: HEX_DECODE  alias: hex_decode(hex_encode(uid))
-    06: sqltype: 32764 BOOLEAN Nullable scale: 0 subtype: 0 len: 1
-    :  name:   alias: b64_dec(b64_enc(uid)) result
-    07: sqltype: 32764 BOOLEAN Nullable scale: 0 subtype: 0 len: 1
-    :  name:   alias: hex_dec(hex_enc(uid)) result
-    {COMMON_OUTPUT}
-"""
-
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'SYSTEM.'
+    expected_stdout = f"""
+        01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 20 charset: 1 {SQL_SCHEMA_PREFIX}OCTETS
+        :  name: UID  alias: UID
+        02: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 28 charset: 2 {SQL_SCHEMA_PREFIX}ASCII
+        :  name: BASE64_ENCODE  alias: b64_encode(uid)
+        03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 21 charset: 1 {SQL_SCHEMA_PREFIX}OCTETS
+        :  name: BASE64_DECODE  alias: b64_decode(b64_encode(uid))
+        04: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 40 charset: 2 {SQL_SCHEMA_PREFIX}ASCII
+        :  name: HEX_ENCODE  alias: hex_encode(uid)
+        05: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 20 charset: 1 {SQL_SCHEMA_PREFIX}OCTETS
+        :  name: HEX_DECODE  alias: hex_decode(hex_encode(uid))
+        06: sqltype: 32764 BOOLEAN Nullable scale: 0 subtype: 0 len: 1
+        :  name:   alias: b64_dec(b64_enc(uid)) result
+        07: sqltype: 32764 BOOLEAN Nullable scale: 0 subtype: 0 len: 1
+        :  name:   alias: hex_dec(hex_enc(uid)) result
+        {COMMON_OUTPUT}
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
