@@ -7,6 +7,11 @@ TITLE:       There is no check of existance generator and exception when privile
 DESCRIPTION:
 JIRA:        CORE-5852
 FBTEST:      bugs.core_5852
+NOTES:
+    [02.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -62,31 +67,40 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    Records affected: 0
-"""
-
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -Exception NO_SUCH_EXC does not exist
-
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -Generator/Sequence NO_SUCH_GEN does not exist
-
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -GRANT failed
     -Generator/Sequence NO_SUCH_SEQ does not exist
+    Records affected: 0
+"""
+
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -Exception "PUBLIC"."NO_SUCH_EXC" does not exist
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -Generator/Sequence "PUBLIC"."NO_SUCH_GEN" does not exist
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -GRANT failed
+    -Generator/Sequence "PUBLIC"."NO_SUCH_SEQ" does not exist
+    Records affected: 0
 """
 
 @pytest.mark.version('>=3.0.4')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
