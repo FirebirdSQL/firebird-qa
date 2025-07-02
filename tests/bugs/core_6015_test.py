@@ -26,6 +26,11 @@ DESCRIPTION:
   Also, error messages differ because CORE-5606 was not backported to FB 3.x.
 JIRA:        CORE-6015
 FBTEST:      bugs.core_6015
+NOTES:
+    [02.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
 """
 
 import pytest
@@ -107,43 +112,36 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('(-)?At procedure .*', '')])
 
-# version: 3.0.8
-
-expected_stderr_1 = """
+expected_stdout_3x = """
     Statement failed, SQLSTATE = 40001
     lock conflict on no wait transaction
-    -At procedure 'SP_EVAL_STATIC_PSQL' line: 3, col: 8
-    At procedure 'SP_EVAL_STATIC_PSQL' line: 3, col: 8
-
+    
     Statement failed, SQLSTATE = 40001
     Attempt to evaluate index expression recursively
-    -At procedure 'SP_EVAL_DYNAMIC_SQL' line: 3, col: 8
     -lock conflict on no wait transaction
 """
 
-@pytest.mark.version('>=3.0.8,<4.0')
-def test_1(act: Action):
-    act.expected_stderr = expected_stderr_1
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
-
-# version: 4.0
-
-expected_stderr_2 = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42000
     Expression evaluation error for index "TEST_STATIC_PSQL_EVAL" on table "TEST_STATIC_PSQL"
     -Attempt to evaluate index expression recursively
-    -At procedure 'SP_EVAL_STATIC_PSQL' line: 3, col: 8
-    At procedure 'SP_EVAL_STATIC_PSQL' line: 3, col: 8
-
     Statement failed, SQLSTATE = 42000
     Expression evaluation error for index "TEST_DYNAMIC_SQL_EVAL" on table "TEST_DYNAMIC_SQL"
     -Attempt to evaluate index expression recursively
-    -At procedure 'SP_EVAL_DYNAMIC_SQL' line: 3, col: 8
 """
 
-@pytest.mark.version('>=4.0')
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42000
+    Expression evaluation error for index ""PUBLIC"."TEST_STATIC_PSQL_EVAL"" on table ""PUBLIC"."TEST_STATIC_PSQL""
+    -Attempt to evaluate index expression recursively
+    Statement failed, SQLSTATE = 42000
+    Expression evaluation error for index ""PUBLIC"."TEST_DYNAMIC_SQL_EVAL"" on table ""PUBLIC"."TEST_DYNAMIC_SQL""
+    -Attempt to evaluate index expression recursively
+"""
+
+
+@pytest.mark.version('>=3.0')
 def test_2(act: Action):
-    act.expected_stderr = expected_stderr_2
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_stdout_3x if act.is_version('<4') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
