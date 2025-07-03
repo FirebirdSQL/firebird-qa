@@ -70,12 +70,12 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
-    Expression evaluation error for index ""PUBLIC"."IDX_TEST_BIT"" on table ""PUBLIC"."TEST""
+    Expression evaluation error for index "PUBLIC"."IDX_TEST_BIT" on table "PUBLIC"."TEST"
     expression evaluation not supported
     Argument for BIN_SHL must be zero or positive
 
     Statement failed, SQLSTATE = 22018
-    Expression evaluation error for index ""PUBLIC"."T_INDEX"" on table ""PUBLIC"."T_TABLE""
+    Expression evaluation error for index "PUBLIC"."T_INDEX" on table "PUBLIC"."T_TABLE"
     conversion error from string "2014.02.33"
 """
 

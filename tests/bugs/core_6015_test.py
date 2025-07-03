@@ -132,10 +132,10 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
-    Expression evaluation error for index ""PUBLIC"."TEST_STATIC_PSQL_EVAL"" on table ""PUBLIC"."TEST_STATIC_PSQL""
+    Expression evaluation error for index "PUBLIC"."TEST_STATIC_PSQL_EVAL" on table "PUBLIC"."TEST_STATIC_PSQL"
     -Attempt to evaluate index expression recursively
     Statement failed, SQLSTATE = 42000
-    Expression evaluation error for index ""PUBLIC"."TEST_DYNAMIC_SQL_EVAL"" on table ""PUBLIC"."TEST_DYNAMIC_SQL""
+    Expression evaluation error for index "PUBLIC"."TEST_DYNAMIC_SQL_EVAL" on table "PUBLIC"."TEST_DYNAMIC_SQL"
     -Attempt to evaluate index expression recursively
 """
 
