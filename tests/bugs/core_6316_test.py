@@ -17,6 +17,11 @@ NOTES:
     [13.03.2025] pzotov
         Changed expected out for 6.x after fixed https://github.com/FirebirdSQL/firebird/issues/8470.
         Question about 'page size NULL' and 'page size DEFAULT' not yet resolved: whether they allowed or no.
+
+    [03.07.2025] pzotov
+    Adjusted expected_output for FB 6.x: min page_size is 8192.
+    ::: NB ::: Test diration time is about 75 seconds.
+    Checked on 6.0.0.892
 """
 
 import pytest
@@ -402,41 +407,41 @@ def test_1(act: Action, capsys):
             create database ... page_size 8191
             DB created. Actual page_size: 8192
             create database ... page_size 4097 default character set win1251
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 4097
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 4096 default character set win1251
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 4096
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 4095 default character set win1251
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 4095
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 2049 default character set win1251
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 2049
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 2048 default character set win1251
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 2048
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 2047 default character set win1251
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 2047
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 1025 default character set win1251
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 1025
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 1024 default character set win1251
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 1024
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 1023 default character set win1251
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 1023
-            DB created. Actual page_size: 4096
+            DB created. Actual page_size: 8192
             create database ... page_size 0 default character set win1251
             DB created. Actual page_size: 8192
             create database ... page_size 0
