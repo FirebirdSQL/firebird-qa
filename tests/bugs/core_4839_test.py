@@ -50,8 +50,8 @@ def test_1(act: Action, tmp_user: User):
     """
 
     expected_stdout_6x = f"""
-        GRANT USAGE ON SEQUENCE PUBLIC.GEN_BAR TO {tmp_user.name.upper()}
-        GRANT USAGE ON EXCEPTION PUBLIC.EXC_FOO TO {tmp_user.name.upper()}
+        GRANT USAGE ON SEQUENCE PUBLIC.GEN_BAR TO USER {tmp_user.name.upper()}
+        GRANT USAGE ON EXCEPTION PUBLIC.EXC_FOO TO USER {tmp_user.name.upper()}
     """
     
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
