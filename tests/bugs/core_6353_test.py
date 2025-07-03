@@ -7,6 +7,11 @@ TITLE:       INT128 has problems with some PSQL objects
 DESCRIPTION:
 JIRA:        CORE-6353
 FBTEST:      bugs.core_6353
+NOTES:
+    [03.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -193,7 +198,7 @@ test_script = """
 act = isql_act('db', test_script, substitutions=[('line: [\\d]+, col: [\\d]+', ''),
                                                  ('[ \t]+', ' ')])
 
-expected_stdout = """
+expected_stdout_5x = """
     ID 1
     ID2 170141183460469231731687303715884105726
     ID -9223372036854775808
@@ -220,30 +225,70 @@ expected_stdout = """
     I_MAX 170141183460469231731687303715884105727
     I_MIN -170141183460469231731687303715884105728
     I_MAX 170141183460469231731687303715884105727
-    V_MIN -170141183460469231731687303715884105728
-    V_MIN 170141183460469231731687303715884105727
-    P_MIN 170141183460469231731687303715884105727
-    P_MAX -170141183460469231731687303715884105728
-    P_MIN 1
-    P_MIN -1
-"""
-
-expected_stderr = """
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST2"."I_MIN", value "-2"
     Statement failed, SQLSTATE = 23000
     validation error for column "TEST2"."I_MIN", value "2"
+    V_MIN -170141183460469231731687303715884105728
+    V_MIN 170141183460469231731687303715884105727
+    P_MIN 170141183460469231731687303715884105727
+    P_MAX -170141183460469231731687303715884105728
     Statement failed, SQLSTATE = HY000
     exception 1
     -EX_ZERO_DIV_NOT_ALLOWED
     -Can not delete -170141183460469231731687303715884105728 by zero
-    -At procedure 'SP_ZERO_DIV' line: 8, col: 12
+    -At procedure 'SP_ZERO_DIV'
+    P_MIN 1
+    P_MIN -1
 """
+
+expected_stdout_6x = """
+    ID 1
+    ID2 170141183460469231731687303715884105726
+    ID -9223372036854775808
+    ID2 -1
+    ID 9223372036854775807
+    ID2 -1
+    I_MIN -170141183460469231731687303715884105728
+    I_MAX 170141183460469231731687303715884105727
+    I_MIN -170141183460469231731687303715884105728
+    I_MAX 170141183460469231731687303715884105727
+    PLAN ("PUBLIC"."V_TEST0" "PUBLIC"."TEST0" ORDER "PUBLIC"."TEST0_I_MIN_DEC")
+    MAX -170141183460469231731687303715884105728
+    PLAN ("PUBLIC"."V_TEST0" "PUBLIC"."TEST0" ORDER "PUBLIC"."TEST0_I_MIN_ASC")
+    MIN -170141183460469231731687303715884105728
+    PLAN ("PUBLIC"."V_TEST0" "PUBLIC"."TEST0" ORDER "PUBLIC"."TEST0_I_MAX_DEC")
+    MAX 170141183460469231731687303715884105727
+    PLAN ("PUBLIC"."V_TEST0" "PUBLIC"."TEST0" ORDER "PUBLIC"."TEST0_I_MAX_ASC")
+    MIN 170141183460469231731687303715884105727
+    I_MIN -170141183460469231731687303715884105728
+    I_MAX 170141183460469231731687303715884105727
+    I_MIN -170141183460469231731687303715884105728
+    I_MAX 170141183460469231731687303715884105727
+    I_MIN -170141183460469231731687303715884105728
+    I_MAX 170141183460469231731687303715884105727
+    I_MIN -170141183460469231731687303715884105728
+    I_MAX 170141183460469231731687303715884105727
+    Statement failed, SQLSTATE = 23000
+    validation error for column "PUBLIC"."TEST2"."I_MIN", value "-2"
+    Statement failed, SQLSTATE = 23000
+    validation error for column "PUBLIC"."TEST2"."I_MIN", value "2"
+    V_MIN -170141183460469231731687303715884105728
+    V_MIN 170141183460469231731687303715884105727
+    P_MIN 170141183460469231731687303715884105727
+    P_MAX -170141183460469231731687303715884105728
+    Statement failed, SQLSTATE = HY000
+    exception 1
+    -"PUBLIC"."EX_ZERO_DIV_NOT_ALLOWED"
+    -Can not delete -170141183460469231731687303715884105728 by zero
+    -At procedure "PUBLIC"."SP_ZERO_DIV"
+    P_MIN 1
+    P_MIN -1
+"""
+
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
