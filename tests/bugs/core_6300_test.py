@@ -15,6 +15,12 @@ NOTES:
         Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+
+    [03.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214.
+
 """
 
 import pytest
@@ -31,23 +37,25 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions = [ ( '^((?!SQLSTATE|sqltype|name:).)*$', ''), ('[ \t]+', ' ') ] )
 
-expected_stdout = """
-    01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 38 charset: 0 NONE
-    :  name: MON$GUID  alias: MON$GUID
-    02: sqltype: 448 VARYING scale: 0 subtype: 0 len: 255 charset: 2 ASCII
-    :  name: MON$FILE_ID  alias: MON$FILE_ID
-    03: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
-    :  name: MON$NEXT_ATTACHMENT  alias: MON$NEXT_ATTACHMENT
-    04: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
-    :  name: MON$NEXT_STATEMENT  alias: MON$NEXT_STATEMENT
-    05: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 255 charset: 0 NONE
-    :  name: RDB$GET_CONTEXT  alias: RDB$GET_CONTEXT
-    06: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 255 charset: 0 NONE
-    :  name: RDB$GET_CONTEXT  alias: RDB$GET_CONTEXT
-"""
-
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  'SYSTEM.'
+    expected_stdout = f"""
+        01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 38 charset: 0 {SQL_SCHEMA_PREFIX}NONE
+        :  name: MON$GUID  alias: MON$GUID
+        02: sqltype: 448 VARYING scale: 0 subtype: 0 len: 255 charset: 2 {SQL_SCHEMA_PREFIX}ASCII
+        :  name: MON$FILE_ID  alias: MON$FILE_ID
+        03: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
+        :  name: MON$NEXT_ATTACHMENT  alias: MON$NEXT_ATTACHMENT
+        04: sqltype: 580 INT64 Nullable scale: 0 subtype: 0 len: 8
+        :  name: MON$NEXT_STATEMENT  alias: MON$NEXT_STATEMENT
+        05: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 255 charset: 0 {SQL_SCHEMA_PREFIX}NONE
+        :  name: RDB$GET_CONTEXT  alias: RDB$GET_CONTEXT
+        06: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 255 charset: 0 {SQL_SCHEMA_PREFIX}NONE
+        :  name: RDB$GET_CONTEXT  alias: RDB$GET_CONTEXT
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
