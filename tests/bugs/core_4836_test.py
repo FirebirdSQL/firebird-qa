@@ -66,9 +66,9 @@ def test_1(act: Action, tmp_user: User, tmp_role: Role):
     """
 
     expected_stdout_6x = f"""
-        GRANT UPDATE (TEXT) ON PUBLIC.TEST TO {tmp_user.name.upper()} WITH GRANT OPTION
+        GRANT UPDATE (TEXT) ON PUBLIC.TEST TO USER {tmp_user.name.upper()} WITH GRANT OPTION
         GRANT UPDATE (TEXT) ON PUBLIC.TEST TO ROLE {tmp_role.name.upper()} GRANTED BY {tmp_user.name.upper()}
-        GRANT UPDATE (TEXT) ON PUBLIC.TEST TO {tmp_user.name.upper()} WITH GRANT OPTION
+        GRANT UPDATE (TEXT) ON PUBLIC.TEST TO USER {tmp_user.name.upper()} WITH GRANT OPTION
     """
 
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
