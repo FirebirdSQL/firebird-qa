@@ -210,7 +210,7 @@ def test_1(act: Action, tmp_user: User):
     expected_stdout_6x = f"""
         USER                            {tmp_user.name.upper()}
         
-        GRANT USAGE ON SCHEMA PUBLIC TO USER PUBLIC
+        GRANT USAGE ON SCHEMA PUBLIC TO PUBLIC
         Statement failed, SQLSTATE = 28000
         no permission for INSERT access to TABLE "SYSTEM"."RDB$CHARACTER_SETS"
         -Effective user is {tmp_user.name.upper()}
