@@ -7,6 +7,10 @@ TITLE:       Forward-compatible expressions LOCALTIME and LOCALTIMESTAMP
 DESCRIPTION:
 JIRA:        CORE-5853
 FBTEST:      bugs.core_5853
+NOTES:
+    [03.07.2025] pzotov
+    Added substitution to suppress all except sqltype and fields name from SQLDA output.
+    Checked on 6.0.0.892; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
 """
 
 import pytest
@@ -16,44 +20,24 @@ db = db_factory()
 
 # version: 3.0
 
-test_script_1 = """
-    set planonly;
-    select current_time, current_timestamp from rdb$database;
+test_script = """
+    set list on;
+    set sqlda_display on;
     select localtime from rdb$database;
     select localtimestamp from rdb$database;
 """
 
-act_1 = isql_act('db', test_script_1)
+act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype:|name:).)*$',''),('[ \t]+',' ')])
 
-expected_stdout_1 = """
-    PLAN (RDB$DATABASE NATURAL)
-    PLAN (RDB$DATABASE NATURAL)
-    PLAN (RDB$DATABASE NATURAL)
+expected_stdout = """
+    01: sqltype: 560 TIME scale: 0 subtype: 0 len: 4
+    : name: LOCALTIME alias: LOCALTIME
+    01: sqltype: 510 TIMESTAMP scale: 0 subtype: 0 len: 8
+    : name: LOCALTIMESTAMP alias: LOCALTIMESTAMP
 """
 
-@pytest.mark.version('>=2.5.9,<4.0')
-def test_1(act_1: Action):
-    act_1.expected_stdout = expected_stdout_1
-    act_1.execute()
-    assert act_1.clean_stdout == act_1.clean_expected_stdout
-
-# version: 4.0
-
-test_script_2 = """
-    set planonly;
-    select current_time, current_timestamp from rdb$database;
-    --select localtime from rdb$database;
-    --select localtimestamp from rdb$database;
-"""
-
-act_2 = isql_act('db', test_script_2)
-
-expected_stdout_2 = """
-    PLAN (RDB$DATABASE NATURAL)
-"""
-
-@pytest.mark.version('>=4.0')
-def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.execute()
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+@pytest.mark.version('>=3.0')
+def test_2(act: Action):
+    act.expected_stdout = expected_stdout
+    act.execute()
+    assert act.clean_stdout == act.clean_expected_stdout
