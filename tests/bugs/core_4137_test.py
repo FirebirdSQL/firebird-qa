@@ -101,7 +101,7 @@ expected_stdout_6x = """
     COMMIT WORK;
     SET AUTODDL ON;
     /* Grant permissions for this database */
-    GRANT USAGE ON SCHEMA PUBLIC TO USER PUBLIC;
+    GRANT USAGE ON SCHEMA PUBLIC TO PUBLIC;
 """
 
 @pytest.mark.version('>=3.0')
