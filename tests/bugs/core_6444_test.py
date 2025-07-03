@@ -15,6 +15,10 @@ NOTES:
         Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+    [03.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.892; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
 """
 import os
 import pytest
@@ -31,18 +35,20 @@ act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|sqltype:|name:)
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = """
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  'SYSTEM.'
+    act.expected_stdout = f"""
         01: sqltype: 496 LONG scale: 0 subtype: 0 len: 4
         :  name: RDB$CONFIG_ID  alias: RDB$CONFIG_ID
-        02: sqltype: 448 VARYING scale: 0 subtype: 0 len: 63 charset: 2 ASCII
+        02: sqltype: 448 VARYING scale: 0 subtype: 0 len: 63 charset: 2 {SQL_SCHEMA_PREFIX}ASCII
         :  name: RDB$CONFIG_NAME  alias: RDB$CONFIG_NAME
-        03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 1020 charset: 4 UTF8
+        03: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 1020 charset: 4 {SQL_SCHEMA_PREFIX}UTF8
         :  name: RDB$CONFIG_VALUE  alias: RDB$CONFIG_VALUE
-        04: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 1020 charset: 4 UTF8
+        04: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 1020 charset: 4 {SQL_SCHEMA_PREFIX}UTF8
         :  name: RDB$CONFIG_DEFAULT  alias: RDB$CONFIG_DEFAULT
         05: sqltype: 32764 BOOLEAN scale: 0 subtype: 0 len: 1
         :  name: RDB$CONFIG_IS_SET  alias: RDB$CONFIG_IS_SET
-        06: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 1020 charset: 4 UTF8
+        06: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 1020 charset: 4 {SQL_SCHEMA_PREFIX}UTF8
         :  name: RDB$CONFIG_SOURCE  alias: RDB$CONFIG_SOURCE
     """
     act.execute(combine_output = True)
