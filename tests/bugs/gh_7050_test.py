@@ -9,6 +9,10 @@ NOTES:
     Test based on example provided in doc/README.monitoring_tables
     Probably much useful test will be implemened later (with join mon$memory_usage etc).
     Checked on 6.0.0.213, 5.0.1.1307.
+
+    [04.07.2025] pzotov
+    Added 'SQL_SCHEMA_*_PREFIX' variables to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.894; 5.0.3.1668.
 """
 
 import pytest
@@ -111,102 +115,104 @@ subs = \
 
 act = isql_act('db', test_script, substitutions = subs)
 
-expected_stdout = """
-    N_FACTORIAL 120
-    MON_STTM_ID
-    MON_CSTM_ID
-    MON_STAT_ID
-    MON_STATE                       1
-    MON_SQL_TEXT_BLOB_ID
-    select n_factorial from fact_static_psql(5)
-    MON_EXPLAINED_PLAN_BLOB_ID
-    Select Expression
-    -> Procedure "FACT_STATIC_PSQL" Scan
-    Records affected: 1
-
-
-    MON_CSTM_ID
-    MON_SQL_TEXT_BLOB_ID
-    select n_factorial from fact_static_psql(5)
-    MON_EXPLAINED_PLAN_BLOB_ID
-    Select Expression
-    -> Procedure "FACT_STATIC_PSQL" Scan
-    MON_OBJ_NAME <null>
-    MON_OBJ_TYPE <null>
-    MON_PKG_NAME <null>
-    MON_STAT_ID
-
-    MON_CSTM_ID
-    MON_SQL_TEXT_BLOB_ID
-    MON_EXPLAINED_PLAN_BLOB_ID
-    Select Expression
-    -> Singularity Check
-    -> Procedure "FACT_STATIC_PSQL" Scan
-    Select Expression
-    -> Singularity Check
-    -> Table "MON$DATABASE" Full Scan
-    MON_OBJ_NAME FACT_STATIC_PSQL
-    MON_OBJ_TYPE 5
-    MON_PKG_NAME <null>
-    MON_STAT_ID
-    Records affected: 2
-
-
-    MON_STTM_ID
-    MON_CALL_ID 192
-    MON_CALLER_ID <null>
-    MON_STAT_ID
-    MON_CSTM_ID
-    MON_OBJ_NAME FACT_STATIC_PSQL
-    MON_OBJ_TYPE 5
-    MON_SRC_ROW 8
-    MON_SRC_COL 17
-
-    MON_STTM_ID
-    MON_CALL_ID 193
-    MON_CALLER_ID 192
-    MON_STAT_ID
-    MON_CSTM_ID
-    MON_OBJ_NAME FACT_STATIC_PSQL
-    MON_OBJ_TYPE 5
-    MON_SRC_ROW 8
-    MON_SRC_COL 17
-
-    MON_STTM_ID
-    MON_CALL_ID 194
-    MON_CALLER_ID 193
-    MON_STAT_ID
-    MON_CSTM_ID
-    MON_OBJ_NAME FACT_STATIC_PSQL
-    MON_OBJ_TYPE 5
-    MON_SRC_ROW 8
-    MON_SRC_COL 17
-
-    MON_STTM_ID
-    MON_CALL_ID 195
-    MON_CALLER_ID 194
-    MON_STAT_ID
-    MON_CSTM_ID
-    MON_OBJ_NAME FACT_STATIC_PSQL
-    MON_OBJ_TYPE 5
-    MON_SRC_ROW 8
-    MON_SRC_COL 17
-
-    MON_STTM_ID
-    MON_CALL_ID 196
-    MON_CALLER_ID 195
-    MON_STAT_ID
-    MON_CSTM_ID
-    MON_OBJ_NAME FACT_STATIC_PSQL
-    MON_OBJ_TYPE 5
-    MON_SRC_ROW 15
-    MON_SRC_COL 13
-    Records affected: 5
-
-"""
-
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PUBLIC_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    SQL_SCHEMA_SYSTEM_PREFIX = '' if act.is_version('<6') else '"SYSTEM".'
+    expected_stdout = f"""
+        N_FACTORIAL 120
+        MON_STTM_ID
+        MON_CSTM_ID
+        MON_STAT_ID
+        MON_STATE                       1
+        MON_SQL_TEXT_BLOB_ID
+        select n_factorial from fact_static_psql(5)
+        MON_EXPLAINED_PLAN_BLOB_ID
+        Select Expression
+        -> Procedure {SQL_SCHEMA_PUBLIC_PREFIX}"FACT_STATIC_PSQL" Scan
+        Records affected: 1
+
+
+        MON_CSTM_ID
+        MON_SQL_TEXT_BLOB_ID
+        select n_factorial from fact_static_psql(5)
+        MON_EXPLAINED_PLAN_BLOB_ID
+        Select Expression
+        -> Procedure {SQL_SCHEMA_PUBLIC_PREFIX}"FACT_STATIC_PSQL" Scan
+        MON_OBJ_NAME <null>
+        MON_OBJ_TYPE <null>
+        MON_PKG_NAME <null>
+        MON_STAT_ID
+
+        MON_CSTM_ID
+        MON_SQL_TEXT_BLOB_ID
+        MON_EXPLAINED_PLAN_BLOB_ID
+        Select Expression
+        -> Singularity Check
+        -> Procedure {SQL_SCHEMA_PUBLIC_PREFIX}"FACT_STATIC_PSQL" Scan
+        Select Expression
+        -> Singularity Check
+        -> Table {SQL_SCHEMA_SYSTEM_PREFIX}"MON$DATABASE" Full Scan
+        MON_OBJ_NAME FACT_STATIC_PSQL
+        MON_OBJ_TYPE 5
+        MON_PKG_NAME <null>
+        MON_STAT_ID
+        Records affected: 2
+
+
+        MON_STTM_ID
+        MON_CALL_ID 192
+        MON_CALLER_ID <null>
+        MON_STAT_ID
+        MON_CSTM_ID
+        MON_OBJ_NAME FACT_STATIC_PSQL
+        MON_OBJ_TYPE 5
+        MON_SRC_ROW 8
+        MON_SRC_COL 17
+
+        MON_STTM_ID
+        MON_CALL_ID 193
+        MON_CALLER_ID 192
+        MON_STAT_ID
+        MON_CSTM_ID
+        MON_OBJ_NAME FACT_STATIC_PSQL
+        MON_OBJ_TYPE 5
+        MON_SRC_ROW 8
+        MON_SRC_COL 17
+
+        MON_STTM_ID
+        MON_CALL_ID 194
+        MON_CALLER_ID 193
+        MON_STAT_ID
+        MON_CSTM_ID
+        MON_OBJ_NAME FACT_STATIC_PSQL
+        MON_OBJ_TYPE 5
+        MON_SRC_ROW 8
+        MON_SRC_COL 17
+
+        MON_STTM_ID
+        MON_CALL_ID 195
+        MON_CALLER_ID 194
+        MON_STAT_ID
+        MON_CSTM_ID
+        MON_OBJ_NAME FACT_STATIC_PSQL
+        MON_OBJ_TYPE 5
+        MON_SRC_ROW 8
+        MON_SRC_COL 17
+
+        MON_STTM_ID
+        MON_CALL_ID 196
+        MON_CALLER_ID 195
+        MON_STAT_ID
+        MON_CSTM_ID
+        MON_OBJ_NAME FACT_STATIC_PSQL
+        MON_OBJ_TYPE 5
+        MON_SRC_ROW 15
+        MON_SRC_COL 13
+        Records affected: 5
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
