@@ -8,8 +8,13 @@ DESCRIPTION:
 JIRA:        CORE-4701
 NOTES:
     [02.11.2024] pzotov
-    Confirmed bug on 3.0.13.33794.
-    Checked on 4.0.6.3165, 5.0.2.1551, 6.0.0.415
+        Confirmed bug on 3.0.13.33794.
+        Checked on 4.0.6.3165, 5.0.2.1551, 6.0.0.415
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
 """
 
 import pytest
@@ -50,7 +55,7 @@ def test_1(act: Action, capsys):
 
     act.execute(combine_output = True)
 
-    act.expected_stdout = """
+    expected_stdout_5x = """
         PLAN (G NATURAL)
         F_NATREADS 3
         Records affected: 1
@@ -58,6 +63,16 @@ def test_1(act: Action, capsys):
         F_IDXREADS 3
         Records affected: 1
     """
+
+    expected_stdout_6x = """
+        PLAN ("G" NATURAL)
+        F_NATREADS 3
+        Records affected: 1
+        PLAN ("G" INDEX ("PUBLIC"."G_IND"))
+        F_IDXREADS 3
+        Records affected: 1
+    """
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
 
     with act.connect_server() as srv:
         srv.database.validate(database = act.db.db_path)
