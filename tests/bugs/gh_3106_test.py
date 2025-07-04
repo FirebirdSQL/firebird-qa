@@ -3,24 +3,19 @@
 """
 ID:          issue-3106
 ISSUE:       3106
-TITLE:       Many indexed reads in a compound index with NULLs
+TITLE:       Indexed reads in a compound index with NULLs present even if record does not exist
 DESCRIPTION:
-    BEFORE fix trace log was like this:
-    ======
-      Table         Natural     Index
-      *******************************
-      RDB$DATABASE        1
-      TEST_TABLE                    3 <<< this line must NOT present now.
-    ======
-    AFTER fix trace must contain line only for RDB$DATABASE in the table statistics section.
-
-    Confirmed bug on 4.0.0.2451: trace statistics contain line with three indexed reads for test table.
-    Checked on 4.0.0.2453 SS/CS: all OK, there are no indexed reads on test table in the trace log.
 JIRA:        CORE-2709
 FBTEST:      bugs.gh_3106
 NOTES:
     [21.06.2022] pzotov
+    Confirmed bug on 4.0.0.2451: table statistics has three indexed reads for 'TEST' table.
     Checked on 4.0.1.2692, 5.0.0.509.
+
+    [04.07.2025] pzotov
+    Re-implemented using con.info.get_table_access_stats(), removed trace launch and parsing.
+    Confirmed problem on 4.0.0.2451.
+    Checked on 6.0.0.892; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import locale
@@ -29,68 +24,55 @@ import pytest
 from firebird.qa import *
 
 init_script = '''
-    recreate table test_table (
+    recreate table test (
         id1 int,
         id2 int,
         id3 int
     );
     commit;
 
-    insert into test_table (id1, id2, id3) values (1, 1, null);
-    insert into test_table (id1, id2, id3) values (1, 2, null);
-    insert into test_table (id1, id2, id3) values (1, 3, null);
-    insert into test_table (id1, id2, id3) values (2, 1, null);
-    insert into test_table (id1, id2, id3) values (2, 2, null);
-    insert into test_table (id1, id2, id3) values (2, 3, null);
+    insert into test (id1, id2, id3) values (1, 1, null);
+    insert into test (id1, id2, id3) values (1, 2, null);
+    insert into test (id1, id2, id3) values (1, 3, null);
+    insert into test (id1, id2, id3) values (2, 1, null);
+    insert into test (id1, id2, id3) values (2, 2, null);
+    insert into test (id1, id2, id3) values (2, 3, null);
     commit;
 
-    create index test_table_idx1 on test_table (id1,id2,id3);
+    create index test_idx_compound on test (id1,id2,id3);
     commit;
 '''
 
 db = db_factory(init = init_script)
-
 act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
-FOUND_EXPECTED_TAB_HEAD_MSG = 'Found table statistics header.'
-FOUND_EXPECTED_RDB_STAT_MSG = 'Found expected line for rdb$database.'
-
-expected_stdout_trace = f"""
-    {FOUND_EXPECTED_TAB_HEAD_MSG}
-    {FOUND_EXPECTED_RDB_STAT_MSG}
-"""
-
+expected_out = 'EXPECTED'
 
 @pytest.mark.trace
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
-    trace_cfg_items = [
-        'time_threshold = 0',
-        'log_statement_finish = true',
-        'print_perf = true',
-    ]
 
-    sql_run='''
-      set list on;
-      select 1 as dummy from rdb$database r left join test_table t on t.id1 = 1 and t.id2 is null;
-    '''
+    with act.db.connect() as con:
+        idx_reads = 0
+        cur = con.cursor()
+        cur.execute("select rdb$relation_id from rdb$relations where rdb$relation_name = upper('test')")
+        src_relation_id = cur.fetchone()[0]
 
-    with act.trace(db_events = trace_cfg_items, encoding=locale.getpreferredencoding()):
-        act.isql(input = sql_run, combine_output = True)
+        for x_table in con.info.get_table_access_stats():
+            if x_table.table_id == src_relation_id:
+                idx_reads = -x_table.indexed if x_table.indexed else 0
 
-    p_tablestat_head = re.compile('Table\\s+Natural\\s+Index', re.IGNORECASE)
-    p_tablestat_must_found = re.compile('rdb\\$database\\s+\\d+', re.IGNORECASE)
-    p_tablestat_must_miss = re.compile('test_table\\s+\\d+', re.IGNORECASE)
+        cur.execute('select 1 /* trace_me */ from test where ID1 = 1 and ID2 IS NULL')
+        data = cur.fetchall()
+        for x_table in con.info.get_table_access_stats():
+            if x_table.table_id == src_relation_id:
+                idx_reads += x_table.indexed if x_table.indexed else 0
 
-    for line in act.trace_log:
-        if p_tablestat_head.search(line):
-            print( FOUND_EXPECTED_TAB_HEAD_MSG )
-        elif p_tablestat_must_found.search(line):
-            print( FOUND_EXPECTED_RDB_STAT_MSG )
-        elif p_tablestat_must_miss.search(line):
-            print( '### FAILED ### found UNEXPECTED line:')
-            print(line.strip())
+    if idx_reads == 0:
+        print(expected_out)
+    else:
+        print(f'UNEXPECTED: {data=}, {idx_reads=} ')
 
-    act.expected_stdout = expected_stdout_trace
+    act.expected_stdout = expected_out
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
