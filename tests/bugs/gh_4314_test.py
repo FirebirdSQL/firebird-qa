@@ -7,7 +7,12 @@ TITLE:       Sub-optimal predicate checking while selecting from a view [CORE398
 DESCRIPTION:
 NOTES:
     [20.08.2024] pzotov
-    Checked on 6.0.0.438, 5.0.2.1479, 4.0.6.3142, 3.0.12.33784.
+        Checked on 6.0.0.438, 5.0.2.1479, 4.0.6.3142, 3.0.12.33784.
+    [26.06.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
 """
 import locale
 import re
@@ -92,7 +97,7 @@ def test_1(act: Action, capsys):
             ps = cur.prepare(test_sql)
             print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
 
-    expected_stdout = """
+    expected_stdout_5x = """
         Select Expression
         ....-> Filter
         ........-> Nested Loop Join (outer)
@@ -117,6 +122,32 @@ def test_1(act: Action, capsys):
         ....................-> Bitmap
         ........................-> Index "RF_REL_NAME" Range Scan (full match)
     """
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_6x = """
+        Select Expression
+        ....-> Filter
+        ........-> Nested Loop Join (outer)
+        ............-> Filter
+        ................-> Table "PUBLIC"."RR" as "PUBLIC"."V" "R" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."RR_ID" Range Scan (upper bound: 1/1)
+        ............-> Filter
+        ................-> Table "PUBLIC"."RF" as "PUBLIC"."V" "PUBLIC"."RF" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."RF_REL_NAME" Range Scan (full match)
+        Select Expression
+        ....-> Filter
+        ........-> Nested Loop Join (outer)
+        ............-> Filter
+        ................-> Table "PUBLIC"."RR" as "D" "R" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."RR_ID" Range Scan (upper bound: 1/1)
+        ............-> Filter
+        ................-> Table "PUBLIC"."RF" as "D" "PUBLIC"."RF" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."RF_REL_NAME" Range Scan (full match)
+    """
+    
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
