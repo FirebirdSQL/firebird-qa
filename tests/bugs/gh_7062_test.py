@@ -6,6 +6,10 @@ ISSUE:       7062
 TITLE:       Creation of expression index does not release its statement correctly
 DESCRIPTION:
 FBTEST:      bugs.gh_7062
+NOTES:
+    [04.07.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -36,15 +40,17 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 22012
-    Expression evaluation error for index "***unknown***" on table "TEST_A"
-    -arithmetic exception, numeric overflow, or string truncation
-    -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
-"""
-
 @pytest.mark.version('>=4.0.1')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 22012
+        Expression evaluation error for index "***unknown***" on table {SQL_SCHEMA_PREFIX}"TEST_A"
+        -arithmetic exception, numeric overflow, or string truncation
+        -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
+    """
+    
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
