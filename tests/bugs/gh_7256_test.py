@@ -4,8 +4,7 @@
 ID:          issue-7256
 ISSUE:       7256
 TITLE:       Inconsistent conversion of non-TEXT blobs in BLOB_APPEND
-NOTES:
-    [22.02.2023] pzotov
+DESCRIPTION:
         1. Test makes TWO subsequent connections:
             1) to write blobs in the table using charset UTF8
             2) to READ that table using charset NONE.
@@ -19,21 +18,23 @@ NOTES:
 
         3. Statement 'select blob_append(<list of nuls>) from test' currently does not show <null> literal.
            This is a bug and must/will be fixed. After that, test will be adjusted.
-
+NOTES:
+    [22.02.2023] pzotov
         Thanks to Vlad for suggestions. Discussed 20-21 feb 2023.
         Checked on 5.0.0.958.
-
-        [03.03.2023] pzotov
+     [03.03.2023] pzotov
         Added 'set blob all' because result of blob_append(null, null) must be visible as literal '<null>'.
         Added substitution for suppressing 'Nullable' flags in the SQLDA output: it is sufficient for this test
         to check only datatypes of result.
         Discussed with Vlad, letters 02-mar-2023 16:01 and 03-mar-2023 14:43.
-
-        Checked on 5.0.0.967, 4.0.3.2904 (intermediate build 03-mar-2023 12:33)
+         Checked on 5.0.0.967, 4.0.3.2904 (intermediate build 03-mar-2023 12:33)
     [14.12.2023] pzotov
         Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+    [04.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -108,30 +109,33 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions = [('^((?!SQLSTATE|sqltype:|BLOB_RESULT).)*$', ''), ('BLOB Nullable', 'BLOB'), ('[ \t]+', ' ')])
 
-expected_stdout = """
-    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 1 OCTETS
-    :  name: BLOB_APPEND  alias: BLOB_RESULT_1
-
-    01: sqltype: 520 BLOB scale: 0 subtype: 0 len: 8
-    :  name: BLOB_APPEND  alias: BLOB_RESULT_2
-
-    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 21 ISO8859_1
-    :  name: BLOB_APPEND  alias: BLOB_RESULT_3A
-
-    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 4 UTF8
-    :  name: BLOB_APPEND  alias: BLOB_RESULT_3B
-
-    01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 2 ASCII
-    :  name: BLOB_APPEND  alias: BLOB_RESULT_4
-
-    01: sqltype: 520 BLOB Nullable scale: 0 subtype: 0 len: 8
-    :  name: BLOB_APPEND  alias: BLOB_RESULT_5
-
-    BLOB_RESULT_5 <null>
-"""
-
 @pytest.mark.version('>=4.0.3')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'SYSTEM.'
+    expected_stdout = f"""
+        01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 1 {SQL_SCHEMA_PREFIX}OCTETS
+        :  name: BLOB_APPEND  alias: BLOB_RESULT_1
+
+        01: sqltype: 520 BLOB scale: 0 subtype: 0 len: 8
+        :  name: BLOB_APPEND  alias: BLOB_RESULT_2
+
+        01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 21 {SQL_SCHEMA_PREFIX}ISO8859_1
+        :  name: BLOB_APPEND  alias: BLOB_RESULT_3A
+
+        01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 4 {SQL_SCHEMA_PREFIX}UTF8
+        :  name: BLOB_APPEND  alias: BLOB_RESULT_3B
+
+        01: sqltype: 520 BLOB scale: 0 subtype: 1 len: 8 charset: 2 {SQL_SCHEMA_PREFIX}ASCII
+        :  name: BLOB_APPEND  alias: BLOB_RESULT_4
+
+        01: sqltype: 520 BLOB Nullable scale: 0 subtype: 0 len: 8
+        :  name: BLOB_APPEND  alias: BLOB_RESULT_5
+
+        BLOB_RESULT_5 <null>
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True, charset = 'None' )
     assert act.clean_stdout == act.clean_expected_stdout
+    	
