@@ -11,6 +11,11 @@ DESCRIPTION:
     Checked on: 4.0.0.2448 - works fine.
     No errors must be during execution of this code.
 FBTEST:      bugs.gh_6778
+NOTES:
+    [04.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -123,11 +128,20 @@ fb5_expected_stdout = """
     PLAN JOIN (C A2 NATURAL, C A1 INDEX (IA1))
 """
 
+fb6_expected_stdout = """
+    -- line, column
+    PLAN JOIN ("C" "PUBLIC"."A1" NATURAL, "C" "PUBLIC"."A2" INDEX ("PUBLIC"."IA2"))
+    -- line, column
+    PLAN JOIN ("C" "PUBLIC"."A2" NATURAL, "C" "PUBLIC"."A1" INDEX ("PUBLIC"."IA1"))
+"""
+
 act = python_act('db', substitutions=[('-- line(:)?\\s+\\d+,\\s+col(umn)?(:)?\\s+\\d+', '-- line, column')])
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
+
     test_script = fb5_test_script if act.is_version('>=5') else fb4_test_script
-    act.expected_stdout = fb5_expected_stdout if act.is_version('>=5') else fb4_expected_stdout
-    act.isql(switches=['-q'], input=test_script)
+    expected_stdout = fb4_expected_stdout if act.is_version('<5') else fb5_expected_stdout if act.is_version('<6') else fb6_expected_stdout
+    act.expected_stdout = expected_stdout
+    act.isql(switches=['-q'], input=test_script, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
