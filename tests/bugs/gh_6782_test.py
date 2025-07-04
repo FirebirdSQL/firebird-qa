@@ -22,11 +22,16 @@ DESCRIPTION:
     Test parses trace log and search there lines with names of known procedures/functions and
     then checks presence of lines with number of fetched records (for selectable procedures) and
     additional statistics ('fetches/reads/writes/marks').
+FBTEST:      bugs.gh_6782
 NOTES:
     [30.06.2022] pzotov
-    Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.509.
-
-FBTEST:      bugs.gh_6782
+        Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.509.
+    [04.07.2025] pzotov
+        Changed list of patterns to find name of procedures / functions (standalone / packaged):
+        we have to take in account name of SQL schema and presense of double quotes in 6.x.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import locale
@@ -142,7 +147,7 @@ db = db_factory(init=init_script)
 
 act = python_act('db')
 
-expected_stdout_trace = """
+expected_stdout_5x = """
     Procedure STANDALONE_SELECTABLE_SP:
     FOUND line with number of fetched records
     FOUND line with execution statistics
@@ -164,6 +169,31 @@ expected_stdout_trace = """
     FOUND line with execution statistics
 
     Procedure SP_MAIN:
+    FOUND line with execution statistics
+"""
+
+expected_stdout_6x = """
+    Procedure "PUBLIC"."STANDALONE_SELECTABLE_SP":
+    FOUND line with number of fetched records
+    FOUND line with execution statistics
+
+    Function "PUBLIC"."STANDALONE_FUNC":
+    FOUND line with execution statistics
+
+    Procedure "PUBLIC"."STANDALONE_NONSELECTED_SP":
+    FOUND line with execution statistics
+
+    Procedure "PUBLIC"."PG_TEST"."PACKAGED_SELECTABLE_SP":
+    FOUND line with number of fetched records
+    FOUND line with execution statistics
+
+    Function "PUBLIC"."PG_TEST"."PACKAGED_FUNC":
+    FOUND line with execution statistics
+
+    Procedure "PUBLIC"."PG_TEST"."PACKAGED_NONSELECTED_SP":
+    FOUND line with execution statistics
+
+    Procedure "PUBLIC"."SP_MAIN":
     FOUND line with execution statistics
 """
 
@@ -189,8 +219,10 @@ def test_1(act: Action, capsys):
 
     allowed_patterns = \
     (
-         r'Procedure\s+(STANDALONE_SELECTABLE_SP:|STANDALONE_NONSELECTED_SP:|PG_TEST.PACKAGED_SELECTABLE_SP:|PG_TEST.PACKAGED_NONSELECTED_SP:|SP_MAIN:)'
-        ,r'Function\s+(STANDALONE_FUNC:|PG_TEST.PACKAGED_FUNC:)'
+         r'Procedure\s+("PUBLIC".)?(")?(STANDALONE_SELECTABLE_SP|STANDALONE_NONSELECTED_SP|SP_MAIN)(")?:'
+        ,r'Function\s+("PUBLIC".)?(")?STANDALONE_FUNC(")?:'
+        ,r'Procedure\s+("PUBLIC".)?(")?PG_TEST(")?.(")?(PACKAGED_SELECTABLE_SP|PACKAGED_NONSELECTED_SP)(")?:'
+        ,r'Function\s+("PUBLIC".)?(")?PG_TEST(")?.(")?(PACKAGED_FUNC)(")?:'
         ,r'\d+\s+record(s|\(s\))?\s+fetched'
         ,r'\s+\d+\s+ms(,)?'
     )
@@ -199,7 +231,7 @@ def test_1(act: Action, capsys):
 
     for line in act.trace_log:
         if line.strip():
-            #print('>'+line.strip()+'<', act.match_any(line, allowed_patterns))
+            # print('>'+line.strip()+'<', act.match_any(line, allowed_patterns))
             if act.match_any(line, allowed_patterns):
                 if ' ms' in line and 'fetch' in line:
                     print('FOUND line with execution statistics')
@@ -208,6 +240,6 @@ def test_1(act: Action, capsys):
                 else:
                     print(line)
             
-    act.expected_stdout = expected_stdout_trace
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
