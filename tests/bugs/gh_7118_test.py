@@ -10,8 +10,12 @@ NOTES:
     https://github.com/FirebirdSQL/firebird/commit/1b192404d43a15d403b5ff92760bc5df9d3c89c3
     (13.09.2022 19:17, "More complete solution for #3357 and #7118")
     One more test that attempts to verify this commit: bugs/gh_7398_test.py
-
     Checked on 3.0.11.33665, 4.0.3.2904, 5.0.0.964
+
+    [04.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.863; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -74,17 +78,23 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-""
-
-expected_stdout = """
-    PLAN JOIN (T1 INDEX (T1_COL), T2 INDEX (RDB$PRIMARY2), T3 INDEX (RDB$PRIMARY3))
-    PLAN JOIN (T1 INDEX (T1_COL), T2 INDEX (RDB$PRIMARY2), T3 INDEX (RDB$PRIMARY3))
-    PLAN JOIN (T1 INDEX (T1_COL), T2 INDEX (RDB$PRIMARY2), T3 INDEX (RDB$PRIMARY3))
-    PLAN JOIN (T1 INDEX (T1_COL), T2 INDEX (RDB$PRIMARY2), T3 INDEX (RDB$PRIMARY3))
-"""
-
 @pytest.mark.version('>=3.0.9')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_5x = """
+        PLAN JOIN (T1 INDEX (T1_COL), T2 INDEX (RDB$PRIMARY2), T3 INDEX (RDB$PRIMARY3))
+        PLAN JOIN (T1 INDEX (T1_COL), T2 INDEX (RDB$PRIMARY2), T3 INDEX (RDB$PRIMARY3))
+        PLAN JOIN (T1 INDEX (T1_COL), T2 INDEX (RDB$PRIMARY2), T3 INDEX (RDB$PRIMARY3))
+        PLAN JOIN (T1 INDEX (T1_COL), T2 INDEX (RDB$PRIMARY2), T3 INDEX (RDB$PRIMARY3))
+    """
+
+    expected_stdout_6x = """
+        PLAN JOIN ("T1" INDEX ("PUBLIC"."T1_COL"), "T2" INDEX ("PUBLIC"."RDB$PRIMARY2"), "T3" INDEX ("PUBLIC"."RDB$PRIMARY3"))
+        PLAN JOIN ("T1" INDEX ("PUBLIC"."T1_COL"), "T2" INDEX ("PUBLIC"."RDB$PRIMARY2"), "T3" INDEX ("PUBLIC"."RDB$PRIMARY3"))
+        PLAN JOIN ("T1" INDEX ("PUBLIC"."T1_COL"), "T2" INDEX ("PUBLIC"."RDB$PRIMARY2"), "T3" INDEX ("PUBLIC"."RDB$PRIMARY3"))
+        PLAN JOIN ("T1" INDEX ("PUBLIC"."T1_COL"), "T2" INDEX ("PUBLIC"."RDB$PRIMARY2"), "T3" INDEX ("PUBLIC"."RDB$PRIMARY3"))
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
