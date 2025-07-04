@@ -7,8 +7,12 @@ TITLE:       subselect losing the index when where clause includes coalesce() [C
 DESCRIPTION:
 NOTES:
     [21.08.2024] pzotov
-    Confirmed bug on 2.1.7.18553. No such problem on 2.5.927156.
-    Checked on 6.0.0.438, 5.0.2.1479, 4.0.6.3142, 3.0.12.33784.
+        Confirmed bug on 2.1.7.18553. No such problem on 2.5.927156.
+        Checked on 6.0.0.438, 5.0.2.1479, 4.0.6.3142, 3.0.12.33784.
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 import pytest
 from firebird.qa import *
@@ -110,7 +114,7 @@ def test_1(act: Action, capsys):
         ps = cur.prepare(test_sql)
         print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
 
-    expected_plan_4x = """
+    expected_stdout_4x = """
         Select Expression
         ....-> Singularity Check
         ........-> First N Records
@@ -127,7 +131,8 @@ def test_1(act: Action, capsys):
         Select Expression
         ....-> Table "T3" Full Scan
     """
-    expected_plan_5x = """
+
+    expected_stdout_5x = """
         Sub-query
         ....-> Singularity Check
         ........-> First N Records
@@ -145,6 +150,26 @@ def test_1(act: Action, capsys):
         Select Expression
         ....-> Table "T3" Full Scan
     """
-    act.expected_stdout = expected_plan_4x if act.is_version('<5') else expected_plan_5x
+    
+    expected_stdout_6x = """
+        Sub-query
+        ....-> Singularity Check
+        ........-> First N Records
+        ............-> Filter
+        ................-> Filter
+        ....................-> Union
+        ........................-> Filter
+        ............................-> Table "PUBLIC"."T1" as "PUBLIC"."V1" "PUBLIC"."T1" Access By ID
+        ................................-> Bitmap
+        ....................................-> Index "PUBLIC"."T1_UK1" Unique Scan
+        ........................-> Filter
+        ............................-> Table "PUBLIC"."T2" as "PUBLIC"."V1" "PUBLIC"."T2" Access By ID
+        ................................-> Bitmap
+        ....................................-> Index "PUBLIC"."T2_UK1" Unique Scan
+        Select Expression
+        ....-> Table "PUBLIC"."T3" Full Scan
+    """
+
+    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
