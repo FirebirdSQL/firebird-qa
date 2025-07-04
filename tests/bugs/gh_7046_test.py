@@ -23,7 +23,6 @@ NOTES:
        "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
     3. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
        (for LINUX this equality is case-sensitive, even when aliases are compared!)
-
 	Checked on 5.0.0.958
     
     [26.06.2023] pzotov
@@ -31,8 +30,11 @@ NOTES:
 	https://github.com/FirebirdSQL/firebird/commit/15b0b297dcde81cc5e1c38cbd4ea761e27f442bd
 	Added check for this ability.
 	Also, comment text now is non-ascii (decided to use parts of 'lorem ipsum' encoded in armenian and georgian)
-
 	Checked on 5.0.0.1087
+
+    [04.07.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214.
 """
 
 import os
@@ -58,6 +60,7 @@ act = python_act('db', substitutions=[('[ \t]+', ' '), ('.*===.*', ''), ('PLUGIN
 tmp_file = temp_file('tmp_gh_7046-ddl.sql')
 fn_meta_log = temp_file('tmp_gh_7046-meta.log')
 
+@pytest.mark.intl
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, tmp_file: Path, fn_meta_log: Path, capsys):
     
@@ -203,10 +206,12 @@ def test_1(act: Action, tmp_file: Path, fn_meta_log: Path, capsys):
                     elif 'SQLSTATE' in line:
                         print('UNEXPECTED ERROR: ',line)
 
+        
+        SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'PUBLIC.'
         act.expected_stdout = u"""
             CREATE MAPPING %(MAPPING_NAME)s USING PLUGIN
             CREATE OR ALTER GLOBAL MAPPING %(MAPPING_NAME)s USING PLUGIN
-            COMMENT ON VIEW V_MAP_INFO IS '%(VIEW_COMMENT)s';
+            COMMENT ON VIEW %(SQL_SCHEMA_PREFIX)sV_MAP_INFO IS '%(VIEW_COMMENT)s';
             COMMENT ON MAPPING TRUSTED_AUTH_7046 IS '%(MAPPING_COMMENT)s';
             COMMENT ON GLOBAL MAPPING TRUSTED_AUTH_7046 IS '%(MAPPING_COMMENT)s';
         """ % locals()
