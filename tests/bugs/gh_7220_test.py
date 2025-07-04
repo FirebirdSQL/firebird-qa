@@ -7,8 +7,12 @@ TITLE:       Dependencies of subroutines are not preserved after backup restore
 DESCRIPTION:
 NOTES:
     [23.02.2023] pzotov
-    Confirmed bug on 5.0.0.520 (but 'drop table' will not fail only if it is executed in the same connect as DDL).
-    Checked on 5.0.0.958 - all fine.
+        Confirmed bug on 5.0.0.520 (but 'drop table' will not fail only if it is executed in the same connect as DDL).
+        Checked on 5.0.0.958 - all fine.
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.863; 5.0.3.1668.
 """
 import pytest
 from firebird.qa import *
@@ -53,34 +57,55 @@ test_sql = """
     drop domain domain1;
 """
 
-expected_out = """
-    RDB$DEPENDENT_NAME              PKG
-    RDB$DEPENDED_ON_NAME            TABLE1
-
-    RDB$DEPENDENT_NAME              PKG
-    RDB$DEPENDED_ON_NAME            DOMAIN1
-
-    RDB$DEPENDENT_NAME              WAIT_EVENT
-    RDB$DEPENDED_ON_NAME            TABLE1
-    Records affected: 3
-
-    drop table table1;
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -cannot delete
-    -COLUMN TABLE1.N
-    -there are 1 dependencies
-
-    drop domain domain1;
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -DROP DOMAIN DOMAIN1 failed
-    -Domain DOMAIN1 is used in procedure PKG.PROC2 (parameter name I) and cannot be dropped
-"""
-
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
 
-    act.expected_stdout = expected_out
+    expected_stdout_5x = """
+        RDB$DEPENDENT_NAME              PKG
+        RDB$DEPENDED_ON_NAME            TABLE1
+
+        RDB$DEPENDENT_NAME              PKG
+        RDB$DEPENDED_ON_NAME            DOMAIN1
+
+        RDB$DEPENDENT_NAME              WAIT_EVENT
+        RDB$DEPENDED_ON_NAME            TABLE1
+        Records affected: 3
+
+        drop table table1;
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -cannot delete
+        -COLUMN TABLE1.N
+        -there are 1 dependencies
+
+        drop domain domain1;
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -DROP DOMAIN DOMAIN1 failed
+        -Domain DOMAIN1 is used in procedure PKG.PROC2 (parameter name I) and cannot be dropped
+    """
+
+    expected_stdout_6x = """
+        RDB$DEPENDENT_NAME              PKG
+        RDB$DEPENDED_ON_NAME            TABLE1
+        RDB$DEPENDENT_NAME              PKG
+        RDB$DEPENDED_ON_NAME            DOMAIN1
+        RDB$DEPENDENT_NAME              WAIT_EVENT
+        RDB$DEPENDED_ON_NAME            TABLE1
+        Records affected: 3
+        drop table table1;
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -cannot delete
+        -COLUMN "PUBLIC"."TABLE1"."N"
+        -there are 1 dependencies
+        drop domain domain1;
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -DROP DOMAIN "PUBLIC"."DOMAIN1" failed
+        -Domain "PUBLIC"."DOMAIN1" is used in procedure "PUBLIC"."PKG"."PROC2" (parameter name "I") and cannot be dropped
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.isql(switches=['-q'], combine_output = True, input = test_sql)
     assert act.clean_stdout == act.clean_expected_stdout
