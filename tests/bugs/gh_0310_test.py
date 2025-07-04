@@ -1741,6 +1741,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                CURRENT_ROLE
     RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                CURRENT_SCHEMA
+    RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                CURRENT_TIME
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                CURRENT_TIMESTAMP
@@ -2327,6 +2329,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                SCROLL
     RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                SEARCH_PATH
+    RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                SECOND
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                SECURITY
@@ -2544,7 +2548,7 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
 
-    Records affected: 509
+    Records affected: 511
 """
 
 @pytest.mark.disabled_in_forks
