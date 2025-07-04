@@ -6,13 +6,16 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/3810
 TITLE:       Wrong or missing IS NULL optimization (regression) [CORE3449]
 NOTES:
     [14.04.2023] pzotov
-    Confirmed poor performance on 3.0.11.33678 (num of fetches = 10'099).
-    Checked on 3.0.11.33681 -- all fine, fetches differ for less than 20.
-
+        Confirmed poor performance on 3.0.11.33678 (num of fetches = 10'099).
+        Checked on 3.0.11.33681 -- all fine, fetches differ for less than 20.
     [22.09.2023] pzotov
-    Changed name of table to simpler. 
-    Removed usage of index test_fld2 after discuss with Anton Zuev (Red Soft) and dimitr,
-    see: https://github.com/FirebirdSQL/firebird-qa/pull/19
+        Changed name of table to simpler. 
+        Removed usage of index test_fld2 after discuss with Anton Zuev (Red Soft) and dimitr,
+        see: https://github.com/FirebirdSQL/firebird-qa/pull/19
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -95,16 +98,23 @@ test_script = """
     );
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
     PLAN (TEST INDEX (TEST_FLD123))
+    COUNT                           0
+    FETCHES_DIFF                    OK, expected
+"""
+
+expected_stdout_6x = """
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_FLD123"))
     COUNT                           0
     FETCHES_DIFF                    OK, expected
 """
 
 @pytest.mark.version('>=3.0.11')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
