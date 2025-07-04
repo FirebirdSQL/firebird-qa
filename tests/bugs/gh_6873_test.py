@@ -6,6 +6,11 @@ ISSUE:       6873
 TITLE:       SIMILAR TO does not use index when pattern starts with non-wildcard character (in contrary to LIKE)
 DESCRIPTION:
 FBTEST:      bugs.gh_6873
+NOTES:
+    [04.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.876; 5.0.3.1668.
 """
 
 import pytest
@@ -102,9 +107,10 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
 	PLAN (TEST INDEX (TEST_X1_ASC))
 	ID                              2
 	ID                              4
@@ -166,8 +172,54 @@ expected_stdout = """
 	ID                              2
 """
 
+expected_stdout_6x = """
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_X1_ASC"))
+    ID                              2
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_X1_ASC"))
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_X1_ASC"))
+    ID                              2
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_Y1_DEC"))
+    ID                              2
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_Y1_DEC"))
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_Y1_DEC"))
+    ID                              2
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_X2_ASC"))
+    ID                              2
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_X2_ASC"))
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_X2_ASC"))
+    ID                              2
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_Y2_DEC"))
+    ID                              2
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_Y2_DEC"))
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_Y2_DEC"))
+    ID                              2
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_X3_ASC"))
+    ID                              2
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_X3_ASC"))
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_X3_ASC"))
+    ID                              2
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_Y3_DEC"))
+    ID                              2
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_Y3_DEC"))
+    ID                              4
+    PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_Y3_DEC"))
+    ID                              2
+"""
+
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
