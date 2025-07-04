@@ -5,11 +5,16 @@ ID:          issue-7257
 ISSUE:       7257
 TITLE:       Support for partial indices
 NOTES:
-    Initial discussion: https://github.com/FirebirdSQL/firebird/issues/3750
-    Checked on 5.0.0.957 (intermediate build).
-    NB. Currently this test contains only trivial cases for check.
-    More complex examples, including misc datatypes (non-ascii, decfloat and int128),
-    will be added later.
+    [18.01.2025] pzotov
+        Initial discussion: https://github.com/FirebirdSQL/firebird/issues/3750
+        Checked on 5.0.0.957 (intermediate build).
+        NB. Currently this test contains only trivial cases for check.
+        More complex examples, including misc datatypes (non-ascii, decfloat and int128),
+        will be added later.
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.863; 5.0.3.1668.
 """
 
 import pytest
@@ -102,37 +107,58 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    PLAN (TEST NATURAL)
-    COUNT                           4
-
-    PLAN (TEST NATURAL)
-    COUNT                           3
-
-    PLAN (TEST INDEX (TEST_F01))
-    COUNT                           196
-
-    PLAN (TEST INDEX (TEST_F02))
-    COUNT                           195
-
-
-    PLAN (TEST ORDER TEST_COMPUTED_ASC)
-    COUNT                           190
-
-    PLAN (TEST ORDER TEST_COMPUTED_DEC)
-    COUNT                           190
-
-    PLAN (TEST INDEX (TEST_COMPUTED_ASC))
-    COUNT                           190
-
-    PLAN (TEST INDEX (TEST_COMPUTED_DEC))
-    COUNT                           190
-"""
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_5x = """
+        PLAN (TEST NATURAL)
+        COUNT                           4
+
+        PLAN (TEST NATURAL)
+        COUNT                           3
+
+        PLAN (TEST INDEX (TEST_F01))
+        COUNT                           196
+
+        PLAN (TEST INDEX (TEST_F02))
+        COUNT                           195
+
+
+        PLAN (TEST ORDER TEST_COMPUTED_ASC)
+        COUNT                           190
+
+        PLAN (TEST ORDER TEST_COMPUTED_DEC)
+        COUNT                           190
+
+        PLAN (TEST INDEX (TEST_COMPUTED_ASC))
+        COUNT                           190
+
+        PLAN (TEST INDEX (TEST_COMPUTED_DEC))
+        COUNT                           190
+    """
+
+    expected_stdout_6x = """
+        PLAN ("PUBLIC"."TEST" NATURAL)
+        COUNT                           4
+        PLAN ("PUBLIC"."TEST" NATURAL)
+        COUNT                           3
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_F01"))
+        COUNT                           196
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_F02"))
+        COUNT                           195
+        PLAN ("PUBLIC"."TEST" ORDER "PUBLIC"."TEST_COMPUTED_ASC")
+        COUNT                           190
+        PLAN ("PUBLIC"."TEST" ORDER "PUBLIC"."TEST_COMPUTED_DEC")
+        COUNT                           190
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_COMPUTED_ASC"))
+        COUNT                           190
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_COMPUTED_DEC"))
+        COUNT                           190
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
