@@ -49,7 +49,7 @@ expected_stdout_5x = """
 expected_stdout_6x = """
     GRANT SELECT ON PUBLIC."t t" TO ROLE "FOR"
     GRANT "FOR CVC" TO CVC
-    GRANT USAGE ON SCHEMA PUBLIC TO USER PUBLIC
+    GRANT USAGE ON SCHEMA PUBLIC TO PUBLIC
     WHO_AM_I CVC
     I_M_PLAYING_ROLE FOR CVC
     Statement failed, SQLSTATE = 42000
