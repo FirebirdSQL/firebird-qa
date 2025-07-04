@@ -6,11 +6,15 @@ ISSUE:       3812
 TITLE:       Query with SP doesn't accept explicit plan [CORE3451]
 NOTES:
     [18.02.2023] pzotov
-    Confirmed problem on 5.0.0.743, got:
-        Statement failed, SQLSTATE = 42S02
-        -Invalid command
-        -there is no alias or table named TMP_SP1 at this scope level
-    Checked on 5.0.0.745 - all OK.
+        Confirmed problem on 5.0.0.743, got:
+            Statement failed, SQLSTATE = 42S02
+            -Invalid command
+            -there is no alias or table named TMP_SP1 at this scope level
+        Checked on 5.0.0.745 - all OK.
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.876; 5.0.3.1668.
 """
 
 import pytest
@@ -65,12 +69,16 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
+expected_stdout_5x = """
     PLAN JOIN (JOIN (TMP_SP1 NATURAL, T1 INDEX (TMP_TBL1_FLD2)), T2 INDEX (TMP_TBL2_FLD1), T3 INDEX (TMP_TBL3_FLD1))
+"""
+
+expected_stdout_6x = """
+    PLAN JOIN (JOIN ("PUBLIC"."TMP_SP1" NATURAL, "T1" INDEX ("PUBLIC"."TMP_TBL1_FLD2")), "T2" INDEX ("PUBLIC"."TMP_TBL2_FLD1"), "T3" INDEX ("PUBLIC"."TMP_TBL3_FLD1"))
 """
 
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
