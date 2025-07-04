@@ -6,8 +6,12 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7137
 TITLE:       Optimizer regression: bad plan (HASH instead of JOIN) is chosen for some inner joins
 NOTES:
     [26.04.2022] pzotov
-    Confirmed bug (ineffective execution plan) on 3.0.9.33560 (09.02.2022).
-    Checked on 6.0.0.336, 5.0.1.1383, 4.0.5.3086, 3.0.10.33569 (24.02.2022) - all fine.
+        Confirmed bug (ineffective execution plan) on 3.0.9.33560 (09.02.2022).
+        Checked on 6.0.0.336, 5.0.1.1383, 4.0.5.3086, 3.0.10.33569 (24.02.2022) - all fine.
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.863; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -88,7 +92,7 @@ def test_1(act: Action, capsys):
             with cur.prepare(q) as ps:
                 print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
 
-    expected_stdout = """
+    expected_stdout_5x = """
         Select Expression
         ....-> Nested Loop Join (inner)
         ........-> Filter
@@ -104,7 +108,24 @@ def test_1(act: Action, capsys):
         ................-> Bitmap
         ....................-> Index "TEST_C_FK" Range Scan (full match)
     """
-   
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_6x = """
+        Select Expression
+        ....-> Nested Loop Join (inner)
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST_B" as "B" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_B_PK" Unique Scan
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST_A" as "A" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_A_NAME" Range Scan (full match)
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST_C" as "C" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_C_FK" Range Scan (full match)
+    """
+    
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
