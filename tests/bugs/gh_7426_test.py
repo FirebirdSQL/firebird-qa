@@ -17,12 +17,15 @@ DESCRIPTION:
     No errors must present in the trace log.
 NOTES:
     [07-sep-2023] pzotov
-    ::: NB :::
-    1. It must be noted that the term 'COMPILE' means parsing of BLR code into an execution tree, i.e. this action
-       occurs when unit code is loaded into metadata cache. 
-    2. Currently there is no way to specify in the trace what EXACT type of DDL trigger fired. It is shown as "AFTER DDL".
-   
-    Checked on 5.0.0.1190.
+        1. The term 'COMPILE' means parsing of BLR code into an execution tree, i.e. this action
+           occurs when unit code is loaded into metadata cache. 
+        2. Currently there is no way to specify in the trace what EXACT type of DDL trigger fired.
+           It is shown as "AFTER DDL".
+        Checked on 5.0.0.1190.
+    [05.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.909; 5.0.3.1668.
 """
 import locale
 import re
@@ -38,7 +41,7 @@ trace = ['log_initfini = false',
          'log_trigger_compile = true',
          ]
 
-allowed_patterns = [ ' ERROR AT ', 'Trigger TRG_ANY_DDL_STATEMENT_', ]
+allowed_patterns = [ ' ERROR AT ', 'Trigger ("PUBLIC".)?(")?TRG_ANY_DDL_STATEMENT_(BEFORE|AFTER)(")?', ]
 allowed_patterns = [ re.compile(r, re.IGNORECASE) for r in  allowed_patterns]
 
 @pytest.mark.trace
@@ -64,7 +67,7 @@ def test_1(act: Action, capsys):
             rdb$set_context('USER_SESSION', 'SKIP_DDL_TRG', '1');
         end
         ^
-        create or alter trigger trg_any_ddl_statement_alter active after any ddl statement as 
+        create or alter trigger trg_any_ddl_statement_after active after any ddl statement as 
         begin
             if (rdb$get_context('USER_SESSION', 'SKIP_DDL_TRG') is null) then
                 execute statement
@@ -135,11 +138,16 @@ def test_1(act: Action, capsys):
                 if p.search(line):
                     print(line.strip())
 
-    expected_stdout = f"""
+    expected_stdout_5x = f"""
         Trigger TRG_ANY_DDL_STATEMENT_BEFORE (BEFORE DDL):
-        Trigger TRG_ANY_DDL_STATEMENT_ALTER (AFTER DDL):
+        Trigger TRG_ANY_DDL_STATEMENT_AFTER (AFTER DDL):
     """
 
-    act.expected_stdout = expected_stdout
+    expected_stdout_6x = f"""
+        Trigger "PUBLIC"."TRG_ANY_DDL_STATEMENT_BEFORE" (BEFORE DDL):
+        Trigger "PUBLIC"."TRG_ANY_DDL_STATEMENT_AFTER" (AFTER DDL):
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
