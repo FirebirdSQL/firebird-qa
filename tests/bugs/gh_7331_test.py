@@ -15,7 +15,7 @@ NOTES:
     [04.07.2025] pzotov
         Separated expected output for FB major versions prior/since 6.x.
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-        Checked on 6.0.0.863; 5.0.3.1668.
+        Checked on 6.0.0.909; 5.0.3.1668.
 """
 
 import pytest

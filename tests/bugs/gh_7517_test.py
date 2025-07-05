@@ -11,7 +11,7 @@ NOTES:
         Checked on 5.0.0.978; 4.0.3.2913; 3.0.11.33666 - all fine.
     [04.07.2025] pzotov
         Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
-        Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214.
+        Checked on 6.0.0.909; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest

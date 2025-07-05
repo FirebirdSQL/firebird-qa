@@ -15,7 +15,7 @@ NOTES:
         Checked on 6.0.0.778; 5.0.3.1649. Initial check was 24-apr-2023 on 5.0.0.1030.
     [04.07.2025] pzotov
         Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
-        Checked on 6.0.0.894; 5.0.3.1668.
+        Checked on 6.0.0.909; 5.0.3.1668.
 """
 import pytest
 from firebird.qa import *
