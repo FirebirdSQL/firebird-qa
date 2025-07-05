@@ -6,13 +6,16 @@ ISSUE:       7331
 TITLE:       Cost-based choice between nested loop join and hash join
 NOTES:
     [20.02.2023] pzotov
-    Confirmed difference between snapshots before and after commit
-    https://github.com/FirebirdSQL/firebird/commit/99c9f63f874d74beb53d338c97c033fe7c8d71a9
-    Checked on 5.0.0.763 (plan did not use hash join); 5.0.0.957 (plan uses HJ).
-
+        Confirmed difference between snapshots before and after commit
+        https://github.com/FirebirdSQL/firebird/commit/99c9f63f874d74beb53d338c97c033fe7c8d71a9
+        Checked on 5.0.0.763 (plan did not use hash join); 5.0.0.957 (plan uses HJ).
     [12.09.2023] pzotov
-    Adjusted plan for query #2 after letter from dimitr, 11-sep-2023 20:23.
-    Checked on 5.0.0.1204
+        Adjusted plan for query #2 after letter from dimitr, 11-sep-2023 20:23.
+        Checked on 5.0.0.1204
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.863; 5.0.3.1668.
 """
 
 import pytest
@@ -112,13 +115,19 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    PLAN HASH (LINEITEM INDEX (LINEITEM_SHIPDATE), ORDERS NATURAL)
-    PLAN HASH (JOIN (CUSTOMER NATURAL, ORDERS INDEX (ORDERS_CUSTKEY_FK)), LINEITEM INDEX (LINEITEM_SHIPDATE))
-"""
-
 @pytest.mark.version('>=5.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_5x = """
+        PLAN HASH (LINEITEM INDEX (LINEITEM_SHIPDATE), ORDERS NATURAL)
+        PLAN HASH (JOIN (CUSTOMER NATURAL, ORDERS INDEX (ORDERS_CUSTKEY_FK)), LINEITEM INDEX (LINEITEM_SHIPDATE))
+    """
+
+    expected_stdout_6x = """
+        PLAN HASH ("PUBLIC"."LINEITEM" INDEX ("PUBLIC"."LINEITEM_SHIPDATE"), "PUBLIC"."ORDERS" NATURAL)
+        PLAN HASH (JOIN ("PUBLIC"."CUSTOMER" NATURAL, "PUBLIC"."ORDERS" INDEX ("PUBLIC"."ORDERS_CUSTKEY_FK")), "PUBLIC"."LINEITEM" INDEX ("PUBLIC"."LINEITEM_SHIPDATE"))
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
