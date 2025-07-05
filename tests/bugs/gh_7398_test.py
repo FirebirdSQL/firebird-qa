@@ -115,20 +115,20 @@ expected_out_6x = """
     ................-> Hash Join (inner) (keys: 1, total key length: 4)
     ....................-> Nested Loop Join (inner)
     ........................-> Filter
-    ............................-> Table "PCP_TIN_REC" as "R" Full Scan
+    ............................-> Table "PUBLIC"."PCP_TIN_REC" as "R" Full Scan
     ........................-> Filter
-    ............................-> Table "PCP_TIN_REC_MAT" as "M" Access By ID
+    ............................-> Table "PUBLIC"."PCP_TIN_REC_MAT" as "M" Access By ID
     ................................-> Bitmap
-    ....................................-> Index "FK_PCP_TIN_REC_MAT_REC" Range Scan (full match)
+    ....................................-> Index "PUBLIC"."FK_PCP_TIN_REC_MAT_REC" Range Scan (full match)
     ........................-> Filter
-    ............................-> Table "INV_ETQ_MAT" as "CUS" Access By ID
+    ............................-> Table "PUBLIC"."INV_ETQ_MAT" as "CUS" Access By ID
     ................................-> Bitmap
-    ....................................-> Index "IDX_INV_ETQ_MAT_ANOMES" Range Scan (full match)
+    ....................................-> Index "PUBLIC"."IDX_INV_ETQ_MAT_ANOMES" Range Scan (full match)
     ....................-> Record Buffer (record length: 33)
     ........................-> Filter
-    ............................-> Table "INV_ETQ_NAT" as "NAT" Access By ID
+    ............................-> Table "PUBLIC"."INV_ETQ_NAT" as "NAT" Access By ID
     ................................-> Bitmap
-    ....................................-> Index "IDX_INV_ETQ_NAT_CML_STAT" Range Scan (full match)
+    ....................................-> Index "PUBLIC"."IDX_INV_ETQ_NAT_CML_STAT" Range Scan (full match)
 """
 
 @pytest.mark.version('>=4.0')
