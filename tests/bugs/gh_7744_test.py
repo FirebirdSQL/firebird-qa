@@ -14,8 +14,9 @@ DESCRIPTION:
     After this we return SQL SECURITY attribute to 'DEFINER' and repeat the same. This attempt must complete with success.
     Finally, we DROP SQL SECURITY. This must again cause permission error for call of every PSQL units.
 NOTES:
-    [12.11.2023] pzotov
-    Checked on 6.0.0.122
+    [05.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.909; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -32,41 +33,6 @@ u_junior = user_factory('db', name='tmp$7744_junior', password='456')
 @pytest.mark.version('>=6.0')
 def test_1(act: Action, u_senior: User, u_junior: User):
 
-    expected_stdout = f"""
-        RES_1                                  4.641588833612778892410076350919446
-        RES_2                                  5.848035476425732131013574720275845
-        RES_3                                  6.694329500821695218826593246399307
-
-        Statement failed, SQLSTATE = 28000
-        no permission for SELECT access to TABLE TEST
-        -Effective user is {u_junior.name}
-
-        Statement failed, SQLSTATE = 28000
-        no permission for SELECT access to TABLE TEST
-        -Effective user is {u_junior.name}
-
-        Statement failed, SQLSTATE = 28000
-        no permission for SELECT access to TABLE TEST
-        -Effective user is {u_junior.name}
-
-        RES_7                                  8.879040017426007084292689552528769
-        RES_8                                  9.283177667225557784820152701838891
-        RES_9                                  9.654893846056297578599327844350667
-
-        Statement failed, SQLSTATE = 28000
-        no permission for SELECT access to TABLE TEST
-        -Effective user is {u_junior.name}
-
-        Statement failed, SQLSTATE = 28000
-        no permission for SELECT access to TABLE TEST
-        -Effective user is {u_junior.name}
-
-        Statement failed, SQLSTATE = 28000
-        no permission for SELECT access to TABLE TEST
-        -Effective user is {u_junior.name}
-    """
-
-    act.expected_stdout = expected_stdout
     test_script = f"""
         set list on;
         connect '{act.db.dsn}' user {act.db.user} password '{act.db.password}';
@@ -194,5 +160,43 @@ def test_1(act: Action, u_senior: User, u_junior: User):
         rollback;
     """
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TABLE_TEST_NAME = 'TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST"'
+
+    expected_stdout = f"""
+        RES_1                                  4.641588833612778892410076350919446
+        RES_2                                  5.848035476425732131013574720275845
+        RES_3                                  6.694329500821695218826593246399307
+
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE {TABLE_TEST_NAME}
+        -Effective user is {u_junior.name}
+
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE {TABLE_TEST_NAME}
+        -Effective user is {u_junior.name}
+
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE {TABLE_TEST_NAME}
+        -Effective user is {u_junior.name}
+
+        RES_7                                  8.879040017426007084292689552528769
+        RES_8                                  9.283177667225557784820152701838891
+        RES_9                                  9.654893846056297578599327844350667
+
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE {TABLE_TEST_NAME}
+        -Effective user is {u_junior.name}
+
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE {TABLE_TEST_NAME}
+        -Effective user is {u_junior.name}
+
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE {TABLE_TEST_NAME}
+        -Effective user is {u_junior.name}
+    """
+
+    act.expected_stdout = expected_stdout
     act.isql(switches=['-q'], input = test_script, connect_db = False, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
