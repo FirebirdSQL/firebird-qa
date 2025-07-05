@@ -12,27 +12,24 @@ DESCRIPTION:
     This behavior changed since snapshot 5.0.0.1304 (date: 16-dec-2023).
 NOTES:
     [17.12.2023] pzotov
-    1. Explained plans for queries where 'tmain' have aliases 'm0'  ... 'm4' have:
-       * 'Filter (preliminary)' - for snapshots before this fix
-       * 'Filter' (WITHOUT preliminary) - after fix
-    2. Last commit in the push is "deterministic uncorrelated subqueries to be considered as invariants" - but there is NO DIFFERENCE
-       between explained plans for 5.x snapshots that belongs to time points just _before_ and _after_ this push.
-       This is because push of PR#7853 has several commits, and one of them did broke such functionality whereas next
-       commit - WITHIN THIS PUSH (!) - did restore previous state (letter by dimitr, 17.12.2023 21:17).
+        1. Explained plans for queries where 'tmain' have aliases 'm0'  ... 'm4' have:
+           * 'Filter (preliminary)' - for snapshots before this fix
+           * 'Filter' (WITHOUT preliminary) - after fix
+        2. Last commit in the push is "deterministic uncorrelated subqueries to be considered as invariants" - but there is NO DIFFERENCE
+           between explained plans for 5.x snapshots that belongs to time points just _before_ and _after_ this push.
+           This is because push of PR#7853 has several commits, and one of them did broke such functionality whereas next
+           commit - WITHIN THIS PUSH (!) - did restore previous state (letter by dimitr, 17.12.2023 21:17).
 
-    3. Actually, NON-correlated subqueries became considered as INVARIANT much earlier, since 5.0.0.890, 10-jan-2023
-       ("Merge pull request #7441 from FirebirdSQL/v5-pretty-explained-plan", a6ce0ec1632ec037b41b9cbcad42fd3ce6a9ea5e).
-       It seems that this old commit (of 10-jan-2023) caused lot of old issues to be considered now as fixed, for example 
-       https://github.com/FirebirdSQL/firebird/issues/3394
-       Query where 'tmain' table has alias 'm4' (and 'tdetl' table is involved - in contrary to all other queries) - is from this ticket.
-       This query explained plan must have "Sub-query (invariant)" since build 5.0.0.890
+        3. Actually, NON-correlated subqueries became considered as INVARIANT much earlier, since 5.0.0.890, 10-jan-2023
+           ("Merge pull request #7441 from FirebirdSQL/v5-pretty-explained-plan", a6ce0ec1632ec037b41b9cbcad42fd3ce6a9ea5e).
+           It seems that this old commit (of 10-jan-2023) caused lot of old issues to be considered now as fixed, for example 
+           https://github.com/FirebirdSQL/firebird/issues/3394
+           Query where 'tmain' table has alias 'm4' (and 'tdetl' table is involved - in contrary to all other queries) - is from this ticket.
+           This query explained plan must have "Sub-query (invariant)" since build 5.0.0.890
 
-    Checked on 5.0.0.1304
-    ::: NB ::: Build 6.0.0.180 - FAILS because this PR still not pushed in master branch. Waiting for commit.
-
-    [18.11.2024] pzotov
-    Remove upper bound for version after this feature was front-ported to 6.x in commit 0d72b8097c292dabb5c9a257a157f20d9362ab26 (16.11.23).
-    Checked on 6.0.0.532.
+    [05.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' and variables to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.909; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -65,36 +62,6 @@ query_lst = (
 
 act = python_act('db')
 
-expected_stdout = """
-    Select Expression
-    ....-> Aggregate
-    ........-> Filter
-    ............-> Table "TMAIN" as "M0" Full Scan
-
-    Select Expression
-    ....-> Aggregate
-    ........-> Filter
-    ............-> Table "TMAIN" as "M1" Full Scan
-
-    Select Expression
-    ....-> Aggregate
-    ........-> Filter
-    ............-> Table "TMAIN" as "M2" Full Scan
-
-    Select Expression
-    ....-> Aggregate
-    ........-> Filter
-    ............-> Table "TMAIN" as "M3" Full Scan
-
-    Sub-query (invariant)
-    ....-> Singularity Check
-    ........-> Aggregate
-    ............-> Table "TDETL" as "D" Full Scan
-    Select Expression
-    ....-> Aggregate
-    ........-> Filter
-    ............-> Table "TMAIN" as "M4" Full Scan
-"""
 #---------------------------------------------------------
 def replace_leading(source, char="."):
     stripped = source.lstrip()
@@ -108,6 +75,40 @@ def test_1(act: Action, capsys):
             with cur.prepare(q) as ps:
                 print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TABLE_TMAIN_NAME = '"TMAIN"' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TMAIN"'
+    TABLE_TDETL_NAME = '"TDETL"' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TDETL"'
+    expected_stdout = f"""
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table {TABLE_TMAIN_NAME} as "M0" Full Scan
+
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table {TABLE_TMAIN_NAME} as "M1" Full Scan
+
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table {TABLE_TMAIN_NAME} as "M2" Full Scan
+
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table {TABLE_TMAIN_NAME} as "M3" Full Scan
+
+        Sub-query (invariant)
+        ....-> Singularity Check
+        ........-> Aggregate
+        ............-> Table {TABLE_TDETL_NAME} as "D" Full Scan
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table {TABLE_TMAIN_NAME} as "M4" Full Scan
+    """
+    
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
