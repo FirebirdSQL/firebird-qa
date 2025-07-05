@@ -11,9 +11,12 @@ DESCRIPTION:
     Restore from this .fbk must finish with WARNING and display name of that index.
 NOTES:
     [30.03.2023] pzotov
-    Unfortunately, I could not find DDL that leads not only to warning (on FB builds after fix)
-    but also to "gbak: ERROR" if we try to restore from this .fbk on FB builds *before* this
-    problem was fixed: 'gbak -rep' on all major FB just silently finished w/o any message.
+        Unfortunately, I could not find DDL that leads not only to warning (on FB builds after fix)
+        but also to "gbak: ERROR" if we try to restore from this .fbk on FB builds *before* this
+        problem was fixed: 'gbak -rep' on all major FB just silently finished w/o any message.
+    [04.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -27,12 +30,6 @@ import re
 db = db_factory()
 
 act = python_act('db')
-
-expected_stdout = """
-    gbak: WARNING:index T2_FLD cannot be used in the specified plan
-    gbak:finishing, closing, and going home
-    gbak:adjusting the ONLINE and FORCED WRITES flags
-"""
 
 fbk_file = temp_file('gh_7499.tmp.fbk')
 
@@ -56,6 +53,14 @@ def test_1(act: Action, fbk_file: Path, capsys):
             if act.match_any(line.strip(), allowed_patterns):
                 print(line)
 
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    INDEX_NAME = 'T2_FLD' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"T2_FLD"'
+    expected_stdout = f"""
+        gbak: WARNING:index {INDEX_NAME} cannot be used in the specified plan
+        gbak:finishing, closing, and going home
+        gbak:adjusting the ONLINE and FORCED WRITES flags
+    """
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
