@@ -13,33 +13,10 @@ DESCRIPTION:
           Number of NR must always be 0.
           Number of IR should increase in proportion to the number of 'OR' terms in the WHERE expression.
 NOTES:
-    [01.11.2023] pzotov
-        0. ::: NB ::: TEST IS LIKELY TO BE SUPPLEMENTED WITH OTHER CASES.
-        1. Explained plan must be displayed with preserved indents, see call to func replace_leading().
-        2. Statistics is gathered using con.info.get_table_access_stats() method.
-           One need to remember that values are cumulative, so we have make two 'snapshots',
-           before and after query execution, and then calculate difference between them.
-
-        Checked on 6.0.0.101.
-
-    [16.12.2023] pzotov
-        Adjusted output to recent changes in FB, currently only for FB 5.x.
-        See:
-            https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83
-            More realistic cardinality adjustments for unmatchable booleans, this should also fix #7904: FB5 bad plan for query
-
-        Output for FB 6.x will be changed later (letter from dimitr, 16.12.2023 10:32)
-
-    [18.01.2025] pzotov
-        Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
-        in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
-        Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
-        This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
-        The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
-
-    [19.01.2025] pzotov
-        Result in 6.x became equal to 5.x. Removed separation of expected* output
-        Checked on 6.0.0.587-90401f7
+    [05.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.909; 5.0.3.1668.
 """
 
 import pytest
@@ -145,7 +122,7 @@ def test_1(act: Action, capsys):
 
     #--------------------------------------------------------------------
 
-    expected_out = f"""
+    expected_stdout_5x = f"""
         Query: {q_list[0]}
         Select Expression
         ....-> Filter
@@ -155,7 +132,7 @@ def test_1(act: Action, capsys):
         NR: 0
         IR: 1000
 
-        Query: select * from test where x = 3 or x = 2
+        Query: {q_list[1]}
         Select Expression
         ....-> Filter
         ........-> Table "TEST" Access By ID
@@ -167,7 +144,7 @@ def test_1(act: Action, capsys):
         NR: 0
         IR: 2000
 
-        Query: select * from test where x = 2 or x = 3 or x = 1
+        Query: {q_list[2]}
         Select Expression
         ....-> Filter
         ........-> Table "TEST" Access By ID
@@ -182,7 +159,7 @@ def test_1(act: Action, capsys):
         NR: 0
         IR: 3000
 
-        Query: select * from test where x = 2 or x is null or x = 3 or x = 1
+        Query: {q_list[3]}
         Select Expression
         ....-> Filter
         ........-> Table "TEST" Access By ID
@@ -200,7 +177,7 @@ def test_1(act: Action, capsys):
         NR: 0
         IR: 4000
 
-        Query: select * from test where x = 5
+        Query: {q_list[4]}
         Select Expression
         ....-> Filter
         ........-> Table "TEST" Access By ID
@@ -209,7 +186,7 @@ def test_1(act: Action, capsys):
         NR: 0
         IR: 1000
 
-        Query: select * from test where x = 6 or x = 5
+        Query: {q_list[5]}
         Select Expression
         ....-> Filter
         ........-> Table "TEST" Access By ID
@@ -221,7 +198,7 @@ def test_1(act: Action, capsys):
         NR: 0
         IR: 2000
 
-        Query: select * from test where x = 5 or x = 4 or x = 6
+        Query: {q_list[6]}
         Select Expression
         ....-> Filter
         ........-> Table "TEST" Access By ID
@@ -236,7 +213,7 @@ def test_1(act: Action, capsys):
         NR: 0
         IR: 3000
 
-        Query: select * from test where x = 6 or x is null or x = 4 or x = 5
+        Query: {q_list[7]}
         Select Expression
         ....-> Filter
         ........-> Table "TEST" Access By ID
@@ -255,6 +232,116 @@ def test_1(act: Action, capsys):
         IR: 4000
     """
 
-    act.expected_stdout = expected_out
+    expected_stdout_6x = f"""
+        Query: {q_list[0]}
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."TEST" Access By ID
+        ............-> Bitmap
+        ................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        NR: 0
+        IR: 1000
+
+        Query: {q_list[1]}
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        NR: 0
+        IR: 2000
+
+        Query: {q_list[2]}
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        NR: 0
+        IR: 3000
+
+        Query: {q_list[3]}
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        ........................-> Bitmap
+        ............................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        NR: 0
+        IR: 4000
+
+        Query: {q_list[4]}
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."TEST" Access By ID
+        ............-> Bitmap
+        ................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        NR: 0
+        IR: 1000
+
+        Query: {q_list[5]}
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        NR: 0
+        IR: 2000
+
+        Query: {q_list[6]}
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        NR: 0
+        IR: 3000
+
+        Query: {q_list[7]}
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."TEST" Access By ID
+        ............-> Bitmap Or
+        ................-> Bitmap Or
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        ........................-> Bitmap
+        ............................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."TEST_X_DEC" Range Scan (full match)
+        NR: 0
+        IR: 4000
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
