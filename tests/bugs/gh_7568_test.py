@@ -6,9 +6,13 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7568
 TITLE:       Equivalence of boolean condition in partial index
 NOTES:
     [03.02.2024] pzotov
-    Test is based on https://github.com/FirebirdSQL/firebird/pull/7987
-    Confirmed problem on 6.0.0.244.
-    Checked on 6.0.0.247.
+        Test is based on https://github.com/FirebirdSQL/firebird/pull/7987
+        Confirmed problem on 6.0.0.244.
+        Checked on 6.0.0.247.
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.863.
 """
 
 import pytest
@@ -69,38 +73,42 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
-
-    PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
-"""
-
 @pytest.mark.version('>=6.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_5x = """
+        PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_ASC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
+        PLAN (TEST INDEX (TEST_IDX_OFFER_DEC))
+    """
+    expected_stdout_6x = """
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_ASC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_ASC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_ASC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_ASC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_ASC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_ASC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_ASC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_DEC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_DEC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_DEC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_DEC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_DEC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_DEC"))
+        PLAN ("PUBLIC"."TEST" INDEX ("PUBLIC"."TEST_IDX_OFFER_DEC"))
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
