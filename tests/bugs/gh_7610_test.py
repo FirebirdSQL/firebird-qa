@@ -14,15 +14,18 @@ DESCRIPTION:
     Query 'select * from test' must fail with 'no permission for SELECT' error.
 NOTES:
     [03.06.2023] pzotov
-    BOTH problems (ability to query table and random numbers in rdb$system_privileges) could be reproduced only in OLD
-    snapshots, not in recent ones! 
-    In FB 4.x last snapshot where *both* problems present is 4.0.0.2571 (20-aug-2021). In 4.0.0.2573 only problem with
-    random number in rdb$ exists, but user can no longer query table.
-    In 4.0.3.2948 (01-jun-2023) content of rdb$ is 0000000000000000.
+        BOTH problems (ability to query table and random numbers in rdb$system_privileges) could be reproduced only in OLD
+        snapshots, not in recent ones! 
+        In FB 4.x last snapshot where *both* problems present is 4.0.0.2571 (20-aug-2021). In 4.0.0.2573 only problem with
+        random number in rdb$ exists, but user can no longer query table.
+        In 4.0.3.2948 (01-jun-2023) content of rdb$ is 0000000000000000.
 
-    In FB 5.x situation is similar: last snapshot with *both* problems is 5.0.0.1000 (02-apr-2023), and since 5.0.0.1001
-    one may see only problem with numbers in rdb$, but they look 'constant': 3400000000000000, and this is so up to 5.0.0.1063.
-    Since 5.0.0.1065 (01-jun-2023) content of rdb$ is 0000000000000000.
+        In FB 5.x situation is similar: last snapshot with *both* problems is 5.0.0.1000 (02-apr-2023), and since 5.0.0.1001
+        one may see only problem with numbers in rdb$, but they look 'constant': 3400000000000000, and this is so up to 5.0.0.1063.
+        Since 5.0.0.1065 (01-jun-2023) content of rdb$ is 0000000000000000.
+    [04.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.909; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -81,6 +84,8 @@ def test_1(act: Action, fbk_file: Path, tmp_user: User, tmp_role: Role, capsys):
         select * from test;
     """
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TABLE_TEST_NAME = 'TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST"'
     expected_stdout = f"""
         MON$USER                        {tmp_user.name.upper()}
         MON$ROLE                        {tmp_role.name.upper()}
@@ -89,7 +94,7 @@ def test_1(act: Action, fbk_file: Path, tmp_user: User, tmp_role: Role, capsys):
         RDB$ROLE_NAME                   {tmp_role.name.upper()}
         RDB$SYSTEM_PRIVILEGES           0000000000000000
         Statement failed, SQLSTATE = 28000
-        no permission for SELECT access to TABLE TEST
+        no permission for SELECT access to TABLE {TABLE_TEST_NAME}
         -Effective user is {tmp_user.name.upper()}
     """
 
