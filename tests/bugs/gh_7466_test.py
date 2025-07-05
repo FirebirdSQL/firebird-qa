@@ -14,36 +14,39 @@ DESCRIPTION:
     No errors must present in the trace log. All created units must be specified in blocks related to compilation.
 NOTES:
     [17-aug-2023] pzotov
-    ::: NB :::
-    0. This test DOES NOT check tracking of plans for queries inside those PSQL modules (i.e. strarting ticket issue,
-       see: https://github.com/FirebirdSQL/firebird/pull/7466#issue-1564439735 ).
-       SEPARATE TEST WILL BE IMPLEMENTED FOR THAT.
-    1. It must be noted that the term 'COMPILE' means parsing of BLR code into an execution tree, i.e. this action
-       occurs when unit code is loaded into metadata cache. 
-    2. Procedures and functions are loaded into metadata cache immediatelly when they are created.
-    3. Triggers are loaded into metadata cache in 'deferred' way, when something occurs that causes trigger to fire.
-       So, DML trigger will fire when we do (for example) INSERT, DB_level trigger - when we do some action on DB level
-       (e.g. connect/disconnect), and similar to DDL trigger.
-    4. Currently there is no way to specify in the trace what EXACT type of DDL trigger fired. It is shown as "AFTER DDL".
-    5. Lot of system-related triggers are displayed in the trace log during creating user-defined units:
-           Trigger RDB$TRIGGER_26 FOR RDB$RELATION_CONSTRAINTS
-           Trigger RDB$TRIGGER_18 FOR RDB$INDEX_SEGMENTS (BEFORE UPDATE)
-           Trigger RDB$TRIGGER_8 FOR RDB$USER_PRIVILEGES (BEFORE DELETE)
-       etc. Test ignores them and takes in account only triggers that have been creates by "our" SQL script.
-    6. User-defined DDL trigger will be loaded into metadata cache MULTIPLE times (three in this test: for create view,
-       its altering and its dropping - although there is no re-connect between these actions). This is conisdered as bug,
-       see: https://github.com/FirebirdSQL/firebird/pull/7426 (currently it is not yet fixed).
-    
-    Checked on 5.0.0.1164.
-    Thanks to dimitr for explanations.
-    Discussed with dimitr, letters 17.08.2023.
+        ::: NB :::
+        0. This test DOES NOT check tracking of plans for queries inside those PSQL modules (i.e. strarting ticket issue,
+           see: https://github.com/FirebirdSQL/firebird/pull/7466#issue-1564439735 ).
+           SEPARATE TEST WILL BE IMPLEMENTED FOR THAT.
+        1. The term 'COMPILE' means parsing of BLR code into an execution tree, i.e. this action
+           occurs when unit code is loaded into metadata cache. 
+        2. Procedures and functions are loaded into metadata cache immediatelly when they are created.
+        3. Triggers are loaded into metadata cache in 'deferred' way, when something occurs that causes trigger to fire.
+           So, DML trigger will fire when we do (for example) INSERT, DB_level trigger - when we do some action on DB level
+           (e.g. connect/disconnect), and similar to DDL trigger.
+        4. Currently there is no way to specify in the trace what EXACT type of DDL trigger fired. It is shown as "AFTER DDL".
+        5. Lot of system-related triggers are displayed in the trace log during creating user-defined units:
+               Trigger RDB$TRIGGER_26 FOR RDB$RELATION_CONSTRAINTS
+               Trigger RDB$TRIGGER_18 FOR RDB$INDEX_SEGMENTS (BEFORE UPDATE)
+               Trigger RDB$TRIGGER_8 FOR RDB$USER_PRIVILEGES (BEFORE DELETE)
+           etc. Test ignores them and takes in account only triggers that have been creates by "our" SQL script.
+        6. User-defined DDL trigger will be loaded into metadata cache MULTIPLE times (three in this test: for create view,
+           its altering and its dropping - although there is no re-connect between these actions). This is conisdered as bug,
+           see: https://github.com/FirebirdSQL/firebird/pull/7426 (currently it is not yet fixed).
+        
+        Checked on 5.0.0.1164.
+        Thanks to dimitr for explanations.
+        Discussed with dimitr, letters 17.08.2023.
 
     [06-sep-2023] pzotov
-    Changed expected output: DDL trigger is loaded into metadata cache only once, so we have to check only SINGLE
-    occurence of "Trigger TRG_DDL (AFTER DDL)" event.
-    See also: https://github.com/FirebirdSQL/firebird/commit/00c2d10102468d5494b413c0de295079f62a27ec
-
-    Checkec on 5.0.0.1190
+        Changed expected output: DDL trigger is loaded into metadata cache only once, so we have to check only SINGLE
+        occurence of "Trigger TRG_DDL (AFTER DDL)" event.
+        See also: https://github.com/FirebirdSQL/firebird/commit/00c2d10102468d5494b413c0de295079f62a27ec
+        Checked on 5.0.0.1190
+    [05.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.909; 5.0.3.1668.
 """
 import locale
 import re
@@ -61,7 +64,12 @@ trace = ['log_initfini = false',
          'log_trigger_compile = true',
          ]
 
-allowed_patterns = [ ' ERROR AT ', 'Trigger TRG_', 'Procedure (SP_TEST|PG_TEST.PG_SP_WORKER)', 'Function (FN_TEST|PG_TEST.PG_FN_WORKER)' ]
+allowed_patterns = [
+     ' ERROR AT ',
+     'Trigger ("PUBLIC".)?(")?TRG_',
+     'Procedure ("PUBLIC".)?(")?(SP_TEST|PG_TEST(")?.(")?PG_SP_WORKER(")?)',
+     'Function ("PUBLIC".)?(")?(FN_TEST|PG_TEST(")?.(")?PG_FN_WORKER)'
+]
 allowed_patterns = [ re.compile(r, re.IGNORECASE) for r in  allowed_patterns]
 
 @pytest.mark.trace
@@ -267,7 +275,7 @@ def test_1(act: Action, capsys):
                 if p.search(line):
                     print(line.strip())
 
-    expected_stdout = f"""
+    expected_stdout_5x = f"""
         Procedure SP_TEST:
         Procedure PG_TEST.PG_SP_WORKER:
         Function FN_TEST:
@@ -277,6 +285,16 @@ def test_1(act: Action, capsys):
         Trigger TRG_DDL (AFTER DDL):
     """
 
-    act.expected_stdout = expected_stdout
+    expected_stdout_6x = f"""
+        Procedure "PUBLIC"."SP_TEST":
+        Procedure "PUBLIC"."PG_TEST"."PG_SP_WORKER":
+        Function "PUBLIC"."FN_TEST":
+        Function "PUBLIC"."PG_TEST"."PG_FN_WORKER":
+        Trigger "PUBLIC"."TRG_DB_CONN" (ON CONNECT):
+        Trigger "PUBLIC"."TRG_TEST_BIU" FOR "PUBLIC"."TEST" (BEFORE INSERT):
+        Trigger "PUBLIC"."TRG_DDL" (AFTER DDL):
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
