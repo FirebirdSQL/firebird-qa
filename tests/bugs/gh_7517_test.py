@@ -6,9 +6,12 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7517
 TITLE:       Successful compiling of procedure with wrong PLAN(s) used by some of its statement(s)
 NOTES:
     [29.03.2023] pzotov
-    Code for reproducing was provided by dimitr, letter 29.03.2023 09:46.
-	Confirmed bug on 3.0.11.33665.
-    Cheched on 5.0.0.978; 4.0.3.2913; 3.0.11.33666 - all fine.
+        Code for reproducing was provided by dimitr, letter 29.03.2023 09:46.
+    	Confirmed bug on 3.0.11.33665.
+        Checked on 5.0.0.978; 4.0.3.2913; 3.0.11.33666 - all fine.
+    [04.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -33,15 +36,17 @@ test_script = """
     from t1;
 """
 
-expected_stdout = """
-    Statement failed, SQLSTATE = 42000
-    index T2_FLD cannot be used in the specified plan
-"""
-
 act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0.11')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    INDEX_NAME = 'T2_FLD' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"T2_FLD"'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 42000
+        index {INDEX_NAME} cannot be used in the specified plan
+    """
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
