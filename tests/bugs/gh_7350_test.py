@@ -25,10 +25,9 @@ NOTES:
              set transaction read committed record_version WAIT;
              select id from test order by id with lock skip locked
         5. Here we check only 'SELECT ... WITH LOCK' behavour. Results of UPDATE and DELETE are checked in gh_7810_test.py
-    [04.07.2025] pzotov
-        Separated expected output for FB major versions prior/since 6.x.
-        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-        Checked on 6.0.0.863; 5.0.3.1668.
+    [05.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' and variables to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.909; 5.0.3.1668.
 """
 
 import pytest
