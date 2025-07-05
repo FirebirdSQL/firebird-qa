@@ -13,29 +13,22 @@ DESCRIPTION: test verifies ability to get records from table which already has s
              All kinds of transaction isolation levels are involved: TABLE STABILITY; SNAPSHOT; RC READ_CONSISTENCY; RC REC_VER and RC NO_REC_VER.
 NOTES:
     [22.11.2023] pzotov
-    1. Parameter ReadConsistency in firebird.conf must be set to 0, i.e. NOT-default value.
-    2. TIL = "RC NO_record_version" can be used to check feature since gh-7811 was fixed (20.11.2023 in master)
-    3. Only persistent table is checked. For session-level GTT (using two transactions for single attach)
-       it is unable to run 'select ... with lock' or 'update/delete ... skip locked': exception raises with message
-       "SQLSTATE = HY000 / Cannot select temporary table ... WITH LOCK"
-       Discussed with dimitr and hvlad, 13.09.2023
-    4. Added WAIT mode to be checked after fixed https://github.com/FirebirdSQL/firebird/issues/7700
-       ( https://github.com/FirebirdSQL/firebird/commit/5b14baa37b6ee214cd8ccc21f2e99dce119fe60e )
-       NOTE: before fix gh-7700, following statement hanged:
-         set transaction read committed record_version WAIT;
-         select id from test order by id with lock skip locked
-    5. Here we check only 'SELECT ... WITH LOCK' behavour. Results of UPDATE and DELETE are checked in gh_7810_test.py
-
-    [25.11.2023] pzotov
-    Writing code requires more care since 6.0.0.150: ISQL does not allow to specify THE SAME terminator twice,
-    i.e.
-    set term @; select 1 from rdb$database @ set term @; - will not compile ("Unexpected end of command" raises).
-
-    Checked on 6.0.0.137 (SS/CS), 5.0.0.1274 (SS/CS).
-
-    [27.11.2023] pzotov
-    Removed branched for 5.x vs 6.x, code now the same for 5.x and 6.x
-    Checked on 5.0.0.1280 (intermediate build 27.11.2023, after backporting, commit dc2d85c17b41fb6c378bffc0896338c4f8856998).
+        1. Parameter ReadConsistency in firebird.conf must be set to 0, i.e. NOT-default value.
+        2. TIL = "RC NO_record_version" can be used to check feature since gh-7811 was fixed (20.11.2023 in master)
+        3. Only persistent table is checked. For session-level GTT (using two transactions for single attach)
+           it is unable to run 'select ... with lock' or 'update/delete ... skip locked': exception raises with message
+           "SQLSTATE = HY000 / Cannot select temporary table ... WITH LOCK"
+           Discussed with dimitr and hvlad, 13.09.2023
+        4. Added WAIT mode to be checked after fixed https://github.com/FirebirdSQL/firebird/issues/7700
+           ( https://github.com/FirebirdSQL/firebird/commit/5b14baa37b6ee214cd8ccc21f2e99dce119fe60e )
+           NOTE: before fix gh-7700, following statement hanged:
+             set transaction read committed record_version WAIT;
+             select id from test order by id with lock skip locked
+        5. Here we check only 'SELECT ... WITH LOCK' behavour. Results of UPDATE and DELETE are checked in gh_7810_test.py
+    [04.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.863; 5.0.3.1668.
 """
 
 import pytest
@@ -44,409 +37,15 @@ from firebird.driver import tpb, Isolation, TraLockResolution, TraAccessMode, Da
 import time
 
 db = db_factory()
-substitutions = [ ('transaction number is \\d+', 'transaction number is'),
-                  ("-At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL' line.*", "-At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'"),
-                  ("-At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE' line.*", "-At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'"),
+substitutions = [ (r'line(:)?\s+\d+.*', ''),
+                  ('transaction number is \\d+', 'transaction number is'),
+                  #("-At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL' line.*", "-At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'"),
+                  #("-At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE' line.*", "-At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'"),
                   ('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost:')
                 ]
 act = python_act('db', substitutions = substitutions)
 
 CHECK_SQL = 'select id from test order by id with lock skip locked'
-
-expected_stdout = f"""
-    QUERY_TYPE = DSQL, TIL = SERIALIZABLE, ACCESS = READ, WAIT = NO_WAIT:
-    lock conflict on no wait transaction
-    -Acquire lock for relation (TEST) failed
-    -901
-    335544345
-    335544382
-    QUERY_TYPE = DSQL, TIL = SNAPSHOT, ACCESS = READ, WAIT = NO_WAIT:
-    attempted update during read-only transaction
-    -817
-    335544361
-    QUERY_TYPE = DSQL, TIL = SNAPSHOT, ACCESS = READ, WAIT = WAIT:
-    attempted update during read-only transaction
-    -817
-    335544361
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = NO_WAIT:
-    attempted update during read-only transaction
-    -817
-    335544361
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = WAIT:
-    attempted update during read-only transaction
-    -817
-    335544361
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
-    attempted update during read-only transaction
-    -817
-    335544361
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
-    attempted update during read-only transaction
-    -817
-    335544361
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
-    attempted update during read-only transaction
-    -817
-    335544361
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
-    attempted update during read-only transaction
-    -817
-    335544361
-    QUERY_TYPE = DSQL, TIL = SERIALIZABLE, ACCESS = WRITE, WAIT = NO_WAIT:
-    lock conflict on no wait transaction
-    -Acquire lock for relation (TEST) failed
-    -901
-    335544345
-    335544382
-    QUERY_TYPE = DSQL, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = DSQL, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = DSQL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_LOCAL, TIL = SERIALIZABLE, ACCESS = READ, WAIT = NO_WAIT:
-    lock conflict on no wait transaction
-    -Acquire lock for relation (TEST) failed
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -901
-    335544345
-    335544382
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = SNAPSHOT, ACCESS = READ, WAIT = NO_WAIT:
-    attempted update during read-only transaction
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -817
-    335544361
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = SNAPSHOT, ACCESS = READ, WAIT = WAIT:
-    attempted update during read-only transaction
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -817
-    335544361
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = NO_WAIT:
-    attempted update during read-only transaction
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -817
-    335544361
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = WAIT:
-    attempted update during read-only transaction
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -817
-    335544361
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
-    attempted update during read-only transaction
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -817
-    335544361
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
-    attempted update during read-only transaction
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -817
-    335544361
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
-    attempted update during read-only transaction
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -817
-    335544361
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
-    attempted update during read-only transaction
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -817
-    335544361
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = SERIALIZABLE, ACCESS = WRITE, WAIT = NO_WAIT:
-    lock conflict on no wait transaction
-    -Acquire lock for relation (TEST) failed
-    -At procedure 'SP_GET_UNLOCKED_ROWS_LOCAL'
-    -901
-    335544345
-    335544382
-    335544842
-    QUERY_TYPE = PSQL_LOCAL, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_LOCAL, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_REMOTE, TIL = SERIALIZABLE, ACCESS = READ, WAIT = NO_WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544345 : lock conflict on no wait transaction
-    335544382 : Acquire lock for relation (TEST) failed
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = SNAPSHOT, ACCESS = READ, WAIT = NO_WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544361 : attempted update during read-only transaction
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = SNAPSHOT, ACCESS = READ, WAIT = WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544361 : attempted update during read-only transaction
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = NO_WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544361 : attempted update during read-only transaction
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544361 : attempted update during read-only transaction
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544361 : attempted update during read-only transaction
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544361 : attempted update during read-only transaction
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544361 : attempted update during read-only transaction
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544361 : attempted update during read-only transaction
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = SERIALIZABLE, ACCESS = WRITE, WAIT = NO_WAIT:
-    Execute statement error at isc_dsql_fetch :
-    335544345 : lock conflict on no wait transaction
-    335544382 : Acquire lock for relation (TEST) failed
-    Statement : select id from test order by id with lock skip locked
-    Data source : Firebird::localhost:
-    -At procedure 'SP_GET_UNLOCKED_ROWS_REMOTE'
-    -901
-    335544926
-    335544842
-    QUERY_TYPE = PSQL_REMOTE, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_REMOTE, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-    QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
-    ID=2
-    ID=3
-    ID=4
-    ID=6
-    ID=7
-    ID=8
-    ID=10
-"""
 
 @pytest.mark.es_eds
 @pytest.mark.version('>=5.0')
@@ -539,6 +138,406 @@ def test_1(act: Action, capsys):
                         finally:
                             tx_free_seeker.rollback()
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TABLE_TEST_NAME = 'TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST"'
+    SP_LOCAL_NAME = "'SP_GET_UNLOCKED_ROWS_LOCAL'" if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"SP_GET_UNLOCKED_ROWS_LOCAL"'
+    SP_REMOTE_NAME = "'SP_GET_UNLOCKED_ROWS_REMOTE'" if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"SP_GET_UNLOCKED_ROWS_REMOTE"'
+
+    expected_stdout = f"""
+        QUERY_TYPE = DSQL, TIL = SERIALIZABLE, ACCESS = READ, WAIT = NO_WAIT:
+        lock conflict on no wait transaction
+        -Acquire lock for relation ({TABLE_TEST_NAME}) failed
+        -901
+        335544345
+        335544382
+        QUERY_TYPE = DSQL, TIL = SNAPSHOT, ACCESS = READ, WAIT = NO_WAIT:
+        attempted update during read-only transaction
+        -817
+        335544361
+        QUERY_TYPE = DSQL, TIL = SNAPSHOT, ACCESS = READ, WAIT = WAIT:
+        attempted update during read-only transaction
+        -817
+        335544361
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = NO_WAIT:
+        attempted update during read-only transaction
+        -817
+        335544361
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = WAIT:
+        attempted update during read-only transaction
+        -817
+        335544361
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
+        attempted update during read-only transaction
+        -817
+        335544361
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
+        attempted update during read-only transaction
+        -817
+        335544361
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
+        attempted update during read-only transaction
+        -817
+        335544361
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
+        attempted update during read-only transaction
+        -817
+        335544361
+        QUERY_TYPE = DSQL, TIL = SERIALIZABLE, ACCESS = WRITE, WAIT = NO_WAIT:
+        lock conflict on no wait transaction
+        -Acquire lock for relation ({TABLE_TEST_NAME}) failed
+        -901
+        335544345
+        335544382
+        QUERY_TYPE = DSQL, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = DSQL, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = DSQL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_LOCAL, TIL = SERIALIZABLE, ACCESS = READ, WAIT = NO_WAIT:
+        lock conflict on no wait transaction
+        -Acquire lock for relation ({TABLE_TEST_NAME}) failed
+        -At procedure {SP_LOCAL_NAME}
+        -901
+        335544345
+        335544382
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = SNAPSHOT, ACCESS = READ, WAIT = NO_WAIT:
+        attempted update during read-only transaction
+        -At procedure {SP_LOCAL_NAME}
+        -817
+        335544361
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = SNAPSHOT, ACCESS = READ, WAIT = WAIT:
+        attempted update during read-only transaction
+        -At procedure {SP_LOCAL_NAME}
+        -817
+        335544361
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = NO_WAIT:
+        attempted update during read-only transaction
+        -At procedure {SP_LOCAL_NAME}
+        -817
+        335544361
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = WAIT:
+        attempted update during read-only transaction
+        -At procedure {SP_LOCAL_NAME}
+        -817
+        335544361
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
+        attempted update during read-only transaction
+        -At procedure {SP_LOCAL_NAME}
+        -817
+        335544361
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
+        attempted update during read-only transaction
+        -At procedure {SP_LOCAL_NAME}
+        -817
+        335544361
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
+        attempted update during read-only transaction
+        -At procedure {SP_LOCAL_NAME}
+        -817
+        335544361
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
+        attempted update during read-only transaction
+        -At procedure {SP_LOCAL_NAME}
+        -817
+        335544361
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = SERIALIZABLE, ACCESS = WRITE, WAIT = NO_WAIT:
+        lock conflict on no wait transaction
+        -Acquire lock for relation ({TABLE_TEST_NAME}) failed
+        -At procedure {SP_LOCAL_NAME}
+        -901
+        335544345
+        335544382
+        335544842
+        QUERY_TYPE = PSQL_LOCAL, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_LOCAL, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_LOCAL, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_REMOTE, TIL = SERIALIZABLE, ACCESS = READ, WAIT = NO_WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544345 : lock conflict on no wait transaction
+        335544382 : Acquire lock for relation ({TABLE_TEST_NAME}) failed
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = SNAPSHOT, ACCESS = READ, WAIT = NO_WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544361 : attempted update during read-only transaction
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = SNAPSHOT, ACCESS = READ, WAIT = WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544361 : attempted update during read-only transaction
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = NO_WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544361 : attempted update during read-only transaction
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = READ, WAIT = WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544361 : attempted update during read-only transaction
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544361 : attempted update during read-only transaction
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544361 : attempted update during read-only transaction
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = NO_WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544361 : attempted update during read-only transaction
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = READ, WAIT = WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544361 : attempted update during read-only transaction
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = SERIALIZABLE, ACCESS = WRITE, WAIT = NO_WAIT:
+        Execute statement error at isc_dsql_fetch :
+        335544345 : lock conflict on no wait transaction
+        335544382 : Acquire lock for relation ({TABLE_TEST_NAME}) failed
+        Statement : select id from test order by id with lock skip locked
+        Data source : Firebird::localhost:
+        -At procedure {SP_REMOTE_NAME}
+        -901
+        335544926
+        335544842
+        QUERY_TYPE = PSQL_REMOTE, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_REMOTE, TIL = SNAPSHOT, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_READ_CONSISTENCY, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = NO_WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+        QUERY_TYPE = PSQL_REMOTE, TIL = READ_COMMITTED_NO_RECORD_VERSION, ACCESS = WRITE, WAIT = WAIT:
+        ID=2
+        ID=3
+        ID=4
+        ID=6
+        ID=7
+        ID=8
+        ID=10
+    """
+    
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
