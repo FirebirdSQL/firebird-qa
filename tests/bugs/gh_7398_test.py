@@ -7,26 +7,29 @@ TITLE:       Worst plan sort created to execute an indexed tables
 DESCRIPTION:
 NOTES:
     [29.09.2024] pzotov
-    1. Ineffective execution plan was up to 4.0.3.2840.
-       Since 4.0.3.2843 plan changed and is the same for all subsequent FB-4.x snapshots.
-       Commit: https://github.com/FirebirdSQL/firebird/commit/1b192404d43a15d403b5ff92760bc5df9d3c89c3
-       (13.09.2022 19:17, "More complete solution for #3357 and #7118")
+        1. Ineffective execution plan was up to 4.0.3.2840.
+           Since 4.0.3.2843 plan changed and is the same for all subsequent FB-4.x snapshots.
+           Commit: https://github.com/FirebirdSQL/firebird/commit/1b192404d43a15d403b5ff92760bc5df9d3c89c3
+           (13.09.2022 19:17, "More complete solution for #3357 and #7118")
 
-    2. Database provided in the ticket has too big size (~335 Mb).
-       Test uses much smaller DB that was created on basis of original one by
-       extraction of small portions of data from tables PCP_TIN_REC_MAT and INV_ETQ_MAT.
-       These tables in original DB have 114115 and 1351211 rows.
-       In DB that is used here these tables have 15000 and 30000 rows corresp.
-       NOT all constraints are used in the test DB. Particularly, following DDL were abandoned:
-           ALTER TABLE PCP_TIN_REC ADD CONSTRAINT FK_PCP_TIN_REC_EMP FOREIGN KEY (ID_EMP) REFERENCES SYS_EMP (ID_EMP);
-           ALTER TABLE PCP_TIN_REC ADD CONSTRAINT FK_PCP_TIN_REC_OP FOREIGN KEY (ID_OP) REFERENCES PCP_OP (ID_OP);
-           ALTER TABLE PCP_TIN_REC_MAT ADD CONSTRAINT FK_PCP_TIN_REC_MAT_MAT FOREIGN KEY (ID_MAT) REFERENCES INV_MAT (ID_MAT);
-       Test database have been backed up using 4.0.3.2840 and compressed to .zip file.
-    3. Because of missed valuable part of source data, I'm not sure that this test verifies exactly ticket issue.
-       But in any case, using this test one may see difference in execution plan that is produced in 4.0.3.2840 and 4.0.3.2843.
-       And such difference also can be seen on original DB (although plans there differ from those which are in test DB).
+        2. Database provided in the ticket has too big size (~335 Mb).
+           Test uses much smaller DB that was created on basis of original one by
+           extraction of small portions of data from tables PCP_TIN_REC_MAT and INV_ETQ_MAT.
+           These tables in original DB have 114115 and 1351211 rows.
+           In DB that is used here these tables have 15000 and 30000 rows corresp.
+           NOT all constraints are used in the test DB. Particularly, following DDL were abandoned:
+               ALTER TABLE PCP_TIN_REC ADD CONSTRAINT FK_PCP_TIN_REC_EMP FOREIGN KEY (ID_EMP) REFERENCES SYS_EMP (ID_EMP);
+               ALTER TABLE PCP_TIN_REC ADD CONSTRAINT FK_PCP_TIN_REC_OP FOREIGN KEY (ID_OP) REFERENCES PCP_OP (ID_OP);
+               ALTER TABLE PCP_TIN_REC_MAT ADD CONSTRAINT FK_PCP_TIN_REC_MAT_MAT FOREIGN KEY (ID_MAT) REFERENCES INV_MAT (ID_MAT);
+           Test database have been backed up using 4.0.3.2840 and compressed to .zip file.
+        3. Because of missed valuable part of source data, I'm not sure that this test verifies exactly ticket issue.
+           But in any case, using this test one may see difference in execution plan that is produced in 4.0.3.2840 and 4.0.3.2843.
+           And such difference also can be seen on original DB (although plans there differ from those which are in test DB).
 
-    Checked on 6.0.0.471, 5.0.2.1519, 4.0.6.3157.
+        Checked on 6.0.0.471, 5.0.2.1519, 4.0.6.3157.
+    [05.07.2025] pzotov
+        Added substitution to suppress all except sqltype and fields name from SQLDA output.
+        Checked on 6.0.0.892; 5.0.3.1668.
 """
 
 import locale
