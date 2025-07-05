@@ -12,6 +12,9 @@ NOTES:
         Added 'SQLSTATE' in substitutions: runtime error must not be filtered out by '?!(...)' pattern
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
+    [04.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' and variables - to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.909; 5.0.3.1668; 4.0.6.3214.
 """
 import locale
 import pytest
@@ -42,8 +45,9 @@ def test_1(act: Action):
         select sp_test_func() as runtotal from rdb$database rows 0;
     """
 
-    expected_stdout = """
-        01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 52 WIN1251
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'SYSTEM.'
+    expected_stdout = f"""
+        01: sqltype: 520 BLOB Nullable scale: 0 subtype: 1 len: 8 charset: 52 {SQL_SCHEMA_PREFIX}WIN1251
     """
 
     act.expected_stdout = expected_stdout
