@@ -29,6 +29,11 @@ NOTES:
         Confirmed bug on 6.0.0.421, 5.0.1.1469
         Checked on 6.0.0.423, 5.0.2.1477
     [06.07.2025] pzotov
+        ::: NB ::: See doc/sql.extensions/README.schemas.md 
+        When working with object names in ... `MAKE_DBKEY`, the names containing special characters or lowercase
+        letters must be enclosed in quotes ... In earlier versions, `MAKE_DBKEY` required an exact table name as
+        its first parameter and did not support the use of double quotes for special characters.
+        ----------------------------------------------------------------------------------------
         Separated expected output for FB major versions prior/since 6.x.
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.914; 5.0.3.1668.
@@ -215,6 +220,11 @@ def test_1(act: Action, capsys):
                     ^
                 """
             else:
+                # ::: NB ::: See doc/sql.extensions/README.schemas.md 
+                # When working with object names in ... `MAKE_DBKEY`, the names containing special characters or lowercase
+                # letters must be enclosed in quotes ... In earlier versions, `MAKE_DBKEY` required an exact table name as
+                # its first parameter and did not support the use of double quotes for special characters.
+                #
                 test_sql = f"""
                     recreate table "{table_random_uname_quoted}"(id int)
                     ^
@@ -224,6 +234,9 @@ def test_1(act: Action, capsys):
                         select /* {range_name=} {iter=} */ id
                         from "{table_random_uname_quoted}"
                         where rdb$db_key = make_dbkey('"{table_random_uname_quoted}"', 0)
+                        --                             |                           |
+                        --                             |                           |
+                        --                             +----- required in  6.x ----+
                         into id1;
                     end
                     ^
