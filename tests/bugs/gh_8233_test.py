@@ -7,26 +7,27 @@ TITLE:       SubQueryConversion = true - multiple rows in singleton select
 DESCRIPTION:
 NOTES:
     [27.08.2024] pzotov
-    1. Confirmed bug on 5.0.1.1485-274af35 (26.08.2024), got for SubQueryConversion=true:
-       "multiple rows in singleton select", gdscodes: (335544652, 335544842)
-    2. Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
-       Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
-    3. Table 't1' must have more than one row for bug reproducing. Query must be enclosed in execute block.
-    4. Custom driver config objects are created here, one with SubQueryConversion = true and second with false.
-
+        1. Confirmed bug on 5.0.1.1485-274af35 (26.08.2024), got for SubQueryConversion=true:
+           "multiple rows in singleton select", gdscodes: (335544652, 335544842)
+        2. Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
+           Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
+        3. Table 't1' must have more than one row for bug reproducing. Query must be enclosed in execute block.
+        4. Custom driver config objects are created here, one with SubQueryConversion = true and second with false.
     [18.01.2025] pzotov
-    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
-    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
-    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
-    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
-    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
-    
-    Checked on 5.0.2.1487-6934878 -- all ok.
-    Thanks to dimitr for the advice on implementing the test.
+        Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+        in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+        Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+        This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+        The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+        Checked on 5.0.2.1487-6934878 -- all ok.
+        Thanks to dimitr for the advice on implementing the test.
 
     [16.04.2025] pzotov
-    Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
-    Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
+        Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
+        Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
+    [06.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 
 import pytest
@@ -118,6 +119,7 @@ def test_1(act: Action, capsys):
             if ps:
                 ps.free()
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
     act.expected_stdout = f"""
         Select Expression (line 5, column 12)
         ....-> Singularity Check
@@ -125,9 +127,9 @@ def test_1(act: Action, capsys):
         ............-> Filter
         ................-> Hash Join (semi)
         ....................-> Sort (record length: 28, key length: 8)
-        ........................-> Table "T1" Full Scan
+        ........................-> Table {SQL_SCHEMA_PREFIX}"T1" Full Scan
         ....................-> Record Buffer (record length: 25)
-        ........................-> Table "T2" Full Scan
+        ........................-> Table {SQL_SCHEMA_PREFIX}"T2" Full Scan
         3
     """
     act.stdout = capsys.readouterr().out
