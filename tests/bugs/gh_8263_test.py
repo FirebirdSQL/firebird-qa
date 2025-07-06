@@ -20,15 +20,16 @@ DESCRIPTION:
     'Index "..." Full Scan' line.
 NOTES:
     [28.09.2024] pzotov
-    ::: NB :::
-    This test forced to change prototypes of firebird.conf for 5.x and 6.x, see in $QA_HOME/firebird-qa/configs/
-    files 'fb50_all.conf' and 'fb60_all.conf': they now contain ParallelWorkers > 1.
-    This change may affect on entire QA run result! Some other tests may need to be adjusted after this.
-
-    Thanks to Vlad for suggestions about this test implementation.
-
-    Confirmed bug on 6.0.0.471, 5.0.2.1516
-    Checked on 6.0.0.474, 5.0.2.1519 -- all Ok.
+        ::: NB :::
+        This test forced to change prototypes of firebird.conf for 5.x and 6.x, see in $QA_HOME/firebird-qa/configs/
+        files 'fb50_all.conf' and 'fb60_all.conf': they now contain ParallelWorkers > 1.
+        This change may affect on entire QA run result! Some other tests may need to be adjusted after this.
+        Thanks to Vlad for suggestions about this test implementation.
+        Confirmed bug on 6.0.0.471, 5.0.2.1516
+        Checked on 6.0.0.474, 5.0.2.1519 -- all Ok.
+    [06.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.914; 5.0.3.1668; 4.0.6.3214.
 """
 import locale
 from pathlib import Path
@@ -135,10 +136,11 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
         # Print explained plan with padding eash line by dots in order to see indentations:
         print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
     act.expected_stdout = f"""
         Select Expression
-        ....-> Table "TEST" Access By ID
-        ........-> Index "TEST_ID" Full Scan
+        ....-> Table {SQL_SCHEMA_PREFIX}"TEST" Access By ID
+        ........-> Index {SQL_SCHEMA_PREFIX}"TEST_ID" Full Scan
     """
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
