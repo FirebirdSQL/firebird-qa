@@ -115,7 +115,7 @@ def test_1(act: Action, capsys):
 
     print(max_keys_msg)
 
-    act.expected_stdout = f"""
+    expected_stdout_5x = f"""
         Select Expression
         ....-> Filter
         ........-> Hash Join (inner) (keys, total key length)
@@ -127,6 +127,21 @@ def test_1(act: Action, capsys):
         ................-> Table "TEST2" as "T2" Full Scan
         {expected_keys}
     """
+
+    expected_stdout_6x = f"""
+        Select Expression
+        ....-> Filter
+        ........-> Hash Join (inner) (keys, total key length)
+        ............-> Hash Join (inner) (keys, total key length)
+        ................-> Table "PUBLIC"."TEST3" as "T3" Full Scan
+        ................-> Record Buffer (record length)
+        ....................-> Table "PUBLIC"."TEST1" as "T1" Full Scan
+        ............-> Record Buffer (record length)
+        ................-> Table "PUBLIC"."TEST2" as "T2" Full Scan
+        {expected_keys}
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
