@@ -7,9 +7,12 @@ TITLE:       Partial index uniqueness violation (changes in columns participatin
 DESCRIPTION:
 NOTES:
     [19.04.2024] pzotov
-    Reduced min_version to 5.0.1 after backporting (commit #0e9ef69).
-    Confirmed bug on 6.0.0.315; confirmed problem noted as second case (see ticket) in 6.0.0.321 #1d96c10.
-    Checked on 6.0.0.325 #f5930a5, 5.0.1.1383 #0e9ef69 (intermediate snapshot) - all OK.
+        Reduced min_version to 5.0.1 after backporting (commit #0e9ef69).
+        Confirmed bug on 6.0.0.315; confirmed problem noted as second case (see ticket) in 6.0.0.321 #1d96c10.
+        Checked on 6.0.0.325 #f5930a5, 5.0.1.1383 #0e9ef69 (intermediate snapshot) - all OK.
+    [06.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 
 import pytest
@@ -75,39 +78,41 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
 
-expected_stdout = """
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TEST1_IDX_A"
-    -Problematic key value is ("T1_A" = 2)
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TEST1_IDX_A"
-    -Problematic key value is ("T1_A" = 1)
-
-    T1_A                            1
-    T1_A_CNT                        1
-
-    T1_A                            2
-    T1_A_CNT                        1
-
-    T2_ID                           1
-    T2_A                            1
-    T2_B                            0
-
-    T2_ID                           2
-    T2_A                            2
-    T2_B                            0
-
-    T2_ID                           3
-    T2_A                            1
-    T2_B                            0
-
-    T2_ID                           4
-    T2_A                            2
-    T2_B                            1
-"""
-
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {SQL_SCHEMA_PREFIX}"TEST1_IDX_A"
+        -Problematic key value is ("T1_A" = 2)
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {SQL_SCHEMA_PREFIX}"TEST1_IDX_A"
+        -Problematic key value is ("T1_A" = 1)
+
+        T1_A                            1
+        T1_A_CNT                        1
+
+        T1_A                            2
+        T1_A_CNT                        1
+
+        T2_ID                           1
+        T2_A                            1
+        T2_B                            0
+
+        T2_ID                           2
+        T2_A                            2
+        T2_B                            0
+
+        T2_ID                           3
+        T2_A                            1
+        T2_B                            0
+
+        T2_ID                           4
+        T2_A                            2
+        T2_B                            1
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
