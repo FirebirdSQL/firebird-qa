@@ -66,62 +66,110 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions = [('[-]?At line \\d+.*', '')])
 
-expected_stdout = """
-    Statement failed, SQLSTATE = 22021
-    unsuccessful metadata update
-    -CREATE VIEW V_TEST_1 failed
-    -Dynamic SQL Error
-    -SQL error code = -204
-    -COLLATION MISSED_COLL for CHARACTER SET UTF8 is not defined
-
-    Statement failed, SQLSTATE = 22021
-    unsuccessful metadata update
-    -CREATE PROCEDURE SP_TEST_1 failed
-    -Dynamic SQL Error
-    -SQL error code = -204
-    -COLLATION MISSED_COLL for CHARACTER SET UTF8 is not defined
-
-    Statement failed, SQLSTATE = 22021
-    unsuccessful metadata update
-    -CREATE PROCEDURE SP_TEST_2 failed
-    -Dynamic SQL Error
-    -SQL error code = -204
-    -COLLATION MISSED_COLL for CHARACTER SET UTF8 is not defined
-
-    Statement failed, SQLSTATE = 22021
-    unsuccessful metadata update
-    -CREATE FUNCTION FN_TEST_1 failed
-    -Dynamic SQL Error
-    -SQL error code = -204
-    -COLLATION MISSED_COLL for CHARACTER SET UTF8 is not defined
-
-    Statement failed, SQLSTATE = 42S02
-    Dynamic SQL Error
-    -SQL error code = -204
-    -Table unknown
-    -V_TEST_1
-
-    Statement failed, SQLSTATE = 39000
-    Dynamic SQL Error
-    -SQL error code = -804
-    -Function unknown
-    -FN_TEST_1
-
-    Statement failed, SQLSTATE = 42S02
-    Dynamic SQL Error
-    -SQL error code = -204
-    -Table unknown
-    -SP_TEST_1
-
-    Statement failed, SQLSTATE = 42000
-    Dynamic SQL Error
-    -SQL error code = -204
-    -Procedure unknown
-    -SP_TEST_2
-"""
-
 @pytest.mark.version('>=6.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+
+    expected_stdout_5x = """
+        Statement failed, SQLSTATE = 22021
+        unsuccessful metadata update
+        -CREATE VIEW V_TEST_1 failed
+        -Dynamic SQL Error
+        -SQL error code = -204
+        -COLLATION MISSED_COLL for CHARACTER SET UTF8 is not defined
+
+        Statement failed, SQLSTATE = 22021
+        unsuccessful metadata update
+        -CREATE PROCEDURE SP_TEST_1 failed
+        -Dynamic SQL Error
+        -SQL error code = -204
+        -COLLATION MISSED_COLL for CHARACTER SET UTF8 is not defined
+
+        Statement failed, SQLSTATE = 22021
+        unsuccessful metadata update
+        -CREATE PROCEDURE SP_TEST_2 failed
+        -Dynamic SQL Error
+        -SQL error code = -204
+        -COLLATION MISSED_COLL for CHARACTER SET UTF8 is not defined
+
+        Statement failed, SQLSTATE = 22021
+        unsuccessful metadata update
+        -CREATE FUNCTION FN_TEST_1 failed
+        -Dynamic SQL Error
+        -SQL error code = -204
+        -COLLATION MISSED_COLL for CHARACTER SET UTF8 is not defined
+
+        Statement failed, SQLSTATE = 42S02
+        Dynamic SQL Error
+        -SQL error code = -204
+        -Table unknown
+        -V_TEST_1
+
+        Statement failed, SQLSTATE = 39000
+        Dynamic SQL Error
+        -SQL error code = -804
+        -Function unknown
+        -FN_TEST_1
+
+        Statement failed, SQLSTATE = 42S02
+        Dynamic SQL Error
+        -SQL error code = -204
+        -Table unknown
+        -SP_TEST_1
+
+        Statement failed, SQLSTATE = 42000
+        Dynamic SQL Error
+        -SQL error code = -204
+        -Procedure unknown
+        -SP_TEST_2
+    """
+
+    expected_stdout_6x = """
+        Statement failed, SQLSTATE = 22021
+        unsuccessful metadata update
+        -CREATE VIEW "PUBLIC"."V_TEST_1" failed
+        -Dynamic SQL Error
+        -SQL error code = -204
+        -COLLATION "PUBLIC"."MISSED_COLL" for CHARACTER SET "SYSTEM"."UTF8" is not defined
+        Statement failed, SQLSTATE = 22021
+        unsuccessful metadata update
+        -CREATE PROCEDURE "PUBLIC"."SP_TEST_1" failed
+        -Dynamic SQL Error
+        -SQL error code = -204
+        -COLLATION "PUBLIC"."MISSED_COLL" for CHARACTER SET "SYSTEM"."UTF8" is not defined
+        Statement failed, SQLSTATE = 22021
+        unsuccessful metadata update
+        -CREATE PROCEDURE "PUBLIC"."SP_TEST_2" failed
+        -Dynamic SQL Error
+        -SQL error code = -204
+        -COLLATION "PUBLIC"."MISSED_COLL" for CHARACTER SET "SYSTEM"."UTF8" is not defined
+        Statement failed, SQLSTATE = 22021
+        unsuccessful metadata update
+        -CREATE FUNCTION "PUBLIC"."FN_TEST_1" failed
+        -Dynamic SQL Error
+        -SQL error code = -204
+        -COLLATION "PUBLIC"."MISSED_COLL" for CHARACTER SET "SYSTEM"."UTF8" is not defined
+        Statement failed, SQLSTATE = 42S02
+        Dynamic SQL Error
+        -SQL error code = -204
+        -Table unknown
+        -"V_TEST_1"
+        Statement failed, SQLSTATE = 39000
+        Dynamic SQL Error
+        -SQL error code = -804
+        -Function unknown
+        -"FN_TEST_1"
+        Statement failed, SQLSTATE = 42S02
+        Dynamic SQL Error
+        -SQL error code = -204
+        -Table unknown
+        -"SP_TEST_1"
+        Statement failed, SQLSTATE = 42000
+        Dynamic SQL Error
+        -SQL error code = -204
+        -Procedure unknown
+        -"SP_TEST_2"
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
