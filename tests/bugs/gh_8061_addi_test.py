@@ -14,22 +14,30 @@ DESCRIPTION:
        (paragraph "Validity of Unnesting")
     2) https://jonathanlewis.wordpress.com/2007/02/26/subquery-with-or/
 NOTES:
-    1. One need to change config parameter SubQueryConversion to 'true' when check FB 5.x.
-    2. Commits:
-       6.x:
-           22.03.2025 10:47
-           https://github.com/FirebirdSQL/firebird/commit/fc12c0ef392fec9c83d41bc17da3dc233491498c
-           (Unnest IN/ANY/EXISTS subqueries and optimize them using semi-join algorithm (#8061))
-       5.x
-           31.07.2024 09:46
-           https://github.com/FirebirdSQL/firebird/commit/4943b3faece209caa93cc9573803677019582f1c
-           (Added support for semi/anti and outer joins to hash join algorithm ...)
-           Also:
-           14.09.2024 09:24
-           https://github.com/FirebirdSQL/firebird/commit/5fa4ae611d18fd4ce9aac1c8dbc79e5fea2bc1f2
-           (Fix bug #8252: Incorrect subquery unnesting with complex dependencies)
-    
-    Checked on 6.0.0.735,  5.0.3.1647
+        1. One need to change config parameter SubQueryConversion to 'true' when check FB 5.x.
+        2. Commits:
+           6.x:
+               22.03.2025 10:47
+               https://github.com/FirebirdSQL/firebird/commit/fc12c0ef392fec9c83d41bc17da3dc233491498c
+               (Unnest IN/ANY/EXISTS subqueries and optimize them using semi-join algorithm (#8061))
+           5.x
+               31.07.2024 09:46
+               https://github.com/FirebirdSQL/firebird/commit/4943b3faece209caa93cc9573803677019582f1c
+               (Added support for semi/anti and outer joins to hash join algorithm ...)
+               Also:
+               14.09.2024 09:24
+               https://github.com/FirebirdSQL/firebird/commit/5fa4ae611d18fd4ce9aac1c8dbc79e5fea2bc1f2
+               (Fix bug #8252: Incorrect subquery unnesting with complex dependencies)
+        
+        Checked on 6.0.0.735,  5.0.3.1647
+    [06.07.2025] pzotov
+        Script 'sample-DB_-_firebird.sql' in filed/standard_sample_databases.zip has been adjusted
+        for applying in FB 6.x: 'ALTER CHARACTER SET ... SET DEFAULT COLLATION <CUSTOM_COLLATION>'
+        requires explicitly specified `PUBLIC.` prefix. Execute block with if/else is used now there.
+
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 
 import pytest
@@ -163,7 +171,7 @@ def test_1(act: Action, tmp_sql: Path, capsys):
             print(line)
     act.reset()
 
-    act.expected_stdout = f"""
+    expected_stdout_5x = f"""
         1000
         {query_map[1000][0]}
         {query_map[1000][1]}
@@ -221,5 +229,66 @@ def test_1(act: Action, tmp_sql: Path, capsys):
         ....-> Filter
         ........-> Table "EMPLOYEE" as "X1" Full Scan
     """
+
+    expected_stdout_6x = f"""
+        1000
+        {query_map[1000][0]}
+        {query_map[1000][1]}
+        Sub-query
+        ....-> Filter
+        ........-> Table "PUBLIC"."EMPLOYEE" as "X" Full Scan
+        Sub-query
+        ....-> Filter (preliminary)
+        ........-> Filter
+        ............-> Table "PUBLIC"."SALES" as "S3" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."SALES_CUSTOMER_FK_CUST_NO" Range Scan (full match)
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."CUSTOMER" as "C3" Full Scan
+
+        2000
+        {query_map[2000][0]}
+        {query_map[2000][1]}
+        Sub-query
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "PUBLIC"."SALES" as "S3" Access By ID
+        ................-> Index "PUBLIC"."SALES_CUSTOMER_FK_CUST_NO" Range Scan (full match)
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."CUSTOMER" as "C3" Full Scan
+
+        3000
+        {query_map[3000][0]}
+        {query_map[3000][1]}
+        Sub-query
+        ....-> Union
+        ........-> Filter
+        ............-> Table "PUBLIC"."CUSTOMER" as "C1" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."CUSTOMER_PK" Unique Scan
+        ........-> Filter
+        ............-> Table "PUBLIC"."EMPLOYEE" as "X1" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."EMPLOYEE_PK" Unique Scan
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."SALES" as "S1" Full Scan
+
+        4000
+        {query_map[4000][0]}
+        {query_map[4000][1]}
+        Sub-query
+        ....-> Filter
+        ........-> Table "PUBLIC"."SALES" as "S1" Access By ID
+        ............-> Bitmap
+        ................-> Index "PUBLIC"."SALES_EMPLOYEE_FK_SALES_REP" Range Scan (full match)
+        Select Expression
+        ....-> Filter
+        ........-> Table "PUBLIC"."EMPLOYEE" as "X1" Full Scan
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
