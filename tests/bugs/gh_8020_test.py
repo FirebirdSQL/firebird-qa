@@ -7,36 +7,21 @@ TITLE:       AV when both function and dependent table are dropped in the same t
 DESCRIPTION:
 NOTES:
     [12.03.2024] pzotov
-    1. Crash occured only when connection is done via TCP protocol.
-    2. Another bug currently *remains* in FB 6.x if DROP-statements are in DSQL form, i.e are not 'enclosed' in PSQL and begin/end blocks:
-           ==========
-           Statement failed, SQLSTATE = 39000
-           unsuccessful metadata update
-           -DROP TABLE T_FN failed
-           -invalid request BLR at offset 1
-           -function F is not defined
-           ==========
-       See https://github.com/FirebirdSQL/firebird/issues/8021 (currently not fixed).
-       Because of this, it was decided to run DROP statements within PSQL code.
-    3. Test checks whether MON$SERVER_PID remains the same after execution of DROP statements. In case of crash this is not so.
-
-    Confirmed bug on 6.0.0.268
-    Checked on 6.0.0.269
+        1. Crash occured only when connection is done via TCP protocol.
+        2. Another bug currently *remains* in FB 6.x if DROP-statements are in DSQL form, i.e are not 'enclosed' in PSQL and begin/end blocks:
+           See https://github.com/FirebirdSQL/firebird/issues/8021 (currently not fixed).
+           Because of this, it was decided to run DROP statements within PSQL code.
+        3. Test checks whether MON$SERVER_PID remains the same after execution of DROP statements. In case of crash this is not so.
+        Confirmed bug on 6.0.0.268. Checked on 6.0.0.269
+    [06.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.914.
 """
 
 import pytest
 from firebird.qa import *
 
 db = db_factory()
-
-expected_stdout = """
-    IS_SERVER_PID_THE_SAME          <true>
-    Statement failed, SQLSTATE = 38000
-    unsuccessful metadata update
-    -cannot delete
-    -Function F
-    -there are 1 dependencies
-"""
 
 act = python_act('db')
 
@@ -86,6 +71,16 @@ def test_1(act: Action):
         commit;
     """
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    TEST_FUNC_NAME = 'F' if act.is_version('<6') else  f'{SQL_SCHEMA_PREFIX}"F"'
+    expected_stdout = f"""
+        IS_SERVER_PID_THE_SAME          <true>
+        Statement failed, SQLSTATE = 38000
+        unsuccessful metadata update
+        -cannot delete
+        -Function {TEST_FUNC_NAME}
+        -there are 1 dependencies
+    """
     act.expected_stdout = expected_stdout
     act.isql(switches=['-q'], input = test_script, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
