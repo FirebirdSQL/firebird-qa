@@ -174,102 +174,95 @@ def test_1(act: Action, capsys):
 
     expected_stdout = """
         Initial state:
-        
         Query: select * from v1_chk_nr
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST1" as "V1_CHK_NR TEST1" Full Scan
+        ............-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_NR" "PUBLIC"."TEST1" Full Scan
         3 lowered "D" normal
         Query: select * from v1_chk_ir_asc
         Select Expression
         ....-> Filter
-        ........-> Table "TEST1" as "V1_CHK_IR_ASC TEST1" Access By ID
-        ............-> Index "TEST1_ASC" Range Scan (full match)
+        ........-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_IR_ASC" "PUBLIC"."TEST1" Access By ID
+        ............-> Index "PUBLIC"."TEST1_ASC" Range Scan (full match)
         3 lowered "D" normal
         Query: select * from v1_chk_ir_dec
         Select Expression
         ....-> Filter
-        ........-> Table "TEST1" as "V1_CHK_IR_DEC TEST1" Access By ID
-        ............-> Index "TEST1_DEC" Range Scan (full match)
+        ........-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_IR_DEC" "PUBLIC"."TEST1" Access By ID
+        ............-> Index "PUBLIC"."TEST1_DEC" Range Scan (full match)
         3 lowered "D" normal
         Query: select * from v2_chk_nr
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST2" as "V2_CHK_NR TEST2" Full Scan
+        ............-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_NR" "PUBLIC"."TEST2" Full Scan
         3 lowered "L" normal
         Query: select * from v2_chk_ir_asc
         Select Expression
         ....-> Filter
-        ........-> Table "TEST2" as "V2_CHK_IR_ASC TEST2" Access By ID
-        ............-> Index "TEST2_PARTIAL_ASC" Full Scan
+        ........-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_IR_ASC" "PUBLIC"."TEST2" Access By ID
+        ............-> Index "PUBLIC"."TEST2_PARTIAL_ASC" Full Scan
         3 lowered "L" normal
         Query: select * from v2_chk_ir_dec
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST2" as "V2_CHK_IR_DEC TEST2" Access By ID
+        ............-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_IR_DEC" "PUBLIC"."TEST2" Access By ID
         ................-> Bitmap
-        ....................-> Index "TEST2_PARTIAL_ASC" Full Scan
+        ....................-> Index "PUBLIC"."TEST2_PARTIAL_ASC" Full Scan
         3 lowered "L" normal
-        
-        
         After alter domain dm_utf8 type varchar(1) character set utf8 collate unicode_ci:
-        
         Query: select * from v1_chk_nr
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST1" as "V1_CHK_NR TEST1" Full Scan
+        ............-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_NR" "PUBLIC"."TEST1" Full Scan
         3 lowered "D" normal
         4 UPPERED "D" normal
         Query: select * from v1_chk_ir_asc
         Select Expression
         ....-> Filter
-        ........-> Table "TEST1" as "V1_CHK_IR_ASC TEST1" Access By ID
-        ............-> Index "TEST1_ASC" Range Scan (full match)
+        ........-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_IR_ASC" "PUBLIC"."TEST1" Access By ID
+        ............-> Index "PUBLIC"."TEST1_ASC" Range Scan (full match)
         3 lowered "D" normal
         4 UPPERED "D" normal
         Query: select * from v1_chk_ir_dec
         Select Expression
         ....-> Filter
-        ........-> Table "TEST1" as "V1_CHK_IR_DEC TEST1" Access By ID
-        ............-> Index "TEST1_DEC" Range Scan (full match)
+        ........-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_IR_DEC" "PUBLIC"."TEST1" Access By ID
+        ............-> Index "PUBLIC"."TEST1_DEC" Range Scan (full match)
         4 UPPERED "D" normal
         3 lowered "D" normal
         Query: select * from v2_chk_nr
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST2" as "V2_CHK_NR TEST2" Full Scan
+        ............-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_NR" "PUBLIC"."TEST2" Full Scan
         3 lowered "L" normal
         4 UPPERED "L" normal
         Query: select * from v2_chk_ir_asc
         Select Expression
         ....-> Filter
-        ........-> Table "TEST2" as "V2_CHK_IR_ASC TEST2" Access By ID
-        ............-> Index "TEST2_PARTIAL_ASC" Full Scan
+        ........-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_IR_ASC" "PUBLIC"."TEST2" Access By ID
+        ............-> Index "PUBLIC"."TEST2_PARTIAL_ASC" Full Scan
         3 lowered "L" normal
         4 UPPERED "L" normal
         Query: select * from v2_chk_ir_dec
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST2" as "V2_CHK_IR_DEC TEST2" Access By ID
+        ............-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_IR_DEC" "PUBLIC"."TEST2" Access By ID
         ................-> Bitmap
-        ....................-> Index "TEST2_PARTIAL_ASC" Full Scan
+        ....................-> Index "PUBLIC"."TEST2_PARTIAL_ASC" Full Scan
         4 UPPERED "L" normal
         3 lowered "L" normal
-        
-        
         After alter domain dm_utf8 type varchar(1) character set utf8 collate unicode_ci_ai:
-        
         Query: select * from v1_chk_nr
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST1" as "V1_CHK_NR TEST1" Full Scan
+        ............-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_NR" "PUBLIC"."TEST1" Full Scan
         1 lowered "D" w/accent
         2 UPPERED "D" w/accent
         3 lowered "D" normal
@@ -277,8 +270,8 @@ def test_1(act: Action, capsys):
         Query: select * from v1_chk_ir_asc
         Select Expression
         ....-> Filter
-        ........-> Table "TEST1" as "V1_CHK_IR_ASC TEST1" Access By ID
-        ............-> Index "TEST1_ASC" Range Scan (full match)
+        ........-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_IR_ASC" "PUBLIC"."TEST1" Access By ID
+        ............-> Index "PUBLIC"."TEST1_ASC" Range Scan (full match)
         3 lowered "D" normal
         4 UPPERED "D" normal
         1 lowered "D" w/accent
@@ -286,8 +279,8 @@ def test_1(act: Action, capsys):
         Query: select * from v1_chk_ir_dec
         Select Expression
         ....-> Filter
-        ........-> Table "TEST1" as "V1_CHK_IR_DEC TEST1" Access By ID
-        ............-> Index "TEST1_DEC" Range Scan (full match)
+        ........-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_IR_DEC" "PUBLIC"."TEST1" Access By ID
+        ............-> Index "PUBLIC"."TEST1_DEC" Range Scan (full match)
         2 UPPERED "D" w/accent
         1 lowered "D" w/accent
         4 UPPERED "D" normal
@@ -296,7 +289,7 @@ def test_1(act: Action, capsys):
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST2" as "V2_CHK_NR TEST2" Full Scan
+        ............-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_NR" "PUBLIC"."TEST2" Full Scan
         1 lowered "L" w/accent
         2 UPPERED "L" w/accent
         3 lowered "L" normal
@@ -304,8 +297,8 @@ def test_1(act: Action, capsys):
         Query: select * from v2_chk_ir_asc
         Select Expression
         ....-> Filter
-        ........-> Table "TEST2" as "V2_CHK_IR_ASC TEST2" Access By ID
-        ............-> Index "TEST2_PARTIAL_ASC" Full Scan
+        ........-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_IR_ASC" "PUBLIC"."TEST2" Access By ID
+        ............-> Index "PUBLIC"."TEST2_PARTIAL_ASC" Full Scan
         3 lowered "L" normal
         4 UPPERED "L" normal
         1 lowered "L" w/accent
@@ -314,57 +307,53 @@ def test_1(act: Action, capsys):
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST2" as "V2_CHK_IR_DEC TEST2" Access By ID
+        ............-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_IR_DEC" "PUBLIC"."TEST2" Access By ID
         ................-> Bitmap
-        ....................-> Index "TEST2_PARTIAL_ASC" Full Scan
+        ....................-> Index "PUBLIC"."TEST2_PARTIAL_ASC" Full Scan
         2 UPPERED "L" w/accent
         1 lowered "L" w/accent
         4 UPPERED "L" normal
         3 lowered "L" normal
-        
-        
         After alter domain dm_utf8 type varchar(1) character set utf8:
-        
         Query: select * from v1_chk_nr
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST1" as "V1_CHK_NR TEST1" Full Scan
+        ............-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_NR" "PUBLIC"."TEST1" Full Scan
         3 lowered "D" normal
         Query: select * from v1_chk_ir_asc
         Select Expression
         ....-> Filter
-        ........-> Table "TEST1" as "V1_CHK_IR_ASC TEST1" Access By ID
-        ............-> Index "TEST1_ASC" Range Scan (full match)
+        ........-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_IR_ASC" "PUBLIC"."TEST1" Access By ID
+        ............-> Index "PUBLIC"."TEST1_ASC" Range Scan (full match)
         3 lowered "D" normal
         Query: select * from v1_chk_ir_dec
         Select Expression
         ....-> Filter
-        ........-> Table "TEST1" as "V1_CHK_IR_DEC TEST1" Access By ID
-        ............-> Index "TEST1_DEC" Range Scan (full match)
+        ........-> Table "PUBLIC"."TEST1" as "PUBLIC"."V1_CHK_IR_DEC" "PUBLIC"."TEST1" Access By ID
+        ............-> Index "PUBLIC"."TEST1_DEC" Range Scan (full match)
         3 lowered "D" normal
         Query: select * from v2_chk_nr
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST2" as "V2_CHK_NR TEST2" Full Scan
+        ............-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_NR" "PUBLIC"."TEST2" Full Scan
         3 lowered "L" normal
         Query: select * from v2_chk_ir_asc
         Select Expression
         ....-> Filter
-        ........-> Table "TEST2" as "V2_CHK_IR_ASC TEST2" Access By ID
-        ............-> Index "TEST2_PARTIAL_ASC" Full Scan
+        ........-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_IR_ASC" "PUBLIC"."TEST2" Access By ID
+        ............-> Index "PUBLIC"."TEST2_PARTIAL_ASC" Full Scan
         3 lowered "L" normal
         Query: select * from v2_chk_ir_dec
         Select Expression
         ....-> Sort (record length: NN, key length: MM)
         ........-> Filter
-        ............-> Table "TEST2" as "V2_CHK_IR_DEC TEST2" Access By ID
+        ............-> Table "PUBLIC"."TEST2" as "PUBLIC"."V2_CHK_IR_DEC" "PUBLIC"."TEST2" Access By ID
         ................-> Bitmap
-        ....................-> Index "TEST2_PARTIAL_ASC" Full Scan
+        ....................-> Index "PUBLIC"."TEST2_PARTIAL_ASC" Full Scan
         3 lowered "L" normal
     """
-
     act.expected_stdout = expected_stdout
 
     act.stdout = capsys.readouterr().out
