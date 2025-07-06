@@ -12,15 +12,17 @@ DESCRIPTION:
     (Error at disconnect: / Execute statement error at attach : / 335544830 : Too many recursion levels of EXECUTE STATEMENT)
 NOTES:
     [27.05.2024] pzotov
-    Time of ISQL execution is limited by MAX_WAIT_FOR_ISQL_TERMINATE seconds. Currently it is ~6s for SS and ~18s for CS.
-
+        Time of ISQL execution is limited by MAX_WAIT_FOR_ISQL_TERMINATE seconds. Currently it is ~6s for SS and ~18s for CS.
     [08.06.2024] pzotov
-    Added threshold in order to prevent infinite recursion in case of regression.
-    Otherwise this test can cause collapse of test machine because of infinite launch of firebird processes (in case of Classic).
-    See notes in the code below, variable 'STOP_RECURSIVE_ES_AFTER_ITER'.
-    Checked on snapshot 5.x that was not yet fixed.
+        Added threshold in order to prevent infinite recursion in case of regression.
+        Otherwise this test can cause collapse of test machine because of infinite launch of firebird processes (in case of Classic).
+        See notes in the code below, variable 'STOP_RECURSIVE_ES_AFTER_ITER'.
+        Checked on snapshot 5.x that was not yet fixed.
 
-    Checked on 6.0.0.362, 5.0.1.1408, 4.0.5.3103 (all SS/CS).
+        Checked on 6.0.0.362, 5.0.1.1408, 4.0.5.3103 (all SS/CS).
+    [06.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.914; 5.0.3.1668; 4.0.6.3214.
 """
 
 import re
@@ -171,6 +173,8 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
                 f.write(line[1:] + '\n')
 
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    TRG_DETACH_NAME = "'TRG_DETACH'" if act.is_version('<6') else  f'{SQL_SCHEMA_PREFIX}"TRG_DETACH"'
     expected_stdout = f"""
         rdb_trg_name                    TRG_ATTACH
         rdb_trg_type                    8192
@@ -181,13 +185,13 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
         Execute statement error at attach :
         335544830 : Too many recursion levels of EXECUTE STATEMENT
         Data source : Firebird::
-        At trigger 'TRG_DETACH'
+        At trigger {TRG_DETACH_NAME}
 
         Error at disconnect:
         Execute statement error at attach :
         335544830 : Too many recursion levels of EXECUTE STATEMENT
         Data source : Firebird::
-        At trigger 'TRG_DETACH'
+        At trigger {TRG_DETACH_NAME}
     """
 
     with open(tmp_log, 'r') as f:
