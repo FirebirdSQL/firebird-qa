@@ -7,24 +7,24 @@ TITLE:       Incorrect subquery unnesting with complex dependencies (SubQueryCon
 DESCRIPTION:
 NOTES:
     [14.09.2024] pzotov
-    1. Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
-       Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
-    2. Custom driver config object is created here for using 'SubQueryConversion = true'.
-    3. Additional test was made for this issue: tests/functional/tabloid/test_aae2ae32.py
-
+        1. Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
+           Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
+        2. Custom driver config object is created here for using 'SubQueryConversion = true'.
+        3. Additional test was made for this issue: tests/functional/tabloid/test_aae2ae32.py
     [18.01.2025] pzotov
-    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
-    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
-    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
-    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
-    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
-
-    Confirmed bug on 5.0.2.1497.
-    Checked on 5.0.2.1499-5fa4ae6.
-
+        Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+        in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+        Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+        This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+        The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+        Confirmed bug on 5.0.2.1497. Checked on 5.0.2.1499-5fa4ae6.
     [16.04.2025] pzotov
-    Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
-    Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
+        Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
+        Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
+    [06.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 
 import pytest
@@ -91,16 +91,17 @@ def test_1(act: Action, capsys):
         
         con.rollback()
 
-    act.expected_stdout = """
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    act.expected_stdout = f"""
         Sub-query
         ....-> Filter
-        ........-> Table "CUSTOMER" as "C" Access By ID
+        ........-> Table {SQL_SCHEMA_PREFIX}"CUSTOMER" as "C" Access By ID
         ............-> Bitmap
-        ................-> Index "RDB$PRIMARY22" Unique Scan
+        ................-> Index {SQL_SCHEMA_PREFIX}"RDB$PRIMARY22" Unique Scan
         Select Expression
         ....-> First N Records
         ........-> Filter
-        ............-> Table "SALES" as "S" Full Scan
+        ............-> Table {SQL_SCHEMA_PREFIX}"SALES" as "S" Full Scan
         1
         1
         1
