@@ -26,8 +26,12 @@ DESCRIPTION:
         err.sqlstate='2F000'
 NOTES:
     [11.08.2024] pzotov
-    Confirmed bug on 6.0.0.421, 5.0.1.1469
-    Checked on 6.0.0.423, 5.0.2.1477
+        Confirmed bug on 6.0.0.421, 5.0.1.1469
+        Checked on 6.0.0.423, 5.0.2.1477
+    [06.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 import pytest
 from firebird.qa import *
@@ -192,22 +196,38 @@ def test_1(act: Action, capsys):
     for bound_points, range_name in UNICODE_RANGES_MAP.items():
 
         for iter in range(1,REPEAT_CHECKS_FOR_SELECTED_UNICODE_RANGE+1):
-
             
             table_random_unicode_name = get_random_unicode( random.randint(NAME_MIN_LEN, NAME_MAX_LEN), bound_points )
             table_random_unicode_name = ''.join(c for c in table_random_unicode_name if c not in CHARS_TO_SKIP)
-
-            test_sql = f"""
-                recreate table "{table_random_unicode_name.replace('"','""')}"(id int)
-                ^
-                create or alter procedure sp_chk as
-                    declare id1 int;
-                begin
-                    select /* {range_name=} {iter=} */ id from "{table_random_unicode_name.replace('"','""')}" where rdb$db_key = make_dbkey('{table_random_unicode_name}', 0) into id1;
-                end
-                ^
-            """
-            # select id from "{table_random_unicode_name.replace('"','""')}" where rdb$db_key = make_dbkey('{table_random_unicode_name.replace("'","''")}', 0) into id1;
+            table_random_uname_quoted = table_random_unicode_name.replace('"','""')
+            if act.is_version('<6'):
+                test_sql = f"""
+                    recreate table "{table_random_uname_quoted}"(id int)
+                    ^
+                    create or alter procedure sp_chk as
+                        declare id1 int;
+                    begin
+                        select /* {range_name=} {iter=} */ id
+                        from "{table_random_uname_quoted}"
+                        where rdb$db_key = make_dbkey('{table_random_unicode_name}', 0)
+                        into id1;
+                    end
+                    ^
+                """
+            else:
+                test_sql = f"""
+                    recreate table "{table_random_uname_quoted}"(id int)
+                    ^
+                    create or alter procedure sp_chk as
+                        declare id1 int;
+                    begin
+                        select /* {range_name=} {iter=} */ id
+                        from "{table_random_uname_quoted}"
+                        where rdb$db_key = make_dbkey('"{table_random_uname_quoted}"', 0)
+                        into id1;
+                    end
+                    ^
+                """
 
             expected_txt = f'{iter=} of {REPEAT_CHECKS_FOR_SELECTED_UNICODE_RANGE=}: SUCCESS'
             with act.db.connect(charset = 'utf-8') as con:
