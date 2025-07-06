@@ -6,7 +6,10 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7924
 TITLE:       ALTER TABLE ALTER COLUMN <textual_field> can not be changed properly in some cases
 NOTES:
     [22.01.2024] pzotov
-    Checked on 6.0.0.219 (after commit https://github.com/FirebirdSQL/firebird/commit/bcc53d43c8cd0b904d2963173c153056f9465a09)
+        Checked on 6.0.0.219 (after commit https://github.com/FirebirdSQL/firebird/commit/bcc53d43c8cd0b904d2963173c153056f9465a09)
+    [06.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.914.
 """
 
 import pytest
@@ -51,16 +54,19 @@ test_script = """
 	insert into test(f03) values ('Ģ');
 """
 
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    F01                             VARCHAR(10) CHARACTER SET WIN1250 COLLATE WIN_CZ_CI_AI Nullable
-    F02                             VARCHAR(10) CHARACTER SET WIN1252 COLLATE WIN_PTBR Nullable
-    F03                             VARCHAR(10) CHARACTER SET WIN1257 COLLATE WIN1257_EE Nullable
-"""
+substitutions = [('[ \t]+', ' '), (r'Table(:)?\s+\S+.*', '')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=6.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  'SYSTEM.'
+    expected_stdout = f"""
+        F01                             VARCHAR(10) CHARACTER SET {SQL_SCHEMA_PREFIX}WIN1250 COLLATE {SQL_SCHEMA_PREFIX}WIN_CZ_CI_AI Nullable
+        F02                             VARCHAR(10) CHARACTER SET {SQL_SCHEMA_PREFIX}WIN1252 COLLATE {SQL_SCHEMA_PREFIX}WIN_PTBR Nullable
+        F03                             VARCHAR(10) CHARACTER SET {SQL_SCHEMA_PREFIX}WIN1257 COLLATE {SQL_SCHEMA_PREFIX}WIN1257_EE Nullable
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
