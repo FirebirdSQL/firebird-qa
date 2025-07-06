@@ -10,12 +10,16 @@ NOTES:
     Checked on 5.0.0.1303, 6.0.0.180 (for UMOWA_ROWS = 700K number of fetches = 270208, elapsed time = 0.741s)
 
     [24.09.2024] pzotov
-    Changed substitutions: one need to suppress '(keys: N, total key length: M)' in FB 6.x (and ONLY there),
-    otherwise actual and expected output become differ.
-    Commit: https://github.com/FirebirdSQL/firebird/commit/c50b0aa652014ce3610a1890017c9dd436388c43
-    ("Add key info to the hash join plan output", 23.09.2024 18:26)
-    Discussed with dimitr.
-    Checked on 6.0.0.467-cc183f5, 5.0.2.1513
+        Changed substitutions: one need to suppress '(keys: N, total key length: M)' in FB 6.x (and ONLY there),
+        otherwise actual and expected output become differ.
+        Commit: https://github.com/FirebirdSQL/firebird/commit/c50b0aa652014ce3610a1890017c9dd436388c43
+        ("Add key info to the hash join plan output", 23.09.2024 18:26)
+        Discussed with dimitr.
+        Checked on 6.0.0.467-cc183f5, 5.0.2.1513
+    [06.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 
 import pytest
@@ -241,7 +245,7 @@ def test_1(act: Action, capsys):
             with cur.prepare(q) as ps:
                 print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
 
-    expected_stdout = """
+    expected_stdout_5x = """
         Select Expression
         ....-> Aggregate
         ........-> Sort (record length: 132, key length: 16)
@@ -261,7 +265,26 @@ def test_1(act: Action, capsys):
         ............................-> Table "DOK_ROZLICZENIOWY" as "Q1_DOKR" Full Scan
     """
 
+    expected_stdout_6x = """
+        Select Expression
+        ....-> Aggregate
+        ........-> Sort
+        ............-> Filter
+        ................-> Hash Join (inner)
+        ....................-> Nested Loop Join (inner)
+        ........................-> Filter
+        ............................-> Table "PUBLIC"."UMOWA" as "Q1_UMOWA" Access By ID
+        ................................-> Bitmap
+        ....................................-> Index "PUBLIC"."FK_UMOWA__RODZAJ_UMOWY" Range Scan (partial match: 1/2)
+        ........................-> Filter
+        ............................-> Table "PUBLIC"."ROZLICZENIE" as "Q1_ROZL" Access By ID
+        ................................-> Bitmap
+        ....................................-> Index "PUBLIC"."FK_ROZLICZENIE__UMOWA" Range Scan (full match)
+        ....................-> Record Buffer (record length: 25)
+        ........................-> Filter
+        ............................-> Table "PUBLIC"."DOK_ROZLICZENIOWY" as "Q1_DOKR" Full Scan
+    """
     
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
