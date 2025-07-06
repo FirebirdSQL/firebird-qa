@@ -7,22 +7,24 @@ TITLE:       Problematic queries when SubQueryConversion = true
 DESCRIPTION:
 NOTES:
     [03.09.2024] pzotov
-    Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
-    Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
-
+        Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
+        Because of that, testing version are limited only for 5.0.2. FB 6.x currently is NOT tested.
     [18.01.2025] pzotov
-    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
-    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
-    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
-    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
-    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
-    
-    Confirmed bug on 5.0.2.1479-adfe97a.
-    Checked on 5.0.2.1482-604555f.
-
+        Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+        in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+        Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+        This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+        The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+        
+        Confirmed bug on 5.0.2.1479-adfe97a.
+        Checked on 5.0.2.1482-604555f.
     [16.04.2025] pzotov
-    Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
-    Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
+        Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
+        Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
+    [06.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 
 import pytest
@@ -135,7 +137,7 @@ def test_1(act: Action, capsys):
 
         con.rollback()
 
-    act.expected_stdout = f"""
+    expected_stdout_5x = f"""
         Select Expression
         ....-> First N Records
         ........-> Filter
@@ -147,6 +149,21 @@ def test_1(act: Action, capsys):
         ....................-> Table "EMPLOYEE" as "E" Full Scan
         2 d2
     """
+
+    expected_stdout_6x = f"""
+        Select Expression
+        ....-> First N Records
+        ........-> Filter
+        ............-> Hash Join (semi)
+        ................-> Refetch
+        ....................-> Sort (record length: NN, key length: NN)
+        ........................-> Table "PUBLIC"."DEPARTMENT" as "D" Full Scan
+        ................-> Record Buffer (record length: NN)
+        ....................-> Table "PUBLIC"."EMPLOYEE" as "E" Full Scan
+        2 d2
+    """
+   
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
 
