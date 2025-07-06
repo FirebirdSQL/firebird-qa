@@ -7,61 +7,30 @@ TITLE:       Nested IN/EXISTS subqueries should not be converted into semi-joins
 DESCRIPTION:
 NOTES:
     [26.09.2024] pzotov
-    0. Commits:
-       6.x:
-           22.03.2025 10:47
-           https://github.com/FirebirdSQL/firebird/commit/fc12c0ef392fec9c83d41bc17da3dc233491498c
-           (Unnest IN/ANY/EXISTS subqueries and optimize them using semi-join algorithm (#8061))
-       5.x
-           31.07.2024 09:46
-           https://github.com/FirebirdSQL/firebird/commit/4943b3faece209caa93cc9573803677019582f1c
-           (Added support for semi/anti and outer joins to hash join algorithm ...)
-           Also:
-           14.09.2024 09:24
-           https://github.com/FirebirdSQL/firebird/commit/5fa4ae611d18fd4ce9aac1c8dbc79e5fea2bc1f2
-           (Fix bug #8252: Incorrect subquery unnesting with complex dependencies)
-    1. Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
-    2. Custom driver config objects are created here, one with SubQueryConversion = true and second with false.
-    3. First example of this test is also used in tests/functional/tabloid/test_aae2ae32.py
-    
-    Confirmed problem on 5.0.2.1516-fe6ba50 (23.09.2024).
-    Checked on 5.0.2.1516-92316F0 (25.09.2024).
-
-    [15.01.2025] pzotov
-
-    ### CRITICAL ISSUE ### PROBABLY MUST BE APPLIED TO ALL TESTS WITH SIMILAR BEHAVOUR ###
-
-    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
-    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
-    Otherwise access violation raises.
-    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
-
-    Example of broken pytest log when AV occurs:
-    ==========
-        tests/bugs/gh_8265_test.py::test_1 Windows fatal exception: access violation
-
-        Current thread 0x0000385c (most recent call first):
-          Garbage-collecting
-          File "C:/Python3x/Lib/site-packages/firebird/driver/interfaces.py", line 831 in free
-          File "C:/Python3x/Lib/site-packages/firebird/driver/core.py", line 2736 in free
-          ...
-          File "C:/Python3x/Scripts/pytest.exe/__main__.py", line 7 in <module>
-          File "<frozen runpy>", line 88 in _run_code
-          File "<frozen runpy>", line 198 in _run_module_as_main
-        PASSED                           [1773/2565]
-    ==========
-    The reason of that was explained by Vlad, letter 26.10.24 17:42
-    (subject: "oddities when use instances of selective statements"):
-    * line 'cur1.execute(ps1)' creates a new cursor but looses reference on it;
-    * but this cursor is linked with instance of ps1 which *has* reference on that cursor;
-    * call 'ps1.free()' delete this anonimous cursor but Python runtime
-      (or - maybe - code that makes connection cleanup) does not know about it
-      and tries to delete this anon cursor AGAIN when code finishes 'with' block.
-      This attempt causes AV.
-
+        0. Commits:
+           6.x:
+               22.03.2025 10:47
+               https://github.com/FirebirdSQL/firebird/commit/fc12c0ef392fec9c83d41bc17da3dc233491498c
+               (Unnest IN/ANY/EXISTS subqueries and optimize them using semi-join algorithm (#8061))
+           5.x
+               31.07.2024 09:46
+               https://github.com/FirebirdSQL/firebird/commit/4943b3faece209caa93cc9573803677019582f1c
+               (Added support for semi/anti and outer joins to hash join algorithm ...)
+               Also:
+               14.09.2024 09:24
+               https://github.com/FirebirdSQL/firebird/commit/5fa4ae611d18fd4ce9aac1c8dbc79e5fea2bc1f2
+               (Fix bug #8252: Incorrect subquery unnesting with complex dependencies)
+        1. Parameter 'SubQueryConversion' currently presents only in FB 5.x and _NOT_ in FB 6.x.
+        2. Custom driver config objects are created here, one with SubQueryConversion = true and second with false.
+        3. First example of this test is also used in tests/functional/tabloid/test_aae2ae32.py
+           Confirmed problem on 5.0.2.1516-fe6ba50 (23.09.2024). Checked on 5.0.2.1516-92316F0 (25.09.2024).
     [16.04.2025] pzotov
-    Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
-    Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
+        Re-implemented in order to check FB 5.x with set 'SubQueryConversion = true' and FB 6.x w/o any changes in its config.
+        Checked on 6.0.0.687-730aa8f, 5.0.3.1647-8993a57
+    [06.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 
 import pytest
@@ -199,7 +168,7 @@ def test_1(act: Action, capsys):
                 if ps:
                     ps.free()
 
-    act.expected_stdout = f"""
+    expected_stdout_5x = f"""
         1000
         {query_map[1000][0]}
         {query_map[1000][1]}
@@ -268,5 +237,77 @@ def test_1(act: Action, capsys):
         ............-> Table "TEST1" as "Q4_A" Full Scan
         10
     """
+
+    expected_stdout_6x = f"""
+        1000
+        {query_map[1000][0]}
+        {query_map[1000][1]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Hash Join (semi)
+        ................-> Table "PUBLIC"."TEST1" as "Q1_A" Full Scan
+        ................-> Record Buffer (record length: NN)
+        ....................-> Filter
+        ........................-> Hash Join (semi)
+        ............................-> Table "PUBLIC"."TEST2" as "Q1_B" Full Scan
+        ............................-> Record Buffer (record length: NN)
+        ................................-> Filter
+        ....................................-> Table "PUBLIC"."TEST3" as "Q1_C" Full Scan
+        10
+
+        2000
+        {query_map[2000][0]}
+        {query_map[2000][1]}
+        Sub-query
+        ....-> Filter
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST3" as "Q2_C" Full Scan
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Hash Join (semi)
+        ................-> Table "PUBLIC"."TEST1" as "Q2_A" Full Scan
+        ................-> Record Buffer (record length: NN)
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."TEST2" as "Q2_B" Full Scan
+        10
+
+        3000
+        {query_map[3000][0]}
+        {query_map[3000][1]}
+        Sub-query
+        ....-> Filter
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST3" as "Q3_C" Full Scan
+        Sub-query
+        ....-> Filter
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST2" as "Q3_B" Full Scan
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST1" as "Q3_A" Full Scan
+        10
+
+        4000
+        {query_map[4000][0]}
+        {query_map[4000][1]}
+        Sub-query
+        ....-> Filter
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST3" as "Q4_C" Full Scan
+        Sub-query
+        ....-> Filter
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST2" as "Q4_B" Full Scan
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "PUBLIC"."TEST1" as "Q4_A" Full Scan
+        10
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
