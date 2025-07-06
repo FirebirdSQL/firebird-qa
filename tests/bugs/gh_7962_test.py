@@ -6,8 +6,11 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7962
 TITLE:       System procedure/function inconsistency between ISQL SHOW FUNCTIONS and SHOW PROCEDURES
 NOTES:
     [23.01.2024] pzotov
-    Confirmed on 6.0.0.219
-    Checked on 6.0.0.219 after commit https://github.com/FirebirdSQL/firebird/commit/bcc53d43c8cd0b904d2963173c153056f9465a09
+        Confirmed on 6.0.0.219
+        Checked on 6.0.0.219 after commit https://github.com/FirebirdSQL/firebird/commit/bcc53d43c8cd0b904d2963173c153056f9465a09
+    [06.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.914.
 """
 
 import pytest
@@ -34,15 +37,16 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    STANDALONE_FN
-    PG_TEST.FN_USER
-    STANDALONE_SP
-    PG_TEST.SP_USER
-"""
-
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  'PUBLIC.'
+    expected_stdout = f"""
+        {SQL_SCHEMA_PREFIX}STANDALONE_FN
+        {SQL_SCHEMA_PREFIX}PG_TEST.FN_USER
+        {SQL_SCHEMA_PREFIX}STANDALONE_SP
+        {SQL_SCHEMA_PREFIX}PG_TEST.SP_USER
+    """
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
