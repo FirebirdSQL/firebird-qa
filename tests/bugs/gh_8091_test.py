@@ -15,7 +15,10 @@ DESCRIPTION:
     Result must be the same as for iteration with default dialect = 3.
 NOTES:
     [25.10.2024] pzotov
-    Checked on 6.0.0.508-67d8e39 (intermediate build).
+        Checked on 6.0.0.508-67d8e39 (intermediate build).
+    [06.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 import time
 from io import BytesIO
@@ -95,11 +98,13 @@ def test_1(act: Action, capsys):
         ,8 : 'select count(*) from test where z is not distinct from null and mod(id,2) = 0'
         ,9 : 'select count(*) from test where x-y is not distinct from null and mod(id,3) <= 1'
     }
-    nr_block = """
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    nr_block = f"""
         Select Expression
         ....-> Aggregate
         ........-> Filter
-        ............-> Table "TEST" Full Scan
+        ............-> Table {SQL_SCHEMA_PREFIX}"TEST" Full Scan
     """
 
     for iter in range(2):
