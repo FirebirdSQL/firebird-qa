@@ -11,11 +11,14 @@ NOTES:
     Checked on 5.0.1.1322 after backporting (commit fef5af38, 23.01.2024).
 
     [17.11.2024] pzotov
-    Query text was replaced after https://github.com/FirebirdSQL/firebird/commit/26e64e9c08f635d55ac7a111469498b3f0c7fe81
-    ( Cost-based decision between ORDER and SORT plans (#8316) ): 'OPTIMIZE FOR FIRST ROWS' is used for 6.x
-    Suggested by dimitr, letter 16.11.2024 15:15
-
-    Checked on 6.0.0.532; 5.0.2.1567
+        Query text was replaced after https://github.com/FirebirdSQL/firebird/commit/26e64e9c08f635d55ac7a111469498b3f0c7fe81
+        ( Cost-based decision between ORDER and SORT plans (#8316) ): 'OPTIMIZE FOR FIRST ROWS' is used for 6.x
+        Suggested by dimitr, letter 16.11.2024 15:15
+        Checked on 6.0.0.532; 5.0.2.1567
+    [06.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668.
 """
 
 import pytest
@@ -223,7 +226,7 @@ def test_1(act: Action, capsys):
             with cur.prepare(q) as ps:
                 print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
 
-    expected_stdout = """
+    expected_stdout_5x = """
         Select Expression
         ....-> Aggregate
         ........-> Filter
@@ -232,7 +235,16 @@ def test_1(act: Action, capsys):
         ....................-> Bitmap
         ........................-> Index "ROZLICZENIE_FK4" Range Scan (full match)
     """
+    expected_stdout_6x = """
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "PUBLIC"."ROZLICZENIE" as "Q2_ROZL" Access By ID
+        ................-> Index "PUBLIC"."FK_ROZLICZENIE__DYREKCJA" Full Scan
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."ROZLICZENIE_FK4" Range Scan (full match)
+    """
     
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
