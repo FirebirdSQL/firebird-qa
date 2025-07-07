@@ -6,28 +6,25 @@ TITLE:       INNER JOIN join order LIKE and STARTING WITH
 DESCRIPTION: LIKE and STARTING WITH should also be used for determing join order.
 FBTEST:      functional.arno.optimizer.opt_inner_join_05
 NOTES:
-    [15.12.2023] pzotov
-    Re-implemented: check explained plan instead of legacy one. Data not shown.
-    Split expected* between FB 4.x vs 5.x+ after commits:
-        https://github.com/FirebirdSQL/firebird/commit/f647dfd757de3c4065ef2b875c95d19311bb9691 // FB 6.x
-        https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83 // FB 5.x
-        ("More realistic cardinality adjustments for unmatchable booleans, this should also fix #7904: FB5 bad plan for query")
-    Letter from dimitr, 15.12.2023 10:05.
-
     [24.09.2024] pzotov
-    Changed substitutions: one need to suppress '(keys: N, total key length: M)' in FB 6.x (and ONLY there),
-    otherwise actual and expected output become differ.
-    Commit: https://github.com/FirebirdSQL/firebird/commit/c50b0aa652014ce3610a1890017c9dd436388c43
-    ("Add key info to the hash join plan output", 23.09.2024 18:26)
-    Discussed with dimitr.
-    Checked on 6.0.0.467-cc183f5, 5.0.2.1513
+        Changed substitutions: one need to suppress '(keys: N, total key length: M)' in FB 6.x (and ONLY there),
+        otherwise actual and expected output become differ.
+        Commit: https://github.com/FirebirdSQL/firebird/commit/c50b0aa652014ce3610a1890017c9dd436388c43
+        ("Add key info to the hash join plan output", 23.09.2024 18:26)
+        Discussed with dimitr.
+        Checked on 6.0.0.467-cc183f5, 5.0.2.1513
 
     [31.10.2024] pzotov
-    Adjusted expected_out discuss with dimitr: explained plan for FB 6.x became identical to FB 5.x and earlier after
-    https://github.com/FirebirdSQL/firebird/commit/e7e9e01fa9d7c13d8513fcadca102d23ad7c5e2a
-    ("Rework fix for #8290: Unique scan is incorrectly reported in the explained plan for unique index and IS NULL predicate")
-
-    Checked on 3.0.13.33794, 4.0.6.3165, 5.0.2.1551, 6.0.0.515
+        Adjusted expected_out discuss with dimitr: explained plan for FB 6.x became identical to FB 5.x and earlier after
+        https://github.com/FirebirdSQL/firebird/commit/e7e9e01fa9d7c13d8513fcadca102d23ad7c5e2a
+        ("Rework fix for #8290: Unique scan is incorrectly reported in the explained plan for unique index and IS NULL predicate")
+        Checked on 3.0.13.33794, 4.0.6.3165, 5.0.2.1551, 6.0.0.515
+    [07.07.2025] pzotov
+        Refactored: explained plan is used to be checked in expected_out.
+        Added ability to use several queries and their datasets for check - see 'qry_list' and 'qry_data' tuples.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
 """
 
 import pytest
@@ -48,14 +45,8 @@ init_script = """
       ZipCode VARCHAR(12),
       CountryID INTEGER
     );
-
     COMMIT;
 
-    /*
-      COUNTRIES
-      ---------
-      Exporting all rows
-    */
     INSERT INTO COUNTRIES(COUNTRYID, COUNTRYNAME, ISO3166_1_A2) VALUES (1, 'AFGHANISTAN', 'AF');
     INSERT INTO COUNTRIES(COUNTRYID, COUNTRYNAME, ISO3166_1_A2) VALUES (2, 'ALBANIA', 'AL');
     INSERT INTO COUNTRIES(COUNTRYID, COUNTRYNAME, ISO3166_1_A2) VALUES (3, 'ALGERIA', 'DZ');
@@ -296,11 +287,6 @@ init_script = """
     INSERT INTO COUNTRIES(COUNTRYID, COUNTRYNAME, ISO3166_1_A2) VALUES (238, 'ZAMBIA', 'ZM');
     INSERT INTO COUNTRIES(COUNTRYID, COUNTRYNAME, ISO3166_1_A2) VALUES (239, 'ZIMBABWE', 'ZW');
 
-    /*
-      RELATIONS
-      ---------
-      Exporting all rows
-    */
     INSERT INTO RELATIONS(RELATIONID, RELATIONNAME, LOCATION, ADDRESS, ZIPCODE, COUNTRYID) VALUES (101, 'University Amsterdam', 'Amsterdam', 'De Boelelaan 1081A', '1081 HV', 151);
     INSERT INTO RELATIONS(RELATIONID, RELATIONNAME, LOCATION, ADDRESS, ZIPCODE, COUNTRYID) VALUES (102, 'University Brussel', 'ELSENE', 'Pleinlaan 2', '1050', 21);
     INSERT INTO RELATIONS(RELATIONID, RELATIONNAME, LOCATION, ADDRESS, ZIPCODE, COUNTRYID) VALUES (103, 'University Leiden', 'Leiden', 'Niels Bohrweg 1', '2333 CA', 151);
@@ -309,60 +295,90 @@ init_script = """
     COMMIT;
 
     /* Normally these indexes are created by the primary/foreign keys, but we don't want to rely on them for this test */
-
     CREATE UNIQUE ASC INDEX PK_Countries ON Countries (CountryID);
     CREATE UNIQUE ASC INDEX PK_Relations ON Relations (RelationID);
     CREATE ASC INDEX FK_Relations_Countries ON Relations (CountryID);
     CREATE UNIQUE ASC INDEX I_RelationName ON Relations (RelationName);
     CREATE UNIQUE ASC INDEX I_CountryName ON Countries (CountryName);
-
-
     COMMIT;
 """
 
 db = db_factory(init=init_script)
 
+qry_list = (
+    """
+    select
+      r.relationname,
+      c.countryname
+    from
+      relations r
+      join countries c on (c.countryid = r.countryid)
+    where
+      c.countryname like 'N%'
+    order by
+    r.relationname desc
+    """,
+)
+data_list = (
+    """
+    RELATIONNAME : University Leiden
+    COUNTRYNAME : NETHERLANDS
+    RELATIONNAME : University Delft
+    COUNTRYNAME : NETHERLANDS
+    RELATIONNAME : University Amsterdam
+    COUNTRYNAME : NETHERLANDS
+    """,
+)
 
-substitutions = \
-    [
-        ( r'\(record length: \d+, key length: \d+\)', '' ) # (record length: 132, key length: 16)
-       ,( r'\(keys: \d+, total key length: \d+\)', '' )    # (keys: 1, total key length: 2)
-    ]
-
+substitutions = [ ( r'\(record length: \d+, key length: \d+\)', 'record length: N, key length: M' ) ]
 act = python_act('db', substitutions = substitutions)
 
-#----------------------------------------------------------
+#-----------------------------------------------------------
 
 def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
 
-#----------------------------------------------------------
+#-----------------------------------------------------------
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
-
-    test_sql = """
-        select
-          r.relationname,
-          c.countryname
-        from
-          relations r
-          join countries c on (c.countryid = r.countryid)
-        where
-          c.countryname like 'N%'
-        order by
-        r.relationname desc;
-    """
-    
     with act.db.connect() as con:
         cur = con.cursor()
-        with cur.prepare(test_sql) as ps:
-            print( '\n'.join( [replace_leading(s) for s in ps.detailed_plan.split('\n')] ) )
+        for test_sql in qry_list:
+            ps, rs =  None, None
+            try:
+                cur = con.cursor()
+                ps = cur.prepare(test_sql)
+                print(test_sql)
+                # Print explained plan with padding eash line by dots in order to see indentations:
+                print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
 
-    expected_stdout_4x = """
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur.execute(ps)
+                cur_cols = cur.description
+                for r in rs:
+                    for i in range(0,len(cur_cols)):
+                        print( cur_cols[i][0], ':', r[i] )
+
+            except DatabaseError as e:
+                print(e.__str__())
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
+
+    expected_out_4x = f"""
+        {qry_list[0]}
         Select Expression
-        ....-> Sort (record length: 150, key length: 44)
+        ....-> Sort record length: N, key length: M
         ........-> Nested Loop Join (inner)
         ............-> Filter
         ................-> Table "COUNTRIES" as "C" Access By ID
@@ -372,11 +388,13 @@ def test_1(act: Action, capsys):
         ................-> Table "RELATIONS" as "R" Access By ID
         ....................-> Bitmap
         ........................-> Index "FK_RELATIONS_COUNTRIES" Range Scan (full match)
+        {data_list[0]}
     """
 
-    expected_stdout_5x = """
+    expected_out_5x = f"""
+        {qry_list[0]}
         Select Expression
-        ....-> Sort (record length: 150, key length: 44)
+        ....-> Sort record length: N, key length: M
         ........-> Filter
         ............-> Hash Join (inner)
         ................-> Table "RELATIONS" as "R" Full Scan
@@ -385,8 +403,24 @@ def test_1(act: Action, capsys):
         ........................-> Table "COUNTRIES" as "C" Access By ID
         ............................-> Bitmap
         ................................-> Index "I_COUNTRYNAME" Range Scan (full match)
+        {data_list[0]}
     """
 
-    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x
+    expected_out_6x = f"""
+        {qry_list[0]}
+        Select Expression
+        ....-> Sort record length: N, key length: M
+        ........-> Filter
+        ............-> Hash Join (inner) (keys: 1, total key length: 4)
+        ................-> Table "PUBLIC"."RELATIONS" as "R" Full Scan
+        ................-> Record Buffer (record length: 81)
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."COUNTRIES" as "C" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."I_COUNTRYNAME" Range Scan (full match)
+        {data_list[0]}
+    """
+
+    act.expected_stdout = expected_out_4x if act.is_version('<5') else expected_out_5x if act.is_version('<6') else expected_out_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
