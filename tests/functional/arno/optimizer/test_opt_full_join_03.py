@@ -10,9 +10,15 @@ DESCRIPTION:
 FBTEST:      functional.arno.optimizer.opt_full_join_03
 NOTES:
     [07.03.2023] pzotov
-    Replaced WHERE-expr: added coalesce() after discussion with dimitr, letter 07-mar-2023 16:29.
-    Plan changed for datasource 'C'.
-    Checked on 3.0.11.33665, 4.0.3.2904, 5.0.0.970
+        Replaced WHERE-expr: added coalesce() after discussion with dimitr, letter 07-mar-2023 16:29.
+        Plan changed for datasource 'C'.
+        Checked on 3.0.11.33665, 4.0.3.2904, 5.0.0.970
+    [07.07.2025] pzotov
+        Refactored: explained plan is used to be checked in expected_out.
+        Added ability to use several queries and their datasets for check - see 'qry_list' and 'qry_data' tuples.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
 """
 
 import pytest
@@ -67,10 +73,8 @@ init_script = """
 
 db = db_factory(init=init_script)
 
-test_script = """
-    set plan on;
-    set list on;
-    -- full join should return ...
+qry_list = (
+    """
     select
         r.relationname,
         rc.relationid,
@@ -81,36 +85,200 @@ test_script = """
         full join relationcategories rc on (rc.relationid = r.relationid)
         full join categories c on (c.categoryid = rc.categoryid)
     where
-        -- c.categoryid >= 2
         coalesce(c.categoryid,0) >= 2
     order by
-        rc.categoryid desc;
-"""
+        rc.categoryid desc
+    """,
+)
+data_list = (
+    """
+    RELATIONNAME : diving snorkel shop
+    RELATIONID : 1
+    CATEGORYID : 3
+    DESCRIPTION : creditor
+    RELATIONNAME : diving snorkel shop
+    RELATIONID : 1
+    CATEGORYID : 2
+    DESCRIPTION : debtor
+    RELATIONNAME : bakery garbage
+    RELATIONID : 2
+    CATEGORYID : 2
+    DESCRIPTION : debtor
+    RELATIONNAME : None
+    RELATIONID : None
+    CATEGORYID : None
+    DESCRIPTION : newsletter
+    """,
+)
 
-act = isql_act('db', test_script)
+substitutions = [ ( r'\(record length: \d+, key length: \d+\)', 'record length: N, key length: M' ) ]
+act = python_act('db', substitutions = substitutions)
 
-expected_stdout = """
-    PLAN SORT (JOIN (JOIN (C NATURAL, JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS)))), JOIN (JOIN (JOIN (RC NATURAL, R INDEX (PK_RELATIONS)), JOIN (R NATURAL, RC INDEX (FK_RC_RELATIONS))), C NATURAL)))
-    RELATIONNAME                    diving snorkel shop
-    RELATIONID                      1
-    CATEGORYID                      3
-    DESCRIPTION                     creditor
-    RELATIONNAME                    diving snorkel shop
-    RELATIONID                      1
-    CATEGORYID                      2
-    DESCRIPTION                     debtor
-    RELATIONNAME                    bakery garbage
-    RELATIONID                      2
-    CATEGORYID                      2
-    DESCRIPTION                     debtor
-    RELATIONNAME                    <null>
-    RELATIONID                      <null>
-    CATEGORYID                      <null>
-    DESCRIPTION                     newsletter
-"""
+#-----------------------------------------------------------
+
+def replace_leading(source, char="."):
+    stripped = source.lstrip()
+    return char * (len(source) - len(stripped)) + stripped
+
+#-----------------------------------------------------------
 
 @pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+def test_1(act: Action, capsys):
+    with act.db.connect() as con:
+        cur = con.cursor()
+        for test_sql in qry_list:
+            ps, rs =  None, None
+            try:
+                cur = con.cursor()
+                ps = cur.prepare(test_sql)
+                print(test_sql)
+                # Print explained plan with padding eash line by dots in order to see indentations:
+                print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur.execute(ps)
+                cur_cols = cur.description
+                for r in rs:
+                    for i in range(0,len(cur_cols)):
+                        print( cur_cols[i][0], ':', r[i] )
+
+            except DatabaseError as e:
+                print(e.__str__())
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
+
+    expected_out_4x = f"""
+        {qry_list[0]}
+        Select Expression
+        ....-> Sort record length: N, key length: M
+        ........-> Filter
+        ............-> Full Outer Join
+        ................-> Nested Loop Join (outer)
+        ....................-> Table "CATEGORIES" as "C" Full Scan
+        ....................-> Filter
+        ........................-> Full Outer Join
+        ............................-> Nested Loop Join (outer)
+        ................................-> Table "RELATIONCATEGORIES" as "RC" Full Scan
+        ................................-> Filter
+        ....................................-> Table "RELATIONS" as "R" Access By ID
+        ........................................-> Bitmap
+        ............................................-> Index "PK_RELATIONS" Unique Scan
+        ............................-> Nested Loop Join (anti)
+        ................................-> Table "RELATIONS" as "R" Full Scan
+        ................................-> Filter
+        ....................................-> Table "RELATIONCATEGORIES" as "RC" Access By ID
+        ........................................-> Bitmap
+        ............................................-> Index "FK_RC_RELATIONS" Range Scan (full match)
+        ................-> Nested Loop Join (anti)
+        ....................-> Full Outer Join
+        ........................-> Nested Loop Join (outer)
+        ............................-> Table "RELATIONCATEGORIES" as "RC" Full Scan
+        ............................-> Filter
+        ................................-> Table "RELATIONS" as "R" Access By ID
+        ....................................-> Bitmap
+        ........................................-> Index "PK_RELATIONS" Unique Scan
+        ........................-> Nested Loop Join (anti)
+        ............................-> Table "RELATIONS" as "R" Full Scan
+        ............................-> Filter
+        ................................-> Table "RELATIONCATEGORIES" as "RC" Access By ID
+        ....................................-> Bitmap
+        ........................................-> Index "FK_RC_RELATIONS" Range Scan (full match)
+        ....................-> Filter
+        ........................-> Table "CATEGORIES" as "C" Full Scan
+        {data_list[0]}
+    """
+
+    expected_out_5x = f"""
+        {qry_list[0]}
+        Select Expression
+        ....-> Sort record length: N, key length: M
+        ........-> Filter
+        ............-> Full Outer Join
+        ................-> Nested Loop Join (outer)
+        ....................-> Table "CATEGORIES" as "C" Full Scan
+        ....................-> Filter
+        ........................-> Full Outer Join
+        ............................-> Nested Loop Join (outer)
+        ................................-> Table "RELATIONCATEGORIES" as "RC" Full Scan
+        ................................-> Filter
+        ....................................-> Table "RELATIONS" as "R" Access By ID
+        ........................................-> Bitmap
+        ............................................-> Index "PK_RELATIONS" Unique Scan
+        ............................-> Nested Loop Join (outer)
+        ................................-> Table "RELATIONS" as "R" Full Scan
+        ................................-> Filter
+        ....................................-> Table "RELATIONCATEGORIES" as "RC" Access By ID
+        ........................................-> Bitmap
+        ............................................-> Index "FK_RC_RELATIONS" Range Scan (full match)
+        ................-> Nested Loop Join (outer)
+        ....................-> Full Outer Join
+        ........................-> Nested Loop Join (outer)
+        ............................-> Table "RELATIONCATEGORIES" as "RC" Full Scan
+        ............................-> Filter
+        ................................-> Table "RELATIONS" as "R" Access By ID
+        ....................................-> Bitmap
+        ........................................-> Index "PK_RELATIONS" Unique Scan
+        ........................-> Nested Loop Join (outer)
+        ............................-> Table "RELATIONS" as "R" Full Scan
+        ............................-> Filter
+        ................................-> Table "RELATIONCATEGORIES" as "RC" Access By ID
+        ....................................-> Bitmap
+        ........................................-> Index "FK_RC_RELATIONS" Range Scan (full match)
+        ....................-> Filter
+        ........................-> Table "CATEGORIES" as "C" Full Scan
+        {data_list[0]}
+    """
+
+    expected_out_6x = f"""
+        {qry_list[0]}
+        Select Expression
+        ....-> Sort record length: N, key length: M
+        ........-> Filter
+        ............-> Full Outer Join
+        ................-> Nested Loop Join (outer)
+        ....................-> Table "PUBLIC"."CATEGORIES" as "C" Full Scan
+        ....................-> Filter
+        ........................-> Full Outer Join
+        ............................-> Nested Loop Join (outer)
+        ................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Full Scan
+        ................................-> Filter
+        ....................................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
+        ........................................-> Bitmap
+        ............................................-> Index "PUBLIC"."PK_RELATIONS" Unique Scan
+        ............................-> Nested Loop Join (outer)
+        ................................-> Table "PUBLIC"."RELATIONS" as "R" Full Scan
+        ................................-> Filter
+        ....................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
+        ........................................-> Bitmap
+        ............................................-> Index "PUBLIC"."FK_RC_RELATIONS" Range Scan (full match)
+        ................-> Nested Loop Join (outer)
+        ....................-> Full Outer Join
+        ........................-> Nested Loop Join (outer)
+        ............................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Full Scan
+        ............................-> Filter
+        ................................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
+        ....................................-> Bitmap
+        ........................................-> Index "PUBLIC"."PK_RELATIONS" Unique Scan
+        ........................-> Nested Loop Join (outer)
+        ............................-> Table "PUBLIC"."RELATIONS" as "R" Full Scan
+        ............................-> Filter
+        ................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
+        ....................................-> Bitmap
+        ........................................-> Index "PUBLIC"."FK_RC_RELATIONS" Range Scan (full match)
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."CATEGORIES" as "C" Full Scan
+        {data_list[0]}
+    """
+
+    act.expected_stdout = expected_out_4x if act.is_version('<5') else expected_out_5x if act.is_version('<6') else expected_out_6x
+    act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
