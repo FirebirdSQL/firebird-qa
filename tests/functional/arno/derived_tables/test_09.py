@@ -39,8 +39,6 @@ FROM
   Table_10 t10
 FULL JOIN (SELECT * FROM Table_10 t2 WHERE t2.ID = t10.ID) dt ON (1 = 1);"""
 
-act = isql_act('db', test_script, substitutions=[('column.*', '')])
-
 substitutions = [('^((?!(SQLSTATE|Column unknown)).)*$', '')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
