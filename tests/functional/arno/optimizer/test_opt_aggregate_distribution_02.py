@@ -152,25 +152,3 @@ def test_1(act: Action, capsys):
     act.expected_stdout = expected_out_5x if act.is_version('<6') else expected_out_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
-
-
-
-'''
-act = isql_act('db', test_script)
-
-expected_stdout = """PLAN SORT (JOIN (F NATURAL, C INDEX (PK_COLORS)))
-
-     COLORID COLORNAME                            COUNT
-============ ==================== =====================
-           1 Red                                      2
-           2 White                                    2
-           3 Blue                                     2
-           4 Yellow                                   2
-"""
-
-@pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout
-'''
