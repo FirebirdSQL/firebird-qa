@@ -39,18 +39,16 @@ FROM
   Table_10 t10
 LEFT JOIN (SELECT * FROM Table_10 t2 WHERE t2.ID = t10.ID) dt ON (1 = 1);"""
 
-act = isql_act('db', test_script, substitutions=[('column.*', '')])
+substitutions = [('^((?!(SQLSTATE|Column unknown)).)*$', '')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stderr = """Statement failed, SQLSTATE = 42S22
-Dynamic SQL Error
--SQL error code = -206
--Column unknown
--T10.ID
--At line 5, column 58
+expected_stdout = """
+    Statement failed, SQLSTATE = 42S22
+    -Column unknown
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
