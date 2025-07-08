@@ -10,6 +10,11 @@ DESCRIPTION:
     Although length of DECFLOAT(34) literal can exceed 6000 bytes (0.000<6000 zeros>00123)
     implementation limit exists - length of such literal should not exceed 1024 bytes.
 FBTEST:      functional.datatypes.decfloat_literal_length
+NOTES:
+    [08.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.930; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -94,116 +99,115 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script)
+substitutions = [ ('^((?!SQLSTATE|sqltype|exception|overflow|truncation|limit|expected|actual|CONSTANT).)*$', ''), ('[ \t]+', ' ') ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
-    INPUT message field count: 0
 
-    OUTPUT message field count: 1
+expected_stdout_5x = """
     01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
-      :  name: CONSTANT  alias: CONSTANT
-      : table:   owner:
-
-    CONSTANT                              0.1000000000000000000005550000000079
-
-
-
-    INPUT message field count: 0
-
-    OUTPUT message field count: 1
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT 0.1000000000000000000005550000000079
     01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
-      :  name: CONSTANT  alias: CONSTANT
-      : table:   owner:
-
-    CONSTANT                             -0.1000000000000000000005550000000079
-
-
-
-    INPUT message field count: 0
-
-    OUTPUT message field count: 1
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT -0.1000000000000000000005550000000079
     01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
-      :  name: CONSTANT  alias: CONSTANT
-      : table:   owner:
-
-    CONSTANT                                                      5.4321E-1018
-
-
-
-    INPUT message field count: 0
-
-    OUTPUT message field count: 1
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT 5.4321E-1018
     01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
-      :  name: CONSTANT  alias: CONSTANT
-      : table:   owner:
-
-    CONSTANT                                                     -5.4321E-1017
-
-
-
-    INPUT message field count: 0
-
-    OUTPUT message field count: 1
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT -5.4321E-1017
     01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
-      :  name: CONSTANT  alias: CONSTANT
-      : table:   owner:
-
-    CONSTANT                         1.230000000000000000000055500000001E+1023
-
-
-
-    INPUT message field count: 0
-
-    OUTPUT message field count: 1
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT 1.230000000000000000000055500000001E+1023
     01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
-      :  name: CONSTANT  alias: CONSTANT
-      : table:   owner:
-
-    CONSTANT                        -1.230000000000000000000055500000001E+1022
-"""
-
-expected_stderr = """
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT -1.230000000000000000000055500000001E+1022
     Statement failed, SQLSTATE = 22001
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -Implementation limit exceeded
     -expected length 1024, actual 1025
-
     Statement failed, SQLSTATE = 22001
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -Implementation limit exceeded
     -expected length 1024, actual 1025
-
     Statement failed, SQLSTATE = 22001
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -Implementation limit exceeded
     -expected length 1024, actual 1025
-
     Statement failed, SQLSTATE = 22001
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -Implementation limit exceeded
     -expected length 1024, actual 1025
-
     Statement failed, SQLSTATE = 22001
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -Implementation limit exceeded
     -expected length 1024, actual 1025
-
     Statement failed, SQLSTATE = 22001
     arithmetic exception, numeric overflow, or string truncation
     -string right truncation
     -Implementation limit exceeded
     -expected length 1024, actual 1025
 """
+
+expected_stdout_6x = """
+    01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT 0.1000000000000000000005550000000079
+    01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT -0.1000000000000000000005550000000079
+    01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT 5.4321E-1018
+    01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT -5.4321E-1017
+    01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT 1.230000000000000000000055500000001E+1023
+    01: sqltype: 32762 DECFLOAT(34) scale: 0 subtype: 0 len: 16
+    : name: CONSTANT alias: CONSTANT
+    CONSTANT -1.230000000000000000000055500000001E+1022
+    Statement failed, SQLSTATE = 22001
+    arithmetic exception, numeric overflow, or string truncation
+    -string right truncation
+    -Implementation limit exceeded
+    -expected length 1024, actual 1025
+    Statement failed, SQLSTATE = 22001
+    arithmetic exception, numeric overflow, or string truncation
+    -string right truncation
+    -Implementation limit exceeded
+    -expected length 1024, actual 1025
+    Statement failed, SQLSTATE = 22001
+    arithmetic exception, numeric overflow, or string truncation
+    -string right truncation
+    -Implementation limit exceeded
+    -expected length 1024, actual 1025
+    Statement failed, SQLSTATE = 22001
+    arithmetic exception, numeric overflow, or string truncation
+    -string right truncation
+    -Implementation limit exceeded
+    -expected length 1024, actual 1025
+    Statement failed, SQLSTATE = 22001
+    arithmetic exception, numeric overflow, or string truncation
+    -string right truncation
+    -Implementation limit exceeded
+    -expected length 1024, actual 1025
+    Statement failed, SQLSTATE = 22001
+    arithmetic exception, numeric overflow, or string truncation
+    -string right truncation
+    -Implementation limit exceeded
+    -expected length 1024, actual 1025
+"""
+
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
