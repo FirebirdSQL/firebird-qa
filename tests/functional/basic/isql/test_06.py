@@ -6,7 +6,25 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7218
 TITLE:       Let ISQL show per-table run-time statistics.
 NOTES:
     [23.02.2023] pzotov
-    Checked on 5.0.0.958.
+        Checked on 5.0.0.958.
+    [08.07.2025] pzotov
+        ::: WARNING :::
+        First word in the header (" Table name  | Natural | Index  ...") starts from offset = 1,
+        first byte if space (i.e. the letter "T" is shown on byte N2).
+
+        Leading space are removed from each line before assertion, i.e. act.clean_stdout will contain:
+        "Table name  | Natural | Index  ..."  - i.e. the "T" letter will be at starting byte (offset=0).
+        This causes expected_out to be 'wrongly formatted', e.g. like the header row is 'shifted' for 
+        one character to left:
+        --------------------+---------+---------+---------+
+        Table name         | Natural | Index   | Insert  |
+        --------------------+---------+---------+---------+
+        SYSTEM.RDB$FIELDS   |         |        2|         |
+
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.930; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
+
 """
 
 import pytest
@@ -65,7 +83,7 @@ non_ascii_ddl='''
 
 tmp_file = temp_file('non_ascii_ddl.sql')
 
-expected_stdout = """
+expected_stdout_5x = """
     Всего номенклатура электрики, шт. 3
     Per table statistics:
     ----------------------------------------------------------------+---------+---------+---------+---------+---------+---------+---------+---------+
@@ -80,11 +98,26 @@ expected_stdout = """
     ----------------------------------------------------------------+---------+---------+---------+---------+---------+---------+---------+---------+
 """
 
+expected_stdout_6x = """
+    Всего номенклатура электрики, шт. 3
+    Per table statistics:
+    ------------------------------------------------------------------------+---------+---------+---------+---------+---------+---------+---------+---------+
+    Table name                                                             | Natural | Index   | Insert  | Update  | Delete  | Backout | Purge   | Expunge |
+    ------------------------------------------------------------------------+---------+---------+---------+---------+---------+---------+---------+---------+
+    SYSTEM.RDB$FIELDS                                                       |         |        2|         |         |         |         |         |         |
+    SYSTEM.RDB$RELATION_FIELDS                                              |         |        4|         |         |         |         |         |         |
+    SYSTEM.RDB$RELATIONS                                                    |         |        4|         |         |         |         |         |         |
+    SYSTEM.RDB$SECURITY_CLASSES                                             |         |        1|         |         |         |         |         |         |
+    PUBLIC."склад"                                                          |        6|         |         |         |         |         |         |         |
+    PUBLIC."справочник групп изделий используемых в ремонте спецавтомобилей"|        4|         |         |         |         |         |         |         |
+    ------------------------------------------------------------------------+---------+---------+---------+---------+---------+---------+---------+---------+
+"""
+
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, tmp_file: Path):
     tmp_file.write_bytes(non_ascii_ddl.encode('cp1251'))
 
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     # !NB! run with charset:
     act.isql(switches=['-q'], combine_output = True, input_file = tmp_file, charset = 'win1251', io_enc = 'cp1251')
     assert act.clean_stdout == act.clean_expected_stdout
