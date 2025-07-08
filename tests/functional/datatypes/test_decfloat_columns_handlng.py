@@ -8,6 +8,7 @@ TITLE:       Check ability of misc. actions against table column for DECFLOAT da
 DESCRIPTION:
   See  doc/sql.extensions/README.data_types
 FBTEST:      functional.datatypes.decfloat_columns_handlng
+NOTES:
     [08.07.2025] pzotov
     Separated expected output for FB major versions prior/since 6.x.
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
