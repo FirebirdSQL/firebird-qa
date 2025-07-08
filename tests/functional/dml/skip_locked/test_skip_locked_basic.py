@@ -8,8 +8,11 @@ DESCRIPTION:
     More complex cases see in gh_7350_test.py.
 NOTES:
     [26.02.2025] pzotov
-    Commit that introduced this feature (5.0.0.811, 29-oct-2022):
-    https://github.com/FirebirdSQL/firebird/commit/5cc8a8f7fd27d72d5ca6f19eb691e93f2404ddd1
+        Commit that introduced this feature (5.0.0.811, 29-oct-2022):
+        https://github.com/FirebirdSQL/firebird/commit/5cc8a8f7fd27d72d5ca6f19eb691e93f2404ddd1
+    [06.07.2025] pzotov
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+        Checked on 6.0.0.930; 5.0.3.1668.
 """
 from firebird.driver import tpb, Isolation, DatabaseError 
 
@@ -60,10 +63,12 @@ def test_1(act: Action, capsys):
             cur.close()
             tx_worker.rollback()
 
-        act.expected_stdout = """
+        SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+        TEST_TABLE_NAME = 'TEST' if act.is_version('<6') else  f'{SQL_SCHEMA_PREFIX}"TEST"'
+        act.expected_stdout = f"""
             SERIALIZABLE
             lock conflict on no wait transaction
-            -Acquire lock for relation (TEST) failed
+            -Acquire lock for relation ({TEST_TABLE_NAME}) failed
             
             SNAPSHOT
             TIL: SNAPSHOT ID: 2
