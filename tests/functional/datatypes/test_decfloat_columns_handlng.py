@@ -8,6 +8,10 @@ TITLE:       Check ability of misc. actions against table column for DECFLOAT da
 DESCRIPTION:
   See  doc/sql.extensions/README.data_types
 FBTEST:      functional.datatypes.decfloat_columns_handlng
+    [08.07.2025] pzotov
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.930; 5.0.3.1668; 4.0.6.3214.
 """
 
 import pytest
@@ -103,34 +107,42 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    ID                              9223372036854775807
-    N                               -9.999999999999999999999999999999999E+6144
-    X                               -9.999999999999999E+384
-
-    Records affected: 0
-    Records affected: 1
-
-    ID                               1.985155524189834E+379
-    N                                9.999999999999999999999999999999999E+6144
-    X                                9.999999999999999E+384
-
-"""
-
-expected_stderr = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -ALTER TABLE TEST failed
     -Cannot change datatype for N.  Conversion from base type DECFLOAT(34) to DECFLOAT(16) is not supported.
-
+    ID                              9223372036854775807
+    N                               -9.999999999999999999999999999999999E+6144
+    X                               -9.999999999999999E+384
     Statement failed, SQLSTATE = 22003
     Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
+    Records affected: 0
+    Records affected: 1
+    ID                               1.985155524189834E+379
+    N                                9.999999999999999999999999999999999E+6144
+    X                                9.999999999999999E+384
+"""
+
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -ALTER TABLE "PUBLIC"."TEST" failed
+    -Cannot change datatype for "N".  Conversion from base type DECFLOAT(34) to DECFLOAT(16) is not supported.
+    ID                              9223372036854775807
+    N                               -9.999999999999999999999999999999999E+6144
+    X                               -9.999999999999999E+384
+    Statement failed, SQLSTATE = 22003
+    Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
+    Records affected: 0
+    Records affected: 1
+    ID                               1.985155524189834E+379
+    N                                9.999999999999999999999999999999999E+6144
+    X                                9.999999999999999E+384
 """
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
