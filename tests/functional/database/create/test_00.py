@@ -8,6 +8,11 @@ NOTES:
     This test replaces old ones: test_03, test_04, test_05, test_06, test_07 and test_12.
     Custome database config object is used here.
     Checked on 6.0.0.172, 5.0.0.1294, 4.0.5.3040, 3.0.12.33725
+
+    [08.07.2025] pzotov
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.930; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
 """
 import pytest
 from pathlib import Path
@@ -104,6 +109,29 @@ def test_1(act: Action, tmp_fdb: Path, capsys):
         ACTUAL_PAGE_SIZE                32768
     """
 
-    act.expected_stdout = fb3x_expected_out if act.is_version('<4') else fb4x_expected_out
+    fb6x_expected_out = """
+        SPECIFIED_PAGE_SIZE             0
+        ACTUAL_PAGE_SIZE                8192
+        SPECIFIED_PAGE_SIZE             1024
+        ACTUAL_PAGE_SIZE                8192
+        SPECIFIED_PAGE_SIZE             2048
+        ACTUAL_PAGE_SIZE                8192
+        SPECIFIED_PAGE_SIZE             4096
+        ACTUAL_PAGE_SIZE                8192
+        SPECIFIED_PAGE_SIZE             8192
+        ACTUAL_PAGE_SIZE                8192
+        SPECIFIED_PAGE_SIZE             16384
+        ACTUAL_PAGE_SIZE                16384
+        SPECIFIED_PAGE_SIZE             32768
+        ACTUAL_PAGE_SIZE                32768
+        SPECIFIED_PAGE_SIZE             65536
+        ACTUAL_PAGE_SIZE                32768
+        SPECIFIED_PAGE_SIZE             131072
+        ACTUAL_PAGE_SIZE                32768
+        SPECIFIED_PAGE_SIZE             262144
+        ACTUAL_PAGE_SIZE                32768
+    """
+
+    act.expected_stdout = fb3x_expected_out if act.is_version('<4') else fb4x_expected_out if act.is_version('<6') else fb6x_expected_out
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
