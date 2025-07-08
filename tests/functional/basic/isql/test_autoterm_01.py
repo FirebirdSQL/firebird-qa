@@ -49,11 +49,11 @@ def test_1(act: Action):
         create or alter package pg_test as begin procedure pg_sp_test; function pg_fn_test returns int; end; recreate package body pg_test as begin procedure pg_sp_test as begin end function pg_fn_test returns int as begin return 1; end end;
     """
 
-    act.expected_stdout = """
-        O1                              ^
+    expected_stdout = """
+        O1 ^
         bye-bye term
         ^
-        O2                              set term !;
+        O2 set term !;
         bye-bye term
         !
         Print statistics: OFF
@@ -68,6 +68,7 @@ def test_1(act: Action):
         Access Plan only: OFF
         Explain Access Plan: OFF
         Display BLOB type: 1
+        Set names: NONE
         Column headings: ON
         Auto Term: ON
         Terminator: ;
@@ -78,5 +79,6 @@ def test_1(act: Action):
         Keep transaction params: ON
         SET TRANSACTION
     """
+    act.expected_stdout = expected_stdout
     act.isql(switches=['-q'], input = test_sql, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
