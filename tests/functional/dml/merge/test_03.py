@@ -5,6 +5,10 @@ ID:          dml.merge-03
 FBTEST:      functional.dml.merge.03
 TITLE:       MERGE ... RETURNING must refer either ALIAS of the table (if it is defined) or context variables OLD and NEW
 DESCRIPTION:
+NOTES:
+    [08.07.2025] pzotov
+    Added 'FIELD_NAME' to be evaluated and substituted in expected_* on appropriate FB major version (prior/since FB 6.x).
+    Checked on 6.0.0.914; 5.0.3.1668.
 """
 
 import pytest
@@ -56,28 +60,23 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('-At line .*', ''), ('[ \t]+', ' ')])
 
-expected_stdout = """
-    OLD_ID                          1
-    OLD_T_X                         100
-
-    OLD_ID                          1
-    OLD_X                           100
-    NEW_ID                          -2
-    NEW_X                           -101
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 42S22
-    Dynamic SQL Error
-    -SQL error code = -206
-    -Column unknown
-    -TEST_B.ID
-"""
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
+    FIELD_NAME = 'TEST_B.ID' if act.is_version('<6') else  '"TEST_B"."ID"'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 42S22
+        Dynamic SQL Error
+        -SQL error code = -206
+        -Column unknown
+        -{FIELD_NAME}
+        OLD_ID 1
+        OLD_T_X 100
+        OLD_ID 1
+        OLD_X 100
+        NEW_ID -2
+        NEW_X -101
+    """
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
