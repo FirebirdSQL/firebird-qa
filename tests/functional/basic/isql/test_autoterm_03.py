@@ -97,7 +97,7 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
             Dynamic SQL Error
             -SQL error code = -206
             -Column unknown
-            -UNKNOWN_COLUMN
+            -"UNKNOWN_COLUMN"
         """
         , ###############################################
           # https://github.com/FirebirdSQL/firebird/pull/7868#issuecomment-1825452390
