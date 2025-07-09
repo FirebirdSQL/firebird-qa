@@ -11,17 +11,19 @@ import pytest
 from firebird.qa import *
 
 db = db_factory(init="CREATE DOMAIN test VARCHAR(63);")
-
 act = isql_act('db', "ALTER DOMAIN notexists DROP CONSTRAINT;")
 
-expected_stderr = """Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--ALTER DOMAIN NOTEXISTS failed
--Domain not found
-"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    DOMAIN_NAME = 'NOTEXISTS' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"NOTEXISTS"'
+    expected_stdout = f"""Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -ALTER DOMAIN {DOMAIN_NAME} failed
+        -Domain not found
+    """
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
