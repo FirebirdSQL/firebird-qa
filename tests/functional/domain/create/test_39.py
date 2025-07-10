@@ -20,7 +20,7 @@ act = isql_act('db', test_script)
 expected_stdout = """TEST                            VARCHAR(32) CHARACTER SET DOS437 Nullable
 COLLATE DB_ITA437"""
 
-@pytest.mark.skip("Test is covered by bugs/core_6336_test.py and some tests from domain/cretate/ which check text-based domains.")
+@pytest.mark.skip("Covered by 'bugs/core_6336_test.py' and 'test_all_datatypes_basic.py'")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
