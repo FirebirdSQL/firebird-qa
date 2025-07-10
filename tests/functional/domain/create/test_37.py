@@ -108,6 +108,7 @@ expected_stdout = f"""
     validation error for column "TEST"."S", value "*** null ***"
 """
 
+@pytest.mark.skip("Covered by 'test_all_datatypes_basic.py'")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
