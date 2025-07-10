@@ -145,21 +145,34 @@ test_script = """
 act = isql_act('db', test_script, substitutions=[('line:\\s[0-9]+,', 'line: x'),
                                                  ('col:\\s[0-9]+', 'col: y')])
 
-expected_stdout = """
-    E_DECLARED_NAME                 Что-то неправильно со складом
-    E_DETAILED_TEXT                 exception 1
-    Что-то неправильно со складом
-    Остаток стал отрицательным: -8
-    At procedure 'SP_CHECK_AMOUNT' line: x col: y
-    At procedure 'SP_RUN_WRITE_OFF' line: x col: y
-    At procedure 'главная точка входа' line: x col: y
-    At block line: x col: y
-    Records affected: 1
-"""
-
 @pytest.mark.intl
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+
+    expected_stdout_5x = """
+       E_DECLARED_NAME                 Что-то неправильно со складом
+       E_DETAILED_TEXT                 exception 1
+       Что-то неправильно со складом
+       Остаток стал отрицательным: -8
+       At procedure 'SP_CHECK_AMOUNT' line: x col: y
+       At procedure 'SP_RUN_WRITE_OFF' line: x col: y
+       At procedure 'главная точка входа' line: x col: y
+       At block line: x col: y
+       Records affected: 1
+    """
+
+    expected_stdout_6x = """
+       E_DECLARED_NAME                 "PUBLIC"."Что-то неправильно со складом"
+       E_DETAILED_TEXT                 exception 1
+       "PUBLIC"."Что-то неправильно со складом"
+       Остаток стал отрицательным: -8
+       At procedure "PUBLIC"."SP_CHECK_AMOUNT" line: x col: y
+       At procedure "PUBLIC"."SP_RUN_WRITE_OFF" line: x col: y
+       At procedure "PUBLIC"."главная точка входа" line: x col: y
+       At block line: x col: y
+       Records affected: 1
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
