@@ -20,6 +20,7 @@ act = isql_act('db', test_script)
 expected_stdout = """TEST                            ARRAY OF [7]
 DOUBLE PRECISION Nullable"""
 
+@pytest.mark.skip("Covered by 'test_all_datatypes_basic.py'")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
