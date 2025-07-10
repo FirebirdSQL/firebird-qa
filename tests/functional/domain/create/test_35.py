@@ -20,6 +20,7 @@ act = isql_act('db', test_script)
 expected_stdout = """TEST                            VARCHAR(32) Nullable
 DEFAULT CURRENT_USER"""
 
+@pytest.mark.skip("Covered by 'test_all_datatypes_basic.py'")
 @pytest.mark.skip("Test is covered by test_34.py")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
