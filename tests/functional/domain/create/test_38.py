@@ -108,6 +108,7 @@ expected_stdout = f"""
     INSERTED_DATA                   {CHK_TXT}
 """
 
+@pytest.mark.skip("Covered by 'test_all_datatypes_basic.py'")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
