@@ -110,6 +110,7 @@ test_script = f"""
 
 act = isql_act('db', test_script)
 
+@pytest.mark.skip("Covered by 'test_all_datatypes_basic.py'")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     expected_stdout = f"""
