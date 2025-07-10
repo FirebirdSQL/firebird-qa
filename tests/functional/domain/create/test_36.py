@@ -31,6 +31,8 @@ tmp_role = role_factory('db', name='"company boss"')
 
 act = python_act('db')
 DM_SIZE = 32765
+
+@pytest.mark.skip("Covered by 'test_all_datatypes_basic.py'")
 @pytest.mark.version('>=3')
 def test_1(act: Action, tmp_user: User, tmp_role: Role, capsys):
 
