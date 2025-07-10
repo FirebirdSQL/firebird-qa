@@ -6,13 +6,12 @@ FBTEST:      functional.exception.create.03
 TITLE:       CREATE EXCEPTION - too long message
 DESCRIPTION:
 NOTES:
-[23.10.2015]
-  try to create in the SAME transaction exceptions with too long message and correct message (reduce its length with 1)
-  after statement fails. Do that using both ascii and non-ascii characters in these exceptions messages.
-  Expected result: no errors should occur on commit, exceptions should work fine. Taken from eqc ticket #12062.
-[13.06.2016]
-  replaced 'show exception' with regular select from rdb$exception: output of SHOW commands
- is volatile in unstable FB versions.
+    [23.10.2015]
+        try to create in the SAME transaction exceptions with too long message and correct message (reduce its length with 1)
+        after statement fails. Do that using both ascii and non-ascii characters in these exceptions messages.
+        Expected result: no errors should occur on commit, exceptions should work fine. Taken from eqc ticket #12062.
+    [13.06.2016]
+         replaced 'show exception' with regular select from rdb$exception: output of SHOW commands is volatile in unstable FB versions.
 """
 
 import pytest
@@ -43,9 +42,6 @@ test_script = """
 
     commit;
 
-    set list on;
-    select rdb$exception_name, rdb$message from rdb$exceptions;
-
     set term ^;
     execute block as
     begin
@@ -63,42 +59,38 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('-At block line: [\\d]+, col: [\\d]+', '-At block line')])
 
-expected_stdout = """
-    RDB$EXCEPTION_NAME              BOO_ASCII
-    RDB$MESSAGE                     FOOBAR!abcdefghijklmnoprstu012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345
-
-    RDB$EXCEPTION_NAME              BOO_UTF8
-    RDB$MESSAGE                     3ηΣημείωσηΣημείωσηΣημεσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωση
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE EXCEPTION BOO_ASCII failed
-    -Name longer than database column size
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -CREATE EXCEPTION BOO_UTF8 failed
-    -Name longer than database column size
-
-    Statement failed, SQLSTATE = HY000
-    exception 1
-    -BOO_ASCII
-    -FOOBAR!abcdefghijklmnoprstu01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901...
-    -At block line: 3, col: 7
-
-    Statement failed, SQLSTATE = HY000
-    exception 2
-    -BOO_UTF8
-    -3ηΣημείωσηΣημείωσηΣημεσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείω...
-    -At block line: 3, col: 7
-"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_EXC_BOO_ASCII = 'BOO_ASCII' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"BOO_ASCII"'
+    TEST_EXC_BOO_UTF8 = 'BOO_UTF8' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"BOO_UTF8"'
+
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -CREATE EXCEPTION {TEST_EXC_BOO_ASCII} failed
+        -Name longer than database column size
+
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -CREATE EXCEPTION {TEST_EXC_BOO_UTF8} failed
+        -Name longer than database column size
+
+        Statement failed, SQLSTATE = HY000
+        exception 1
+        -{TEST_EXC_BOO_ASCII}
+        -FOOBAR!abcdefghijklmnoprstu01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901...
+        -At block line: 3, col: 7
+
+        Statement failed, SQLSTATE = HY000
+        exception 2
+        -{TEST_EXC_BOO_UTF8}
+        -3ηΣημείωσηΣημείωσηΣημεσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείωσηΣημείω...
+        -At block line: 3, col: 7
+    """
+
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
