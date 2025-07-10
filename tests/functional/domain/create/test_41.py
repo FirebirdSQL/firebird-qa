@@ -32,8 +32,8 @@ def test_1(act: Action):
         expected_stderr = """
             Statement failed, SQLSTATE = 42000
             unsuccessful metadata update
-            -CREATE DOMAIN TEST failed
-            -Domain TEST already exists
+            -CREATE DOMAIN "PUBLIC"."TEST" failed
+            -Domain "PUBLIC"."TEST" already exists
         """
 
     act.expected_stderr = expected_stderr
