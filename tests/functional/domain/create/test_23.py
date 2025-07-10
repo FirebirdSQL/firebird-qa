@@ -19,6 +19,7 @@ act = isql_act('db', test_script)
 
 expected_stdout = """TEST                            CHAR(32767) CHARACTER SET ISO8859_1 Nullable"""
 
+@pytest.mark.skip("Covered by 'test_all_datatypes_basic.py'")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
