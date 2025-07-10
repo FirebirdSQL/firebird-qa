@@ -12,16 +12,25 @@ from firebird.qa import *
 
 db = db_factory()
 
-act = isql_act('db', "DROP DOMAIN test;")
-
-expected_stderr = """Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--DROP DOMAIN TEST failed
--Domain not found
-"""
+act = isql_act('db', "DROP DOMAIN NO_SUCH_DOMAIN;")
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+
+    expected_stdout_5x = """
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -DROP DOMAIN NO_SUCH_DOMAIN failed
+        -Domain not found
+    """
+
+    expected_stdout_6x = """
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -DROP DOMAIN "PUBLIC"."NO_SUCH_DOMAIN" failed
+        -Domain not found
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
