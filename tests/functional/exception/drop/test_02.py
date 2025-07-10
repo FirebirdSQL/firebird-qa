@@ -37,24 +37,22 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    RDB$EXCEPTION_NAME              EXC_TEST
-    RDB$DEPENDENT_NAME              SP_TEST
-    Records affected: 1
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -cannot delete
-    -EXCEPTION EXC_TEST
-    -there are 1 dependencies
-"""
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_EXC_NAME = 'EXC_TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"EXC_TEST"'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -cannot delete
+        -EXCEPTION {TEST_EXC_NAME}
+        -there are 1 dependencies
+        RDB$EXCEPTION_NAME              EXC_TEST
+        RDB$DEPENDENT_NAME              SP_TEST
+        Records affected: 1
+    """
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
