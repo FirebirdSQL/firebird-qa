@@ -36,6 +36,7 @@ unsuccessful metadata update
 -CREATE PROCEDURE TEST failed
 -Procedure TEST already exists"""
 
+@pytest.mark.skip("Covered by lot of other tests.")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stderr = expected_stderr
