@@ -19,36 +19,80 @@ db = db_factory()
 
 test_script = """
     create table t(a int);
-    create view v as select a from t;
+    create view "t" as select a from t;
+
+    create table "v"(a int);
+    create view v as select a from "v";
+
+    set echo on;
     show tables;
     show views;
+
     show table v;
+    show table "v";
+
     show table t;
+    show table "t";
+
     show view v;
-    show view t;
+    show view "v";
 """
 
 act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout = """
-    T
-    V
-    A INTEGER Nullable
-    A INTEGER Nullable
-
-    View Source:
-    select a from t
-"""
-
-expected_stderr = """
-    There is no table V in this database
-    There is no view T in this database
-"""
-
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+
+    expected_stdout_5x = f"""
+        show tables;
+        T
+        v
+        show views;
+        V
+        t
+        show table v;
+        There is no table V in this database
+        show table "v";
+        A INTEGER Nullable
+        show table t;
+        A INTEGER Nullable
+        show table "t";
+        There is no table t in this database
+        show view v;
+        A INTEGER Nullable
+        View Source:
+        select a from "v"
+        show view "v";
+        There is no view v in this database
+
+    """
+
+    expected_stdout_6x = f"""
+        show tables;
+        PUBLIC.T
+        PUBLIC."v"
+        show views;
+        PUBLIC.V
+        PUBLIC."t"
+        show table v;
+        There is no table V in this database
+        show table "v";
+        Table: PUBLIC."v"
+        A INTEGER Nullable
+        show table t;
+        Table: PUBLIC.T
+        A INTEGER Nullable
+        show table "t";
+        There is no table "t" in this database
+        show view v;
+        View: PUBLIC.V
+        A INTEGER Nullable
+        View Source:
+        select a from "v"
+        show view "v";
+        There is no view "v" in this database
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
