@@ -49,16 +49,18 @@ test_script = """
 act = isql_act('db', test_script, substitutions=[('-At block line: [\\d]+, col: [\\d]+',
                                                   '-At block line')])
 
-expected_stderr = """
-    Statement failed, SQLSTATE = 23000
-    violation of FOREIGN KEY constraint "T_DETL_FK_MUR" on table "T_DETL"
-    -Foreign key reference target does not exist
-    -Problematic key value is ("MASTER_UNIQ_REF" = 1)
-    -At block line: 5, col: 9
-"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 23000
+        violation of FOREIGN KEY constraint "T_DETL_FK_MUR" on table {SQL_SCHEMA_PREFIX}"T_DETL"
+        -Foreign key reference target does not exist
+        -Problematic key value is ("MASTER_UNIQ_REF" = 1)
+        -At block line: 5, col: 9
+    """
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
