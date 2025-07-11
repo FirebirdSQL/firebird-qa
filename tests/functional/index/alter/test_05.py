@@ -40,7 +40,7 @@ expected_stdout_5x = """
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
-    -ALTER INDEX TEST_FK failed
+    -ALTER INDEX "PUBLIC"."TEST_FK" failed
     -Cannot deactivate index used by an integrity constraint
 """
 
