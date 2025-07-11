@@ -62,25 +62,26 @@ test_script = """
     execute procedure spx_aux_test (1);
 """
 
-act = isql_act('db', test_script, substitutions=[("-At procedure 'SPX_AUX_TEST' line: .*", ''),
+act = isql_act('db', test_script, substitutions=[("(-)At procedure.*", 'At procedure'),
                                                  ('[ \t]+', ' ')])
 
-expected_stderr = """
+expected_stdout = """
     Statement failed, SQLSTATE = 22012
     arithmetic exception, numeric overflow, or string truncation
-    -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
-
+    -Integer divide by zero. The code attempted to divide an integer value by an integer divisor of zero.
+    At procedure
     Statement failed, SQLSTATE = 22012
     arithmetic exception, numeric overflow, or string truncation
-    -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
-
+    -Integer divide by zero. The code attempted to divide an integer value by an integer divisor of zero.
+    At procedure
     Statement failed, SQLSTATE = 22012
     arithmetic exception, numeric overflow, or string truncation
-    -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
+    -Integer divide by zero. The code attempted to divide an integer value by an integer divisor of zero.
+    At procedure
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
