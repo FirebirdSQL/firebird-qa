@@ -5,51 +5,62 @@ ID:          fkey.primary.insert-06
 FBTEST:      functional.fkey.primary.insert_pk_06
 TITLE:       Check correct work fix with foreign key
 DESCRIPTION:
-  Check foreign key work.
-  Master transaction modifies primary key and committed.
-  Detail transaction inserts record in detail_table.
-  Expected: no errors
+    Check foreign key work.
+    Master connecttion subsequently does following:
+      * starts Tx-1 and modifies primary key;
+      * commits Tx-1;
+      * starts Tx-2 and modifies NON-key field;
+    Detail transaction inserts record in detail_table.
+    Expected: no errors
 """
 
 import pytest
 from firebird.qa import *
-from firebird.driver import tpb, Isolation
+from firebird.driver import tpb, Isolation, DatabaseError
 
-init_script = """CREATE TABLE MASTER_TABLE (
-    ID     INTEGER PRIMARY KEY,
-    INT_F  INTEGER
-);
+init_script = """
+    create table master_table (
+        id     integer primary key,
+        non_key_fld  integer
+    );
 
-CREATE TABLE DETAIL_TABLE (
-    ID    INTEGER PRIMARY KEY,
-    FKEY  INTEGER
-);
+    create table detail_table (
+        id    integer primary key,
+        fkey  integer
+    );
 
-ALTER TABLE DETAIL_TABLE ADD CONSTRAINT FK_DETAIL_TABLE FOREIGN KEY (FKEY) REFERENCES MASTER_TABLE (ID);
-COMMIT;
-INSERT INTO MASTER_TABLE (ID, INT_F) VALUES (1, 10);
-commit;"""
+    alter table detail_table add constraint fk_detail_table foreign key (fkey) references master_table (id);
+    commit;
+    insert into master_table (id, non_key_fld) values (1, 10);
+    commit;
+"""
 
 db = db_factory(init=init_script)
 
 act = python_act('db')
 
 @pytest.mark.version('>=3')
-def test_1(act: Action):
+def test_1(act: Action, capsys):
     with act.db.connect() as con:
-        cust_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
-        con.begin(cust_tpb)
-        with con.cursor() as c:
-            c.execute("UPDATE MASTER_TABLE SET ID=2 WHERE ID=1")
+        custom_tpb = tpb(isolation=Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout=0)
+        con.begin(custom_tpb)
+        with con.cursor() as cur_main:
+            cur_main.execute("update master_table set id=2 where id=1")
             con.commit()
-            con.begin(cust_tpb)
-            c.execute("UPDATE MASTER_TABLE SET INT_F=10")
-            #Create second connection for change detail table
+            con.begin(custom_tpb)
+            cur_main.execute("update master_table set non_key_fld=10")
+
             with act.db.connect() as con_detail:
-                con_detail.begin(cust_tpb)
-                with con_detail.cursor() as cd:
-                    cd.execute("INSERT INTO DETAIL_TABLE (ID, FKEY) VALUES (1,2)")
-                con_detail.commit()
-    # Passed.
+                con_detail.begin(custom_tpb)
+                with con_detail.cursor() as cur_detl:
+                    try:
+                        cur_detl.execute('insert into detail_table (id, fkey) values (1,2)')
+                    except DatabaseError as e:
+                        print(e.__str__())
+                        print(e.gds_codes)
 
-
+    # No output must be here.
+    act.expected_stdout = f"""
+    """
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
