@@ -5,38 +5,49 @@ ID:          gtcs.dsql-domain-21
 FBTEST:      functional.gtcs.dsql_domain_21
 TITLE:       Verify result of ALTER DOMAIN with changing DEFAULT values and DROP constraints when a table exists with field based on this domain
 DESCRIPTION:
-  Original test see in:
-  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_21.script
+    Original test see in:
+    https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/DSQL_DOMAIN_21.script
 
-  Comment in GTCS:
-    This script will test using the alter domain statement on domains that are already in use in table definitions,
-    with domain defaults and check constraints.
-    Related bugs: have to exit db for changes made to domains to affect data being entered into tables.
+    Comment in GTCS:
+      This script will test using the alter domain statement on domains that are already in use in table definitions,
+      with domain defaults and check constraints.
+      Related bugs: have to exit db for changes made to domains to affect data being entered into tables.
 
-  We create domains with default values and constraints. Initially we use such default
-  values that PASS requirements of check-constraints.
-  Statement INSERT DEFAULT and query to the test table is used in order to ensure that we
-  have ability to use such values.
+    We create domains with default values and constraints. Initially we use such default
+    values that PASS requirements of check-constraints.
+    Statement INSERT DEFAULT and query to the test table is used in order to ensure that we
+    have ability to use such values.
 
-  Then we change values in DEFAULT clause so that all of them will VILOLATE check expressions.
-  Here take domains one-by-one and try to user
-  INSERT DEFAULT after each such change of DEFAULT value. Every such attempt must fail.
+    Then we change values in DEFAULT clause so that all of them will VILOLATE check expressions.
+    Here take domains one-by-one and try to user
+    INSERT DEFAULT after each such change of DEFAULT value. Every such attempt must fail.
 
-  Then we drop CHECK constraints in all domains and again try INSERT DEFAULT. It must pass
-  and new default values must be stored in the test table.
-  Finally, we drop DEFAULT in all domains and try INSERT DEFAULT one more time. It must
-  result to NULL value in all fields.
+    Then we drop CHECK constraints in all domains and again try INSERT DEFAULT. It must pass
+    and new default values must be stored in the test table.
+    Finally, we drop DEFAULT in all domains and try INSERT DEFAULT one more time. It must
+    result to NULL value in all fields.
 
-  ::: NB::: Changing default value for BLOB field to one that violates CHECK-expression
-  of domain leads to strange message that does not relates to actual
-  problem: SQLSTATE = 22018 / conversion error from string "BLOB". See CORE-6297 for details.
+    ::: NB::: Changing default value for BLOB field to one that violates CHECK-expression
+    of domain leads to strange message that does not relates to actual
+    problem: SQLSTATE = 22018 / conversion error from string "BLOB". See CORE-6297 for details.
 
-  ::: NOTE :::
-  Added domains with datatype that did appear only in FB 4.0: DECFLOAT and
-  TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
+    ::: NOTE :::
+    Added domains with datatype that did appear only in FB 4.0: DECFLOAT and
+    TIME[STAMP] WITH TIME ZONE. For this reason only FB 4.0+ can be tested.
 NOTES:
-[08.04.2021]
-  changed expected output for date 01-jan-0001 after discuss with Adriano.
+    [08.04.2021]
+        Changed expected output for date 01-jan-0001 after discuss with Adriano.
+    [11.07.2025] pzotov
+        Increased the 'subsitutions' list to suppress "PUBLIC" schema prefix and remove single/double quotes from object names. Need since 6.0.0.834.
+        ::: NB :::
+        File act.files_dir/'test_config.ini' must contain section:
+            [schema_n_quotes_suppress]
+            addi_subst="PUBLIC". " '
+        (thi file is used in qa/plugin.py, see QA_GLOBALS dictionary).
+
+        Value of parameter 'addi_subst' is splitted on tokens using space character and we add every token to 'substitutions' list which
+        eventually will be like this:
+            substitutions = [ ( <previous tuple(s)>, ('"PUBLIC".', ''), ('"', ''), ("'", '') ]
 """
 
 import pytest
@@ -408,8 +419,17 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('F18_BLOB_ID.*', ''),
-                                                 ('F19_BLOB_ID.*', ''), ('F20_BLOB_ID.*', '')])
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+substitutions=[('[ \t]+', ' '), ('F18_BLOB_ID.*', ''), ('F19_BLOB_ID.*', ''), ('F20_BLOB_ID.*', '')]
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = isql_act('db', test_script, substitutions=substitutions)
 
 expected_stdout = """
 	MSG                             point-1
