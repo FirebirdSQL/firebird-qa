@@ -682,671 +682,676 @@ test_script = """
     set term ;^
 """
 
-act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
-
-expected_stdout = """
-    CAST 01:23:45.0000 +00:00
-    CAST 2018-01-01 01:23:45.0000 +00:00
-    EXTRACT 0
-    EXTRACT 0
-    EXTRACT 0
-    EXTRACT 0
-    CAST 01:23:45.0000
-    CAST 2018-01-01 01:23:45.0000
-    CAST 01:23:45.0000 +02:00
-    CAST 2018-01-01 01:23:45.0000 +02:00
-    EXTRACT 2
-    EXTRACT 0
-    EXTRACT 2
-    EXTRACT 0
-    CAST 23:23:45.0000
-    CAST 2017-12-31 23:23:45.0000
-    CONSTANT 01:23:45.0000 +02:00
-    CONSTANT 2018-01-01 01:23:45.0000 +02:00
-    EXTRACT 2
-    EXTRACT 0
-    EXTRACT 2
-    EXTRACT 0
-    CAST 23:23:45.0000
-    CAST 2017-12-31 23:23:45.0000
-    CAST 01:23:45.0000 -02:00
-    CAST 2018-01-01 01:23:45.0000 -02:00
-    EXTRACT -2
-    EXTRACT 0
-    EXTRACT -2
-    EXTRACT 0
-    CAST 01:23:45.0000
-    CAST 2018-01-01 01:23:45.0000
-    CAST 01:23:45.0000 +02:00
-    CAST 2018-01-01 01:23:45.0000 +02:00
-    EXTRACT 2
-    EXTRACT 0
-    EXTRACT 2
-    EXTRACT 0
-    CAST 21:23:45.0000
-    CAST 2017-12-31 21:23:45.0000
-    EXTRACT 3
-    EXTRACT 4
-    EXTRACT 5.6789
-    EXTRACT 678.9
-    EXTRACT 2018
-    EXTRACT 1
-    EXTRACT 2
-    EXTRACT 3
-    EXTRACT 4
-    EXTRACT 5.6789
-    EXTRACT 678.9
-    CONSTANT 2017-10-14 22:00:00.0000 America/Sao_Paulo
-    EXTRACT -3
-    ADD 2017-10-15 23:00:00.0000 America/Sao_Paulo
-    EXTRACT -2
-    ADD 2017-10-16 23:00:00.0000 America/Sao_Paulo
-    EXTRACT -2
-    ADD 2017-10-17 23:00:00.0000 America/Sao_Paulo
-    EXTRACT -2
-    CONSTANT 2017-10-16 22:00:00.0000 America/Sao_Paulo
-    EXTRACT -2
-    SUBTRACT 2017-10-15 22:00:00.0000 America/Sao_Paulo
-    EXTRACT -2
-    SUBTRACT 2017-10-14 21:00:00.0000 America/Sao_Paulo
-    EXTRACT -3
-    SUBTRACT 2017-10-13 21:00:00.0000 America/Sao_Paulo
-    EXTRACT -3
-    DATEADD 2017-10-14 21:00:00.0000 America/Sao_Paulo
-    DATEADD 2017-10-14 22:00:00.0000 America/Sao_Paulo
-    DATEADD 2017-10-14 23:00:00.0000 America/Sao_Paulo
-    DATEADD 2017-10-15 01:00:00.0000 America/Sao_Paulo
-    DATEADD 2017-10-15 02:00:00.0000 America/Sao_Paulo
-    CONSTANT 2018-02-17 22:00:00.0000 America/Sao_Paulo
-    EXTRACT -2
-    ADD 2018-02-18 21:00:00.0000 America/Sao_Paulo
-    EXTRACT -3
-    ADD 2018-02-19 21:00:00.0000 America/Sao_Paulo
-    EXTRACT -3
-    ADD 2018-02-20 21:00:00.0000 America/Sao_Paulo
-    EXTRACT -3
-    CONSTANT 2018-02-19 22:00:00.0000 America/Sao_Paulo
-    EXTRACT -3
-    SUBTRACT 2018-02-18 22:00:00.0000 America/Sao_Paulo
-    EXTRACT -3
-    SUBTRACT 2018-02-17 23:00:00.0000 America/Sao_Paulo
-    EXTRACT -2
-    SUBTRACT 2018-02-16 23:00:00.0000 America/Sao_Paulo
-    EXTRACT -2
-    DATEADD 2018-02-17 23:00:00.0000 America/Sao_Paulo
-    DATEADD 2018-02-17 23:00:00.0000 America/Sao_Paulo
-    DATEADD 2018-02-18 00:00:00.0000 America/Sao_Paulo
-    DATEADD 2018-02-18 01:00:00.0000 America/Sao_Paulo
-    DATEADD 2018-02-18 00:00:00.0000 America/Sao_Paulo
-    DATEADD 2018-02-17 23:00:00.0000 America/Sao_Paulo
-    DATEADD 2018-02-17 23:00:00.0000 America/Sao_Paulo
-    DATEADD 2018-02-17 22:00:00.0000 America/Sao_Paulo
-    DATEDIFF 1
-    DATEDIFF 0
-    DATEDIFF 0
-    CAST 01:23:45.0000 -02:20
-    CAST 2018-01-01 01:23:45.0000 -02:20
-    EXTRACT -2
-    EXTRACT -20
-    EXTRACT -2
-    EXTRACT -20
-    CAST 01:23:45.0000
-    CAST 2018-01-01 01:23:45.0000
-    CAST 01:23:45.0000 +02:00
-    CAST 2018-01-01 01:23:45.0000 +02:00
-    EXTRACT 2
-    EXTRACT 0
-    EXTRACT 2
-    EXTRACT 0
-    CAST 21:03:45.0000
-    CAST 2017-12-31 21:03:45.0000
-    EXTRACT -3
-    EXTRACT 0
-    EXTRACT -3
-    EXTRACT 0
-    <true>
-    <true>
-    CAST 00:23:45.0000
-    CAST 22:23:45.0000
-    CAST 2018-01-01 00:23:45.0000
-    CAST 2017-12-31 22:23:45.0000
-    <true>
-    CAST 01:23:45.0000 -02:00
-    CAST 01:23:45.0000 -04:00
-    CAST 2018-01-01
-    CAST 2018-01-01
-    CAST 01:23:45.0000
-    CAST 03:23:45.0000
-    CAST 2018-01-01 01:23:45.0000
-    CAST 2018-01-01 03:23:45.0000
-    CAST 2018-01-01 01:23:45.0000 -02:00
-    CAST 01:23:45.0000 -02:00
-    <true>
-    <true>
-    <true>
-    <true>
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "01:23:45.0000 -03:00"
-    CAST 2018-01-01 00:00:00.0000 -02:00
-    Statement failed, SQLSTATE = 22018
-    conversion error from string "2018-01-01"
-    CONSTANT 2018-02-03 00:00:00.0000 America/Sao_Paulo
-    ADD 23:23:35.0000 +05:00
-    SUBTRACT 23:23:33.0000 +05:00
-    ADD 2018-01-02 23:23:34.0000 +05:00
-    SUBTRACT 2017-12-31 23:23:34.0000 +05:00
-    ADD 2018-01-01 23:23:34.0000 +05:00
-    ADD 2018-01-01 23:23:34.0000 +05:00
-    ADD 2018-01-01 16:23:34.0000
-    ADD 2018-01-01 16:23:34.0000
-    SUBTRACT -3600.0000
-    SUBTRACT -82800.0000
-    SUBTRACT 7200.0000
-    SUBTRACT -7200.0000
-    SUBTRACT -0.041666667
-    SUBTRACT 0.041666667
-    SUBTRACT 0.083333333
-    SUBTRACT -0.083333333
-    <true>
-    <true>
-    <true>
-    <true>
-    <true>
-    <true>
-    <false>
-    <false>
-    <true>
-    <true>
-    <true>
-    <true>
-    <false>
-    <true>
-    <true>
-    <true>
-    <false>
-    <false>
-    <true>
-    <true>
-    CAST 10:11:12.1345
-    CAST 10:11:12.1345 -03:00
-    SUBSTRING 10:11:12.1345
-    SUBSTRING 10:11:12.1345 -03:00
-    CAST 10:11:12.1345
-    CAST 10:11:12.1345 -03:00
-    CAST 2020-05-20 10:11:12.1345
-    CAST 2020-05-20 10:11:12.1345 -03:00
-    CAST 10:11:12.1345
-    CAST 10:11:12.1345 America/Sao_Paulo
-    SUBSTRING 10:11:12.1345
-    SUBSTRING 10:11:12.1345 America/Sao_Paulo
-    CAST 10:11:12.1345
-    CAST 10:11:12.1345 America/Sao_Paulo
-    CAST 2020-05-20 10:11:12.1345
-    CAST 2020-05-20 10:11:12.1345 America/Sao_Paulo
-    AT 20:01:02.0000 -05:00
-    AT 23:01:02.0000 -02:00
-    AT 04:01:02.0000 +03:00
-    AT 17:01:02.0000 -05:00
-    AT 20:01:02.0000 -02:00
-    AT 01:01:02.0000 +03:00
-    AT 23:01:02.0000 -02:00
-    AT 20:01:02.0000 -02:00
-    AT 2018-01-01 20:01:02.0000 -05:00
-    AT 2018-01-01 23:01:02.0000 -02:00
-    AT 2018-01-02 04:01:02.0000 +03:00
-    AT 2018-01-01 17:01:02.0000 -05:00
-    AT 2018-01-01 20:01:02.0000 -02:00
-    AT 2018-01-02 01:01:02.0000 +03:00
-    AT 2018-01-01 23:01:02.0000 -02:00
-    AT 2018-01-01 20:01:02.0000 -02:00
-    AT 2018-05-01 16:01:02.0000 America/Los_Angeles
-    AT 2018-04-01 16:01:02.0000 America/Los_Angeles
-    AT 2018-03-01 15:01:02.0000 America/Los_Angeles
-    AT 2018-02-01 14:01:02.0000 America/Los_Angeles
-    AT 2018-01-01 14:01:02.0000 America/Los_Angeles
-    ADD 2018-01-02 14:01:02.0000 America/Los_Angeles
-    ADD 2018-01-02 14:01:02.0000 America/Los_Angeles
-    ADD 2018-01-03 14:01:02.0000 America/Los_Angeles
-    FIRST_DAY 2018-01-01 10:11:12.0000 America/Sao_Paulo
-    FIRST_DAY 2018-03-01 10:11:12.0000 America/Sao_Paulo
-    FIRST_DAY 2018-03-04 10:11:12.0000 America/Sao_Paulo
-    LAST_DAY 2018-12-31 10:11:12.0000 America/Sao_Paulo
-    LAST_DAY 2018-03-31 10:11:12.0000 America/Sao_Paulo
-    LAST_DAY 2018-03-10 10:11:12.0000 America/Sao_Paulo
-    T1 2017-03-12 03:30:00.0000 America/New_York
-    T2 2017-03-12 02:30:00.0000 -05:00
-    T3 2017-03-12 03:29:00.0000 America/New_York
-    T4 2017-03-12 03:31:00.0000 America/New_York
-    T5 2017-03-12 01:30:00.0000 America/New_York
-    T6 2017-03-12 04:30:00.0000 America/New_York
-    T1 2017-11-05 01:30:00.0000 America/New_York
-    T2 2017-11-05 01:30:00.0000 -04:00
-    T3 2017-11-05 01:29:00.0000 America/New_York
-    T4 2017-11-05 01:31:00.0000 America/New_York
-    T5 2017-11-05 00:30:00.0000 America/New_York
-    T6 2017-11-05 01:30:00.0000 America/New_York
-    INPUT message field count: 0
-    OUTPUT message field count: 2
-    01: sqltype: 510 TIMESTAMP scale: 0 subtype: 0 len: 8
-    : name: CONSTANT alias: CONSTANT
-    : table: owner:
-    02: sqltype: 560 TIME scale: 0 subtype: 0 len: 4
-    : name: DATEADD alias: DATEADD
-    : table: owner:
-    CONSTANT 2018-05-01 21:01:02.0000
-    DATEADD 21:01:02.0000
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
-    -Problematic key value is ("V" = '12:33:33.0000 +00:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
-    -Problematic key value is ("V" = '13:33:33.0000 +01:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
-    -Problematic key value is ("V" = '14:33:33.0000 +02:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMETZ_UK"
-    -Problematic key value is ("V" = '11:33:33.0000 -03:00')
-    N 6
-    V 11:33:33.0000 +01:00
-    CAST 08:33:33.0000
-    N 3
-    V 11:33:33.4560 +01:00
-    CAST 08:33:33.4560
-    N 5
-    V 11:33:33.0000 -01:00
-    CAST 10:33:33.0000
-    N 2
-    V 11:33:33.4560 -01:00
-    CAST 10:33:33.4560
-    N 4
-    V 11:33:33.0000 -02:00
-    CAST 11:33:33.0000
-    N 1
-    V 11:33:33.4560 -02:00
-    CAST 11:33:33.4560
-    N 0
-    V 11:33:33.0000 America/Sao_Paulo
-    CAST 12:33:33.0000
-    N 6
-    V 11:33:33.0000 +01:00
-    N 3
-    V 11:33:33.4560 +01:00
-    N 5
-    V 11:33:33.0000 -01:00
-    N 2
-    V 11:33:33.4560 -01:00
-    N 4
-    V 11:33:33.0000 -02:00
-    N 1
-    V 11:33:33.4560 -02:00
-    N 0
-    V 11:33:33.0000 America/Sao_Paulo
-    N 6
-    V 11:33:33.0000 +01:00
-    CAST 08:33:33.0000
-    N 3
-    V 11:33:33.4560 +01:00
-    CAST 08:33:33.4560
-    N 5
-    V 11:33:33.0000 -01:00
-    CAST 10:33:33.0000
-    N 7
-    V 12:33:33.0000 +00:00
-    CAST 10:33:33.0000
-    N 8
-    V 13:33:33.0000 +01:00
-    CAST 10:33:33.0000
-    N 9
-    V 14:33:33.0000 +02:00
-    CAST 10:33:33.0000
-    N 2
-    V 11:33:33.4560 -01:00
-    CAST 10:33:33.4560
-    N 4
-    V 11:33:33.0000 -02:00
-    CAST 11:33:33.0000
-    N 1
-    V 11:33:33.4560 -02:00
-    CAST 11:33:33.4560
-    N 0
-    V 11:33:33.0000 America/Sao_Paulo
-    CAST 12:33:33.0000
-    N 6
-    V 11:33:33.0000 +01:00
-    CAST 08:33:33.0000
-    N 3
-    V 11:33:33.4560 +01:00
-    CAST 08:33:33.4560
-    N 5
-    V 11:33:33.0000 -01:00
-    CAST 10:33:33.0000
-    N 7
-    V 12:33:33.0000 +00:00
-    CAST 10:33:33.0000
-    N 8
-    V 13:33:33.0000 +01:00
-    CAST 10:33:33.0000
-    N 9
-    V 14:33:33.0000 +02:00
-    CAST 10:33:33.0000
-    N 2
-    V 11:33:33.4560 -01:00
-    CAST 10:33:33.4560
-    N 4
-    V 11:33:33.0000 -02:00
-    CAST 11:33:33.0000
-    N 1
-    V 11:33:33.4560 -02:00
-    CAST 11:33:33.4560
-    N 0
-    V 11:33:33.0000 America/Sao_Paulo
-    CAST 12:33:33.0000
-    N 6
-    V 11:33:33.0000 +01:00
-    N 3
-    V 11:33:33.4560 +01:00
-    N 5
-    V 11:33:33.0000 -01:00
-    N 7
-    V 12:33:33.0000 +00:00
-    N 8
-    V 13:33:33.0000 +01:00
-    N 9
-    V 14:33:33.0000 +02:00
-    N 2
-    V 11:33:33.4560 -01:00
-    N 4
-    V 11:33:33.0000 -02:00
-    N 1
-    V 11:33:33.4560 -02:00
-    N 0
-    V 11:33:33.0000 America/Sao_Paulo
-    N 6
-    V 11:33:33.0000 +01:00
-    CAST 08:33:33.0000
-    N 3
-    V 11:33:33.4560 +01:00
-    CAST 08:33:33.4560
-    N 5
-    V 11:33:33.0000 -01:00
-    CAST 10:33:33.0000
-    N 7
-    V 12:33:33.0000 +00:00
-    CAST 10:33:33.0000
-    N 8
-    V 13:33:33.0000 +01:00
-    CAST 10:33:33.0000
-    N 9
-    V 14:33:33.0000 +02:00
-    CAST 10:33:33.0000
-    N 2
-    V 11:33:33.4560 -01:00
-    CAST 10:33:33.4560
-    N 4
-    V 11:33:33.0000 -02:00
-    CAST 11:33:33.0000
-    N 1
-    V 11:33:33.4560 -02:00
-    CAST 11:33:33.4560
-    N 0
-    V 11:33:33.0000 America/Sao_Paulo
-    CAST 12:33:33.0000
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
-    -Problematic key value is ("V" = '2018-01-01 12:33:33.0000 +00:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
-    -Problematic key value is ("V" = '2018-01-01 13:33:33.0000 +01:00')
-    Statement failed, SQLSTATE = 23000
-    attempt to store duplicate value (visible to active transactions) in unique index "TIMESTAMPTZ_UK"
-    -Problematic key value is ("V" = '2018-01-01 14:33:33.0000 +02:00')
-    N 6
-    V 2018-01-01 11:33:33.0000 +01:00
-    CAST 2018-01-01 08:33:33.0000
-    N 3
-    V 2018-01-01 11:33:33.4560 +01:00
-    CAST 2018-01-01 08:33:33.4560
-    N 5
-    V 2018-01-01 11:33:33.0000 -01:00
-    CAST 2018-01-01 10:33:33.0000
-    N 2
-    V 2018-01-01 11:33:33.4560 -01:00
-    CAST 2018-01-01 10:33:33.4560
-    N 4
-    V 2018-01-01 11:33:33.0000 -02:00
-    CAST 2018-01-01 11:33:33.0000
-    N 1
-    V 2018-01-01 11:33:33.4560 -02:00
-    CAST 2018-01-01 11:33:33.4560
-    N 6
-    V 2018-01-01 11:33:33.0000 +01:00
-    N 3
-    V 2018-01-01 11:33:33.4560 +01:00
-    N 5
-    V 2018-01-01 11:33:33.0000 -01:00
-    N 2
-    V 2018-01-01 11:33:33.4560 -01:00
-    N 4
-    V 2018-01-01 11:33:33.0000 -02:00
-    N 1
-    V 2018-01-01 11:33:33.4560 -02:00
-    N 6
-    V 2018-01-01 11:33:33.0000 +01:00
-    CAST 2018-01-01 08:33:33.0000
-    N 3
-    V 2018-01-01 11:33:33.4560 +01:00
-    CAST 2018-01-01 08:33:33.4560
-    N 5
-    V 2018-01-01 11:33:33.0000 -01:00
-    CAST 2018-01-01 10:33:33.0000
-    N 7
-    V 2018-01-01 12:33:33.0000 +00:00
-    CAST 2018-01-01 10:33:33.0000
-    N 8
-    V 2018-01-01 13:33:33.0000 +01:00
-    CAST 2018-01-01 10:33:33.0000
-    N 9
-    V 2018-01-01 14:33:33.0000 +02:00
-    CAST 2018-01-01 10:33:33.0000
-    N 2
-    V 2018-01-01 11:33:33.4560 -01:00
-    CAST 2018-01-01 10:33:33.4560
-    N 4
-    V 2018-01-01 11:33:33.0000 -02:00
-    CAST 2018-01-01 11:33:33.0000
-    N 1
-    V 2018-01-01 11:33:33.4560 -02:00
-    CAST 2018-01-01 11:33:33.4560
-    N 6
-    V 2018-01-01 11:33:33.0000 +01:00
-    CAST 2018-01-01 08:33:33.0000
-    N 3
-    V 2018-01-01 11:33:33.4560 +01:00
-    CAST 2018-01-01 08:33:33.4560
-    N 5
-    V 2018-01-01 11:33:33.0000 -01:00
-    CAST 2018-01-01 10:33:33.0000
-    N 7
-    V 2018-01-01 12:33:33.0000 +00:00
-    CAST 2018-01-01 10:33:33.0000
-    N 8
-    V 2018-01-01 13:33:33.0000 +01:00
-    CAST 2018-01-01 10:33:33.0000
-    N 9
-    V 2018-01-01 14:33:33.0000 +02:00
-    CAST 2018-01-01 10:33:33.0000
-    N 2
-    V 2018-01-01 11:33:33.4560 -01:00
-    CAST 2018-01-01 10:33:33.4560
-    N 4
-    V 2018-01-01 11:33:33.0000 -02:00
-    CAST 2018-01-01 11:33:33.0000
-    N 1
-    V 2018-01-01 11:33:33.4560 -02:00
-    CAST 2018-01-01 11:33:33.4560
-    N 6
-    V 2018-01-01 11:33:33.0000 +01:00
-    N 3
-    V 2018-01-01 11:33:33.4560 +01:00
-    N 5
-    V 2018-01-01 11:33:33.0000 -01:00
-    N 7
-    V 2018-01-01 12:33:33.0000 +00:00
-    N 8
-    V 2018-01-01 13:33:33.0000 +01:00
-    N 9
-    V 2018-01-01 14:33:33.0000 +02:00
-    N 2
-    V 2018-01-01 11:33:33.4560 -01:00
-    N 4
-    V 2018-01-01 11:33:33.0000 -02:00
-    N 1
-    V 2018-01-01 11:33:33.4560 -02:00
-    N 6
-    V 2018-01-01 11:33:33.0000 +01:00
-    CAST 2018-01-01 08:33:33.0000
-    N 3
-    V 2018-01-01 11:33:33.4560 +01:00
-    CAST 2018-01-01 08:33:33.4560
-    N 5
-    V 2018-01-01 11:33:33.0000 -01:00
-    CAST 2018-01-01 10:33:33.0000
-    N 7
-    V 2018-01-01 12:33:33.0000 +00:00
-    CAST 2018-01-01 10:33:33.0000
-    N 8
-    V 2018-01-01 13:33:33.0000 +01:00
-    CAST 2018-01-01 10:33:33.0000
-    N 9
-    V 2018-01-01 14:33:33.0000 +02:00
-    CAST 2018-01-01 10:33:33.0000
-    N 2
-    V 2018-01-01 11:33:33.4560 -01:00
-    CAST 2018-01-01 10:33:33.4560
-    N 4
-    V 2018-01-01 11:33:33.0000 -02:00
-    CAST 2018-01-01 11:33:33.0000
-    N 1
-    V 2018-01-01 11:33:33.4560 -02:00
-    CAST 2018-01-01 11:33:33.4560
-    RDB$START_TIMESTAMP 2014-11-02 09:00:00.0000 GMT
-    RDB$END_TIMESTAMP 2015-03-08 09:59:59.9999 GMT
-    RDB$ZONE_OFFSET -480
-    RDB$DST_OFFSET 0
-    RDB$EFFECTIVE_OFFSET -480
-    START_TZH -8
-    START_TZM 0
-    END_TZH -8
-    END_TZM 0
-    RDB$START_TIMESTAMP 2015-03-08 10:00:00.0000 GMT
-    RDB$END_TIMESTAMP 2015-11-01 08:59:59.9999 GMT
-    RDB$ZONE_OFFSET -480
-    RDB$DST_OFFSET 60
-    RDB$EFFECTIVE_OFFSET -420
-    START_TZH -7
-    START_TZM 0
-    END_TZH -7
-    END_TZM 0
-    RDB$START_TIMESTAMP 2015-11-01 09:00:00.0000 GMT
-    RDB$END_TIMESTAMP 2016-03-13 09:59:59.9999 GMT
-    RDB$ZONE_OFFSET -480
-    RDB$DST_OFFSET 0
-    RDB$EFFECTIVE_OFFSET -480
-    START_TZH -8
-    START_TZM 0
-    END_TZH -8
-    END_TZM 0
-    RDB$START_TIMESTAMP 2016-03-13 10:00:00.0000 GMT
-    RDB$END_TIMESTAMP 2016-11-06 08:59:59.9999 GMT
-    RDB$ZONE_OFFSET -480
-    RDB$DST_OFFSET 60
-    RDB$EFFECTIVE_OFFSET -420
-    START_TZH -7
-    START_TZM 0
-    END_TZH -7
-    END_TZM 0
-    RDB$START_TIMESTAMP 2016-11-06 09:00:00.0000 GMT
-    RDB$END_TIMESTAMP 2017-03-12 09:59:59.9999 GMT
-    RDB$ZONE_OFFSET -480
-    RDB$DST_OFFSET 0
-    RDB$EFFECTIVE_OFFSET -480
-    START_TZH -8
-    START_TZM 0
-    END_TZH -8
-    END_TZM 0
-    RDB$START_TIMESTAMP 2017-03-12 10:00:00.0000 GMT
-    RDB$END_TIMESTAMP 2017-11-05 08:59:59.9999 GMT
-    RDB$ZONE_OFFSET -480
-    RDB$DST_OFFSET 60
-    RDB$EFFECTIVE_OFFSET -420
-    START_TZH -7
-    START_TZM 0
-    END_TZH -7
-    END_TZM 0
-    RDB$START_TIMESTAMP 2017-11-05 09:00:00.0000 GMT
-    RDB$END_TIMESTAMP 2018-03-11 09:59:59.9999 GMT
-    RDB$ZONE_OFFSET -480
-    RDB$DST_OFFSET 0
-    RDB$EFFECTIVE_OFFSET -480
-    START_TZH -8
-    START_TZM 0
-    END_TZH -8
-    END_TZM 0
-    RDB$START_TIMESTAMP 2018-03-11 10:00:00.0000 GMT
-    RDB$END_TIMESTAMP 2018-11-04 08:59:59.9999 GMT
-    RDB$ZONE_OFFSET -480
-    RDB$DST_OFFSET 60
-    RDB$EFFECTIVE_OFFSET -420
-    START_TZH -7
-    START_TZM 0
-    END_TZH -7
-    END_TZM 0
-    RDB$START_TIMESTAMP 2018-11-04 09:00:00.0000 GMT
-    RDB$END_TIMESTAMP 2019-03-10 09:59:59.9999 GMT
-    RDB$ZONE_OFFSET -480
-    RDB$DST_OFFSET 0
-    RDB$EFFECTIVE_OFFSET -480
-    START_TZH -8
-    START_TZM 0
-    END_TZH -8
-    END_TZM 0
-    N 1
-    V 11:33:33.4560 -02:00
-    N 1
-    V 2018-01-01 11:33:33.4560 -02:00
-    SUBSTRING America/Sao_Paulo
-    T1 America/New_York
-    T2 America/Los_Angeles
-    SUBSTRING America/Los_Angeles
-    N 0
-    T1 America/Sao_Paulo
-    T2 America/Los_Angeles
-    T3 America/Sao_Paulo
-    N 1
-    T1 America/Sao_Paulo
-    T2 America/Los_Angeles
-    T3 America/Sao_Paulo
-    N 2
-    T1 America/Sao_Paulo
-    T2 America/Los_Angeles
-    T3 America/Sao_Paulo
-    N 3
-    T1 America/Sao_Paulo
-    T2 America/Los_Angeles
-    T3 America/Los_Angeles
-    N 4
-    T1 America/Los_Angeles
-    T2 America/Los_Angeles
-    T3 America/Los_Angeles
-    N 1
-    TZ1 America/Sao_Paulo
-    TZ2 America/New_York
-    TZ3 America/Sao_Paulo
-"""
+act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), (': table:.*', '')])
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_INDEX_TMTZ = '"TIMETZ_UK"' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TIMETZ_UK"'
+    TEST_INDEX_TSTZ = '"TIMESTAMPTZ_UK"' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TIMESTAMPTZ_UK"'
+
+    expected_stdout = f"""
+        CAST 01:23:45.0000 +00:00
+        CAST 2018-01-01 01:23:45.0000 +00:00
+        EXTRACT 0
+        EXTRACT 0
+        EXTRACT 0
+        EXTRACT 0
+        CAST 01:23:45.0000
+        CAST 2018-01-01 01:23:45.0000
+        CAST 01:23:45.0000 +02:00
+        CAST 2018-01-01 01:23:45.0000 +02:00
+        EXTRACT 2
+        EXTRACT 0
+        EXTRACT 2
+        EXTRACT 0
+        CAST 23:23:45.0000
+        CAST 2017-12-31 23:23:45.0000
+        CONSTANT 01:23:45.0000 +02:00
+        CONSTANT 2018-01-01 01:23:45.0000 +02:00
+        EXTRACT 2
+        EXTRACT 0
+        EXTRACT 2
+        EXTRACT 0
+        CAST 23:23:45.0000
+        CAST 2017-12-31 23:23:45.0000
+        CAST 01:23:45.0000 -02:00
+        CAST 2018-01-01 01:23:45.0000 -02:00
+        EXTRACT -2
+        EXTRACT 0
+        EXTRACT -2
+        EXTRACT 0
+        CAST 01:23:45.0000
+        CAST 2018-01-01 01:23:45.0000
+        CAST 01:23:45.0000 +02:00
+        CAST 2018-01-01 01:23:45.0000 +02:00
+        EXTRACT 2
+        EXTRACT 0
+        EXTRACT 2
+        EXTRACT 0
+        CAST 21:23:45.0000
+        CAST 2017-12-31 21:23:45.0000
+        EXTRACT 3
+        EXTRACT 4
+        EXTRACT 5.6789
+        EXTRACT 678.9
+        EXTRACT 2018
+        EXTRACT 1
+        EXTRACT 2
+        EXTRACT 3
+        EXTRACT 4
+        EXTRACT 5.6789
+        EXTRACT 678.9
+        CONSTANT 2017-10-14 22:00:00.0000 America/Sao_Paulo
+        EXTRACT -3
+        ADD 2017-10-15 23:00:00.0000 America/Sao_Paulo
+        EXTRACT -2
+        ADD 2017-10-16 23:00:00.0000 America/Sao_Paulo
+        EXTRACT -2
+        ADD 2017-10-17 23:00:00.0000 America/Sao_Paulo
+        EXTRACT -2
+        CONSTANT 2017-10-16 22:00:00.0000 America/Sao_Paulo
+        EXTRACT -2
+        SUBTRACT 2017-10-15 22:00:00.0000 America/Sao_Paulo
+        EXTRACT -2
+        SUBTRACT 2017-10-14 21:00:00.0000 America/Sao_Paulo
+        EXTRACT -3
+        SUBTRACT 2017-10-13 21:00:00.0000 America/Sao_Paulo
+        EXTRACT -3
+        DATEADD 2017-10-14 21:00:00.0000 America/Sao_Paulo
+        DATEADD 2017-10-14 22:00:00.0000 America/Sao_Paulo
+        DATEADD 2017-10-14 23:00:00.0000 America/Sao_Paulo
+        DATEADD 2017-10-15 01:00:00.0000 America/Sao_Paulo
+        DATEADD 2017-10-15 02:00:00.0000 America/Sao_Paulo
+        CONSTANT 2018-02-17 22:00:00.0000 America/Sao_Paulo
+        EXTRACT -2
+        ADD 2018-02-18 21:00:00.0000 America/Sao_Paulo
+        EXTRACT -3
+        ADD 2018-02-19 21:00:00.0000 America/Sao_Paulo
+        EXTRACT -3
+        ADD 2018-02-20 21:00:00.0000 America/Sao_Paulo
+        EXTRACT -3
+        CONSTANT 2018-02-19 22:00:00.0000 America/Sao_Paulo
+        EXTRACT -3
+        SUBTRACT 2018-02-18 22:00:00.0000 America/Sao_Paulo
+        EXTRACT -3
+        SUBTRACT 2018-02-17 23:00:00.0000 America/Sao_Paulo
+        EXTRACT -2
+        SUBTRACT 2018-02-16 23:00:00.0000 America/Sao_Paulo
+        EXTRACT -2
+        DATEADD 2018-02-17 23:00:00.0000 America/Sao_Paulo
+        DATEADD 2018-02-17 23:00:00.0000 America/Sao_Paulo
+        DATEADD 2018-02-18 00:00:00.0000 America/Sao_Paulo
+        DATEADD 2018-02-18 01:00:00.0000 America/Sao_Paulo
+        DATEADD 2018-02-18 00:00:00.0000 America/Sao_Paulo
+        DATEADD 2018-02-17 23:00:00.0000 America/Sao_Paulo
+        DATEADD 2018-02-17 23:00:00.0000 America/Sao_Paulo
+        DATEADD 2018-02-17 22:00:00.0000 America/Sao_Paulo
+        DATEDIFF 1
+        DATEDIFF 0
+        DATEDIFF 0
+        CAST 01:23:45.0000 -02:20
+        CAST 2018-01-01 01:23:45.0000 -02:20
+        EXTRACT -2
+        EXTRACT -20
+        EXTRACT -2
+        EXTRACT -20
+        CAST 01:23:45.0000
+        CAST 2018-01-01 01:23:45.0000
+        CAST 01:23:45.0000 +02:00
+        CAST 2018-01-01 01:23:45.0000 +02:00
+        EXTRACT 2
+        EXTRACT 0
+        EXTRACT 2
+        EXTRACT 0
+        CAST 21:03:45.0000
+        CAST 2017-12-31 21:03:45.0000
+        EXTRACT -3
+        EXTRACT 0
+        EXTRACT -3
+        EXTRACT 0
+        <true>
+        <true>
+        CAST 00:23:45.0000
+        CAST 22:23:45.0000
+        CAST 2018-01-01 00:23:45.0000
+        CAST 2017-12-31 22:23:45.0000
+        <true>
+        CAST 01:23:45.0000 -02:00
+        CAST 01:23:45.0000 -04:00
+        CAST 2018-01-01
+        CAST 2018-01-01
+        CAST 01:23:45.0000
+        CAST 03:23:45.0000
+        CAST 2018-01-01 01:23:45.0000
+        CAST 2018-01-01 03:23:45.0000
+        CAST 2018-01-01 01:23:45.0000 -02:00
+        CAST 01:23:45.0000 -02:00
+        <true>
+        <true>
+        <true>
+        <true>
+        Statement failed, SQLSTATE = 22018
+        conversion error from string "01:23:45.0000 -03:00"
+        CAST 2018-01-01 00:00:00.0000 -02:00
+        Statement failed, SQLSTATE = 22018
+        conversion error from string "2018-01-01"
+        CONSTANT 2018-02-03 00:00:00.0000 America/Sao_Paulo
+        ADD 23:23:35.0000 +05:00
+        SUBTRACT 23:23:33.0000 +05:00
+        ADD 2018-01-02 23:23:34.0000 +05:00
+        SUBTRACT 2017-12-31 23:23:34.0000 +05:00
+        ADD 2018-01-01 23:23:34.0000 +05:00
+        ADD 2018-01-01 23:23:34.0000 +05:00
+        ADD 2018-01-01 16:23:34.0000
+        ADD 2018-01-01 16:23:34.0000
+        SUBTRACT -3600.0000
+        SUBTRACT -82800.0000
+        SUBTRACT 7200.0000
+        SUBTRACT -7200.0000
+        SUBTRACT -0.041666667
+        SUBTRACT 0.041666667
+        SUBTRACT 0.083333333
+        SUBTRACT -0.083333333
+        <true>
+        <true>
+        <true>
+        <true>
+        <true>
+        <true>
+        <false>
+        <false>
+        <true>
+        <true>
+        <true>
+        <true>
+        <false>
+        <true>
+        <true>
+        <true>
+        <false>
+        <false>
+        <true>
+        <true>
+        CAST 10:11:12.1345
+        CAST 10:11:12.1345 -03:00
+        SUBSTRING 10:11:12.1345
+        SUBSTRING 10:11:12.1345 -03:00
+        CAST 10:11:12.1345
+        CAST 10:11:12.1345 -03:00
+        CAST 2020-05-20 10:11:12.1345
+        CAST 2020-05-20 10:11:12.1345 -03:00
+        CAST 10:11:12.1345
+        CAST 10:11:12.1345 America/Sao_Paulo
+        SUBSTRING 10:11:12.1345
+        SUBSTRING 10:11:12.1345 America/Sao_Paulo
+        CAST 10:11:12.1345
+        CAST 10:11:12.1345 America/Sao_Paulo
+        CAST 2020-05-20 10:11:12.1345
+        CAST 2020-05-20 10:11:12.1345 America/Sao_Paulo
+        AT 20:01:02.0000 -05:00
+        AT 23:01:02.0000 -02:00
+        AT 04:01:02.0000 +03:00
+        AT 17:01:02.0000 -05:00
+        AT 20:01:02.0000 -02:00
+        AT 01:01:02.0000 +03:00
+        AT 23:01:02.0000 -02:00
+        AT 20:01:02.0000 -02:00
+        AT 2018-01-01 20:01:02.0000 -05:00
+        AT 2018-01-01 23:01:02.0000 -02:00
+        AT 2018-01-02 04:01:02.0000 +03:00
+        AT 2018-01-01 17:01:02.0000 -05:00
+        AT 2018-01-01 20:01:02.0000 -02:00
+        AT 2018-01-02 01:01:02.0000 +03:00
+        AT 2018-01-01 23:01:02.0000 -02:00
+        AT 2018-01-01 20:01:02.0000 -02:00
+        AT 2018-05-01 16:01:02.0000 America/Los_Angeles
+        AT 2018-04-01 16:01:02.0000 America/Los_Angeles
+        AT 2018-03-01 15:01:02.0000 America/Los_Angeles
+        AT 2018-02-01 14:01:02.0000 America/Los_Angeles
+        AT 2018-01-01 14:01:02.0000 America/Los_Angeles
+        ADD 2018-01-02 14:01:02.0000 America/Los_Angeles
+        ADD 2018-01-02 14:01:02.0000 America/Los_Angeles
+        ADD 2018-01-03 14:01:02.0000 America/Los_Angeles
+        FIRST_DAY 2018-01-01 10:11:12.0000 America/Sao_Paulo
+        FIRST_DAY 2018-03-01 10:11:12.0000 America/Sao_Paulo
+        FIRST_DAY 2018-03-04 10:11:12.0000 America/Sao_Paulo
+        LAST_DAY 2018-12-31 10:11:12.0000 America/Sao_Paulo
+        LAST_DAY 2018-03-31 10:11:12.0000 America/Sao_Paulo
+        LAST_DAY 2018-03-10 10:11:12.0000 America/Sao_Paulo
+        T1 2017-03-12 03:30:00.0000 America/New_York
+        T2 2017-03-12 02:30:00.0000 -05:00
+        T3 2017-03-12 03:29:00.0000 America/New_York
+        T4 2017-03-12 03:31:00.0000 America/New_York
+        T5 2017-03-12 01:30:00.0000 America/New_York
+        T6 2017-03-12 04:30:00.0000 America/New_York
+        T1 2017-11-05 01:30:00.0000 America/New_York
+        T2 2017-11-05 01:30:00.0000 -04:00
+        T3 2017-11-05 01:29:00.0000 America/New_York
+        T4 2017-11-05 01:31:00.0000 America/New_York
+        T5 2017-11-05 00:30:00.0000 America/New_York
+        T6 2017-11-05 01:30:00.0000 America/New_York
+        INPUT message field count: 0
+        OUTPUT message field count: 2
+        01: sqltype: 510 TIMESTAMP scale: 0 subtype: 0 len: 8
+        : name: CONSTANT alias: CONSTANT
+        : table: owner:
+        02: sqltype: 560 TIME scale: 0 subtype: 0 len: 4
+        : name: DATEADD alias: DATEADD
+        : table: owner:
+        CONSTANT 2018-05-01 21:01:02.0000
+        DATEADD 21:01:02.0000
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {TEST_INDEX_TMTZ}
+        -Problematic key value is ("V" = '12:33:33.0000 +00:00')
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {TEST_INDEX_TMTZ}
+        -Problematic key value is ("V" = '13:33:33.0000 +01:00')
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {TEST_INDEX_TMTZ}
+        -Problematic key value is ("V" = '14:33:33.0000 +02:00')
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {TEST_INDEX_TMTZ}
+        -Problematic key value is ("V" = '11:33:33.0000 -03:00')
+        N 6
+        V 11:33:33.0000 +01:00
+        CAST 08:33:33.0000
+        N 3
+        V 11:33:33.4560 +01:00
+        CAST 08:33:33.4560
+        N 5
+        V 11:33:33.0000 -01:00
+        CAST 10:33:33.0000
+        N 2
+        V 11:33:33.4560 -01:00
+        CAST 10:33:33.4560
+        N 4
+        V 11:33:33.0000 -02:00
+        CAST 11:33:33.0000
+        N 1
+        V 11:33:33.4560 -02:00
+        CAST 11:33:33.4560
+        N 0
+        V 11:33:33.0000 America/Sao_Paulo
+        CAST 12:33:33.0000
+        N 6
+        V 11:33:33.0000 +01:00
+        N 3
+        V 11:33:33.4560 +01:00
+        N 5
+        V 11:33:33.0000 -01:00
+        N 2
+        V 11:33:33.4560 -01:00
+        N 4
+        V 11:33:33.0000 -02:00
+        N 1
+        V 11:33:33.4560 -02:00
+        N 0
+        V 11:33:33.0000 America/Sao_Paulo
+        N 6
+        V 11:33:33.0000 +01:00
+        CAST 08:33:33.0000
+        N 3
+        V 11:33:33.4560 +01:00
+        CAST 08:33:33.4560
+        N 5
+        V 11:33:33.0000 -01:00
+        CAST 10:33:33.0000
+        N 7
+        V 12:33:33.0000 +00:00
+        CAST 10:33:33.0000
+        N 8
+        V 13:33:33.0000 +01:00
+        CAST 10:33:33.0000
+        N 9
+        V 14:33:33.0000 +02:00
+        CAST 10:33:33.0000
+        N 2
+        V 11:33:33.4560 -01:00
+        CAST 10:33:33.4560
+        N 4
+        V 11:33:33.0000 -02:00
+        CAST 11:33:33.0000
+        N 1
+        V 11:33:33.4560 -02:00
+        CAST 11:33:33.4560
+        N 0
+        V 11:33:33.0000 America/Sao_Paulo
+        CAST 12:33:33.0000
+        N 6
+        V 11:33:33.0000 +01:00
+        CAST 08:33:33.0000
+        N 3
+        V 11:33:33.4560 +01:00
+        CAST 08:33:33.4560
+        N 5
+        V 11:33:33.0000 -01:00
+        CAST 10:33:33.0000
+        N 7
+        V 12:33:33.0000 +00:00
+        CAST 10:33:33.0000
+        N 8
+        V 13:33:33.0000 +01:00
+        CAST 10:33:33.0000
+        N 9
+        V 14:33:33.0000 +02:00
+        CAST 10:33:33.0000
+        N 2
+        V 11:33:33.4560 -01:00
+        CAST 10:33:33.4560
+        N 4
+        V 11:33:33.0000 -02:00
+        CAST 11:33:33.0000
+        N 1
+        V 11:33:33.4560 -02:00
+        CAST 11:33:33.4560
+        N 0
+        V 11:33:33.0000 America/Sao_Paulo
+        CAST 12:33:33.0000
+        N 6
+        V 11:33:33.0000 +01:00
+        N 3
+        V 11:33:33.4560 +01:00
+        N 5
+        V 11:33:33.0000 -01:00
+        N 7
+        V 12:33:33.0000 +00:00
+        N 8
+        V 13:33:33.0000 +01:00
+        N 9
+        V 14:33:33.0000 +02:00
+        N 2
+        V 11:33:33.4560 -01:00
+        N 4
+        V 11:33:33.0000 -02:00
+        N 1
+        V 11:33:33.4560 -02:00
+        N 0
+        V 11:33:33.0000 America/Sao_Paulo
+        N 6
+        V 11:33:33.0000 +01:00
+        CAST 08:33:33.0000
+        N 3
+        V 11:33:33.4560 +01:00
+        CAST 08:33:33.4560
+        N 5
+        V 11:33:33.0000 -01:00
+        CAST 10:33:33.0000
+        N 7
+        V 12:33:33.0000 +00:00
+        CAST 10:33:33.0000
+        N 8
+        V 13:33:33.0000 +01:00
+        CAST 10:33:33.0000
+        N 9
+        V 14:33:33.0000 +02:00
+        CAST 10:33:33.0000
+        N 2
+        V 11:33:33.4560 -01:00
+        CAST 10:33:33.4560
+        N 4
+        V 11:33:33.0000 -02:00
+        CAST 11:33:33.0000
+        N 1
+        V 11:33:33.4560 -02:00
+        CAST 11:33:33.4560
+        N 0
+        V 11:33:33.0000 America/Sao_Paulo
+        CAST 12:33:33.0000
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {TEST_INDEX_TSTZ}
+        -Problematic key value is ("V" = '2018-01-01 12:33:33.0000 +00:00')
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {TEST_INDEX_TSTZ}
+        -Problematic key value is ("V" = '2018-01-01 13:33:33.0000 +01:00')
+        Statement failed, SQLSTATE = 23000
+        attempt to store duplicate value (visible to active transactions) in unique index {TEST_INDEX_TSTZ}
+        -Problematic key value is ("V" = '2018-01-01 14:33:33.0000 +02:00')
+        N 6
+        V 2018-01-01 11:33:33.0000 +01:00
+        CAST 2018-01-01 08:33:33.0000
+        N 3
+        V 2018-01-01 11:33:33.4560 +01:00
+        CAST 2018-01-01 08:33:33.4560
+        N 5
+        V 2018-01-01 11:33:33.0000 -01:00
+        CAST 2018-01-01 10:33:33.0000
+        N 2
+        V 2018-01-01 11:33:33.4560 -01:00
+        CAST 2018-01-01 10:33:33.4560
+        N 4
+        V 2018-01-01 11:33:33.0000 -02:00
+        CAST 2018-01-01 11:33:33.0000
+        N 1
+        V 2018-01-01 11:33:33.4560 -02:00
+        CAST 2018-01-01 11:33:33.4560
+        N 6
+        V 2018-01-01 11:33:33.0000 +01:00
+        N 3
+        V 2018-01-01 11:33:33.4560 +01:00
+        N 5
+        V 2018-01-01 11:33:33.0000 -01:00
+        N 2
+        V 2018-01-01 11:33:33.4560 -01:00
+        N 4
+        V 2018-01-01 11:33:33.0000 -02:00
+        N 1
+        V 2018-01-01 11:33:33.4560 -02:00
+        N 6
+        V 2018-01-01 11:33:33.0000 +01:00
+        CAST 2018-01-01 08:33:33.0000
+        N 3
+        V 2018-01-01 11:33:33.4560 +01:00
+        CAST 2018-01-01 08:33:33.4560
+        N 5
+        V 2018-01-01 11:33:33.0000 -01:00
+        CAST 2018-01-01 10:33:33.0000
+        N 7
+        V 2018-01-01 12:33:33.0000 +00:00
+        CAST 2018-01-01 10:33:33.0000
+        N 8
+        V 2018-01-01 13:33:33.0000 +01:00
+        CAST 2018-01-01 10:33:33.0000
+        N 9
+        V 2018-01-01 14:33:33.0000 +02:00
+        CAST 2018-01-01 10:33:33.0000
+        N 2
+        V 2018-01-01 11:33:33.4560 -01:00
+        CAST 2018-01-01 10:33:33.4560
+        N 4
+        V 2018-01-01 11:33:33.0000 -02:00
+        CAST 2018-01-01 11:33:33.0000
+        N 1
+        V 2018-01-01 11:33:33.4560 -02:00
+        CAST 2018-01-01 11:33:33.4560
+        N 6
+        V 2018-01-01 11:33:33.0000 +01:00
+        CAST 2018-01-01 08:33:33.0000
+        N 3
+        V 2018-01-01 11:33:33.4560 +01:00
+        CAST 2018-01-01 08:33:33.4560
+        N 5
+        V 2018-01-01 11:33:33.0000 -01:00
+        CAST 2018-01-01 10:33:33.0000
+        N 7
+        V 2018-01-01 12:33:33.0000 +00:00
+        CAST 2018-01-01 10:33:33.0000
+        N 8
+        V 2018-01-01 13:33:33.0000 +01:00
+        CAST 2018-01-01 10:33:33.0000
+        N 9
+        V 2018-01-01 14:33:33.0000 +02:00
+        CAST 2018-01-01 10:33:33.0000
+        N 2
+        V 2018-01-01 11:33:33.4560 -01:00
+        CAST 2018-01-01 10:33:33.4560
+        N 4
+        V 2018-01-01 11:33:33.0000 -02:00
+        CAST 2018-01-01 11:33:33.0000
+        N 1
+        V 2018-01-01 11:33:33.4560 -02:00
+        CAST 2018-01-01 11:33:33.4560
+        N 6
+        V 2018-01-01 11:33:33.0000 +01:00
+        N 3
+        V 2018-01-01 11:33:33.4560 +01:00
+        N 5
+        V 2018-01-01 11:33:33.0000 -01:00
+        N 7
+        V 2018-01-01 12:33:33.0000 +00:00
+        N 8
+        V 2018-01-01 13:33:33.0000 +01:00
+        N 9
+        V 2018-01-01 14:33:33.0000 +02:00
+        N 2
+        V 2018-01-01 11:33:33.4560 -01:00
+        N 4
+        V 2018-01-01 11:33:33.0000 -02:00
+        N 1
+        V 2018-01-01 11:33:33.4560 -02:00
+        N 6
+        V 2018-01-01 11:33:33.0000 +01:00
+        CAST 2018-01-01 08:33:33.0000
+        N 3
+        V 2018-01-01 11:33:33.4560 +01:00
+        CAST 2018-01-01 08:33:33.4560
+        N 5
+        V 2018-01-01 11:33:33.0000 -01:00
+        CAST 2018-01-01 10:33:33.0000
+        N 7
+        V 2018-01-01 12:33:33.0000 +00:00
+        CAST 2018-01-01 10:33:33.0000
+        N 8
+        V 2018-01-01 13:33:33.0000 +01:00
+        CAST 2018-01-01 10:33:33.0000
+        N 9
+        V 2018-01-01 14:33:33.0000 +02:00
+        CAST 2018-01-01 10:33:33.0000
+        N 2
+        V 2018-01-01 11:33:33.4560 -01:00
+        CAST 2018-01-01 10:33:33.4560
+        N 4
+        V 2018-01-01 11:33:33.0000 -02:00
+        CAST 2018-01-01 11:33:33.0000
+        N 1
+        V 2018-01-01 11:33:33.4560 -02:00
+        CAST 2018-01-01 11:33:33.4560
+        RDB$START_TIMESTAMP 2014-11-02 09:00:00.0000 GMT
+        RDB$END_TIMESTAMP 2015-03-08 09:59:59.9999 GMT
+        RDB$ZONE_OFFSET -480
+        RDB$DST_OFFSET 0
+        RDB$EFFECTIVE_OFFSET -480
+        START_TZH -8
+        START_TZM 0
+        END_TZH -8
+        END_TZM 0
+        RDB$START_TIMESTAMP 2015-03-08 10:00:00.0000 GMT
+        RDB$END_TIMESTAMP 2015-11-01 08:59:59.9999 GMT
+        RDB$ZONE_OFFSET -480
+        RDB$DST_OFFSET 60
+        RDB$EFFECTIVE_OFFSET -420
+        START_TZH -7
+        START_TZM 0
+        END_TZH -7
+        END_TZM 0
+        RDB$START_TIMESTAMP 2015-11-01 09:00:00.0000 GMT
+        RDB$END_TIMESTAMP 2016-03-13 09:59:59.9999 GMT
+        RDB$ZONE_OFFSET -480
+        RDB$DST_OFFSET 0
+        RDB$EFFECTIVE_OFFSET -480
+        START_TZH -8
+        START_TZM 0
+        END_TZH -8
+        END_TZM 0
+        RDB$START_TIMESTAMP 2016-03-13 10:00:00.0000 GMT
+        RDB$END_TIMESTAMP 2016-11-06 08:59:59.9999 GMT
+        RDB$ZONE_OFFSET -480
+        RDB$DST_OFFSET 60
+        RDB$EFFECTIVE_OFFSET -420
+        START_TZH -7
+        START_TZM 0
+        END_TZH -7
+        END_TZM 0
+        RDB$START_TIMESTAMP 2016-11-06 09:00:00.0000 GMT
+        RDB$END_TIMESTAMP 2017-03-12 09:59:59.9999 GMT
+        RDB$ZONE_OFFSET -480
+        RDB$DST_OFFSET 0
+        RDB$EFFECTIVE_OFFSET -480
+        START_TZH -8
+        START_TZM 0
+        END_TZH -8
+        END_TZM 0
+        RDB$START_TIMESTAMP 2017-03-12 10:00:00.0000 GMT
+        RDB$END_TIMESTAMP 2017-11-05 08:59:59.9999 GMT
+        RDB$ZONE_OFFSET -480
+        RDB$DST_OFFSET 60
+        RDB$EFFECTIVE_OFFSET -420
+        START_TZH -7
+        START_TZM 0
+        END_TZH -7
+        END_TZM 0
+        RDB$START_TIMESTAMP 2017-11-05 09:00:00.0000 GMT
+        RDB$END_TIMESTAMP 2018-03-11 09:59:59.9999 GMT
+        RDB$ZONE_OFFSET -480
+        RDB$DST_OFFSET 0
+        RDB$EFFECTIVE_OFFSET -480
+        START_TZH -8
+        START_TZM 0
+        END_TZH -8
+        END_TZM 0
+        RDB$START_TIMESTAMP 2018-03-11 10:00:00.0000 GMT
+        RDB$END_TIMESTAMP 2018-11-04 08:59:59.9999 GMT
+        RDB$ZONE_OFFSET -480
+        RDB$DST_OFFSET 60
+        RDB$EFFECTIVE_OFFSET -420
+        START_TZH -7
+        START_TZM 0
+        END_TZH -7
+        END_TZM 0
+        RDB$START_TIMESTAMP 2018-11-04 09:00:00.0000 GMT
+        RDB$END_TIMESTAMP 2019-03-10 09:59:59.9999 GMT
+        RDB$ZONE_OFFSET -480
+        RDB$DST_OFFSET 0
+        RDB$EFFECTIVE_OFFSET -480
+        START_TZH -8
+        START_TZM 0
+        END_TZH -8
+        END_TZM 0
+        N 1
+        V 11:33:33.4560 -02:00
+        N 1
+        V 2018-01-01 11:33:33.4560 -02:00
+        SUBSTRING America/Sao_Paulo
+        T1 America/New_York
+        T2 America/Los_Angeles
+        SUBSTRING America/Los_Angeles
+        N 0
+        T1 America/Sao_Paulo
+        T2 America/Los_Angeles
+        T3 America/Sao_Paulo
+        N 1
+        T1 America/Sao_Paulo
+        T2 America/Los_Angeles
+        T3 America/Sao_Paulo
+        N 2
+        T1 America/Sao_Paulo
+        T2 America/Los_Angeles
+        T3 America/Sao_Paulo
+        N 3
+        T1 America/Sao_Paulo
+        T2 America/Los_Angeles
+        T3 America/Los_Angeles
+        N 4
+        T1 America/Los_Angeles
+        T2 America/Los_Angeles
+        T3 America/Los_Angeles
+        N 1
+        TZ1 America/Sao_Paulo
+        TZ2 America/New_York
+        TZ3 America/Sao_Paulo
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
