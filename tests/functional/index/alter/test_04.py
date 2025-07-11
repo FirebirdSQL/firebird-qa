@@ -33,7 +33,7 @@ expected_stdout_5x = """
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
-    -ALTER INDEX TEST_PK failed
+    -ALTER INDEX "PUBLIC"."TEST_PK" failed
     -Cannot deactivate index used by a PRIMARY/UNIQUE constraint
 """
 
