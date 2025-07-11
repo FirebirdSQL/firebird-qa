@@ -52,29 +52,38 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 
-expected_stdout = """
-    point-1 10 30
-    point-2 11 44 220
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE 42000
-    unsuccessful metadata update
-    -cannot delete
-    -COLUMN T0.A
-    -there are 1 dependencies
-    Statement failed, SQLSTATE 42000
-
-    unsuccessful metadata update
-    -cannot delete
-    -COLUMN T1.AF
-    -there are 1 dependencies
-"""
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+
+    expected_stdout_5x = """
+        Statement failed, SQLSTATE 42000
+        unsuccessful metadata update
+        -cannot delete
+        -COLUMN T0.A
+        -there are 1 dependencies
+        point-1 10 30
+        Statement failed, SQLSTATE 42000
+        unsuccessful metadata update
+        -cannot delete
+        -COLUMN T1.AF
+        -there are 1 dependencies
+        point-2 11 44 220
+    """
+    expected_stdout_6x = """
+        Statement failed, SQLSTATE 42000
+        unsuccessful metadata update
+        -cannot delete
+        -COLUMN "PUBLIC"."T0"."A"
+        -there are 1 dependencies
+        point-1 10 30
+        Statement failed, SQLSTATE 42000
+        unsuccessful metadata update
+        -cannot delete
+        -COLUMN "PUBLIC"."T1"."AF"
+        -there are 1 dependencies
+        point-2 11 44 220
+    """
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
