@@ -53,33 +53,28 @@ act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' '),
                                                  ('attempted update of read-only column.*',
                                                   'attempted update of read-only column')])
 
-expected_stdout = """
-    point-1 10 30
-    point-2 10 30
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE 42000
-    attempted update of read-only column
-
-    Statement failed, SQLSTATE 42000
-    attempted update of read-only column
-
-    Statement failed, SQLSTATE 42000
-    unsuccessful metadata update
-    -TABLE T5
-    -Can't have relation with only computed fields or constraints
-
-    Statement failed, SQLSTATE 21S01
-    Dynamic SQL Error
-    -SQL error code -804
-    -Count of read-write columns does not equal count of values
-"""
-
 @pytest.mark.version('>=3')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_TABLE_NAME = 'T5' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"T5"'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE 42000
+        attempted update of read-only column
+        point-1 10 30
+        Statement failed, SQLSTATE 42000
+        attempted update of read-only column
+        point-2 10 30
+        Statement failed, SQLSTATE 42000
+        unsuccessful metadata update
+        -TABLE {TEST_TABLE_NAME}
+        -Can't have relation with only computed fields or constraints
+        Statement failed, SQLSTATE 21S01
+        Dynamic SQL Error
+        -SQL error code -804
+        -Count of read-write columns does not equal count of values
+    """    
+
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
