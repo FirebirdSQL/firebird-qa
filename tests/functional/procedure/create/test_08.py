@@ -12,24 +12,29 @@ from firebird.qa import *
 
 db = db_factory()
 
-test_script = """SET TERM ^;
-CREATE PROCEDURE test RETURNS(id INT)AS
-BEGIN
-  COMMIT;
-END ^
-SET TERM ;^"""
+test_script = """
+    set term ^;
+    create procedure sp_test returns(id int)as
+    begin
+        commit;
+    end ^
+    set term ;^
+"""
 
-act = isql_act('db', test_script)
-
-expected_stderr = """Statement failed, SQLSTATE = 42000
-
-Dynamic SQL Error
--SQL error code = -104
--Token unknown - line 3, column 3
--COMMIT"""
+substitutions = [('Token unknown.*', 'Token unknown')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+
+    expected_stdout = """
+        Statement failed, SQLSTATE = 42000
+        Dynamic SQL Error
+        -SQL error code = -104
+        -Token unknown - line 3, column 3
+        -commit
+    """
+
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
