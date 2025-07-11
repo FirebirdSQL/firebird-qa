@@ -52,6 +52,10 @@ act = python_act('db', substitutions = substitutions)
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_worker: User, capsys):
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_EXC_NAME = 'paramètre non trouvé' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"paramètre non trouvé"'
+    TEST_TRG_NAME = "'gâchette de déconnexion'" if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"gâchette de déconnexion"'
+
     init_sql  = f"""
         set list on;
         set bail on;
@@ -141,12 +145,12 @@ def test_1(act: Action, tmp_worker: User, capsys):
             335544842 : At trigger 'gâchette de déconnexion'
         """
     else:
-        expected_trace_log = """
+        expected_trace_log = f"""
             FAILED EXECUTE_TRIGGER_FINISH
             ERROR AT purge_attachment
-            335544382 : paramètre non trouvé
+            335544382 : {TEST_EXC_NAME}
             335545016 : Paramètre "fréquence fermée" a une valeur incorrecte ou n'a pas été trouvé dans
-            335544842 : At trigger 'gâchette de déconnexion'
+            335544842 : At trigger {TEST_TRG_NAME}
         """
 
     act.expected_stdout = expected_trace_log
@@ -184,12 +188,12 @@ def test_1(act: Action, tmp_worker: User, capsys):
             if act.match_any(line[1:].strip(), fb_log_diff_patterns):
                 print(line[1:].strip())
 
-    expected_log_diff = """
+    expected_log_diff = f"""
         Error at disconnect:
         exception 1
-        paramètre non trouvé
+        {TEST_EXC_NAME}
         Paramètre "fréquence fermée" a une valeur incorrecte ou n'a pas été trouvé dans
-        At trigger 'gâchette de déconnexion'
+        At trigger {TEST_TRG_NAME}
     """
 
     act.expected_stdout = expected_log_diff
