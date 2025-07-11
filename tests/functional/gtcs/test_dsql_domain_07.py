@@ -35,6 +35,18 @@ DESCRIPTION:
     nchar not null;
     binary not null;
     varbinary not null;
+NOTES:
+    [11.07.2025] pzotov
+    Increased the 'subsitutions' list to suppress "PUBLIC" schema prefix and remove single/double quotes from object names. Need since 6.0.0.834.
+    ::: NB :::
+    File act.files_dir/'test_config.ini' must contain section:
+        [schema_n_quotes_suppress]
+        addi_subst="PUBLIC". " '
+    (thi file is used in qa/plugin.py, see QA_GLOBALS dictionary).
+
+    Value of parameter 'addi_subst' is splitted on tokens using space character and we add every token to 'substitutions' list which
+    eventually will be like this:
+        substitutions = [ ( <previous tuple(s)>, ('"PUBLIC".', ''), ('"', ''), ("'", '') ]
 """
 
 import pytest
@@ -345,8 +357,17 @@ test_script = """
 
 """
 
-act = isql_act('db', test_script, substitutions=[('[ \t]+', ' '), ('DM_FDEFAULT_BLOB_ID.*', ''),
-                                                 ('DM_FVALID_BLOB_ID.*', '')])
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+substitutions=[('[ \t]+', ' '), ('DM_FDEFAULT_BLOB_ID.*', ''), ('DM_FVALID_BLOB_ID.*', '')]
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = isql_act('db', test_script, substitutions=substitutions)
 
 expected_stdout = """
 	DM_NAME                         DOM06_01
