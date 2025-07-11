@@ -195,31 +195,31 @@ expected_stdout = """
     Dynamic SQL Error
     -SQL error code = -206
     -Column unknown
-    -UNLIST
+    -"UNLIST"
     -At line 5, column 48
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
     -Column unknown
-    -UNLIST
+    -"UNLIST"
     -At line 1, column 8
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
     -Column unknown
-    -UNLIST
+    -"UNLIST"
     -At line 1, column 8
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
     -Column unknown
-    -A.UNLIST
+    -"A"."UNLIST"
     -At line 1, column 8
     Statement failed, SQLSTATE = 42S22
     Dynamic SQL Error
     -SQL error code = -206
     -Column unknown
-    -A.UNLIST
+    -"A"."UNLIST"
     -At line 1, column 8
 """
 
