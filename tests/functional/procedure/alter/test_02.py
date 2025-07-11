@@ -12,22 +12,27 @@ from firebird.qa import *
 
 db = db_factory()
 
-test_script = """SET TERM ^;
-ALTER PROCEDURE test RETURNS (id INTEGER)AS
-BEGIN
-  id=2;
-END ^
-SET TERM ;^"""
+test_script = """
+    set term ^;
+    alter procedure sp_test returns (id integer)as
+    begin
+      id=2;
+    end ^
+    set term ;^
+"""
 
 act = isql_act('db', test_script)
 
-expected_stderr = """Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--ALTER PROCEDURE TEST failed
--Procedure TEST not found"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_PROC_NAME = 'SP_TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"SP_TEST"'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -ALTER PROCEDURE {TEST_PROC_NAME} failed
+        -Procedure {TEST_PROC_NAME} not found
+    """
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
