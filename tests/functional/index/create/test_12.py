@@ -26,6 +26,7 @@ test_script = """CREATE UNIQUE INDEX test ON t(a);"""
 
 act = isql_act('db', test_script)
 
+@pytest.mark.skip("Covered by lot of other tests.")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.execute()
