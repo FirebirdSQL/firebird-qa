@@ -27,6 +27,7 @@ unsuccessful metadata update
 -Index TEST already exists
 """
 
+@pytest.mark.skip("Covered by 'test_all_cases_basic.py'")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stderr = expected_stderr
