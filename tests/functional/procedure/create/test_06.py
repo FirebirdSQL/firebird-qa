@@ -39,6 +39,7 @@ END
 Parameters:
 ID                                OUTPUT INTEGER"""
 
+@pytest.mark.skip("Covered by lot of other tests.")
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
