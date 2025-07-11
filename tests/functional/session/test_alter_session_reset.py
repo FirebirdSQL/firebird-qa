@@ -16,9 +16,11 @@ FBTEST:      functional.session.alter_session_reset
 import pytest
 from firebird.qa import *
 
-substitutions = [('-At line[:]{0,1}[\\s]+[\\d]+,[\\s]+column[:]{0,1}[\\s]+[\\d]+', ''),
-                 ('line[:]{0,1}[\\s]+[\\d]+,[\\s]+col[:]{0,1}[\\s]+[\\d]+', ''),
-                 ('[-]{0,1}Effective user is.*', 'Effective user')]
+substitutions = [  ('(-At)?\\s+line(:)?\\s+[\\d]+.*', '')
+                  ,('(-)?Effective user is.*', 'Effective user')
+                  ,('(-)?At procedure .*', 'At procedure')
+                  ,('no permission for SELECT access to TABLE\\s+.*', 'no permission for SELECT access')
+                ]
 
 db = db_factory()
 
@@ -204,76 +206,58 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout = """
-    MSG                             Point before call sp_decfloat_test with trap settings: {Division_by_zero, Invalid_operation, Overflow}
-    RAISED_GDS                      335545142
-    RAISED_SQLST                    22003
-
-    MSG                             Point before call sp_decfloat_test with trap settings: {Inexact}
-    RAISED_GDS                      335545140
-    RAISED_SQLST                    22000
-
-    MY_NAME                         TMP$USER4TEST
-    MY_ROLE                         BOSS
-    TX_LOCK_TIMEOUT                 9
-    TX_READ_ONLY                    1
-    TX_AUTO_UNDO                    0
-    ISOL_DESCR                      READ_COMMITTED
-
-    ID                              1
-    X                               100
-    Records affected: 1
-
-    CONTEXT_VAR_NAME                WHATS_MY_NAME
-    CONTEXT_VAR_VALUE               TMP$USER4TEST
-
-    CONTEXT_VAR_NAME                WHATS_MY_ROLE
-    CONTEXT_VAR_VALUE               BOSS
-
-
-    MSG                             Point AFTER reset session, before call sp_decfloat_test
-    RAISED_GDS                      335545142
-    RAISED_SQLST                    22003
-
-    MY_NAME                         TMP$USER4TEST
-    MY_ROLE                         ACNT
-    TX_LOCK_TIMEOUT                 9
-    TX_READ_ONLY                    1
-    TX_AUTO_UNDO                    0
-    ISOL_DESCR                      READ_COMMITTED
-
-    CONTEXT_VAR_NAME                <null>
-    CONTEXT_VAR_VALUE               <null>
-
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 22003
-    Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
-    -At procedure 'SP_DECFLOAT_TEST' line: 17, col: 13
-    -At procedure 'SP_DECFLOAT_TEST' line: 26, col: 17
-
-    Statement failed, SQLSTATE = 22000
-    Decimal float inexact result.  The result of an operation cannot be represented as a decimal fraction.
-    -At procedure 'SP_DECFLOAT_TEST' line: 17, col: 13
-    -At procedure 'SP_DECFLOAT_TEST' line: 26, col: 17
-
-    Session was reset with warning(s)
-    -Transaction is rolled back due to session reset, all changes are lost
-    Statement failed, SQLSTATE = 22003
-    Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
-    -At procedure 'SP_DECFLOAT_TEST' line: 17, col: 13
-    -At procedure 'SP_DECFLOAT_TEST' line: 26, col: 17
-
-    Statement failed, SQLSTATE = 28000
-    no permission for SELECT access to TABLE GTT_TEST
-    -Effective user is TMP$USER4TEST
-"""
-
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
+
+    expected_stdout = """
+        MSG                             Point before call sp_decfloat_test with trap settings: {Division_by_zero, Invalid_operation, Overflow}
+        RAISED_GDS                      335545142
+        RAISED_SQLST                    22003
+        Statement failed, SQLSTATE = 22003
+        Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
+        At procedure
+        At procedure
+        MSG                             Point before call sp_decfloat_test with trap settings: {Inexact}
+        RAISED_GDS                      335545140
+        RAISED_SQLST                    22000
+        Statement failed, SQLSTATE = 22000
+        Decimal float inexact result.  The result of an operation cannot be represented as a decimal fraction.
+        At procedure
+        At procedure
+        MY_NAME                         TMP$USER4TEST
+        MY_ROLE                         BOSS
+        TX_LOCK_TIMEOUT                 9
+        TX_READ_ONLY                    1
+        TX_AUTO_UNDO                    0
+        ISOL_DESCR                      READ_COMMITTED
+        ID                              1
+        X                               100
+        Records affected: 1
+        CONTEXT_VAR_NAME                WHATS_MY_NAME
+        CONTEXT_VAR_VALUE               TMP$USER4TEST
+        CONTEXT_VAR_NAME                WHATS_MY_ROLE
+        CONTEXT_VAR_VALUE               BOSS
+        Session was reset with warning(s)
+        -Transaction is rolled back due to session reset, all changes are lost
+        MSG                             Point AFTER reset session, before call sp_decfloat_test
+        RAISED_GDS                      335545142
+        RAISED_SQLST                    22003
+        Statement failed, SQLSTATE = 22003
+        Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.
+        At procedure
+        At procedure
+        MY_NAME                         TMP$USER4TEST
+        MY_ROLE                         ACNT
+        TX_LOCK_TIMEOUT                 9
+        TX_READ_ONLY                    1
+        TX_AUTO_UNDO                    0
+        ISOL_DESCR                      READ_COMMITTED
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access
+        Effective user
+        CONTEXT_VAR_NAME                <null>
+        CONTEXT_VAR_VALUE               <null>
+    """
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
