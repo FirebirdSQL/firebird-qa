@@ -14,8 +14,11 @@ DESCRIPTION:
 import pytest
 from firebird.qa import *
 
-substitutions = [('^((?!Statement failed|SQL error code|Column unknown|F01|F02|REL_NAME|Records).)*$', ''),
-                 ('[ \t]+', ' ')]
+substitutions = [  ('^((?!Statement failed|SQL error code|Column unknown|F01|F02|REL_NAME|Records).)*$', '')
+                  ,('(")?F01(")?', 'F01')
+                  ,('(")?F02(")?', 'F02')
+                  ,('[ \t]+', ' ')
+                ]
 
 db = db_factory()
 
