@@ -10,103 +10,94 @@ FBTEST:      functional.procedure.create.05
 import pytest
 from firebird.qa import *
 
-init_script = """CREATE EXCEPTION test 'test exception';
-CREATE TABLE tb(id INT, text VARCHAR(32));
-commit;"""
+db = db_factory()
 
-db = db_factory(init=init_script)
+SP_BODY = """
+        declare variable p1 smallint;
+    begin
+        /* comments */
+         p1=1+1;                           /* assigment */
+         exception exc_test;                   /* exception */
+         execute procedure dummy(:p1);    /* call sp   */
+         execute procedure dummy2(:p1) returning_values :p1;
+         execute procedure sp_test;         /*recursive call */
+         exit;
 
-test_script = """SET TERM ^;
-CREATE PROCEDURE dummy (id INT) AS
-BEGIN
-  id=id;
-END ^
+         for select id from tb into :p1
+         do begin
+             p1 = p1 + 2;
+         end
 
-CREATE PROCEDURE dummy2 (id INT) RETURNS(newID INT) AS
-BEGIN
-  newid=id;
-END ^
+         insert into tb(id) values(:p1);
+         update tb set text='new text' where id=:p1;
+         delete from tb where text=:p1+1;
+         select id from tb where text='ggg' into :p1;
+         if(p1 is not null)then begin
+           p1=null;
+         end
+    
+         if (p1 is null) then p1=2;
+         else 
+             begin
+                 p1=2;
+             end
 
-CREATE PROCEDURE test
-AS
-DECLARE VARIABLE p1 SMALLINT;
-BEGIN
-/* Comments */
-  p1=1+1;                           /* assigment */
-  EXCEPTION test;                   /* Exception */
-  EXECUTE PROCEDURE dummy(:p1);    /* Call SP   */
-  EXECUTE PROCEDURE dummy2(:p1) RETURNING_VALUES :p1;
-  EXECUTE PROCEDURE test;         /*recursive call */
-  EXIT;
-  FOR SELECT id FROM tb INTO :p1 DO BEGIN
-    p1=p1+2;
-  END
-  INSERT INTO tb(id) VALUES(:p1);
-  UPDATE tb SET text='new text' WHERE id=:p1;
-  DELETE FROM tb WHERE text=:p1+1;
-  SELECT id FROM tb WHERE text='ggg' INTO :p1;
-  IF(p1 IS NOT NULL)THEN BEGIN
-    p1=NULL;
-  END
-  IF(p1 IS NULL)THEN p1=2;
-    ELSE BEGIN
-    p1=2;
-  END
-  POST_EVENT 'My Event';
-  POST_EVENT p1;
-  WHILE(p1>30)DO BEGIN
-   p1=p1-1;
-  END
-  BEGIN
-    EXCEPTION test;
-    WHEN ANY DO p1=45;
-  END
-END ^
-SET TERM ;^
-commit;
-SHOW PROCEDURE test;"""
+         post_event 'my event';
+         post_event p1;
 
-act = isql_act('db', test_script)
+         while(p1>30)do begin
+          p1=p1-1;
+         end
+         begin
+           exception exc_test;
+           when any do p1=45;
+         end
+    end
+"""
 
-expected_stdout = """Procedure text:
-=============================================================================
-DECLARE VARIABLE p1 SMALLINT;
-BEGIN
-/* Comments */
-  p1=1+1;                           /* assigment */
-  EXCEPTION test;                   /* Exception */
-  EXECUTE PROCEDURE dummy(:p1);    /* Call SP   */
-  EXECUTE PROCEDURE dummy2(:p1) RETURNING_VALUES :p1;
-  EXECUTE PROCEDURE test;         /*recursive call */
-  EXIT;
-  FOR SELECT id FROM tb INTO :p1 DO BEGIN
-    p1=p1+2;
-  END
-  INSERT INTO tb(id) VALUES(:p1);
-  UPDATE tb SET text='new text' WHERE id=:p1;
-  DELETE FROM tb WHERE text=:p1+1;
-  SELECT id FROM tb WHERE text='ggg' INTO :p1;
-  IF(p1 IS NOT NULL)THEN BEGIN
-    p1=NULL;
-  END
-  IF(p1 IS NULL)THEN p1=2;
-    ELSE BEGIN
-    p1=2;
-  END
-  POST_EVENT 'My Event';
-  POST_EVENT p1;
-  WHILE(p1>30)DO BEGIN
-   p1=p1-1;
-  END
-  BEGIN
-    EXCEPTION test;
-    WHEN ANY DO p1=45;
-  END
-END
-============================================================================="""
+test_script = f"""
+
+    create exception exc_test 'test exception';
+    create table tb(id int, text varchar(32));
+    commit;
+    
+    set term ^;
+    create procedure dummy (id int) as
+    begin
+      id=id;
+    end
+    ^
+
+    create procedure dummy2 (id int) returns(newid int) as
+    begin
+      newid=id;
+    end
+    ^
+
+    create procedure sp_test as
+    {SP_BODY}
+    ^
+    set term ;^
+    commit;
+    show procedure sp_test;
+"""
+
+act = isql_act('db', test_script, substitutions = [('=====*','')])
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+
+    expected_stdout_5x = f"""
+        Procedure text:
+        {SP_BODY}
+    """
+
+    expected_stdout_6x = f"""
+        Procedure: PUBLIC.SP_TEST
+        Procedure text:
+        {SP_BODY}
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
