@@ -103,7 +103,8 @@ test_script = """
     --commit;
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' '), ('violation of FOREIGN KEY constraint .*', 'violation of FOREIGN KEY constraint')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
     WHO_AMI                         U01
