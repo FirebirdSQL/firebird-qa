@@ -41,6 +41,7 @@ import locale
 import re
 import time
 from pathlib import Path
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
@@ -75,7 +76,6 @@ def test_1(act: Action, capsys):
     # Full path + filename of database to which we will try to connect:
     #
     tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
-
 
     tmp_dba_helper = 'tmp_supervisor'
     check_sql = f'''
@@ -114,7 +114,6 @@ def test_1(act: Action, capsys):
         commit;
 
         -- set echo on;
-
         -- Must PASS:
         create or alter user stock_boss password '123';
         alter user stock_boss firstname 'foo-rio-bar' password '456';
@@ -143,55 +142,58 @@ def test_1(act: Action, capsys):
         quit;
     '''
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    TEST_TABLE_NAME = 'TEST_SS' if act.is_version('<6') else  f'{SQL_SCHEMA_PREFIX}"TEST_SS"'
+    act.expected_stdout = f"""
+        WHO_AM_I                        {tmp_dba_helper.upper()}
+        RDB$ROLE_NAME                   RDB$ADMIN
+        RDB$ROLE_IN_USE                 <false>
+        RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
+        MON$SEC_DATABASE                Self
+
+        WHO_AM_I                        {tmp_dba_helper.upper()}
+        RDB$ROLE_NAME                   R_FOR_GRANT_REVOKE_ANY_DDL_RIGHT
+        RDB$ROLE_IN_USE                 <true>
+        RDB$SYSTEM_PRIVILEGES           0200000000000000
+        MON$SEC_DATABASE                Self
+        Records affected: 2
+
+        SEC$USER_NAME                   STOCK_BOSS
+        SEC$FIRST_NAME                  foo-rio-bar
+        SEC$ADMIN                       <false>
+        SEC$ACTIVE                      <true>
+
+        SEC$USER_NAME                   STOCK_MNGR
+        SEC$FIRST_NAME                  <null>
+        SEC$ADMIN                       <false>
+        SEC$ACTIVE                      <false>
+
+        Records affected: 2
+
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -GRANT failed
+        -no SELECT privilege with grant option on table/view {TEST_TABLE_NAME}
+
+        Statement failed, SQLSTATE = 28000
+        no permission for SELECT access to TABLE {TEST_TABLE_NAME}
+        -Effective user is TMP_SUPERVISOR
+
+        Records affected: 0
+    """
+    act.isql(switches = ['-q'], input = check_sql, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
     try:
-        act.expected_stdout = f"""
-            WHO_AM_I                        {tmp_dba_helper.upper()}
-            RDB$ROLE_NAME                   RDB$ADMIN
-            RDB$ROLE_IN_USE                 <false>
-            RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
-            MON$SEC_DATABASE                Self
-
-            WHO_AM_I                        {tmp_dba_helper.upper()}
-            RDB$ROLE_NAME                   R_FOR_GRANT_REVOKE_ANY_DDL_RIGHT
-            RDB$ROLE_IN_USE                 <true>
-            RDB$SYSTEM_PRIVILEGES           0200000000000000
-            MON$SEC_DATABASE                Self
-            Records affected: 2
-
-            SEC$USER_NAME                   STOCK_BOSS
-            SEC$FIRST_NAME                  foo-rio-bar
-            SEC$ADMIN                       <false>
-            SEC$ACTIVE                      <true>
-
-            SEC$USER_NAME                   STOCK_MNGR
-            SEC$FIRST_NAME                  <null>
-            SEC$ADMIN                       <false>
-            SEC$ACTIVE                      <false>
-
-            Records affected: 2
-
-            Statement failed, SQLSTATE = 42000
-            unsuccessful metadata update
-            -GRANT failed
-            -no SELECT privilege with grant option on table/view TEST_SS
-
-            Statement failed, SQLSTATE = 28000
-            no permission for SELECT access to TABLE TEST_SS
-            -Effective user is TMP_SUPERVISOR
-
-            Records affected: 0
-        """
-        act.isql(switches = ['-q'], input = check_sql, connect_db=False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
-        assert act.clean_stdout == act.clean_expected_stdout
-        act.reset()
-
         # Change DB state to full shutdown in order to have ability to drop database file.
         # This is needed because when DB is self-security then it will be kept opened for 10s
         # (as it always occurs for common security.db). Set linger to 0 does not help.
-        act.gfix(switches=['-shut', 'full', '-force', '0', f'localhost:{REQUIRED_ALIAS}', '-user', act.db.user, '-pas', act.db.password], io_enc = locale.getpreferredencoding(), credentials = False, combine_output = True)
-        act.stdout = capsys.readouterr().out
-        assert act.clean_stdout == act.clean_expected_stdout
-        act.reset()
-
+        act.gfix(switches=['-shut', 'full', '-force', '0', f'localhost:{REQUIRED_ALIAS}' ], io_enc = locale.getpreferredencoding(), combine_output = True)
+    except DatabaseError as e:
+        print(e.__str__())
+        print(e.gds_codes)
     finally:
+        assert act.stdout == '', f'Could not change test DB state to full shutdown, {act.return_code=}'
+        act.reset()
         tmp_fdb.unlink()
