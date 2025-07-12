@@ -36,15 +36,24 @@ test_script = """
     select * from t as t4 where x<=0.5 order by x desc; -- here PLAN ORDER is much efficient than bitmap + PLAN SORT
 """
 
-act = isql_act('db', test_script)
+
+substitutions = []
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
     PLAN (T1 INDEX (T_X_ASC))
-
     PLAN (T2 ORDER T_X_ASC)
-
     PLAN (T3 INDEX (T_X_ASC))
-
     PLAN (T4 ORDER T_X_DEC)
 """
 
