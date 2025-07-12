@@ -12,23 +12,28 @@ from firebird.qa import *
 
 db = db_factory()
 
-test_script = """CREATE TABLE test(
- c1 unk_domain
-);
+test_script = """
+    create table test(
+     c1 unk_domain
+    );
 """
 
 act = isql_act('db', test_script)
 
-expected_stderr = """Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--CREATE TABLE TEST failed
--SQL error code = -607
--Invalid command
--Specified domain or source column UNK_DOMAIN does not exist
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_TABLE_NAME = 'TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST"'
+    TEST_DOMAIN_NAME = 'UNK_DOMAIN' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"UNK_DOMAIN"'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -CREATE TABLE {TEST_TABLE_NAME} failed
+        -SQL error code = -607
+        -Invalid command
+        -Specified domain or source column {TEST_DOMAIN_NAME} does not exist
+    """
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
