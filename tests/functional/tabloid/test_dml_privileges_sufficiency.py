@@ -244,7 +244,19 @@ test_script = """
     commit;
 """
 
-act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
+substitutions=[('[ \t]+', ' ')]
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = isql_act('db', test_script, substitutions = substitutions)
+
 
 expected_stdout = """
     WHOAMI                          TMP$MODIFIER_INS
