@@ -5,6 +5,13 @@ ID:          table.alter-12
 TITLE:       Verify ability to create exactly 254 changes of format (increasing it by 1) after initial creating table
 DESCRIPTION: 
 FBTEST:      functional.table.alter.12
+NOTES:
+    [12.07.2025] pzotov
+    Removed 'SHOW' command.
+    It is enough to run 'alter table test1' 254 and then 'alter table test2' 255  times, and then run query to RDB$FORMATS table.
+    Max value of rdb$format must be 255 in both cases.
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.949; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -13,8 +20,11 @@ from firebird.qa import *
 db = db_factory()
 
 test_script = """
+    set list on;
+    set count on;
+
     recreate table test1(f0 int); -- this also create "format #1"
-    -- following shoudl run OK because of 254 changes:
+    -- following should run OK because of 254 changes:
     alter table test1 add f1 int;
     alter table test1 add f2 int;
     alter table test1 add f3 int;
@@ -271,9 +281,13 @@ test_script = """
     alter table test1 add f254 int;
     commit;
 
-    show table test1;
+    select max(rf.rdb$format) as max_test1_format
+    from rdb$formats rf
+    join rdb$relations rr on rf.rdb$relation_id = rr.rdb$relation_id
+    where rr.rdb$relation_name = upper('test1');
+    commit;
 
-    -- following shoudl FAIL because of 255 changes:
+    -- following should FAIL because of 255 changes:
     recreate table test2(f0 int);
     alter table test2 add f1 int;
     alter table test2 add f2 int;
@@ -530,280 +544,40 @@ test_script = """
     alter table test2 add f253 int;
     alter table test2 add f254 int;
     alter table test2 add f255 int;
+    alter table test2 add f256 int;
     commit;
+
+    select max(rf.rdb$format) as max_test2_format
+    from rdb$formats rf
+    join rdb$relations rr on rf.rdb$relation_id = rr.rdb$relation_id
+    where rr.rdb$relation_name = upper('test2');
 """
 
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    F0                              INTEGER Nullable 
-    F1                              INTEGER Nullable 
-    F2                              INTEGER Nullable 
-    F3                              INTEGER Nullable 
-    F4                              INTEGER Nullable 
-    F5                              INTEGER Nullable 
-    F6                              INTEGER Nullable 
-    F7                              INTEGER Nullable 
-    F8                              INTEGER Nullable 
-    F9                              INTEGER Nullable 
-    F10                             INTEGER Nullable 
-    F11                             INTEGER Nullable 
-    F12                             INTEGER Nullable 
-    F13                             INTEGER Nullable 
-    F14                             INTEGER Nullable 
-    F15                             INTEGER Nullable 
-    F16                             INTEGER Nullable 
-    F17                             INTEGER Nullable 
-    F18                             INTEGER Nullable 
-    F19                             INTEGER Nullable 
-    F20                             INTEGER Nullable 
-    F21                             INTEGER Nullable 
-    F22                             INTEGER Nullable 
-    F23                             INTEGER Nullable 
-    F24                             INTEGER Nullable 
-    F25                             INTEGER Nullable 
-    F26                             INTEGER Nullable 
-    F27                             INTEGER Nullable 
-    F28                             INTEGER Nullable 
-    F29                             INTEGER Nullable 
-    F30                             INTEGER Nullable 
-    F31                             INTEGER Nullable 
-    F32                             INTEGER Nullable 
-    F33                             INTEGER Nullable 
-    F34                             INTEGER Nullable 
-    F35                             INTEGER Nullable 
-    F36                             INTEGER Nullable 
-    F37                             INTEGER Nullable 
-    F38                             INTEGER Nullable 
-    F39                             INTEGER Nullable 
-    F40                             INTEGER Nullable 
-    F41                             INTEGER Nullable 
-    F42                             INTEGER Nullable 
-    F43                             INTEGER Nullable 
-    F44                             INTEGER Nullable 
-    F45                             INTEGER Nullable 
-    F46                             INTEGER Nullable 
-    F47                             INTEGER Nullable 
-    F48                             INTEGER Nullable 
-    F49                             INTEGER Nullable 
-    F50                             INTEGER Nullable 
-    F51                             INTEGER Nullable 
-    F52                             INTEGER Nullable 
-    F53                             INTEGER Nullable 
-    F54                             INTEGER Nullable 
-    F55                             INTEGER Nullable 
-    F56                             INTEGER Nullable 
-    F57                             INTEGER Nullable 
-    F58                             INTEGER Nullable 
-    F59                             INTEGER Nullable 
-    F60                             INTEGER Nullable 
-    F61                             INTEGER Nullable 
-    F62                             INTEGER Nullable 
-    F63                             INTEGER Nullable 
-    F64                             INTEGER Nullable 
-    F65                             INTEGER Nullable 
-    F66                             INTEGER Nullable 
-    F67                             INTEGER Nullable 
-    F68                             INTEGER Nullable 
-    F69                             INTEGER Nullable 
-    F70                             INTEGER Nullable 
-    F71                             INTEGER Nullable 
-    F72                             INTEGER Nullable 
-    F73                             INTEGER Nullable 
-    F74                             INTEGER Nullable 
-    F75                             INTEGER Nullable 
-    F76                             INTEGER Nullable 
-    F77                             INTEGER Nullable 
-    F78                             INTEGER Nullable 
-    F79                             INTEGER Nullable 
-    F80                             INTEGER Nullable 
-    F81                             INTEGER Nullable 
-    F82                             INTEGER Nullable 
-    F83                             INTEGER Nullable 
-    F84                             INTEGER Nullable 
-    F85                             INTEGER Nullable 
-    F86                             INTEGER Nullable 
-    F87                             INTEGER Nullable 
-    F88                             INTEGER Nullable 
-    F89                             INTEGER Nullable 
-    F90                             INTEGER Nullable 
-    F91                             INTEGER Nullable 
-    F92                             INTEGER Nullable 
-    F93                             INTEGER Nullable 
-    F94                             INTEGER Nullable 
-    F95                             INTEGER Nullable 
-    F96                             INTEGER Nullable 
-    F97                             INTEGER Nullable 
-    F98                             INTEGER Nullable 
-    F99                             INTEGER Nullable 
-    F100                            INTEGER Nullable 
-    F101                            INTEGER Nullable 
-    F102                            INTEGER Nullable 
-    F103                            INTEGER Nullable 
-    F104                            INTEGER Nullable 
-    F105                            INTEGER Nullable 
-    F106                            INTEGER Nullable 
-    F107                            INTEGER Nullable 
-    F108                            INTEGER Nullable 
-    F109                            INTEGER Nullable 
-    F110                            INTEGER Nullable 
-    F111                            INTEGER Nullable 
-    F112                            INTEGER Nullable 
-    F113                            INTEGER Nullable 
-    F114                            INTEGER Nullable 
-    F115                            INTEGER Nullable 
-    F116                            INTEGER Nullable 
-    F117                            INTEGER Nullable 
-    F118                            INTEGER Nullable 
-    F119                            INTEGER Nullable 
-    F120                            INTEGER Nullable 
-    F121                            INTEGER Nullable 
-    F122                            INTEGER Nullable 
-    F123                            INTEGER Nullable 
-    F124                            INTEGER Nullable 
-    F125                            INTEGER Nullable 
-    F126                            INTEGER Nullable 
-    F127                            INTEGER Nullable 
-    F128                            INTEGER Nullable 
-    F129                            INTEGER Nullable 
-    F130                            INTEGER Nullable 
-    F131                            INTEGER Nullable 
-    F132                            INTEGER Nullable 
-    F133                            INTEGER Nullable 
-    F134                            INTEGER Nullable 
-    F135                            INTEGER Nullable 
-    F136                            INTEGER Nullable 
-    F137                            INTEGER Nullable 
-    F138                            INTEGER Nullable 
-    F139                            INTEGER Nullable 
-    F140                            INTEGER Nullable 
-    F141                            INTEGER Nullable 
-    F142                            INTEGER Nullable 
-    F143                            INTEGER Nullable 
-    F144                            INTEGER Nullable 
-    F145                            INTEGER Nullable 
-    F146                            INTEGER Nullable 
-    F147                            INTEGER Nullable 
-    F148                            INTEGER Nullable 
-    F149                            INTEGER Nullable 
-    F150                            INTEGER Nullable 
-    F151                            INTEGER Nullable 
-    F152                            INTEGER Nullable 
-    F153                            INTEGER Nullable 
-    F154                            INTEGER Nullable 
-    F155                            INTEGER Nullable 
-    F156                            INTEGER Nullable 
-    F157                            INTEGER Nullable 
-    F158                            INTEGER Nullable 
-    F159                            INTEGER Nullable 
-    F160                            INTEGER Nullable 
-    F161                            INTEGER Nullable 
-    F162                            INTEGER Nullable 
-    F163                            INTEGER Nullable 
-    F164                            INTEGER Nullable 
-    F165                            INTEGER Nullable 
-    F166                            INTEGER Nullable 
-    F167                            INTEGER Nullable 
-    F168                            INTEGER Nullable 
-    F169                            INTEGER Nullable 
-    F170                            INTEGER Nullable 
-    F171                            INTEGER Nullable 
-    F172                            INTEGER Nullable 
-    F173                            INTEGER Nullable 
-    F174                            INTEGER Nullable 
-    F175                            INTEGER Nullable 
-    F176                            INTEGER Nullable 
-    F177                            INTEGER Nullable 
-    F178                            INTEGER Nullable 
-    F179                            INTEGER Nullable 
-    F180                            INTEGER Nullable 
-    F181                            INTEGER Nullable 
-    F182                            INTEGER Nullable 
-    F183                            INTEGER Nullable 
-    F184                            INTEGER Nullable 
-    F185                            INTEGER Nullable 
-    F186                            INTEGER Nullable 
-    F187                            INTEGER Nullable 
-    F188                            INTEGER Nullable 
-    F189                            INTEGER Nullable 
-    F190                            INTEGER Nullable 
-    F191                            INTEGER Nullable 
-    F192                            INTEGER Nullable 
-    F193                            INTEGER Nullable 
-    F194                            INTEGER Nullable 
-    F195                            INTEGER Nullable 
-    F196                            INTEGER Nullable 
-    F197                            INTEGER Nullable 
-    F198                            INTEGER Nullable 
-    F199                            INTEGER Nullable 
-    F200                            INTEGER Nullable 
-    F201                            INTEGER Nullable 
-    F202                            INTEGER Nullable 
-    F203                            INTEGER Nullable 
-    F204                            INTEGER Nullable 
-    F205                            INTEGER Nullable 
-    F206                            INTEGER Nullable 
-    F207                            INTEGER Nullable 
-    F208                            INTEGER Nullable 
-    F209                            INTEGER Nullable 
-    F210                            INTEGER Nullable 
-    F211                            INTEGER Nullable 
-    F212                            INTEGER Nullable 
-    F213                            INTEGER Nullable 
-    F214                            INTEGER Nullable 
-    F215                            INTEGER Nullable 
-    F216                            INTEGER Nullable 
-    F217                            INTEGER Nullable 
-    F218                            INTEGER Nullable 
-    F219                            INTEGER Nullable 
-    F220                            INTEGER Nullable 
-    F221                            INTEGER Nullable 
-    F222                            INTEGER Nullable 
-    F223                            INTEGER Nullable 
-    F224                            INTEGER Nullable 
-    F225                            INTEGER Nullable 
-    F226                            INTEGER Nullable 
-    F227                            INTEGER Nullable 
-    F228                            INTEGER Nullable 
-    F229                            INTEGER Nullable 
-    F230                            INTEGER Nullable 
-    F231                            INTEGER Nullable 
-    F232                            INTEGER Nullable 
-    F233                            INTEGER Nullable 
-    F234                            INTEGER Nullable 
-    F235                            INTEGER Nullable 
-    F236                            INTEGER Nullable 
-    F237                            INTEGER Nullable 
-    F238                            INTEGER Nullable 
-    F239                            INTEGER Nullable 
-    F240                            INTEGER Nullable 
-    F241                            INTEGER Nullable 
-    F242                            INTEGER Nullable 
-    F243                            INTEGER Nullable 
-    F244                            INTEGER Nullable 
-    F245                            INTEGER Nullable 
-    F246                            INTEGER Nullable 
-    F247                            INTEGER Nullable 
-    F248                            INTEGER Nullable 
-    F249                            INTEGER Nullable 
-    F250                            INTEGER Nullable 
-    F251                            INTEGER Nullable 
-    F252                            INTEGER Nullable 
-    F253                            INTEGER Nullable 
-    F254                            INTEGER Nullable 
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 54000
-    unsuccessful metadata update
-    -TABLE TEST2
-    -too many versions
-"""
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST2_TABLE_NAME = 'TEST2' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST2"'
+    expected_stdout = f"""
+        MAX_TEST1_FORMAT                255
+        Records affected: 1
+        
+        Statement failed, SQLSTATE = 54000
+        unsuccessful metadata update
+        -TABLE {TEST2_TABLE_NAME}
+        -too many versions
+
+        Statement failed, SQLSTATE = 54000
+        unsuccessful metadata update
+        -TABLE {TEST2_TABLE_NAME}
+        -too many versions
+        
+        MAX_TEST2_FORMAT                255
+        Records affected: 1
+    """
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stdout == act.clean_expected_stdout and
-            act.clean_stderr == act.clean_expected_stderr)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
