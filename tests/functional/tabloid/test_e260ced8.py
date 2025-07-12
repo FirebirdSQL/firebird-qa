@@ -53,9 +53,6 @@ init_sql = """
 """
 db = db_factory(init = init_sql)
 
-act = python_act('db')
-
-
 substitutions = []
 
 # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
