@@ -5,6 +5,7 @@ ID:          table.alter-05
 TITLE:       ALTER TABLE - ALTER - TO
 DESCRIPTION:
 FBTEST:      functional.table.alter.05
+NOTES:
     [12.07.2025] pzotov
     Removed 'SHOW' command.
     Check that one can *not* rename column if some restrictions exist for that, see:
