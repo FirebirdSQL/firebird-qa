@@ -55,9 +55,28 @@ db = db_factory(init = init_sql)
 
 act = python_act('db')
 
+
+substitutions = []
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
+
+act = python_act('db', substitutions = substitutions)
+
+
+#------------------------------------------------------------
+
 def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
+
+#------------------------------------------------------------
 
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
