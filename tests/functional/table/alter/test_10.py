@@ -34,15 +34,18 @@ test_script = """
 
 act = isql_act('db', test_script)
 
-expected_stdout = """
-    ID                              1
-    ID                              1
-    Statement failed, SQLSTATE = 23000
-    validation error for column "TEST"."ID", value "*** null ***"
-"""
-
 @pytest.mark.version('>=3')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_TABLE_NAME = '"TEST"' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST"'
+    expected_stdout = f"""
+        ID                              1
+        ID                              1
+        Statement failed, SQLSTATE = 23000
+        validation error for column {TEST_TABLE_NAME}."ID", value "*** null ***"
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
