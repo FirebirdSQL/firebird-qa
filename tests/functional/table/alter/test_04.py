@@ -37,7 +37,7 @@ test_script = """
     select id, count(*) from test group by id order by id; -- must issue null:2, 1:1
 """
 
-substitutions = [] # [('[ \t]+', ' '), ('(-)?Problematic key value is.*', 'Problematic key value is')]
+substitutions = [('[ \t]+', ' '), ('(-)?Problematic key value is.*', 'Problematic key value is')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=3')
