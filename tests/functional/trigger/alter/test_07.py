@@ -75,6 +75,7 @@ expected_stderr_2 = """
     attempted update of read-only column TEST.ID
 """
 
+@pytest.mark.skip("Covered by 'test_alter_dml_basic.py'")
 @pytest.mark.version('>=4.0.0')
 def test_2(act: Action):
     act.expected_stdout = expected_stdout_2
