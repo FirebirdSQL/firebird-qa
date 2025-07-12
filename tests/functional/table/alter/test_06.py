@@ -10,6 +10,10 @@ NOTES:
     Removed SHOW command for check result because its output often changes.
     It is enough for this test to obtain similar data from RDB tables.
     Created view and stored function to obtain type name by rdb$fields.rdb$field_type and .rdb$field_sub_type.
+
+    [06.07.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.949; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
 
 import pytest
@@ -98,33 +102,38 @@ test_script = """
     alter table test alter column id type blob;
 """
 
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    FIELD_NAME                      ID
-    FIELD_TYPE                      TIMESTAMP WITHOUT TIME ZONE
-    FIELD_CHAR_LEN                  <null>
-    FIELD_CSET_ID                   <null>
-    FIELD_COLL_ID                   <null>
-    CSET_NAME                       <null>
-    FIELD_COLLATION                 <null>
-
-    FIELD_NAME                      ID
-    FIELD_TYPE                      VARCHAR
-    FIELD_CHAR_LEN                  50
-    FIELD_CSET_ID                   0
-    FIELD_COLL_ID                   0
-    CSET_NAME                       NONE
-    FIELD_COLLATION                 NONE
-
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -ALTER TABLE TEST failed
-    -Cannot change datatype for column ID.  Changing datatype is not supported for BLOB or ARRAY columns.
-"""
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_TABLE_NAME = 'TEST' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST"'
+    TEST_COLUMN_NAME = 'ID' if act.is_version('<6') else f'"ID"'
+    expected_stdout = f"""
+        FIELD_NAME                      ID
+        FIELD_TYPE                      TIMESTAMP WITHOUT TIME ZONE
+        FIELD_CHAR_LEN                  <null>
+        FIELD_CSET_ID                   <null>
+        FIELD_COLL_ID                   <null>
+        CSET_NAME                       <null>
+        FIELD_COLLATION                 <null>
+
+        FIELD_NAME                      ID
+        FIELD_TYPE                      VARCHAR
+        FIELD_CHAR_LEN                  50
+        FIELD_CSET_ID                   0
+        FIELD_COLL_ID                   0
+        CSET_NAME                       NONE
+        FIELD_COLLATION                 NONE
+
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -ALTER TABLE {TEST_TABLE_NAME} failed
+        -Cannot change datatype for column {TEST_COLUMN_NAME}. Changing datatype is not supported for BLOB or ARRAY columns.
+    """
+
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
