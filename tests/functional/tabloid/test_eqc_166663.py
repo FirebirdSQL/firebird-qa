@@ -10,8 +10,6 @@ FBTEST:      functional.tabloid.eqc_166663
 import pytest
 from firebird.qa import *
 
-substitutions = [('exception .*', 'exception'), ('line: .*', 'line')]
-
 db = db_factory(page_size=4096)
 
 test_script = """
@@ -86,6 +84,17 @@ test_script = """
     
     select * from tmain;
 """
+
+substitutions = [('exception .*', 'exception'), ('line: .*', 'line'), ('[ \t]+', ' '), ]
+
+# QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
+# from act.files_dir/'test_config.ini':
+#
+addi_subst_settings = QA_GLOBALS['schema_n_quotes_suppress']
+addi_subst_tokens = addi_subst_settings['addi_subst']
+
+for p in addi_subst_tokens.split(' '):
+    substitutions.append( (p, '') )
 
 act = isql_act('db', test_script, substitutions=substitutions)
 
