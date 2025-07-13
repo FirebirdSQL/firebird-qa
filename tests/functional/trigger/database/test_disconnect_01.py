@@ -27,7 +27,6 @@ from difflib import unified_diff
 import re
 import locale
 
-
 tmp_worker = user_factory('db', name='tmp_worker', password='123')
 
 db = db_factory()
@@ -38,15 +37,9 @@ expected_stdout_test_sql = """
     WHO_AM_I TMP_WORKER
 """
 
-expected_stdout_log_diff = """
-    + Error at disconnect:
-    + arithmetic exception, numeric overflow, or string truncation
-    + Integer divide by zero. The code attempted to divide an integer value by an integer divisor of zero.
-    + At trigger 'TRG_DISCONNECT'
-"""
-
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_worker: User, capsys):
+
     init_sql  = f"""
         set term ^;
         create trigger trg_disconnect on disconnect as
@@ -84,7 +77,7 @@ def test_1(act: Action, tmp_worker: User, capsys):
         "Error at disconnect:",
         "arithmetic exception, numeric overflow, or string truncation",
         "Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.",
-        "At trigger 'TRG_DISCONNECT' line: \\d+, col: \\d+",
+        "At trigger",
     ]
     diff_patterns = [re.compile(s) for s in diff_patterns]
 
@@ -92,6 +85,15 @@ def test_1(act: Action, tmp_worker: User, capsys):
         if line.startswith('+'):
             if act.match_any(line, diff_patterns):
                 print(line.strip())
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_TRG_NAME = "'TRG_DISCONNECT'" if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TRG_DISCONNECT"'
+    expected_stdout_log_diff = f"""
+        + Error at disconnect:
+        + arithmetic exception, numeric overflow, or string truncation
+        + Integer divide by zero. The code attempted to divide an integer value by an integer divisor of zero.
+        + At trigger {TEST_TRG_NAME}
+    """
 
     act.expected_stdout = expected_stdout_log_diff
     act.stdout = capsys.readouterr().out
