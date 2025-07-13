@@ -17,6 +17,9 @@ NOTES:
 
     Confirmed problem on 6.0.0.520.
     Checked on 6.0.0.532 -- all fine.
+
+    12.07.2025 DEFERRED REGRESION, SENT Q TO ADRIANO & DIMITR
+
 """
 
 import pytest
@@ -41,7 +44,7 @@ test_sql = f"""
             ,p.parent_record_source_id 
             ,p.level                   
             ,p.cardinality
-            ,cast(p.access_path as varchar(30)) as access_path
+            ,cast(p.access_path as varchar(8190)) as access_path
             ,max(p.plan_line)over() - p.plan_line as mx
         from rdb$sql.explain('select count(*) from test where 1=1') as p
     ) t
@@ -56,11 +59,12 @@ act = isql_act('db', test_sql, substitutions=[('[ \t]+', ' ')])
 @pytest.mark.version('>=6')
 def test_1(act: Action):
    
-    act.expected_stdout = """
+    TEST_TABLE_NAME = '"TEST"' if act.is_version('<6') else '"PUBLIC"."TEST"'
+    act.expected_stdout = f"""
         ACCESS_PATH -> Filter (preliminary)
         CARDINALITY_VALUES EXPECTED: THE SAME.
 
-        ACCESS_PATH -> Table "TEST" Full Scan
+        ACCESS_PATH -> Table {TEST_TABLE_NAME} Full Scan
         CARDINALITY_VALUES EXPECTED: THE SAME.
     """
     act.execute(combine_output = True)
