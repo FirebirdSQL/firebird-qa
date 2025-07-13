@@ -52,6 +52,7 @@ expected_stderr_fb4 = """
     attempted update of read-only column TEST.ID
 """
 
+@pytest.mark.skip("Covered by 'functional/trigger/alter/test_alter_dml_basic.py'")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     if act.is_version('>=4.0'):
