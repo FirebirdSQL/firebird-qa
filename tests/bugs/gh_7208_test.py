@@ -16,10 +16,19 @@ DESCRIPTION:
     Only one line with statistics is taken in account for one DDL (because their quantity can differ between FB versions).
     Concrete values of NR, IR, Inserts are ignored because they can change, so each line from statistics looks just like
     short prefix: 'RDB' (in expected output).
-
 NOTES:
     [24.02.2023] pzotov
-    Checked on 5.0.0.958, 4.0.3.2903 -- all fine.
+        Checked on 5.0.0.958, 4.0.3.2903 -- all fine.
+    [13.07.2025] pzotov
+        Adjusted patterns: one need to take in account SCHEMA prefix that presents for each table
+        in the trace (since 6.0.0.834), e.g.:
+            Table                              Natural     Index
+            ****************************************************
+            "SYSTEM"."RDB$DATABASE"                 10
+            "SYSTEM"."RDB$RELATIONS"                          10
+            "SYSTEM"."RDB$SCHEMAS"                  20        10
+        See 'p_rdb_table_with_stat'.
+        Checked on 6.0.0.970; 5.0.3.1683; 4.0.6.3221
 """
 
 import locale
@@ -114,7 +123,7 @@ test_sql = '''
 
 db = db_factory()
 
-act = python_act('db', substitutions = [(r'RDB\$\S+\s+\d+(\s+\d+)*', 'RDB')])
+act = python_act('db', substitutions = [('[ \t]+', ' '), (r'("SYSTEM"\.)?(")?RDB\$\S+\s+\d+(\s+\d+)*', 'RDB'), (r'RDB\$\S+\s+\d+(\s+\d+)*', 'RDB')])
 
 expected_stdout_trace = """
 SET TRANSACTION
@@ -286,6 +295,8 @@ def test_1(act: Action, capsys):
     with act.trace(db_events = trace_cfg_items, encoding=locale.getpreferredencoding()):
         act.isql(input = test_sql, combine_output = True)
 
+    p_rdb_table_with_stat = re.compile( r'^("SYSTEM"\.)?(")?RDB\$\S+\s+\d+(\s+\d+)*' )
+
     allowed_patterns = \
     (
          '(SET TRANSACTION)'
@@ -293,7 +304,7 @@ def test_1(act: Action, capsys):
         ,'0 records fetched'
         ,r'\s+\d+\s+ms(,)?'
         ,r'Table\s+Natural\s+Index\s+Update\s+Insert\s+Delete\s+Backout\s+Purge\s+Expunge'
-        ,r'^RDB\$\S+\s+\d+'
+        ,p_rdb_table_with_stat.pattern # r'^("SYSTEM"\.)?(")?RDB\$\S+\s+\d+'
         ,'^commit$'
     )
     allowed_patterns = [ re.compile(p, re.IGNORECASE) for p in allowed_patterns ]
@@ -301,9 +312,8 @@ def test_1(act: Action, capsys):
     rdb_tables_found_for_this_ddl = False
     for line in act.trace_log:
         if line.strip():
-            #print(line.strip())
             if act.match_any(line.strip(), allowed_patterns):
-                if line.startswith('RDB$'):
+                if p_rdb_table_with_stat.search(line):
                     if not rdb_tables_found_for_this_ddl:
                         print(line.strip())
                         rdb_tables_found_for_this_ddl = True
