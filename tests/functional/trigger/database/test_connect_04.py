@@ -27,12 +27,15 @@ act = python_act('db', substitutions=[('line:.*', '')])
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_worker: User, tmp_hacker: User):
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_EXC_NAME = 'EXC_CONNECT' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"EXC_CONNECT"'
+    TEST_TRG_NAME = "'TRG_CONNECT_1'" if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TRG_CONNECT_1"'
     expected_stdout = f"""
         Statement failed, SQLSTATE = HY000
         exception 1
-        -EXC_CONNECT
+        -{TEST_EXC_NAME}
         -Exception in ON CONNECT trigger trg_connect_1 for user {tmp_hacker.name}
-        -At trigger 'TRG_CONNECT_1'
+        -At trigger {TEST_TRG_NAME}
         ID                              1
         AUDIT_WHO                       {tmp_worker.name}
         TRG_NAME                        trg_connect_1
