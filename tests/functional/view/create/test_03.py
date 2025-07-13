@@ -10,29 +10,26 @@ FBTEST:      functional.view.create.03
 import pytest
 from firebird.qa import *
 
-init_script = """CREATE TABLE tb(id INT);
-commit;
+db = db_factory()
+
+test_script = """
+    create view test (id, num, text) as select 1 as id, 5 as num from rdb$database;
 """
-
-db = db_factory(init=init_script)
-
-test_script = """CREATE VIEW test (id,num,text) AS SELECT id,5 FROM tb;
-SHOW VIEW test;
-"""
-
 act = isql_act('db', test_script)
-
-expected_stderr = """Statement failed, SQLSTATE = 07002
-unsuccessful metadata update
--CREATE VIEW TEST failed
--SQL error code = -607
--Invalid command
--number of columns does not match select list
-There is no view TEST in this database
-"""
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert act.clean_stderr == act.clean_expected_stderr
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_VEW_NAME = "TEST" if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TEST"'
+    expected_stdout = f"""
+        Statement failed, SQLSTATE = 07002
+        unsuccessful metadata update
+        -CREATE VIEW {TEST_VEW_NAME} failed
+        -SQL error code = -607
+        -Invalid command
+        -number of columns does not match select list
+    """
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
