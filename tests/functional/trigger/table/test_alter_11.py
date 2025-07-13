@@ -46,6 +46,7 @@ expected_stdout = """
     altered trigger
 """
 
+@pytest.mark.skip("Covered by 'functional/trigger/alter/test_alter_dml_basic.py'")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
