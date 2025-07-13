@@ -30,6 +30,7 @@ unsuccessful metadata update
 There is no view TEST in this database
 """
 
+@pytest.mark.skip("Covered by 'tests/functional/view/create/test_03.py'")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stderr = expected_stderr
