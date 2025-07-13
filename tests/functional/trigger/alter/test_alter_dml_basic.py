@@ -67,8 +67,8 @@ def test_1(act: Action):
                ,   2, 'after insert'
                ,   3, 'before update'
                ,   4, 'after update'
-               ,   5, 'before update'
-               ,   6, 'after update'
+               ,   5, 'before delete'
+               ,   6, 'after delete'
                ,  17, 'before insert or update'
                ,  18, 'after insert or update'
                ,  25, 'before insert or delete'
@@ -296,7 +296,7 @@ def test_1(act: Action):
         REL_NAME                        TEST
         TRG_SEQN                        0
         TRG_ACT                         active
-        TRG_TYPE                        before update
+        TRG_TYPE                        before delete
         TRG_VALID_BLR                   1
         TRG_ENGINE                      <null>
         TRG_ENTRY                       <null>
@@ -307,7 +307,7 @@ def test_1(act: Action):
         REL_NAME                        TEST
         TRG_SEQN                        0
         TRG_ACT                         active
-        TRG_TYPE                        after update
+        TRG_TYPE                        after delete
         TRG_VALID_BLR                   1
         TRG_ENGINE                      <null>
         TRG_ENTRY                       <null>
@@ -397,7 +397,7 @@ def test_1(act: Action):
         REL_NAME                        TEST
         TRG_SEQN                        0
         TRG_ACT                         active
-        TRG_TYPE                        after update
+        TRG_TYPE                        after delete
         TRG_VALID_BLR                   1
         TRG_ENGINE                      <null>
         TRG_ENTRY                       <null>
