@@ -138,7 +138,7 @@ def test_1(act: Action, capsys):
             if ps:
                 ps.free()
 
-    act.expected_stdout = f"""
+    expected_stdout_5x = f"""
         Select Expression
         ....-> Aggregate
         ........-> Filter
@@ -153,5 +153,23 @@ def test_1(act: Action, capsys):
         ....................................-> Table "TEST3" as "C" Full Scan
         10
     """
+
+    expected_stdout_6x = f"""
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Hash Join (semi)
+        ................-> Table "PUBLIC"."TEST1" as "A" Full Scan
+        ................-> Record Buffer (record length: NN)
+        ....................-> Filter
+        ........................-> Hash Join (semi)
+        ............................-> Table "PUBLIC"."TEST2" as "B" Full Scan
+        ............................-> Record Buffer (record length: NN)
+        ................................-> Filter
+        ....................................-> Table "PUBLIC"."TEST3" as "C" Full Scan
+        10
+    """
+    
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
