@@ -76,29 +76,27 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('line: \\d+, col: \\d+', '')])
 
-expected_stdout = """
-    PHASE                           Tx to be rolled back
-    CNT_CHK_TX                      1
-    CNT_CHK_TRG                     1
-    PHASE                           Tx to be committed
-    CNT_CHK_TX                      1
-    CNT_CHK_TRG                     1
-    PHASE                           Final select
-    CNT_CHK_TX                      1
-    CNT_CHK_TRG                     1
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 22012
-    arithmetic exception, numeric overflow, or string truncation
-    -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
-    -At trigger 'TRG_START_TX'
-"""
-
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
+    TEST_TRG_NAME = "'TRG_START_TX'" if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TRG_START_TX"'
+    expected_stdout = f"""
+        PHASE                           Tx to be rolled back
+        CNT_CHK_TX                      1
+        CNT_CHK_TRG                     1
+        PHASE                           Tx to be committed
+        CNT_CHK_TX                      1
+        CNT_CHK_TRG                     1
+        PHASE                           Final select
+        CNT_CHK_TX                      1
+        CNT_CHK_TRG                     1
+        Statement failed, SQLSTATE = 22012
+        arithmetic exception, numeric overflow, or string truncation
+        -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
+        -At trigger {TEST_TRG_NAME}
+    """
+
     act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stdout == act.clean_expected_stdout and
-            act.clean_stderr == act.clean_expected_stderr)
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
