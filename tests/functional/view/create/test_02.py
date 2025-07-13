@@ -10,27 +10,28 @@ FBTEST:      functional.view.create.02
 import pytest
 from firebird.qa import *
 
-init_script = """CREATE TABLE tb(id INT);
-commit;
+db = db_factory()
+
+test_script = """
+    set list on;
+    create table test(id int);
+    create view v_test as select id, 5 as x from test;
+
+    insert into test(id) values(1);
+    select * from v_test;
 """
 
-db = db_factory(init=init_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-test_script = """CREATE VIEW test (id,num) AS SELECT id,5 FROM tb;
-SHOW VIEW test;
-"""
-
-act = isql_act('db', test_script)
-
-expected_stdout = """ID                              INTEGER Nullable
-NUM                             INTEGER Expression
-View Source:
-==== ======
-SELECT id,5 FROM tb
+expected_stdout = """
+    ID 1
+    X 5
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
+
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
