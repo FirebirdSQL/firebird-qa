@@ -11,6 +11,11 @@ DESCRIPTION:
 NOTES:
     Confirmed bug on 5.0.0.1030.
     Checked on 5.0.0.1033 SS/CS (intermediate build, timestamp: 26.04.2023 08:00) -- all fine.
+
+    [13.07.2025] pzotov
+    Adjusted for FB 6.x: it is MANDATORY to specify schema `PLG$PROFILER.` when querying created profiler tables.
+    See doc/sql.extensions/README.schemas.md, section title: '### gbak'; see 'SQL_SCHEMA_PREFIX' variable here.
+    Checked on 6.0.0.970; 5.0.3.1683.
 """
 import locale
 import re
@@ -25,6 +30,8 @@ act = python_act('db', substitutions=[('[ \t]+', ' ')])
 
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
+
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'PLG$PROFILER.'
 
     # Get Firebird log before test
     fb_log_init = act.get_firebird_log()
@@ -51,7 +58,7 @@ def test_1(act: Action, capsys):
         with 
         p_ssn as (
             select profile_id
-            from plg$prof_sessions
+            from {SQL_SCHEMA_PREFIX}plg$prof_sessions
             order by 1 desc rows 1
         )
         select
@@ -61,8 +68,8 @@ def test_1(act: Action, capsys):
             ,r.open_counter  as p_recsource_open_counter
             ,r.fetch_counter as p_recsource_fetch_counter
         from p_ssn s
-        join plg$prof_psql_stats_view as q on s.profile_id = q.profile_id
-        join plg$prof_record_source_stats_view r on s.profile_id = r.profile_id
+        join {SQL_SCHEMA_PREFIX}plg$prof_psql_stats_view as q on s.profile_id = q.profile_id
+        join {SQL_SCHEMA_PREFIX}plg$prof_record_source_stats_view r on s.profile_id = r.profile_id
         order by 1,2,3
         ;
     """
