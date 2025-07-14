@@ -23,6 +23,11 @@ DESCRIPTION:
 NOTES:
     Compared 5.0.0.1087 (26-JUN-2023) vs 5.0.0.1088 (27-JUN-2023)
     Checked on 6.0.0.395
+
+    [13.07.2025] pzotov
+    Adjusted for FB 6.x: it is MANDATORY to specify schema `PLG$PROFILER.` when querying created profiler tables.
+    See doc/sql.extensions/README.schemas.md, section title: '### gbak'; see 'SQL_SCHEMA_PREFIX' variable here.
+    Checked on 6.0.0.970; 5.0.3.1683.
 """
 import pytest
 from firebird.qa import *
@@ -39,6 +44,7 @@ def strip_white(value):
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'PLG$PROFILER.'
     actual_out = ''
     test_sql = f"""
         set bail on;
@@ -89,14 +95,13 @@ def test_1(act: Action, capsys):
         select
              iif( sum( iif(request_id = 0, 1, 0) ) > 0, 'NON_ZERO', 'ZERO' ) as requests_cnt_zero_request_id
             ,iif( sum( iif(request_id = 0, 0, 1) ) > 0, 'NON_ZERO', 'ZERO' ) as requests_cnt_non_zero_req_id
-        from plg$prof_requests;
+        from {SQL_SCHEMA_PREFIX}plg$prof_requests;
 
         select
              iif( sum( iif(request_id = 0, 1, 0) ) > 0, 'NON_ZERO', 'ZERO' ) as psql_stats_cnt_zero_request_id
             ,iif( sum( iif(request_id = 0, 0, 1) ) > 0, 'NON_ZERO', 'ZERO' ) as psql_stats_cnt_non_zero_req_id
-        from plg$prof_psql_stats;
+        from {SQL_SCHEMA_PREFIX}plg$prof_psql_stats;
     """
-
 
     debug_message_sttm = "select 'DETAILED_REQUESTS: OFF' as msg from rdb$database"
     profiler_start_sttm = "select sign(rdb$profiler.start_session('prof_ssn_no_details')) from rdb$database"
