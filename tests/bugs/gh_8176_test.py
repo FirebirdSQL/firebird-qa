@@ -40,6 +40,13 @@ NOTES:
         https://github.com/FirebirdSQL/firebird/commit/f59905fc29f0b9288d61fc6113fd24301dce1327
             Frontported PR #8186 : Fixed a few issues with IPC used by remote profiler
     Snapshots: 6.0.0.398-f59905f, 5.0.1.1440-7b1b824
+
+    [03.07.2025] pzotov
+    Adjusted for FB 6.x: it is MANDATORY to specify schema `PLG$PROFILER.` when querying created profiler tables.
+    See doc/sql.extensions/README.schemas.md, section title: '### gbak'; see 'SQL_SCHEMA_PREFIX' variable here.
+    Also, on FB 6.x one need to use: 'grant usage on schema "PLG$PROFILER" to role ...'
+    Checked on 6.0.0.970; 5.0.3.1668.
+
 """
 
 import pytest
@@ -111,6 +118,8 @@ act = python_act('db')
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action, tmp_worker_usr: User, tmp_profiler_usr: User, tmp_profiler_role: Role, capsys):
 
+    PLG_SCHEMA_PREFIX = '' if act.is_version('<6') else f'PLG$PROFILER.'
+
     addi_script = f"""
         set wng off;
         set bail on;
@@ -168,24 +177,25 @@ def test_1(act: Action, tmp_worker_usr: User, tmp_profiler_usr: User, tmp_profil
         #################################
         # ::: NB ::: Why this is needed ?
         #################################
-        con_admin.execute_immediate(f'grant select on plg$prof_sessions to role {tmp_profiler_role.name}')
-        con_admin.execute_immediate(f'grant select on plg$prof_psql_stats_view to role {tmp_profiler_role.name}')
+
+        # firebird.driver.types.DatabaseError: no permission for USAGE access to SCHEMA "PLG$PROFILER"
+        # -Effective user is TMP_PROFILER_8176
+        if act.is_version('<6'):
+            pass
+        else:
+            con_admin.execute_immediate(f'grant usage on schema "{PLG_SCHEMA_PREFIX[:-1]}" to role {tmp_profiler_role.name}')
+
+        con_admin.execute_immediate(f'grant select on {PLG_SCHEMA_PREFIX}plg$prof_sessions to role {tmp_profiler_role.name}')
+        con_admin.execute_immediate(f'grant select on {PLG_SCHEMA_PREFIX}plg$prof_psql_stats_view to role {tmp_profiler_role.name}')
         con_admin.commit()
         #------------------------------------------------------------------------------
 
         tx_profiler.begin()
-        cur_profiler.execute('select description as profiler_session_descr, attachment_id as profiled_attachment, trim(user_name) as who_was_profiled from plg$prof_sessions order by profile_id')
+        cur_profiler.execute(f'select description as profiler_session_descr, attachment_id as profiled_attachment, trim(user_name) as who_was_profiled from {PLG_SCHEMA_PREFIX}plg$prof_sessions order by profile_id')
         cur_cols = cur_profiler.description
         for r in cur_profiler:
             for i in range(0,len(cur_cols)):
                 print( cur_cols[i][0], ':', r[i] )
-        
-        #cur_profiler.execute('select * from plg$prof_psql_stats_view')
-        #cur_cols = cur_profiler.description
-        #for r in cur_profiler:
-        #    for i in range(0,len(cur_cols)):
-        #        print( cur_cols[i][0], ':', r[i] )
-
         tx_profiler.commit()
 
     act.expected_stdout = f"""
