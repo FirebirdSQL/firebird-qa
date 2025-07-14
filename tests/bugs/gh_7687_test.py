@@ -58,6 +58,13 @@ NOTES:
     It seems that following commits caused this:
         https://github.com/FirebirdSQL/firebird/commit/ae427762d5a3e740b69c7239acb9e2383bc9ca83 // 5.x
         https://github.com/FirebirdSQL/firebird/commit/f647dfd757de3c4065ef2b875c95d19311bb9691 // 6.x
+
+    [03.07.2025] pzotov
+    Adjusted for FB 6.x: it is MANDATORY to specify schema `PLG$PROFILER.` when querying created profiler tables.
+    See doc/sql.extensions/README.schemas.md, section title: '### gbak'; see 'SQL_SCHEMA_PREFIX' variable here.
+    Separated expected output for FB major versions prior/since 6.x.
+    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    Checked on 6.0.0.970; 5.0.3.1668.
 """
 
 import os
@@ -70,6 +77,7 @@ act = python_act('db', substitutions=[('=', ''), ('ACCESS_PATH_BLOB_ID.*', '')])
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'PLG$PROFILER.'
     test_sql = f"""
         recreate table tdetl(id int);
         recreate table tmain(id int primary key using index tmain_pk, x int);
@@ -103,8 +111,8 @@ def test_1(act: Action, capsys):
            ,substring('#' || lpad('', 4*t.level,' ') || replace( replace(t.access_path, ascii_char(13), ''), ascii_char(10), ascii_char(10) || '#' || lpad('', 4*t.level,' ') ) from 1 for 320) as acc_path
            ,substring( cast(t.sql_text as varchar(255)) from 1 for 50 ) as sql_text
            ,dense_rank()over(order by t.level) as ranked_level
-        from plg$prof_record_source_stats_view t
-        join plg$prof_sessions s
+        from {SQL_SCHEMA_PREFIX}plg$prof_record_source_stats_view t
+        join {SQL_SCHEMA_PREFIX}plg$prof_sessions s
             on s.profile_id = t.profile_id and
                s.description = 'profile session 1'
         ;
@@ -159,7 +167,7 @@ def test_1(act: Action, capsys):
         select acc_path as access_path_blob_id from r;
     """
 
-    act.expected_stdout = f"""
+    expected_stdout_5x = f"""
         #Select Expression
         #    -> Filter (preliminary)
         #        -> Nested Loop Join (inner)
@@ -179,6 +187,28 @@ def test_1(act: Action, capsys):
         #                -> Index "TDETL_FK" Full Scan
         Records affected: 10
     """
+
+    expected_stdout_6x = f"""
+        #Select Expression
+        #    -> Filter (preliminary)
+        #        -> Nested Loop Join (inner)
+        #            -> Table "PUBLIC"."TMAIN" as "PUBLIC"."V_TEST" "M4" Full Scan
+        #            -> Filter
+        #                -> Table "PUBLIC"."TDETL" as "PUBLIC"."V_TEST" "D4" "DX" Access By ID
+        #                    -> Bitmap And
+        #                        -> Bitmap And
+        #                            -> Bitmap
+        #                                -> Index "PUBLIC"."TDETL_Z" Range Scan (lower bound: 1/1)
+        #
+        #Sub-query (invariant)
+        #    -> Filter
+        #        -> Aggregate
+        #            -> Table "PUBLIC"."TDETL" as "PUBLIC"."V_TEST" "DY" Access By ID
+        #                -> Index "PUBLIC"."TDETL_FK" Full Scan
+        Records affected: 10
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.isql(input = test_sql, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
