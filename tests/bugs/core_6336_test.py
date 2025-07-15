@@ -6966,6 +6966,8 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
         subprocess.run( [ act.vars['isql']
                           ,'-q'
                           ,act.db.dsn
+                          ,'-user', act.db.user
+                          ,'-pas', act.db.password
                           ,'-ch', 'utf8'
                           ,'-i', tmp_sql
                         ]
