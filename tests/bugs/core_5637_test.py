@@ -26,6 +26,12 @@ NOTES:
     See doc/sql.extensions/README.schemas.md, section title: '### gbak'; see 'SQL_SCHEMA_PREFIX' variable here.
     Currently these messages are suppressed.
     Checked on 6.0.0.970; 5.0.3.1668.
+
+    [16.07.2025] pzotov
+    Messages 'gbak: WARNING' no more suppressed and should be displayed if exist (and this must be considered as bug).
+    Explained by Adriano, 16.07.2025 03:40.
+    Fix was in fc0e37f6fd8291bc41931605c6b2c53437095ca8
+    Checked on 6.0.0.1020-fc0e37f
 """
 
 import pytest
@@ -59,8 +65,7 @@ def test_1(act: Action, sec_fbk: Path, sec_fdb: Path):
         srv.database.validate(database=sec_fdb)
         validation_log = srv.readlines()
         srv.database.shutdown(database=sec_fdb, mode=ShutdownMode.FULL, method=ShutdownMethod.FORCED, timeout=0)
-    #
-    #
-    assert [line for line in gbak_restore_log if 'ERROR' in line.upper() and not 'gbak: WARNING:' in line] == []
+
+    assert [line for line in gbak_restore_log if 'gbak: ERROR' in line.upper() ] == []
     assert [line for line in validation_log if 'ERROR' in line.upper()] == []
     assert list(unified_diff(fb_log_before, fb_log_after)) == []
