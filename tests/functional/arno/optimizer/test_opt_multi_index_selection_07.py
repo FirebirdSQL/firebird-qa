@@ -11,6 +11,7 @@ FBTEST:      functional.arno.optimizer.opt_multi_index_selection_07
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 init_script = """
     CREATE TABLE SelectionTest (
