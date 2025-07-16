@@ -28,6 +28,7 @@ NOTES:
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 init_script = """
     set bail on;

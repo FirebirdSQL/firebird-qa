@@ -23,6 +23,7 @@ NOTES:
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 init_script = """
     create or alter view v_test as select 1 id from rdb$database;

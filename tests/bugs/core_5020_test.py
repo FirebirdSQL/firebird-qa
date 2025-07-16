@@ -22,6 +22,7 @@ NOTES:
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 init_sql = """
     recreate table zf(

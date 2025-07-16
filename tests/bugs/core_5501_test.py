@@ -76,7 +76,7 @@ import re
 from difflib import unified_diff
 from struct import unpack_from
 from firebird.qa import *
-from firebird.driver import Connection
+from firebird.driver import Connection, DatabaseError
 
 ###########################
 ###   S E T T I N G S   ###

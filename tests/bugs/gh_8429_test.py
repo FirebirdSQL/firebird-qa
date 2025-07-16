@@ -45,7 +45,8 @@ from pathlib import Path
 
 import pytest
 from firebird.qa import *
-from firebird.driver import create_database, ShutdownMode, ShutdownMethod
+from firebird.driver import create_database, ShutdownMode, ShutdownMethod, DatabaseError
+
 
 ###########################
 ###   S E T T I N G S   ###
