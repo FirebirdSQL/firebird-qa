@@ -21,6 +21,7 @@ import pytest
 import locale
 import re
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 db = db_factory()
 tmp_user = user_factory('db', name='tmp_syspriv_user', password='123')

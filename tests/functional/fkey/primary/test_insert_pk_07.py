@@ -16,7 +16,7 @@ DESCRIPTION:
 
 import pytest
 from firebird.qa import *
-from firebird.driver import tpb, Isolation
+from firebird.driver import tpb, Isolation, DatabaseError
 
 init_script = """
     create table master_table (
