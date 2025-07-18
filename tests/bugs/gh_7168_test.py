@@ -14,6 +14,10 @@ NOTES:
     Confirmed problem on 4.0.1.2707 (21-jan-2022), 5.0.0.471 (09-apr-2022): restore fails with error
     "firebird.driver.types.DatabaseError: UDR module not loaded" and message after it that can be in localized.
     Checked on: 4.0.3.2904, 5.0.0.475 -- all OK.
+
+    [29.06.2025] pzotov
+    Added 'SQL_SCHEMA_PREFIX' and variable to be substituted in expected_* on FB 6.x
+    Checked on 6.0.0.1020; 5.0.3.1668.
 """
 
 import pytest
@@ -28,12 +32,6 @@ db = db_factory()
 
 act = python_act('db')
 
-expected_stdout = """
-    gbak:restoring function CRYPTO_RSA_PRIVATE_KEY
-    gbak:finishing, closing, and going home
-    gbak:adjusting the ONLINE and FORCED WRITES flags
-"""
-
 fbk_file = temp_file('gh_7168.tmp.fbk')
 
 @pytest.mark.version('>=4.0.1')
@@ -41,9 +39,17 @@ def test_1(act: Action, fbk_file: Path, capsys):
     zipped_fbk_file = zipfile.Path(act.files_dir / 'gh_7168.zip', at = 'gh_7168.fbk')
     fbk_file.write_bytes(zipped_fbk_file.read_bytes())
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
+    TEST_UDR_NAME = 'CRYPTO_RSA_PRIVATE_KEY' if act.is_version('<6') else  f'{SQL_SCHEMA_PREFIX}"CRYPTO_RSA_PRIVATE_KEY"'
+    expected_stdout = f"""
+        gbak:restoring function {TEST_UDR_NAME}
+        gbak:finishing, closing, and going home
+        gbak:adjusting the ONLINE and FORCED WRITES flags
+    """
+
     allowed_patterns = \
     (
-         'gbak:restoring function CRYPTO_RSA_PRIVATE_KEY'
+         f'gbak:restoring function {TEST_UDR_NAME}'
         ,'gbak:finishing, closing, and going home'
         ,'gbak:adjusting the ONLINE and FORCED WRITES flags'
     )
