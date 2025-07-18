@@ -42,24 +42,27 @@ DESCRIPTION:
     Finally, we check that all indices has NON-zero statistics: rel_sel_map{} must have NO items with zero values.
 NOTES:
     [21.12.2024] pzotov
-    Currently only FB 6.x has this feature (since 22-mar-2024 11:46).
-    Commit:  https://github.com/FirebirdSQL/firebird/commit/ef66a9b4d803d5129a10350c54f00bc637c09b48
+        Currently only FB 6.x has this feature (since 22-mar-2024 11:46).
+        Commit:  https://github.com/FirebirdSQL/firebird/commit/ef66a9b4d803d5129a10350c54f00bc637c09b48
+        ::: ACHTUNG ::: Index statistics must be searched in the Index Root page rather than in RDB$INDICES!
+        Internals of misc FB page types can be found here:
+        https://firebirdsql.org/file/documentation/html/en/firebirddocs/firebirdinternals/firebird-internals.html
+        It is supposed that there are no expression-based indices for selected system tables (this case was not investigated).
 
-    ::: ACHTUNG ::: Index statistics must be searched in the Index Root page rather than in RDB$INDICES!
-    Internals of misc FB page types can be found here:
-    https://firebirdsql.org/file/documentation/html/en/firebirddocs/firebirdinternals/firebird-internals.html
-    
-    It is supposed that there are no expression-based indices for selected system tables (this case was not investigated).
-
-    Confirmed ticket issue on 6.0.0.294-c353de4 (21-mar-2024 16:45): some of system tables remain with non-updated index statistics.
-    Checked on 6.0.0.295-ef66a9b (22-mar-2024 13:48): all OK,every of checked system tables has non-zero statistics for its indices.
-    Test executiuon time: ~8...10 seconds.
-
-    [24.02.2025]
-    Changed offset calculations according to #93db88: ODS14: header page refactoring (#8401)
-    See: https://github.com/FirebirdSQL/firebird/commit/93db88084d5a04aaa3f98179e76cdfa092431fa8
-
-    Thanks to Vlad for explanations.
+        Confirmed ticket issue on 6.0.0.294-c353de4 (21-mar-2024 16:45): some of system tables remain with non-updated index statistics.
+        Checked on 6.0.0.295-ef66a9b (22-mar-2024 13:48): all OK,every of checked system tables has non-zero statistics for its indices.
+        Test executiuon time: ~8...10 seconds.
+    [24.02.2025] pzotov
+        Changed offset calculations according to #93db88: ODS14: header page refactoring (#8401)
+        See: https://github.com/FirebirdSQL/firebird/commit/93db88084d5a04aaa3f98179e76cdfa092431fa8
+        Thanks to Vlad for explanations.
+    [18.07.2025] pzotov
+        An old problem triggered by schemas changes was found when this test ran on 6.0.0.834:
+        Sent report to Adriano 18.07.2025 08:24, subj:
+        Weird "message length error (encountered 506, expected 253)" on attempting to create trivial function after trying to drop non-existing filter
+        Fixed on:
+        https://github.com/FirebirdSQL/firebird/commit/45b40b86b94bec9deadcab5d376e079700cd68aa
+        Checked on 6.0.0.1039-45b40b8.
 """
 import sys
 import binascii
@@ -133,6 +136,7 @@ INIT_DB_OBJECTS_SQL = f"""
             v_sttm = 'create or alter mapping local_map_' || i || ' using any plugin from group musicians to role guitarist';
             execute statement v_sttm;
 
+            -- /**********************
             begin
                 v_sttm = 'drop collation name_coll_' || i;
                 execute statement v_sttm;
@@ -172,6 +176,7 @@ INIT_DB_OBJECTS_SQL = f"""
                 begin
                 end
             end
+            -- ************************/
 
             -- examples\api\api9f.sql
             -- declare filter desc_filter_01 -- ==> will be saved in indexed column rdb$filters.rdb$function_name
