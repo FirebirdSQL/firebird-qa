@@ -4,6 +4,11 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.21.0
+==============
+
+* Upgraded Firebird driver and base to v2.x
+
 Version 0.20.2
 ==============
 
