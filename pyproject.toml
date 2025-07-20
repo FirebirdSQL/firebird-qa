@@ -32,8 +32,8 @@ classifiers = [
     "Framework :: Pytest",
     ]
 dependencies = [
-    "firebird-base~=1.8",
-    "firebird-driver~=1.10",
+    "firebird-base~=2.0",
+    "firebird-driver~=2.0",
     "pytest>=7.4",
     "psutil~=5.9",
     ]
@@ -67,28 +67,12 @@ dependencies = [
 [tool.hatch.envs.hatch-test]
 extra-args = ["-vv", "--server", "local"]
 dependencies = [
-]
-
-[tool.hatch.envs.test]
-dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
 ]
-[tool.hatch.envs.test.scripts]
-test = "pytest {args:tests}"
-test-cov = "coverage run -m pytest {args:tests}"
-cov-report = [
-  "- coverage combine",
-  "coverage report",
-]
-cov = [
-  "test-cov",
-  "cov-report",
-]
-version = "python --version"
 
 [[tool.hatch.envs.test.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
 [tool.hatch.envs.doc]
 detached = false
