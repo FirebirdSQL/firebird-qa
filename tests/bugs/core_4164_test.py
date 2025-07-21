@@ -1,36 +1,35 @@
 #coding:utf-8
 
 """
-ID:          issue-4491
-ISSUE:       4491
+ID:          n/a
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4491
 TITLE:       Owner name is missing for generators/exceptions restored from a backup
 DESCRIPTION:
+    Backup for this test was created according to the following scenario:
+        create sequence g;
+        create exception e 'blablabla';
+        commit;
+        grant usage on sequence g to tmp$4164;
+        grant usage on exception e to tmp$4164;
+        grant usage on sequence g to mgr$4164 with grant option;
+        grant usage on exception e to mgr$4164 with grant option;
+        commit;
 JIRA:        CORE-4164
 FBTEST:      bugs.core_4164
 NOTES:
-    [17.07.2025] pzotov
-    Checked on 6.0.0.835; 5.0.3.1661; 4.0.6.3207; 3.0.13.33807.
+    [21.07.2025] pzotov
+    Replaced `sh0w grants` command with query to rdb$user_privileges.
+    Regression was encountered during re-implementing this test:
+    https://github.com/FirebirdSQL/firebird/issues/8640
+    Checked on 6.0.0.1042; 5.0.3.1683; 4.0.6.3221; 3.0.13.33813
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """
-    -- Scenario for this test:
-    -- create sequence g;
-    -- create exception e 'blablabla';
-    -- commit;
-    -- grant usage on sequence g to tmp$4164;
-    -- grant usage on exception e to tmp$4164;
-    -- grant usage on sequence g to mgr$4164 with grant option;
-    -- grant usage on exception e to mgr$4164 with grant option;
-    -- commit;
-    -- ==> and then do backup.
-"""
-
 db = db_factory(from_backup='core4164.fbk')
 
-act = isql_act('db', substitutions=[('=.*', '')])
+act = isql_act('db', substitutions=[('=.*', ''), ('[ \t]+', ' ')])
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
