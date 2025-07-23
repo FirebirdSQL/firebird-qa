@@ -2,7 +2,7 @@
 
 """
 ID:          isql-01
-TITLE:       ISQL - SHOW DATABASE
+TITLE:       ISQL: check output of 'SHOW DATABASE' and 'SHOW DB'
 DESCRIPTION: Check for correct output of SHOW DATABASE on empty database.
 FBTEST:      functional.basic.isql.01
 NOTES:
