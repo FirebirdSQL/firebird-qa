@@ -5,115 +5,117 @@ ID:          isql-01
 TITLE:       ISQL - SHOW DATABASE
 DESCRIPTION: Check for correct output of SHOW DATABASE on empty database.
 FBTEST:      functional.basic.isql.01
+NOTES:
+    [23.07.2025] pzotov
+    Refactored: reduce code size by removing uneeded test* functions for each FB major version.
+    Added check for 'SHOW DB;' command because of regression noted in #8659.
+    Expected output must be identical for 'SHOW DATABASE' and 'SHOW DB' thus we can declare it
+    as duplicated content of expected text for only 1st of these commands, see:
+    act.expected_stdout = expected_stdout + '\n' + expected_stdout
+
+    Checked on 6.0.0.1052; 5.0.3.1684; 4.0.6.3222; 3.0.13.33818.
 """
 
 import pytest
 from firebird.qa import *
 
-# version: 3.0
-
-substitutions = [('Owner.*', 'Owner'), ('PAGE_SIZE.*', 'PAGE_SIZE'),
-                 ('Number of DB pages allocated.*', 'Number of DB pages allocated'),
-                 ('Number of DB pages used.*', 'Number of DB pages used'),
-                 ('Number of DB pages free.*', 'Number of DB pages free'),
-                 ('Sweep.*', 'Sweep'), ('Forced Writes.*', 'Forced Writes'),
-                 ('Transaction -.*', ''), ('ODS.*', 'ODS'),
-                 ('DB =.*', ''), ('Host = .*', ''),
-                 ('Wire crypt plugin.*', 'Wire crypt plugin'),
-                 ('Creation date.*', 'Creation date'),
-                 ('Protocol version.*', 'Protocol version'),
-                 ('Default Character.*', 'Default Character')]
-
 db = db_factory()
 
-act = isql_act('db', 'show database;', substitutions=substitutions)
+# version: 3.0
 
-# ---===+++---===+++---===+++---===+++---===+++---===+++
+substitutions = [ ('Owner.*', 'Owner'),
+                  ('PAGE_SIZE.*', 'PAGE_SIZE'),
+                  ('Number of DB pages allocated.*', 'Number of DB pages allocated'),
+                  ('Number of DB pages used.*', 'Number of DB pages used'),
+                  ('Number of DB pages free.*', 'Number of DB pages free'),
+                  ('Sweep.*', 'Sweep'),
+                  ('Forced Writes.*', 'Forced Writes'),
+                  ('Transaction -.*', ''),
+                  ('ODS.*', 'ODS'),
+                  ('Wire crypt plugin.*', 'Wire crypt plugin'),
+                  ('Creation date.*', 'Creation date'),
+                  ('Protocol version.*', 'Protocol version'),
+                  ('Default Character.*', 'Default Character')
+                ]
+
+test_script = """
+    show database;
+    show db; -- added for check #8659 (regression in 6.x)
+"""
+
+#substitutions = []
+act = isql_act('db', test_script, substitutions=substitutions)
 
 expected_stdout_3x = """
-    Database: localhost:test.fdb
-    Owner: SYSDBA
-    PAGE_SIZE 8192
+    Owner
+    PAGE_SIZE
     Number of DB pages allocated
     Number of DB pages used
     Number of DB pages free
-    Sweep interval = 11120000
-    Forced Writes are ON
-    Transaction - oldest = 1
-    Transaction - oldest active = 2
-    Transaction - oldest snapshot = 2
-    Transaction - Next = 5
-    ODS = 12.0
+    Sweep
+    Forced Writes
+    ODS
     Database not encrypted
-    Creation date: Sep 10, 2021 14:43:52
-    Default Character set: NONE
+    Creation date
+    Default Character
 """
 
-@pytest.mark.version('>=3.0,<4.0')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout_3x
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout
-
-# ---===+++---===+++---===+++---===+++---===+++---===+++
-
-# version: 4.0
 expected_stdout_4x = """
-    Database: localhost:test.fdb
-    Owner: SYSDBA
-    PAGE_SIZE 8192
-    Number of DB pages allocated = 212
-    Number of DB pages used = 192
-    Number of DB pages free = 20
-    Sweep interval = 20000
-    Forced Writes are ON
-    Transaction - oldest = 4
-    Transaction - oldest active = 5
-    Transaction - oldest snapshot = 5
-    Transaction - Next = 9
-    ODS = 13.0
+    Owner
+    PAGE_SIZE
+    Number of DB pages allocated
+    Number of DB pages used
+    Number of DB pages free
+    Sweep
+    Forced Writes
+    ODS
     Database not encrypted
-    Wire crypt plugin:
-    Creation date: Sep 10, 2021 14:43:52
+    Wire crypt plugin
+    Creation date
     Replica mode: NONE
-    Protocol version = 17
-    Default Character set: NONE
+    Protocol version
+    Default Character
 """
 
-@pytest.mark.version('>=4.0,<5.0')
-def test_2(act: Action):
-    act.expected_stdout = expected_stdout_4x
-    act.execute()
-    assert act.clean_stdout == act.clean_expected_stdout
-
-# ---===+++---===+++---===+++---===+++---===+++---===+++
-
-# version: 5.0
 expected_stdout_5x = """
-    Database: localhost:test.fdb
-    Owner: SYSDBA
-    PAGE_SIZE 8192
-    Number of DB pages allocated = 212
-    Number of DB pages used = 192
-    Number of DB pages free = 20
-    Sweep interval = 20000
-    Forced Writes are ON
-    Transaction - oldest = 4
-    Transaction - oldest active = 5
-    Transaction - oldest snapshot = 5
-    Transaction - Next = 9
-    ODS = 13.0
+    Owner
+    PAGE_SIZE
+    Number of DB pages allocated
+    Number of DB pages used
+    Number of DB pages free
+    Sweep
+    Forced Writes
+    ODS
     Database not encrypted
-    Wire crypt plugin:
-    Creation date: Sep 10, 2021 7:13:17 GMT
+    Wire crypt plugin
+    Creation date
     Replica mode: NONE
-    Protocol version = 17
-    Default Character set: NONE
+    Protocol version
+    Default Character
     Publication: Disabled
 """
 
-@pytest.mark.version('>=5.0')
-def test_3(act: Action):
-    act.expected_stdout = expected_stdout_5x
-    act.execute()
+expected_stdout_6x = """
+    Owner
+    PAGE_SIZE
+    Number of DB pages allocated
+    Number of DB pages used
+    Number of DB pages free
+    Sweep
+    Forced Writes
+    ODS
+    Database not encrypted
+    Wire crypt plugin
+    Creation date
+    Replica mode: NONE
+    Protocol version
+    Default Character
+    Publication: Disabled
+"""
+
+@pytest.mark.version('>=3.0')
+def test_1(act: Action):
+    expected_stdout = expected_stdout_3x if act.is_version('<4') else expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.expected_stdout = expected_stdout + '\n' + expected_stdout
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
