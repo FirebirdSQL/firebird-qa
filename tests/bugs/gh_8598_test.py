@@ -33,15 +33,20 @@ NOTES:
     3. On 6.x weird problem with restore from test .fbk currently exists: it lasts for more that 3x comparing to 4.x and 5.x
 
     Checked on Windows: 6.0.0.1050-cee7854 ; 5.0.3.1684-e451f30 ; 4.0.6.3221-e6667b9 (intermediate snapshot)
-"""
 
+    [23.07.2025] pzotov
+    Added custom driver config otherwise 'unavaliable database' raises on attempt to connect to test DB via 'with connect(...)'.
+    After fix #8663 (commit: 9458c3766007ac3696e8c01ed80be96e1098c05f) no more performance problem with restore time
+    Checked on 6.0.0.1052-2279f7b.
+"""
+import os
 import pytest
 import psutil
 import zipfile
+import time
 from pathlib import Path
 from firebird.qa import *
-from firebird.driver import SrvRestoreFlag, DatabaseError, connect
-
+from firebird.driver import SrvRestoreFlag, driver_config, connect, NetProtocol, DatabaseError
 ###########################
 ###   S E T T I N G S   ###
 ###########################
@@ -58,12 +63,21 @@ UPDATE_NON_KEY_CNT = 5000
 # Max allowed ratio between median values of CPU time measured for UPDATE vs CRYPT_HASH:
 MAX_RATIO = 9.0
 
+EXPECTED_MSG = f'acceptable, median_ratio less than {MAX_RATIO=}'
+
 db = db_factory(charset = 'win1251')
 act = python_act('db')
 
 tmp_fbk = temp_file('tmp_8598.fbk')
 tmp_fdb = temp_file('tmp_8598.fdb')
-EXPECTED_MSG = 'EXPECTED'
+tmp_log = temp_file('tmp_8598.log')
+
+
+for v in ('ISC_USER','ISC_PASSWORD'):
+    try:
+        del os.environ[ v ]
+    except KeyError as e:
+        pass
 
 #--------------------------------------------------------------------
 def median(lst):
@@ -73,20 +87,28 @@ def median(lst):
 #--------------------------------------------------------------------
 
 @pytest.mark.version('>=4.0.6')
-def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
+def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
     zipped_fbk_file = zipfile.Path(act.files_dir / 'gh_8598-ods13_0.zip', at='gh_8598.fbk')
     tmp_fbk.write_bytes(zipped_fbk_file.read_bytes())
-    with act.connect_server() as srv:
-        srv.database.restore(database=tmp_fdb, backup=tmp_fbk, flags=SrvRestoreFlag.REPLACE)
-        gbak_restore_log = srv.readlines()
+    with act.connect_server(user = act.db.user, password = act.db.password) as srv:
+        srv.database.restore(database=tmp_fdb, backup=tmp_fbk, verbose = True, flags=SrvRestoreFlag.REPLACE)
+        gbak_restore_log = '\n'.join([x.strip() for x in srv.readlines()])
+        with open(tmp_log, 'w') as f:
+            f.write(gbak_restore_log)
 
-    if 'gbak: ERROR:' in gbak_restore_log: 
+    if 'ERROR' in gbak_restore_log: 
         print('Unexpected error during restore:')
-        for p in gbak_restore_log:
-            print(p)
+        print(gbak_restore_log)
     else:
+        srv_cfg = driver_config.register_server(name = 'tmp_srv_cfg_8598', config = '')
+        db_cfg_name = f'tmp_db_cfg_8598'
+        db_cfg_object = driver_config.register_database(name = db_cfg_name)
+        db_cfg_object.server.value = srv_cfg.name
+        db_cfg_object.protocol.value = NetProtocol.INET
+        db_cfg_object.database.value = str(tmp_fdb)
+
         times_map = {}
-        with connect('localhost:' + str(tmp_fdb), user = act.db.user, password = act.db.password) as con:
+        with connect(db_cfg_name, user = act.db.user, password = act.db.password) as con:
             cur=con.cursor()
             cur.execute('select mon$server_pid as p from mon$attachments where mon$attachment_id = current_connection')
             fb_pid = int(cur.fetchone()[0])
@@ -134,7 +156,6 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
         update_nonk_median = median([v for k,v in times_map.items() if k[0] == 'update_nonk'])
         median_ratio = update_nonk_median / sp_gen_hash_median
 
-        EXPECTED_MSG = f'acceptable, median_ratio less than {MAX_RATIO=}'
         print( 'Medians ratio: ' + (EXPECTED_MSG if median_ratio < MAX_RATIO else '/* perf_issue_tag */ POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(MAX_RATIO) ) ) )
 
         if median_ratio > MAX_RATIO:
