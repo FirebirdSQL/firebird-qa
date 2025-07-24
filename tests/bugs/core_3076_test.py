@@ -3,314 +3,873 @@
 """
 ID:          issue-3455
 ISSUE:       3455
-TITLE:       Better performance for (table.field = :param or :param = -1) in where clause
+TITLE:       Better performance for (table.field = :param OR :param = -1) in where clause
 DESCRIPTION:
-  Test adds 20'000 rows into a table with single field and two indices on it (asc & desc).
-  Indexed field will have values which will produce very poor selectivity (~1/3).
-  Then we check number of indexed and natural reads using mon$ tables and prepared view
-  from .fbk.
-  We check cases when SP count rows using equality (=), IN and BETWEEN expr.
-  When we pass NULLs then procedure should produce zero or low value (<100) of indexed reads.
-  When we pass not null value then SP should produce IR with number ~ 1/3 of total rows in the table.
-NOTES:
-[15.05.2018]
-  TODO LATER, using Python:
-  Alternate code for possible checking (use trace with and ensure that only IR will occur when input arg is not null):
-
-    set term ^;
-    execute block as
-    begin
-      begin execute statement 'drop sequence g'; when any do begin end end
-    end
-    ^
-    set term ;^
-    commit;
-    create sequence g;
-    commit;
-
-    create or alter procedure sp_test as begin end;
-    commit;
-    recreate table test(x int, y int);
-    commit;
-
-    insert into test select mod( gen_id(g,1), 123), mod( gen_id(g,1), 321)  from rdb$types,rdb$types rows 10000;
-    commit;
-
-    create index test_x on test(x);
-    create index test_x_plus_y_asc on test computed by ( x - y );
-    create descending index test_x_plus_y_dec on test computed by ( x+y );
-    commit;
-
-    set term ^;
-    create or alter procedure sp_test( i1 int default null, i2 int default null ) as
-        declare n int;
-        declare s_x varchar(1000);
-        declare s_y varchar(1000);
-    begin
-        s_x = 'select count(*) from test where x = :input_arg or :input_arg is null';
-        s_y = 'select count(*) from test where x + y <= :input_sum  and   x - y >= :input_arg or :input_sum is null';
-        execute statement (s_x) ( input_arg := :i1 ) into n;
-        execute statement (s_y) ( input_arg := :i1, input_sum := :i2 ) into n;
-    end
-    ^
-    set term ;^
-    commit;
-
-    execute procedure sp_test( 65, 99 );
-
-  Trace log should contain following statistics for two ES:
-
-    Table                              Natural     Index
-    *****************************************************
-    TEST                                              82
-
-    Table                              Natural     Index
-    *****************************************************
-    TEST                                              90
 JIRA:        CORE-3076
 FBTEST:      bugs.core_3076
+NOTES:
+    [24.07.2025] pzotov
+    Re-implemented: no need to use mon$tables, all data can be obtained using con.info.get_table_access_stats().
+    Explained plans have beed added in expected out.
+    
+    An issue exists related to PARTIAL INDICES (5x+): it seems that they are not used even for suitable values of input args.
+    Sent letter to dimitr, 24.07.2025 18:04. Waiting for reply.
+
+    Checked on 6.0.0.1061; 5.0.3.1686; 4.0.6.3223; 3.0.13.33818.
 """
 
+from firebird.driver import DatabaseError
 import pytest
 from firebird.qa import *
 
-db = db_factory(from_backup='mon-stat-gathering-3_0.fbk')
+db = db_factory()
+act = isql_act('db')
 
-test_script = """
-    set bail on;
-    set term ^;
-    execute block as
-    begin
-      execute statement 'drop sequence g';
-      when any do begin end
-    end
-    ^
-    set term ;^
-    commit;
-    create sequence g;
-    commit;
-
-    create or alter procedure sp_test_x as begin end;
-    create or alter procedure sp_test_y as begin end;
-    commit;
-
-    recreate table test(x int, y int);
-    recreate table tcnt(q int); -- this serves only for storing total number of rows in 'TEST' table.
-    commit;
-
-    set term ^ ;
-    create or alter procedure sp_test_x(arg_a int, arg_b int) -- for testing ASCENDING index
-    as
-        declare c int;
-    begin
-        if ( :arg_a = 0 ) then
-            select count(*) from test where x = :arg_a or :arg_a is null into c;
-        else if ( :arg_a = 1 ) then
-            select count(*) from test where x in (:arg_a, :arg_b) or :arg_a is null into c;
-        else
-            select count(*) from test where x between :arg_a and :arg_b or :arg_a is null into c;
-    end
-    ^
-    create or alter procedure sp_test_y(arg_a int, arg_b int) -- for testing DESCENDING index
-    as
-        declare c int;
-    begin
-        if ( :arg_a = 0 ) then
-            select count(*) from test where y = :arg_a or :arg_a is null into c;
-        else if ( :arg_a = 1 ) then
-            select count(*) from test where y in (:arg_a, :arg_b) or :arg_a is null into c;
-        else
-            select count(*) from test where y between :arg_a and :arg_b or :arg_a is null into c;
-    end
-    ^
-    set term ; ^
-    commit;
-
-    insert into test (x, y)
-    select mod( gen_id(g,1), 3 ), mod( gen_id(g,1), 3 )
-    from rdb$types, rdb$types
-    rows 20000;
-    insert into tcnt(q) select count(*) from test;
-    commit;
-
-    create index test_x on test(x);
-    create descending index test_y on test(y);
-    commit;
-
-    connect '$(DSN)' user 'SYSDBA' password 'masterkey'; -- mandatory!
-
-    execute procedure sp_truncate_stat;
-    commit;
-
-    --------------------------------
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    execute procedure sp_test_x(0, 0); ----- 1: where x = 0 or 0 is null // 'x' has ascending index
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    --------------------------------
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    execute procedure sp_test_y(0, 0); ----- 2: where y = 0 or 0 is null // 'y' has descend index
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    --------------------------------
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    execute procedure sp_test_x(1, 1); ----- 3: where x in (1, 1) or 1 is null // 'x' has ascending index
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    --------------------------------
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    execute procedure sp_test_y(1, 1); ----- 4: where y in (1, 1) or 1 is null // 'y' has descend index
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    --------------------------------
-
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    execute procedure sp_test_x(2, 2); ----- 5: where x between 2 and 2 or 2 is null // 'x' has ascending index
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    --------------------------------
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    execute procedure sp_test_y(2, 2); ----- 6: where y between 2 and 2 or 2 is null // 'y' has descend index
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    --------------------------------
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    -- check that asc index will NOT be in use when count for :a is null
-    execute procedure sp_test_x(null, null); -- 7: where x between NULL and NULL or NULL is null // 'x' has ascending index
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    --------------------------------
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    -- check that desc index will NOT be in use when count for :a is null
-    execute procedure sp_test_y(null, null); -- 8: : where y between NULL and NULL or NULL is null // 'y' has descend index
-
-    execute procedure sp_gather_stat;
-    commit;
-
-    SET LIST ON;
-    select *
-    from (
-        select
-            'When input arg is NOT null' as what_we_check,
-            rowset,
-            iif( natural_reads <= nr_threshold
-                 and indexed_reads - total_rows/3.00 < ir_threshold -- max detected IR was: 6685 for c.total_rows=20'000
-                ,'OK'
-                ,'POOR:'||
-                 ' NR=' || coalesce(natural_reads, '<null>') ||
-                 ', IR='|| coalesce(indexed_reads, '<null>') ||
-                 ', ir-cnt/3='|| coalesce(indexed_reads - total_rows/3.00, '<null>')
-               ) as result
-        from (
-            select
-                v.rowset
-                ,v.natural_reads
-                ,v.indexed_reads
-                ,c.q as total_rows
-                ,iif( rdb$get_context('SYSTEM','ENGINE_VERSION') starting with '3.', 0, 2 ) as nr_threshold -- max detected NR=2 for 4.0 (SS, CS)
-                ,iif( rdb$get_context('SYSTEM','ENGINE_VERSION') starting with '3.', 45, 45 ) as ir_threshold -- max detected=44 for 4.0 (SS, CS)
-            from v_agg_stat v cross join tcnt c
-            where rowset <= 6
-        )
-
-        UNION ALL
-
-        select
-            'When input arg is NULL' as what_we_check,
-            rowset,
-            iif( natural_reads = total_rows
-                 and indexed_reads < 100 -- 27.07.2016: detected IR=13 for FB 4.0.0.313
-                ,'OK'
-                ,'POOR:'||
-                 ' NR=' || coalesce(natural_reads, '<null>') ||
-                 ', IR='|| coalesce(indexed_reads, '<null>')
-               ) as result
-        from (
-            select v.rowset, v.natural_reads, v.indexed_reads, c.q as total_rows
-            from v_agg_stat v cross join tcnt c
-            where rowset > 6
-        )
-    )
-    order by rowset;
-"""
-
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    WHAT_WE_CHECK                   When input arg is NOT null
-    ROWSET                          1
-    RESULT                          OK
-
-    WHAT_WE_CHECK                   When input arg is NOT null
-    ROWSET                          2
-    RESULT                          OK
-
-    WHAT_WE_CHECK                   When input arg is NOT null
-    ROWSET                          3
-    RESULT                          OK
-
-    WHAT_WE_CHECK                   When input arg is NOT null
-    ROWSET                          4
-    RESULT                          OK
-
-    WHAT_WE_CHECK                   When input arg is NOT null
-    ROWSET                          5
-    RESULT                          OK
-
-    WHAT_WE_CHECK                   When input arg is NOT null
-    ROWSET                          6
-    RESULT                          OK
-
-    WHAT_WE_CHECK                   When input arg is NULL
-    ROWSET                          7
-    RESULT                          OK
-
-    WHAT_WE_CHECK                   When input arg is NULL
-    ROWSET                          8
-    RESULT                          OK
-"""
+#-----------------------------------------------------------
+def replace_leading(source, char="."):
+    stripped = source.lstrip()
+    return char * (len(source) - len(stripped)) + stripped
+#-----------------------------------------------------------
 
 @pytest.mark.version('>=3.0')
-def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.execute()
+def test_1(act: Action, capsys):
+
+    init_script = """
+        set bail on;
+
+        create sequence g;
+        recreate table test(x int, y int, u int, v int, a int, b int);
+        commit;
+
+        set term ^;
+        execute block as
+            declare n int = 50000;
+        begin
+            while (n > 0) do
+            begin
+                insert into test(x,y,u,v,a,b) values( 
+                    mod( :n, 17 )
+                   ,mod( :n, 19 )
+                   ,mod( :n, 23 )
+                   ,mod( :n, 29 )
+                   ,mod( :n, 31 )
+                   ,mod( :n, 37 )
+                );
+                n = n - 1;
+            end
+        end
+        ^
+        set term ;^
+        commit;
+
+        -- common indices, single-column:
+        create index test_x_asc on test(x);
+        create descending index test_y_dec on test(y);
+
+        -- compound indices:
+        create index test_compound_asc on test(u,x);
+        create descending index test_compound_dec on test(v,y);
+
+        create index test_computed_x_y_asc on test computed by (x+y);
+        create index test_computed_x_y_dec on test computed by (x-y);
+        commit;
+    """
+
+    if act.is_version('<5'):
+        pass
+    else:
+        init_script += """
+            -- partial indices, single-column:
+            create index test_y_partial_asc on test(a) where a in (0,1);
+            create descending index test_z_partial_dec on test(b) where b in(0,1);
+        """
+
+    act.isql(switches = ['-q'], input = init_script, combine_output = True)
+    assert act.clean_stdout == '', 'Init script FAILED: {act.clean_stdout=}'
+    act.reset()
+
+    qry_map = {
+        # test common index, asc:
+        1 : ( "select /* trace_me */ count(*) from test where x = ? or ? is null",                 (1,0) ),
+        2 : ( "select /* trace_me */ count(*) from test where x in (?, ?) or ? is null",           (1,2,0) ),
+        3 : ( "select /* trace_me */ count(*) from test where x between ? and ? or ? is null",     (1,2,0) ),
+
+        # test common index, desc:
+        4 : ( "select /* trace_me */ count(*) from test where y = ? or ? is null",                 (1,0) ),
+        5 : ( "select /* trace_me */ count(*) from test where y in (?, ?) or ? is null",           (1,2,0) ),
+        6 : ( "select /* trace_me */ count(*) from test where y between ? and ? or ? is null",     (1,2,0) ),
+
+        # test compound index, asc:
+       11 : ( "select /* trace_me */ count(*) from test where u = ? or ? is null",                 (1,0) ),
+       12 : ( "select /* trace_me */ count(*) from test where u in (?, ?) or ? is null",           (1,2,0) ),
+       13 : ( "select /* trace_me */ count(*) from test where u between ? and ? or ? is null",     (1,2,0) ),
+
+        # test compound index, desc:
+       14 : ( "select /* trace_me */ count(*) from test where u = ? or ? is null",                 (1,0) ),
+       15 : ( "select /* trace_me */ count(*) from test where u in (?, ?) or ? is null",           (1,2,0) ),
+       16 : ( "select /* trace_me */ count(*) from test where u between ? and ? or ? is null",     (1,2,0) ),
+
+        # test computed-by index, asc:
+       21 : ( "select /* trace_me */ count(*) from test where x + y = ? or ? is null",             (2,0) ),
+       22 : ( "select /* trace_me */ count(*) from test where x + y in (?, ?) or ? is null",       (1,2,0) ),
+       23 : ( "select /* trace_me */ count(*) from test where x + y between ? and ? or ? is null", (1,2,0) ),
+
+        # test computed-by index, desc:
+       24 : ( "select /* trace_me */ count(*) from test where x - y = ? or ? is null",             (-1,0) ),
+       25 : ( "select /* trace_me */ count(*) from test where x - y in (?, ?) or ? is null",       (-1,0,0) ),
+       26 : ( "select /* trace_me */ count(*) from test where x - y between ? and ? or ? is null", (-1,0,0) ),
+    }
+
+
+    if 1: # act.is_version('<5'):
+        pass
+    else:
+        qry_add = {
+            # test partial index on 'y', asc:
+            31 : ( "select /* trace_me */ count(*) from test where a = ? or ? is null",                 (1,0) ),
+            32 : ( "select /* trace_me */ count(*) from test where a in (?, ?) or ? is null",           (0,1,0) ),
+            33 : ( "select /* trace_me */ count(*) from test where a between ? and ? or ? is null",     (0,1,0) ),
+
+            # test partial index on 'z', desc:
+            34 : ( "select /* trace_me */ count(*) from test where b = ? or ? is null",                 (1,0) ),
+            35 : ( "select /* trace_me */ count(*) from test where b in (?, ?) or ? is null",           (0,1,0) ),
+            36 : ( "select /* trace_me */ count(*) from test where b between ? and ? or ? is null",     (0,1,0) ),
+        }
+
+        qry_map.update(qry_add)
+
+
+    for qry_idx,v in qry_map.items():
+        qry_text, qry_args = v[:2]
+        qry_map[qry_idx] = (qry_text, qry_args, f'{qry_idx=} '+qry_text )
+
+    with act.db.connect() as con:
+        cur = con.cursor()
+
+        cur.execute(f"select rdb$relation_id from rdb$relations where rdb$relation_name = upper('test')")
+        test_rel_id = None
+        for r in cur:
+            test_rel_id = r[0]
+        assert test_rel_id, f"Could not find ID for relation 'TEST'. Check its name!"
+
+        result_map = {}
+        for qry_idx, qry_data in qry_map.items():
+            qry_text, qry_args, qry_comment = qry_data[:3]
+            ps, rs =  None, None
+            try:
+                cur = con.cursor()
+                ps = cur.prepare(qry_text)
+                print(qry_comment)
+                # Print explained plan with padding eash line by dots in order to see indentations:
+                print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+
+                tabstat1 = [ p for p in con.info.get_table_access_stats() if p.table_id == test_rel_id ]
+                print(f'{qry_args=}')
+                rs = cur.execute(ps, qry_args)
+                for r in rs:
+                    pass
+
+                tabstat2 = [ p for p in con.info.get_table_access_stats() if p.table_id == test_rel_id ]
+                result_map[qry_idx] = \
+                    (
+                       tabstat2[0].sequential if tabstat2[0].sequential else 0
+                      ,tabstat2[0].indexed if tabstat2[0].indexed else 0
+                    )
+                if tabstat1:
+                    seq, idx = result_map[qry_idx]
+                    seq -= (tabstat1[0].sequential if tabstat1[0].sequential else 0)
+                    idx -= (tabstat1[0].indexed if tabstat1[0].indexed else 0)
+                    result_map[qry_idx] = (seq, idx)
+
+                print(f'Table statistics: NATURAL reads: {result_map[qry_idx][0]}; INDEXED reads: {result_map[qry_idx][1]}')
+                print('##############################################################')
+
+            except DatabaseError as e:
+                print(e.__str__())
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
+
+
+    expected_stdout_4x = f"""
+        {qry_map[ 1][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" Range Scan (full match)
+        qry_args={qry_map[ 1][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2942
+        ##############################################################
+        {qry_map[ 2][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "TEST_X_ASC" Range Scan (full match)
+        ........................-> Bitmap
+        ............................-> Index "TEST_X_ASC" Range Scan (full match)
+        qry_args={qry_map[ 2][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5884
+        ##############################################################
+        {qry_map[ 3][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[ 3][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5884
+        ##############################################################
+        {qry_map[ 4][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_Y_DEC" Range Scan (full match)
+        qry_args={qry_map[ 4][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2632
+        ##############################################################
+        {qry_map[ 5][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "TEST_Y_DEC" Range Scan (full match)
+        ........................-> Bitmap
+        ............................-> Index "TEST_Y_DEC" Range Scan (full match)
+        qry_args={qry_map[ 5][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5264
+        ##############################################################
+        {qry_map[ 6][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_Y_DEC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[ 6][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5264
+        ##############################################################
+        {qry_map[11][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        qry_args={qry_map[11][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2174
+        ##############################################################
+        {qry_map[12][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        ........................-> Bitmap
+        ............................-> Index "TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        qry_args={qry_map[12][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[13][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" Range Scan (lower bound: 1/2, upper bound: 1/2)
+        qry_args={qry_map[13][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[14][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        qry_args={qry_map[14][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2174
+        ##############################################################
+        {qry_map[15][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        ........................-> Bitmap
+        ............................-> Index "TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        qry_args={qry_map[15][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[16][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" Range Scan (lower bound: 1/2, upper bound: 1/2)
+        qry_args={qry_map[16][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[21][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_ASC" Range Scan (full match)
+        qry_args={qry_map[21][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 464
+        ##############################################################
+        {qry_map[22][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "TEST_COMPUTED_X_Y_ASC" Range Scan (full match)
+        ........................-> Bitmap
+        ............................-> Index "TEST_COMPUTED_X_Y_ASC" Range Scan (full match)
+        qry_args={qry_map[22][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 774
+        ##############################################################
+        {qry_map[23][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_ASC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[23][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 774
+        ##############################################################
+        {qry_map[24][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_DEC" Range Scan (full match)
+        qry_args={qry_map[24][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2635
+        ##############################################################
+        {qry_map[25][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap Or
+        ........................-> Bitmap
+        ............................-> Index "TEST_COMPUTED_X_Y_DEC" Range Scan (full match)
+        ........................-> Bitmap
+        ............................-> Index "TEST_COMPUTED_X_Y_DEC" Range Scan (full match)
+        qry_args={qry_map[25][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5269
+        ##############################################################
+        {qry_map[26][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_DEC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[26][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5269
+        ##############################################################
+    """
+
+    expected_stdout_5x = f"""
+        {qry_map[ 1][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" Range Scan (full match)
+        qry_args={qry_map[ 1][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2942
+        ##############################################################
+        {qry_map[ 2][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" List Scan (full match)
+        qry_args={qry_map[ 2][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5884
+        ##############################################################
+        {qry_map[ 3][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_X_ASC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[ 3][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5884
+        ##############################################################
+        {qry_map[ 4][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_Y_DEC" Range Scan (full match)
+        qry_args={qry_map[ 4][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2632
+        ##############################################################
+        {qry_map[ 5][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_Y_DEC" List Scan (full match)
+        qry_args={qry_map[ 5][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5264
+        ##############################################################
+        {qry_map[ 6][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_Y_DEC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[ 6][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5264
+        ##############################################################
+        {qry_map[11][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        qry_args={qry_map[11][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2174
+        ##############################################################
+        {qry_map[12][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" List Scan (partial match: 1/2)
+        qry_args={qry_map[12][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[13][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" Range Scan (lower bound: 1/2, upper bound: 1/2)
+        qry_args={qry_map[13][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[14][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        qry_args={qry_map[14][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2174
+        ##############################################################
+        {qry_map[15][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" List Scan (partial match: 1/2)
+        qry_args={qry_map[15][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[16][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPOUND_ASC" Range Scan (lower bound: 1/2, upper bound: 1/2)
+        qry_args={qry_map[16][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[21][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_ASC" Range Scan (full match)
+        qry_args={qry_map[21][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 464
+        ##############################################################
+        {qry_map[22][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_ASC" List Scan (full match)
+        qry_args={qry_map[22][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 774
+        ##############################################################
+        {qry_map[23][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_ASC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[23][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 774
+        ##############################################################
+        {qry_map[24][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_DEC" Range Scan (full match)
+        qry_args={qry_map[24][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2635
+        ##############################################################
+        {qry_map[25][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_DEC" List Scan (full match)
+        qry_args={qry_map[25][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5269
+        ##############################################################
+        {qry_map[26][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "TEST" Full Scan
+        ................-> Table "TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "TEST_COMPUTED_X_Y_DEC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[26][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5269
+        ##############################################################
+    """
+
+    expected_stdout_6x = f"""
+        {qry_map[ 1][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (full match)
+        qry_args={qry_map[ 1][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2942
+        ##############################################################
+        {qry_map[ 2][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_X_ASC" List Scan (full match)
+        qry_args={qry_map[ 2][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5884
+        ##############################################################
+        {qry_map[ 3][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_X_ASC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[ 3][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5884
+        ##############################################################
+        {qry_map[ 4][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_Y_DEC" Range Scan (full match)
+        qry_args={qry_map[ 4][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2632
+        ##############################################################
+        {qry_map[ 5][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_Y_DEC" List Scan (full match)
+        qry_args={qry_map[ 5][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5264
+        ##############################################################
+        {qry_map[ 6][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_Y_DEC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[ 6][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5264
+        ##############################################################
+        {qry_map[11][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        qry_args={qry_map[11][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2174
+        ##############################################################
+        {qry_map[12][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPOUND_ASC" List Scan (partial match: 1/2)
+        qry_args={qry_map[12][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[13][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPOUND_ASC" Range Scan (lower bound: 1/2, upper bound: 1/2)
+        qry_args={qry_map[13][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[14][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPOUND_ASC" Range Scan (partial match: 1/2)
+        qry_args={qry_map[14][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2174
+        ##############################################################
+        {qry_map[15][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPOUND_ASC" List Scan (partial match: 1/2)
+        qry_args={qry_map[15][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[16][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPOUND_ASC" Range Scan (lower bound: 1/2, upper bound: 1/2)
+        qry_args={qry_map[16][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 4348
+        ##############################################################
+        {qry_map[21][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPUTED_X_Y_ASC" Range Scan (full match)
+        qry_args={qry_map[21][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 464
+        ##############################################################
+        {qry_map[22][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPUTED_X_Y_ASC" List Scan (full match)
+        qry_args={qry_map[22][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 774
+        ##############################################################
+        {qry_map[23][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPUTED_X_Y_ASC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[23][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 774
+        ##############################################################
+        {qry_map[24][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPUTED_X_Y_DEC" Range Scan (full match)
+        qry_args={qry_map[24][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 2635
+        ##############################################################
+        {qry_map[25][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPUTED_X_Y_DEC" List Scan (full match)
+        qry_args={qry_map[25][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5269
+        ##############################################################
+        {qry_map[26][2]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Condition
+        ................-> Table "PUBLIC"."TEST" Full Scan
+        ................-> Table "PUBLIC"."TEST" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."TEST_COMPUTED_X_Y_DEC" Range Scan (lower bound: 1/1, upper bound: 1/1)
+        qry_args={qry_map[26][1]}
+        Table statistics: NATURAL reads: 0; INDEXED reads: 5269
+        ##############################################################
+    """
+
+    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
 
