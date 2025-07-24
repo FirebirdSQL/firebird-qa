@@ -5,29 +5,24 @@ ID:          issue-3894
 ISSUE:       3894
 TITLE:       There is no need to undo changes made in GTT created with ON COMMIT DELETE ROWS option when transaction is rolled back
 DESCRIPTION:
-  After discuss with hvlad it was decided to use fetches & marks values that are issued in trace
-  ROLLBACK_TRANSACTION statistics and evaluate ratio of these values with:
-  1) number of inserted rows(see 'NUM_ROWS_TO_BE_ADDED' constant);
-  2) number of data pages that table occupies (it's retieved via 'gstat -t T_FIX_TAB').
+    After discuss with hvlad it was decided to use fetches & marks values that are issued in trace
+    ROLLBACK_TRANSACTION statistics and evaluate ratio of these values with:
+    1) number of inserted rows(see 'NUM_ROWS_TO_BE_ADDED' constant);
+    2) number of data pages that table occupies (it's retieved via 'gstat -t T_FIX_TAB').
 
-  We use three tables with the same DDL: permanent ('t_fix_tab'), GTT PRESERVE and GTT DELETE rows.
-  All these tables are subject to DML which does insert rows.
-  Permanent table is used for retrieving statistics of data pages that are in use after this DML.
-  Number of rows that we add into tables should not be very high, otherwise rollback will be done via TIP,
-  i.e. without real undone actions ==> we will not see proper ratios.
-  After serveral runs it was decided to use value = 45000 (rows).
-
-  All ratios should belong to some range with +/-5% of possible difference from one run to another.
-  Concrete values of ratio were found after several runs on 2.5.7, 3.0.2 & 4.0.0
-
-  Checked on 2.5.7.27030 (SS/SC), WI-V3.0.2.32644 (SS/SC/CS) and WI-T4.0.0.468 (SS/SC); 4.0.0.633 (CS/SS)
-
-  Notes.
-  1. We can estimate volume of UNDO changes in trace statistics for ROLLBACK event.
-     This statistics was added since 2.5.2 (see CORE-3598).
-  2. We have to use 'gstat -t <table>'instead of 'fbsvcmgr sts_table <...>'in 2.5.x - see CORE-5426.
+    We use three tables with the same DDL: permanent ('t_fix_tab'), GTT PRESERVE and GTT DELETE rows.
+    All these tables are subject to DML which does insert rows.
+    Permanent table is used for retrieving statistics of data pages that are in use after this DML.
+    Number of rows that we add into tables should not be very high, otherwise rollback will be done via TIP,
+    i.e. without real undone actions ==> we will not see proper ratios.
+    After serveral runs it was decided to use value = 45000 (rows).
+    All ratios should belong to some range with +/-5% of possible difference from one run to another.
 JIRA:        CORE-3537
 FBTEST:      bugs.core_3537
+NOTES:
+    [24.07.2025] pzotov
+    Changed THRESHOLD values after start usage DB with page_size = 8192 (see 'check_data' dict).
+    Checked on 6.0.0.1061; 5.0.3.1686; 4.0.6.3223; 3.0.13.33818.
 """
 
 import pytest
@@ -115,8 +110,8 @@ init_script = """
     commit;
 """
 
-# NOTE: Calculation depend on page_size=4096 !!!
-db = db_factory(page_size=4096, init=init_script)
+# NOTE: Calculation depend on page_size. Since 6.x min size = 8K.
+db = db_factory(page_size = 8192, init=init_script)
 
 act = python_act('db')
 
@@ -128,7 +123,9 @@ trace = ['log_transactions = true',
 @pytest.mark.trace
 @pytest.mark.version('>=3')
 def test_1(act: Action, capsys):
+    
     NUM_ROWS_TO_BE_ADDED = 45000
+
     # Make initial data filling into PERMANENT table for retrieving later number of data pages
     # (it should be the same for any kind of tables, including GTTs):
     with act.db.connect() as con:
@@ -182,25 +179,39 @@ def test_1(act: Action, capsys):
                         gtt_sav_marks = int(words[k-1])
                     else:
                         gtt_del_marks = int(words[k-1])
-    #
-    check_data = {
-        'ratio_fetches_to_row_count_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_fetches / NUM_ROWS_TO_BE_ADDED, 9.1219,  5.1465),
-        'ratio_fetches_to_row_count_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_fetches / NUM_ROWS_TO_BE_ADDED,   0.0245,  0.00015),
-        'ratio_marks_to_row_count_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_marks / NUM_ROWS_TO_BE_ADDED,     2.0732,  2.05186),
-        'ratio_marks_to_row_count_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_marks / NUM_ROWS_TO_BE_ADDED,       0.0245,  0.000089),
-        'ratio_fetches_to_datapages_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_fetches / dp_cnt,               373.85,  209.776),
-        'ratio_fetches_to_datapages_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_fetches / dp_cnt,                 1.0063,  0.00634),
-        'ratio_marks_to_datapages_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_marks / dp_cnt,                   84.9672, 83.6358),
-        'ratio_marks_to_datapages_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_marks / dp_cnt,                     1.0036,  0.00362),
-    }
-    i = 2 #  FB 3+
+
+    # Changed 24.07.2025 after several runs on 3.x ... 6.x:
+    if act.is_version('<4'):
+        check_data = {
+            'ratio_fetches_to_row_count_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_fetches / NUM_ROWS_TO_BE_ADDED,    5.07240),
+            'ratio_fetches_to_row_count_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_fetches / NUM_ROWS_TO_BE_ADDED,      0.00011),
+            'ratio_marks_to_row_count_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_marks / NUM_ROWS_TO_BE_ADDED,        2.02564),
+            'ratio_marks_to_row_count_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_marks / NUM_ROWS_TO_BE_ADDED,          0.0000667),
+            'ratio_fetches_to_datapages_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_fetches / dp_cnt,                419.59191),
+            'ratio_fetches_to_datapages_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_fetches / dp_cnt,                    0.00919),
+            'ratio_marks_to_datapages_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_marks / dp_cnt,                    167.56250),
+            'ratio_marks_to_datapages_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_marks / dp_cnt,                        0.00551),
+        }
+    else:
+        check_data = {
+            'ratio_fetches_to_row_count_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_fetches / NUM_ROWS_TO_BE_ADDED,    5.07707),
+            'ratio_fetches_to_row_count_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_fetches / NUM_ROWS_TO_BE_ADDED,      0.00011),
+            'ratio_marks_to_row_count_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_marks / NUM_ROWS_TO_BE_ADDED,        2.02727),
+            'ratio_marks_to_row_count_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_marks / NUM_ROWS_TO_BE_ADDED,          0.0000667),
+            'ratio_fetches_to_datapages_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_fetches / dp_cnt,                391.21233),
+            'ratio_fetches_to_datapages_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_fetches / dp_cnt,                    0.00856),
+            'ratio_marks_to_datapages_for_GTT_PRESERVE_ROWS' : (1.00 * gtt_sav_marks / dp_cnt,                    156.21061),
+            'ratio_marks_to_datapages_for_GTT_DELETE_ROWS' : (1.00 * gtt_del_marks / dp_cnt,                        0.00514),
+        }
+
+
     MAX_DIFF_PERCENT = 5.0
-    # THRESHOLD
+
     failed_flag = False
     for k, v in sorted(check_data.items()):
         msg = ('Check ' + k + ': ' +
-               ('OK' if v[i] * ((100 - MAX_DIFF_PERCENT)/100) <= v[0] <= v[i] * (100+MAX_DIFF_PERCENT) / 100
-                else 'value '+str(v[0])+' not in range '+str( v[i] ) + ' +/-' + str(MAX_DIFF_PERCENT) + '%')
+               ('OK' if v[1] * ((100 - MAX_DIFF_PERCENT)/100) <= v[0] <= v[1] * (100+MAX_DIFF_PERCENT) / 100
+                else 'value '+str(v[0])+' not in range '+str( v[1] ) + ' +/-' + str(MAX_DIFF_PERCENT) + '%')
                )
         print(msg)
         failed_flag = 'not in range' in msg
