@@ -7,14 +7,17 @@ TITLE:       Non-correlated sub-query is evaluated multiple times if it is based
 DESCRIPTION:
 NOTES:
     [18.01.2025] pzotov
-    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
-    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
-    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
-    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
-    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
-   
-    Confirmed bug on 6.0.0.222
-    Checked on 6.0.0.223, 5.0.1.1322.
+        Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+        in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+        Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+        This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+        The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+        Confirmed bug on 6.0.0.222
+    [25.07.2025] pzotov
+        Separated test DB-init scripts for check on versions prior/since 6.x.
+        On 6.x we have to take in account indexed fields containing SCHEMA names, see below DDL for rdb$fields.
+        Thanks to dimitr for suggestion.
+    Checked on 6.0.0.1061; 5.0.3.1686
 """
 
 from pathlib import Path
@@ -23,21 +26,37 @@ import pytest
 from firebird.qa import *
 from firebird.driver import DatabaseError
 
-init_sql = """
-    create view v_test_nr as select 1 i from rdb$fields rows 50;
-    create view v_test_ir1 as select 1 i from rdb$fields where rdb$field_name > '' rows 50;
-    create view v_test_ir2 as select 1 i from rdb$fields where rdb$field_name > '' order by rdb$field_name rows 50;
-     
-    create table test(id int);
-    insert into test(id) select row_number()over() from rdb$types rows 100;
-    commit;
-"""
-db = db_factory(init = init_sql)
-
+db = db_factory()
 act = python_act('db')
 
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action, capsys):
+
+    init_script_5x = """
+        create view v_test_nr as select 1 i from rdb$fields rows 50;
+        create view v_test_ir1 as select 1 i from rdb$fields where rdb$field_name > '' rows 50;
+        create view v_test_ir2 as select 1 i from rdb$fields where rdb$field_name > '' order by rdb$field_name rows 50;
+        create table test(id int);
+        insert into test(id) select row_number()over() from rdb$types rows 100;
+        commit;
+    """
+
+    # On 6.x rdb$fields we have to take in account rdb$schema_name.
+    # This table currently has one index with key: RDB$SCHEMA_NAME,RDB$FIELD_NAME
+    init_script_6x = """
+        create view v_test_nr as select 1 i from rdb$fields rows 50;
+        create view v_test_ir1 as select 1 i from rdb$fields where rdb$schema_name = upper('PUBLIC') and rdb$field_name > '' rows 50;
+        create view v_test_ir2 as select 1 i from rdb$fields where rdb$schema_name = upper('PUBLIC') and rdb$field_name > '' order by rdb$field_name rows 50;
+        create table test(id int);
+        insert into test(id) select row_number()over() from rdb$types rows 100;
+        commit;
+    """
+
+    act.isql(switches = ['-q'], input = init_script_5x if act.is_version('<6') else init_script_6x, combine_output = True)
+    assert act.clean_stdout == '', f'Init script failed: {act.clean_stdout=}'
+    act.reset()
+
+    ##################################################################################
 
     t_map = { 'rdb$fields' : -1, }
 
