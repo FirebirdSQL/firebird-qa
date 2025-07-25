@@ -11,15 +11,18 @@ DESCRIPTION:
 FBTEST:      bugs.gh_3218
 NOTES:
     [20.01.2024] pzotov
-    Confirmed problem on 5.0.0.442: number of indexed reads was equal to the total count of records in rdb$relation_fields.
-    Checked on 6.0.0.218, 5.0.1.1318.
-
+        Confirmed problem on 5.0.0.442: number of indexed reads was equal to the total count of records in rdb$relation_fields.
     [18.01.2025] pzotov
-    Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
-    in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
-    Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
-    This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
-    The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+        Resultset of cursor that executes using instance of selectable PreparedStatement must be stored
+        in some variable in order to have ability close it EXPLICITLY (before PS will be freed).
+        Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
+        This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
+        The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
+    [25.07.2025] pzotov
+        Separated test scripts for check on versions prior/since 6.x.
+        On 6.x we have to take in account indexed fields containing SCHEMA names, see below DDL for RDB$RELATION_FIELDS.
+        Thanks to dimitr for suggestion.
+    Checked on 6.0.0.1061; 5.0.3.1686
 """
 
 from pathlib import Path
@@ -54,11 +57,12 @@ init_sql = """
 """
 db = db_factory(init = init_sql)
 
-act = python_act('db')
+substitutions = [('RDB\$INDEX_\\d+', 'RDB$INDEX_*'),] 
+act = python_act('db', substitutions = substitutions)
 
 #----------------------------------------------------------
 
-def replace_leading(source, char="#"):
+def replace_leading(source, char="."):
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
 
@@ -81,7 +85,28 @@ def test_1(act: Action, capsys):
         #------------------------------------------------------
 
         result_map = {}
-        chk_sql = 'select 1 from sp_get_relations r join rdb$relation_fields f on f.rdb$relation_name = r.rdb$relation_name where r.rdb$relation_id < 10'
+        
+        test_sql_5x = """
+            select 1 from sp_get_relations r
+            join rdb$relation_fields f
+                on f.rdb$relation_name = r.rdb$relation_name
+            where r.rdb$relation_id < 10
+        """
+
+
+        # ALTER TABLE RDB$RELATION_FIELDS ADD CONSTRAINT RDB$INDEX_15 UNIQUE (RDB$FIELD_NAME, RDB$SCHEMA_NAME, RDB$RELATION_NAME);
+        # CREATE INDEX RDB$INDEX_3 ON RDB$RELATION_FIELDS (RDB$FIELD_SOURCE_SCHEMA_NAME, RDB$FIELD_SOURCE);
+        # CREATE INDEX RDB$INDEX_4 ON RDB$RELATION_FIELDS (RDB$SCHEMA_NAME, RDB$RELATION_NAME);
+        test_sql_6x = """
+            select 1
+            from sp_get_relations r
+            join rdb$relation_fields f
+                on f.rdb$schema_name = upper('system')
+                   and f.rdb$relation_name = r.rdb$relation_name
+            where r.rdb$relation_id < 10
+        """
+
+        chk_sql = test_sql_5x if act.is_version('<6') else test_sql_6x
         ps, rs = None, None
         try:
             ps = cur.prepare(chk_sql)
@@ -118,17 +143,31 @@ def test_1(act: Action, capsys):
             if ps:
                 ps.free()
 
-    act.expected_stdout = """
+    expected_stdout_5x = """
         Select Expression
-        ####-> Nested Loop Join (inner)
-        ########-> Filter
-        ############-> Procedure "SP_GET_RELATIONS" as "R" Scan
-        ########-> Filter
-        ############-> Table "RDB$RELATION_FIELDS" as "F" Access By ID
-        ################-> Bitmap
-        ####################-> Index "RDB$INDEX_4" Range Scan (full match)
+        ....-> Nested Loop Join (inner)
+        ........-> Filter
+        ............-> Procedure "SP_GET_RELATIONS" as "R" Scan
+        ........-> Filter
+        ............-> Table "RDB$RELATION_FIELDS" as "F" Access By ID
+        ................-> Bitmap
+        ....................-> Index "RDB$INDEX_*" Range Scan (full match)
         Result:
         Acceptable.
     """
+    expected_stdout_6x = """
+        Select Expression
+        ....-> Nested Loop Join (inner)
+        ........-> Filter
+        ............-> Procedure "PUBLIC"."SP_GET_RELATIONS" as "R" Scan
+        ........-> Filter
+        ............-> Table "SYSTEM"."RDB$RELATION_FIELDS" as "F" Access By ID
+        ................-> Bitmap
+        ....................-> Index "SYSTEM"."RDB$INDEX_*" Range Scan (full match)
+        Result:
+        Acceptable.
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
