@@ -12,8 +12,9 @@ NOTES:
     Re-implemented: no need to use mon$tables, all data can be obtained using con.info.get_table_access_stats().
     Explained plans have beed added in expected out.
     
-    An issue exists related to PARTIAL INDICES (5x+): it seems that they are not used even for suitable values of input args.
-    Sent letter to dimitr, 24.07.2025 18:04. Waiting for reply.
+    Partial indices (5.x+) can not be used in queries like "select ... from test where a = ? or ? is null"
+    because actual value for parameter is unknown at prepare phase. One need to replace "?" with literal for that
+    but that is not related to this test. Letter from dimitr 25.07.2025 09:13.
 
     Checked on 6.0.0.1061; 5.0.3.1686; 4.0.6.3223; 3.0.13.33818.
 """
@@ -75,15 +76,6 @@ def test_1(act: Action, capsys):
         commit;
     """
 
-    if act.is_version('<5'):
-        pass
-    else:
-        init_script += """
-            -- partial indices, single-column:
-            create index test_y_partial_asc on test(a) where a in (0,1);
-            create descending index test_z_partial_dec on test(b) where b in(0,1);
-        """
-
     act.isql(switches = ['-q'], input = init_script, combine_output = True)
     assert act.clean_stdout == '', 'Init script FAILED: {act.clean_stdout=}'
     act.reset()
@@ -119,25 +111,6 @@ def test_1(act: Action, capsys):
        25 : ( "select /* trace_me */ count(*) from test where x - y in (?, ?) or ? is null",       (-1,0,0) ),
        26 : ( "select /* trace_me */ count(*) from test where x - y between ? and ? or ? is null", (-1,0,0) ),
     }
-
-
-    if 1: # act.is_version('<5'):
-        pass
-    else:
-        qry_add = {
-            # test partial index on 'y', asc:
-            31 : ( "select /* trace_me */ count(*) from test where a = ? or ? is null",                 (1,0) ),
-            32 : ( "select /* trace_me */ count(*) from test where a in (?, ?) or ? is null",           (0,1,0) ),
-            33 : ( "select /* trace_me */ count(*) from test where a between ? and ? or ? is null",     (0,1,0) ),
-
-            # test partial index on 'z', desc:
-            34 : ( "select /* trace_me */ count(*) from test where b = ? or ? is null",                 (1,0) ),
-            35 : ( "select /* trace_me */ count(*) from test where b in (?, ?) or ? is null",           (0,1,0) ),
-            36 : ( "select /* trace_me */ count(*) from test where b between ? and ? or ? is null",     (0,1,0) ),
-        }
-
-        qry_map.update(qry_add)
-
 
     for qry_idx,v in qry_map.items():
         qry_text, qry_args = v[:2]
