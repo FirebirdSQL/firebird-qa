@@ -59,10 +59,20 @@ def try_insert(con, cur, fld, data):
     print(f'\nTrying to add array in {fld}')
     try:
         print(f'Data: {data}')
-        with cur.prepare(f"insert into test_arr({fld}) values (?)") as ps:
+        ps, rs = None, None
+        try:
+            ps = cur.prepare(f"insert into test_arr({fld}) values (?)")
             for x in data:
-                cur.execute(ps, (x,))
-            
+                rs = cur.execute(ps, (x,))
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if rs:
+                rs.close()
+            if ps:
+                ps.free()
+        
         cur.execute(f'select {fld} from test_arr order by id desc rows 1')
         for r in cur:
             for x in r[0]:
