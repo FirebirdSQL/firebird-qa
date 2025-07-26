@@ -31,17 +31,21 @@ def test_1(act: Action, capsys):
         con.commit()
         cur1.execute("insert into test values(1)")
         con.commit()
+        ps = None
         try:
             with act.db.connect() as con2:
                 cur2 = con2.cursor()
                 cur2.execute("select 1 from rdb$database")
                 cur1.execute("drop table test")
-                cur2.prepare("update test set x=-x")
+                ps = cur2.prepare("update test set x=-x")
                 con2.commit()
-        except Exception as e:
+        except DatabaseError as e:
             print(e.__str__())
             for x in e.gds_codes:
                 print(x)
+        finally:
+            if ps:
+                ps.free()
 
         act.expected_stdout = """
             table is not defined
