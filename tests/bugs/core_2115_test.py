@@ -4,15 +4,16 @@
 ID:          issue-2548
 ISSUE:       2548
 TITLE:       Query plan is missing for the long query
-DESCRIPTION: test creates table with one index and generates query like:
-                 select * from ... where
-                     exists(select ...) and
-                     exists(select ...) and
-                     exists(select ...) and
-                     ...
-             -- where number of sub-queries is defined by variable SUBQRY_COUNT
-             Then we open cursor and ask to show execution plan (in traditional form).
-             Plan must have SUBQRY_COUNT lines with the same content: 'PLAN (T1 INDEX (T1_X))'
+DESCRIPTION: 
+    test creates table with one index and generates query like:
+        select * from ... where
+            exists(select ...) and
+            exists(select ...) and
+            exists(select ...) and
+            ...
+    -- where number of sub-queries is defined by variable SUBQRY_COUNT
+    Then we open cursor and ask to show execution plan (in traditional form).
+    Plan must have SUBQRY_COUNT lines with the same content: 'PLAN (T1 INDEX (T1_X))'
 JIRA:        CORE-2115
 FBTEST:      bugs.core_2115
 NOTES:
@@ -27,9 +28,14 @@ NOTES:
     3. Upper limit for SUBQRY_COUNT currently still the same: 256. After exceeding of this, we get:
        "SQLSTATE = 54001 ... -Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256"
 """
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
+
+##################
+SUBQRY_COUNT = 256
+##################
 
 init_sql = """
     create sequence g;
@@ -49,22 +55,27 @@ act = python_act('db')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
 
-    SUBQRY_COUNT = 256
     test_sql = """
-select 1 as c
-from t1
-where x = 0 and
+        select 1 as c
+        from t1
+        where x = 0 and
     """
-
 
     test_sql += '\n'.join( ( f'exists(select 1 from t1 where x = {i}) and' for i in range(SUBQRY_COUNT-1) ) )
     test_sql += '\n1=1'
 
     with act.db.connect() as con:
         cur = con.cursor()
-        ps = cur.prepare(test_sql)
-        print(ps.plan)
+        ps = None
+        try:
+            ps = cur.prepare(test_sql)
+            print(ps.plan)
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
 
     expected_stdout = '\n'.join( ('PLAN (T1 INDEX (T1_X))' for i in range(SUBQRY_COUNT)) )
-    #assert '' == capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
