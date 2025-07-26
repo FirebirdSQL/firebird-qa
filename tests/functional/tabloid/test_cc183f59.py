@@ -22,6 +22,7 @@ NOTES:
 
 import re
 import time
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
@@ -67,8 +68,6 @@ for p in addi_subst_tokens.split(' '):
 
 act = python_act('db', substitutions = substitutions)
 
-
-
 #-----------------------------------------------------------
 
 def replace_leading(source, char="."):
@@ -94,8 +93,16 @@ def test_1(act: Action, capsys):
 
     with act.db.connect() as con:
         cur = con.cursor()
-        ps = cur.prepare(test_sql)
-        print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+        ps = None
+        try:
+            ps = cur.prepare(test_sql)
+            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
 
     act.expected_stdout = """
         Select Expression
