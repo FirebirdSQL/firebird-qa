@@ -14,6 +14,8 @@ NOTES:
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
+from firebird.driver import DatabaseError
+
 import pytest
 from firebird.qa import *
 
@@ -111,9 +113,17 @@ def test_1(act: Action, capsys):
 
     with act.db.connect() as con:
         cur = con.cursor()
-        ps = cur.prepare(test_sql)
-        print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
-
+        ps = None
+        try:
+            ps = cur.prepare(test_sql)
+            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
+    
     expected_stdout_4x = """
         Select Expression
         ....-> Singularity Check
