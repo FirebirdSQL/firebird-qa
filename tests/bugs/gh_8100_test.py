@@ -13,9 +13,10 @@ NOTES:
     Confirmed problem on 5.0.0.1391, 6.0.0.344: got "ValueError: Incorrect ARRAY field value"
     Checked on 6.0.0.345 #17b007d, 5.0.1.1394 #aa3cafb - all OK.
 """
+from firebird.driver import DatabaseError
+from pathlib import Path
 
 import pytest
-from pathlib import Path
 from firebird.qa import *
 
 db = db_factory()
@@ -35,9 +36,18 @@ def test_1(act: Action, capsys):
             ,[ [31, 33, 55, 47], [17, 22, 33, 14], [91, 21, 93, 24] ]
         )
 
-        ps = cur.prepare("insert into array_table(arr) values (?)")
-        for x in data:
-            cur.execute(ps, (x,))
+        ps = None
+        try:
+            ps = cur.prepare("insert into array_table(arr) values (?)")
+            for x in data:
+                cur.execute(ps, (x,))
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
+        
         con.commit()
 
         cur.execute("select id, arr from array_table order by (arr[1,2]) desc")
