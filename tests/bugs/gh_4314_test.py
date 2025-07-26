@@ -14,6 +14,8 @@ NOTES:
         Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 
 """
+from firebird.driver import DatabaseError
+
 import locale
 import re
 
@@ -94,8 +96,16 @@ def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
         for test_sql in (query_from_view, query_from_dt):
-            ps = cur.prepare(test_sql)
-            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+            ps = None
+            try:
+                ps = cur.prepare(test_sql)
+                print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
+            finally:
+                if ps:
+                    ps.free()
 
     expected_stdout_5x = """
         Select Expression
