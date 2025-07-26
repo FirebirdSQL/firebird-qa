@@ -34,6 +34,7 @@ NOTES:
 
     Checked on 6.0.0.858; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
@@ -158,8 +159,17 @@ def test_1(act: Action, capsys):
 
     with act.db.connect() as con:
         cur = con.cursor()
-        ps = cur.prepare(test_sql)
-        print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+        ps = None
+        try:
+            ps = cur.prepare(test_sql)
+            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+        except DatabaseError as e:
+            print(e.__str__())
+            for x in e.gds_codes:
+                print(x)
+        finally:
+            if ps:
+                ps.free()
 
     act.expected_stdout = fb4x_expected_out if act.is_version('<5') else fb5x_expected_out if act.is_version('<6') else fb6x_expected_out
     act.execute(combine_output = True)
