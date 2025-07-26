@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 
 """
 ID:          issue-873
@@ -9,16 +9,22 @@ JIRA:        CORE-1802
 FBTEST:      bugs.core_1802
 NOTES:
     [26.06.2025] pzotov
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-
-    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+    [26.07.2025] pzotov
+        Minor re-implementing: on Linux this test fails if PIPE mechanism is used instead of regular .sql file
+        which must be executed via '-i <file.sql>'. Noted by Anton Zuev, Redbase. Letter 03.07.2025 10:46.
+    Checked on 6.0.0.1061; 5.0.3.1686; 4.0.6.3223; 3.0.13.33818.
 """
 
 import pytest
 from firebird.qa import *
+from pathlib import Path
 
-db = db_factory(charset = 'win1250', page_size = 8192)
+db = db_factory(charset='win1250', page_size=8192)
+act = isql_act('db')
+
+tmp_sql = temp_file('tmp_core_1802_win1250.sql')
 
 test_script = """
     -- https://firebirdsql.org/file/documentation/html/en/refdocs/fblangref50/firebird-50-language-reference.html#fblangref50-datatypes-chartypes-charindxs
@@ -92,8 +98,6 @@ test_script = """
     select * from test where f01 = 'náma';
 """
 
-act = isql_act('db', test_script)
-
 expected_stdout_5x = """
     PLAN (TEST INDEX (TEST_F01_UNQ))
 """
@@ -103,7 +107,14 @@ expected_stdout_6x = """
 """
 
 @pytest.mark.version('>=3')
-def test_1(act: Action):
+def test_1(act: Action, tmp_sql: Path):
+
+    tmp_sql.write_text(test_script, encoding='windows-1250')
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
-    act.isql(switches = ['-q'], charset = 'win1250', input = test_script, combine_output = True)
+
+    ###############################################################
+    ### We have to use here '-i <file>' rather than PIPE mecanism.
+    ### Otherwise lot of 'token unknown' errors will raise on LINUX
+    ###############################################################
+    act.isql(switches = ['-q'], charset = 'win1250', input_file = tmp_sql, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
