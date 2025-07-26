@@ -31,10 +31,10 @@ NOTES:
         Added 'SQL_SCHEMA_PREFIX' and variables to be substituted in expected_* on FB 6.x
         Checked on 6.0.0.909; 5.0.3.1668; 4.0.6.3214.
 """
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
-
 
 init_sql = """
     set bail on;
@@ -72,8 +72,16 @@ def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
         for q in query_lst:
-            with cur.prepare(q) as ps:
+            ps = None
+            try:
+                ps = cur.prepare(q)
                 print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
+            finally:
+                if ps:
+                    ps.free()
 
     SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
     TABLE_TMAIN_NAME = '"TMAIN"' if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"TMAIN"'
