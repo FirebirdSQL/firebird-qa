@@ -398,6 +398,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
             cur.execute(ps, (cp1251_txt1, None))
             cur.execute(ps, (None, cp1251_txt2))
             con.commit()
+            ps.free()
         
         # Must be EMPTY:
         out_main = capsys.readouterr().out
