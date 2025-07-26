@@ -11,7 +11,7 @@ NOTES:
     [25.07.2025] pzotov
     Separated expected output on major versions (4.x ... 6.x).
     Test probably will be further reimplemented, including adding checks for other functions.
-    Issues exist for 4.x and 5.x: blob_append, decode, coalesce, nullif - currently they prevent index usage.
+    Issues exist for 4.x and 5.x: blob_append - currently it prevents index usage.
 
     Checked on 6.0.0.1061; 5.0.3.1686; 4.0.6.3223.
 """
@@ -68,21 +68,21 @@ def test_1(act: Action):
           select rdb$relation_name, {RDB_SCHEMA_FIELD} from rdb$relations r07
           union
           select rdb$field_name, {RDB_SCHEMA_FIELD} from rdb$fields f07
-        ) as dt (name, schema_name) where dt.name = decode(char_length(schema_name), 6, 'foo', 'bar') {SQL_SCHEMA_SUFFIX}
+        ) as dt (name, schema_name) where dt.name = decode(octet_length(gen_uuid()), 16, 'foo', 'bar') {SQL_SCHEMA_SUFFIX}
         ;
 
         select * from (
           select rdb$relation_name, {RDB_SCHEMA_FIELD} from rdb$relations r08
           union
           select rdb$field_name, {RDB_SCHEMA_FIELD} from rdb$fields f08
-        ) as dt (name, schema_name) where dt.name = coalesce(schema_name, 'foo') {SQL_SCHEMA_SUFFIX}
+        ) as dt (name, schema_name) where dt.name = coalesce(gen_uuid(), 'bar') {SQL_SCHEMA_SUFFIX}
         ;
 
         select * from (
           select rdb$relation_name, {RDB_SCHEMA_FIELD} from rdb$relations r09
           union
           select rdb$field_name, {RDB_SCHEMA_FIELD} from rdb$fields f09
-        ) as dt (name, schema_name) where dt.name = nullif(schema_name, 'foo') {SQL_SCHEMA_SUFFIX}
+        ) as dt (name, schema_name) where dt.name = nullif(gen_uuid(), 'bar') {SQL_SCHEMA_SUFFIX}
         ;
 
         select * from (
@@ -112,9 +112,9 @@ def test_1(act: Action):
         PLAN SORT (DT R03 INDEX (RDB_INDEX_*), DT F03 INDEX (RDB_INDEX_*))
         PLAN SORT (DT R04 INDEX (RDB_INDEX_*), DT F04 INDEX (RDB_INDEX_*))
         PLAN SORT (DT R05 NATURAL, DT F05 NATURAL)
-        PLAN SORT (DT R07 NATURAL, DT F07 NATURAL)
-        PLAN SORT (DT R08 NATURAL, DT F08 NATURAL)
-        PLAN SORT (DT R09 NATURAL, DT F09 NATURAL)
+        PLAN SORT (DT R07 INDEX (RDB_INDEX_*), DT F07 INDEX (RDB_INDEX_*))
+        PLAN SORT (DT R08 INDEX (RDB_INDEX_*), DT F08 INDEX (RDB_INDEX_*))
+        PLAN SORT (DT R09 INDEX (RDB_INDEX_*), DT F09 INDEX (RDB_INDEX_*))
         PLAN SORT (DT R10 INDEX (RDB_INDEX_*), DT F10 INDEX (RDB_INDEX_*))
     """
 
@@ -124,9 +124,9 @@ def test_1(act: Action):
         PLAN SORT (DT R03 INDEX (RDB_INDEX_*), DT F03 INDEX (RDB_INDEX_*))
         PLAN SORT (DT R04 INDEX (RDB_INDEX_*), DT F04 INDEX (RDB_INDEX_*))
         PLAN SORT (DT R05 NATURAL, DT F05 NATURAL)
-        PLAN SORT (DT R07 NATURAL, DT F07 NATURAL)
-        PLAN SORT (DT R08 NATURAL, DT F08 NATURAL)
-        PLAN SORT (DT R09 NATURAL, DT F09 NATURAL)
+        PLAN SORT (DT R07 INDEX (RDB_INDEX_*), DT F07 INDEX (RDB_INDEX_*))
+        PLAN SORT (DT R08 INDEX (RDB_INDEX_*), DT F08 INDEX (RDB_INDEX_*))
+        PLAN SORT (DT R09 INDEX (RDB_INDEX_*), DT F09 INDEX (RDB_INDEX_*))
         PLAN SORT (DT R10 INDEX (RDB_INDEX_*), DT F10 INDEX (RDB_INDEX_*))
         PLAN SORT (DT R51 INDEX (RDB_INDEX_*), DT F51 INDEX (RDB_INDEX_*))
     """
