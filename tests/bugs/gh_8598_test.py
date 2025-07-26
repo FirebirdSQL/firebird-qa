@@ -41,6 +41,7 @@ NOTES:
 
     [26.07.2025] pzotov
     Increased max allowed ratio between median values (MAX_RATIO) for Linux after several runs: currently this ratio is ~9.5 ... 11.5.
+    Test duration: ~35s.
     Checked on 6.0.0.1077
 """
 import os
@@ -63,8 +64,6 @@ N_HASH_EVALUATE_COUNT = 500
 
 # How many times we do update on-key column in the 'TMAIN' table:
 UPDATE_NON_KEY_CNT = 5000
-
-EXPECTED_MSG = f'acceptable, median_ratio less than {MAX_RATIO=}'
 
 db = db_factory(charset = 'win1251')
 act = python_act('db')
@@ -161,6 +160,7 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
         update_nonk_median = median([v for k,v in times_map.items() if k[0] == 'update_nonk'])
         median_ratio = update_nonk_median / sp_gen_hash_median
 
+        EXPECTED_MSG = f'acceptable, median_ratio less than {MAX_RATIO=}'
         print( 'Medians ratio: ' + (EXPECTED_MSG if median_ratio < MAX_RATIO else '/* perf_issue_tag */ POOR: %s, more than threshold: %s' % ( '{:9g}'.format(median_ratio), '{:9g}'.format(MAX_RATIO) ) ) )
 
         if median_ratio > MAX_RATIO:
