@@ -31,17 +31,22 @@ act = python_act('db')
 def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
-        ps = cur.prepare('execute block (a_input_value dm_test = ?) returns (y integer) as begin y = a_input_value; suspend; end')
+        ps, rs = None, None
         try:
+            ps = cur.prepare('execute block (a_input_value dm_test = ?) returns (y integer) as begin y = a_input_value; suspend; end')
             for x in (1, 11):
-                cur.execute(ps, (x,))
+                rs = cur.execute(ps, (x,))
                 for r in cur:
                     print(r[0])
         except DatabaseError as e:
             print(e.__str__())
             for x in e.gds_codes:
                 print(x)
-
+        finally:
+            if rs:
+                rs.close()
+            if ps:
+                ps.free()
 
     expected_stdout_5x = """
         1
