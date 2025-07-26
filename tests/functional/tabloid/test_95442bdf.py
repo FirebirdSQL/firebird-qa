@@ -17,6 +17,7 @@ NOTES:
     Checked on intermediate snapshot 6.0.0.363 #95442bd.
     Thanks to dimitr for provided example.
 """
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
@@ -64,8 +65,16 @@ def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
         for x in join_expr_lst:
-            with cur.prepare(f'select * from ' + x) as ps:
+            ps = None
+            try:
+                ps = cur.prepare(f'select * from ' + x)
                 print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
+            finally:
+                if ps:
+                    ps.free()
    
     act.expected_stdout = """
         Select Expression
