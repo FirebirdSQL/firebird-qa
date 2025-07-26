@@ -36,7 +36,7 @@ import locale
 import re
 import zipfile
 from pathlib import Path
-from firebird.driver import SrvRestoreFlag
+from firebird.driver import SrvRestoreFlag, DatabaseError
 import time
 
 import pytest
@@ -148,9 +148,17 @@ def test_1(act: Action, fbk_file: Path, capsys):
     with act.db.connect() as con:
         chk_sql = 'select 1 from test order by id'
         cur = con.cursor()
-        ps = cur.prepare(check_sql)
-        # Print explained plan with padding eash line by dots in order to see indentations:
-        print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+        ps = None
+        try:
+            ps = cur.prepare(check_sql)
+            # Print explained plan with padding eash line by dots in order to see indentations:
+            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
     
     act.expected_stdout = expected_out_4x if act.is_version('<5') else expected_out_5x if act.is_version('<6') else expected_out_6x
 
