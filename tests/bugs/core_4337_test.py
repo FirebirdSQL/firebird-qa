@@ -52,14 +52,13 @@ NOTES:
 import datetime as py_dt
 from datetime import timedelta
 import time
-
 import subprocess
 from difflib import unified_diff
 import re
 from pathlib import Path
+from firebird.driver import DbWriteMode, DatabaseError
 
 from firebird.qa import *
-from firebird.driver import DbWriteMode
 import pytest
 
 substitutions = [
@@ -167,33 +166,45 @@ def test_1(act: Action, sweep_log: Path, capsys):
             stm = r"select first 1 a.mon$attachment_id from mon$attachments a where a.mon$system_flag <> 1 and lower(a.mon$remote_process) similar to '(%[\\/](gfix|fbsvcmgr)(.exe)?)'"
             t1=py_dt.datetime.now()
             with con.cursor() as cur1:
-                ps1 = cur1.prepare(stm)
-                p_sweep = subprocess.Popen( [act.vars['gfix'], '-sweep', '-user', act.db.user, '-password', act.db.password, act.db.dsn],
-                                            stdout = f_sweep_log,
-                                            stderr = subprocess.STDOUT
-                                          )
+                ps1, rs1 = None, None
+                try:
+                    p_sweep = subprocess.Popen( [act.vars['gfix'], '-sweep', '-user', act.db.user, '-password', act.db.password, act.db.dsn],
+                                                stdout = f_sweep_log,
+                                                stderr = subprocess.STDOUT
+                                              )
 
-                ##########################################################################
-                # LOOP-1: WAIT FOR FIRST APPEARANCE OF GFIX PROCESS IN THE MON$ATTACHMENTS
-                ##########################################################################
-                while True:
-                    t2=py_dt.datetime.now()
-                    d1=t2-t1
-                    dd = d1.seconds*1000 + d1.microseconds//1000
-                    if dd > MAX_WAIT_FOR_SWEEP_START_MS:
-                        print(f'TIMEOUT EXPIRATION: waiting for SWEEP process took {dd} ms which exceeds limit = {MAX_WAIT_FOR_SWEEP_START_MS} ms.')
-                        break
+                    ##########################################################################
+                    # LOOP-1: WAIT FOR FIRST APPEARANCE OF GFIX PROCESS IN THE MON$ATTACHMENTS
+                    ##########################################################################
+                    ps1 = cur1.prepare(stm)
+                    while True:
+                        t2=py_dt.datetime.now()
+                        d1=t2-t1
+                        dd = d1.seconds*1000 + d1.microseconds//1000
+                        if dd > MAX_WAIT_FOR_SWEEP_START_MS:
+                            print(f'TIMEOUT EXPIRATION: waiting for SWEEP process took {dd} ms which exceeds limit = {MAX_WAIT_FOR_SWEEP_START_MS} ms.')
+                            break
 
-                    cur1.execute(ps1)
-                    for r in cur1:
-                        sweep_attach_id = r[0]
-                    
-                    con.commit()
-                    if sweep_attach_id:
-                        break
-                    else:
-                        time.sleep(0.1)
-                #<while True (loop for search gfix process in mon$attachments)
+                        rs1 = cur1.execute(ps1)
+                        for r in cur1:
+                            sweep_attach_id = r[0]
+                        
+                        con.commit()
+                        if sweep_attach_id:
+                            break
+                        else:
+                            time.sleep(0.1)
+                    #<while True (loop for search gfix process in mon$attachments)
+    
+                except DatabaseError as e:
+                    print( e.__str__() )
+                    print(e.gds_codes)
+                finally:
+                    if rs1:
+                        rs1.close()
+                    if ps1:
+                        ps1.free()
+
 
             #< with con.cursor() as cur1
 
@@ -218,26 +229,38 @@ def test_1(act: Action, sweep_log: Path, capsys):
             ##################################################################################################
             t1=py_dt.datetime.now()
             with con.cursor() as cur2:
-                ps2 = cur2.prepare( stm.replace('select ', 'select /* search re-connect that could be made */ ') )
-                while True:
-                    t2=py_dt.datetime.now()
-                    d1=t2-t1
-                    dd = d1.seconds*1000 + d1.microseconds//1000
-                    if dd > MAX_WAIT_FOR_GFIX_RESTART_MS:
-                        # Expected: gfix reconnect was not detected for last {MAX_WAIT_FOR_GFIX_RESTART_MS} ms.
-                        break
-                    con.commit()
-                    cur2.execute(ps2)
-                    # Resultset now must be EMPTY. we must not find any record!
-                    for r in cur2:
-                        sweep_reconnect = r[0]
-                    
-                    #con.commit()
-                    if sweep_reconnect:
-                        # UNEXPECTED: gfix reconnect found, with attach_id={sweep_reconnect}
-                        break
-                    else:
-                        time.sleep(0.1)
+                ps2, rs2 = None, None
+                try:
+                    ps2 = cur2.prepare( stm.replace('select ', 'select /* search re-connect that could be made */ ') )
+                    while True:
+                        t2=py_dt.datetime.now()
+                        d1=t2-t1
+                        dd = d1.seconds*1000 + d1.microseconds//1000
+                        if dd > MAX_WAIT_FOR_GFIX_RESTART_MS:
+                            # Expected: gfix reconnect was not detected for last {MAX_WAIT_FOR_GFIX_RESTART_MS} ms.
+                            break
+                        con.commit()
+                        rs2 = cur2.execute(ps2)
+                        # Resultset now must be EMPTY. we must not find any record!
+                        for r in cur2:
+                            sweep_reconnect = r[0]
+                        
+                        #con.commit()
+                        if sweep_reconnect:
+                            # UNEXPECTED: gfix reconnect found, with attach_id={sweep_reconnect}
+                            break
+                        else:
+                            time.sleep(0.1)
+
+                except DatabaseError as e:
+                    print( e.__str__() )
+                    print(e.gds_codes)
+                finally:
+                    if rs2:
+                        rs2.close()
+                    if ps2:
+                        ps2.free()
+            
             #< with con.cursor() as cur2
 
             assert sweep_reconnect is None, f'Found re-connect of SWEEP process, attachment: {sweep_reconnect}'
