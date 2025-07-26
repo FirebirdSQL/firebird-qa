@@ -39,6 +39,8 @@ NOTES:
     Checked on 6.0.0.607-1985b88, 5.0.2.1610-5e63ad0
 """
 
+from firebird.driver import DatabaseError
+
 import pytest
 from firebird.qa import *
 
@@ -109,8 +111,16 @@ def test_1(act: Action, capsys):
     """
     with act.db.connect() as con:
         cur = con.cursor()
-        ps = cur.prepare(test_sql)
-        print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
+        ps = None
+        try:
+            ps = cur.prepare(test_sql)
+            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
 
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
