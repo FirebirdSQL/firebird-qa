@@ -28,6 +28,7 @@ NOTES:
 
 import re
 import time
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
@@ -98,12 +99,20 @@ def test_1(act: Action, capsys):
     top_level_keys_found = -1
     with act.db.connect() as con:
         cur = con.cursor()
-        ps = cur.prepare(test_sql)
-        print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
-        for s in ps.detailed_plan.split('\n'):
-            if (pm := p_hj_keys.search(s)):
-                top_level_keys_found = max(top_level_keys_found, int(pm.group().split()[-1]))
-                break
+        ps = None
+        try:
+            ps = cur.prepare(test_sql)
+            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+            for s in ps.detailed_plan.split('\n'):
+                if (pm := p_hj_keys.search(s)):
+                    top_level_keys_found = max(top_level_keys_found, int(pm.group().split()[-1]))
+                    break
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
 
     max_keys_msg = 'Top-level hash join keys: '
     expected_keys = ''
