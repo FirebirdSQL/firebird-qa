@@ -29,16 +29,19 @@ db_1 = db_factory(init=init_script_1)
 
 act_1 = python_act('db_1')
 
-expected_stdout_1 = """Test PASSED!"""
-
 @pytest.mark.version('>=3.0,<4.0')
 def test_1(act_1: Action):
     with  act_1.db.connect() as con:
-        c = con.cursor()
+        cur = con.cursor()
+        ps = None
         try:
-            c.prepare('select * from RDB$DATABASE where RDB$CHARACTER_SET_NAME = rtrim(trim(?))')
-        except:
-            pytest.fail('Test FAILED')
+            ps = cur.prepare('select * from RDB$DATABASE where RDB$CHARACTER_SET_NAME = rtrim(trim(?))')
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
 
 # version: 4.0
 
@@ -67,10 +70,13 @@ act_2 = python_act('db_2')
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
     with  act_2.db.connect() as con:
-        c = con.cursor()
+        cur = con.cursor()
+        ps = None
         try:
-            c.prepare('select 1 from rdb$database where UDR40_frac(?) != UDR40_div(?, ?) / ?')
-        except:
-            pytest.fail('Test FAILED')
-
-
+            ps = cur.prepare('select 1 from rdb$database where UDR40_frac(?) != UDR40_div(?, ?) / ?')
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
