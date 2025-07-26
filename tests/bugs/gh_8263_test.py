@@ -132,9 +132,17 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
     with connect(str(tmp_fdb), user = act.db.user, password = act.db.password) as con:
         chk_sql = 'select 1 from test order by id'
         cur = con.cursor()
-        ps = cur.prepare(chk_sql)
-        # Print explained plan with padding eash line by dots in order to see indentations:
-        print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+        ps = None
+        try:
+            ps = cur.prepare(chk_sql)
+            # Print explained plan with padding eash line by dots in order to see indentations:
+            print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
 
     SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
     act.expected_stdout = f"""
