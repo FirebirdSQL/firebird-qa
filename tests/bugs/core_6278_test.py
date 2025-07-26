@@ -24,8 +24,8 @@ NOTES:
     [03.07.2025] pzotov
     Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
     Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214.
-
 """
+from firebird.driver import DatabaseError
 
 import pytest
 import re
@@ -56,8 +56,16 @@ def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
         for x in scoped_expr_lst:
-            with cur.prepare(f'select count(s) from test where {x}') as ps:
+            ps = None
+            try:
+                ps = cur.prepare(f'select count(s) from test where {x}')
                 print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
+            finally:
+                if ps:
+                    ps.free()
 
     SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
     act.expected_stdout = f"""
