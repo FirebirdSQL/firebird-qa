@@ -15,6 +15,7 @@ NOTES:
 
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
@@ -29,12 +30,19 @@ def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur1 = con.cursor()
         cur2 = con.cursor()
-        ps = cur1.prepare(f'select 1 /* {TAG_TEXT} */ from rdb$database')
-        cur2.execute(f"select mon$sql_text, mon$explained_plan from mon$statements s where s.mon$sql_text containing '{TAG_TEXT}' and s.mon$sql_text NOT containing 'mon$statements'")
-        for r in cur2:
-            print(r[0])
-            print(r[1])
-
+        ps = None
+        try:
+            ps = cur1.prepare(f'select 1 /* {TAG_TEXT} */ from rdb$database')
+            cur2.execute(f"select mon$sql_text, mon$explained_plan from mon$statements s where s.mon$sql_text containing '{TAG_TEXT}' and s.mon$sql_text NOT containing 'mon$statements'")
+            for r in cur2:
+                print(r[0])
+                print(r[1])
+        except DatabaseError as e:
+            print( e.__str__() )
+            print(e.gds_codes)
+        finally:
+            if ps:
+                ps.free()
 
     expected_stdout_5x = f"""
         select 1 /* {TAG_TEXT} */ from rdb$database
