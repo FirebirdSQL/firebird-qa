@@ -13,6 +13,7 @@ NOTES:
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.863; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
 """
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
@@ -89,8 +90,16 @@ def test_1(act: Action, capsys):
     with act.db.connect() as con:
         cur = con.cursor()
         for q in query_lst:
-            with cur.prepare(q) as ps:
+            ps = None
+            try:
+                ps = cur.prepare(q)
                 print( '\n'.join([replace_leading(s) for s in ps.detailed_plan .split('\n')]) )
+            except DatabaseError as e:
+                print( e.__str__() )
+                print(e.gds_codes)
+            finally:
+                if ps:
+                    ps.free()
 
     expected_stdout_5x = """
         Select Expression
