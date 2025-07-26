@@ -96,7 +96,9 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
     d1 = py_dt.timedelta(0)
     with act.db.connect() as con:
         cur = con.cursor()
+
         ps = cur.prepare('select mon$crypt_state from mon$database')
+        rs = None
 
         t1=py_dt.datetime.now()
         try:
@@ -112,7 +114,7 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
                 ######################################################
                 ###   C H E C K    M O N $ C R Y P T _ S T A T E   ###
                 ######################################################
-                cur.execute(ps)
+                rs = cur.execute(ps)
                 current_crypt_state = cur.fetchone()[0]
                 con.commit()
                 if current_crypt_state == REQUIRED_CRYPT_STATE:
@@ -121,7 +123,14 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
                 else:
                     time.sleep(0.5)
         except DatabaseError as e:
-            print( e.__str__() )
+            print(e.__str__())
+            for x in e.gds_codes:
+                print(x)
+        finally:
+            if rs:
+                rs.close()
+            if ps:
+                ps.free()
 
 
     assert e_thread_finished, f'TIMEOUT EXPIRATION: {mode=} took {d1.seconds*1000 + d1.microseconds//1000} ms which {max_wait_encr_thread_finish=} ms'
