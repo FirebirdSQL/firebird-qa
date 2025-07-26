@@ -95,9 +95,6 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
 
     d1 = py_dt.timedelta(0)
     with act.db.connect() as con:
-        #cur = con.cursor()
-        #ps = cur.prepare('select mon$crypt_state from mon$database')
-
         t1=py_dt.datetime.now()
         try:
             d1 = t1-t1
