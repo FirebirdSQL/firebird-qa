@@ -47,12 +47,16 @@ NOTES:
     Also, on FB 6.x one need to use: 'grant usage on schema "PLG$PROFILER" to role ...'
     Checked on 6.0.0.970; 5.0.3.1668.
 
+    [27.07.2025] pzotov
+    Temporary set marker to SKIP on Linux when Servermode = 'Classic' because of hanged execution (since 6.0.0.1066).
+    Sent report to dimitr et al, 27.07.2025 10:15.
 """
+import os
+from firebird.driver import tpb, Isolation # , TraLockResolution, TraAccessMode, DatabaseError
+import time
 
 import pytest
 from firebird.qa import *
-from firebird.driver import tpb, Isolation # , TraLockResolution, TraAccessMode, DatabaseError
-import time
 
 N_COUNT = 1000
 init_script = f"""
@@ -118,6 +122,9 @@ act = python_act('db')
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action, tmp_worker_usr: User, tmp_profiler_usr: User, tmp_profiler_role: Role, capsys):
 
+    if os.name != 'nt' and act.vars['server-arch'] != 'SuperServer':
+        pytest.skip("TEMPORARY SKIPPED BECAUSE HANGS")
+    
     PLG_SCHEMA_PREFIX = '' if act.is_version('<6') else f'PLG$PROFILER.'
 
     addi_script = f"""
