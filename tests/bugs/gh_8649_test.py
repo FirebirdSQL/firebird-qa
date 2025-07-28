@@ -19,6 +19,9 @@ NOTES:
        This means that on step "2." DB-level triggers will fire, even if they are invalid or cause problems.
        We *ourselves* have to drop such triggers, BEFORE teardown - see 'con_kill_db_level_trigger'.
     2. Name of trigger must be adjusted on FB 6.x because of SQL schemas introduction since 6.0.0.834
+    3. One need to suppress message test of error, it can differ on Windows vs Linux in case if 'Win_sspi'
+       presents in AuthClient parameter. In that case on Windows error text is "335545060 : Missing security context"
+       vs Linux: "335544472 : Your user name and password are not defined". Thanks to Alex for explanation.
 
     Confirmed bug (crash) on 6.0.0.949; 5.0.3.1668; 4.0.6.3214.
     Checked on 6.0.0.967; 5.0.3.1683; 4.0.6.3221
@@ -38,12 +41,11 @@ for v in ('ISC_USER','ISC_PASSWORD'):
     except KeyError as e:
         pass
 
-substitutions = [  ('^((?!(SQLSTATE|error|Error|TRG_CONNECT|attach|security|password|source)).)*$', '')
-                  ,('operation for file .*', 'operation for file')
-                  ,('Missing security context for .*', 'Missing security context')
+substitutions = [  ('^((?!(SQLSTATE|attach|source|trigger)).)*$', '')
                   ,('Data source : Firebird::.*', 'Data source : Firebird::')
                   ,(r'line(:)?\s+\d+.*', '')
                 ]
+
 act = python_act('db', substitutions = substitutions)
 act2 = python_act('db2')
 
@@ -66,10 +68,10 @@ def test_1(act: Action, act2: Action):
     """
 
     TEST_TRIGGER_NAME = "'TRG_CONNECT'" if act.is_version('<6') else '"PUBLIC"."TRG_CONNECT"'
+
     act.expected_stdout = f"""
         Statement failed, SQLSTATE = 42000
         Execute statement error at attach :
-        335545060 : Missing security context
         Data source : Firebird::
         -At trigger {TEST_TRIGGER_NAME}
     """
