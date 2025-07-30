@@ -11,9 +11,9 @@ DESCRIPTION:
     Such table will require valuable time to be swept, about 4..5 seconds
     (we set DB forced_writes = ON and small buffers number in the DB header).
 
-    After this we launch trace and 'gfix -sweep' (asynchronousl, via subprocess.Popen()).
+    After this we launch trace and 'gfix -sweep' (asynchronously, via subprocess.Popen()).
     Then we immediately open cursor and start LOOP with query to mon$attachments.
-    Loop will work until  connection created by gfix  will be seen there (usually this must occurs instantly).
+    Loop will work until connection created by gfix will be seen there (usually this must occurs instantly).
 
     When gfix connection is known, we execute 'DELETE FROM MON$ATTACHMENT' command which should kill its attachment.
     Process of GFIX should raise error 'connection shutdown' - and we check this by saving its output to log.
@@ -41,12 +41,12 @@ NOTES:
         Appearance of 'gfix' process is checked in loop by querying mon$attachments, see also: MAX_WAIT_FOR_SWEEP_START_MS.
         More precise pattern for line with message about failed sweep (see 'p_sweep_failed').
         Checked on Windows and Linux: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730
-    [22.02.2023] pzotov
-    During run on 5.0.0.958 SS, "Windows fatal exception: access violation" error occurs and its full text + stack was 'embedded'
-    in the pytest output. This error happens on garbage collection of Python code, when Statement destructor (__del__) was executed.
-    Although all resources, including prepared statement, are used here within 'with' context manager, it will be good to put every
-    'ps' usage inside 'with' block related to appropriate cursor. Before this, second 'ps' usage was linked to 1st [closed] cursor,
-    so this may be relate4d somehow to this AV.
+    [30.07.2025] pzotov
+        Re-implemented: in case of failed assumption about some intermediate result, we have to 'accumulate' output and print
+        it at final point of this test (instead of break on assertion). If 'Unexpected p_sweep.returncode=0' will present in
+        the output than we have to increase field length and/or rows count (because sweep complets its job faster than we can
+        to establish connection for check presense of gfix in mon$attachments).
+    Checked on Windows: 6.0.0.1092; 5.0.3.1689; 4.0.6.3223; 3.0.13.33818.
 """
 
 import datetime as py_dt
@@ -73,18 +73,40 @@ substitutions = [
                   ('FIREBIRD.LOG:.* ERROR DURING SWEEP OF .*TEST.FDB.*', 'FIREBIRD.LOG: + ERROR DURING SWEEP OF TEST.FDB')
                 ]
 
-init_sql = """
+###########################
+###   S E T T I N G S   ###
+###########################
+
+# ::: NB ::: Increase field length and/or rows count if sweep will complete its work
+# before we establish connection to check presense of gfix in mon$attachments:
+#
+FIELD_LEN = 4000
+ROWS_CNT = 25000
+
+# How long can we wait (milliseconds) for the FIRST appearance of 'gfix' process in mon$attachments:
+#
+MAX_WAIT_FOR_SWEEP_START_MS = 3000
+
+# How long we wait (milliseconds) for SECOND appearance of 'gfix' process in mon$attachments, after it was killed.
+# NOTE. If it appears then we have a BUG
+#
+MAX_WAIT_FOR_GFIX_RESTART_MS = 3000
+
+FOUND_FAILED_SWEEP_MSG = 'FOUND SWEEP_FAILED MESSAGE.'
+############################
+
+init_sql = f"""
     set list on;
     recreate table t(
-         s01 varchar(4000)
-        ,s02 varchar(4000)
-        ,s03 varchar(4000)
-        ,s04 varchar(4000)
+         s01 varchar({FIELD_LEN})
+        ,s02 varchar({FIELD_LEN})
+        ,s03 varchar({FIELD_LEN})
+        ,s04 varchar({FIELD_LEN})
     );
     commit;
     set term ^;
     execute block as
-        declare n int = 20000;
+        declare n int = {ROWS_CNT};
         declare w int;
     begin
         select f.rdb$field_length
@@ -137,9 +159,11 @@ trace = ['time_threshold = 0',
 def test_1(act: Action, sweep_log: Path, capsys):
 
     with act.connect_server() as srv:
-
         # REDUCE number of cache buffers in DB header in order to sweep make its work as long as possible
-        srv.database.set_default_cache_size(database=act.db.db_path, size=75)
+        # Attempt to set too low value will fail with:
+        # bad parameters on attach or create database
+        # -Attempt to set in database number of buffers which is out of acceptable range [50:2147483646]
+        srv.database.set_default_cache_size(database=act.db.db_path, size = 75)
 
         # Change FW to ON (in order to make sweep life harder :))
         srv.database.set_write_mode(database=act.db.db_path, mode=DbWriteMode.SYNC)
@@ -148,14 +172,6 @@ def test_1(act: Action, sweep_log: Path, capsys):
         log_before = srv.readlines()
 
     #---------------------------------------------------------------
-
-    # How long can we wait (milliseconds) for the FIRST appearance of 'gfix' process in mon$attachments:
-    #
-    MAX_WAIT_FOR_SWEEP_START_MS = 3000
-
-    # How long we wait (milliseconds) for SECOND appearance of 'gfix' process in mon$attachments, after it was killed.
-    # NOTE. If it appears then we have a BUG
-    MAX_WAIT_FOR_GFIX_RESTART_MS = 3000
 
     sweep_attach_id = None
     sweep_reconnect = None
@@ -185,6 +201,12 @@ def test_1(act: Action, sweep_log: Path, capsys):
                             print(f'TIMEOUT EXPIRATION: waiting for SWEEP process took {dd} ms which exceeds limit = {MAX_WAIT_FOR_SWEEP_START_MS} ms.')
                             break
 
+                        # ::: NB ::: 'ps1' returns data, i.e. this is SELECTABLE expression.
+                        # We have to store result of cur.execute(<psInstance>) in order to
+                        # close it explicitly.
+                        # Otherwise AV can occur during Python garbage collection and this
+                        # causes pytest to hang on its final point.
+                        # Explained by hvlad, email 26.10.24 17:42
                         rs1 = cur1.execute(ps1)
                         for r in cur1:
                             sweep_attach_id = r[0]
@@ -201,7 +223,7 @@ def test_1(act: Action, sweep_log: Path, capsys):
                     print(e.gds_codes)
                 finally:
                     if rs1:
-                        rs1.close()
+                        rs1.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
                     if ps1:
                         ps1.free()
 
@@ -216,54 +238,59 @@ def test_1(act: Action, sweep_log: Path, capsys):
             time.sleep(1)
 
             # Now we can KILL attachment that belongs to SWEEP process, <sweep_attach_id>:
+            sweep_kill_beg = py_dt.datetime.now()
             con.execute_immediate(f'delete from mon$attachments where mon$attachment_id = {sweep_attach_id}')
+            sweep_kill_end = py_dt.datetime.now()
 
             p_sweep.wait()
             f_sweep_log.close()
 
-            assert p_sweep.returncode == 1, 'p_sweep.returncode: {p_sweep.returncode}'
+            if p_sweep.returncode == 1:
+                ##################################################################################################
+                # LOOP-2: WAIT FOR POSSIBLE SECOND APPEARENCE (RECONNECT) OF GFIX. IF IT OCCURS THEN WE HAVE A BUG
+                ##################################################################################################
+                t1=py_dt.datetime.now()
+                with con.cursor() as cur2:
+                    ps2, rs2 = None, None
+                    try:
+                        ps2 = cur2.prepare( stm.replace('select ', 'select /* search re-connect that could be made */ ') )
+                        while True:
+                            t2=py_dt.datetime.now()
+                            d1=t2-t1
+                            dd = d1.seconds*1000 + d1.microseconds//1000
+                            if dd > MAX_WAIT_FOR_GFIX_RESTART_MS:
+                                # Expected: gfix reconnect was not detected for last {MAX_WAIT_FOR_GFIX_RESTART_MS} ms.
+                                break
+                            con.commit()
+                            rs2 = cur2.execute(ps2)
+                            # Resultset now must be EMPTY. we must not find any record!
+                            for r in cur2:
+                                sweep_reconnect = r[0]
+                            
+                            #con.commit()
+                            if sweep_reconnect:
+                                # UNEXPECTED: gfix reconnect found, with attach_id={sweep_reconnect}
+                                break
+                            else:
+                                time.sleep(0.1)
 
+                    except DatabaseError as e:
+                        print( e.__str__() )
+                        print(e.gds_codes)
+                    finally:
+                        if rs2:
+                            rs2.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                        if ps2:
+                            ps2.free()
+                
+                #< with con.cursor() as cur2
+            else:
+                # Test should be considered as FAILED. Make additional output for debug:
+                print(f'Unexpected {p_sweep.returncode=}. Timestamps: {sweep_kill_beg=}, {sweep_kill_end=} (compare with firebird.log if needed)')
 
-            ##################################################################################################
-            # LOOP-2: WAIT FOR POSSIBLE SECOND APPEARENCE (RECONNECT) OF GFIX. IF IT OCCURS THEN WE HAVE A BUG
-            ##################################################################################################
-            t1=py_dt.datetime.now()
-            with con.cursor() as cur2:
-                ps2, rs2 = None, None
-                try:
-                    ps2 = cur2.prepare( stm.replace('select ', 'select /* search re-connect that could be made */ ') )
-                    while True:
-                        t2=py_dt.datetime.now()
-                        d1=t2-t1
-                        dd = d1.seconds*1000 + d1.microseconds//1000
-                        if dd > MAX_WAIT_FOR_GFIX_RESTART_MS:
-                            # Expected: gfix reconnect was not detected for last {MAX_WAIT_FOR_GFIX_RESTART_MS} ms.
-                            break
-                        con.commit()
-                        rs2 = cur2.execute(ps2)
-                        # Resultset now must be EMPTY. we must not find any record!
-                        for r in cur2:
-                            sweep_reconnect = r[0]
-                        
-                        #con.commit()
-                        if sweep_reconnect:
-                            # UNEXPECTED: gfix reconnect found, with attach_id={sweep_reconnect}
-                            break
-                        else:
-                            time.sleep(0.1)
-
-                except DatabaseError as e:
-                    print( e.__str__() )
-                    print(e.gds_codes)
-                finally:
-                    if rs2:
-                        rs2.close()
-                    if ps2:
-                        ps2.free()
-            
-            #< with con.cursor() as cur2
-
-            assert sweep_reconnect is None, f'Found re-connect of SWEEP process, attachment: {sweep_reconnect}'
+            if sweep_reconnect:
+                # Test should be considered as FAILED. Make additional output for debug:
+                print(f'Unexpected re-connect of SWEEP process, attachment: {sweep_reconnect}')
 
         #< with db.connect as con
 
@@ -285,11 +312,10 @@ def test_1(act: Action, sweep_log: Path, capsys):
     p_sweep_failed = re.compile( r'[.*\s+]*20\d{2}(-\d{2}){2}T\d{2}(:\d{2}){2}.\d{3,4}\s+\(.+\)\s+SWEEP_FAILED$', re.IGNORECASE)
     p_att_success = re.compile( r'[.*\s+]*20\d{2}(-\d{2}){2}T\d{2}(:\d{2}){2}.\d{3,4}\s+\(.+\)\s+ATTACH_DATABASE$', re.IGNORECASE)
 
-    trace_expected = 'FOUND SWEEP_FAILED MESSAGE.'
     for i,line in enumerate(act.trace_log):
         if line.strip():
             if p_sweep_failed.search(line.strip()):
-                print(trace_expected)
+                print(FOUND_FAILED_SWEEP_MSG)
                 found_sweep_failed = 1
             if found_sweep_failed == 1 and p_att_success.search(line) and i < len(act.trace_log)-2 and 'gfix' in act.trace_log[i+2].lower():
                 # NB: we have to ignore "FAILED ATTACH_DATABASE".
@@ -297,10 +323,19 @@ def test_1(act: Action, sweep_log: Path, capsys):
                 print('TRACE: UNEXPECTED ATTACH FOUND AFTER KILL SWEEP! CHECK LINE N {i}:')
                 print('TRACE_LOG: ' + line)
 
-    act.expected_stdout = trace_expected
-    act.stdout = capsys.readouterr().out
-    assert act.clean_stdout == act.clean_expected_stdout
-    act.reset()
+    if not found_sweep_failed:
+        # Test should be considered as FAILED. Make additional output for debug:
+        print('Trace log: could not find message about FAILED sweep:')
+        print('--- start of trace log ---')
+        for i,line in enumerate(act.trace_log):
+            if line.strip():
+                print(line)
+        print('--- finish of trace log ---')
+
+    #act.expected_stdout = FOUND_FAILED_SWEEP_MSG
+    #act.stdout = capsys.readouterr().out
+    #assert act.clean_stdout == act.clean_expected_stdout
+    #act.reset()
 
     #----------------------------------------------------------------
 
@@ -309,15 +344,15 @@ def test_1(act: Action, sweep_log: Path, capsys):
         log_after = srv.readlines()
 
     '''
-    Example of diff:
-    COMPUTERNAME	Wed Sep 14 15:58:37 2022
-    	Sweep is started by SYSDBA
-    	Database "C:/TEMP/PYTEST_PATH/TEST.FDB" 
-    	OIT 20, OAT 21, OST 21, Next 21
+      Example of diff:
+      COMPUTERNAME	Wed Sep 14 15:58:37 2022
+      	Sweep is started by SYSDBA
+      	Database "C:/TEMP/PYTEST_PATH/TEST.FDB" 
+      	OIT 20, OAT 21, OST 21, Next 21
 
-    COMPUTERNAME	Wed Sep 14 15:58:37 2022
-    	Error during sweep of C:/PYTEST_PATH/TEST.FDB:
-    	connection shutdown
+      COMPUTERNAME	Wed Sep 14 15:58:37 2022
+      	Error during sweep of C:/PYTEST_PATH/TEST.FDB:
+      	connection shutdown
     '''
 
     p_tx_counter  = re.compile("\\+[\\s]+OIT[ ]+\\d+,[\\s]*OAT[\\s]+\\d+,[\\s]*OST[\\s]+\\d+,[\\s]*NEXT[\\s]+\\d+")
@@ -327,7 +362,8 @@ def test_1(act: Action, sweep_log: Path, capsys):
             if 'SWEEP' in line or 'CONNECTION' in line or p_tx_counter.match(line):
                 print( 'FIREBIRD.LOG: ' + (' '.join(line.split())) )
 
-    fb_log_expected = """
+    fb_log_expected = f"""
+        {FOUND_FAILED_SWEEP_MSG}
         FIREBIRD.LOG: + SWEEP IS STARTED BY SYSDBA
         FIREBIRD.LOG: + OIT, OAT, OST, NEXT
         FIREBIRD.LOG: + ERROR DURING SWEEP OF TEST.FDB
