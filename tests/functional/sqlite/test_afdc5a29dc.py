@@ -103,7 +103,7 @@ expected_stdout = """
     -numeric value is out of range
 """
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=4')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
