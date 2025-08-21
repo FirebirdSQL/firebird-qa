@@ -37,7 +37,7 @@ expected_stdout = """
     Records affected: 1
 """
 
-@pytest.mark.version('>=3')
+@pytest.mark.version('>=5')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
