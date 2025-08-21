@@ -9,8 +9,10 @@ NOTES:
     [20.08.2025] pzotov
     Execution plan (in legacy form) contains excessive comma on FB 6.x (regression),
     see: https://github.com/FirebirdSQL/firebird/issues/8711
-    Currently plan is not shown.
     Checked on 6.0.0.1204, 5.0.4.1701, 4.0.7.3231, 3.0.14.33824
+
+    [21.08.2025] pzotov
+    Added 'set plan on' because GH-8711 has been fixed. Checked on 6.0.0.1232.
 """
 
 import pytest
@@ -37,10 +39,10 @@ test_script = """
             or x.b is not distinct from y.b and y.a > x.a
     );
 
-    --set plan on;
     set count on;
     select * from v_test;
     create index t1_b on t1(b);
+    set plan on;
     select * from v_test;
 """
 
@@ -55,7 +57,6 @@ addi_subst_tokens = addi_subst_settings['addi_subst']
 for p in addi_subst_tokens.split(' '):
     substitutions.append( (p, '') )
 
-substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
@@ -63,6 +64,8 @@ expected_stdout = """
     A 3
     Records affected: 2
 
+    PLAN (V_TEST Y INDEX (T1_B, T1_B, T1_A, T1_B))
+    PLAN (V_TEST X NATURAL)
     A 2
     A 3
     Records affected: 2
