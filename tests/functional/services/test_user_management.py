@@ -17,6 +17,10 @@ DESCRIPTION:
     https://firebird-driver.readthedocs.io/en/latest/ref-core.html#firebird.driver.core.Server.user
     https://firebird-driver.readthedocs.io/en/latest/ref-core.html#serveruserservices
 FBTEST:      functional.services.user_management
+NOTES:
+    [01.09.2025] pzotov
+    Fixed wrong TIL = RC read consistency which prevent this test to run on 3.x.
+    Thanks to Anton Zuev, Redbase.
 """
 import sys
 import firebird.driver
@@ -39,7 +43,7 @@ def test_1(act: Action, capsys):
 
         sttm = 'select gen_id(g,1) as point, sec$user_name, sec$first_name, sec$last_name, sec$admin from rdb$database join sec$users on sec$user_name = ?'
     
-        custom_tpb = tpb(isolation = Isolation.READ_COMMITTED_READ_CONSISTENCY, lock_timeout = 0)
+        custom_tpb = tpb(isolation = Isolation.READ_COMMITTED, lock_timeout = 0)
         tx1 = con.transaction_manager(custom_tpb)
         tx1.begin()
         cur = tx1.cursor()
