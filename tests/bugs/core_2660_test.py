@@ -14,25 +14,26 @@ from firebird.qa import *
 
 db = db_factory(charset='UTF8')
 
-test_script = """select b.*
-  from rdb$database a
-  left join (
-    select count(*) c
-      from rdb$database
-  ) b on 1 = 0;"""
+test_script = """
+    set list on;
+    select b.*
+    from rdb$database a
+    left join (
+        select count(*) cnt
+        from rdb$database
+    ) b on 1 = 0;
+"""
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-                    C
-=====================
-               <null>
-
+    CNT <null>
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
