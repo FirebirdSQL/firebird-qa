@@ -12,81 +12,104 @@ FBTEST:      bugs.core_1108
 import pytest
 from firebird.qa import *
 
-init_script = """CREATE TABLE EMPLOYEE (
-    EMP_NO SMALLINT,
-    JOB_COUNTRY VARCHAR(15));
+init_script = """
+    recreate table employee (
+        emp_no smallint,
+        job_country varchar(15)
+    );
 
-COMMIT;
-
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (2, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (4, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (5, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (8, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (9, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (11, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (12, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (14, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (15, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (20, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (24, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (28, 'England');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (29, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (34, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (36, 'England');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (37, 'England');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (44, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (45, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (46, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (52, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (61, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (65, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (71, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (72, 'Canada');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (83, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (85, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (94, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (105, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (107, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (109, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (110, 'Japan');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (113, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (114, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (118, 'Japan');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (121, 'Italy');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (127, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (134, 'France');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (136, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (138, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (141, 'Switzerland');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (144, 'USA');
-INSERT INTO EMPLOYEE (EMP_NO, JOB_COUNTRY) VALUES (145, 'USA');
-
-COMMIT;
+    insert into employee values (2, 'usa');
+    insert into employee values (4, 'usa');
+    insert into employee values (5, 'usa');
+    insert into employee values (8, 'usa');
+    insert into employee values (9, 'usa');
+    insert into employee values (11, 'usa');
+    insert into employee values (12, 'usa');
+    insert into employee values (14, 'usa');
+    insert into employee values (15, 'usa');
+    insert into employee values (20, 'usa');
+    insert into employee values (24, 'usa');
+    insert into employee values (28, 'england');
+    insert into employee values (29, 'usa');
+    insert into employee values (34, 'usa');
+    insert into employee values (36, 'england');
+    insert into employee values (37, 'england');
+    insert into employee values (44, 'usa');
+    insert into employee values (45, 'usa');
+    insert into employee values (46, 'usa');
+    insert into employee values (52, 'usa');
+    insert into employee values (61, 'usa');
+    insert into employee values (65, 'usa');
+    insert into employee values (71, 'usa');
+    insert into employee values (72, 'canada');
+    insert into employee values (83, 'usa');
+    insert into employee values (85, 'usa');
+    insert into employee values (94, 'usa');
+    insert into employee values (105, 'usa');
+    insert into employee values (107, 'usa');
+    insert into employee values (109, 'usa');
+    insert into employee values (110, 'japan');
+    insert into employee values (113, 'usa');
+    insert into employee values (114, 'usa');
+    insert into employee values (118, 'japan');
+    insert into employee values (121, 'italy');
+    insert into employee values (127, 'usa');
+    insert into employee values (134, 'france');
+    insert into employee values (136, 'usa');
+    insert into employee values (138, 'usa');
+    insert into employee values (141, 'switzerland');
+    insert into employee values (144, 'usa');
+    insert into employee values (145, 'usa');
+    commit;
 """
 
 db = db_factory(init=init_script)
 
-test_script = """Select 'Country:', Job_Country, Count(*)
-  From Employee
-  Group By 1,2;"""
+test_script = """
+    set list on;
+    set count on;
+    select 'country:', job_country, count(*)
+    from employee
+    group by 1, 2;
+"""
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """CONSTANT JOB_COUNTRY                     COUNT
-======== =============== =====================
-Country: Canada                              1
-Country: England                             3
-Country: France                              1
-Country: Italy                               1
-Country: Japan                               2
-Country: Switzerland                         1
-Country: USA                                33
+expected_stdout = """
+    CONSTANT country:
+    JOB_COUNTRY canada
+    COUNT 1
 
+    CONSTANT country:
+    JOB_COUNTRY england
+    COUNT 3
+    
+    CONSTANT country:
+    JOB_COUNTRY france
+    COUNT 1
+    
+    CONSTANT country:
+    JOB_COUNTRY italy
+    COUNT 1
+    
+    CONSTANT country:
+    JOB_COUNTRY japan
+    COUNT 2
+    
+    CONSTANT country:
+    JOB_COUNTRY switzerland
+    COUNT 1
+    
+    CONSTANT country:
+    JOB_COUNTRY usa
+    COUNT 33
+    Records affected: 7
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
