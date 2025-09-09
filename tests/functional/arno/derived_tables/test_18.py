@@ -10,47 +10,57 @@ FBTEST:      functional.arno.derived_tables.18
 import pytest
 from firebird.qa import *
 
-init_script = """CREATE TABLE Table_10 (
-  ID INTEGER NOT NULL,
-  GROUPID INTEGER,
-  DESCRIPTION VARCHAR(10)
-);
+init_script = """
+    create table table_10 (
+      id integer not null,
+      groupid integer,
+      description varchar(10)
+    );
+    commit;
 
-COMMIT;
-
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (0, NULL, NULL);
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (1, 1, 'one');
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (2, 1, 'two');
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (3, 2, 'three');
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (4, 2, 'four');
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (5, 2, 'five');
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (6, 3, 'six');
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (7, 3, 'seven');
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (8, 3, 'eight');
-INSERT INTO Table_10 (ID, GROUPID, DESCRIPTION) VALUES (9, 3, 'nine');
-
-COMMIT;
+    insert into table_10 (id, groupid, description) values (0, null, null);
+    insert into table_10 (id, groupid, description) values (1, 1, 'one');
+    insert into table_10 (id, groupid, description) values (2, 1, 'two');
+    insert into table_10 (id, groupid, description) values (3, 2, 'three');
+    insert into table_10 (id, groupid, description) values (4, 2, 'four');
+    insert into table_10 (id, groupid, description) values (5, 2, 'five');
+    insert into table_10 (id, groupid, description) values (6, 3, 'six');
+    insert into table_10 (id, groupid, description) values (7, 3, 'seven');
+    insert into table_10 (id, groupid, description) values (8, 3, 'eight');
+    insert into table_10 (id, groupid, description) values (9, 3, 'nine');
+    commit;
 """
 
 db = db_factory(init=init_script)
 
-test_script = """SELECT
-  dt.*
-FROM
-  (SELECT t1.GROUPID, Count(t1.ID) FROM Table_10 t1 GROUP BY t1.GROUPID) dt (GROUPID, ID_COUNT)
-WHERE
-dt.GROUPID >= 2;"""
+test_script = """
+    set list on;
+    set count on;
+    select dt.*
+    from (
+        select t1.groupid, count(t1.id)
+        from table_10 t1
+        group by t1.groupid
+    ) dt (groupid, id_count)
+    where
+    dt.groupid >= 2;
+"""
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """     GROUPID              ID_COUNT
-============ =====================
-           2                     3
-           3                     4
+expected_stdout = """
+    GROUPID 2
+    ID_COUNT 3
+    
+    GROUPID 3
+    ID_COUNT 4
+    
+    Records affected: 2
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
