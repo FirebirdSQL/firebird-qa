@@ -18,59 +18,74 @@ FBTEST:      bugs.core_1419
 import pytest
 from firebird.qa import *
 
-init_script = """set term ^;
+init_script = """
+    create table tdelay(id int primary key);
 
-create procedure ts1 returns ( ts timestamp )
-as
-begin
-  ts = current_timestamp;
-  suspend;
-end^
+    set term ^;
+    create procedure sp_delay as
+    begin
+        insert into tdelay(id) values(1);
+        in autonomous transaction do
+        begin
+            execute statement ('insert into tdelay(id) values(?)') (1);
+            when any do
+            begin
+                -- nop --
+            end
+        end
+        delete from tdelay where id = 1;
+    end
+    ^
+    create procedure sp_get_timestamp returns ( ts timestamp ) as
+    begin
+        ts = current_timestamp;
+        suspend;
+    end
+    ^
+    create procedure sp_main returns ( ts_self timestamp, ts_execute timestamp, ts_select timestamp ) as
+    begin
+        -- ::: NB ::: this SP must be called in TIL with LOCK TIMEOUT <n>!
+        ts_self = current_timestamp;
+        execute procedure sp_get_timestamp returning_values :ts_execute;
+        select ts from sp_get_timestamp into :ts_select;
+        suspend;
 
-create procedure ts2 returns ( ts_self timestamp, ts_execute timestamp, ts_select timestamp )
-as
-  declare cnt int = 1000000;
-begin
-  ts_self = current_timestamp;
-  execute procedure ts1 returning_values :ts_execute;
-  select ts from ts1 into :ts_select;
-  suspend;
+        execute procedure sp_delay;
 
-  while (cnt > 0) do
-    cnt = cnt - 1;
-
-  ts_self = current_timestamp;
-  execute procedure ts1 returning_values :ts_execute;
-  select ts from ts1 into :ts_select;
-  suspend;
-end^
-
-set term ;^
-
-commit;"""
+        ts_self = current_timestamp;
+        execute procedure sp_get_timestamp returning_values :ts_execute;
+        select ts from sp_get_timestamp into :ts_select;
+        suspend;
+    end
+    ^
+    set term ;^
+    commit;
+"""
 
 db = db_factory(init=init_script)
 
-test_script = """SELECT COUNT(*)
-FROM ts2
-WHERE cast(ts_self as varchar(50))=cast(ts_execute as varchar(50))
-AND cast(ts_self as varchar(50))=cast(ts_select as varchar(50))
-;
-
+test_script = """
+    set list on;
+    commit;
+    set transaction lock timeout 2;
+    select count(*)
+    from sp_main p
+    where
+        cast(p.ts_self as varchar(50)) = cast(p.ts_execute as varchar(50))
+        and cast(p.ts_self as varchar(50)) = cast(p.ts_select as varchar(50))
+    ;
 """
 
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-                COUNT
-=====================
-                    2
-
+    COUNT 2
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
