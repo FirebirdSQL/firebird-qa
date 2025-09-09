@@ -31,9 +31,9 @@ NOTES:
        It can be empty but it MUST present if we want database to be created using prefix 'inet://' for its DSN.
        Because of that, encryption of db_file_c will be done at exclusive connection, see reduced indent for 'run_encr_decr()' call.
 
-    Great thanks to Alex for provided scenario for this test (letter 10-feb-2025 20:43) ans lot of suggestions.
+    Great thanks to Alex for provided scenario for this test (letter 10-feb-2025 20:43) and lot of suggestions.
 
-    Confirmed bug only for Super, snapshots: 6.0.0.600-188de60; 5.0.2.1606-a92f352; 4.0.6.3181-00b648f.
+    Confirmed bug only for Super, snapshots: 6.0.0.601-6af07d0; 5.0.2.1606-a92f352; 4.0.6.3181-00b648f.
     Classic not affected.
     Checked on 6.0.0.607-1985b88; 5.0.2.1610-5e63ad0; 4.0.6.3185-9cac45a - all fine.
 """
@@ -214,13 +214,23 @@ def test_1(act_a: Action, act_b: Action, act_c: Action, usr_x: User, usr_y: User
     dbfile_b.unlink(missing_ok = True)
     dbfile_c.unlink(missing_ok = True)
 
-    # ::: NB :::
+    # xxx old comment xxx
     # 'create_database()' will use LOCAL protocol if $QA_ROOT/firebir-driver.conf has no section [firebird.server.defaults]
     # It can be empty but it MUST present if we want database to be created using prefix 'inet://' for its DSN.
+    # xxxxxxxxxxxxxxxxxxx
+    # ::: NB :::
+    # act_*.db.db_path is an ALIAS, not full path to DB file!
+    # firebird-driver function _is_dsn(act_*.db.db_path) will return False for this value because it does not look like 'c:\path\to\'
+    # If we call create_database() with specifying such alias without custom instance of db_config AND without protocol ('localhost:', 'inet://' or 'xnet://')
+    # then code in this function will not define 'dsn' variable and will fail with:
+    #              else:  # pragma: no cover
+    #  >               raise InterfaceError("Result code does not match request code")
+    #  E               firebird.driver.types.InterfaceError: Result code does not match request code
+    # Because of this, we have to explicitly specify protocol here!
     #
-    with create_database(act_a.db.db_path, user = act_a.db.user, password = act_a.db.password) as con_a, \
-        create_database(act_b.db.db_path, user = act_b.db.user, password = act_b.db.password) as con_b, \
-        create_database(act_c.db.db_path, user = act_c.db.user, password = act_c.db.password) as con_c:
+    with create_database('inet://' + act_a.db.db_path, user = act_a.db.user, password = act_a.db.password) as con_a, \
+        create_database('inet://' + act_b.db.db_path, user = act_b.db.user, password = act_b.db.password) as con_b, \
+        create_database('inet://' + act_c.db.db_path, user = act_c.db.user, password = act_c.db.password) as con_c:
         
         sql = f"""        
             create procedure sp_a (a_who varchar(31)) returns (o_info varchar(512)) as
