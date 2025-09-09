@@ -3,36 +3,47 @@
 """
 ID:          intfunc.count-02
 TITLE:       COUNT
-DESCRIPTION: Count of Not Null values and count of rows and count of distinct values
+DESCRIPTION: Count of: 1) all rows; 2) not null values; 3) distinct values
 FBTEST:      functional.intfunc.count.02
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """CREATE TABLE test( id INTEGER);
-INSERT INTO test VALUES(0);
-INSERT INTO test VALUES(0);
-INSERT INTO test VALUES(null);
-INSERT INTO test VALUES(null);
-INSERT INTO test VALUES(null);
-INSERT INTO test VALUES(1);
-INSERT INTO test VALUES(1);
-INSERT INTO test VALUES(1);
-INSERT INTO test VALUES(1);
+init_script = """
+    create table test( id integer);
+    insert into test values(0);
+    insert into test values(0);
+    insert into test values(null);
+    insert into test values(null);
+    insert into test values(null);
+    insert into test values(1);
+    insert into test values(1);
+    insert into test values(1);
+    insert into test values(1);
+    commit;
 """
 
 db = db_factory(init=init_script)
 
-act = isql_act('db', "SELECT COUNT(*), COUNT(ID), COUNT(DISTINCT ID) FROM test;")
+test_script = """
+    set list on;
+    select count(*) as cnt_all, count(id) as cnt_nn, count(distinct id) as cnt_unq from test;
+    commit;
+"""
 
-expected_stdout = """                COUNT                 COUNT                 COUNT
-===================== ===================== =====================
-                    9                     6                     2
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
+
+expected_stdout = """
+    CNT_ALL 9
+    CNT_NN  6
+    CNT_UNQ 2
 """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
+
