@@ -27,6 +27,7 @@ NOTES:
     3. Attempt to run this test on FB 4.0.5.3127 (10-JUL-2024) raises:
            "E firebird.driver.types.DatabaseError: feature is not supported"
        (scollable cursors are not supported in network protocol in FB-4.x)
+    4. See also: functional/tabloid/test_f8cb4a6e.py
 
     Checked on 6.0.0.401-a7d10a4, 5.0.1.1453-62ee5f1.
 """
