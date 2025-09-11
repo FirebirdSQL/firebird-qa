@@ -14,8 +14,6 @@ NOTES:
 import pytest
 from firebird.qa import *
 
-db = db_factory()
-
 init_script = """
     set list on;
     recreate table test_a(id int primary key using descending index test_a_desc_pk);
