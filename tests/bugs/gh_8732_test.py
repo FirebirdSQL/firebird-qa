@@ -38,11 +38,7 @@ init_script = """
 
 db = db_factory(init=init_script)
 
-substitutions = [('[ \t]+', ' ')]
 act = python_act('db', substitutions=[('record length.*', ''), ('key length.*', '')])
-
-expected_stdout = """
-"""
 
 #-----------------------------------------------------------
 def replace_leading(source, char="."):
