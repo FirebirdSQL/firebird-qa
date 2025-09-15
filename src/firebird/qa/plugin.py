@@ -1822,7 +1822,7 @@ class Action:
         if (result.returncode or result.stderr) and not bool(self.expected_stderr) and not combine_output:
             self._node.add_report_section('call', 'ISQL stdout', result.stdout)
             self._node.add_report_section('call', 'ISQL stderr', result.stderr)
-            raise ExecutionError("Test script execution failed")
+            raise ExecutionError("Test script execution failed\n\n" + result.stderr)
 
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
@@ -1873,7 +1873,7 @@ class Action:
         if result.returncode:
             self._node.add_report_section('call', 'ISQL stdout', result.stdout)
             self._node.add_report_section('call', 'ISQL stderr', result.stderr)
-            raise ExecutionError("ISQL execution failed")
+            raise ExecutionError("ISQL execution failed\n\n" + result.stderr)
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -1936,7 +1936,7 @@ class Action:
         if (result.returncode or result.stderr) and not bool(self.expected_stderr):
             self._node.add_report_section('call', 'gstat stdout', result.stdout)
             self._node.add_report_section('call', 'gstat stderr', result.stderr)
-            raise ExecutionError("gstat execution failed")
+            raise ExecutionError("gstat execution failed\n\n" + result.stderr)
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -2000,7 +2000,7 @@ class Action:
         if (result.returncode or result.stderr) and not bool(self.expected_stderr):
             self._node.add_report_section('call', 'gsec stdout', result.stdout)
             self._node.add_report_section('call', 'gsec stderr', result.stderr)
-            raise ExecutionError("gsec execution failed")
+            raise ExecutionError("gsec execution failed\n\n" + result.stderr)
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -2064,7 +2064,7 @@ class Action:
         if (result.returncode or result.stderr) and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'gbak stdout', result.stdout)
             self._node.add_report_section('call', 'gbak stderr', result.stderr)
-            raise ExecutionError("gbak execution failed")
+            raise ExecutionError("gbak execution failed\n\n" + result.stderr)
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -2127,7 +2127,7 @@ class Action:
         if (result.returncode or result.stderr) and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'nbackup stdout', result.stdout)
             self._node.add_report_section('call', 'nbackup stderr', result.stderr)
-            raise ExecutionError("nbackup execution failed")
+            raise ExecutionError("nbackup execution failed\n\n" + result.stderr)
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -2191,7 +2191,7 @@ class Action:
         if (result.returncode or result.stderr) and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'gfix stdout', result.stdout)
             self._node.add_report_section('call', 'gfix stderr', result.stderr)
-            raise ExecutionError("gfix execution failed")
+            raise ExecutionError("gfix execution failed\n\n" + result.stderr)
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -2269,7 +2269,7 @@ class Action:
         if (result.returncode or result.stderr) and not (bool(self.expected_stderr) or combine_output):
             self._node.add_report_section('call', 'ISQL stdout', result.stdout)
             self._node.add_report_section('call', 'ISQL stderr', result.stderr)
-            raise ExecutionError("ISQL execution failed")
+            raise ExecutionError("ISQL execution failed\n\n" + result.stderr)
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
@@ -2332,7 +2332,7 @@ class Action:
         if (result.returncode or result.stderr) and not bool(self.expected_stderr):
             self._node.add_report_section('call', 'fbsvcmgr stdout', result.stdout)
             self._node.add_report_section('call', 'fbsvcmgr stderr', result.stderr)
-            raise ExecutionError("fbsvcmgr execution failed")
+            raise ExecutionError("fbsvcmgr execution failed\n\n" + result.stderr)
         self.return_code: int = result.returncode
         self.stdout: str = result.stdout
         self.stderr: str = result.stderr
