@@ -21,7 +21,7 @@ NOTES:
     Test probably will be further reimplemented, including adding checks for other functions.
 
     Issues exist for some functions when they are in WHERE-expresion: indices not used
-    (e.g. blob_append for 5.x or any afggregate or windowed functions for 5.x and 6.x)
+    (e.g. blob_append for 5.x or any afggregate or windowed functions for 5.x and 6.x).
     Test duration: ~4...5 seconds.
 
     Discussed with dimitr, letters 30.06.2025, 14.09.2025.
