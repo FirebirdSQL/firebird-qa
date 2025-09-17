@@ -18,24 +18,24 @@ from firebird.qa import *
 db = db_factory()
 
 test_script = """
-    create table t(a int);
-    create view "t" as select a from t;
+    create table a_table(a int);
+    create view "a_table" as select a from a_table;
 
-    create table "v"(a int);
-    create view v as select a from "v";
+    create table "a_view"(a int);
+    create view a_view as select a from "a_view";
 
     set echo on;
     show tables;
     show views;
 
-    show table v;
-    show table "v";
+    show table a_view;
+    show table "a_view";
 
-    show table t;
-    show table "t";
+    show table a_table;
+    show table "a_table";
 
-    show view v;
-    show view "v";
+    show view a_view;
+    show view "a_view";
 """
 
 act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
@@ -43,56 +43,97 @@ act = isql_act('db', test_script, substitutions=[('=', ''), ('[ \t]+', ' ')])
 @pytest.mark.version('>=3')
 def test_1(act: Action):
 
-    expected_stdout_5x = f"""
+    expected_stdout_3x = f"""
         show tables;
-        T
-        v
+        A_TABLE a_view
+
         show views;
-        V
-        t
-        show table v;
-        There is no table V in this database
-        show table "v";
+        A_VIEW a_table
+
+        show table a_view;
+        There is no table A_VIEW in this database
+
+        show table "a_view";
         A INTEGER Nullable
-        show table t;
+        
+        show table a_table;
         A INTEGER Nullable
-        show table "t";
-        There is no table t in this database
-        show view v;
+        
+        show table "a_table";
+        There is no table a_table in this database
+        
+        show view a_view;
         A INTEGER Nullable
         View Source:
-        select a from "v"
-        show view "v";
-        There is no view v in this database
+        select a from "a_view"
+        
+        show view "a_view";
+        There is no view a_view in this database
+    """
 
+    expected_stdout_5x = f"""
+        show tables;
+        A_TABLE
+        a_view
+
+        show views;
+        A_VIEW
+        a_table
+        
+        show table a_view;
+        There is no table A_VIEW in this database
+        
+        show table "a_view";
+        A INTEGER Nullable
+        
+        show table a_table;
+        A INTEGER Nullable
+        
+        show table "a_table";
+        There is no table a_table in this database
+        
+        show view a_view;
+        A INTEGER Nullable
+        View Source:
+        select a from "a_view"
+        
+        show view "a_view";
+        There is no view a_view in this database
     """
 
     expected_stdout_6x = f"""
         show tables;
-        PUBLIC.T
-        PUBLIC."v"
+        PUBLIC.A_TABLE
+        PUBLIC."a_view"
+
         show views;
-        PUBLIC.V
-        PUBLIC."t"
-        show table v;
-        There is no table V in this database
-        show table "v";
-        Table: PUBLIC."v"
+        PUBLIC.A_VIEW
+        PUBLIC."a_table"
+
+        show table a_view;
+        There is no table A_VIEW in this database
+
+        show table "a_view";
+        Table: PUBLIC."a_view"
         A INTEGER Nullable
-        show table t;
-        Table: PUBLIC.T
+
+        show table a_table;
+        Table: PUBLIC.A_TABLE
         A INTEGER Nullable
-        show table "t";
-        There is no table "t" in this database
-        show view v;
-        View: PUBLIC.V
+
+        show table "a_table";
+        There is no table "a_table" in this database
+
+        show view a_view;
+        View: PUBLIC.A_VIEW
         A INTEGER Nullable
         View Source:
-        select a from "v"
-        show view "v";
-        There is no view "v" in this database
+        select a from "a_view"
+
+        show view "a_view";
+        There is no view "a_view" in this database
     """
 
-    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.expected_stdout = expected_stdout_3x if act.is_version('<4') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
