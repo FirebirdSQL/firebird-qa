@@ -2,7 +2,7 @@
 
 """
 ID:          n/a
-TITLE:       Test of RETURNING clause
+TITLE:       Test of RETURNING clause: INSERT, UPDATE, MERGE.
 DESCRIPTION:
     Original test see in:
     https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/FB_SQL_RETURNING_1.script
