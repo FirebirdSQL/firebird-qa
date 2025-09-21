@@ -17,7 +17,7 @@ from firebird.qa import *
 
 db = db_factory()
 
-tmp_user: User = user_factory('db', name='tmp_gtcs_nested_func_user', password='123')
+tmp_user: User = user_factory('db', name='tmp_gtcs_nested_proc_user', password='123')
 
 # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
 # from act.files_dir/'test_config.ini':
