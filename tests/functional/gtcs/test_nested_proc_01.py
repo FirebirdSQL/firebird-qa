@@ -529,26 +529,26 @@ def test_1(act: Action, tmp_user: User):
         MSG point-090
         Statement failed, SQLSTATE 28000
         no permission for EXECUTE access to PROCEDURE P4
-        -Effective user is TMP_GTCS_NESTED_FUNC_USER
+        -Effective user is TMP_GTCS_NESTED_PROC_USER
         Statement failed, SQLSTATE 28000
         no permission for SELECT access to TABLE T1
-        -Effective user is TMP_GTCS_NESTED_FUNC_USER
+        -Effective user is TMP_GTCS_NESTED_PROC_USER
         Statement failed, SQLSTATE 28000
         no permission for SELECT access to TABLE T1
-        -Effective user is TMP_GTCS_NESTED_FUNC_USER
+        -Effective user is TMP_GTCS_NESTED_PROC_USER
         Statement failed, SQLSTATE 28000
         no permission for SELECT access to TABLE T1
-        -Effective user is TMP_GTCS_NESTED_FUNC_USER
+        -Effective user is TMP_GTCS_NESTED_PROC_USER
         MSG point-100
         Statement failed, SQLSTATE 28000
         no permission for SELECT access to TABLE T1
-        -Effective user is TMP_GTCS_NESTED_FUNC_USER
+        -Effective user is TMP_GTCS_NESTED_PROC_USER
         Statement failed, SQLSTATE 28000
         no permission for EXECUTE access to PROCEDURE P2
-        -Effective user is TMP_GTCS_NESTED_FUNC_USER
+        -Effective user is TMP_GTCS_NESTED_PROC_USER
         Statement failed, SQLSTATE 28000
         no permission for EXECUTE access to PROCEDURE P2
-        -Effective user is TMP_GTCS_NESTED_FUNC_USER
+        -Effective user is TMP_GTCS_NESTED_PROC_USER
         MSG point-110
         I 0
         O 0
