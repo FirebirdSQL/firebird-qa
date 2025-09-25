@@ -33,7 +33,7 @@ act = isql_act('db', substitutions = substitutions)
 
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=6.0')
 def test_1(act: Action, tmp_user: User):
 
     test_script = f"""
