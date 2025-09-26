@@ -24,7 +24,7 @@ NOTES:
     (e.g. blob_append for 5.x or any afggregate or windowed functions for 5.x and 6.x).
     Test duration: ~4...5 seconds.
 
-    Discussed with dimitr, letters 30.06.2025, 14.09.2025.
+    Discussed with dimitr, letters: 30.06.2025; 14.09.2025.
     Checked on 6.0.0.1275; 5.0.4.1713.
 """
 import datetime
