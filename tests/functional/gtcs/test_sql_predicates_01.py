@@ -2,7 +2,7 @@
 
 """
 ID:          n/a
-TITLE:       
+TITLE:       Support for NOT SINGULAR <subquery>
 DESCRIPTION:
   Original test see in:
       https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/C_SQL_PRED_1.script
