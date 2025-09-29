@@ -14,6 +14,12 @@ NOTES:
     Fixed on:
         https://github.com/FirebirdSQL/firebird/commit/169da595f8693fc1a65a79c741724b1bc8db9f25
 
+    [29.09.2025] pzotov
+    Number of listening port must be pre-checked before further actions in order to use default
+    value (3050). Otherwise "TypeError: int() ... must be ... not 'NoneType'" raises if QA plugin
+    works under standard configuration which has no explicitly specified port.
+    Thanks to Anton Zuev, Redbase.
+
     Confirmed bug on: 6.0.0.767; 5.0.3.1650; 4.0.6.3200; 3.0.13.33808
     Checked on: 6.0.0.770; 5.0.3.1651; 4.0.6.3203; 3.0.13.33809
 """
@@ -46,15 +52,19 @@ def test_1(act: Action, capsys):
     ]
 
     # Define the server address and port number
-    server_address = ('localhost', int(act.vars['port']))
+    if act.vars.get('port'):
+        fb_port = int(act.vars['port'])
+    else:
+        fb_port = 3050
+
+    server_address = ('localhost', fb_port)
 
     # Creating a TCP Client Socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
-        client_socket.settimeout(SOCKET_TIMEOUT)
-        client_socket.connect(server_address)
-
         # Loop to send outbound data and receive inbound data
         try:
+            client_socket.settimeout(SOCKET_TIMEOUT)
+            client_socket.connect(server_address)
             for i,data in enumerate(outbound_data):
                 # Send data
                 print(f"Item {i}. Trying to send.")
@@ -66,15 +76,15 @@ def test_1(act: Action, capsys):
                 received_data = client_socket.recv(BUFFER_SIZE)
                 #print("Received:", binascii.hexlify(received_data))
                 print(f"Item {i}. Received {len(received_data)} bytes")
-        except ConnectionResetError as x:
-            print("### ERROR-1 ###")
-            # [WinError 10054] An existing connection was forcibly closed by the remote hos
-            # DISABLED OUTPUT: localized message here! >>> print(x) 
-            print(f'{x.errno=}')
-            #print(f'{x.winerror=}')
-        except Exception as e:
-            print("### ERROR-2 ###")
-            print(e)
+        except ConnectionError as e:
+            # ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote hos
+            # ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+            print(f'{e.__class__=}')
+            print(f'{e.errno=}')
+            # DISABLED OUTPUT: localized message can be here! >>> print(e) 
+        except Exception as x:
+            print("### ERROR ###")
+            print(f'{x.__class__=}')
 
     act.expected_stdout = """
         Item 0. Trying to send.
