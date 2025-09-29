@@ -716,38 +716,116 @@ INSERT INTO SALES_PERF (EMPNO, FIRST_NAME, LAST_NAME, SALARY, TOTAL_SALES) VALUE
 
 commit;
 
+create unique index cust on customers (custno);
+create unique index dept on departments (deptno);
+create unique index empno_x1 on employees (empno);
+create index emp_dept on employees (deptno);
+create index emp_job on employees (job);
+create unique index ep_empno on employees_projects (empno, proj_no);
+create unique index job_x1 on jobs (job);
+create unique index proj_no on projects (proj_no);
+create unique index pyxis$index on pyxis$forms (pyxis$form_name);
+alter index pyxis$index inactive;
+create unique index qli$procedures_idx1 on qli$procedures (qli$procedure_name);
+create unique index sh_empno on salary_history (empno);
+create unique index po on sales (ponumb);
+create unique index sp_empno on sales_perf (empno);
+commit;
 
-/* View: VIEW_SI, Owner: BUILDER */
-CREATE VIEW VIEW_SI (ROWID, SOURCE, NSMALLINT01, NSMALLINT02, NSMALLINT03, NSMALLINT04, NSMALLINT05) AS
-SELECT ROWID,SOURCE,NSMALLINT01,NSMALLINT02,NSMALLINT03,NSMALLINT04,NSMALLINT05 FROM BIG;
+create view view_si (rowid, source, nsmallint01, nsmallint02, nsmallint03, nsmallint04, nsmallint05) as
+select rowid,source,nsmallint01,nsmallint02,nsmallint03,nsmallint04,nsmallint05 from big;
+------------------
+create view view_fl (rowid, source, nfloat01, nfloat02, nfloat03, nfloat04, nfloat05) as
+select rowid,source,nfloat01,nfloat02,nfloat03,nfloat04,nfloat05 from big;
+------------------
+create view view_lfl (rowid, source, nlfloat01, nlfloat02, nlfloat03, nlfloat04, nlfloat05) as
+select rowid,source,nlfloat01,nlfloat02,nlfloat03,nlfloat04,nlfloat05 from big;
+------------------
+create view view_in (rowid, source, ninteger01, ninteger02, ninteger03, ninteger04, ninteger05) as
+select rowid,source,ninteger01,ninteger02,ninteger03,ninteger04,ninteger05 from big;
+------------------
+create view view_dc (rowid, source, ndecimal01, ndecimal02, ndecimal03, ndecimal04, ndecimal05) as
+select rowid,source,ndecimal01,ndecimal02,ndecimal03,ndecimal04,ndecimal05 from big;
+------------------
+create view view_ch (rowid, cchar01, cchar02, cchar03, cchar04, cchar05) as
+select rowid,cchar01,cchar02,cchar03,cchar04,cchar05 from big;
+------------------
+create view view_vch (rowid, vchar01, vchar02, vchar03, vchar04, vchar05) as
+select rowid,vchar01,vchar02,vchar03,vchar04,vchar05 from big;
+------------------
+create view view_dt (rowid, ddate01, ddate02, ddate03, ddate04, ddate05) as
+select rowid, ddate01,ddate02,ddate03,ddate04,ddate05 from big;
+------------------
+create or alter view dept_budget as
+select
+    deptno,
+    department,
+    mgrno,
+    reports,
+    dept_level,
+    head_dept
+from departments d
+;
+------------------
+create or alter view empsal as
+select
+    e.empno,
+    e.name,
+    e.level,
+    j.job_title
+    --yearly,
+    --pay_period,
+    --weekly,
+    --hourly
+from employees e
+join jobs j on e.job = j.job
+;
+------------------
+create or alter view fullemp as
+select
+    empno,
+    name,
+    job_title,
+    department
+from departments d
+join employees e on d.deptno = e.deptno
+join jobs j on e.job = j.job
+;
+------------------
+create or alter view head_dept as
+select
+    deptno,
+    department,
+    mgrno,
+    dept_level,
+    head_dept
+from dept_budget d where d.deptno in('000',100,110,120,200,300,400)
+;
+------------------
+create or alter view management as
+select
+    empno,
+    last_name,
+    first_name,
+    salary,
+    job,
+    deptno,
+    level
+from employees e where e.level <= 4
+;
+------------------
+create or alter view sales_force as
+select
+    empno,
+    last_name,
+    first_name,
+    salary,
+    super
+from employees e where e.job = 'Sales'
+;
+------------------
+commit;
 
-/* View: VIEW_FL, Owner: BUILDER */
-CREATE VIEW VIEW_FL (ROWID, SOURCE, NFLOAT01, NFLOAT02, NFLOAT03, NFLOAT04, NFLOAT05) AS
-SELECT ROWID,SOURCE,NFLOAT01,NFLOAT02,NFLOAT03,NFLOAT04,NFLOAT05 FROM BIG;
-
-/* View: VIEW_LFL, Owner: BUILDER */
-CREATE VIEW VIEW_LFL (ROWID, SOURCE, NLFLOAT01, NLFLOAT02, NLFLOAT03, NLFLOAT04, NLFLOAT05) AS
-SELECT ROWID,SOURCE,NLFLOAT01,NLFLOAT02,NLFLOAT03,NLFLOAT04,NLFLOAT05 FROM BIG;
-
-/* View: VIEW_IN, Owner: BUILDER */
-CREATE VIEW VIEW_IN (ROWID, SOURCE, NINTEGER01, NINTEGER02, NINTEGER03, NINTEGER04, NINTEGER05) AS
-SELECT ROWID,SOURCE,NINTEGER01,NINTEGER02,NINTEGER03,NINTEGER04,NINTEGER05 FROM BIG;
-
-/* View: VIEW_DC, Owner: BUILDER */
-CREATE VIEW VIEW_DC (ROWID, SOURCE, NDECIMAL01, NDECIMAL02, NDECIMAL03, NDECIMAL04, NDECIMAL05) AS
-SELECT ROWID,SOURCE,NDECIMAL01,NDECIMAL02,NDECIMAL03,NDECIMAL04,NDECIMAL05 FROM BIG;
-
-/* View: VIEW_CH, Owner: BUILDER */
-CREATE VIEW VIEW_CH (ROWID, CCHAR01, CCHAR02, CCHAR03, CCHAR04, CCHAR05) AS
-SELECT ROWID,CCHAR01,CCHAR02,CCHAR03,CCHAR04,CCHAR05 FROM BIG;
-
-/* View: VIEW_VCH, Owner: BUILDER */
-CREATE VIEW VIEW_VCH (ROWID, VCHAR01, VCHAR02, VCHAR03, VCHAR04, VCHAR05) AS
-SELECT ROWID,VCHAR01,VCHAR02,VCHAR03,VCHAR04,VCHAR05 FROM BIG;
-
-/* View: VIEW_DT, Owner: BUILDER */
-CREATE VIEW VIEW_DT (ROWID, DDATE01, DDATE02, DDATE03, DDATE04, DDATE05) AS
-SELECT ROWID, DDATE01,DDATE02,DDATE03,DDATE04,DDATE05 FROM BIG;
 
 /* Domain constraints */
 ALTER DOMAIN CUSTOMER SET NOT NULL;
@@ -763,8 +841,7 @@ ALTER DOMAIN SEX ADD CHECK ( VALUE = 'F' or VALUE = 'M' or VALUE IS NULL);
 ALTER DOMAIN VENDOR SET NOT NULL;
 
 
-CREATE UNIQUE INDEX CUST ON CUSTOMERS (CUSTNO);
-SET TERM ^ ;
+SET TERM ^;
 CREATE OR ALTER TRIGGER STORE_CUSTOMER FOR CUSTOMERS
 ACTIVE BEFORE INSERT POSITION 0
 as begin
@@ -773,13 +850,6 @@ as begin
 --        abort 1;
 end;
 ^
-SET TERM ; ^
-
-
-
-CREATE UNIQUE INDEX DEPT ON DEPARTMENTS (DEPTNO);
-
-SET TERM ^ ;
 CREATE OR ALTER TRIGGER CASCADE_CHANGE FOR DEPARTMENTS
 ACTIVE AFTER UPDATE POSITION 0
 as begin
@@ -836,15 +906,7 @@ as begin
 --        abort 3;
 end;
 ^
-SET TERM ; ^
 
-
-
-CREATE UNIQUE INDEX EMPNO_X1 ON EMPLOYEES (EMPNO);
-CREATE INDEX EMP_DEPT ON EMPLOYEES (DEPTNO);
-CREATE INDEX EMP_JOB ON EMPLOYEES (JOB);
-
-SET TERM ^ ;
 CREATE OR ALTER TRIGGER ERASE_EMPLOYEES FOR EMPLOYEES
 ACTIVE AFTER DELETE POSITION 0
 as begin
@@ -994,16 +1056,7 @@ as begin
 --      end_for;
 end;
 ^
-SET TERM ; ^
 
-
-
-CREATE UNIQUE INDEX EP_EMPNO ON EMPLOYEES_PROJECTS (EMPNO, PROJ_NO);
-
-
-
-CREATE UNIQUE INDEX JOB_X1 ON JOBS (JOB);
-SET TERM ^ ;
 CREATE OR ALTER TRIGGER CASCADE_JOB FOR JOBS
 ACTIVE AFTER UPDATE POSITION 0
 as begin
@@ -1019,23 +1072,7 @@ as begin
 --            end;
 end;
 ^
-SET TERM ; ^
 
-
-CREATE UNIQUE INDEX PROJ_NO ON PROJECTS (PROJ_NO);
-
-
-CREATE UNIQUE INDEX PYXIS$INDEX ON PYXIS$FORMS (PYXIS$FORM_NAME);
-ALTER INDEX PYXIS$INDEX INACTIVE;
-
-
-
-CREATE UNIQUE INDEX QLI$PROCEDURES_IDX1 ON QLI$PROCEDURES (QLI$PROCEDURE_NAME);
-
-
-
-
-SET TERM ^ ;
 CREATE OR ALTER TRIGGER CHECK_REVIEW FOR REVIEW
 ACTIVE BEFORE INSERT POSITION 0
 as begin
@@ -1047,16 +1084,7 @@ as begin
 --        abort 13;
 end;
 ^
-SET TERM ; ^
 
-
-
-CREATE UNIQUE INDEX SH_EMPNO ON SALARY_HISTORY (EMPNO);
-
-
-
-
-SET TERM ^ ;
 CREATE OR ALTER TRIGGER ERASE_SAL_HIS FOR SALARY_HISTORY
 ACTIVE BEFORE DELETE POSITION 0
 as begin
@@ -1073,18 +1101,7 @@ as begin
 --         abort 1;
 end;
 ^
-SET TERM ; ^
 
-
-
-
-CREATE UNIQUE INDEX PO ON SALES (PONUMB);
-
-
-
-
-
-SET TERM ^ ;
 CREATE OR ALTER TRIGGER ADD_CUSTOMER FOR SALES
 ACTIVE BEFORE INSERT POSITION 1
 as begin
@@ -1128,15 +1145,7 @@ as begin
 --      end_for;
 end;
 ^
-SET TERM ; ^
 
-
-
-
-
-CREATE UNIQUE INDEX SP_EMPNO ON SALES_PERF (EMPNO);
-
-SET TERM ^ ;
 CREATE OR ALTER TRIGGER RAISE_SALARY FOR SALES_PERF
 ACTIVE AFTER UPDATE POSITION 1
 as begin
@@ -1151,7 +1160,8 @@ as begin
 --    end;
 end;
 ^
-SET TERM ; ^
+SET TERM ;^
+commit;
 
 GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES ON BIG TO PUBLIC;
 GRANT DELETE, INSERT, SELECT, UPDATE, REFERENCES ON CUSTOMERS TO PUBLIC;
