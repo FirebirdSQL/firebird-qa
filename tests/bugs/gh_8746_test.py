@@ -18,7 +18,7 @@ NOTES:
     returns for transaction with TIL = READ_COMMITTED_READ_CONSISTENCY value 'SNAPSHOT'
     rather than 'READ COMMITTED'.
 
-    Checked on 6.0.0.1282.
+    Checked on 6.0.0.1282, 5.0.4.1717.
 """
 import pytest
 from firebird.qa import *
@@ -27,7 +27,7 @@ from firebird.driver import tpb, Isolation, DatabaseError
 db = db_factory()
 act = python_act('db', substitutions = [('[ \t]+', ' ')])
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.4')
 def test_1(act: Action, capsys):
 
     test_sql = """
