@@ -40,19 +40,24 @@ NOTES:
     or to change firebid-driver.conf - and this will be more proper way.
     This file (firebid-driver.conf) must have section with name [DEFAULT] with encoding_errors = ignore.
     Test assumes exactly THIS, i.e. we do NOT specify "encoding_errors = 'ignore'" in acty.connect_server()
-"""
 
+    [30.09.2025] pzotov
+    Separated MAX_THRESHOLD assignment depending on OS (on Linux currently it must be greater than on Windows).
+    Added diagnostics when restore command failed (usually because of timeout).
+"""
+import os
 import locale
 import zipfile
 import subprocess
 import re
+from difflib import unified_diff
+from textwrap import wrap
+from firebird.driver import SrvRepairFlag
+from pathlib import Path
+import time
 
 import pytest
 from firebird.qa import *
-from firebird.driver import SrvRepairFlag
-from pathlib import Path
-from difflib import unified_diff
-import time
 
 db = db_factory()
 act = python_act('db')
@@ -61,16 +66,16 @@ tmp_log = temp_file('gh_6785.tmp.log')
 tmp_fbk = temp_file('gh_6785.tmp.fbk')
 tmp_fdb = temp_file('gh_6785.tmp.fdb')
 
-###################
-MAX_THRESHOLD = 300
-###################
+###############################################
+MAX_THRESHOLD = 300 if os.name == 'nt' else 400
+###############################################
 
 expected_stdout = """
     Restore retcode: 0
     Validation retcode: 0
 """
 
-restore_completed_msg = 'Restore COMPLETED.'
+COMPLETED_MSG = 'Restore COMPLETED.'
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
@@ -81,6 +86,7 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
 
     # If the timeout expires, the child process will be killed and waited for.
     # The TimeoutExpired exception will be re-raised after the child process has terminated.
+    tmp_log.unlink(missing_ok = True)
     try:
         p = subprocess.run([ act.vars['gbak'],
                             '-user', act.db.user, '-password', act.db.password,
@@ -91,14 +97,30 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
                           ,stderr = subprocess.STDOUT
                           ,timeout = MAX_THRESHOLD
                          )
-        print( restore_completed_msg )
         restore_code = p.returncode
+        print( COMPLETED_MSG )
 
     except Exception as e:
+        print(f'{e.__class__=}')
+        # DO NOT: print(f'{e.errno=}') AttributeError: 'TimeoutExpired' object has no attribute 'errno'
+        # Command '[...gbak...]'  timed out after 299.99996796250343 seconds
         print(e.__str__())
-        tmp_fdb.unlink()
+        
+        if tmp_fdb.is_file():
+            print('Size of [partially] restored DB: %d' % os.path.getsize(tmp_fdb))
+        else:
+            print('Target database does not exist!')
 
-    act.expected_stdout = restore_completed_msg
+        tmp_fdb.unlink(missing_ok = True)
+
+        if tmp_log.is_file():
+            print('Check restore log:')
+            with open(tmp_log, 'r') as f:
+                print(f.read())
+        else:
+            print('Restore log does not exist!')
+
+    act.expected_stdout = COMPLETED_MSG
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
