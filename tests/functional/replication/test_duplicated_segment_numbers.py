@@ -17,7 +17,7 @@ NOTES:
     1. In case of any errors (somewhat_failed <> 0) test will re-create db_main and db_repl, and then perform all needed
        actions to resume replication (set 'replica' flag on db_repl, enabling publishing in db_main, remove all files
        from subdirectories <repl_journal> and <repl_archive> which must present in the same folder as <db_main>).
-    2. CRUSIAL NOTE. File replication.conf must NOT contain 'journal_archive_command = ...' parameter!
+    2. CRUCIAL NOTE. File replication.conf must NOT contain 'journal_archive_command = ...' parameter!
        Engine must iself copy segments to $(archivepathname). Otherwise problem can not be reproduced.
     3. NO DELAY must be between closing connection marked here as 'att_2' and inserting record by connection 'att_1'.
     4. Related commits:
