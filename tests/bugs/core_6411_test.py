@@ -37,6 +37,10 @@ NOTES:
     ::: NB ::: test duration time is ~6 minutes.
     Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
     Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214.
+
+    [06.10.2025] pzotov
+    Disabled execution on 6.x: since #7332 this test not actual because rowsize can achieve 1Mb (i.e. 16x larger than in previous versions).
+    Besides, execution time will be unacceptable.
 """
 
 import pytest
@@ -51,18 +55,21 @@ act = python_act('db', substitutions=[('.*(-)?After line \\d+.*', ''), ('[ \t]+'
 
 isql_script = temp_file('test-script-6411.sql')
 
-@pytest.mark.version('>=3.0.7')
+@pytest.mark.version('>=3.0.7,<6')
 def test_1(act: Action, isql_script: Path, capsys):
+    
+    FLD_COUNT_THRESHOLD = 8064 if act.is_version('<6') else 50000 # ?
+
     for step in range(0,2):
-        FLD_COUNT = 8064 + step
+        fields_count = FLD_COUNT_THRESHOLD + step
         ddl_init = 'recreate table tdata (id bigint primary key'
-        ddl_addi = '\n'.join([f',f{i} bigint' for i in range(1,FLD_COUNT)])
+        ddl_addi = '\n'.join([f',f{i} bigint' for i in range(1,fields_count)])
         ddl_expr = ''.join([ddl_init, ddl_addi, ')'])
         upd_init = 'update or insert into tdata values(1'
-        upd_addi = '\n'.join( [f',{i}' for i in range(1,FLD_COUNT)])
+        upd_addi = '\n'.join( [f',{i}' for i in range(1,fields_count)])
         upd_expr = ''.join([upd_init, upd_addi, ') matching(id)'])
         sel_init = 'select '
-        sel_addi = '+'.join([str(i) for i in range(0,FLD_COUNT)])
+        sel_addi = '+'.join([str(i) for i in range(0,fields_count)])
         sel_expr = ''.join([sel_init, sel_addi, ' as fields_total from tdata'])
         sql_expr=  f"""
             set bail on ;
@@ -81,18 +88,18 @@ def test_1(act: Action, isql_script: Path, capsys):
 
         for line in act.clean_stdout.splitlines():
             if line.strip():
-                print(f'step: {step}, FLD_COUNT: {FLD_COUNT}, result: {line}')
+                print(f'step: {step}, fields_count: {fields_count}, result: {line}')
 
     act.reset()
 
     SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else  '"PUBLIC".'
     TABLE_NAME = 'TDATA' if act.is_version('<6') else  '"TDATA"'
     expected_stdout = f"""
-        step: 0, FLD_COUNT: 8064, result: FIELDS_TOTAL 32510016
-        step: 1, FLD_COUNT: 8065, result: Statement failed, SQLSTATE = 54000
-        step: 1, FLD_COUNT: 8065, result: unsuccessful metadata update
-        step: 1, FLD_COUNT: 8065, result: -new record size of 65536 bytes is too big
-        step: 1, FLD_COUNT: 8065, result: -TABLE {SQL_SCHEMA_PREFIX}{TABLE_NAME}
+        step: 0, fields_count: {FLD_COUNT_THRESHOLD}, result: FIELDS_TOTAL 32510016
+        step: 1, fields_count: {FLD_COUNT_THRESHOLD+1}, result: Statement failed, SQLSTATE = 54000
+        step: 1, fields_count: {FLD_COUNT_THRESHOLD+1}, result: unsuccessful metadata update
+        step: 1, fields_count: {FLD_COUNT_THRESHOLD+1}, result: -new record size of 65536 bytes is too big
+        step: 1, fields_count: {FLD_COUNT_THRESHOLD+1}, result: -TABLE {SQL_SCHEMA_PREFIX}{TABLE_NAME}
     """
 
     act.expected_stdout = expected_stdout
