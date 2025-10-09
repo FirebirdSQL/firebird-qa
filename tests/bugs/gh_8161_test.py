@@ -25,6 +25,11 @@ NOTES:
         Separated test scripts and expected output for check on versions prior/since 6.x.
         On 6.x we have to take in account indexed fields containing SCHEMA names, see below their DDL in the code.
         Thanks to dimitr for suggestion.
+    [09.10.2025] pzotov
+        Adjusted expected_out: explained plan for FB 6.x became identical to FB 5.x and earlier after
+        3e3b75f9 ("Re-add indexes for object name without schema name, removing their uniqueness (#8664)")
+        ::: NB ::: Pre-created .fbk and a query to RDB tables must be used in this test (provided in the ticket).
+        Otherwise problem not reproduced.
 
     Checked on 6.0.0.1061; 5.0.3.1686; 4.0.6.3223; 3.0.13.33818.
 """
@@ -171,7 +176,7 @@ def test_1(act: Action, tmp_fbk: Path, capsys):
         ....-> Filter
         ........-> Table "SYSTEM"."RDB$RELATION_FIELDS" as "X" Access By ID
         ............-> Bitmap
-        ................-> Index "SYSTEM"."RDB$INDEX_nn" Range Scan (partial match: 1/2)
+        ................-> Index "SYSTEM"."RDB$INDEX_nn" Range Scan (full match)
     """
     
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
