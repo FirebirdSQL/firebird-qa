@@ -60,8 +60,14 @@ NOTES:
     Checked on Windows: 3.0.8.33535 (SS/CS), 4.0.1.2692 (SS/CS), 5.0.0.730
 
     [26.02.2025] pzotov
-    Increased valueTHRESHOLD_FOR_MAKE_CONNECT_MS for servermode = 'Super': on poor hardware
+    Increased value THRESHOLD_FOR_MAKE_CONNECT_MS for servermode = 'Super': on poor hardware
     previous value was not enough. Problem appeared on 6.0.0.655, Windows 10, build 19045.3086.
+
+    [10.10.2025] pzotov
+    Increased SKIP_BACK_FROM_LAST_PAGE from 15 to 50: test stopped passing on FB 6.x after
+    3e3b75 ("Re-add indexes for object name without schema name...") with issuing
+    "UNEXPECTED: can connect to DB with missed last ... pages".
+    Checked on 6.0.0.1300 5.0.4.1711 4.0.7.3236 3.0.14.33826.
 """
 
 import os
@@ -76,8 +82,7 @@ from pathlib import Path
 import pytest
 from firebird.qa import *
 
-
-SKIP_BACK_FROM_LAST_PAGE = 15
+SKIP_BACK_FROM_LAST_PAGE = 50
 NUM_OF_CUTED_LAST_PAGES = 20
 
 db = db_factory()
