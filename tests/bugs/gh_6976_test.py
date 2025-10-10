@@ -171,9 +171,9 @@ def test_1(act_source: Action, act_broken: Action, capsys):
         if ms >= 0:
             connect_establishing_ms.append( ms )
 
+    msg_prefix = 'Median duration of receiving an error by the client: '
     if len(connect_establishing_ms) > 0:
         median_connect_ms = median(connect_establishing_ms)
-        msg_prefix = 'Median duration of receiving an error by the client: '
         if median_connect_ms <= THRESHOLD_FOR_MAKE_CONNECT_MS:
             print(msg_prefix + 'acceptable.')
         else:
