@@ -9,6 +9,10 @@ NOTES:
     Presense of several VIEWS that depend on table <T> caused weird output of command 'show depend <T>'.
     Confirmed bug (weird output) on 6.0.0.1050-cee7854.
     Checked on 6.0.0.1052-c6658eb; 5.0.3.1684; 4.0.6.3222; 3.0.13.33818
+
+    [09.10.2025] pzotov
+    Adjusted output for 6.x after 3e3b75 ("Re-add indexes for object name without schema name...")
+    Checked on 6.0.0.1299
 """
 
 import pytest
@@ -35,7 +39,7 @@ expected_stdout_5x = """
 """
 
 expected_stdout_6x = """
-    PUBLIC.V_TEST1:View, PUBLIC.V_TEST1:View->ID, PUBLIC.V_TEST2:View, PUBLIC.V_TEST2:View->ID, PUBLIC.V_TEST3:View, PUBLIC.V_TEST3:View->ID, PUBLIC.V_TEST4:View, PUBLIC.V_TEST4:View->ID, PUBLIC.V_TEST5:View, PUBLIC.V_TEST5:View->ID
+    PUBLIC.V_TEST1:View, PUBLIC.V_TEST2:View, PUBLIC.V_TEST3:View, PUBLIC.V_TEST4:View, PUBLIC.V_TEST5:View, PUBLIC.V_TEST1:View->ID, PUBLIC.V_TEST2:View->ID, PUBLIC.V_TEST3:View->ID, PUBLIC.V_TEST4:View->ID, PUBLIC.V_TEST5:View->ID
     [PUBLIC.TEST:Table]
 """
 
