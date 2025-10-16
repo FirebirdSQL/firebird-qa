@@ -5,11 +5,29 @@ ID:          issue-6729
 ISSUE:       6729
 TITLE:       Regression: gstat with switch -t executed via services fails with "found unknown switch" error
 DESCRIPTION:
-  Test creates several tables and request statistics for one of them usin Services API.
-  Output must contain for one and only one (selected) table - TEST_01 (and its index).
-  All lines from output which do not include this name are ignored (see 'subst' section).
+    Test creates several tables and request statistics for one of them usin Services API.
+    Output must contain for one and only one (selected) table - TEST_01 (and its index).
+    All lines from output which do not include this name are ignored (see 'subst' section).
 JIRA:        CORE-6499
 FBTEST:      bugs.core_6499
+NOTES:
+    [16.10.2025] pzotov
+    Fixed in:
+        4.x ('master' at that time): 10-mar-2021,
+            https://github.com/FirebirdSQL/firebird/commit/6d8be2caee3c99101638bc90e5c0a13b3221dea2
+        3.x (backported): 10-mar-2021,
+            https://github.com/FirebirdSQL/firebird/commit/f0c193def839069459d5b12ba3dcaf65deec36a1
+
+    Probably, the bug could be reproduced in some old (initial) version of firebird-driver when it
+    did not use isc_spb_sts_table tag during creation of SPB, as noted by Alex:
+    https://github.com/FirebirdSQL/firebird/issues/6729#issuecomment-826248689
+    
+    Bug can NOT be reproduced using current version of firebird-driver (2.0.2), checked on:
+        4.0.0.2382 Release Candidate 1 // 21-feb-2021
+        4.0.0.2382 Release Candidate 1 // 04-mar-2021
+        3.0.7.33388 // 07-nov-2020
+        3.0.8.33423 // 04-mar-2021
+    Because of that, i've decided to DISABLE this test at all.
 """
 
 import pytest
@@ -40,12 +58,17 @@ expected_stdout = """
     Index TEST_01_ID (0)
 """
 
-@pytest.mark.version('>=3.0.8')
+@pytest.mark.skip('NOT REPRODUCIBLE, SEE NOTES.')
+@pytest.mark.version('>=3.0.7')
 def test_1(act: Action, capsys):
     with act.connect_server() as srv:
-        srv.database.get_statistics(database=act.db.db_path, tables=['TEST_01'],
-                                    flags=SrvStatFlag.DATA_PAGES | SrvStatFlag.IDX_PAGES,
-                                    callback=act.print_callback)
+        srv.database.get_statistics(
+            database=act.db.db_path
+           ,tables=['TEST_01']
+           ,flags=SrvStatFlag.DATA_PAGES | SrvStatFlag.IDX_PAGES
+           ,callback=act.print_callback
+        )
+        # print( '\n'.join([x.strip() for x in srv.readlines()]) )
     act.expected_stdout = expected_stdout
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
