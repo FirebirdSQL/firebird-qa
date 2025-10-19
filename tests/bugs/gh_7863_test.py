@@ -12,7 +12,6 @@ NOTES:
         Otherwise access violation raises during Python GC and pytest hangs at final point (does not return control to OS).
         This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
         The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
-        Confirmed bug on 6.0.0.222
     [25.07.2025] pzotov
         Separated test DB-init scripts for check on versions prior/since 6.x.
         On 6.x we have to take in account indexed fields containing SCHEMA names, see below DDL for rdb$fields.
@@ -24,8 +23,11 @@ NOTES:
         indices (see below). See letter from dimitr: 08-oct-2025 08:50:
             "... the newly added system indices are a temporary solution and may disappear in future versions.
             Maybe some of the failing tests should be re-implemented to be based on user tables instead of the system ones."
-
-    Checked on 6.0.0.1300; 5.0.4.1711
+    Fixed in:
+        * 6.x: https://github.com/FirebirdSQL/firebird/commit/fd135f41e8185e4b3286a954c800dadbe7298df5
+        * 5.x: https://github.com/FirebirdSQL/firebird/commit/5affd44b1596f2ae553197954d2be044df558206
+    Confirmed bug on 6.0.0.222 (built 23-jan-2024). Checked on 6.0.0.223 (24-jan-2024) -- all fine.
+    Checked on 6.0.0.1312; 5.0.4.1725.
 """
 
 from pathlib import Path
