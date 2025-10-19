@@ -869,7 +869,6 @@ def test_1(act: Action, capsys):
     
     act.expected_stdout = expected_stdout
     act.isql(switches=['-q', act.db.db_path, '-user', act.db.user], input = check_sql, credentials = False, connect_db = False, combine_output = True, io_enc = locale.getpreferredencoding())
-    #time.sleep(10000)
 
     # temply, use 4debug when DB is not self-sec:
     #act.isql(input = check_sql, combine_output = True, io_enc = locale.getpreferredencoding())
