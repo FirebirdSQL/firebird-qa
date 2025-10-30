@@ -1,47 +1,49 @@
 #coding:utf-8
 
 """
-ID:          replication.test_grantor_not_changes_in_replica_if_owner_not_sysdba
-ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8058
-TITLE:       DDL-Changes in replication does not set the correct grantor
+ID:          replication.test_journal_file_truncated_on_concurrent_cs_load.py
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8766
+TITLE:       File truncation errors may happen during replication in Windows CS
 DESCRIPTION:
-    Test creates user with admin rights (see 'db_main_owner') and calls 'reset_replication' function in order
-    to re-create db_main database with new OWNER  = <db_main_owner>, i.e. it must differ from SYSDBA.
-    Then it does actions described in the ticket.
-    Final REVOKE command being issued against db_main must apply also in db_repl, w/o error.
-    Test verifies that by checking result of query:
-        select 1 as db_repl_privilege_unexp_remains from rdb$database
-        where exists (
-            select 1 from rdb$user_privileges p where p.rdb$relation_name = upper('test') and p.rdb$privilege = upper('D')
-        );
-    Outcome of this query on REPLICA database must become empty for no more than MAX_TIME_FOR_WAIT_DATA_IN_REPLICA seconds.
-    Otherwise test is considered as failed. 
+    Fix:
+    https://github.com/FirebirdSQL/firebird/commit/559b5f6c474056d6be320ad2d86fb5de473bb3a1
 
+    Test cretes two connections (as described in the ticket).
+    Second connection (in chronological order) creates table and inserts one record in it, then commits and quits.
+    After this, first connection adds record to existing table (created by second connection), commits and quits.
+    Then we wait until replica DB will have the same data as master for <MAX_TIME_FOR_WAIT_DATA_IN_REPLICA> seconds.
+    If replace become equal to master then we check replication log for presense of 'WARNING:' or 'ERROR:' messages
+    (they must NOT appear there -- see 'out_post' variable).
+    Otherwise we show content of new lines in replication log that did appear (they should contain WARNING/ERROR).
 NOTES:
-    [15.12.2024] pzotov
-    Before fix, following messages did appear in replication log:
-        ERROR: unsuccessful metadata update
-        REVOKE failed
-        <db_main_owner> is not grantor of DELETE on TEST to <db_main_owner>.
+    [03.10.2025] pzotov
+    1. In case of any errors (somewhat_failed <> 0) test will re-create db_main and db_repl, and then perform all needed
+       actions to resume replication (set 'replica' flag on db_repl, enabling publishing in db_main, remove all files
+       from subdirectories <repl_journal> and <repl_archive> which must present in the same folder as <db_main>).
+    2. CRUCIAL NOTE. File replication.conf *MUST* contain 'journal_archive_command = ...' parameter!
+       Engine must NOT iself copy segments to $(archivepathname). Otherwise problem can not be reproduced.
 
-    We have to restore owner = SYSDBA for db_main, so we call 'reset_replication' function second time at final point.
-    Test execution time is about 7...8 seconds (for snapshots that have fix).
+    4. Related commits:
+        4.x: https://github.com/FirebirdSQL/firebird/commit/754ec3ea915b09a112cdc6c85bc2ce051cdc6818
+        5.x: https://github.com/FirebirdSQL/firebird/commit/1e8e75fbfd0ea6af174946423504733619c98d37
+        6.x: https://github.com/FirebirdSQL/firebird/commit/d8102f7d7f8c97b58046d216aa944993e6d16ff9
+    5. Test duration: ~7-8 seconds - if it passes. Otherwise duration is defined by MAX_TIME_* settings (see in the code).
 
-    Confirmed bug on 6.0.0.299, 5.0.1.1371, 4.0.5.3082
-    Checked on 6.0.0.552, 5.0.2.1569, 4.0.6.3170.
+    Confirmed bug on 6.0.0.1286-33a721b; 5.0.4.1715-4aac556; 4.0.7.3235-754ec3e
+    Checked on 6.0.0.1292-83c4c5f; 5.0.4.1717-42cf2d1; 4.0.7.3236-9eefa79
 """
 import os
 import shutil
 import re
-import locale
 from difflib import unified_diff
 from pathlib import Path
-import datetime
+import traceback
 import time
+import datetime as py_dt
 
 import pytest
 from firebird.qa import *
-from firebird.driver import * 
+from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, ShutdownMode, ShutdownMethod, DatabaseError
 
 # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
 # from act.files_dir/'test_config.ini':
@@ -50,21 +52,19 @@ repl_settings = QA_GLOBALS['replication']
 MAX_TIME_FOR_WAIT_SEGMENT_IN_LOG = int(repl_settings['max_time_for_wait_segment_in_log'])
 MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
 
-MAIN_DB_ALIAS = repl_settings['main_db_alias']
-REPL_DB_ALIAS = repl_settings['repl_db_alias']
-RUN_SWEEP_AT_END = int(repl_settings['run_sweep_at_end'])
-
+MAIN_DB_ALIAS = repl_settings['MAIN_DB_8766_ALIAS']
+REPL_DB_ALIAS = repl_settings['REPL_DB_8766_ALIAS']
+RUN_SWEEP_AT_END = int(repl_settings['RUN_SWEEP_AT_END'])
 
 db_main = db_factory( filename = '#' + MAIN_DB_ALIAS, do_not_create = True, do_not_drop = True)
 db_repl = db_factory( filename = '#' + REPL_DB_ALIAS, do_not_create = True, do_not_drop = True)
 
-db_main_owner = user_factory('db_main', name = 'tmp_gh_8058', password = '456', admin = True)
-
-substitutions = [('Start removing objects in:.*', 'Start removing objects'),
-                 ('Finish. Total objects removed:  [1-9]\\d*', 'Finish. Total objects removed'),
-                 ('.* CREATE DATABASE .*', ''),
-                 ('[\t ]+', ' '),
-                 ('FOUND message about replicated segment N .*', 'FOUND message about replicated segment')]
+substitutions = [
+                    ('Start removing objects in:.*', 'Start removing objects'),
+                    ('Finish. Total objects removed:  [1-9]\\d*', 'Finish. Total objects removed'),
+                    ('.* CREATE DATABASE .*', ''),
+                    ('[\t ]+', ' '),
+                ]
 
 act_db_main = python_act('db_main', substitutions=substitutions)
 act_db_repl = python_act('db_repl', substitutions=substitutions)
@@ -80,10 +80,11 @@ def cleanup_folder(p):
     for root, dirs, files in os.walk(p):
         for f in files:
             # ::: NB ::: 22.12.2023.
-            # We have to expect that attempt to delete of GUID and (maybe) archived segments can FAIL with
-            # PermissionError: [WinError 32] The process cannot ... used by another process: /path/to/{GUID}
-            # Also, we have to skip exception if file (segment) was just deleted by engine
+            # We have to expect that attempt to deletion of GUID and maybe some other files can FAIL with
+            # PermissionError: [WinError 32] The process cannot access the file because it is being used by another process:
+            # '<path/to/{GUID}'
             try:
+                #os.unlink(os.path.join(root, f))
                 Path(root +'/' + f).unlink(missing_ok = True)
             except PermissionError as x:
                 pass
@@ -95,10 +96,7 @@ def cleanup_folder(p):
 
 #--------------------------------------------
 
-# ::: NB :::
-# THIS FUNCTION HAS ADDITIONAL INPUT PARAMETER: 'db_main_owner' 
-#
-def reset_replication(act_db_main: Action, act_db_repl: Action, db_main_file, db_repl_file, db_main_owner: User = None):
+def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
     out_reset = ''
     failed_shutdown_db_map = {} # K = 'db_main', 'db_repl'; V = error that occurred when we attempted to change DB state to full shutdown (if it occurred)
 
@@ -133,6 +131,7 @@ def reset_replication(act_db_main: Action, act_db_repl: Action, db_main_file, db
         # Rather, this must be displayed as diff and test must be considered as just failed.
         for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
             remained_files = cleanup_folder(p)
+
             if remained_files:
                 out_reset += '\n'.join( (f"Directory '{str(p)}' remains non-empty. Could not delete file(s):", '\n'.join(remained_files)) )
 
@@ -149,10 +148,7 @@ def reset_replication(act_db_main: Action, act_db_repl: Action, db_main_file, db
             out_reset += '\n'.join( failed_shutdown_msg )
         else:
             try:
-                if db_main_owner and a == act_db_main:
-                    dbx = create_database( str(d), user = db_main_owner.name, password = db_main_owner.password )
-                else:
-                    dbx = create_database( str(d), user = a.db.user, password = a.db.password )
+                dbx = create_database(str(d), user = a.db.user)
                 dbx.close()
                 with a.connect_server() as srv:
                     srv.database.set_write_mode(database = d, mode = DbWriteMode.ASYNC)
@@ -161,7 +157,7 @@ def reset_replication(act_db_main: Action, act_db_repl: Action, db_main_file, db
                         srv.database.set_replica_mode(database = d, mode = ReplicaMode.READ_ONLY)
                     else:
                         with a.db.connect() as con:
-                            con.execute_immediate(f'alter database enable publication')
+                            con.execute_immediate('alter database enable publication')
                             con.execute_immediate('alter database include all to publication')
                             con.commit()
             except DatabaseError as e:
@@ -173,56 +169,9 @@ def reset_replication(act_db_main: Action, act_db_repl: Action, db_main_file, db
 
 #--------------------------------------------
 
-def watch_repl_log_pattern( act_db_main: Action, pattern_to_check, replold_lines, max_allowed_time_for_wait, consider_found_as_unexpected = False):
-
-    replication_log = act_db_main.home_dir / 'replication.log'
-
-    result = ''
-    found_required_message = False
-    found_required_line = ''
-    t0 = time.time()
-    for i in range(0,max_allowed_time_for_wait):
-
-        time.sleep(1)
-
-        with open(replication_log, 'r') as f:
-            diff_data = unified_diff(
-                replold_lines,
-                f.readlines()
-              )
-
-        for k,d in enumerate(diff_data):
-            if pattern_to_check.search(d):
-                found_required_message = True
-                break
-
-        if found_required_message:
-            break
-    t1 = time.time()
-    if not consider_found_as_unexpected and not found_required_message or consider_found_as_unexpected and found_required_message:
-        # ACHTUNG! This looks weird but we have to either re-read replication log now or wait at least <JOURNAL_ARCHIVE_TIMEOUT> seconds
-        # if we want to see FULL (actual) content of this log! Otherwise last part of log will be missed. I have no explanations for that :(
-        repllog_diff = ''
-        with open(replication_log, 'r') as f:
-            diff_data = unified_diff(
-                replold_lines,
-                f.readlines()
-              )
-            repllog_diff = '\n'.join( ( ('%4d ' %i) + r.rstrip() for i,r in enumerate(diff_data) ) )
-
-        if consider_found_as_unexpected:
-            unexp_msg = f"UNEXPECTED outcome: pattern '{pattern_to_check.pattern}' must not occur in log but was ENCOUNTERED there for {int(t1-t0)} seconds."
-        else:
-            unexp_msg = f"MISSED outcome: pattern '{pattern_to_check.pattern}' was NOT FOUND for {int(t1-t0)} seconds."
-
-        result = '\n'.join( (unexp_msg, 'replication log diff:', repllog_diff) )
-
-    return result
-
-#--------------------------------------------
-
 def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', isql_check_script = '', replica_expected_out = ''):
 
+    result = ''
     retcode = 1;
     ready_to_check = False
     if ddl_ready_query:
@@ -240,49 +189,49 @@ def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', i
     else:
         ready_to_check = True
 
+    msg = f'UNEXPECTED. Check query did not return any rows for {max_allowed_time_for_wait} seconds.'
+
     if not ready_to_check:
-        print( f'UNEXPECTED. Query to verify DDL completion did not return any rows for {max_allowed_time_for_wait} seconds.' )
-        print('Query:')
-        print(ddl_ready_query)
-
-        return
-    
-    final_check_pass = False
-    if isql_check_script:
-        retcode = 0
-        for i in range(max_allowed_time_for_wait):
-            a.reset()
-            a.expected_stdout = replica_expected_out
-            a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = True)
-
-            if a.return_code:
-                # "Token unknown", "Name longer than database column size" etc: we have to
-                # immediately break from this loop because isql_check_script is incorrect!
-                break
-            
-            if a.clean_stdout == a.clean_expected_stdout:
-                final_check_pass = True
-                break
-            if i < max_allowed_time_for_wait-1:
-                time.sleep(1)
-
-        if not final_check_pass:
-            print(f'UNEXPECTED. Final check query did not return expected dataset for {max_allowed_time_for_wait} seconds.')
-            print('Final check query:')
-            print(isql_check_script)
-            print('Expected output:')
-            print(a.clean_expected_stdout)
-            print('Actual output:')
-            print(a.clean_stdout)
-            print(f'ISQL return_code={a.return_code}')
-            print(f'Waited for {i} seconds')
-
-        a.reset()
-
+        result = '\n'.join((msg, 'ddl_ready_query:', ddl_ready_query))
     else:
-        final_check_pass = True
+        final_check_pass = False
+        if isql_check_script:
+            retcode = 0
+            for i in range(max_allowed_time_for_wait):
+                a.reset()
+                a.expected_stdout = replica_expected_out
+                a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = True)
 
-    return
+                if a.return_code:
+                    # "Token unknown", "Name longer than database column size" etc: we have to
+                    # immediately break from this loop because isql_check_script is incorrect!
+                    break
+                
+                if a.clean_stdout == a.clean_expected_stdout:
+                    final_check_pass = True
+                    break
+                if i < max_allowed_time_for_wait-1:
+                    time.sleep(1)
+
+            if not final_check_pass:
+                
+                result = '\n'.join( 
+                                    (  msg
+                                      ,'Final check query:'
+                                      ,isql_check_script
+                                      ,'Expected output:'
+                                      ,a.clean_expected_stdout
+                                      ,'Actual output:'
+                                      ,a.clean_stdout
+                                      ,f'ISQL return_code={a.return_code}'
+                                      ,f'Waited for {i} seconds'
+                                    )
+                                  )
+            a.reset()
+        else:
+            final_check_pass = True
+
+    return result # empty string --> OK
 
 #--------------------------------------------
 
@@ -292,6 +241,7 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
     # remove all DB objects (tables, views, ...):
     #
     db_main_meta, db_repl_meta = '', ''
+    result = ''
     for a in (act_db_main,act_db_repl):
         if a == act_db_main:
             sql_clean = (a.files_dir / 'drop-all-db-objects.sql').read_text()
@@ -304,7 +254,8 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
             if a.clean_stdout == a.clean_expected_stdout:
                 a.reset()
             else:
-                print(a.clean_expected_stdout)
+                result = a.clean_stdout
+                # print(a.clean_stdout)
                 a.reset()
                 break
 
@@ -346,15 +297,12 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
                 )
             """
 
-
             ##############################################################################
             ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
             ##############################################################################
-            watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
+            result = watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
 
             # Must be EMPTY:
-            print(capsys.readouterr().out)
-
             db_main_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
         else:
             db_repl_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
@@ -369,59 +317,104 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
             #
             a.gfix(switches=['-sweep', a.db.dsn])
 
-    # Final point: metadata must become equal:
-    #
-    diff_meta = ''.join(unified_diff( \
-                         [x for x in db_main_meta.splitlines() if 'CREATE DATABASE' not in x],
-                         [x for x in db_repl_meta.splitlines() if 'CREATE DATABASE' not in x])
-                       )
-    # Must be EMPTY:
-    print(diff_meta)
-
-#--------------------------------------------
-
-def get_repl_log(act_db_main: Action):
-    replication_log = act_db_main.home_dir / 'replication.log'
-    rlog_lines = []
-    with open(replication_log, 'r') as f:
-        rlog_lines = f.readlines()
-
-    return rlog_lines
+    if result == '':
+        # Final point: metadata must become equal:
+        #
+        diff_meta = ''.join(unified_diff( \
+                             [x for x in db_main_meta.splitlines() if 'CREATE DATABASE' not in x],
+                             [x for x in db_repl_meta.splitlines() if 'CREATE DATABASE' not in x])
+                           )
+        # Must be EMPTY:
+        return diff_meta
+    else:
+        return result
 
 #--------------------------------------------
 
 @pytest.mark.replication
-@pytest.mark.version('>=4.0.5')
-def test_1(act_db_main: Action,  act_db_repl: Action, db_main_owner: User, capsys):
+@pytest.mark.platform('Windows')
+@pytest.mark.version('>=4.0.7')
+def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
+
+    if act_db_main.vars['server-arch'] == 'SuperServer':
+        pytest.skip("n/a for SuperServer")
 
     # Map for storing mnemonas and details for every FAILED step:
     run_errors_map = {}
+
+    db_info = {}
+    out_main = out_post = out_drop = out_reset = ''
 
     # Obtain full path + filename for DB_MAIN and DB_REPL aliases.
     # NOTE: we must NOT use 'a.db.db_path' for ALIASED databases!
     # It will return '.' rather than full path+filename.
     # Use only con.info.name for that!
     #
-    db_info = {}
     for a in (act_db_main, act_db_repl):
-        with a.db.connect() as con:
+        with a.db.connect(no_db_triggers = True) as con:
             db_info[a,  'db_full_path'] = con.info.name
+            db_info[a,  'db_fw_initial'] = con.info.write_mode
 
-    run_errors_map['init_reset'] = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'], db_main_owner)
+    with act_db_repl.connect_server() as srv:
+        srv.database.set_write_mode(database = act_db_repl.db.db_path, mode = DbWriteMode.SYNC)
 
-    # Result: owner of db_main_alias = db_main_owner, i.e. NOT 'SYSDBA'
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    diff_data = []
+    replication_log = act_db_main.home_dir / 'replication.log'
+    replold_lines = []
+    with open(replication_log, 'r') as f:
+        replold_lines = f.readlines()
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     sql_init = f"""
         set bail on;
+        create or alter procedure sp_gen_uuid as begin end;
+        set term ^;
+        execute block as
+        begin
+           execute statement 'drop domain dm_txt';
+           when any do
+           begin
+               -- nop --
+           end
+        end ^
+        set term ^;
+        commit;
+
+        create domain dm_txt varchar(1000) not null;
+        create or alter procedure sp_gen_uuid as begin end;
         recreate table test (
-            id int generated by default as identity constraint test_pk primary key
-            ,f01 int
+            id int generated by default as identity primary key using descending index test_pk_desc
+            ,who varchar(10)
+            ,txt dm_txt unique using index test_txt_unq
         );
+        commit;
+
+        set term ^;
+        alter procedure sp_gen_uuid(n_rows int) returns(o_txt dm_txt) as
+            declare v_fld_len smallint;
+        begin
+            select
+                 f.rdb$character_length as field_char_len
+            from rdb$relation_fields rf
+            join rdb$fields f on rf.rdb$field_source = f.rdb$field_name
+            where rf.rdb$relation_name = upper('TEST') and rf.rdb$field_name = upper('txt')
+            into v_fld_len;
+            while (n_rows > 0) do
+            begin
+                o_txt = lpad('', v_fld_len, uuid_to_char(gen_uuid()));
+                n_rows = n_rows - 1;
+                suspend;
+            end
+        end
+        ^
+        set term ;^
+        commit;
 
         recreate table t_completed(id int primary key);
         commit;
     """
-    act_db_main.isql(switches=['-q', '-user', db_main_owner.name, '-pass', db_main_owner.password], credentials = False, input = sql_init, combine_output = True)
+    act_db_main.isql(switches=['-q'], input = sql_init, combine_output = True)
     run_errors_map['out_prep_ddl'] = act_db_main.clean_stdout
     act_db_main.reset()
 
@@ -439,48 +432,63 @@ def test_1(act_db_main: Action,  act_db_repl: Action, db_main_owner: User, capsy
         # Must be EMPTY:
         run_errors_map['out_repl_ddl'] = capsys.readouterr().out
 
+        # Get content of firebird.log BEFORE test
+        log_before = act_db_main.get_firebird_log()
 
+        try:
+            with act_db_main.db.connect() as con1:
+                con1.execute_immediate("insert into test(who, txt) values('att_1', 'init')")
+                with act_db_main.db.connect() as con2:
+                    con2.execute_immediate("insert into test(who, txt) select 'att-2', p.o_txt from sp_gen_uuid(50000) as p")
+                    con2.execute_immediate("insert into t_completed(id) values(1)")
+                    con2.commit()
+                con1.commit()
+        except Exception as e:
+            for x in traceback.format_exc().split('\n'):
+                print('  ',x)
+        run_errors_map['out_segm_handling']  = capsys.readouterr().out
+
+        log_after = act_db_main.get_firebird_log()
+
+        p_fb_log = re.compile('error |journal|truncate|((reading|writing) data (from|to))', re.IGNORECASE)
+        fb_log_diff = '\n'.join( [line.rstrip() for line in unified_diff(log_before, log_after) if line.startswith('+') and line.split('+') and p_fb_log.search(line) ] )
+        run_errors_map['fb_log_diff'] = fb_log_diff
+
+        with open(replication_log, 'r') as f:
+            diff_data = unified_diff(
+                replold_lines,
+                f.readlines()
+              )
+
+        # Post-check: verify that diff between old and current replication.log does NOT contain 'WARNING:' or 'ERROR:' lines:
+        repl_log_diff = '\n'.join( [ line.rstrip() for line in diff_data if 'WARNING:' in line or 'ERROR:' in line ] )
+        run_errors_map['repl_log_diff'] = repl_log_diff
+        
     if max(v.strip() for v in run_errors_map.values()):
-        # Some problem raised with delivering DDL changes to replica
+        # Some problem was in the code executed by con1 and/or con2
         pass
     else:
-
-        sql_revoke_access = f"""
-            set wng off;
-            set list on;
-            revoke delete on test from {db_main_owner.name};
-            commit;
-            select 1 as db_main_privilege_unexp_remains
-            from rdb$database
-            where exists (
-                select 1 from rdb$user_privileges p
-                where p.rdb$relation_name = upper('test') and p.rdb$privilege = upper('D')
-            );
-            commit;
-        """
-        act_db_main.isql(switches=['-q', '-user', db_main_owner.name, '-pass', db_main_owner.password], credentials = False, input = sql_revoke_access, combine_output = True)
-        run_errors_map['db_main_privilege_unexp_remains']  = act_db_repl.stdout # must be EMPTY
-        act_db_main.reset()
-
-
-    if max(v.strip() for v in run_errors_map.values()):
-        # Some problem was in just executed statement
-        pass
-    else:
-        ############################################################
-        ###  WAIT UNTIL REPLICA APPLY 'REVOKE' PRIVILEGE COMMAND ###
-        ############################################################
+        ##############################################################################
+        ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
+        ##############################################################################
         # ( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', isql_check_script = '', replica_expected_out = ''):
-        chk_repl_sql = f"set list on;select 1 as db_repl_privilege_unexp_remains from rdb$database where exists(select 1 from rdb$user_privileges p where p.rdb$relation_name = upper('test') and p.rdb$privilege = upper('D'));"
-        watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query = '', isql_check_script = chk_repl_sql, replica_expected_out = '' )
+
+        isql_expected_out = f"""
+            1
+        """
+        isql_check_script  = f"set heading off;select id from t_completed;"
+        watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, '', isql_check_script, isql_expected_out )
+
         # Must be EMPTY:
-        run_errors_map['db_repl_privilege_not_deleted'] = capsys.readouterr().out
+        run_errors_map['out_repl_data'] = capsys.readouterr().out
 
-    # This test changes OWNER of db_main to NON-sysdba.
-    # We have to revert this change regardless on test outcome.
+    # Must be EMPTY:
+    #for k,v in run_errors_map.items():
+    #    if v.strip():
+    #        print(k,':::',v)
+
     run_errors_map['final_reset'] = reset_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'])
-
-    # NO NEEDED because we have done reset just now: drop_db_objects(act_db_main, act_db_repl, capsys)
+    # out_drop = drop_db_objects(act_db_main, act_db_repl, capsys)
 
     if max(v.strip() for v in run_errors_map.values()):
         print(f'Problem(s) detected, check run_errors_map:')

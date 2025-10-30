@@ -117,8 +117,8 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
         # It will return '.' rather than full path+filename.
 
         repl_root_path = Path(db_main_file).parent
-        repl_jrn_sub_dir = repl_settings['journal_sub_dir']
-        repl_arc_sub_dir = repl_settings['archive_sub_dir']
+        repl_jrn_sub_dir = Path(db_main_file).with_suffix('.journal')
+        repl_arc_sub_dir = Path(db_main_file).with_suffix('.archive')
 
         # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
         # xxx   s h u t d o w n    a n d    d r o p     m a s t e r    a n d    r e p l i c a   xxx
@@ -146,11 +146,9 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
         # NOTE: test must NOT raise unrecoverable error if some of files in these folders can not be deleted.
         # Rather, this must be displayed as diff and test must be considered as just failed.
         for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
-            
-            remained_files = cleanup_folder(repl_root_path/p)
-
+            remained_files = cleanup_folder(p)
             if remained_files:
-                out_reset += '\n'.join( (f"Directory '{str(repl_root_path/p)}' remains non-empty. Could not delete file(s):", '\n'.join(remained_files)) )
+                out_reset += '\n'.join( (f"Directory '{str(p)}' remains non-empty. Could not delete file(s):", '\n'.join(remained_files)) )
 
     # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     # xxx  r e c r e a t e     d b _ m a i n     a n d     d b _ r e p l  xxx

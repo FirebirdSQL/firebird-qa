@@ -51,9 +51,9 @@ from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, 
 repl_settings = QA_GLOBALS['replication']
 
 MAX_TIME_FOR_WAIT_DATA_IN_REPLICA = int(repl_settings['max_time_for_wait_data_in_replica'])
-MAIN_DB_ALIAS = repl_settings['main_db_alias']
-REPL_DB_ALIAS = repl_settings['repl_db_alias']
-RUN_SWEEP_AT_END = int(repl_settings['run_sweep_at_end'])
+MAIN_DB_ALIAS = repl_settings['MAIN_DB_ALIAS']
+REPL_DB_ALIAS = repl_settings['REPL_DB_ALIAS']
+RUN_SWEEP_AT_END = int(repl_settings['RUN_SWEEP_AT_END'])
 
 db_main = db_factory( filename = '#' + MAIN_DB_ALIAS, do_not_create = True, do_not_drop = True)
 db_repl = db_factory( filename = '#' + REPL_DB_ALIAS, do_not_create = True, do_not_drop = True)
@@ -110,8 +110,8 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
         # It will return '.' rather than full path+filename.
 
         repl_root_path = Path(db_main_file).parent
-        repl_jrn_sub_dir = repl_settings['journal_sub_dir']
-        repl_arc_sub_dir = repl_settings['archive_sub_dir']
+        repl_jrn_sub_dir = Path(db_main_file).with_suffix('.journal')
+        repl_arc_sub_dir = Path(db_main_file).with_suffix('.archive')
 
         for f in (db_main_file, db_repl_file):
             # Method db.drop() changes LINGER to 0, issues 'delete from mon$att' with suppressing exceptions
@@ -133,11 +133,10 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
         # NOTE: test must NOT raise unrecoverable error if some of files in these folders can not be deleted.
         # Rather, this must be displayed as diff and test must be considered as just failed.
         for p in (repl_jrn_sub_dir,repl_arc_sub_dir):
-            
-            remained_files = cleanup_folder(repl_root_path/p)
+            remained_files = cleanup_folder(p)
 
             if remained_files:
-                out_reset += '\n'.join( (f"Directory '{str(repl_root_path/p)}' remains non-empty. Could not delete file(s):", '\n'.join(remained_files)) )
+                out_reset += '\n'.join( (f"Directory '{str(p)}' remains non-empty. Could not delete file(s):", '\n'.join(remained_files)) )
 
     # xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     # xxx  r e c r e a t e     d b _ m a i n     a n d     d b _ r e p l  xxx
