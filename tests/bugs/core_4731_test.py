@@ -64,6 +64,21 @@ NOTES:
             * RDB$TYPES (letter to FB team 18.10.2025 20:50, created ticket #8779);
         Further description and notes will be later.
         Checked on 6.0.0.1312-efa86f3; 5.0.4.1725-85ed111; 4.0.7.3237-c6d4331; 3.0.14.33827-93a8023.
+
+    [31.10.2025] pzotov
+        Adjusted expected data in etalone_gds_map{}: 
+        * table RDB$TYPES can be modified by limited set of statements:
+          INSERT; DELETE; UPDATE - but any columns except rdb$system_flag (e.g. rdb$type, rdb$field_name)
+          This can be done by user who was granted with system privilege 'CREATE_USER_TYPES', see test:
+          functional/syspriv/test_create_user_types.py
+        * 6.x+: rdb$triggers and rdb$fields are protected since commit #c77fbddc;
+        * 6.x+: list of gdscodes for 'drop sequence <g>' depends on whether this is SYSTEM or IDENTITY generator
+          (i.e. its rdb$system_flag is 1 or 6). We have to split gdscodes comparison for these ases:
+          (336397303, 336068927) -- when trying to drop SYSTEM sequence;
+          (335544351, 336397303, 336068880) -- when trying to drop IDENTITY sequence.
+
+        Checked on 6.0.0.1335 5.0.4.1725 4.0.7.3237 3.0.14.33827
+
 JIRA:        CORE-4731
 FBTEST:      bugs.core_4731
 """
@@ -102,12 +117,11 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
        ,'delete from rdb$types where coalesce(rdb$system_flag,0) = 0'
        ,'delete from mon$attachments'
        ,'delete from mon$statements'
-       #------------------------------
-       # probably must NOT be allowed:
-       #------------------------------
-       #,'insert into rdb$fields'
-       #,'insert into rdb$triggers'
     ]
+
+    if act.is_version('<6'):
+        ALLOWED_STTM_PREFIXES.extend( ('insert into rdb$fields', 'insert into rdb$triggers') )
+
     if act.is_version('<4'):
         pass
     else:
@@ -123,6 +137,9 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
 
     etalone_gds_map = {}
     if act.is_version('<4'):
+        ################
+        ###    3.x   ###
+        ################
         etalone_gds_map[ ('mon$attachments', 'ADD_CTR') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('mon$attachments', 'ADD_DEF') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('mon$attachments', 'ALT_ADC') ] =  ((335544351, 336397287, 335544352),)
@@ -506,7 +523,8 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$generators', 'DML_UPD') ] =  ((335545030,),)
         etalone_gds_map[ ('rdb$generators', 'KIL_DEF') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('rdb$generators', 'KIL_FLD') ] =  ((335544351, 336397287, 335544352),)
-        etalone_gds_map[ ('rdb$generators', 'KIL_GEN') ] =  ((335544351, 336397303, 336068880),)
+        etalone_gds_map[ ('rdb$generators', 'KIL_GEN') ] =  ((335544351, 336397303, 336068880),) # 31.10.2025 errors when trying to drop SYSTEM sequence
+        etalone_gds_map[ ('rdb$generators', 'KIL_GID') ] =  ((335544351, 336397303, 336068880),) # 31.10.2025 errors when trying to drop IDENTITY sequence
         etalone_gds_map[ ('rdb$generators', 'KIL_TAB') ] =  ((335544351, 336397288, 335544352),)
         etalone_gds_map[ ('rdb$generators', 'RECR_GN') ] =  ((335544351, 336397304, 336068880),)
         etalone_gds_map[ ('rdb$generators', 'SET_GEN') ] =  ((335544351, 336397325, 336068895),)
@@ -849,6 +867,9 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('sec$users', 'KIL_TAB') ] =  ((335544351, 336397288, 335544352),)
         etalone_gds_map[ ('sec$users', 'SET_NUL') ] =  ((335544351, 336397287, 335544352),)
     elif act.is_version('<5'):
+        ################
+        ###    4.x   ###
+        ################
         etalone_gds_map[ ('mon$attachments', 'ADD_CTR') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('mon$attachments', 'ADD_DEF') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('mon$attachments', 'ALT_ADC') ] =  ((335544351, 336397287, 335544352),)
@@ -1353,7 +1374,8 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$generators', 'DML_UPD') ] =  ((335545030,),)
         etalone_gds_map[ ('rdb$generators', 'KIL_DEF') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('rdb$generators', 'KIL_FLD') ] =  ((335544351, 336397287, 335544352),)
-        etalone_gds_map[ ('rdb$generators', 'KIL_GEN') ] =  ((335544351, 336397303, 336068880),)
+        etalone_gds_map[ ('rdb$generators', 'KIL_GEN') ] =  ((335544351, 336397303, 336068880),) # 31.10.2025 errors when trying to drop SYSTEM sequence
+        etalone_gds_map[ ('rdb$generators', 'KIL_GID') ] =  ((335544351, 336397303, 336068880),) # 31.10.2025 errors when trying to drop IDENTITY sequence
         etalone_gds_map[ ('rdb$generators', 'KIL_TAB') ] =  ((335544351, 336397288, 335544352),)
         etalone_gds_map[ ('rdb$generators', 'PUB_DIS') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('rdb$generators', 'PUB_ENA') ] =  ((335544351, 336397287, 335544352),)
@@ -1850,6 +1872,9 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('sec$users', 'SQL_DEF') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('sec$users', 'SQL_INV') ] =  ((335544351, 336397287, 335544352),)
     elif act.is_version('<6'):
+        ################
+        ###    5.x   ###
+        ################
         etalone_gds_map[ ('mon$attachments', 'ADD_CTR') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('mon$attachments', 'ADD_DEF') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('mon$attachments', 'ALT_ADC') ] =  ((335544351, 336397287, 335544352),)
@@ -2372,7 +2397,8 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$generators', 'DML_UPD') ] =  ((335545030,),)
         etalone_gds_map[ ('rdb$generators', 'KIL_DEF') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('rdb$generators', 'KIL_FLD') ] =  ((335544351, 336397287, 335544352),)
-        etalone_gds_map[ ('rdb$generators', 'KIL_GEN') ] =  ((335544351, 336397303, 336068880),)
+        etalone_gds_map[ ('rdb$generators', 'KIL_GEN') ] =  ((335544351, 336397303, 336068880),) # 31.10.2025 errors when trying to drop SYSTEM sequence
+        etalone_gds_map[ ('rdb$generators', 'KIL_GID') ] =  ((335544351, 336397303, 336068880),) # 31.10.2025 errors when trying to drop IDENTITY sequence
         etalone_gds_map[ ('rdb$generators', 'KIL_TAB') ] =  ((335544351, 336397288, 335544352),)
         etalone_gds_map[ ('rdb$generators', 'PUB_DIS') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('rdb$generators', 'PUB_ENA') ] =  ((335544351, 336397287, 335544352),)
@@ -2887,6 +2913,9 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('sec$users', 'SQL_DEF') ] =  ((335544351, 336397287, 335544352),)
         etalone_gds_map[ ('sec$users', 'SQL_INV') ] =  ((335544351, 336397287, 335544352),)
     else:
+        ################
+        ###    6.x+  ###
+        ################
         etalone_gds_map[ ('mon$attachments', 'ADD_CTR') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('mon$attachments', 'ADD_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('mon$attachments', 'ALT_ADC') ] =  ((336397287, 336068927),)
@@ -3289,6 +3318,7 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$fields', 'ALT_NAM') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$fields', 'ALT_POS') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$fields', 'ALT_TYP') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$fields', 'DML_INS') ] =  ((335545030,),)  # 31.10.2025: only since commit #c77fbddc (29.10.2025)
         etalone_gds_map[ ('rdb$fields', 'DML_DEL') ] =  ((335545030,),)
         etalone_gds_map[ ('rdb$fields', 'DML_LOK') ] =  ((335545074,),)
         etalone_gds_map[ ('rdb$fields', 'DML_UPD') ] =  ((335545030,),)
@@ -3409,7 +3439,8 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$generators', 'DML_UPD') ] =  ((335545030,),)
         etalone_gds_map[ ('rdb$generators', 'KIL_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$generators', 'KIL_FLD') ] =  ((336397287, 336068927),)
-        etalone_gds_map[ ('rdb$generators', 'KIL_GEN') ] =  ((335544351, 336397303, 336068880),)
+        etalone_gds_map[ ('rdb$generators', 'KIL_GEN') ] =  ((336397303, 336068927),)            # 31.10.2025 errors when trying to drop SYSTEM sequence
+        etalone_gds_map[ ('rdb$generators', 'KIL_GID') ] =  ((335544351, 336397303, 336068880),) # 31.10.2025 errors when trying to drop IDENTITY sequence
         etalone_gds_map[ ('rdb$generators', 'KIL_TAB') ] =  ((336397288, 336068927),)
         etalone_gds_map[ ('rdb$generators', 'PUB_DIS') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$generators', 'PUB_ENA') ] =  ((336397287, 336068927),)
@@ -3813,6 +3844,7 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$triggers', 'ALT_NAM') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$triggers', 'ALT_POS') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$triggers', 'ALT_TYP') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$triggers', 'DML_INS') ] =  ((335545030,),) # only since 29.10.2025, commit #c77fbddc
         etalone_gds_map[ ('rdb$triggers', 'DML_DEL') ] =  ((335545030,),)
         etalone_gds_map[ ('rdb$triggers', 'DML_LOK') ] =  ((335545074,),)
         etalone_gds_map[ ('rdb$triggers', 'DML_UPD') ] =  ((335545030,),)
@@ -3952,19 +3984,27 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
     prep_script = (act.files_dir / 'core_4731.sql').read_text()
     prep_script = prep_script % {'dba_privileged_name': dba_privileged_user.name,
                                  'non_privileged_name': non_privileged_user.name}
+
+    #############################################################
+    ###  QA _ H O M E / f i l e s / c o r e _ 4 7 3 1 . s q l ###
+    #############################################################
     act.isql(switches=['-q'], input=prep_script, combine_output = True)
     assert act.clean_stdout == ''
     act.reset()
 
-    # Remove all attachments that can stay alive after preparing DB because of ExtConnPoolLifeTime > 0:
+    # Auxiliary changes in the test DB using services API:
     with act.connect_server() as srv:
-        # nbackup which will add record into rdb$backup_history table:
+        # nbackup which will add record into rdb$backup_history table.
+        # We have to check ability to run: 'delete from rdb$backup_history' (4.x+)
         srv.database.nbackup(database = act.db.db_path, backup = tmp_nbk, level = 0)
 
+        # make DB shutdown / bring online: remove all attachments that can stay alive
+        # after preparing DB because of ExtConnPoolLifeTime > 0:
         srv.database.shutdown(database = act.db.db_path, mode = ShutdownMode.FULL, method = ShutdownMethod.FORCED, timeout = 0)
         srv.database.bring_online(database = act.db.db_path)
     #
 
+    # DO NOT DELETE! Uncomment and use this copy for misc debug purposes:
     #shutil.copy2(act.db.db_path, r'C:\FBTESTING\qa\misc\tmp_core_4731.fdb') # 4debug only
 
     found_mism = 0
