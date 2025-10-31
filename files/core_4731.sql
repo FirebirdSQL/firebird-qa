@@ -796,27 +796,56 @@
                 nulls first
             )
             ,ddl_gen as (
-                -- query to generate ALTER SEQUENCE RESTART ...
+                -- query to generate statements to change/drop SEQUENCES
                 select
-                    'rdb$generators'  as rel_name
-                    ,90 + n.i as ord_pos
-                    ,0 as ret_dbkey
-                    ,decode(n.i, 0, 'SET_GEN', 1, 'ALT_GNR', 2, 'ALT_GNI', 3, 'RECR_GN', 4, 'KIL_GEN') as op
-                    ,'' as dml_where
-                    ,decode(n.i
-                            , 0, 'set generator ' || lower(trim(g.rdb$generator_name)) || ' to -9223372036854775808'
-                            , 1, 'alter sequence ' || lower(trim(g.rdb$generator_name)) || ' restart with -9223372036854775808'
-                            , 2, 'alter sequence ' || lower(trim(g.rdb$generator_name)) || ' increment by 32767'
-                            , 3, 'recreate sequence ' || lower(trim(g.rdb$generator_name))
-                            , 4, 'drop sequence ' || lower(trim(g.rdb$generator_name))
-                           )
-                     as alt_stt
-                from rdb$generators g
-                join dbg d on ('RDB$GENERATORS' = d.debug_rdb_table or d.debug_rdb_table is null)
-                cross join (select row_number()over()-1 i from rdb$types rows 5) n
-                -- 1 =  system
-                -- 6 = inner sequence for identity columns
-                where g.rdb$system_flag in(1,6)
+                    rel_name,
+                    ord_pos,
+                    ret_dbkey,
+                    op,
+                    dml_where,
+                    alt_stt
+                from (
+                    select
+                        'rdb$generators'  as rel_name
+                        ,90 + n.i as ord_pos
+                        ,0 as ret_dbkey
+                        ,decode(n.i, 0, 'SET_GEN', 1, 'ALT_GNR', 2, 'ALT_GNI', 3, 'RECR_GN', 4, 'KIL_GEN', 5, 'KIL_GID') as op
+                        ,'' as dml_where
+                        ,decode(n.i
+                                , 0, 'set generator ' || lower(trim(g.rdb$generator_name)) || ' to -9223372036854775808'
+                                , 1, 'alter sequence ' || lower(trim(g.rdb$generator_name)) || ' restart with -9223372036854775808'
+                                , 2, 'alter sequence ' || lower(trim(g.rdb$generator_name)) || ' increment by 32767'
+                                , 3, 'recreate sequence ' || lower(trim(g.rdb$generator_name))
+                                , 4, 'drop /* system */ sequence ' || lower(trim(g.rdb$generator_name))
+                                , 5, 'drop /* identity */ sequence ' || lower(trim(g.rdb$generator_name))
+                               )
+                         as alt_stt
+                        ,g.rdb$system_flag as sys_flag
+                    from rdb$generators g
+                    join dbg d on ('RDB$GENERATORS' = d.debug_rdb_table or d.debug_rdb_table is null)
+                    cross join (select row_number()over()-1 i from rdb$types rows 6) n
+                    -- 1 =  system
+                    -- 6 = inner sequence for identity columns
+                    where
+                    g.rdb$system_flag in (1,6)
+                )
+                -- ::: NB :::
+                -- 1. We must NOT check 'recreate sequence' for system generators on 6.x+.
+                --    This statement will create sequence in PUBLIC schema (no errors will raise).
+                --    Check for 'recreate sequence' must be done for 3.x ... 5.x which have no schemas.
+                -- 2. We must NOT check 'set generator' or 'alter sequence' for sequences created
+                --    by engine for IDENTITY columns becase these statements *allowed*.
+                --    Such generators must be checked only by 'recreate' and 'drop' statements
+                --    with raising -DROP SEQUENCE "PUBLIC"."RDB$1" failed / -Cannot delete system generator "PUBLIC"."RDB$1"
+                -- Letter from dimitr, 29.10.2025 11:29
+                where
+                    ( sys_flag = 1
+                      and op <> 'KIL_GID'
+                      and (left(rdb$get_context('SYSTEM','ENGINE_VERSION'),2) in ('3.', '4.', '5.') or op <> 'RECR_GN')
+                      or
+                      sys_flag = 6
+                      and op in ('RECR_GN', 'KIL_GID')
+                    )
             )
             -- select * from ddl_gen
 
@@ -854,6 +883,7 @@
 	    declare v_sys_schema varchar(63) character set utf8;
     begin
         if ( rdb$get_context('SYSTEM','ENGINE_VERSION') similar to '([6-9]|[[:DIGIT:]]{2,}).' || ascii_char(37) ) then
+             --if ( left(rdb$get_context('SYSTEM','ENGINE_VERSION'),2) NOT in ('3.', '4.', '5.') ) -- 6.x+
         begin
             for
                 execute statement 'select lower(trim(rdb$schema_name)) from rdb$schemas where coalesce(rdb$system_flag,0) = 1'
