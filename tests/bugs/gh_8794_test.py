@@ -7,8 +7,9 @@ TITLE:       Called procedure parameter changes during execution without assignm
 DESCRIPTION:
 NOTES:
     [01.11.2025] pzotov
-    On 6.x bug was fixed 07.05.2025 since 6.0.0.778-d735e65 and can not be preproduced on recent snapshots
-    (commit #11d5d592, "Fix for #8082 by making engine to use user buffers directly (#8145)")
+    1. 'Dummy' trigger *must* be created otherwise problem does not appear.
+    2. On 6.x bug was fixed 07.05.2025 since 6.0.0.778-d735e65 and can not be preproduced on recent snapshots
+       (commit #11d5d592, "Fix for #8082 by making engine to use user buffers directly (#8145)")
 
     Confirmed bug on 6.0.0.776-007cd03; 5.0.4.1725-85ed111
     Checked on 6.0.0.1335-eceaf06; 5.0.4.1725-17610be; 4.0.7.3237-c6d4331; 3.0.14.33827-93a8023.
@@ -23,6 +24,9 @@ test_script = """
     set bail on;
     set heading off;
     set term ^;
+    -- #########################################################
+    -- ###   v a l u e s    t o    b e     i n s e r t e d   ###
+    -- #########################################################
     execute block as
     begin
         rdb$set_context('USER_SESSION', 'NUM_VALUE', '1');
