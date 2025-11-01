@@ -45,6 +45,8 @@ import pytest
 from firebird.qa import *
 from firebird.driver import connect, create_database, DbWriteMode, ReplicaMode, ShutdownMode, ShutdownMethod, DatabaseError
 
+CONCURRENT_WORKLOAD_GENERATING_ROWS = 70000
+
 # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
 # from act.files_dir/'test_config.ini':
 repl_settings = QA_GLOBALS['replication']
@@ -439,7 +441,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
             with act_db_main.db.connect() as con1:
                 con1.execute_immediate("insert into test(who, txt) values('att_1', 'init')")
                 with act_db_main.db.connect() as con2:
-                    con2.execute_immediate("insert into test(who, txt) select 'att-2', p.o_txt from sp_gen_uuid(50000) as p")
+                    con2.execute_immediate( f"insert into test(who, txt) select 'att-2', p.o_txt from sp_gen_uuid( {CONCURRENT_WORKLOAD_GENERATING_ROWS} ) as p")
                     con2.execute_immediate("insert into t_completed(id) values(1)")
                     con2.commit()
                 con1.commit()
