@@ -11,8 +11,12 @@ NOTES:
     [30.06.2025] pzotov
     Separated expected output for FB major versions prior/since 6.x.
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-
     Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
+    [02.11.2025] pzotov
+    Commented out 'request.addfinalizer(drop_connections)' because QA plugin already has similar functionality
+    for teardown phase - see class Database, func drop().
+    Checked on Windows 6.0.0.1335; 5.0.4.1725; 4.0.7.3237; 3.0.14.33827 (SS and CS)
 """
 
 import pytest
@@ -58,44 +62,52 @@ hang_output = temp_file('hang_script.out')
 @pytest.mark.es_eds
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, hang_script_file: Path, hang_output: Path, capsys, request):
-    # Fializer for FB4
-    def drop_connections():
-        with act.db.connect() as con4cleanup:
-            con4cleanup.execute_immediate('delete from mon$attachments where mon$attachment_id != current_connection')
-            con4cleanup.commit()
+    
+    ## Fializer for FB4
+    #def drop_connections():
+    #    with act.db.connect() as con4cleanup:
+    #        con4cleanup.execute_immediate('delete from mon$attachments where mon$attachment_id != current_connection')
+    #        con4cleanup.commit()
+    #
+    #request.addfinalizer(drop_connections)
 
-    request.addfinalizer(drop_connections)
     # Following script will hang for sevral seconds (see 'lock timeout' argument - and this will serve as pause
     # during which we can launch fbsvcmgr to validate database:
-    hang_script_file.write_text(f"""
-    set term ^;
-    execute block as
-    begin
-      execute statement 'drop role tmp$r4707';
-      when any do begin end
-    end ^
-    set term ;^
-    commit;
+    hang_script_file.write_text(
+        f"""
+            set term ^;
+            execute block as
+            begin
+                execute statement 'drop role tmp$r4707';
+                when any do begin end
+            end ^
+            set term ;^
+            commit;
 
-    set transaction wait;
+            set transaction wait;
 
-    delete from test1;
-    insert into test3(id) values(1);
-    set list on;
-    select 'Starting EB with infinite pause.' as isql_msg from rdb$database;
-    set term ^;
-    execute block as
-    begin
-      execute statement 'update test1 set id=-id'
-      on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
-      as user '{act.db.user}' password '{act.db.password}'
-         role 'TMP$R4707' -- this will force to create new attachment, and its Tx will be paused on INFINITE time.
-      ;
-      -- COMMENTED 30.03.2025: we must know if some error occurred during infinite wait! --> when any do begin end
-    end ^
-    set term ;^
-    select 'EB with pause finished.' as msg_2 from rdb$database;
-    """)
+            delete from test1;
+            insert into test3(id) values(1);
+            set list on;
+            select 'Starting EB with infinite pause.' as isql_msg from rdb$database;
+            set term ^;
+            execute block as
+            begin
+                execute statement 'update test1 set id=-id'
+                on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
+                as user '{act.db.user}' password '{act.db.password}'
+                   role 'TMP$R4707' -- this will force to create new attachment, and its Tx will be paused on INFINITE time.
+                ;
+                -- Discussed with Vlad, letters 29.03.2025 ... 09.04.2025
+                -- subj: "WI-6.0.0.707-4bd4f5f0, Classic. CORE-4707 (online validation): ..."
+                -- COMMENTED 30.03.2025: we must know if some error occurred during infinite wait! --> when any do begin end
+                -- ::: NB ::: ON LINUX THIS TEST CAN STILL FAIL, THE REASON REMAINS UNKNOWN :::
+            end ^
+            set term ;^
+            select 'EB with pause finished.' as msg_2 from rdb$database;
+        """
+    )
+
     # Make asynchronous call of ISQL which will stay several seconds in pause due to row-level lock
     with open(hang_output, mode='w') as hang_out:
         p_hang_sql = subprocess.Popen([act.vars['isql'], '-i', str(hang_script_file),
