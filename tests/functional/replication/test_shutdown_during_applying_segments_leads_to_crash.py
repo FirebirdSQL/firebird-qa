@@ -476,13 +476,13 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         # Here we can assume that replica is accepting segments and this work is not completed.
         # Now we change replica state to full shutdown.
         # On 5.0.0.215 following attempt to make connection to Services API causes crash, client gets:
-        # firebird.driver.types.DatabaseError: Error writing data to the connection.
+        # firebird.driver.types.DatabaseError: Error wr1ting data to the connection.
         # -send_packet/send
         # (SS only; no such problem on Classic) 
         with act_db_repl.connect_server() as srv:
 
             # FB crashes here, replication archive folder can not be cleaned:
-            # PermissionError: [WinError 32] ...: '<repl_arc_sub_dir>/<dbmain>.journal-NNN'
+            # Perm1ssionError: [WinError 32] ...: '<repl_arc_sub_dir>/<dbmain>.journal-NNN'
             srv.database.shutdown(
                                       database=act_db_repl.db.db_path
                                       ,mode=ShutdownMode.FULL
