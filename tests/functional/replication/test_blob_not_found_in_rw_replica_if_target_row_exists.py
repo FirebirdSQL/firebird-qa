@@ -372,6 +372,8 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
 def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
 
     out_prep, out_main, out_drop = '', '', ''
+    blob_inserted_hashes = { act_db_main.db.db_path : '<UNDEFINED>' }
+
     # Obtain full path + filename for DB_MAIN and DB_REPL aliases.
     # NOTE: we must NOT use 'a.db.db_path' for ALIASED databases!
     # It will return '.' rather than full path+filename.
@@ -427,7 +429,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
         # Some problem raised with delivering DDL changes to replica
         pass
     else:
-        blob_inserted_hashes = {}
+        #blob_inserted_hashes = {}
 
         # NB: first we put blob into REPLICA database!
         ##############################################
@@ -474,10 +476,9 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_data: Path, capsys):
                 ,crypt_hash(b using sha512) as blob_hash
             from test;
         """
-
         isql_expected_out = f"""
             REPLICA_MODE READ-WRITE
-            BLOB_HASH {blob_inserted_hashes[ act_db_main.db.db_path ]}
+            BLOB_HASH { blob_inserted_hashes.get(act_db_main.db.db_path, '<undefined>') }
             Records affected: 1
         """
         
