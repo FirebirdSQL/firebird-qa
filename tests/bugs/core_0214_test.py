@@ -193,6 +193,7 @@ db = db_factory(init = init_sql, page_size = PAGE_SIZE)
 
 act = python_act('db', substitutions = [('[ \t]+', ' ')])
 
+@pytest.mark.slow
 @pytest.mark.version('>=4')
 def test_1(act: Action, capsys):
 
@@ -216,8 +217,8 @@ def test_1(act: Action, capsys):
             fields_lst = [x[0].strip() for x in cur1.fetchall()]
 
             for f_name in fields_lst:
-                query1 = f'select count(*) from (select distinct {f_name} from {t_name})'
-                query2 = f'select count(distinct {f_name}) from {t_name}'
+                query1 = f'select /* trace_me */ count(*) from (select distinct {f_name} from {t_name})'
+                query2 = f'select /* trace_me */ count(distinct {f_name}) from {t_name}'
                 ps1 = cur1.prepare(query1)
                 ps2 = cur2.prepare(query2)
                 for c in (cur1, cur2):
