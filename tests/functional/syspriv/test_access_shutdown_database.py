@@ -50,12 +50,12 @@ expected_stdout_isql = """
     WHO_AMI                         TMP_SYSPRIV_USER
     RDB$ROLE_NAME                   RDB$ADMIN
     RDB_ROLE_IN_USE                 <false>
-    RDB$SYSTEM_PRIVILEGES           FFFFFFFFFFFFFFFF
+    RDB_SYS_PRIVILEGES              FFFFFFFFFFFFFFFF
     MON$SHUTDOWN_MODE               2
     WHO_AMI                         TMP_SYSPRIV_USER
     RDB$ROLE_NAME                   TMP_ROLE_FOR_ACCESS_SHUTDOWN_DB
     RDB_ROLE_IN_USE                 <true>
-    RDB$SYSTEM_PRIVILEGES           0001000000000000
+    RDB_SYS_PRIVILEGES              0001000000000000
     MON$SHUTDOWN_MODE               2
     ATT_USER                        TMP_SYSPRIV_USER
     ATT_PROT                        TCP
@@ -75,7 +75,7 @@ expected_stdout_isql = """
 def show_db_info(act: Action, tmp_user: User, tmp_role: Role):
 
     print('Data from DB header:')
-    with act.connect_server(user = tmp_user.name, password = tmp_user.password, role = tmp_role.name) as srv:
+    with act.connect_server(user = tmp_user.name, password = tmp_user.password) as srv:
         srv.database.get_statistics(database = act.db.db_path, flags = SrvStatFlag.HDR_PAGES)
         stat_output = [x.rstrip() for x in srv.readlines() if x.strip()]
         for i,line in enumerate(stat_output):
@@ -83,9 +83,10 @@ def show_db_info(act: Action, tmp_user: User, tmp_role: Role):
                 print(line)
 
     print('Data from mon$database:')
-    with act.db.connect(user = tmp_user.name, password = tmp_user.password, role = tmp_role.name) as con:
+    with act.db.connect(user = tmp_user.name, password = tmp_user.password) as con:
         cur = con.cursor()
-        cur.execute('select mon$database_name,mon$shutdown_mode,mon$read_only,mon$creation_date,mon$owner,mon$sec_database from mon$database')
+        #cur.execute('select current_timestamp,current_user,mon$database_name,mon$shutdown_mode,mon$read_only,mon$creation_date,mon$owner,mon$sec_database from mon$database')
+        cur.execute('select current_timestamp,v.* from v_check as v')
         hdr=cur.description
         for r in cur:
             for i in range(len(hdr)):
@@ -103,7 +104,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
              current_user as who_ami
             ,r.rdb$role_name
             ,rdb$role_in_use(r.rdb$role_name) as RDB_ROLE_IN_USE
-            ,r.rdb$system_privileges
+            ,cast(r.rdb$system_privileges as varchar(16) character set octets) as RDB_SYS_PRIVILEGES
             ,m.mon$shutdown_mode
         from mon$database m cross join rdb$roles r;
         commit;
@@ -154,7 +155,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
         commit;
     '''
     act.isql(switches=['-q'], input=init_script, combine_output = True)
-    assert '' == act.stdout, 'Init script failed.'
+    assert '' == act.clean_stdout, 'Init script failed.'
     act.reset()
 
     # ---------------------------------------------------------------
@@ -162,7 +163,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
     # Must FAIL: user has right only to *access* to DB in shutdown-single mode and make some DMLs there.
     # But he has NO right to change DB state to shutdown (any kind of mode).
     # Expected error: "no permission for shutdown/online access to database ..."
-    with act.connect_server(user = tmp_user.name, password = tmp_user.password, role = tmp_role.name) as srv_nondba:
+    with act.connect_server(user = tmp_user.name, password = tmp_user.password) as srv_nondba:
         try:
             srv_nondba.database.shutdown(database=act.db.db_path
                                   ,mode=ShutdownMode.SINGLE
@@ -201,7 +202,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
     # Result: DB now is in shutdown-single mode.
     # We have to check that only single attachment can be established to this DB:
 
-    sql_chk='''
+    sql_chk = f'''
         set list on;
         select v.* from v_check v;
         select a.att_user, att_prot from att_log a;
@@ -211,7 +212,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
         begin
             execute statement 'select current_user from rdb$database'
             on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
-            as user 'SYSDBA' password 'masterkey'
+            as user '{act.db.user}' password '{act.db.password}'
             into who_else_here;
 
             suspend;
@@ -219,7 +220,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
         ^
         set term ;^
     '''
-    act.isql(switches=['-q', '-user', tmp_user.name, '-pas', tmp_user.password, '-role', tmp_role.name], input=sql_chk, credentials = False, combine_output=True)
+    act.isql(switches=['-q', '-user', tmp_user.name, '-pas', tmp_user.password], input=sql_chk, credentials = False, combine_output=True)
 
     act.expected_stdout = expected_stdout_isql
     assert act.clean_stdout == act.clean_expected_stdout  # <<<<<<<<<<<<<<<<<<<<<<<< check #2
@@ -233,7 +234,7 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
     # "-Some database(s) were shutdown when trying to read mapping data"
     # Sent report to Alex et al, 25.09.2022 18:55. Waiting for resolution.
     #
-    with act.connect_server(user = tmp_user.name, password = tmp_user.password, role = tmp_role.name) as srv_nondba:
+    with act.connect_server(user = tmp_user.name, password = tmp_user.password) as srv_nondba:
         try:
             srv_nondba.database.bring_online(database=act.db.db_path)
             print('### CAUTION ### database.bring_online() UNEXPECTEDLY NOT RAISED ERROR.')
