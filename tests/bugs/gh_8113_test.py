@@ -3,7 +3,7 @@
 """
 ID:          issue-8113
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8113
-TITLE:        UNION ALL optimization with constant false condition
+TITLE:       UNION ALL optimization with constant false condition
 DESCRIPTION:
     Test uses script based on example from ticket.
     Number of UNIONed parts is defined via UNION_MEMBERS_CNT variable.
