@@ -17,11 +17,17 @@ FBTEST:      functional.syspriv.access_shutdown_database
 
 NOTES: checked on 4.0.1.2692, 5.0.0.489.
 """
-
+import os
 import pytest
 from firebird.qa import *
-from firebird.driver import ShutdownMode,ShutdownMethod
-from firebird.driver.types import DatabaseError
+from firebird.driver import ShutdownMode,ShutdownMethod,SrvStatFlag,DatabaseError
+#from firebird.driver.types import DatabaseError
+
+for v in ('ISC_USER','ISC_PASSWORD'):
+    try:
+        del os.environ[ v ]
+    except KeyError as e:
+        pass
 
 substitutions = [ ('no permission for (shutdown|(bring online)) access to database .*', 'no permission for shutdown/online access to database')
                   ,('-Some database.* shutdown when trying to read mapping data', '')   # <<< perhaps this is due to bug in Classic. May need to be deleted later // 25.09.2022
@@ -35,7 +41,6 @@ tmp_user = user_factory('db', name='tmp_syspriv_user', password='123')
 tmp_role = role_factory('db', name='tmp_role_for_access_shutdown_db')
 
 act = python_act('db', substitutions=substitutions)
-
 
 expected_stdout_fbsvc = """
     no permission for shutdown/online access to database
@@ -64,6 +69,30 @@ expected_stdout_isql = """
 
 @pytest.mark.es_eds
 @pytest.mark.version('>=4.0')
+
+#--------------------------------------------------------------------
+
+def show_db_info(act: Action, tmp_user: User, tmp_role: Role):
+
+    print('Data from DB header:')
+    with act.connect_server(user = tmp_user.name, password = tmp_user.password, role = tmp_role.name) as srv:
+        srv.database.get_statistics(database = act.db.db_path, flags = SrvStatFlag.HDR_PAGES)
+        stat_output = [x.rstrip() for x in srv.readlines() if x.strip()]
+        for i,line in enumerate(stat_output):
+            if 'database' in line.lower() or 'attributes' in line.lower():
+                print(line)
+
+    print('Data from mon$database:')
+    with act.db.connect(user = tmp_user.name, password = tmp_user.password, role = tmp_role.name) as con:
+        cur = con.cursor()
+        cur.execute('select mon$database_name,mon$shutdown_mode,mon$read_only,mon$creation_date,mon$owner,mon$sec_database from mon$database')
+        hdr=cur.description
+        for r in cur:
+            for i in range(len(hdr)):
+                print( hdr[i][0].ljust(32),':', r[i] )
+
+#--------------------------------------------------------------------
+
 def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
 
     init_script = \
@@ -124,7 +153,9 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
         grant default {tmp_role.name} to user {tmp_user.name};
         commit;
     '''
-    act.isql(switches=['-q'], input=init_script)
+    act.isql(switches=['-q'], input=init_script, combine_output = True)
+    assert '' == act.stdout, 'Init script failed.'
+    act.reset()
 
     # ---------------------------------------------------------------
 
@@ -137,7 +168,8 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
                                   ,mode=ShutdownMode.SINGLE
                                   ,method=ShutdownMethod.FORCED
                                   ,timeout=0)
-        
+            print('### CAUTION ### database.shutdown() UNEXPECTEDLY NOT RAISED ERROR.')
+            show_db_info(act, tmp_user, tmp_role)
         except DatabaseError as e:
             print(e.__str__())
 
@@ -204,11 +236,12 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
     with act.connect_server(user = tmp_user.name, password = tmp_user.password, role = tmp_role.name) as srv_nondba:
         try:
             srv_nondba.database.bring_online(database=act.db.db_path)
-        
+            print('### CAUTION ### database.bring_online() UNEXPECTEDLY NOT RAISED ERROR.')
+            show_db_info(act, tmp_user, tmp_role)
         except DatabaseError as e:
             print(e.__str__())
 
-    act.expected_stdout = expected_stdout_fbsvc
+    act.expected_stdout = expected_stdout_fbsvc # 'no permission for shutdown/online access to database'
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout # <<<<<<<<<<<<<<<<<<<<<<<< check #3
     act.reset()
@@ -224,4 +257,3 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
     assert '' == capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout # <<<<<<<<<<<<<<<<<<<<<<<< check #4
     act.reset()
-
