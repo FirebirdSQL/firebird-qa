@@ -22,7 +22,7 @@ test_script = """
     insert into t0(c0,c1) values('-1','-2');
     -- insert into t0(c0,c1,c2) values('-3','-4', '-3');
     set count on;
-    select c0,c1,c2,c2 not in(c0,c1) from t0;
+    select c0,c1,c2,c2 not in(c0,c1) as chk from t0;
 """
 
 substitutions = [('[ \t]+', ' ')]
@@ -32,12 +32,12 @@ expected_stdout = """
     C0 <null>
     C1 0
     C2 <null>
-    <null>
+    CHK <null>
 
     C0 -1
     C1 -2
     C2 <null>
-    <null>
+    CHK <null>
 
     Records affected: 2
 """
