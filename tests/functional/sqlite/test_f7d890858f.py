@@ -21,14 +21,20 @@ test_script = """
     insert into test values ( 99 ) ;
 
     set count on;
-    select exists (select count(*)over() from test order by (select sum(f01)over() from test)) from rdb$database;
+    select
+        exists(
+            select count(*)over()
+            from test
+            order by (select sum(f01)over() from test)
+        ) as chk
+    from rdb$database;
 """
 
 substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    <true>
+    CHK <true>
     Records affected: 1
 """
 
