@@ -26,8 +26,11 @@ NOTES:
         ("negative lookahead assertion", see https://docs.python.org/3/library/re.html#regular-expression-syntax).
         Added 'combine_output = True' in order to see SQLSTATE if any error occurs.
     [02.07.2025] pzotov
-    Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
-    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214
+        Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
+    [05.12.2025] pzotov
+        Added 'BOOL_COLUMN_NAME' variable to be substituted into SQLDA after fixed #8820
+        ('name: BOOL alias: ...' is displayed in SQLDA for 6.x).
+        Checked on 6.0.0.1364; 5.0.4.1737; 4.0.7.3237
 """
 
 import pytest
@@ -59,7 +62,10 @@ test_script = """
     ) t;
 """
 
-substitutions = [ ('^((?!(SQLSTATE|sqltype|alias|UID|encode|decode|result)).)*$', ''), ]
+substitutions = [
+                    ('^((?!(SQLSTATE|sqltype|alias|UID|encode|decode|result)).)*$', '')
+                   ,('[ \t]+', ' ')
+                ]
 
 act = isql_act('db', test_script, substitutions = substitutions)
 
@@ -77,6 +83,7 @@ COMMON_OUTPUT = """
 def test_1(act: Action):
 
     SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else 'SYSTEM.'
+    BOOL_COLUMN_NAME = '' if act.is_version('<6') else 'BOOL'
     expected_stdout = f"""
         01: sqltype: 452 TEXT Nullable scale: 0 subtype: 0 len: 20 charset: 1 {SQL_SCHEMA_PREFIX}OCTETS
         :  name: UID  alias: UID
@@ -89,9 +96,9 @@ def test_1(act: Action):
         05: sqltype: 448 VARYING Nullable scale: 0 subtype: 0 len: 20 charset: 1 {SQL_SCHEMA_PREFIX}OCTETS
         :  name: HEX_DECODE  alias: hex_decode(hex_encode(uid))
         06: sqltype: 32764 BOOLEAN Nullable scale: 0 subtype: 0 len: 1
-        :  name:   alias: b64_dec(b64_enc(uid)) result
+        :  name: {BOOL_COLUMN_NAME} alias: b64_dec(b64_enc(uid)) result
         07: sqltype: 32764 BOOLEAN Nullable scale: 0 subtype: 0 len: 1
-        :  name:   alias: hex_dec(hex_enc(uid)) result
+        :  name: {BOOL_COLUMN_NAME} alias: hex_dec(hex_enc(uid)) result
         {COMMON_OUTPUT}
     """
 
