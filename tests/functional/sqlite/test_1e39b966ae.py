@@ -22,8 +22,14 @@ test_script = """
     insert into t1(a,b) values(1,null);
 
     set count on;
-    select t1.*, b is not null and y='xyz' from t1 left join t2 on b = x;
-    select a from t1 left join t2 on (b=x) where not ( b is not null and y='xyz' );
+    select t1.*, b is not null and y='xyz' as chk
+    from t1
+    left join t2 on b = x
+    ;
+    select a
+    from t1
+    left join t2 on (b=x)
+    where not ( b is not null and y='xyz' );
 """
 
 substitutions = [('[ \t]+', ' ')]
@@ -32,7 +38,7 @@ act = isql_act('db', test_script, substitutions = substitutions)
 expected_stdout = """
     A 1
     B <null>
-    <false>
+    CHK <false>
     Records affected: 1
 
     A 1
