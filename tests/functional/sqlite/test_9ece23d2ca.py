@@ -25,8 +25,8 @@ test_script = """
     insert into t1 values(3, 4, upper('abc'));
 
     set count on;
-    select c, c = 'Abc', 0 as z from t1 order by b;
-    select c, c = 'Abc', rank() over (order by b) from t1;
+    select c, c = 'Abc' as chk1, 0 as z from t1 order by b;
+    select c, c = 'Abc' as chk2, rank() over (order by b) from t1;
 """
 
 substitutions = [('[ \t]+', ' ')]
@@ -34,17 +34,18 @@ act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
     C abc
-    <true>
+    CHK1 <true>
     Z 0
     C ABC
-    <true>
+    CHK1 <true>
     Z 0
     Records affected: 2
+
     C abc
-    <true>
+    CHK2 <true>
     RANK 1
     C ABC
-    <true>
+    CHK2 <true>
     RANK 2
     Records affected: 2
 """
