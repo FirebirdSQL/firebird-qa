@@ -27,7 +27,8 @@ test_script = """
     insert into t2 values(1,2);
     insert into t2 values(5,6);
     set count on;
-    select t1.*, t2.*, y = b from t1, t2 where y=b;
+    select t1.*, t2.*, y = b as chk
+    from t1, t2 where y=b;
 """
 
 substitutions = [('[ \t]+', ' ')]
@@ -38,7 +39,7 @@ expected_stdout = """
     Y 2
     A 1
     B 2
-    <true>
+    CHK <true>
     Records affected: 1
 """
 
