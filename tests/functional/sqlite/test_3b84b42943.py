@@ -22,17 +22,20 @@ test_script = """
     insert into t0(c0) values(0);
 
     set count on;
-    select t1.c1 is true from t0 left join t1 using(c0);
-    select t1.c1 is true from t0 natural left join t1;
+    select t1.c1 is true as chk
+    from t0 left join t1 using(c0);
+    select t1.c1 is true as chk
+    from t0 natural left join t1;
 """
 
 substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    <false>
+    CHK <false>
     Records affected: 1
-    <false>
+
+    CHK <false>
     Records affected: 1
 """
 
