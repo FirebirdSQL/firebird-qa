@@ -22,7 +22,7 @@ test_script = """
     insert into t0 values(3);
     
     set count on;
-    select 0 in (select v1 from t0)
+    select 0 in (select v1 from t0) as chk
     from t0
     where v1 = 2 or exists(select v1 from t0 rows 0);
 """
@@ -31,7 +31,7 @@ substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    <false>
+    CHK <false>
     Records affected: 1
 """
 
