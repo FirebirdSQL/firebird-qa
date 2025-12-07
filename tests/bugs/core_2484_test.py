@@ -2,7 +2,7 @@
 
 """
 ID:          issue-2897
-ISSUE:       2897
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/2897
 TITLE:       Success message when connecting to tiny trash database file
 DESCRIPTION:
     We make invalid FDB file by creating binary file and write small string in it (text: 'ŒåŁä').
@@ -37,12 +37,10 @@ JIRA:        CORE-2484
 FBTEST:      bugs.core_2484
 NOTES:
     Related issues:
-        https://github.com/FirebirdSQL/firebird/issues/6747
-        "Wrong message when connecting to tiny trash database file", ex. CORE-6518 // 18.03.2021
-        https://github.com/FirebirdSQL/firebird/issues/6755
-        "Connect to database that contains broken pages can lead to FB crash", ex. CORE-6528 // 31.03.2021
-        https://github.com/FirebirdSQL/firebird/issues/6968
-        "On Windows, engine may hung when works with corrupted database and read after the end of file" // 14.09.2021
+        #6747 "Wrong message when connecting to tiny trash database file", ex. CORE-6518 // 18.03.2021
+        #6755 "Connect to database that contains broken pages can lead to FB crash", ex. CORE-6528 // 31.03.2021
+        #6968 "On Windows, engine may hung when works with corrupted database and read after the end of file" // 14.09.2021
+        #8450  "Slightly better checking for a valid database file"
     [24.07.2025] pzotov
         Adjusted expected output in 6.x to actual, letter from dimitr 23.07.2025 11:35
         Checked on 6.0.0.1061; 5.0.3.1686; 4.0.6.3223; 3.0.13.33818
