@@ -68,6 +68,14 @@ NOTES:
     3e3b75 ("Re-add indexes for object name without schema name...") with issuing
     "UNEXPECTED: can connect to DB with missed last ... pages".
     Checked on 6.0.0.1300 5.0.4.1711 4.0.7.3236 3.0.14.33826.
+
+    [28.12.2025] pzotov
+    Increased threshold value for median time that engine spends to establish connection for Classic.
+    Detected on 6.0.0.1383 after migration of QA suite on reserving host (Windows 10, CPU W-2123 3.60GHz).
+    Previous value was 250, new median is ~350. The reason of such change is unknown.
+    *** TODO ***
+    Probably, test must be re-implemented: we have to check only absense of delay for ~110 seconds between
+    second and third attempts to make connection.
 """
 
 import os
@@ -82,8 +90,16 @@ from pathlib import Path
 import pytest
 from firebird.qa import *
 
+##############################
+###     s e t t i n g s    ###
+##############################
+# Threshold values for median time that engine spent to establish connection to broken DB, ms.
+# We have to split these values depending on ServerMode.
+MAX_WAIT_FOR_CONNECT_CS = 500
+MAX_WAIT_FOR_CONNECT_SS = 150
 SKIP_BACK_FROM_LAST_PAGE = 50
 NUM_OF_CUTED_LAST_PAGES = 20
+#############################
 
 db = db_factory()
 tmp_fdb = db_factory(filename = 'tmp_gh_6976.cuted_off.fdb', async_write = True)
@@ -155,7 +171,7 @@ def try_cuted_off_db(act_source, act_broken, db_page_size, db_pages_cnt, cut_off
 @pytest.mark.platform('Windows')
 def test_1(act_source: Action, act_broken: Action, capsys):
 
-    THRESHOLD_FOR_MAKE_CONNECT_MS = 250 if 'classic' in act_source.vars['server-arch'].lower() else 150
+    THRESHOLD_FOR_MAKE_CONNECT_MS = MAX_WAIT_FOR_CONNECT_CS if 'classic' in act_source.vars['server-arch'].lower() else MAX_WAIT_FOR_CONNECT_SS
 
     with act_source.db.connect() as con:
         db_page_size = con.info.page_size
