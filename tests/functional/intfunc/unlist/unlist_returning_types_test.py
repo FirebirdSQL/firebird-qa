@@ -8,6 +8,11 @@ DESCRIPTION: Provided by red-soft. Original file name: "unlist.test_returning_ty
 NOTES:
     [09.04.2025] pzotov
     Checked on 6.0.0.725
+
+    [28.12.2025] pzotov
+    Changed substitutions list: value +/-0e0 can be displayed with 16 digits after decimal point.
+    We have to suppress "excessive" 16th digit (zero).
+    Detected on Intel Xeon W-2123 ("Intel64 Family 6 Model 85 Stepping 4") // Windows-10
 """
 
 import pytest
@@ -237,7 +242,8 @@ test_script = f"""
     select * from unlist('texttexttext' returning test_domain) as a(unlist_domain_02);
 """
 
-act = isql_act('db', test_script, substitutions=[ ('[ \\t]+', ' ') ])
+substitutions= [('[\t ]+', ' '), ('.0000000000000000', '.000000000000000')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = f"""
     UNLIST_BIGINT_01 -9223372036854775808
