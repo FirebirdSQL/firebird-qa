@@ -12,6 +12,11 @@ NOTES:
     Because of that, min_version is set to 5.0.
 
     Checked on Linux: 6.0.0.726-d79c643; 5.0.3.1642-9dc399f; Windows: 6.0.0.726-90e0f49; 5.0.3.1641-da493b5
+
+    [28.12.2025] pzotov
+    Changed substitutions list: value +/-0e0 can be displayed with 16 digits after decimal point.
+    We have to suppress "excessive" 16th digit (zero).
+    Detected on Intel Xeon W-2123 ("Intel64 Family 6 Model 85 Stepping 4") // Windows-10
 """
 
 import pytest
@@ -44,7 +49,8 @@ test_script = """
     set term ;^
 """
 
-act = isql_act('db', test_script, substitutions=[('[\\s]+', ' ')])
+substitutions= [('[\t ]+', ' '), ('.0000000000000000', '.000000000000000')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
            0       1.000000000000000      0.5000000000000000 
@@ -584,8 +590,8 @@ expected_stdout = """
          534  3.162020133383978e-322  1.581010066691989e-322 
          535  7.905050333459945e-323  3.952525166729972e-323 
          536  1.976262583364986e-323  9.881312916824931e-324 
-         537  4.940656458412465e-324       0.000000000000000 
-         538       0.000000000000000       0.000000000000000 
+         537  4.940656458412465e-324  0.0000000000000000
+         538  0.0000000000000000      0.0000000000000000
 """
 
 @pytest.mark.version('>=5.0')
