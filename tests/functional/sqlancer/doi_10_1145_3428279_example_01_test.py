@@ -12,6 +12,11 @@ DESCRIPTION:
 NOTES:
     [01.06.2025] pzotov
     Bug exists on Firebird 3.0.13.33807 (18.04.2025).
+
+    [28.12.2025] pzotov
+    Changed substitutions list: value +/-0e0 can be displayed with 16 digits after decimal point.
+    We have to suppress "excessive" 16th digit (zero).
+    Detected on Intel Xeon W-2123 ("Intel64 Family 6 Model 85 Stepping 4") // Windows-10
 """
 
 import pytest
@@ -42,7 +47,8 @@ test_script = """
     ----------------------------------------------------------------------
 """
 
-act = isql_act('db', test_script, substitutions=[('[ \t]+', ' ')])
+substitutions= [('[\t ]+', ' '), ('.0000000000000000', '.000000000000000')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
