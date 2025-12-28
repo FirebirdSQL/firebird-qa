@@ -7,8 +7,35 @@ TITLE:       BUGCHECK "decompression overran buffer (179)" when WITH LOCK clause
 DESCRIPTION:
 NOTES:
     [25.11.2024] pzotov
-    Confirmed bug on 6.0.0.1355-f3c5da8 ; 5.0.4.1735-63db1b3 ; 4.0.7.3237-c6d4331 ; 3.0.14.33828-25cd017
-    Checked on 6.0.0.1357-d37c931 ; 5.0.4.1735-0-5ee71b6 ; 4.0.7.3237-cdd12070 ; 3.0.14.33829-bd28d83
+        Confirmed bug on 6.0.0.1355-f3c5da8 ; 5.0.4.1735-63db1b3 ; 4.0.7.3237-c6d4331 ; 3.0.14.33828-25cd017
+        Checked on 6.0.0.1357-d37c931 ; 5.0.4.1735-0-5ee71b6 ; 4.0.7.3237-cdd12070 ; 3.0.14.33829-bd28d83
+    [28.12.2025] pzotov
+        Added temporary mark 'disabled_in_forks' to SKIP this test when QA verifies FB fork rather than vanilla build.
+        Reason: HQbird 3.x issues BUGCHECK, firebird process terminates and further tests are not executed.
+        After skipping ~180 tests firebird-driver causes crash of pytest (or Python) with following messages:
+        ============
+            tests/functional/database/create/test_00.py::test_1 ERROR           [1549/2221]
+            tests/functional/database/create/test_01.py::test_1 FAILED          [1550/2221]
+            C:/py-311-venv/.venv/Lib/site-packages/_pytest/unraisableexception.py:67:
+            PytestUnraisableExceptionWarning: Exception ignored in: <function Statement.__del__ at 0x0000015485E6F880>
+
+            Traceback (most recent call last):
+              File "C:/py-311-venv/.venv/Lib/site-packages/firebird/driver/core.py", line 3028, in __del__
+                self.free()
+              File "C:/py-311-venv/.venv/Lib/site-packages/firebird/driver/core.py", line 3047, in free
+                self._istmt.free()
+              File "C:/py-311-venv/.venv/Lib/site-packages/firebird/driver/interfaces.py", line 830, in free
+                self._check()
+              File "C:/py-311-venv/.venv/Lib/site-packages/firebird/driver/interfaces.py", line 141, in _check
+                raise self.__report(DatabaseError, self.status.get_errors())
+            firebird.driver.types.DatabaseError: invalid statement handle
+
+            Enable tracemalloc to get traceback where the object was allocated.
+            See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+              warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+            ...
+        ============
+        Reproduced in Python: 3.11.2; pytest: 9.0.2; firebird.driver: 2.0.2; firebird.Qa: 0.21.0
 """
 
 import pytest
@@ -29,6 +56,7 @@ custom_tpb = tpb(isolation = Isolation.READ_COMMITTED, lock_timeout = -1)
 
 #-----------------------------------------------------------
 
+@pytest.mark.disabled_in_forks
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
 
