@@ -10,7 +10,7 @@ NOTES:
     Checked on 6.0.0.755-9d191e8 (intermediate snapshot)
     [28.12.2025] pzotov
     Changed substitutions list: value +/-0e0 can be displayed with 16 digits after decimal point.
-    We have to suppress "excessive" 16th digit (zero).
+    We have to suppress "excessive" 16th+ zeroes.
     Detected on Intel Xeon W-2123 ("Intel64 Family 6 Model 85 Stepping 4") // Windows-10
 """
 
@@ -95,7 +95,7 @@ test_script = """
     from rdb$database;
 """
 
-act = isql_act('db', test_script, substitutions = [ ('[ \t]+',' '), ('0.0000000000000000', '0.0000000000000000') ])
+act = isql_act('db', test_script, substitutions = [('[\t ]+', ' '), ('.0{15,}', '.000000000000000')])
 
 expected_stdout = """
     LEAST_01                        123
