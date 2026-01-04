@@ -3,7 +3,7 @@
 """
 ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8836
-TITLE:       Missing a column name for boolean expression
+TITLE:       Regression: Aggregate function ANY_VALUE always returns NULL
 DESCRIPTION:
     doc/sql.extensions/README.aggregate_functions.md
     ANY_VALUE is a non-deterministic aggregate function that returns its expression for an arbitrary record from the grouped rows.
