@@ -6,7 +6,7 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8822
 TITLE:       Some procedures containing LIST aggregate function are not restored in Firebird 6.0 if backup was made in 5.0
 DESCRIPTION:
     Test uses backup of database that was created in ODS 13.1 (FB 5.0.4.x) and contains SP with source from the ticket.
-    We extract this .fbk from .zip and try to restore from it using services API. No errors must occur
+    We extract this .fbk from .zip and try to restore from it using services API. No errors must occur.
     Finally, we query some info for this SP from RDB$PROCEDURES and run SP. No error must raise.
 NOTES:
     [05.01.2026] pzotov
