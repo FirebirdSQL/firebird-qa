@@ -3,7 +3,7 @@
 """
 ID:          issue-1551
 ISSUE:       1551
-TITLE:       User-collations based on UNICODE are not upgrade to newer ICU version on restore
+TITLE:       User-collations based on UNICODE are not upgrade to newer ICU version on restore.
 DESCRIPTION:
     Test uses .fbk which was created on linux host and has collation with following DDL:
     create collation nums_coll for utf8 from unicode case insensitive 'NUMERIC-SORT=1';
