@@ -3,7 +3,7 @@
 """
 ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8842
-TITLE:       GTT accept weird syntax and has unnecessary syntax conflicts
+TITLE:       GTT accept weird syntax and has unnecessary syntax conflicts.
 DESCRIPTION:
 NOTES:
     [04.01.2026] pzotov
