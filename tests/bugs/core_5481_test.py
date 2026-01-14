@@ -9,15 +9,24 @@ JIRA:        CORE-5481
 FBTEST:      bugs.core_5481
 NOTES:
     [24.09.2023] pzotov
-    Execution plan changed in FB 5.x since build 5.0.0.1211 (14-sep-2023).
-    Expected output has been splitted on that remains actual for FB 4.x and one that issued for 5.x+.
-    Confirmed by dimitr, letter 24.09.2023 13:30
+        Execution plan changed in FB 5.x since build 5.0.0.1211 (14-sep-2023).
+        Expected output has been splitted on that remains actual for FB 4.x and one that issued for 5.x+.
+        Confirmed by dimitr, letter 24.09.2023 13:30
 
     [01.07.2025] pzotov
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-    
-    Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.884; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [15.01.2026] pzotov
+        Execution plan has changed since 6.0.0.1393-f7068cd.
+        New plan can be used instead of old one.
+
+        See  e8de18c2, "Some adjustments to the selectivity factors".
+        See  565bfcd6, "Fix missing inversion when the bounded ORDER plan is converted into the SORT one..."
+
+        NOTE. Firebird 6.x often tries to SORT(INDEX) instead of ORDER...INDEX if cost looks cheaper.
+        See letter from dimitr, 14.01.2026 13:05.
+        Checked on 6.0.0.1393-f7068cd.
 """
 
 import pytest
@@ -82,7 +91,7 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     PLAN SORT ("PUBLIC"."V_TEST" "B" INDEX ("PUBLIC"."BALANCES_BALANCEDATE_ORGACCOUNT"))
-    PLAN ("PUBLIC"."V_TEST" "B" ORDER "PUBLIC"."BALANCES_BALANCEDATE_DESC" INDEX ("PUBLIC"."FK_BALANCES_ORGACCOUNTS"))
+    PLAN SORT ("PUBLIC"."V_TEST" "B" INDEX ("PUBLIC"."FK_BALANCES_ORGACCOUNTS", "PUBLIC"."BALANCES_BALANCEDATE_DESC"))
 """
 
 
