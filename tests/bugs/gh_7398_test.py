@@ -30,6 +30,12 @@ NOTES:
     [05.07.2025] pzotov
         Added substitution to suppress all except sqltype and fields name from SQLDA output.
         Checked on 6.0.0.892; 5.0.3.1668.
+    [15.01.2026] pzotov
+        Execution plan has changed since 6.0.0.1393-f7068cd.
+        See  e8de18c2, "Some adjustments to the selectivity factors".
+        New plan can be used instead of old one (letter from dimitr, 14.01.2026 13:05).
+        NOTE. This test may be changed soon again.
+        Checked on 6.0.0.1393-f7068cd.
 """
 
 import locale
@@ -110,6 +116,7 @@ expected_out_5x = """
     ................................-> Bitmap
     ....................................-> Index "IDX_INV_ETQ_NAT_CML_STAT" Range Scan (full match)
 """
+
 expected_out_6x = """
     Select Expression
     ....-> Aggregate
@@ -117,12 +124,11 @@ expected_out_6x = """
     ............-> Filter
     ................-> Hash Join (inner) (keys: 1, total key length: 4)
     ....................-> Nested Loop Join (inner)
-    ........................-> Filter
-    ............................-> Table "PUBLIC"."PCP_TIN_REC" as "R" Full Scan
-    ........................-> Filter
-    ............................-> Table "PUBLIC"."PCP_TIN_REC_MAT" as "M" Access By ID
-    ................................-> Bitmap
-    ....................................-> Index "PUBLIC"."FK_PCP_TIN_REC_MAT_REC" Range Scan (full match)
+    ........................-> Hash Join (inner) (keys: 1, total key length: 4)
+    ............................-> Table "PUBLIC"."PCP_TIN_REC_MAT" as "M" Full Scan
+    ............................-> Record Buffer (record length: 33)
+    ................................-> Filter
+    ....................................-> Table "PUBLIC"."PCP_TIN_REC" as "R" Full Scan
     ........................-> Filter
     ............................-> Table "PUBLIC"."INV_ETQ_MAT" as "CUS" Access By ID
     ................................-> Bitmap
