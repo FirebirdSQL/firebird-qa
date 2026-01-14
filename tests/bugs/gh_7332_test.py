@@ -14,21 +14,26 @@ DESCRIPTION:
     Every row in every of these colums is result of concatenation of all unicode codepoints that require 4 bytes per character
     see list here: https://design215.com/toolbox/utf8-4byte-characters.php
     (Sumerian Cuneiform, Egyptian Hieroglyphs, Musical Symbols, Mahjong+Dominoes+Playing_Cards, Emojis)
-    After successful ionsert of several rows in  this table, we run following query:
+    After successful insert of several rows in  this table, we run following query:
        "select * from test a, test b order by a.id" -- and obtain its explained execution plan.
     This plan must contain 'Refetch' item, regardless that InlineSortThreshold is 10M (i.e. much greater than doubled record size).
     All above mentioned actions are performed for three protocols: local, inet and xnet (for windows).
 NOTES:
     [05.10.2025] pzotov
-    One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
-    Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
-    (for LINUX this equality is case-sensitive, even when aliases are compared!)
-    Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace it before every test session).
-    Discussed with pcisar, letters since 30-may-2022 13:48, subject:
-    "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
-    Custom driver config object ('db_cfg_object') is used: we have to use DB with predefined alias instead of temporary one.
-
-    Checked on 6.0.0.1292-c63a3ed (SS/CS)
+        One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
+        Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
+        (for LINUX this equality is case-sensitive, even when aliases are compared!)
+        Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace it before every test session).
+        Discussed with pcisar, letters since 30-may-2022 13:48, subject:
+        "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
+        Custom driver config object ('db_cfg_object') is used: we have to use DB with predefined alias instead of temporary one.
+        Checked on 6.0.0.1292-c63a3ed (SS/CS)
+    [15.01.2026] pzotov
+        Added substitution with suppressing table name and its alias in explained plan because it no matters.
+        ::: NB ::: Order of joined sources has been changed since 6.0.0.1393-f7068cd.
+        See 565bfcd6, "Fix missing inversion when the bounded ORDER plan is converted into the SORT one...".
+        This is not regression (explained by dimitr, letter 14.01.2026 13:05).
+        Checked on 6.0.0.1393-f7068cd; 6.0.0.1389-f784b93
 """
 
 import re
@@ -48,6 +53,7 @@ substitutions = \
     [ 
        ('record length(:)?\\s+\\d+, key length(:)?\\s+\\d+', 'record length: N, key length: M')
       ,('"PUBLIC".', '')
+      ,('Table .* Full Scan', 'Table Full Scan')
       ,('"', '')
     ]
 act = python_act('db', substitutions = substitutions)
@@ -303,7 +309,8 @@ def test_1(act: Action, capsys):
                         ,b."29: Είκοσι εννέα (Íkosi ennéa)"
                         ,b."30: Τριάντα (Triánta)"
                         ,b."31: Τριάντα ένα (Triánta éna)"
-                    from test2 a, test2 b
+                    from test2 a
+                    cross join test2 b
                     order by 
                         a.id
                 """
@@ -336,8 +343,8 @@ def test_1(act: Action, capsys):
             ....-> Refetch
             ........-> Sort (record length: N, key length: M)
             ............-> Nested Loop Join (inner)
-            ................-> Table TEST2 as B Full Scan
-            ................-> Table TEST2 as A Full Scan
+            ................-> Table Full Scan
+            ................-> Table Full Scan
             {SUCCESS_MSG}
         """
         act.stdout = capsys.readouterr().out
