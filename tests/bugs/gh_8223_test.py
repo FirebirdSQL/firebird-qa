@@ -28,6 +28,11 @@ NOTES:
         Separated expected output for FB major versions prior/since 6.x.
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.914; 5.0.3.1668.
+    [15.01.2026] pzotov
+        Execution plan has changed since 6.0.0.1393-f7068cd.
+        Currently it is unknown whether we have to adjust actual output.
+        Waiting for decision by dimitr, letter 14.01.2026 13:05.
+        See  e8de18c2, "Some adjustments to the selectivity factors".
 """
 
 import pytest
