@@ -9,9 +9,12 @@ JIRA:        CORE-1550
 FBTEST:      bugs.core_1550_postfix
 NOTES:
     [23.03.2025] pzotov
-    Separated output because plans differ on 6.x vs previous versions since commit fc12c0ef
-    ("Unnest IN/ANY/EXISTS subqueries and optimize them using semi-join algorithm (#8061)").
-    Checked on 6.0.0.687-730aa8f; 5.0.3.1633-25a0817 
+        Separated output because plans differ on 6.x vs previous versions since commit fc12c0ef
+        ("Unnest IN/ANY/EXISTS subqueries and optimize them using semi-join algorithm (#8061)").
+        Checked on 6.0.0.687-730aa8f; 5.0.3.1633-25a0817 
+    [16.01.2026] pzotov
+        Adjusted output for 6.x: changed plan must be considered as correct
+        (letter from dimitr, 15.01.2026 09:12).
 """
 
 import pytest
