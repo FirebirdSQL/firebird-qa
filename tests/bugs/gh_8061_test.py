@@ -48,6 +48,15 @@ NOTES:
         Separated expected output for FB major versions prior/since 6.x.
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.914; 5.0.3.1668.
+
+    [16.01.2026] pzotov
+        Script 'sample-DB_-_firebird.sql' in filed/standard_sample_databases.zip has been supplemented with
+        index statistics re-calculation, including PK/FK indices. This is needed to get correct execution plan
+        for query marked as 'Check unnesting of two nested EXISTS' (explained by dimitr, 15.01.2026 09:12).
+        If value of select_count_from_<outer> * index_selectivity_for_<inner> greater than 1 then HJ is used.
+        Otherwise Nested Loops are in use.
+        Execution plan for this query has changed in 6.0.0.1394-c8d9d10d (2026.01.14) after
+        commit #893488b "(Simplified but still) cost-based choice between LOOP and HASH semi-joins".
 """
 
 import pytest
@@ -267,12 +276,12 @@ def test_1(act: Action, tmp_sql: Path, capsys):
         ........-> Hash Join (semi)
         ............-> Table "PUBLIC"."CUSTOMER" as "C3" Full Scan
         ............-> Record Buffer (record length: NN)
-        ................-> Filter
-        ....................-> Hash Join (semi)
-        ........................-> Table "PUBLIC"."SALES" as "S3" Full Scan
-        ........................-> Record Buffer (record length: NN)
-        ............................-> Filter
-        ................................-> Table "PUBLIC"."EMPLOYEE" as "X" Full Scan
+        ................-> Nested Loop Join (semi)
+        ....................-> Table "PUBLIC"."SALES" as "S3" Full Scan
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."EMPLOYEE" as "X" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."EMPLOYEE_PK" Unique Scan
 
         4000
         {query_map[4000][0]}
