@@ -92,7 +92,7 @@ def test_1(act: Action):
     else:
         expected_stdout = """
             PLAN HASH ("M" NATURAL, "D" ORDER "PUBLIC"."TD_PK")
-            PLAN HASH ("M" NATURAL, "D" ORDER "PUBLIC"."TD_F01_F02_UNQ")
+            PLAN HASH ("M" NATURAL, SORT ("D" NATURAL))
         """
 
     act.expected_stdout = expected_stdout
