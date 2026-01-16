@@ -194,6 +194,7 @@ db = db_factory(init = init_sql, page_size = PAGE_SIZE)
 act = python_act('db', substitutions = [('[ \t]+', ' ')])
 
 @pytest.mark.slow
+@pytest.mark.perf_measure
 @pytest.mark.version('>=4')
 def test_1(act: Action, capsys):
 

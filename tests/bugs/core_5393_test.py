@@ -185,7 +185,7 @@ expected_stdout = f"""
     {MSG_PREFIX}acceptable.
 """
 
-
+@pytest.mark.perf_measure
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action, capsys):
 

@@ -109,6 +109,7 @@ DATA_LEN = 50 * 1024 * 1024
 # 
 MAX_THRESHOLD_FOR_COMPRESS_ON_VS_OFF = 4.0
 
+@pytest.mark.perf_measure
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_data: Path, capsys):
 

@@ -51,6 +51,7 @@ ADD_2_COMMIT_MAX_RATIO = 0.8
 db = db_factory(from_backup='core5602.fbk')
 act = python_act('db')
 
+@pytest.mark.perf_measure
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action, capsys):
     time_data = {}

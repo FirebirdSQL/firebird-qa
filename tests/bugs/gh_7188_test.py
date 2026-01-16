@@ -53,6 +53,7 @@ RSS_MAX_DIFF = 1.003
 VMS_MAX_DIFF = 1.001
 PASSED_MSG = 'OK'
 
+@pytest.mark.perf_measure
 @pytest.mark.version('>=4.0.2')
 def test_1(act1: Action, act2: Action, tmp_user1: User, tmp_user2: User, capsys):
     dt_list = []

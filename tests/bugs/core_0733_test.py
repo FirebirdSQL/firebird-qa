@@ -128,6 +128,7 @@ db = db_factory(init=init_script, charset = 'none')
 
 act = python_act('db')
 
+@pytest.mark.perf_measure
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
 

@@ -39,6 +39,8 @@ def get_server_pid(con):
         fb_pid = int(cur.fetchone()[0])
     return fb_pid
 #--------------------------------------------------------------------
+
+@pytest.mark.perf_measure
 @pytest.mark.version('>=5.0.3')
 def test_1(act: Action, capsys):
 

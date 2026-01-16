@@ -62,6 +62,7 @@ def median(lst):
     return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
 #--------------------------------------------------------------------
 
+@pytest.mark.perf_measure
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
 

@@ -94,6 +94,7 @@ expected_stdout = """
     Medians ratio: acceptable
 """
 
+@pytest.mark.perf_measure
 @pytest.mark.version('>=4.0.5')
 def test_1(act: Action, capsys):
     

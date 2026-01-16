@@ -81,8 +81,8 @@ expected_stdout = """
     Duration ratio: acceptable
 """
 
-#@pytest.mark.version('>=3.0.8')
-@pytest.mark.version('>=3.0')
+@pytest.mark.perf_measure
+@pytest.mark.version('>=3.0.8')
 def test_1(act: Action, capsys):
    
     ###########################

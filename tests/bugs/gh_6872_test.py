@@ -86,6 +86,7 @@ expected_stdout = """
 """
 
 @pytest.mark.intl
+@pytest.mark.perf_measure
 @pytest.mark.version('>=4.0.1')
 def test_1(act: Action, capsys):
 

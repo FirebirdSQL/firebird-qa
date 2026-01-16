@@ -81,6 +81,7 @@ SIM2_LIKE_RATIO_MAP = { 'starts_with' : 10.0, 'ends_with': 8.0 }
 
 ###########################
 
+@pytest.mark.perf_measure
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
     

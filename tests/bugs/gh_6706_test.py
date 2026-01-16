@@ -56,6 +56,7 @@ def get_server_pid(con):
 
 #--------------------------------------------------------------------
 
+@pytest.mark.perf_measure
 @pytest.mark.version('>=4.0.0')
 def test_1(act: Action, capsys):
     
