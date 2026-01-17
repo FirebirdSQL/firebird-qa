@@ -5,24 +5,36 @@ ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6413
 TITLE:       Data pages of newly gbak restored databases should be marked as "swept"
 DESCRIPTION:
-NOTES:
-    [17.07.2025] pzotov
     Test adds a table and fill it with some data.
     Then we make b/r and obtain statistics using 'gstat -d ...'
     Output will contain lines like: "Primary pages: 1, secondary pages: 1, swept pages: 1"
     We have to check that in every such line value of primary pages is equal to swept pages
     or it can be greater but NO MORE than for <MAX_NUM_OF_EMPTY_PAGES> because of pages
     allocation algorithm.
-
     Explained by Vlad, 17.07.2025 16:34.
-    Confirmed on 6.0.0.799
-    Checked on 6.0.0.1020 ; 5.0.3.1683
+NOTES:
+    [17.07.2025] pzotov
+        Commits:
+        5.x (25.06.2025 2054): a0e23c32251c2257c4e3b13d0a9fd98a29a16dec // Back-ported pull request #8549
+        6.x (25.06.2025 1905): 564c98b2e0854be949166ee369128208af32eec5
+    [17.01.2026] pzotov
+        One need to explicitly DISABLE parallel workers during restore because otherwise test can fail
+        in approx 3-4% of runs on Classic: difference between primary and swept pages GREATER than
+        <MAX_NUM_OF_EMPTY_PAGES> can appear.
+        Default value of parallel workers (in firebird.conf) may be greater than 1, so we have to run
+        srv.database.restore() with explicitly specified 'parallel_workers=1'.
+        This ability absent in local_restore() method thus it was decided to run restore using common way.
+        Big thanks Vlad for suggestion.
+
+        Confirmed on 6.0.0.858 ; 5.0.3.1668
+        Checked on 6.0.0.876; 6.0.0.1394 ; 5.0.3.1673; 5.0.4.1746
 """
 import string
 import locale
 import re
-from io import BytesIO
+from pathlib import Path
 from firebird.driver import SrvRestoreFlag
+
 import pytest
 from firebird.qa import *
 
@@ -47,6 +59,8 @@ db = db_factory(init = init_sql, charset = 'win1251', page_size = 8192)
 
 act = python_act('db')
 
+fbk_file = temp_file('gh_6413.fbk')
+
 #-----------------------------------------------------------
 
 REMOVE_PUNCT = str.maketrans('', '', string.punctuation)
@@ -54,12 +68,17 @@ MAX_NUM_OF_EMPTY_PAGES = 7
 EXPECTED_MSG = f'Expected: no lines with difference between primary and swept pages GREATER than {MAX_NUM_OF_EMPTY_PAGES}'
 
 @pytest.mark.version('>=5.0.3')
-def test_1(act: Action, capsys):
-    backup = BytesIO()
-    with act.connect_server() as srv:
-        srv.database.local_backup(database = act.db.db_path, backup_stream = backup)
-        backup.seek(0)
-        srv.database.local_restore(backup_stream = backup, database = act.db.db_path, flags = SrvRestoreFlag.REPLACE)
+def test_1(act: Action, fbk_file: Path, capsys):
+
+    with act.connect_server(encoding=locale.getpreferredencoding()) as srv:
+        srv.database.backup(database=act.db.db_path, backup=fbk_file)
+        # NOTE: backup method is **(ASYNC service)** (see firebird driver source).
+        # We have to call wait() here otherwise exception raises:
+        # self._srv()._svc.start(spb.get_buffer()) --> firebird.driver.types.DatabaseError: Service is currently busy: Restore Database
+        srv.wait()
+
+        srv.database.restore(backup=fbk_file, database=act.db.db_path, flags=SrvRestoreFlag.REPLACE, parallel_workers=1)
+        srv.wait()
 
     act.gstat(switches=['-d' ], io_enc = locale.getpreferredencoding())
     # Primary pages: 1, secondary pages: 1, swept pages: 1
