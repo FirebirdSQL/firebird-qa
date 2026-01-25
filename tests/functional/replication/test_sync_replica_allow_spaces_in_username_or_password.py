@@ -60,6 +60,7 @@ NOTES:
 
     Confirmed bug on 6.0.0.599-ba58842 (25.01.2025): replication could not run if user/password contain space(s).
     Checked on 6.0.0.599-979f46b (snapshot based on fix, timestamp: 27.01.2025 1142).
+    Checked on 6.0.0.1395 (Windows and Linux).
 """
 import re
 import locale
@@ -144,7 +145,7 @@ def reset_sync_replication(act_db_main: Action, act_db_repl: Action, db_main_fil
                             con.commit()
             except DatabaseError as e:
                 out_reset += e.__str__()
-        
+
     # Must remain EMPTY:
     ####################
     return out_reset
@@ -188,6 +189,8 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     # Use only con.info.name for that!
     #
     db_info = {}
+    log_before = []
+    replold_lines = []
     try:
         for a in (act_db_main, act_db_repl):
             with a.db.connect() as con:
@@ -196,9 +199,15 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         log_before = act_db_main.get_firebird_log()
         replold_lines = get_repl_log(act_db_main)
     except DatabaseError as e:
+        # Example when some of aliases is defined incorrectly (Linux):
+        #  I/O error during "open" operation for file "db_sync_REPL_alias"
+        # -Error while trying to open file
+        # -No such file or directory\ngdscodes:\n(335544344, 335544734)
         run_errors_map['init_db_err'] = '\n'.join( (e.__str__(), 'gdscodes:', f'{e.gds_codes}') )
     except Exception as e:
         run_errors_map['init_common_err'] = f"Unexpected error during initial code execution: {e}"
+
+    assert len(run_errors_map)==0 and len(db_info) == 2
 
     #------------------------------------------------------------
 
@@ -209,7 +218,6 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
             for u_name in SYNC_USER_NAME_LST:
                 for u_pswd in SYNC_USER_PSWD_LST:
                     idx += 1
-                
                     # write default values in SYNC_REPL_USER_FILE and SYNC_REPL_PSWD_FILE (to have ability replicate role 'service_team' and grants for it):
                     out_set_sync = set_sync_replica_user_pswd(db_info[act_db_main,'db_full_path'], SYNC_REPL_USER_FILE, SYNC_REPL_PSWD_FILE, act_db_main.db.user, act_db_main.db.password)
 
@@ -314,15 +322,11 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     run_errors_map['repl_log_diff'] = repl_log_diff
 
     if max(v.strip() for v in run_errors_map.values()):
-        pass
+        run_errors_map['final_reset'] = reset_sync_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'])
     else:
         act_db_main.expected_stdout = '\n'.join( expected_on_replica )
         act_db_main.stdout = capsys.readouterr().out
         assert act_db_main.clean_stdout == act_db_main.clean_expected_stdout
-
-    # This test changes OWNER of db_main to NON-sysdba.
-    # We have to revert this change regardless on test outcome.
-    run_errors_map['final_reset'] = reset_sync_replication(act_db_main, act_db_repl, db_info[act_db_main,'db_full_path'], db_info[act_db_repl,'db_full_path'])
 
     if max(v.strip() for v in run_errors_map.values()):
         print(f'Problem(s) detected, check run_errors_map:')
@@ -331,5 +335,5 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
                 print(k,':')
                 print(v.strip())
                 print('-' * 40)
-    
+ 
     assert '' == capsys.readouterr().out
