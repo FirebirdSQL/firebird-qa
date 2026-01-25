@@ -1011,6 +1011,7 @@ test_script = """
 act = isql_act('db', test_script, substitutions=[ ('[ \\t]+', ' ') ])
 
 @pytest.mark.version('>=6.0.0')
+@pytest.mark.slow
 def test_1(act: Action):
 
     expected_stdout = f"""
