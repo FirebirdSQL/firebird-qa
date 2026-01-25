@@ -60,7 +60,7 @@ expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
-    -COLUMN TEST.F01
+    -TABLE TEST
     -there are 1 dependencies
     Table: TEST2
     F01 (DM_INT) INTEGER Nullable
