@@ -31,6 +31,7 @@ NOTES:
                  Discussed with pcisar, letters since 30-may-2022 13:48.
     Checked on 6.0.0.1394 5.0.4.1746 4.0.7.3243.
 """
+import os
 import random
 import re
 import string
@@ -40,6 +41,12 @@ from firebird.driver import driver_config, DatabaseError, create_database, core 
 
 import pytest
 from firebird.qa import *
+
+for v in ('ISC_USER','ISC_PASSWORD'):
+    try:
+        del os.environ[ v ]
+    except KeyError as e:
+        pass
 
 ##############
 REQUIRED_ALIAS = 'tmp_self_sec_alias'
@@ -52,6 +59,7 @@ CHECKED_CHARS_LST = list(string.punctuation)
 #     > raise self.__report(DatabaseError, self.status.get_errors())
 #     E firebird.driver.types.DatabaseError: Missing terminating quote <'> in the end of quoted string
 #     E -Secondary attachment - config data from DPB ignored
+# gdscode = 335545279
 CHECKED_CHARS_LST.remove('"')
 CHECKED_CHARS_LST.remove("'")
 
@@ -173,23 +181,30 @@ def test_1(act: Action, capsys):
                 print(e.__str__())
                 print(e.gds_codes)
 
-            if user_created_ok:
-                with fb_core.connect_server(server = srv_cfg.name, expected_db = self_db) as srv:
-                    svc = fb_core.ServerUserServices(srv)
-                    try:
-                        svc.update( user_name = f'"{db_owner}"', password = db_passwd, database = self_db)
-                        user_updated_ok = 1
-                    except DatabaseError as e:
-                        print(f'Problem with adding user >{db_owner}< in {self_db=}')
-                        #print(e)
-                        print(e.__str__())
-                        print(e.gds_codes)
-                        print('List of all users:')
-                        for u in svc.get_all(database = self_db):
-                            print(f'{u.user_name=}')
+            # svc.update() raises:
+            # >           self._srv()._svc.start(spb.get_buffer()) // core.py:5452
+            # >       self._check()
+            # ...
+            # > firebird.driver.types.DatabaseError: invalid switch specified // interfaces.py:141 // gdscode=336724008
+
+            #if user_created_ok:
+            #    with fb_core.connect_server(server = srv_cfg.name, user = f'"{db_owner}"', password = db_passwd, expected_db = self_db) as srv:
+            #        svc = fb_core.ServerUserServices(srv)
+            #        try:
+            #            svc.update( user_name = f'"{db_owner}"', password = db_passwd, database = self_db)
+            #            #svc.update( user_name = db_owner, password = db_passwd, database = self_db)
+            #            user_updated_ok = 1
+            #        except DatabaseError as e:
+            #            print(f'Problem with adding user >{db_owner}< in {self_db=}')
+            #            #print(e)
+            #            print(e.__str__())
+            #            print(e.gds_codes)
+            #            #print('List of all users:')
+            #            #for u in svc.get_all(database = self_db):
+            #            #    print(f'{u.user_name=}')
         # < with create_database
 
-        if user_updated_ok:
+        if user_created_ok:
             with fb_core.connect('inet://' + REQUIRED_ALIAS, user= f'"{db_owner}"', password = db_passwd) as con:
                 cur = con.cursor()
                 try:
