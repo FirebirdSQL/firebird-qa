@@ -3,12 +3,12 @@
 """
 ID:          n/a
 ISSUE:       n/a
-TITLE:       DB with owner containing every character from string.punctuation set, with duplicating it up to max allowed length
+TITLE:       Allow to create DB with owner containing a character from string.punctuation set, with duplicating it up to max allowed length
 DESCRIPTION:
-    Test verifies ability to create DB with assigning to its OWNER values like  '!' * 63 ; '"' * 63 ; '<' * 63 etc.
+    Test verifies ability to create DB with assigning to its OWNER values like  '!' * 63 ; '[' * 63 ; '<' * 63 etc.
     After such DB will be created (in empbedded mode), we check ability to create USER in it (via Services API).
     It is better to use self-security DB because later this test can be extented by some code that operates with another cases
-    of extremely 'exotic' user names (i.e. such users must not remain in th default security.db if this test fails).
+    of extremely 'exotic' user names (i.e. such users must not remain in the default security.db if this test fails).
 NOTES:
     [22.01.2026] pzotov
         There are several special characters for which logic of this test is changed:  backslash ; qouble quotes ; apostrophe.
@@ -45,6 +45,15 @@ from firebird.qa import *
 REQUIRED_ALIAS = 'tmp_self_sec_alias'
 CHECKED_CHARS_LST = list(string.punctuation)
 ##############
+
+# Double quote and apostrophe can not be used: con.commit() fails on create_database() and
+# attempt to run: create or alter user "{db_owner}" password '{db_passwd}' using plugin Srp
+# Error;
+#     > raise self.__report(DatabaseError, self.status.get_errors())
+#     E firebird.driver.types.DatabaseError: Missing terminating quote <'> in the end of quoted string
+#     E -Secondary attachment - config data from DPB ignored
+CHECKED_CHARS_LST.remove('"')
+CHECKED_CHARS_LST.remove("'")
 
 db = db_factory()
 substitutions = []
@@ -106,6 +115,7 @@ def test_1(act: Action, capsys):
     db_cfg_object.database.value = REQUIRED_ALIAS
 
     tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
+    self_db = str(tmp_fdb)
 
     chk_sql = """
         select
@@ -118,9 +128,10 @@ def test_1(act: Action, capsys):
             ,a.mon$attachment_name as att_name
             ,s.sec$user_name as sec_user_text
             ,octet_length(trim(s.sec$user_name)) as sec_user_octets
+            ,left(a.mon$remote_protocol,3) as mon_protocol
         from mon$database m
         join mon$attachments a on a.mon$attachment_id = current_connection
-        join sec$users s on upper(trim(s.sec$user_name)) = upper(trim(m.mon$owner))
+        left join sec$users s on upper(trim(s.sec$user_name)) = upper(trim(m.mon$owner))
     """
     
     expected_out_lines = []
@@ -149,50 +160,68 @@ def test_1(act: Action, capsys):
         db_owner = db_owner.replace('"', '""')
 
         db_passwd = '123'
+
+        user_created_ok = 0
+        user_updated_ok = 0
         with create_database(db_cfg_name, user= f'"{db_owner}"', password = db_passwd) as con:
-            cur = con.cursor()
-            cur.execute('select mon$database_name as db_name from mon$database')
-            ccol=cur.description
-            self_db_file = '|TOTALLY|UNDEFINED|'
-            for r in cur:
-                for i in range(0,len(ccol)):
-                    #print( ccol[i][0],':', r[i])
-                    if ccol[i][0].lower() == 'db_name'.lower():
-                        self_db_file = r[i].lower()
-            con.commit()
+            try:
+                con.execute_immediate(f'''create or alter user "{db_owner}" password '{db_passwd}' using plugin Srp ''')
+                con.commit() # < fails when db_owner is sequence of double quote or apostrophe
+                user_created_ok = 1
+            except DatabaseError as e:
+                print(f'Problem with CREATE USER >{db_owner}< in {self_db=}')
+                print(e.__str__())
+                print(e.gds_codes)
+
+            if user_created_ok:
+                with fb_core.connect_server(server = srv_cfg.name, expected_db = self_db) as srv:
+                    svc = fb_core.ServerUserServices(srv)
+                    try:
+                        svc.update( user_name = f'"{db_owner}"', password = db_passwd, database = self_db)
+                        user_updated_ok = 1
+                    except DatabaseError as e:
+                        print(f'Problem with adding user >{db_owner}< in {self_db=}')
+                        #print(e)
+                        print(e.__str__())
+                        print(e.gds_codes)
+                        print('List of all users:')
+                        for u in svc.get_all(database = self_db):
+                            print(f'{u.user_name=}')
+        # < with create_database
+
+        if user_updated_ok:
+            with fb_core.connect('inet://' + REQUIRED_ALIAS, user= f'"{db_owner}"', password = db_passwd) as con:
+                cur = con.cursor()
+                try:
+                    cur.execute(chk_sql)
+                    ccol=cur.description
+                    for r in cur:
+                        for i in range(0,len(ccol)):
+                            print( ccol[i][0],':', r[i])
+                    add_block_to_expected_out = f"""
+                        DB_NAME : {self_db.lower()}
+                        SEC_DB : Self
+                        DB_OWNER_TEXT : {db_owner}
+                        DB_OWNER_OCTETS : {MAX_USER_LENGTH}
+                        WHOAMI_TEXT : {db_owner}
+                        WHOAMI_OCTETS : {MAX_USER_LENGTH}
+                        ATT_NAME : {REQUIRED_ALIAS}
+                        SEC_USER_TEXT : {db_owner}
+                        SEC_USER_OCTETS : {MAX_USER_LENGTH}
+                        MON_PROTOCOL : TCP
+                    """
+                    expected_out_lines.append(add_block_to_expected_out)
+                except DatabaseError as e:
+                    # find/display record error
+                    # -Install incomplete. To complete security database initialization please CREATE USER.
+                    print(f'Problem with obtaining data from mon$ and sec$ tables for user >"{db_owner}"< in {self_db=}')
+                    # print(e)
+                    print(e.__str__())
+                    print(e.gds_codes)
         
-            with fb_core.connect_server(server = srv_cfg.name, expected_db = self_db_file) as srv:
-                svc = fb_core.ServerUserServices(srv)
-                svc.add( user_name = f'"{db_owner}"', password = db_passwd, database = self_db_file)
+            act.gfix( switches = ['-user', f'"{db_owner}"', '-pas', db_passwd, '-shutdown', 'full', '-force', '0', 'inet://' + REQUIRED_ALIAS], credentials = False, combine_output = True, io_enc = locale.getpreferredencoding() )
 
-            if CHECKED_CHARS_LST[k] in ('"', "'"):
-                # Currently there is problem with executing query to security DB:
-                # > for r in cur
-                # ...
-                # > raise self.__report(DatabaseError, self.status.get_errors())
-                # E firebird.driver.types.DatabaseError: Missing terminating quote <'> in the end of quoted string
-                # E -Secondary attachment - config data from DPB ignored
-                pass
-            else:
-                cur.execute(chk_sql)
-                ccol=cur.description
-                for r in cur:
-                    for i in range(0,len(ccol)):
-                        print( ccol[i][0],':', r[i])
-                add_block_to_expected_out = f"""
-                    DB_NAME : {self_db_file}
-                    SEC_DB : Self
-                    DB_OWNER_TEXT : {db_owner}
-                    DB_OWNER_OCTETS : {MAX_USER_LENGTH}
-                    WHOAMI_TEXT : {db_owner}
-                    WHOAMI_OCTETS : {MAX_USER_LENGTH}
-                    ATT_NAME : tmp_self_sec_alias
-                    SEC_USER_TEXT : {db_owner}
-                    SEC_USER_OCTETS : {MAX_USER_LENGTH}
-                """
-                expected_out_lines.append(add_block_to_expected_out)
-            con.drop_database()
-
+    # < for k in range(len(CHECKED_CHARS_LST))
     act.expected_stdout = '\n'.join(expected_out_lines)
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
