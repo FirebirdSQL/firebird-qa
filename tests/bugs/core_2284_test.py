@@ -48,6 +48,7 @@ expected_stdout = """
 expected_stderr = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
+    -RECREATE TABLE "PUBLIC"."TEST_CS__DETAIL" failed
     -partner index segment no 1 has incompatible data type
 """
 

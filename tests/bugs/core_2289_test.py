@@ -47,7 +47,9 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 23000
-    violation of FOREIGN KEY constraint "PACKET_DETAIL_FK" on table "PUBLIC"."PACKET_DETAIL"
+    unsuccessful metadata update
+    -ALTER TABLE "PUBLIC"."PACKET_DETAIL" failed
+    -violation of FOREIGN KEY constraint "PACKET_DETAIL_FK" on table "PUBLIC"."PACKET_DETAIL"
     -Foreign key reference target does not exist
     -Problematic key value is ("PACKET_ID" = 753)
 """
