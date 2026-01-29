@@ -26,11 +26,24 @@ test_script = """
     set term ;^
     commit;
     alter domain d type varchar(11);
-    alter domain d type varchar(11); -- segmentation fault here
+    alter domain d type varchar(11);	-- segmentation fault here
+    execute procedure p1;				-- assertion was here
+"""
+
+expected_stdout = """
+Statement failed, SQLSTATE = 2F000
+Error while parsing procedure "PUBLIC"."P1"'s BLR
+-expression evaluation not supported
+Statement failed, SQLSTATE = 2F000
+Error while parsing procedure "PUBLIC"."P1"'s BLR
+-expression evaluation not supported
 """
 
 act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.execute()
+    act.expected_stdout = expected_stdout
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
+

@@ -45,6 +45,7 @@ act = isql_act('db', test_script, substitutions = substitutions)
 expected_stdout = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
+    -CREATE INDEX IX failed
     -key size exceeds implementation restriction for index "IX"
     There is no table TAB in this database
 """

@@ -75,17 +75,13 @@ expected_stdout_6x = """
 
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
-    -cannot delete
-    -COLUMN "PUBLIC"."T2"."C1"
-    -there are 1 dependencies
+    -Cannot have circular dependencies with computed fields
 
     Statement failed, SQLSTATE = 42000
     Cannot have circular dependencies with computed fields
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
-    -cannot delete
-    -COLUMN "PUBLIC"."T2"."C1"
-    -there are 1 dependencies
+    -Cannot have circular dependencies with computed fields
 """
 
 @pytest.mark.version('>=3.0.2')
