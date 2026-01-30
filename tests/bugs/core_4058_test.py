@@ -21,6 +21,7 @@ db = db_factory()
 act = python_act('db')
 
 @pytest.mark.version('>=3')
+@pytest.mark.perf_measure		# Avoid running it on DEV_BUILD - a lot of data added to the LOG
 def test_1(act: Action):
     with act.connect_server() as srv:
         srv.info.get_log()

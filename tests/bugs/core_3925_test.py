@@ -38,7 +38,9 @@ def test_1(act: Action):
     SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
     expected_stdout = f"""
         Statement failed, SQLSTATE = 23000
-        violation of FOREIGN KEY constraint "FK_KEY_REF" on table {SQL_SCHEMA_PREFIX}"TEST"
+        unsuccessful metadata update
+        -ALTER TABLE "PUBLIC"."TEST" failed
+        -violation of FOREIGN KEY constraint "FK_KEY_REF" on table "PUBLIC"."TEST"
         -Foreign key reference target does not exist
         -Problematic key value is ("REF" = -1)
     """

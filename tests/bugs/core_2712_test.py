@@ -37,6 +37,7 @@ def test_1(act: Action, capsys):
                 cur2 = con2.cursor()
                 cur2.execute("select 1 from rdb$database")
                 cur1.execute("drop table test")
+                con.commit()
                 ps = cur2.prepare("update test set x=-x")
                 con2.commit()
         except DatabaseError as e:
@@ -48,8 +49,16 @@ def test_1(act: Action, capsys):
                 ps.free()
 
         act.expected_stdout = """
-            table is not defined
-            335544395
+            Dynamic SQL Error
+            -SQL error code = -204
+            -Table unknown
+            -"PUBLIC"."TEST"
+            -At line 1, column 8
+            335544569
+            335544436
+            335544580
+            335544382
+            336397208
         """
         act.stdout = capsys.readouterr().out
         assert act.clean_stdout == act.clean_expected_stdout

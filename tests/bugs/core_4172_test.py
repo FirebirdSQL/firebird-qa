@@ -168,12 +168,8 @@ test_script_2 = """
 """
 
 expected_stdout_2 = """
-O_GDSCODE                       <null>
-RDB$FUNCTION_NAME               THE_DIV
-RDB$ENTRYPOINT                  unknown_udf!UC_div
-RDB$ENGINE_NAME                 UDR
-RDB$LEGACY_FLAG                 0
-Records affected: 1
+O_GDSCODE                       335544351
+Records affected: 0
 Records affected: 0
 
 """

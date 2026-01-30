@@ -46,7 +46,9 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 22018
-    Expression evaluation error for index "***unknown***" on table "PUBLIC"."TAB"
+    unsuccessful metadata update
+    -CREATE INDEX "PUBLIC"."ITAB" failed
+    -Expression evaluation error for index "***unknown***" on table "PUBLIC"."TAB"
     conversion error from string "2021-09-27"
 """
 

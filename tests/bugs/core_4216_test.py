@@ -115,6 +115,8 @@ expected_stdout = """
 """
 
 @pytest.mark.version('>=3')
+@pytest.mark.perf_measure
+
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute()

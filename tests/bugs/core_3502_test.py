@@ -44,7 +44,7 @@ expected_stdout = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
-    COLUMN *
+    -VIEW "PUBLIC"."V"
     -there are 1 dependencies
 """
 

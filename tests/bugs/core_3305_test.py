@@ -52,8 +52,6 @@ expected_out_5x = """
 expected_out_6x = """
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column "PUBLIC"."TEST"."V"
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column "PUBLIC"."TEST"."V"
 """
 
 @pytest.mark.version('>=3')
