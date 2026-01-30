@@ -5,12 +5,14 @@ ID:          issue-6798
 ISSUE:       6798
 TITLE:       Add built-in functions UNICODE_CHAR and UNICODE_VAL to convert between Unicode code point and character
 DESCRIPTION:
-  NB. Only basic checks are peformed here.
-  This test mostly will be re-implemented later in order to check more complex cases.
-  Lists of unicode characters and their codes:
-    https://en.wikipedia.org/wiki/List_of_Unicode_characters
-    https://gist.github.com/ngs/2782436
-FBTEST:      bugs.gh_6798
+    NB. Only basic checks are peformed here.
+    This test mostly will be re-implemented later in order to check more complex cases.
+    Lists of unicode characters and their codes:
+        https://en.wikipedia.org/wiki/List_of_Unicode_characters
+        https://gist.github.com/ngs/2782436
+NOTES:
+    See also:
+        tests/functional/tabloid/test_3b372197.py
 """
 
 import pytest

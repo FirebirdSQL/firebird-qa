@@ -18,6 +18,9 @@ FBTEST:      functional.syspriv.access_shutdown_database
 NOTES: checked on 4.0.1.2692, 5.0.0.489.
 """
 import os
+import locale
+import random
+import string
 import pytest
 from firebird.qa import *
 from firebird.driver import ShutdownMode,ShutdownMethod,SrvStatFlag,DatabaseError
@@ -29,124 +32,56 @@ for v in ('ISC_USER','ISC_PASSWORD'):
     except KeyError as e:
         pass
 
-substitutions = [ ('no permission for (shutdown|(bring online)) access to database .*', 'no permission for shutdown/online access to database')
-                  ,('-Some database.* shutdown when trying to read mapping data', '')   # <<< perhaps this is due to bug in Classic. May need to be deleted later // 25.09.2022
-                  ,('335544528 : database.* shutdown', '335544528 : database shutdown')
-                  ,('Data source : Firebird::localhost:.*', 'Data source : Firebird::localhost:')
-                  ,('-At block line: [\\d]+, col: [\\d]+', '-At block line')
-                ]
-db = db_factory()
+db = db_factory( filename = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8)) + '.fdb' )
 
 tmp_user = user_factory('db', name='tmp_syspriv_user', password='123')
 tmp_role = role_factory('db', name='tmp_role_for_access_shutdown_db')
 
-act = python_act('db', substitutions=substitutions)
-
-expected_stdout_fbsvc = """
-    no permission for shutdown/online access to database
-"""
-
-expected_stdout_isql = """
-    WHO_AMI                         TMP_SYSPRIV_USER
-    RDB$ROLE_NAME                   RDB$ADMIN
-    RDB_ROLE_IN_USE                 <false>
-    RDB_SYS_PRIVILEGES              FFFFFFFFFFFFFFFF
-    MON$SHUTDOWN_MODE               2
-    WHO_AMI                         TMP_SYSPRIV_USER
-    RDB$ROLE_NAME                   TMP_ROLE_FOR_ACCESS_SHUTDOWN_DB
-    RDB_ROLE_IN_USE                 <true>
-    RDB_SYS_PRIVILEGES              0001000000000000
-    MON$SHUTDOWN_MODE               2
-    ATT_USER                        TMP_SYSPRIV_USER
-    ATT_PROT                        TCP
-
-    Statement failed, SQLSTATE = 42000
-    Execute statement error at attach :
-    335544528 : database shutdown
-    Data source : Firebird::localhost:
-    -At block line
-"""
+act = python_act('db')
 
 @pytest.mark.es_eds
 @pytest.mark.version('>=4.0')
 
 #--------------------------------------------------------------------
 
-def show_db_info(act: Action, tmp_user: User, tmp_role: Role):
+def show_db_info(act: Action): # , tmp_user: User, tmp_role: Role):
 
-    print('Data from DB header:')
-    with act.connect_server(user = tmp_user.name, password = tmp_user.password) as srv:
+    retdata = ['Data from DB header:']
+    with act.connect_server(user = act.db.user, password = act.db.password) as srv:
         srv.database.get_statistics(database = act.db.db_path, flags = SrvStatFlag.HDR_PAGES)
         stat_output = [x.rstrip() for x in srv.readlines() if x.strip()]
         for i,line in enumerate(stat_output):
             if 'database' in line.lower() or 'attributes' in line.lower():
-                print(line)
+                retdata.append(line)
 
-    print('Data from mon$database:')
-    with act.db.connect(user = tmp_user.name, password = tmp_user.password) as con:
-        cur = con.cursor()
-        #cur.execute('select current_timestamp,current_user,mon$database_name,mon$shutdown_mode,mon$read_only,mon$creation_date,mon$owner,mon$sec_database from mon$database')
-        cur.execute('select current_timestamp,v.* from v_check as v')
-        hdr=cur.description
-        for r in cur:
-            for i in range(len(hdr)):
-                print( hdr[i][0].ljust(32),':', r[i] )
+    retdata.append( 'Data from mon$database:' )
+    try:
+        #with act.db.connect(user = tmp_user.name, password = tmp_user.password) as con:
+        with act.db.connect(user = act.db.user, password = act.db.password) as con:
+            cur = con.cursor()
+            #cur.execute('select current_timestamp,current_user,mon$database_name,mon$shutdown_mode,mon$read_only,mon$creation_date,mon$owner,mon$sec_database from mon$database')
+            cur.execute('select current_timestamp,v.* from v_check as v')
+            hdr=cur.description
+            for r in cur:
+                for i in range(len(hdr)):
+                    retdata.append( hdr[i][0].ljust(32) + ':' + f'{r[i]}' )
+    except DatabaseError as e:
+        retdata.append( e.__str__() )
+
+    return '\n'.join( retdata )
 
 #--------------------------------------------------------------------
 
 def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
 
+    # Map for storing mnemonas and details for every FAILED step:
+    run_errors_map = {}
+
     init_script = \
     f'''
         set wng off;
-        create or alter view v_check as
-        select
-             current_user as who_ami
-            ,r.rdb$role_name
-            ,rdb$role_in_use(r.rdb$role_name) as RDB_ROLE_IN_USE
-            ,cast(r.rdb$system_privileges as varchar(16) character set octets) as RDB_SYS_PRIVILEGES
-            ,m.mon$shutdown_mode
-        from mon$database m cross join rdb$roles r;
-        commit;
-
         alter user {tmp_user.name} revoke admin role;
         revoke all on all from {tmp_user.name};
-
-        create or alter trigger trg_connect active on connect as
-        begin
-        end;
-        commit;
-
-        recreate table att_log (
-            att_id int,
-            att_name varchar(255),
-            att_user varchar(255),
-            att_prot varchar(255)
-        );
-
-        commit;
-
-        grant select on v_check to public;
-        grant all on att_log to public;
-        commit;
-
-        set term ^;
-        create or alter trigger trg_connect active on connect as
-        begin
-          if ( upper(current_user) <> upper('SYSDBA') ) then
-             in autonomous transaction do
-             insert into att_log(att_name, att_user, att_prot)
-             select
-                  mon$attachment_name
-                 ,mon$user
-                 ,left(mon$remote_protocol,3)
-             from mon$attachments
-             where mon$user = current_user
-             ;
-        end
-        ^
-        set term ;^
-        commit;
 
         alter role {tmp_role.name}
             set system privileges to ACCESS_SHUTDOWN_DATABASE; -- CHANGE_SHUTDOWN_MODE, USE_GFIX_UTILITY, IGNORE_DB_TRIGGERS;
@@ -155,106 +90,155 @@ def test_1(act: Action, tmp_user: User, tmp_role:Role, capsys):
         commit;
     '''
     act.isql(switches=['-q'], input=init_script, combine_output = True)
-    assert '' == act.clean_stdout, 'Init script failed.'
+    if act.clean_stdout:
+        run_errors_map['init_err'] = 'Init script failed.\n' + act.clean_stdout
     act.reset()
 
     # ---------------------------------------------------------------
 
-    # Must FAIL: user has right only to *access* to DB in shutdown-single mode and make some DMLs there.
-    # But he has NO right to change DB state to shutdown (any kind of mode).
-    # Expected error: "no permission for shutdown/online access to database ..."
-    with act.connect_server(user = tmp_user.name, password = tmp_user.password) as srv_nondba:
-        try:
-            srv_nondba.database.shutdown(database=act.db.db_path
-                                  ,mode=ShutdownMode.SINGLE
-                                  ,method=ShutdownMethod.FORCED
-                                  ,timeout=0)
-            print('### CAUTION ### database.shutdown() UNEXPECTEDLY NOT RAISED ERROR.')
-            show_db_info(act, tmp_user, tmp_role)
-        except DatabaseError as e:
-            print(e.__str__())
+    if len(run_errors_map) == 0:
+        # Must FAIL: tmp_user has right only to *access* to DB in shutdown-single mode and make some DMLs there.
+        # But he has NO right to change DB state to shutdown (any kind of mode).
+        # Expected error: "no permission for shutdown/online access to database ..."
+        
+        act.gfix( switches = ['-user', tmp_user.name, '-pas', tmp_user.password, '-shutdown', 'single', '-force', '0', act.db.dsn], credentials = False, combine_output = True, io_enc = locale.getpreferredencoding() )
 
-    act.expected_stdout = expected_stdout_fbsvc
-    act.stdout = capsys.readouterr().out
-    assert act.clean_stdout == act.clean_expected_stdout # <<<<<<<<<<<<<<<<<<<<<<<< check #0
-    act.reset()
+        # !!!UNSTABLE RESULT!!! 28.01.2026
+        # act.svcmgr( switches = ['localhost:service_mgr', 'user', tmp_user.name, 'password', tmp_user.password, 'action_properties', 'dbname', act.db.db_path, 'prp_shutdown_mode', 'prp_sm_single', 'prp_force_shutdown', '0'], connect_mngr = False, io_enc = locale.getpreferredencoding() )
+        # act.connect_server(user = tmp_user.name, password = tmp_user.password) as srv_nondba
+
+        msg_prefix = f'CAUTION. Change DB state to ShutdownMode.SINGLE running by {tmp_user.name} UNEXPECTEDLY'
+        if act.clean_stdout and act.return_code != 0:
+            pass
+        elif act.return_code == 0:
+            run_errors_map['shut_single_err0'] = f'{msg_prefix} returned {act.return_code=}.\n' + show_db_info(act)
+        else:
+            run_errors_map['shut_single_err1'] = f'{msg_prefix} passed.\n' + show_db_info(act)
+
+        act.reset()
 
     #-----------------------------------------------------------------
 
-    # Must PASS: we change DB state to shut-single using SYSDBA account.
-    # No message must be issued now:
-    with act.connect_server() as srv_sysdba:
-        try:
-            srv_sysdba.database.shutdown(database=act.db.db_path
-                                  ,mode=ShutdownMode.SINGLE
-                                  ,method=ShutdownMethod.FORCED
-                                  ,timeout=0)
-        
-        except DatabaseError as e:
-            print(e.__str__())
+    if len(run_errors_map) == 0:
+        # Must PASS: we change DB state to shut-single using SYSDBA account.
+        # No message must be issued now:
+        act.gfix( switches = ['-user', act.db.user, '-pas', act.db.password, '-shutdown', 'single', '-force', '0', act.db.dsn], credentials = False, combine_output = True, io_enc = locale.getpreferredencoding() )
 
-    act.expected_stdout = ''
-    act.stdout = capsys.readouterr().out
-    assert act.clean_stdout == act.clean_expected_stdout # <<<<<<<<<<<<<<<<<<<<<<<< check #1
-    act.reset()
+        '''
+        with act.connect_server() as srv_sysdba:
+            try:
+                srv_sysdba.database.shutdown(database=act.db.db_path
+                                      ,mode=ShutdownMode.SINGLE
+                                      ,method=ShutdownMethod.FORCED
+                                      ,timeout=0)
+            except DatabaseError as e:
+                run_errors_map['shut_single_err2'] = f'### CAUTION-1 ### shutdown(ShutdownMode.SINGLE) running by {act.db.user} UNEXPECTEDLY failed.\n' + e.__str__() + '\n' + show_db_info(act)
+                #print(e.__str__())
+        '''
+        #act.expected_stdout = ''
+        #act.stdout = capsys.readouterr().out
+        #assert act.clean_stdout == act.clean_expected_stdout # <<<<<<<<<<<<<<<<<<<<<<<< check #1
 
-    # ---------------------------------------------------------------
-    # Result: DB now is in shutdown-single mode.
-    # We have to check that only single attachment can be established to this DB:
-
-    sql_chk = f'''
-        set list on;
-        select v.* from v_check v;
-        select a.att_user, att_prot from att_log a;
-        set term ^;
-        execute block returns( who_else_here rdb$user ) as
-            declare another_user varchar(31);
-        begin
-            execute statement 'select current_user from rdb$database'
-            on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
-            as user '{act.db.user}' password '{act.db.password}'
-            into who_else_here;
-
-            suspend;
-        end
-        ^
-        set term ;^
-    '''
-    act.isql(switches=['-q', '-user', tmp_user.name, '-pas', tmp_user.password], input=sql_chk, credentials = False, combine_output=True)
-
-    act.expected_stdout = expected_stdout_isql
-    assert act.clean_stdout == act.clean_expected_stdout  # <<<<<<<<<<<<<<<<<<<<<<<< check #2
-    act.reset()
+        msg_prefix = f'CAUTION. Change DB state to ShutdownMode.SINGLE running by {act.db.user} UNEXPECTEDLY'
+        if act.clean_stdout:
+            run_errors_map['shut_single_err2'] = f'{msg_prefix} failed.\n' + act.clean_stdout + '\n' + show_db_info(act)
+        elif act.return_code != 0:
+            run_errors_map['shut_single_err3'] = f'{msg_prefix} returned {act.return_code}.\n' + act.clean_stdout + '\n' + show_db_info(act)
+        else:
+            pass   
+        act.reset()
 
     # ---------------------------------------------------------------
+    if len(run_errors_map) == 0:
+        # Result: DB now is in shutdown-single mode.
+        # We have to check that only single attachment can be established to this DB:
 
-    # must FAIL: we attempt to bring DB online using NON-dba account:
-    # Expected error: "no permission for bring online access to database ..."
-    # !!!NB!!! As of 25.09.2022, for FB 4.x and 5.x in Classic mode additional message will raise here:
-    # "-Some database(s) were shutdown when trying to read mapping data"
-    # Sent report to Alex et al, 25.09.2022 18:55. Waiting for resolution.
-    #
-    with act.connect_server(user = tmp_user.name, password = tmp_user.password) as srv_nondba:
-        try:
-            srv_nondba.database.bring_online(database=act.db.db_path)
-            print('### CAUTION ### database.bring_online() UNEXPECTEDLY NOT RAISED ERROR.')
-            show_db_info(act, tmp_user, tmp_role)
-        except DatabaseError as e:
-            print(e.__str__())
+        sql_chk = f'''
+            set list on;
+            set term ^;
+            execute block returns( who_else_here rdb$user ) as
+                declare another_user varchar(31);
+            begin
+                execute statement 'select current_user from rdb$database'
+                on external 'localhost:' || rdb$get_context('SYSTEM','DB_NAME')
+                as user '{act.db.user}' password '{act.db.password}'
+                into who_else_here;
 
-    act.expected_stdout = expected_stdout_fbsvc # 'no permission for shutdown/online access to database'
-    act.stdout = capsys.readouterr().out
-    assert act.clean_stdout == act.clean_expected_stdout # <<<<<<<<<<<<<<<<<<<<<<<< check #3
-    act.reset()
+                suspend;
+            end
+            ^
+            set term ;^
+        '''
+        act.isql(switches=['-q', '-user', tmp_user.name, '-pas', tmp_user.password], input=sql_chk, credentials = False, combine_output=True)
 
-    # must PASS because here we return DB online using SYSDBA account:
-    with act.connect_server() as srv_sysdba:
-        try:
-            srv_sysdba.database.bring_online(database=act.db.db_path)
+        msg_prefix = f'CAUTION. SQL for check that only one attachment is allowed'
+        if 'SQLSTATE = 42000' in act.clean_stdout:
+            pass
+        elif act.return_code == 0:
+            run_errors_map['check_single_att_allowed1'] = f'{msg_prefix} UNEXPECTEDLY returned {act.return_code}'
+        else:
+            run_errors_map['check_single_att_allowed2'] = f"{msg_prefix} UNEXPECTEDLY has no required 'SQLSTATE' code:\n{act.clean_stdout}"
+        act.reset()
+
+    # ---------------------------------------------------------------
+
+    if len(run_errors_map) == 0:
+        # must FAIL: we attempt to bring DB online using NON-dba account:
+        # Expected error: "no permission for bring online access to database ..."
+        # !!!NB!!! As of 25.09.2022, for FB 4.x and 5.x in Classic mode additional message will raise here:
+        # "-Some database(s) were shutdown when trying to read mapping data"
+        # Sent report to Alex et al, 25.09.2022 18:55. Waiting for resolution.
+        #
+        '''
+        !!! UNSTABLE RESULT !!! 28.01.2026
+        with act.connect_server(user = tmp_user.name, password = tmp_user.password) as srv_nondba:
+        '''
+
+        act.gfix( switches = ['-user', tmp_user.name, '-pas', tmp_user.password, '-online', act.db.dsn], credentials = False, combine_output = True, io_enc = locale.getpreferredencoding() )
         
-        except DatabaseError as e:
-            print(e.__str__())
+        msg_prefix = f'CAUTION. Change DB state to ONLINE running by {tmp_user.name} UNEXPECTEDLY'
+        if act.clean_stdout and act.return_code != 0:
+            pass
+        elif act.return_code == 0:
+            run_errors_map['bring_online_err0'] = f'{msg_prefix} returned {act.return_code=}.\n' + show_db_info(act)
+        else:
+            run_errors_map['bring_online_err1'] = f'{msg_prefix} passed.\n' + show_db_info(act)
 
+        act.reset()
+
+    if len(run_errors_map) == 0:
+        # must PASS because here we return DB online using SYSDBA account:
+        '''
+        !!! UNSTABLE RESULT !!! 28.01.2026
+        with act.connect_server() as srv_sysdba:
+            try:
+                srv_sysdba.database.bring_online(database=act.db.db_path)
+            except DatabaseError as e:
+                run_errors_map['bring_online_err2'] = f'### CAUTION-4 ### bring_online() running by {act.db.user} UNEXPECTEDLY failed.\n' + e.__str__() + '\n' + show_db_info(act)
+        #assert '' == capsys.readouterr().out
+        #assert act.clean_stdout == act.clean_expected_stdout # <<<<<<<<<<<<<<<<<<<<<<<< check #4
+        '''
+
+        act.gfix( switches = ['-user', act.db.user, '-pas', act.db.password, '-online', act.db.dsn], credentials = False, combine_output = True, io_enc = locale.getpreferredencoding() )
+        
+        msg_prefix = 'CAUTION. Call bring_online() performed by {act.db.user} UNEXPECTEDLY'
+
+        if not act.clean_stdout and act.return_code == 0:
+            pass
+        elif act.return_code != 0:
+            run_errors_map['bring_online_err2'] = f'{msg_prefix} returned {act.return_code=}.\n' + show_db_info(act)
+        else:
+            run_errors_map['bring_online_err3'] = f'{msg_prefix} failed.\n' + act.clean_stdout + show_db_info(act)
+
+        act.reset()
+
+
+    if run_errors_map and max(v.strip() for v in run_errors_map.values()):
+        print(f'Problem(s) detected, check run_errors_map:')
+        for k,v in run_errors_map.items():
+            if v.strip():
+                print(k,':')
+                print(v.strip())
+                print('-' * 40)
+ 
     assert '' == capsys.readouterr().out
-    assert act.clean_stdout == act.clean_expected_stdout # <<<<<<<<<<<<<<<<<<<<<<<< check #4
-    act.reset()

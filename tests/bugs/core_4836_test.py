@@ -55,7 +55,6 @@ test_script = """
 
 act = isql_act('db', test_script, substitutions=[('^((?!SQLSTATE|C4836|R4836).)*$', '')])
 
-@pytest.mark.intl
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_user: User, tmp_role: Role):
 
