@@ -28,6 +28,8 @@ NOTES:
     [27.05.2025] pzotov
     0. Package 'pywin32' must be installed for this test (pip install pywin32).
     1. Problem could be reproduced only on Windows. Emulation of PASTE required (PIPE will not show any problem).
+       See also:
+           https://github.com/FirebirdSQL/firebird/issues/7202
     2. Test was added just to be able to check result of pasting long text in existing ISQL console.
        This test will not able to create console window if python was launched by scheduler and
        appropriate task has not set to: "Run only when user is logged on".
