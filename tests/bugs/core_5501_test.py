@@ -383,6 +383,7 @@ def parse_page_header(con: Connection, page_number: int, map_dbo: Dict):
 ################################
 
 @pytest.mark.encryption
+@pytest.mark.perf_measure		# Running on DEV_BUILD causes assertion on bad page type
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action, capsys):
     map_dbo = {}
