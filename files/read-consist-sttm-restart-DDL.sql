@@ -3,21 +3,18 @@
 -- https://asktom.oracle.com/pls/asktom/f?p=100:11:::::P11_QUESTION_ID:11504247549852
 SET BAIL ON;
 --set echo on;
-set autoddl off;
+-- ?! set autoddl off;
 commit;
 SET KEEP_TRAN_PARAMS ON;
 set transaction no wait;
 set term ^;
 execute block as
 begin
-    begin
+    if (  exists(select * from rdb$triggers rt where rt.rdb$trigger_name = upper('trg_commit'))  ) then
         execute statement 'drop trigger trg_commit';
-        when any do begin end
-    end
-    begin
+
+    if (  exists(select * from rdb$triggers rt where rt.rdb$trigger_name = upper('trg_rollback'))  ) then
         execute statement 'drop trigger trg_rollback';
-        when any do begin end
-    end
 end
 ^
 commit
@@ -26,12 +23,20 @@ recreate view v_worker_log as select 1 x from rdb$database
 ^
 recreate view v_test as select 1 x from rdb$database
 ^
+recreate table test(id int)
+^
 recreate table tlog_want(id int)
 ^
 recreate table tlog_done(id int)
 ^
-recreate table test(id int)
-^
+
+-- This was regression caused by #27ae3dfc, see letter to Adriano 01.02.2026 1203:
+-- QA. Problems since #27ae3dfc (LTT) - dependency on COLLATION remaining if try to drop it via ES, excessive COMMIT required
+-- Without following COMMIT attempt to drop collation via ES will fail with 'Collation "PUBLIC"."TEXT_CI" already exists'
+-- (this occurs always on checked_mode = 'view', i.e. after checked_mode = 'table' and reconnect).
+-- Currently this commit is UNcommented but it will be removed after fix.
+commit ^ -- ?!
+
 execute block as
 begin
     begin
