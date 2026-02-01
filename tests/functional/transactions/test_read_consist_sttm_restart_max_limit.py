@@ -215,10 +215,13 @@ def test_1(act: Action, fn_worker_sql: Path, fn_worker_log: Path, fn_worker_err:
                     commit;
                 '''
 
-                act.isql(switches=['-q'], input = ''.join( (sql_init, sql_addi) ) )
+                # NB: add switch '-e' in order to see entire executed code if script fails:
+                act.isql(switches=['-q', '-e'], input = ''.join( (sql_init, sql_addi) ), combine_output = True )
                 # ::: NOTE ::: We have to immediately quit if any error raised in prepare phase.
                 # See also letter from dimitr, 01-feb-2022 14:46
-                assert act.stderr == ''
+                if act.return_code or 'SQLSTATE =' in act.stdout:
+                    print(f'Initial script failed with {act.return_code=} for {checked_mode=}, {checked_DML=}, {main_iter=}:\n\n' + act.stdout)
+                    assert capsys.readouterr().out == ''
                 act.reset()
 
                 # Get Firebird log before test
