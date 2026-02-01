@@ -6,12 +6,12 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1383
 TITLE:       ISQL - SHOW SYSTEM parameters
 DESCRIPTION: Extend ISQL SHOW SYSTEM command to accept parameters TABLES, COLLATIONS and FUNCTIONS
 JIRA:        CORE-978
-FBTEST:      functional.basic.isql.03
-
 NOTES:
     [28.04.2022] pzotov
-    See: gh-1383, "Extend ISQL SHOW SYSTEM command [CORE978]"
-    Checked on 5.0.0.488, 4.0.1.2692, 3.0.8.33535.
+        See: gh-1383, "Extend ISQL SHOW SYSTEM command [CORE978]"
+        Checked on 5.0.0.488, 4.0.1.2692, 3.0.8.33535.
+    [01.02.2026] pzotov
+        Added 'mon$local_temporary_tables' and 'mon$local_temporary_table_columns' - since 6.0.0.1403.
 """
 
 import pytest
@@ -647,6 +647,8 @@ fb6x_checked_stdout = """
     SYSTEM.MON$CONTEXT_VARIABLES
     SYSTEM.MON$DATABASE
     SYSTEM.MON$IO_STATS
+    SYSTEM.MON$LOCAL_TEMPORARY_TABLES
+    SYSTEM.MON$LOCAL_TEMPORARY_TABLE_COLUMNS
     SYSTEM.MON$MEMORY_USAGE
     SYSTEM.MON$RECORD_STATS
     SYSTEM.MON$STATEMENTS
