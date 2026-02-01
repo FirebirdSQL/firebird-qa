@@ -4,7 +4,9 @@
 ID:          isql-02
 TITLE:       ISQL - SHOW SYSTEM TABLES
 DESCRIPTION: Check for correct output of "SHOW SYSTEM;" command on empty database.
-FBTEST:      functional.basic.isql.02
+NOTES:
+    [01.02.2026] pzotov
+    Added 'mon$local_temporary_tables' and 'mon$local_temporary_table_columns' - since 6.0.0.1403.
 """
 
 import pytest
@@ -591,6 +593,8 @@ fb6x_checked_stdout = """
         SYSTEM.MON$CONTEXT_VARIABLES
         SYSTEM.MON$DATABASE
         SYSTEM.MON$IO_STATS
+        SYSTEM.MON$LOCAL_TEMPORARY_TABLES
+        SYSTEM.MON$LOCAL_TEMPORARY_TABLE_COLUMNS
         SYSTEM.MON$MEMORY_USAGE
         SYSTEM.MON$RECORD_STATS
         SYSTEM.MON$STATEMENTS
