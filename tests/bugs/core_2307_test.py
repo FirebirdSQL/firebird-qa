@@ -36,6 +36,7 @@ act = python_act('db')
 NUM_OF_TABLES = 1000
 
 sql_ddl = f"""
+    set bail on;
     set term ^;
     Execute block as
         declare variable i integer = 0;
@@ -66,8 +67,8 @@ sql_ddl = f"""
 
 sql_dml = """
     execute block returns(r_min int, r_max int) as
-        declare n varchar(31);
-        declare i integer;
+        declare rel_name rdb$relation_name;
+        declare i int;
     begin
         for
             select min(rdb$relation_id),max(rdb$relation_id)
@@ -78,19 +79,22 @@ sql_dml = """
             suspend;
 
         for
-            select rdb$relation_name
+            select trim(rdb$relation_name)
             from rdb$relations
+            where rdb$relation_type=0 and rdb$system_flag=0
             --  4 debug only! >> rows 100
-            into :n
+            into :rel_name
         do
-            execute statement 'select 1 as k from ' || :n || ' rows 1' into :i;
+            execute statement 'select 1 as k from ' || :rel_name || ' rows 1' into :i;
     end
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     # prepare DB for testing: create lot of tables:
-    act.isql(switches=[], input=sql_ddl)
+    act.isql(switches = ['-q'], input=sql_ddl, combine_output = True)
+    assert act.return_code == 0, 'Initial script failed:\n\n' + act.clean_stdout
+
     with act.db.connect() as con:
         c = con.cursor()
         c.execute(sql_dml)
