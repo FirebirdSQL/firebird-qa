@@ -3,7 +3,12 @@
 -- https://asktom.oracle.com/pls/asktom/f?p=100:11:::::P11_QUESTION_ID:11504247549852
 SET BAIL ON;
 --set echo on;
--- ?! set autoddl off;
+
+-- ::: NB ::: 02.02.2026. DO NOT use 'SET AUTODDL OFF' here.
+-- Regression in 6.0.0.1403-b1d8d64 (first snapshot with LTT), separate test for that was created:
+-- $QA_HOME/tests/functional/tabloid/test_525e5665.py  (see notes there).
+-- DISABLED -- set autoddl off;
+
 commit;
 SET KEEP_TRAN_PARAMS ON;
 set transaction no wait;
