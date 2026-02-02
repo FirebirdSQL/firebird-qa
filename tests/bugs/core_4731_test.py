@@ -3,7 +3,7 @@
 """
 ID:          issue-5037
 ISSUE:       5037
-TITLE:       Prohibit an ability to issue DML or DDL statements on RDB$ tables
+TITLE:       Prohibit an ability to issue DML or DDL statements on RDB$ tables (CORE-4731)
 DESCRIPTION:
   Integral test for verifying ability to change system tables. Currently only for SYSDBA.
   Main idea: read system tables (hereafter - 'ST') metadata and generate all possible DML and DDL
@@ -79,8 +79,9 @@ NOTES:
 
         Checked on 6.0.0.1335 5.0.4.1725 4.0.7.3237 3.0.14.33827
 
-JIRA:        CORE-4731
-FBTEST:      bugs.core_4731
+    [02.02.2026] pzotov
+        Added expected data for MON$LOCAL_TEMPORARY_TABLES and MON$LOCAL_TEMPORARY_TABLE_COLUMNS (6.x only)
+        Checked on 6.0.0.1403
 """
 import shutil
 import re
@@ -3088,6 +3089,7 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('mon$table_stats', 'SET_NUL') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('mon$table_stats', 'SQL_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('mon$table_stats', 'SQL_INV') ] =  ((336397287, 336068927),)
+
         etalone_gds_map[ ('mon$transactions', 'ADD_CTR') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('mon$transactions', 'ADD_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('mon$transactions', 'ALT_ADC') ] =  ((336397287, 336068927),)
@@ -3106,6 +3108,46 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('mon$transactions', 'SET_NUL') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('mon$transactions', 'SQL_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('mon$transactions', 'SQL_INV') ] =  ((336397287, 336068927),)
+
+        # since 6.0.0.1403:
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'ADD_CTR') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'ADD_DEF') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'ALT_ADC') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'ALT_NAM') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'ALT_POS') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'ALT_TYP') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'DML_DEL') ] =  ((335544444,),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'DML_INS') ] =  ((335544444,),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'DML_LOK') ] =  ((335545073,),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'DML_UPD') ] =  ((335544444,),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'KIL_DEF') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'KIL_FLD') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'KIL_TAB') ] =  ((336397288, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'PUB_DIS') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'PUB_ENA') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'SET_NUL') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'SQL_DEF') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_table_columns', 'SQL_INV') ] =  ((336397287, 336068927),)
+
+        etalone_gds_map[ ('mon$local_temporary_tables', 'ADD_CTR') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'ADD_DEF') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'ALT_ADC') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'ALT_NAM') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'ALT_POS') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'ALT_TYP') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'DML_DEL') ] =  ((335544444,),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'DML_INS') ] =  ((335544444,),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'DML_LOK') ] =  ((335545073,),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'DML_UPD') ] =  ((335544444,),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'KIL_DEF') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'KIL_FLD') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'KIL_TAB') ] =  ((336397288, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'PUB_DIS') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'PUB_ENA') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'SET_NUL') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'SQL_DEF') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('mon$local_temporary_tables', 'SQL_INV') ] =  ((336397287, 336068927),)
+
         etalone_gds_map[ ('rdb$auth_mapping', 'ADD_CTR') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$auth_mapping', 'ADD_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$auth_mapping', 'ADROPIC') ] =  ((335544351, 336397305, 335544352), (335544351, 336397312, 335544352))
@@ -4010,6 +4052,22 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
     found_mism = 0
     actual_gds_map = {} # K = (rel_name, op_type); V = set( (gdscodes,) )
     with act.db.connect() as con: # user = dba_privileged_user.name, password = dba_privileged_user.password) as con:
+
+        if act.is_version('<6'):
+            pass
+        else:
+            # create LTT in order to see ots data in m`on$local_temporary_tables and m`on$local_temporary_table_columns
+            # (with furter attempts to change these *non_empty* tables via DELETE / UPDATE / SELECT WITH LOCK):
+            ddl_for_fill_mon_ltt = """
+                recreate local temporary table ltt_orders (
+                    order_id int not null,
+                    customer_id int,
+                    order_date timestamp
+                ) on commit preserve rows
+            """
+            con.execute_immediate(ddl_for_fill_mon_ltt)
+            con.commit()
+
         custom_tpb = tpb(isolation = Isolation.READ_COMMITTED_RECORD_VERSION, lock_timeout = 0)
         tx = con.transaction_manager(custom_tpb)
         cur = tx.cursor()
@@ -4074,7 +4132,7 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
 
                etalone_gds_set = etalone_gds_map.get( (sys_table, op_type), set() )
                if e.gds_codes not in etalone_gds_set:
-                   print( f'UNEXPECTED list of {e.gds_codes=} for {run_expr=}. Must be one of {etalone_gds_set=}' )
+                   print( f'UNEXPECTED list of {e.gds_codes=} for {op_type=}, {run_expr=}. Must be one of {etalone_gds_set=}' )
                    found_mism += 1
 
            finally:
