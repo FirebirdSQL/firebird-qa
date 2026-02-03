@@ -34,7 +34,7 @@ NOTES:
     Confirmed bug on 4.0.1.2735, 3.0.10.33570: name of session did contain LF characters in its middle points.
     Confirmed problem on 5.0.0.418 - but only for console FB utility (fbsvcmgr), and NOT for usage firebird-QA framework
     (it causes BUGCHECK "decompression overran buffer (179), file: sqz.cpp line: 293" on test teardown phase).
-    Checked on 6.0.0.363, 5.0.1.1408, 4.0.5.3103, 3.0.12.33744
+    Checked on 6.0.0.363, 5.0.1.1408, 4.0.5.3103, 3.0.12.33744.
 """
 
 import pytest
