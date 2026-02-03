@@ -58,8 +58,12 @@ from firebird.driver import InterfaceError
 # cleanup temp dir: remove all files that could remain from THIS test previous runs:
 # -----------------
 trc_log_path = Path(tempfile.gettempdir())
+<<<<<<< HEAD
 trc_prefix = 'gh-7141'
 trc_log_ptrn = f'{trc_prefix}.*.tmp'
+=======
+trc_log_ptrn = 'gh-7139.*.tmp'
+>>>>>>> 51ef06c5c3a2ed8927daa3efd93a094c82058843
 for file_path in trc_log_path.glob(trc_log_ptrn):
     if file_path.is_file(): # Ensure it's a file and not a directory
         try:
@@ -67,8 +71,17 @@ for file_path in trc_log_path.glob(trc_log_ptrn):
         except OSError as e:
             pass
 
+<<<<<<< HEAD
 RANDOM_TRACE_LOG = trc_log_path / ( trc_prefix + '.' + ''.join(random.choices(string.ascii_lowercase + string.digits, k=8)) + '.tmp')
 tmp_trace_cfg = temp_file(f'{trc_prefix}.trc.cfg')
+=======
+# ::: NB ::: We have to use DB in OS temp dir rather than in folder defined as Pytest --basetemp!
+# Otherwise loop of this test will fail at 2nd iter with 'object in use' because database remains opened for ~20 seconds
+# after 'killer' connection completes. Attempt to close DB faster using 'gfix -shut...' DOES NOT HEELP!
+#
+RANDOM_TRACE_LOG = trc_log_path / ( 'gh-7139.' + ''.join(random.choices(string.ascii_lowercase + string.digits, k=8)) + '.tmp')
+tmp_trace_cfg = temp_file('trace.gh-7139.cfg')
+>>>>>>> 51ef06c5c3a2ed8927daa3efd93a094c82058843
  
 db = db_factory()
 act = python_act('db')
