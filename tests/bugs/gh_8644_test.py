@@ -66,9 +66,13 @@ def test_1(act: Action, capsys):
     #
     assert fname_in_dbconf
 
+    # Full path + filename of database to which we will try to connect:
+    #
+    tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
+
     test_sql = f"""
         set list on;
-        create database '{REQUIRED_ALIAS}' user {act.db.user} password '{act.db.password}';
+        create database '{tmp_fdb}' user {act.db.user} password '{act.db.password}';
         select trim(replace(g.rdb$config_value,' ','')) as db_conf_providers from rdb$config g where upper(g.rdb$config_name) = upper('providers');
         commit;
         set term ^;
@@ -82,11 +86,16 @@ def test_1(act: Action, capsys):
         ^
         set term ;^
         commit;
+        -- 03.02.2026: we have to clear external connection pool!
+        -- Otherwise this test fails when is checked in loop ("Windows 32" error raises).
+        ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL;
+        commit;
     """
 
     act.isql(switches=['-q'], input = test_sql, connect_db = False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
     for line in act.stdout.splitlines():
         print(line)
+    tmp_fdb.unlink() # < fails if external connection pool was not cleared before!
 
     act.expected_stdout = """
         DB_CONF_PROVIDERS Loopback,Remote,Engine14
