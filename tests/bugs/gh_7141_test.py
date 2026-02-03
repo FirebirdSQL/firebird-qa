@@ -12,6 +12,25 @@ DESCRIPTION:
         * using fbsvcmgr action_trace_list.
     Both way must return info which contains <LONG_NAME_OF_TRACE_SESSION> without line breaking (this is what was fixed).
 NOTES:
+    [03.02.2026] pzotov
+    :::: ACHTUNG :::
+    The source code of may differ depending on installation from git-repo vs pip install.
+    There are special requirements to several parts of its source code related to this test:
+        1) class TraceSession defined in $FB_DRV_HOME/types.py must contain 'plugins' field:
+              plugins: list = field(default_factory=list)
+              # 25.08.2025, discussed with pcisar, subj: "firebird-driver can't parse content of srv.trace.sessions since f9ac3d34"
+           // otherwise test can raise TypeError: TraceSession.__init__() got an unexpected keyword argument 'plugins'
+        2) class ServerTraceServices defined in $FB_DRV_HOME/core.py must contain branch related to output of trace plugins:
+              ...
+              elif line.lstrip().startswith('plugins:'):
+                  current['plugins'] = line.split(':')[1].strip().split(',')
+                  # 25.08.2025, discussed with pcisar, subj: "firebird-driver can't parse content of srv.trace.sessions since f9ac3d34"
+    See also: https://github.com/FirebirdSQL/python3-driver/issues/55
+    Test will raise RUNTIME EXCEPTION if firebird-driver source has no such additions.
+    Trace log remains opened by fbsvcmgr in that case and subsequent runs of this test will fail on teardown phase with
+    'WindowsError: [Error 32] The process cannot access the file... <trace_log>'
+    Because of that, it was decided to create trace log in the _OS_ temp dir with random name that matches pattern 'gh-7141.*.tmp'
+    
     Confirmed bug on 4.0.1.2735, 3.0.10.33570: name of session did contain LF characters in its middle points.
     Confirmed problem on 5.0.0.418 - but only for console FB utility (fbsvcmgr), and NOT for usage firebird-QA framework
     (it causes BUGCHECK "decompression overran buffer (179), file: sqz.cpp line: 293" on test teardown phase).
@@ -25,13 +44,29 @@ from firebird.qa import *
 from pathlib import Path
 import subprocess
 import time
+import tempfile
+import random
+import string
+from firebird.driver import InterfaceError
 
 #db = db_factory(async_write = False)
 db = db_factory()
 act = python_act('db')
 
-tmp_trace_cfg = temp_file('test_trace_7141.cfg')
-tmp_trace_log = temp_file('test_trace_7141.log')
+# cleanup temp dir: remove all files that could remain from THIS test previous runs:
+# -----------------
+trc_log_path = Path(tempfile.gettempdir())
+trc_prefix = 'gh-7141'
+trc_log_ptrn = f'{trc_prefix}.*.tmp'
+for file_path in trc_log_path.glob(trc_log_ptrn):
+    if file_path.is_file(): # Ensure it's a file and not a directory
+        try:
+            file_path.unlink(missing_ok = True)
+        except OSError as e:
+            pass
+
+RANDOM_TRACE_LOG = trc_log_path / ( trc_prefix + '.' + ''.join(random.choices(string.ascii_lowercase + string.digits, k=8)) + '.tmp')
+tmp_trace_cfg = temp_file(f'{trc_prefix}.trc.cfg')
 
 MAX_WAIT_FOR_TRACE_STOP = 10
 TRC_SESSION_NAME_PREFIX = 'gh_7141_'
@@ -45,7 +80,7 @@ EXPECTED_MSG2 = 'Success: found trace session name in the result of fbsvcmgr act
 
 @pytest.mark.trace
 @pytest.mark.version('>=3.0.10')
-def test_1(act: Action, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
+def test_1(act: Action, tmp_trace_cfg: Path, capsys):
 
     trace_txt = f"""
         database=%[\\\\/]{act.db.db_path.name}
@@ -59,7 +94,7 @@ def test_1(act: Action, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
     trace_session_id = -1
     trace_session_nm = ''
 
-    with tmp_trace_log.open('w') as f_log:
+    with RANDOM_TRACE_LOG.open('w') as f_log:
         # EXPLICIT call of FB utility 'fbsvcmgr':
         p = subprocess.Popen( [ act.vars['fbsvcmgr'],
                                 'localhost:service_mgr',
@@ -84,14 +119,35 @@ def test_1(act: Action, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
 
         assert q1.returncode == 0
 
+        v_error_msg = ''
         with act.connect_server() as srv:
             # K = 1
             # V = TraceSession(id=1, user='SYSDBA', timestamp=..., name=<LONG_NAME_OF_TRACE_SESSION>, flags=['active', ' trace'])
-            for k,v in srv.trace.sessions.items():
-                if v.flags[0] == 'active' and v.name.startswith(TRC_SESSION_NAME_PREFIX):
-                    trace_session_id = v.id
-                    trace_session_nm = v.name
+
+            ### ACHTUNG ###
+            # Source code of firebird-driver must meet following requirements:
+            #     class TraceSession defined in $FB_DRV_HOME/types.py must contain 'plugins' field:
+            #         plugins: list = field(default_factory=list)
+            #         # 25.08.2025, discussed with pcisar, subj: "firebird-driver can't parse content of srv.trace.sessions since f9ac3d34"
+            #     // otherwise test can raise TypeError: TraceSession.__init__() got an unexpected keyword argument 'plugins'
+            #     class ServerTraceServices defined in $FB_DRV_HOME/core.py must contain branch related to output of trace plugins:
+            #         ...
+            #         elif line.lstrip().startswith('plugins:'):
+            #             current['plugins'] = line.split(':')[1].strip().split(',')
+            #             # 25.08.2025, discussed with pcisar, subj: "firebird-driver can't parse content of srv.trace.sessions since f9ac3d34"
+            # See also: https://github.com/FirebirdSQL/python3-driver/issues/55
+            # Test will raise RUNTIME EXCEPTION if firebird-driver source has no such additions.
+            # Trace log remains opened by fbsvcmgr in that case and subsequent runs of this test will fail on teardown phase with
+            # 'WindowsError: [Error 32] The process cannot access the file... <trace_log>'
+            try:
+                for k,v in srv.trace.sessions.items():
+                    if v.flags[0] == 'active' and v.name.startswith(TRC_SESSION_NAME_PREFIX):
+                        trace_session_id = v.id
+                        trace_session_nm = v.name
+            except (TypeError, InterfaceError) as e:
+                v_error_msg = e.__str__()
             
+        assert v_error_msg == '', 'Source code of firebird-driver probably needs to be updated.'
         assert trace_session_id > 0, f'Could not find trace session to be stopped in {act.connect_server().trace.sessions.items()=}'
 
         q2 = subprocess.run( [ act.vars['fbsvcmgr'],
@@ -118,7 +174,7 @@ def test_1(act: Action, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
     p_prefix_in_list = re.compile(f'name(:)?\\s+{TRC_SESSION_NAME_PREFIX}', re.IGNORECASE)
 
     found_in_trc_list = False
-    with tmp_trace_log.open('r') as f_log:
+    with RANDOM_TRACE_LOG.open('r') as f_log:
         for line in f_log:
             #if p_prefix_in_list.search(line):
             if LONG_NAME_OF_TRACE_SESSION in line:
@@ -128,7 +184,7 @@ def test_1(act: Action, tmp_trace_cfg: Path, tmp_trace_log: Path, capsys):
 
     if not found_in_trc_list:
         print('Check result of fbsvcmgr action_trace_list:')
-        with tmp_trace_log.open('r') as f:
+        with RANDOM_TRACE_LOG.open('r') as f:
             trace_lines = [ x for x in f.read().splitlines() if x.split() ]
             for i, x in enumerate(trace_lines):
                 print(f'line {i}, length = {len(x.rstrip())}: >' + x.rstrip() + '<')
