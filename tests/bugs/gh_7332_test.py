@@ -94,6 +94,10 @@ def test_1(act: Action, capsys):
     #
     assert fname_in_dbconf
     
+    # Full path + filename of database to which we will try to connect:
+    #
+    tmp_fdb = Path( act.vars['sample_dir'], 'qa', fname_in_dbconf )
+  
     srv_cfg = """
         [local]
         host = localhost
@@ -106,7 +110,7 @@ def test_1(act: Action, capsys):
     db_cfg_object = driver_config.register_database(name = db_cfg_name)
     db_cfg_object.server.value = srv_cfg.name
     db_cfg_object.protocol.value = NetProtocol.INET
-    db_cfg_object.database.value = REQUIRED_ALIAS
+    db_cfg_object.database.value = str(tmp_fdb) # REQUIRED_ALIAS
 
     protocols_list = [ None, NetProtocol.INET, ] # None - for local/embedded connection.
     if act.platform == 'Windows':
@@ -117,10 +121,13 @@ def test_1(act: Action, capsys):
         CHECKED_PROTOCOL = 'INET' if p == NetProtocol.INET else 'XNET' if p == NetProtocol.XNET else 'NONE'
         with create_database(db_cfg_name, user = act.db.user, password = act.db.password, charset = 'utf8') as con:
             cur = con.cursor()
-            cur.execute("select a.mon$remote_protocol, g.rdb$config_value from mon$attachments a cross join rdb$config g where a.mon$attachment_id = current_connection and g.rdb$config_name = 'InlineSortThreshold'")
+            cur.execute("select a.mon$remote_protocol, g.rdb$config_value, d.mon$database_name from mon$attachments a cross join mon$database d cross join rdb$config g where a.mon$attachment_id = current_connection and g.rdb$config_name = 'InlineSortThreshold'")
             #cur.execute("select g.rdb$config_value from rdb$config g where g.rdb$config_name = 'InlineSortThreshold'")
             for r in cur:
                 protocol_name = 'NONE' if not r[0] else 'INET' if r[0].upper().startswith('TCP') else 'XNET' if r[0].upper() == 'XNET'.upper() else '????'
+                dbfile_name = r[2]
+                #print(f'{CHECKED_PROTOCOL=}, {dbfile_name=}')
+    
                 print(protocol_name)
                 print(r[1])
                 assert int(r[1]) == INLINE_SORT_THRESHOLD, f'Values of InlineSortThreshold not equal. Config: {r[0]}, this test: {INLINE_SORT_THRESHOLD}.'
