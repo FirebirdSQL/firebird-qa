@@ -131,7 +131,10 @@ def test_1(act: Action, capsys):
     
                 print(protocol_name)
                 print(r[1])
-                assert int(r[1]) == INLINE_SORT_THRESHOLD, f'Values of InlineSortThreshold not equal. Config: {r[0]}, this test: {INLINE_SORT_THRESHOLD}.'
+                # in case of mismatch for XNET check that there is no concurrent FB instance with same value of 'IpcName' in firebird.conf!
+                # If such instance is running and was launched before currently tested FB then value of InlineSortThreshold will be taken from it!
+                assert int(r[1]) == INLINE_SORT_THRESHOLD, f'{protocol_name=}: values of InlineSortThreshold not equal. Config: {r[1]}, this test: {INLINE_SORT_THRESHOLD}, {dbfile_name=}'
+                
 
             ps, rs =  None, None
             try:
