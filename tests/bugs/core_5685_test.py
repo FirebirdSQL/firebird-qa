@@ -38,12 +38,6 @@ DESCRIPTION:
     (expected: all fields in ITER #2 must be NULL)
 JIRA:        CORE-5685
 NOTES:
-    [06.10.2022] pzotov
-        Fails on Linux when run in 'batch' mode (i.e. when pytest has to perform the whole tests set).
-        Can not reproduce fail when run this test 'separately': it passes, but lasts too longm, ~130 s.
-        Test will be re-implemented.
-        DEFERRED.
-
     [03.02.2026] pzotov
         ::: ACHTUNG ::: In case of using VPN one need to add IP = 192.0.2.1 to exclusions list.
         TCP-request to this IP must be direct (i.e. bypass VPN).
@@ -57,10 +51,12 @@ NOTES:
         Similar problem raises if we use db_factory with random file name because pytest attempts to
         drop entire directory defined as temporary storage for its run.
         Also, this problem will raise if this test outcome is verified multiple times via LOOP.
+
         Probably, this can be solved by set 'TcpMaxDataRetransmissions' parameter to small value in
         HKEY_LOCAL_MACHINE/System/CurrentControlSet/Services/Tcpip/Parameters (default = 5)
         But if we reduce this value then isql will not hang for valuable time and test will fail.
-
+        Explanation by Vlad about to synchronous behaviour of connection establishing:
+        http://www.ibaseforum.ru/viewtopic.php?f=8&t=4859&p=31026 // (rus, 2009)
 
         Because of that, test creates DB in _OS_ temp directory rather than in Pytest temp folder.
         Name of DB matches to the pattern: 'core-5685.<random_str>.tmp'
@@ -70,6 +66,7 @@ NOTES:
         Confirmed bug on 4.0.0.483; 3.0.2.32703
         Confirmed fix in 4.0.0.840; 3.0.3.32900.
         Checked on Windows (all SS/CS): 6.0.0.1403; 5.0.4.1748; 4.0.7.3243; 3.0.14.33829
+        Checked on Linux: 6.0.0.1403 (SS/CS). Removed mark that prohibits exectuion on Linux.
 """
 import os
 import platform
@@ -139,7 +136,6 @@ init_script = temp_file('init_script.sql')
 hang_script = temp_file('hang_script.sql')
 hang_stdout = temp_file('hang_script.out')
 
-@pytest.mark.skipif(platform.system() != 'Windows', reason='FIXME: see notes')
 @pytest.mark.es_eds
 @pytest.mark.version('>=3.0.2')
 def test_1(act: Action, init_script: Path, hang_script: Path, hang_stdout: Path, capsys):
