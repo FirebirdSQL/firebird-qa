@@ -21,6 +21,10 @@ NOTES:
        Despite the fact that 'Providers' property is mentioned in DPB class (see core.py), one can *not* to specify it in custom DB config
        because this property actually is not initialized anywhere in the source code of firebird-driver.
 
+    [03.02.2026] pzotov
+       Added 'ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL' in .sql.
+       Otherwise this test fails when is checked in loop ("Windows 32" error raises).
+
     Confirmed bug  on 6.0.0.949, got:
         Statement failed, SQLSTATE = 42000
         Execute statement error at attach :
