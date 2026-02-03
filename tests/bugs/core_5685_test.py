@@ -57,6 +57,10 @@ NOTES:
         Similar problem raises if we use db_factory with random file name because pytest attempts to
         drop entire directory defined as temporary storage for its run.
         Also, this problem will raise if this test outcome is verified multiple times via LOOP.
+        Probably, this can be solved by set 'TcpMaxDataRetransmissions' parameter to small value in
+        HKEY_LOCAL_MACHINE/System/CurrentControlSet/Services/Tcpip/Parameters (default = 5)
+        But if we reduce this value then isql will not hang for valuable time and test will fail.
+
 
         Because of that, test creates DB in _OS_ temp directory rather than in Pytest temp folder.
         Name of DB matches to the pattern: 'core-5685.<random_str>.tmp'
@@ -96,7 +100,7 @@ for v in ('ISC_USER','ISC_PASSWORD'):
 MAX_WAIT_FOR_WORKER_START_MS = 20000
 MAX_WAIT_FOR_KILLER_FINISH_MS = 15000
 BOGON_IP_ADDRESS = '192.0.2.1'
-VPN_WARNING_MSG = f"\nIf you use VPN then add IP={BOGON_IP_ADDRESS} to the exclusions list."
+VPN_WARNING_MSG = f"\n::: NOTE ::: If you use VPN then add IP={BOGON_IP_ADDRESS} to the exclusions list."
 
 # cleanup temp dir: remove all files that could remain from THIS test previous runs:
 # -----------------
@@ -177,7 +181,9 @@ def test_1(act: Action, init_script: Path, hang_script: Path, hang_stdout: Path,
 
     sql_to_hang = """
         set list on;
+        select current_timestamp as dts_start from rdb$database;
         select * from sp_get_data;
+        select current_timestamp as dts_finish from rdb$database;
     """
     hang_script.write_text(sql_to_hang)
     pattern_for_failed_statement = re.compile('Statement failed, SQLSTATE = (08006|08003)')
@@ -235,7 +241,7 @@ def test_1(act: Action, init_script: Path, hang_script: Path, hang_stdout: Path,
         if con_watched and p_hang_sql:
 
             time.sleep(2) # ::: NB ::: we have to be sure that isql will hang at obtaining data from bogon IP
-            assert p_hang_sql.poll() is None, f"ISQL process which had to hang completed too fast. Check its log:" + hang_stdout.read_text() + VPN_WARNING_MSG
+            assert p_hang_sql.poll() is None, f"\nISQL process which had to hang completed too fast. Check its log:\n" + '\n'.join([ x for x in hang_stdout.read_text().splitlines() if x.strip() ]) + VPN_WARNING_MSG
 
             kill_script = f"""
                 set list on;
@@ -305,7 +311,7 @@ def test_1(act: Action, init_script: Path, hang_script: Path, hang_stdout: Path,
         #< if con_watched and p_hang_sql
     #< with open(hang_stdout, mode='w')
 
-    assert con_watched and p_hang_sql, f"Could not find ISQL which had to hang for {MAX_WAIT_FOR_WORKER_START_MS} ms. Check its log:" + hang_stdout.read_text() + VPN_WARNING_MSG
+    assert con_watched and p_hang_sql, f"\nCould not find ISQL which had to hang for {MAX_WAIT_FOR_WORKER_START_MS} ms. Check its log:\n" + '\n'.join([ x for x in hang_stdout.read_text().splitlines() if x.strip() ]) + VPN_WARNING_MSG
 
     # 4debug only:
     #shutil.copy2(hang_script, r"C:\FBTESTING\qa\misc\core-5685-hanged.debug.sql")
@@ -353,6 +359,8 @@ def test_1(act: Action, init_script: Path, hang_script: Path, hang_stdout: Path,
     SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
     STORED_PROC_NAME = "'SP_GET_DATA'" if act.is_version('<6') else '"SP_GET_DATA"'
 
+    act.substitutions.extend( [('.*DTS_START.*', '')] )
+
     expected_stdout = f"""
         HANGED ATTACH LOG: Statement failed, SQLSTATE = 42000
         HANGED ATTACH LOG: Execute statement error at isc_dsql_fetch :
@@ -367,7 +375,9 @@ def test_1(act: Action, init_script: Path, hang_script: Path, hang_stdout: Path,
         HANGED ATTACH LOG: <found pattern about failed statement>
         HANGED ATTACH LOG: <found pattern about closed connection>
         HANGED ATTACH LOG: After line <N>
-
+        HANGED ATTACH LOG: <found pattern about failed statement>
+        HANGED ATTACH LOG: <found pattern about closed connection>
+        HANGED ATTACH LOG: After line <N>
         KILLER ATTACH LOG: ITERATION_NO                    1
         KILLER ATTACH LOG: HANGING_ATTACH_CONNECTION       1
         KILLER ATTACH LOG: HANGING_ATTACH_PROTOCOL         TCP
@@ -375,7 +385,6 @@ def test_1(act: Action, init_script: Path, hang_script: Path, hang_stdout: Path,
         KILLER ATTACH LOG: select * from sp_get_data
         KILLER ATTACH LOG: DELETED_COUNT                   1
         KILLER ATTACH LOG: DETACH_ENDED_TIME               Acceptable.
-
         KILLER ATTACH LOG: ITERATION_NO                    2
         KILLER ATTACH LOG: HANGING_ATTACH_CONNECTION       <null>
         KILLER ATTACH LOG: HANGING_ATTACH_PROTOCOL         <null>
