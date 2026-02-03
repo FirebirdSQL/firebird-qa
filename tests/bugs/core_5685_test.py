@@ -96,6 +96,7 @@ for v in ('ISC_USER','ISC_PASSWORD'):
 MAX_WAIT_FOR_WORKER_START_MS = 20000
 MAX_WAIT_FOR_KILLER_FINISH_MS = 15000
 BOGON_IP_ADDRESS = '192.0.2.1'
+VPN_WARNING_MSG = f"\nIf you use VPN then add IP={BOGON_IP_ADDRESS} to the exclusions list."
 
 # cleanup temp dir: remove all files that could remain from THIS test previous runs:
 # -----------------
@@ -183,10 +184,11 @@ def test_1(act: Action, init_script: Path, hang_script: Path, hang_stdout: Path,
     pattern_for_connection_close = re.compile('(Error (reading|writing) data (from|to) the connection)|(connection shutdown)')
     pattern_for_ignored_messages = re.compile('(-send_packet/send)|(-Killed by database administrator.)')
     killer_output_map = {}
+    con_watched = None
+    p_hang_sql = None
+
     #
     with open(hang_stdout, mode='w') as hang_out:
-        con_watched = None
-        p_hang_sql = None
 
         # Create connection for watching mon$attachments: we are waiting appearance of 'isql' process now:
         #
@@ -230,75 +232,80 @@ def test_1(act: Action, init_script: Path, hang_script: Path, hang_stdout: Path,
 
         #< with fb_core.connect(...) as con_monitoring
 
-        assert con_watched and p_hang_sql, f"Could not find launched SQL for {MAX_WAIT_FOR_WORKER_START_MS} ms. ABEND."
-        time.sleep(2) # ::: NB ::: we have to be sure that isql will hang at obtaining data from bogon IP
-        assert p_hang_sql.poll() is None, f"ISQL process completed too fast. If you are using VPN then add IP={BOGON_IP_ADDRESS} to the exclusions list."
+        if con_watched and p_hang_sql:
 
-        kill_script = f"""
-            set list on;
-            set blob all;
-            connect '{TEST_DB_DSN}' user {act.db.user} password '{act.db.password}';
-            select gen_id(g,1) as ITERATION_NO from rdb$database;
-            commit;
+            time.sleep(2) # ::: NB ::: we have to be sure that isql will hang at obtaining data from bogon IP
+            assert p_hang_sql.poll() is None, f"ISQL process which had to hang completed too fast. Check its log:" + hang_stdout.read_text() + VPN_WARNING_MSG
 
-            select
-                 sign(a.mon$attachment_id) as hanging_attach_connection
-                ,left(a.mon$remote_protocol,3) as hanging_attach_protocol
-                ,s.mon$state as hanging_statement_state
-                ,s.mon$sql_text as hanging_statement_blob_id
-            from rdb$database d
-            left join mon$attachments a on a.mon$remote_process containing 'isql'
-                and a.mon$system_flag is distinct from 1
-                and a.mon$attachment_id is distinct from current_connection
-            left join mon$statements s on
-                a.mon$attachment_id = s.mon$attachment_id
-                and s.mon$state = 1 -- 4.0 Classic: 'SELECT RDB$MAP_USING, RDB$MAP_PLUGIN, ... FROM RDB$AUTH_MAPPING', mon$state = 0
-            ;
+            kill_script = f"""
+                set list on;
+                set blob all;
+                connect '{TEST_DB_DSN}' user {act.db.user} password '{act.db.password}';
+                select gen_id(g,1) as ITERATION_NO from rdb$database;
+                commit;
 
-            set term ^;
-            execute block returns(deleted_count smallint, detach_ended_time varchar(255)) as
-                declare t0 timestamp;
-                declare deleted_in_ms int;
-            begin
-                t0 = 'now';
-                delete /*  iter %(iter)s */ from mon$attachments a
-                where
-                    a.mon$attachment_id <> current_connection
-                    and a.mon$remote_process containing 'isql';
-                deleted_count = row_count;
-                deleted_in_ms = datediff(millisecond from t0 to cast('now' as timestamp));
-                detach_ended_time = iif(deleted_in_ms < {MAX_WAIT_FOR_KILLER_FINISH_MS}, 'Acceptable.', 'TOO SLOW: ' || deleted_in_ms || ' ms -- greater than MAX_WAIT_FOR_KILLER_FINISH_MS=' || {MAX_WAIT_FOR_KILLER_FINISH_MS});
-                suspend;
-            end
-            ^
-            commit
-            ^
-            --/*
-            execute block as
-                declare v_dummy int;
-            begin
+                select
+                     sign(a.mon$attachment_id) as hanging_attach_connection
+                    ,left(a.mon$remote_protocol,3) as hanging_attach_protocol
+                    ,s.mon$state as hanging_statement_state
+                    ,s.mon$sql_text as hanging_statement_blob_id
+                from rdb$database d
+                left join mon$attachments a on a.mon$remote_process containing 'isql'
+                    and a.mon$system_flag is distinct from 1
+                    and a.mon$attachment_id is distinct from current_connection
+                left join mon$statements s on
+                    a.mon$attachment_id = s.mon$attachment_id
+                    and s.mon$state = 1 -- 4.0 Classic: 'SELECT RDB$MAP_USING, RDB$MAP_PLUGIN, ... FROM RDB$AUTH_MAPPING', mon$state = 0
+                ;
+
+                set term ^;
+                execute block returns(deleted_count smallint, detach_ended_time varchar(255)) as
+                    declare t0 timestamp;
+                    declare deleted_in_ms int;
                 begin
-                    execute statement 'ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL';
-                when any do
+                    t0 = 'now';
+                    delete /* trace_me: iter %(iter)s */ from mon$attachments a
+                    where
+                        a.mon$attachment_id <> current_connection
+                        and a.mon$remote_process containing 'isql';
+                    deleted_count = row_count;
+                    deleted_in_ms = datediff(millisecond from t0 to cast('now' as timestamp));
+                    detach_ended_time = iif(deleted_in_ms < {MAX_WAIT_FOR_KILLER_FINISH_MS}, 'Acceptable.', 'TOO SLOW: ' || deleted_in_ms || ' ms -- greater than MAX_WAIT_FOR_KILLER_FINISH_MS=' || {MAX_WAIT_FOR_KILLER_FINISH_MS});
+                    suspend;
+                end
+                ^
+                commit
+                ^
+                --/*
+                execute block as
+                    declare v_dummy int;
+                begin
                     begin
+                        execute statement 'ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL';
+                    when any do
+                        begin
+                        end
                     end
                 end
-            end
-            ^
-            --*/
-        """
-        
-        try:
-            for iter in range(2):
-                ########################
-                ###    k i l l e r   ###
-                ########################
-                act.isql(switches=['-q'], input = kill_script % locals(), connect_db = False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
-                killer_output_map[ iter ] = act.clean_stdout
-                act.reset()
-        finally:
-            p_hang_sql.terminate()
-            p_hang_sql.wait(timeout = MAX_WAIT_FOR_KILLER_FINISH_MS)
+                ^
+                --*/
+            """
+            
+            try:
+                for iter in range(2):
+                    ########################
+                    ###    k i l l e r   ###
+                    ########################
+                    act.isql(switches=['-q'], input = kill_script % locals(), connect_db = False, credentials = False, combine_output = True, io_enc = locale.getpreferredencoding())
+                    killer_output_map[ iter ] = act.clean_stdout
+                    act.reset()
+            finally:
+                p_hang_sql.terminate()
+                p_hang_sql.wait(timeout = MAX_WAIT_FOR_KILLER_FINISH_MS)
+        #< if con_watched and p_hang_sql
+    #< with open(hang_stdout, mode='w')
+
+    assert con_watched and p_hang_sql, f"Could not find ISQL which had to hang for {MAX_WAIT_FOR_WORKER_START_MS} ms. Check its log:" + hang_stdout.read_text() + VPN_WARNING_MSG
 
     # 4debug only:
     #shutil.copy2(hang_script, r"C:\FBTESTING\qa\misc\core-5685-hanged.debug.sql")
