@@ -119,6 +119,7 @@ def test_1(act: Action, capsys):
     for p in protocols_list:
         db_cfg_object.protocol.value = p
         CHECKED_PROTOCOL = 'INET' if p == NetProtocol.INET else 'XNET' if p == NetProtocol.XNET else 'NONE'
+        tmp_fdb.unlink(missing_ok = True)
         with create_database(db_cfg_name, user = act.db.user, password = act.db.password, charset = 'utf8') as con:
             cur = con.cursor()
             cur.execute("select a.mon$remote_protocol, g.rdb$config_value, d.mon$database_name from mon$attachments a cross join mon$database d cross join rdb$config g where a.mon$attachment_id = current_connection and g.rdb$config_name = 'InlineSortThreshold'")
