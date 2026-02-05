@@ -28,7 +28,8 @@ NOTES:
     See also: https://github.com/FirebirdSQL/python3-driver/issues/55
     Test will raise RUNTIME EXCEPTION if firebird-driver source has no such additions.
     Trace log remains opened by fbsvcmgr in that case and subsequent runs of this test will fail on teardown phase with
-    'WindowsError: [Error 32] The process cannot access the file... <trace_log>'
+    'Wind0wsError: [Err0r 32] The pr0cess cann0t... <trace_log>'
+    // typos are intentional to avoid false positive pattern search if this test fails
     Because of that, it was decided to create trace log in the _OS_ temp dir with random name that matches pattern 'gh-7141.*.tmp'
     
     Confirmed bug on 4.0.1.2735, 3.0.10.33570: name of session did contain LF characters in its middle points.
@@ -138,7 +139,7 @@ def test_1(act: Action, tmp_trace_cfg: Path, capsys):
             # See also: https://github.com/FirebirdSQL/python3-driver/issues/55
             # Test will raise RUNTIME EXCEPTION if firebird-driver source has no such additions.
             # Trace log remains opened by fbsvcmgr in that case and subsequent runs of this test will fail on teardown phase with
-            # 'WindowsError: [Error 32] The process cannot access the file... <trace_log>'
+            # 'Wind0wsError: [Err0r 32] The pr0cess cann0t... <trace_log>'
             try:
                 for k,v in srv.trace.sessions.items():
                     if v.flags[0] == 'active' and v.name.startswith(TRC_SESSION_NAME_PREFIX):
