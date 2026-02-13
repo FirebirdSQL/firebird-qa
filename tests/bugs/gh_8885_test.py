@@ -19,7 +19,8 @@ NOTES:
     3. Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace it before every test session).
        Discussed with pcisar, letters since 30-may-2022 13:48, subject:
        "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
-    4. Commits that fixed problem:
+    4. AV raised when LockMemSize had minimal size and LockHashSlots greater than ~32K (letter from Vlad, mailbox pz@ibase.ru, 02.02.26 1319.
+    5. Commits that fixed problem:
         6.x: https://github.com/FirebirdSQL/firebird/commit/b93f2781a8d8d0ae746b1ae3c47894c7debf52a0
         5.x: https://github.com/FirebirdSQL/firebird/commit/95542f0939d82dcd4c0278fb3194ff266eea4e3a
              ("Merge pull request #8896 from FirebirdSQL/work/gh-8885")
