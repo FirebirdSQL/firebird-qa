@@ -12,46 +12,41 @@ DESCRIPTION:
     Restore is logged and we check that this log does not contain 'gbak:error' message (and eventually completes OK).
     Restored database must contain all created DB objects, i.e. we must have ability to explicitly specify them in SQL.
     Table trigger (containing explicit PLAN clause in its DDL) also must exist and remain active.
-
     Before this bug was fixed:
     1) log of restore contained:
        gbak: ERROR:Error while parsing function FN_WORKER's BLR
        gbak: ERROR: index TEST_X cannot be used in the specified plan
     2) restored database had NO indices that were explicitly specified in any DDL and any attempt to use appropriate
        DB object failed with SQLSTATE = 42S02/39000/42000 ('Table/Procedure/Function} unknown').
-
 JIRA:        CORE-1725
-FBTEST:      bugs.core_1725
 NOTES:
     [28.10.2024] pzotov
-    1. Test fully re-implemented.
-       We do NOT extract metadata before and after restore (in order to compare it):
-       in FB 6.x 'gbak -i' leads to 'create INACTIVE index ...' statements in generated SQL
-       (see https://github.com/FirebirdSQL/firebird/issues/8091 - "Ability to create an inactive index").
-
-       Comparison of metadata that was before and after restore has no much sense.
-       Rather, we have to check SQL/DML that attempt to use DB object which DDL contain
-       explicitly specified execution plan.
-       All such actions must raise error related to invalid BLR, but *not* error about missing DB object.
-
-       BTW: it looks strange that such messages contain "-there is no index TEST_X for table TEST".
-       Such index definitely DOES exist but it is inactive.
-
-    2. Bug existed up to 17-jan-2019.
-       It was fixed by commits related to other issues, namely:
-           3.x: a74130019af89012cc1e04ba18bbc9c4a69e1a5d // 17.01.2019
-           4.x: fea7c61d9741dc142fa020bf3aa93af7e52e2002 // 17.01.2019
-           5.x: fea7c61d9741dc142fa020bf3aa93af7e52e2002 // 18.01.2019
-           ("Attempted to fix CORE-2440, CORE-5118 and CORE-5900 together (expression indices contain NULL keys after restore).")
-
-    Checked on:
-    6.0.0.511-c4bc943; 5.0.2.1547-1e08f5e; 4.0.0.1384-fea7c61 (17-jan-2019, just after fix); 3.0.13.33793-3e62713
-
+        1. Test was fully re-implemented.
+           We do NOT extract metadata before and after restore (in order to compare it):
+           in FB 6.x 'gbak -i' leads to 'create INACTIVE index ...' statements in generated SQL
+           (see https://github.com/FirebirdSQL/firebird/issues/8091 - "Ability to create an inactive index").
+           Comparison of metadata that was before and after restore has no much sense.
+           Rather, we have to check SQL/DML that attempt to use DB object which DDL contain
+           explicitly specified execution plan.
+           All such actions must raise error related to invalid BLR, but *not* error about missing DB object.
+           BTW: it looks strange that such messages contain "-there is no index TEST_X for table TEST".
+           Such index definitely DOES exist but it is inactive.
+        2. Bug existed up to 17-jan-2019.
+           It was fixed by commits related to other issues, namely:
+               3.x: a74130019af89012cc1e04ba18bbc9c4a69e1a5d // 17.01.2019
+               4.x: fea7c61d9741dc142fa020bf3aa93af7e52e2002 // 17.01.2019
+               5.x: fea7c61d9741dc142fa020bf3aa93af7e52e2002 // 18.01.2019
+               ("Attempted to fix CORE-2440, CORE-5118 and CORE-5900 together (expression indices contain NULL keys after restore).")
+        Checked on:
+        6.0.0.511-c4bc943; 5.0.2.1547-1e08f5e; 4.0.0.1384-fea7c61 (17-jan-2019, just after fix); 3.0.13.33793-3e62713
     [30.06.2025] pzotov
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-    
-    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [13.02.2026] pzotov
+        Adjusted output for 5.x and 6.x to actual (changed after #14c6de6e "Improvement #8895...").
+        Confirmed by Vlad, 13.02.2026 1006.
+        Checked on 6.0.0.1428 5.0.4.1757.
 """
 
 import locale
@@ -312,7 +307,7 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
 
     ###########################################################################
 
-    expected_stdout_5x = """
+    expected_stdout_4x = """
         restore_log
         gbak:finishing, closing, and going home
         gbak:adjusting the ONLINE and FORCED WRITES flags
@@ -379,6 +374,80 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
         Error while parsing function PG_TEST.PG_FN_WORKER's BLR
         invalid request BLR at offset
         -there is no index TEST_X for table TEST
+        insert into test(id, x, y) values(-1, -1, -1) returning id, x, y;
+        Statement failed, SQLSTATE = 42000
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
+    """
+
+
+    expected_stdout_5x = """
+        restore_log
+        gbak:finishing, closing, and going home
+        gbak:adjusting the ONLINE and FORCED WRITES flags
+        check_metadata
+        RDB$INDEX_NAME TEST_X
+        RDB$INDEX_INACTIVE 1
+        RDB$INDEX_NAME TEST_Y
+        RDB$INDEX_INACTIVE 1
+        Records affected: 2
+        RDB$PACKAGE_NAME <null>
+        SP_NAME SP_INIT
+        SP_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        SP_NAME SP_MAIN
+        SP_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        SP_NAME SP_WORKER
+        SP_VALID_BLR 1
+        RDB$PACKAGE_NAME PG_TEST
+        SP_NAME PG_SP_WORKER
+        SP_VALID_BLR 1
+        Records affected: 4
+        RDB$PACKAGE_NAME <null>
+        FN_NAME FN_INIT
+        FN_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        FN_NAME FN_MAIN
+        FN_VALID_BLR 1
+        RDB$PACKAGE_NAME <null>
+        FN_NAME FN_WORKER
+        FN_VALID_BLR 1
+        RDB$PACKAGE_NAME PG_TEST
+        FN_NAME PG_FN_WORKER
+        FN_VALID_BLR 1
+        Records affected: 4
+        RDB$TRIGGER_NAME TEST_BI
+        RDB$TRIGGER_INACTIVE 0
+        TG_VALID_BLR 1
+        Records affected: 1
+        check_avail_db_objects
+        select * from v_worker;
+        Statement failed, SQLSTATE = 42000
+        invalid request BLR at offset
+        -there is no index TEST_Y for table TEST
+        execute procedure sp_main;
+        Statement failed, SQLSTATE = 2F000
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
+        -Error while parsing procedure SP_WORKER's BLR
+        -Error while parsing procedure SP_MAIN's BLR
+        select fn_main() from rdb$database;
+        Statement failed, SQLSTATE = 2F000
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
+        -Error while parsing function FN_WORKER's BLR
+        -Error while parsing function FN_MAIN's BLR
+        execute procedure pg_test.pg_sp_worker;
+        Statement failed, SQLSTATE = 2F000
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
+        -Error while parsing procedure PG_TEST.PG_SP_WORKER's BLR
+        select pg_test.pg_fn_worker() from rdb$database;
+        Statement failed, SQLSTATE = 2F000
+        invalid request BLR at offset
+        -there is no index TEST_X for table TEST
+        -Error while parsing function PG_TEST.PG_FN_WORKER's BLR
         insert into test(id, x, y) values(-1, -1, -1) returning id, x, y;
         Statement failed, SQLSTATE = 42000
         invalid request BLR at offset
@@ -458,7 +527,6 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
         -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
     """
 
-    
-    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
