@@ -3,7 +3,7 @@
 """
 ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/06d18794f7c219aa9dca05b48dabab7732c7ba37
-TITLE:       Checks for 'object in use' must be done when running DDL changes for LTTs.
+TITLE:       Checks for 'object in use' when doing DDL changes in LTTs.
 DESCRIPTION:
     DDL against LTT must behave exactly as for persistent table or GTT: 'object in use'
     must raise if changes in LTT exist and was caused by concurrent non-completed DML.
