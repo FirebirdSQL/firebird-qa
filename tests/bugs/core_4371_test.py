@@ -49,17 +49,17 @@ expected_stdout_4x = """
 """
 
 expected_stdout_5x = """
-    Statement failed, SQLSTATE = 2F000
-    invalid request BLR at offset
-    -exception EX_SOME_NON_EXISTENT_NAME not defined
-    -Error while parsing function FN_TEST's BLR
+     Statement failed, SQLSTATE = 2F000
+     invalid request BLR at offset
+     -exception EX_SOME_NON_EXISTENT_NAME not defined
+     -Error while parsing function FN_TEST's BLR
 """
 
 expected_stdout_6x = """
-    Statement failed, SQLSTATE = 2F000
-    Error while parsing function "PUBLIC"."FN_TEST"'s BLR
-    -invalid request BLR at offset
-    -exception "PUBLIC"."EX_SOME_NON_EXISTENT_NAME" not defined
+     Statement failed, SQLSTATE = 2F000
+     invalid request BLR at offset
+     -exception "PUBLIC"."EX_SOME_NON_EXISTENT_NAME" not defined
+     -Error while parsing function "PUBLIC"."FN_TEST"'s BLR
 """
 
 @pytest.mark.version('>=3.0')
