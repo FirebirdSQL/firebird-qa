@@ -17,7 +17,7 @@ NOTES:
     [13.02.2026] pzotov
         Adjusted output for 5.x and 6.x to actual (changed after #14c6de6e "Improvement #8895...").
         Confirmed by Vlad, 13.02.2026 1006.
-        Checked on 6.0.0.1428 5.0.4.1757.
+        Checked on 6.0.0.1454, 5.0.4.1762, 4.0.7.3245, 3.0.14.33838.
 """
 
 import pytest
@@ -60,8 +60,8 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 2F000
-    Error while parsing procedure "PUBLIC"."SP_TEST"'s BLR
-    -index "PUBLIC"."TEST_F01" cannot be used in the specified plan
+    index "PUBLIC"."TEST_F01" cannot be used in the specified plan
+    -Error while parsing procedure "PUBLIC"."SP_TEST"'s BLR
 """
 
 @pytest.mark.version('>=3.0')
