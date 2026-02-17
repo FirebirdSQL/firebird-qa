@@ -380,7 +380,6 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
         -there is no index TEST_X for table TEST
     """
 
-
     expected_stdout_5x = """
         restore_log
         gbak:finishing, closing, and going home
@@ -501,26 +500,26 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, capsys):
         -there is no index "PUBLIC"."TEST_Y" for table "PUBLIC"."TEST"
         execute procedure sp_main;
         Statement failed, SQLSTATE = 2F000
-        Error while parsing procedure "PUBLIC"."SP_MAIN"'s BLR
-        -Error while parsing procedure "PUBLIC"."SP_WORKER"'s BLR
         invalid request BLR at offset
         -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
+        -Error while parsing procedure "PUBLIC"."SP_WORKER"'s BLR
+        -Error while parsing procedure "PUBLIC"."SP_MAIN"'s BLR
         select fn_main() from rdb$database;
         Statement failed, SQLSTATE = 2F000
-        Error while parsing function "PUBLIC"."FN_MAIN"'s BLR
-        -Error while parsing function "PUBLIC"."FN_WORKER"'s BLR
         invalid request BLR at offset
         -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
+        -Error while parsing function "PUBLIC"."FN_WORKER"'s BLR
+        -Error while parsing function "PUBLIC"."FN_MAIN"'s BLR
         execute procedure pg_test.pg_sp_worker;
         Statement failed, SQLSTATE = 2F000
-        Error while parsing procedure "PUBLIC"."PG_TEST"."PG_SP_WORKER"'s BLR
         invalid request BLR at offset
         -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
+        -Error while parsing procedure "PUBLIC"."PG_TEST"."PG_SP_WORKER"'s BLR
         select pg_test.pg_fn_worker() from rdb$database;
         Statement failed, SQLSTATE = 2F000
-        Error while parsing function "PUBLIC"."PG_TEST"."PG_FN_WORKER"'s BLR
         invalid request BLR at offset
         -there is no index "PUBLIC"."TEST_X" for table "PUBLIC"."TEST"
+        -Error while parsing function "PUBLIC"."PG_TEST"."PG_FN_WORKER"'s BLR
         insert into test(id, x, y) values(-1, -1, -1) returning id, x, y;
         Statement failed, SQLSTATE = 42000
         invalid request BLR at offset
