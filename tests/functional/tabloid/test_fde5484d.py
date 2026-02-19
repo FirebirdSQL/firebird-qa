@@ -91,7 +91,7 @@ def test_1(act: Action, tmp_user: User, tmp_pswf: Path, capsys):
         tmp_pswf.write_text(checked_pswd)
  
         for pswd_transfer in ('cmd_param', 'fetch_from'):
-            protocols_lst = ('inet', 'xnet') if os.name =='nt' else 'inet'
+            protocols_lst = ('inet', 'xnet') if os.name =='nt' else ('inet',)
             for prot_prefix in protocols_lst:
                 dsn = prot_prefix + '://' + str(act.db.db_path)
                 isql_args = [dsn, '-q', '-user', tmp_user.name]
