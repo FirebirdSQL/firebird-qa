@@ -8,7 +8,7 @@ DESCRIPTION:
 JIRA:        CORE-336
 FBTEST:      bugs.core_0929
 """
-
+from firebird.driver import DatabaseError
 import pytest
 from firebird.qa import *
 

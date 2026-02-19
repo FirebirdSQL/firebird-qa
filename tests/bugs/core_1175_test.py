@@ -12,6 +12,7 @@ DESCRIPTION:
 JIRA:        CORE-1175
 FBTEST:      bugs.core_1175
 """
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *

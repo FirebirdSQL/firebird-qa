@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 from firebird.qa import *
+from firebird.driver import DatabaseError
 
 db = db_factory()
 act = python_act('db')
