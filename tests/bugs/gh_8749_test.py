@@ -13,8 +13,8 @@ NOTES:
     We query both tables in order to obtain one (arbitrary) record with value of RDB$RECORD_VERSION
     that is same for both EMPLOYEE and PROJECT -- see variables 'EMP_RECVERS_SAMPLE' and 'PRJ_RECVERS_SAMPLE'
 
-    Confirmed problem on 5.0.4.1762: no rows when index on rdb$record_version is used (all FOUND_DATA_* = 0)
-    Checked on 5.0.4.1767-52823f5.
+    Confirmed problem on 6.0.0.1458-0-6a76c1d, 5.0.4.1762: no rows when index on rdb$record_version is used (all FOUND_DATA_* = 0)
+    Checked on 6.0.0.1458-c3778e0; 5.0.4.1767-52823f5.
 """
 import time
 import zipfile
@@ -37,7 +37,7 @@ def replace_leading(source, char="."):
 
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=5.0.4','<6.0')
+@pytest.mark.version('>=5.0.4')
 def test_1(act: Action, tmp_init_sql: Path, capsys):
     employee_data_sql = zipfile.Path(act.files_dir / 'standard_sample_databases.zip', at='sample-DB_-_firebird.sql')
     tmp_init_sql.write_bytes(employee_data_sql.read_bytes())
@@ -166,6 +166,48 @@ def test_1(act: Action, tmp_init_sql: Path, capsys):
         FOUND_DATA_3000 : 1
     """
 
-    act.expected_stdout = expected_stdout_5x
+    expected_stdout_6x = f"""
+        1000
+        {query_map[1000][0]}
+        {query_map[1000][1]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "PUBLIC"."EMPLOYEE" as "E" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."EMP_RDB_REC_VER" Range Scan (full match)
+        FOUND_DATA_1000 : 1
+
+        2000
+        {query_map[2000][0]}
+        {query_map[2000][1]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Table "PUBLIC"."PROJECT" as "P" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."PRJ_RDB_REC_VER" Range Scan (full match)
+        FOUND_DATA_2000 : 1
+
+        3000
+        {query_map[3000][0]}
+        {query_map[3000][1]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Filter
+        ............-> Hash Join (inner) (keys: 1, total key length: 8)
+        ................-> Filter
+        ....................-> Table "PUBLIC"."EMPLOYEE" as "E1" Access By ID
+        ........................-> Bitmap
+        ............................-> Index "PUBLIC"."EMP_RDB_REC_VER" Range Scan (full match)
+        ................-> Record Buffer (record length: 25)
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."PROJECT" as "P1" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."PRJ_RDB_REC_VER" Range Scan (full match)
+        FOUND_DATA_3000 : 1
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
