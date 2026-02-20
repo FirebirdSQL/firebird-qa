@@ -11,16 +11,19 @@ NOTES:
     [26.06.2025] pzotov
     Separated expected output for FB major versions prior/since 6.x.
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
+    [20.02.2026] pzotov
+    Re-implemented: explained plan is shown now (it has changed in 6.x 19.02.2026, snapshot 6.0.0.1458,
+    commit: "6a76c1da Better index usage in full outer joins...").
+    Min-version increased to 5.0 (no changes expected in FB 3.x/4.x related to FULL JOIN).
+    Checked on 6.0.0.1461-5e98812; 5.0.4.1767-52823f5.
 """
 
 import pytest
 from firebird.qa import *
 
-db = db_factory()
-
-test_script = """
+init_script = """
     create table td_data1 (
       c1 varchar(20) character set win1251 not null collate win1251,
       c2 integer not null,
@@ -38,39 +41,115 @@ test_script = """
     );
     create index idx_td_data2 on td_data2(c1,c2,c3);
     commit;
-
-    set planonly;
-    select
-        d1.c1, d2.c1,
-        d1.c2, d2.c2,
-        d1.c3, d2.c3,
-        coalesce(sum(d1.d1), 0) t1,
-        coalesce(sum(d2.d2), 0) t2
-    from td_data1 d1
-    full join td_data2 d2
-        on
-            d2.c1 = d1.c1
-            and d2.c2 = d1.c2
-            and d2.c3 = d1.c3
-    group by
-        d1.c1, d2.c1,
-        d1.c2, d2.c2,
-        d1.c3, d2.c3;
 """
 
+db = db_factory(init = init_script)
 
-act = isql_act('db', test_script)
+query_map = {
+    1000 : (
+                """
+                    select
+                        d1.c1, d2.c1,
+                        d1.c2, d2.c2,
+                        d1.c3, d2.c3,
+                        coalesce(sum(d1.d1), 0) t1,
+                        coalesce(sum(d2.d2), 0) t2
+                    from td_data1 d1
+                    full join td_data2 d2
+                        on
+                            d2.c1 = d1.c1
+                            and d2.c2 = d1.c2
+                            and d2.c3 = d1.c3
+                    group by
+                        d1.c1, d2.c1,
+                        d1.c2, d2.c2,
+                        d1.c3, d2.c3
+                """
+               ,''
+           )
+}
 
-expected_stdout_5x = """
-    PLAN SORT (JOIN (JOIN (D2 NATURAL, D1 INDEX (IDX_TD_DATA1)), JOIN (D1 NATURAL, D2 INDEX (IDX_TD_DATA2))))
+test_script = """
 """
 
-expected_stdout_6x = """
-    PLAN SORT (JOIN (JOIN ("D2" NATURAL, "D1" INDEX ("PUBLIC"."IDX_TD_DATA1")), JOIN ("D1" NATURAL, "D2" INDEX ("PUBLIC"."IDX_TD_DATA2"))))
-"""
+substitutions = [('[ \t]+', ' '), ('(record|key)\\s+length(:)?\\s+\\d+', 'record/key length: NNN')]
+act = python_act('db', substitutions = substitutions)
 
-@pytest.mark.version('>=3')
-def test_1(act: Action):
+#-----------------------------------------------------------
+
+def replace_leading(source, char="."):
+    stripped = source.lstrip()
+    return char * (len(source) - len(stripped)) + stripped
+
+#-----------------------------------------------------------
+
+@pytest.mark.version('>=5')
+def test_1(act: Action, capsys):
+
+    expected_stdout_5x = f"""
+        1000
+        {query_map[1000][0]}
+        {query_map[1000][1]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Sort (record length: 180, key length: 80)
+        ............-> Full Outer Join
+        ................-> Nested Loop Join (outer)
+        ....................-> Table "TD_DATA2" as "D2" Full Scan
+        ....................-> Filter
+        ........................-> Table "TD_DATA1" as "D1" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "IDX_TD_DATA1" Range Scan (full match)
+        ................-> Nested Loop Join (outer)
+        ....................-> Table "TD_DATA1" as "D1" Full Scan
+        ....................-> Filter
+        ........................-> Table "TD_DATA2" as "D2" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "IDX_TD_DATA2" Range Scan (full match)
+    """
+
+    expected_stdout_6x = f"""
+        1000
+        {query_map[1000][0]}
+        {query_map[1000][1]}
+        Select Expression
+        ....-> Aggregate
+        ........-> Sort (record length: 180, key length: 80)
+        ............-> Full Outer Join
+        ................-> Nested Loop Join (outer)
+        ....................-> Table "PUBLIC"."TD_DATA1" as "D1" Full Scan
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."TD_DATA2" as "D2" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."IDX_TD_DATA2" Range Scan (full match)
+        ................-> Nested Loop Join (outer)
+        ....................-> Table "PUBLIC"."TD_DATA2" as "D2" Full Scan
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."TD_DATA1" as "D1" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."IDX_TD_DATA1" Range Scan (full match)
+    """
+
+    with act.db.connect() as con:
+        cur = con.cursor()
+        for q_idx, q_tuple in query_map.items():
+            test_sql, qry_comment = q_tuple[:2]
+            ps, rs = None, None
+            try:
+                print(q_idx)
+                print(test_sql)
+                print(qry_comment)
+                ps = cur.prepare(test_sql)
+                print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+            except DatabaseError as e:
+                print(e.__str__())
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close()
+                if ps:
+                    ps.free()
+
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
-    act.execute(combine_output = True)
+    act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
