@@ -9,7 +9,6 @@ DESCRIPTION:
   The two tables R and C contain both 1 value that isn't inside RC.
   =====
   NB: 'UNION ALL' is used here, so PLAN for 2.5 will be of TWO separate rows.
-FBTEST:      functional.arno.optimizer.opt_full_join_04
 NOTES:
     [01.08.2023] pzotov
         Adjusted plan to actual for FB 5.x after letter from dimitr.
@@ -19,6 +18,10 @@ NOTES:
         Separated expected output for FB major versions prior/since 6.x.
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.914; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
+    [20.02.2026] pzotov
+        Adjusted expected output to actual: FULL JOIN execution plan has changed since 19.02.2026 6.0.0.1458,
+        commit: "6a76c1da Better index usage in full outer joins...". Discussed with dimitr, 20.02.2026 1723.
+        Checked on 6.0.0.1461-5e98812.
 """
 
 import pytest
@@ -308,6 +311,12 @@ def test_1(act: Action, capsys):
         ................-> Filter
         ....................-> Full Outer Join
         ........................-> Nested Loop Join (outer)
+        ............................-> Table "PUBLIC"."RELATIONS" as "R" Full Scan
+        ............................-> Filter
+        ................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
+        ....................................-> Bitmap
+        ........................................-> Index "PUBLIC"."PK_RELATIONCATEGORIES" Unique Scan
+        ........................-> Nested Loop Join (outer)
         ............................-> Filter
         ................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
         ....................................-> Bitmap
@@ -316,12 +325,6 @@ def test_1(act: Action, capsys):
         ................................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
         ....................................-> Bitmap
         ........................................-> Index "PUBLIC"."PK_RELATIONS" Unique Scan
-        ........................-> Nested Loop Join (outer)
-        ............................-> Table "PUBLIC"."RELATIONS" as "R" Full Scan
-        ............................-> Filter
-        ................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
-        ....................................-> Bitmap
-        ........................................-> Index "PUBLIC"."PK_RELATIONCATEGORIES" Unique Scan
         ........-> Filter
         ............-> Nested Loop Join (outer)
         ................-> Filter
