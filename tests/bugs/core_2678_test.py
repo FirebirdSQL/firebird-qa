@@ -69,9 +69,6 @@ query_map = {
            )
 }
 
-test_script = """
-"""
-
 substitutions = [('[ \t]+', ' '), ('(record|key)\\s+length(:)?\\s+\\d+', 'record/key length: NNN')]
 act = python_act('db', substitutions = substitutions)
 
