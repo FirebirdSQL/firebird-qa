@@ -7,7 +7,6 @@ DESCRIPTION:
   TableX FULL OUTER JOIN TableY with relation in the ON clause.
   Three tables are used, where 1 table (RC) holds references to the two other tables (R and C).
   The two tables R and C contain both 1 value that isn't inside RC.
-FBTEST:      functional.arno.optimizer.opt_full_join_02
 NOTES:
     [27.12.2020]
         added 'rc.categoryid' to 'order by' list in order to have always stable sort result.
@@ -23,6 +22,10 @@ NOTES:
         Separated expected output for FB major versions prior/since 6.x.
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.914; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
+    [20.02.2026] pzotov
+        Adjusted expected output to actual: FULL JOIN execution plan has changed since 19.02.2026 6.0.0.1458,
+        commit: "6a76c1da Better index usage in full outer joins...". Discussed with dimitr, 20.02.2026 1723.
+        Checked on 6.0.0.1461-5e98812.
 """
 
 import pytest
@@ -249,37 +252,43 @@ def test_1(act: Action, capsys):
         ........-> Filter
         ............-> Full Outer Join
         ................-> Nested Loop Join (outer)
-        ....................-> Table "PUBLIC"."CATEGORIES" as "C" Full Scan
-        ....................-> Filter
-        ........................-> Full Outer Join
-        ............................-> Nested Loop Join (outer)
-        ................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Full Scan
-        ................................-> Filter
-        ....................................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
-        ........................................-> Bitmap
-        ............................................-> Index "PUBLIC"."PK_RELATIONS" Unique Scan
-        ............................-> Nested Loop Join (outer)
-        ................................-> Table "PUBLIC"."RELATIONS" as "R" Full Scan
-        ................................-> Filter
-        ....................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
-        ........................................-> Bitmap
-        ............................................-> Index "PUBLIC"."FK_RC_RELATIONS" Range Scan (full match)
-        ................-> Nested Loop Join (outer)
         ....................-> Full Outer Join
-        ........................-> Nested Loop Join (outer)
-        ............................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Full Scan
-        ............................-> Filter
-        ................................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
-        ....................................-> Bitmap
-        ........................................-> Index "PUBLIC"."PK_RELATIONS" Unique Scan
         ........................-> Nested Loop Join (outer)
         ............................-> Table "PUBLIC"."RELATIONS" as "R" Full Scan
         ............................-> Filter
         ................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
         ....................................-> Bitmap
         ........................................-> Index "PUBLIC"."FK_RC_RELATIONS" Range Scan (full match)
+        ........................-> Nested Loop Join (outer)
+        ............................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Full Scan
+        ............................-> Filter
+        ................................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
+        ....................................-> Bitmap
+        ........................................-> Index "PUBLIC"."PK_RELATIONS" Unique Scan
         ....................-> Filter
-        ........................-> Table "PUBLIC"."CATEGORIES" as "C" Full Scan        {data_list[0]}
+        ........................-> Table "PUBLIC"."CATEGORIES" as "C" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."PK_CATEGORIES" Unique Scan
+        ................-> Nested Loop Join (outer)
+        ....................-> Table "PUBLIC"."CATEGORIES" as "C" Full Scan
+        ....................-> Filter
+        ........................-> Full Outer Join
+        ............................-> Nested Loop Join (outer)
+        ................................-> Table "PUBLIC"."RELATIONS" as "R" Full Scan
+        ................................-> Filter
+        ....................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
+        ........................................-> Bitmap
+        ............................................-> Index "PUBLIC"."PK_RELATIONCATEGORIES" Unique Scan
+        ............................-> Nested Loop Join (outer)
+        ................................-> Filter
+        ....................................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
+        ........................................-> Bitmap
+        ............................................-> Index "PUBLIC"."FK_RC_CATEGORIES" Range Scan (full match)
+        ................................-> Filter
+        ....................................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
+        ........................................-> Bitmap
+        ............................................-> Index "PUBLIC"."PK_RELATIONS" Unique Scan
+        {data_list[0]}
     """
 
     act.expected_stdout = expected_out_4x if act.is_version('<5') else expected_out_5x if act.is_version('<6') else expected_out_6x
