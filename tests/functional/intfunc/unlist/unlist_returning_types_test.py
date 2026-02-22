@@ -4,13 +4,13 @@
 ID:          issue-8418
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8418
 TITLE:       UNLIST function. Check output for different returning types
-DESCRIPTION: Provided by red-soft. Original file name: "unlist.test_returning_types.py"
+DESCRIPTION: Initial version of test was provided by red-soft (file: "unlist.test_returning_types.py").
 NOTES:
     [28.12.2025] pzotov
         Changed substitutions: value +/-0e0 can be displayed with 16 digits after decimal point.
         "Excessive" 16th digit (zero) is supressed. Detected on Windows-10, Intel Xeon W-2123.
         Discussed with FB-team, key note by Vlad: 29.12.2025 11:53, ucrtbase.dll can differ.
-    [22.06.2025] pzotov
+    [22.02.2026] pzotov
         Re-implemented: use python_act in order to see gdscodes list. Adjusted substitutions.
         Organize statements into dict in order to make easy their search in case when test fails.
         Adusted output to actual: no error raises in for statements when returning datatype is
@@ -18,7 +18,75 @@ NOTES:
             select * from unlist('text' returning varchar) as a(unlist_varchar_03);
         Changed at #d32276b8 'Support VARCHAR without explicit length'
         Previously such expressions failed with 'SQLSTATE = 42000 / ... / Token unknown -)'
-        Checked on 6.0.0.1461.
+
+    [23.02.2026] pzotov ::: ACHTUNG ::: CRUCIAL NOTES ABOUT TIME[STAMP] WITH TIME ZONE :::
+
+        Python's dateutil.tz module may produce wrong time zone offsets for "too old" dates (mostly pre- 1940s) and/or "exotic" time zones!
+        For example, rdb$time_zone_util.transitions() returns for timezone = 'Indian/Cocos' (first 2 rows are shown):
+            RDB$START_TIMESTAMP             0001-01-01 00:00:00.0000 GMT
+            RDB$END_TIMESTAMP               1919-12-31 17:35:12.9999 GMT
+            RDB$ZONE_OFFSET                 384
+            RDB$DST_OFFSET                  0
+            RDB$EFFECTIVE_OFFSET            384
+
+            RDB$START_TIMESTAMP             1919-12-31 17:35:13.0000 GMT
+            RDB$END_TIMESTAMP               1942-04-30 17:29:59.9999 GMT
+            RDB$ZONE_OFFSET                 390
+            RDB$DST_OFFSET                  0
+            RDB$EFFECTIVE_OFFSET            390
+        (note: RDB$EFFECTIVE_OFFSET is 384 minutes, i.e. '03:24' in HH:MM format, - for all dated before 31-dec-1919).
+
+        The firebird-driver uses dateutil.tz for timezone tzinfo objects, see types.py / def get_timezone().
+        But if we make connection using firebird-driver and create cursor with query: 
+            select cast(tstz as timestamp with time zone)
+            from (
+                select '1901-12-14 03:15:51.9999' as tstz from rdb$database
+                UNION ALL
+                select '1901-12-14 03:15:52.0000' from rdb$database
+            )
+        -- then its output (on checked firebird-driver 2.0.2) will be:
+        * on Python: 3.9.4 (tags/v3.9.4:1f2e308, Apr  6 2021, 13:40:21) [MSC v.1928 64 bit (AMD64)]
+            1901-12-14 03:15:51.999900+06:27:40 -- 387 minutes! Not 384 nor 390
+            1901-12-14 03:15:52+06:30           -- 390 minutes but date belongs to 1901 rather than to 1931+!
+        * on Python: 3.11.2 (tags/v3.11.2:878ead1, Feb  7 2023, 16:38:35) [MSC v.1934 64 bit (AMD64)]
+            1901-12-14 03:15:51.999900+06:24:47 -- 384 minutes (OK)
+            1901-12-14 03:15:52+06:24:47        -- 384 minutes (OK)
+        * on Python 3.11.8 (tags/v3.11.8:db85d51, Feb  6 2024, 22:03:32) [MSC v.1937 64 bit (AMD64)])
+                 and 3.11.9 (main, Apr 10 2024, 13:16:36) [GCC 13.2.0]:
+            1901-12-14 03:15:51.999900+06:27:40 -- 387 minutes! Not 384 nor 390
+            1901-12-14 03:15:52+06:30           -- 390 minutes but date belongs to 1901 rather than to 1931+!
+        * on Python 3.14.3:
+            1901-12-14 03:15:51.999900+06:24:47 -- 384 minutes (OK)
+            1901-12-14 03:15:52+06:24:47        -- 384 minutes (OK)
+ 
+        Similar can be seen if we run this script:
+        =================
+        import sys
+        from datetime import datetime
+        from dateutil import tz
+
+        print(sys.version)
+
+        ic_tz = tz.gettz('Indian/Cocos')
+        print(f'{ic_tz._trans_list=}')
+        dt_objects_list = (
+            datetime(1901, 12, 14, 3, 15, 51, 999900, tzinfo=ic_tz)
+           ,datetime(1901, 12, 14, 3, 15, 52, tzinfo=ic_tz)
+        )
+
+        for p in dt_objects_list:
+            print('Value in orig TZ:', p)
+        =================
+        On Python 3.11.8 output is:
+            ic_tz._trans_list=(-2147460248, 2147507047) 
+            1901-12-14 03:15:51.999900+06:27:40 -- 387 minutes! Not 384 nor 390
+            1901-12-14 03:15:52+06:30           -- 390 minutes but date belongs to 1901 rather than to 1931+!
+        On Python 3.14.3 output is:
+            (-2147460561, -1577922887, -873235800, -778386600, 2147507047)
+            1901-12-14 03:15:51.999900+06:24:47 -- 384 minutes (OK)
+            1901-12-14 03:15:52+06:24:47        -- 384 minutes (OK)
+
+    Checked on 6.0.0.1465.
 """
 from firebird.driver import DatabaseError
 
@@ -193,36 +261,39 @@ def test_1(act: Action, capsys):
         
         # must PASS:
         ,42500 : "select * from unlist('23:59:59.9999 europe/moscow,23:59:59.9999 -03:00,23:59:59.9999 gmt,23:59:59.9999 aet,23:59:59.9999 art,23:59:59.9999 etc/gmt+5,23:59:59.9999 america/kentucky/monticello' returning time with time zone) as a(unlist_tmtz_06)"
-
-        # timestamp
+        #----------------------------------
+        # timestamp WITHOUT time zone
         # must PASS:
         ,43000 : "select * from unlist('8/06/2315 00:00:00.0000,1245-12-01 23:59:59.9999' returning timestamp) as a(unlist_timestamp_01)"
 
-        # SQLSTATE = 22018 / conversion error from string "00:00:00.0000,1245-12-01"
-        ,43100 : "select * from unlist('8/06/2315 00:00:00.0000,1245-12-01 23:59:59.9999',' ' returning timestamp) as a(unlist_timestamp_02)"
+        # SQLSTATE = 22018 / conversion error from string "00:00:00.0000,2023-12-01"
+        ,43100 : "select * from unlist('8/06/2315 00:00:00.0000,2023-12-01 23:59:59.9999',' ' returning timestamp) as a(unlist_timestamp_02)"
 
         # SQLSTATE = 22018 / conversion error from string "8/06/2315"
-        ,43200 : "select * from unlist('8/06/2315 00:00:00.0000,1245-12-01 23:59:59.9999',':' returning timestamp) as a(unlist_timestamp_03)"
+        ,43200 : "select * from unlist('8/06/2315 00:00:00.0000,2023-12-01 23:59:59.9999',':' returning timestamp) as a(unlist_timestamp_03)"
 
         # SQLSTATE = 22018 / conversion error from string "00:00:00.0000"
         ,43300 : "select * from unlist('00:00:00.0000,23:59:59.9999' returning timestamp) as a(unlist_timestamp_04)"
+        #----------------------------------
+        # timestamp WITH time zone
+        # ::: NB ::: It is desirable to use "normal" values belonging to 'time[stamp] with time zone' type,  i.e. avoid "too old" dates or "exotic" time zones.
+        # Otherwise one may to encounter wrong time zone offsets produces by Python's dateutil.tz module (found in Python versions up to 3.11.9).
 
-        # timestamp with time zone
         # must PASS:
-        ,43400 : "select * from unlist('8/06/2315 00:00:00.0000,1245-12-01 23:59:59.9999' returning timestamp with time zone) as a(unlist_tstz_01)"
+        ,43400 : "select * from unlist('8/06/2023 11:22:33.4455,2023-06-08 11:33:22.5432,1-1-1 1:2:3:4444' returning timestamp with time zone) as a(unlist_tstz_01)"
 
-        # conversion error from string "00:00:00.0000,1245-12-01"
-        ,43500 : "select * from unlist('8/06/2315 00:00:00.0000,1245-12-01 23:59:59.9999',' ' returning timestamp with time zone) as a(unlist_tstz_02)"
+        # conversion error from string "11:22:33.4455,2023-06-08" (because space character was explicitly specified as delimiter):
+        ,43500 : "select * from unlist('8/06/2023 11:22:33.4455,2023-06-08 23:59:59.9999',' ' returning timestamp with time zone) as a(unlist_tstz_02)"
 
-        # conversion error from string "8/06/2315 00"
-        ,43600 : "select * from unlist('8/06/2315 00:00:00.0000,1245-12-01 23:59:59.9999',':' returning timestamp with time zone) as a(unlist_tstz_03)"
+        # conversion error from string "8/06/2023 00" (because colon was explicitly specified as delimiter):
+        ,43600 : "select * from unlist('8/06/2023 11:22:33.4455,2023-06-08 23:59:59.9999',':' returning timestamp with time zone) as a(unlist_tstz_03)"
 
         # conversion error from string "00:00:00.0000"
         ,43700 : "select * from unlist('00:00:00.0000,23:59:59.9999' returning timestamp with time zone) as a(unlist_tstz_04)"
 
         # must PASS:
         ,43800 : "select * from unlist('8/06/2315 23:59:59.9999 europe/moscow,8/06/2315 23:59:59.9999 -03:00,8/06/2315 23:59:59.9999 gmt,8/06/2315 23:59:59.9999 aet,8/06/2315 23:59:59.9999 art,8/06/2315 23:59:59.9999 etc/gmt+5,8/06/2315 23:59:59.9999 america/kentucky/monticello' returning timestamp with time zone) as a(unlist_tstz_05)"
-
+        #----------------------------------
         # varbinary(n)
         # must PASS:
         ,45000 : "select * from unlist('1111,12345678' returning varbinary(8)) as a(unlist_varbin_01)"
@@ -604,7 +675,7 @@ def test_1(act: Action, capsys):
         -+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=
         43100
         {qry_map[43100]}
-        conversion error from string "00:00:00.0000,1245-12-01"
+        conversion error from string "00:00:00.0000,2023-12-01"
         (335544334,)
         -+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=
         43200
@@ -619,17 +690,18 @@ def test_1(act: Action, capsys):
         -+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=
         43400
         {qry_map[43400]}
-        UNLIST_TSTZ_01 : 2315-08-06 00:00:00+06:30
-        UNLIST_TSTZ_01 : 1245-12-01 23:59:59.999900+06:27:40
+        UNLIST_TSTZ_01 : 2023-08-06 11:22:33.445500+06:30
+        UNLIST_TSTZ_01 : 2023-06-08 11:33:22.543200+06:30
+        UNLIST_TSTZ_01 : 2001-01-01 01:02:03.444400+06:30
         -+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=
         43500
         {qry_map[43500]}
-        conversion error from string "00:00:00.0000,1245-12-01"
+        conversion error from string "11:22:33.4455,2023-06-08"
         (335544334,)
         -+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=
         43600
         {qry_map[43600]}
-        conversion error from string "8/06/2315 00"
+        conversion error from string "8/06/2023 11"
         (335544334,)
         -+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=-+=
         43700
