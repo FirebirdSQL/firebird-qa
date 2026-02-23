@@ -34,10 +34,9 @@ NOTES:
             RDB$ZONE_OFFSET                 390
             RDB$DST_OFFSET                  0
             RDB$EFFECTIVE_OFFSET            390
-        (note: RDB$EFFECTIVE_OFFSET is 384 minutes, i.e. '03:24' in HH:MM format, - for all dated before 31-dec-1919).
 
         The firebird-driver uses dateutil.tz for timezone tzinfo objects, see types.py / def get_timezone().
-        But if we make connection using firebird-driver and create cursor with query: 
+        If we make connection using firebird-driver and create cursor with query: 
             select cast(tstz as timestamp with time zone)
             from (
                 select '1901-12-14 03:15:51.9999' as tstz from rdb$database
