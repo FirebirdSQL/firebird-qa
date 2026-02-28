@@ -7,8 +7,8 @@ DESCRIPTION:
 NOTES:
     [28.02.2026] pzotov
     See letter from Adriano, 28.02.2026 04:58:20 +0300.
-    Confirmed bug (regression) on 6.0.0.1794-f0cac4e: attempt to create INDEX fails with
-    attempted update on read-only database / gfd=335544765 (but local TABLE is created OK).
+    Confirmed bug (regression) on 6.0.0.1794-f0cac4e: attempt to create LTT fails with
+    attempted update on read-only DB / gds=335544765 (no such error on 6.0.0.1465-3bbe725)
 """
 import locale
 import time
