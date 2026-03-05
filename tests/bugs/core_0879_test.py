@@ -9,11 +9,13 @@ JIRA:        CORE-879
 FBTEST:      bugs.core_0879
 NOTES:
     [23.06.2025] pzotov
-    ::: NB :::
-    SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
+    ::: NB ::: SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
     See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
-
     Checked on 6.0.0.853; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
+    [05.03.2026] pzotov
+    Adjusted expected output which has changed since #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026 17:31:04 +0000).
+    Checked on 6.0.0.1807-46797ab.
 """
 
 import pytest
@@ -42,16 +44,24 @@ for p in addi_subst_tokens.split(' '):
 
 act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -key size exceeds implementation restriction for index "IX"
     There is no table TAB in this database
 """
 
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -CREATE INDEX IX failed
+    -key size exceeds implementation restriction for index "IX"
+    There is no table TAB in this database
+"""
+
 @pytest.mark.version('>=3')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
