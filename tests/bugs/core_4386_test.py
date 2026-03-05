@@ -108,7 +108,13 @@ ddl_script = """
 @pytest.mark.version('>=4.0')
 @pytest.mark.perf_measure               # To be reworked for new meta cache - all objects are deleteable
 def test_1(act: Action, capsys):
-    act.isql(switches=[], input=ddl_script)
+
+    act.isql(switches = ['-q'], input = ddl_script, combine_output = True)
+    assert act.clean_stdout == '', 'Initial script FAILED:\n' + act.clean_stdout
+    act.reset()
+
+    #----------------------------------------------------------------------
+
 
     drop_commands = [ 'drop procedure sp_test',
                       'drop procedure sp_worker',
@@ -158,7 +164,8 @@ def test_1(act: Action, capsys):
                         print(e.gds_codes)
 
     SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
-    act.expected_stdout = f"""
+
+    expected_stdout_5x = f"""
         READ_COMMITTED_NO_RECORD_VERSION drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
@@ -369,7 +376,11 @@ def test_1(act: Action, capsys):
         -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
         (335544345, 335544351, 335544453)
     """
-                
+
+    expected_stdout_6x = f"""
+    """
+    
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x                
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
