@@ -8,10 +8,10 @@ DESCRIPTION:
 JIRA:        CORE-3502
 FBTEST:      bugs.core_3502
 NOTES:
-    [27.06.2025] pzotov
-    Added subst to suppress output: it is enough to display error message w/o concrete coulmn name for this test.
-
-    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [05.03.2026] pzotov
+    Removed old substitutions.
+    Adjusted expected output which has changed since #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026 17:31:04 +0000).
+    Checked on 6.0.0.1807-46797ab; 5.0.4.1780-2040071; 4.0.7.3245; 3.0.14.33838
 """
 
 import pytest
@@ -38,18 +38,24 @@ test_script = """
     drop view v;
 """
 
-act = isql_act('db', test_script, substitutions = [('(-)?COLUMN .*', 'COLUMN *')])
-
-expected_stdout = """
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -cannot delete
-    COLUMN *
-    -there are 1 dependencies
-"""
+act = isql_act('db', test_script)
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    expected_stdout_5x = """
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -cannot delete
+        -COLUMN V.ID
+        -there are 1 dependencies
+    """
+    expected_stdout_6x = """
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -cannot delete
+        -VIEW "PUBLIC"."V"
+        -there are 1 dependencies
+    """
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
