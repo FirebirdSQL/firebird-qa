@@ -11,8 +11,10 @@ NOTES:
     [26.06.2025] pzotov
     Re-implemented via try/except and check show exception data.
     Suppressing quotes around `id <...>` as irrelevant to this test.
-
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [05.03.2026] pzotov
+    Adjusted expected output which has changed since #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026 17:31:04 +0000).
+    Checked on 6.0.0.1807-46797ab.
 """
 
 import pytest
@@ -21,7 +23,8 @@ from firebird.driver import DatabaseError
 
 db = db_factory()
 
-act = python_act('db', substitutions=[('table (")?id \\d+(")? is not defined', 'table is not defined')])
+substitutions = [('table (")?id \\d+(")? is not defined', 'table is not defined')]
+act = python_act('db', substitutions = substitutions)
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
@@ -47,10 +50,14 @@ def test_1(act: Action, capsys):
             if ps:
                 ps.free()
 
-        act.expected_stdout = """
-            table is not defined
-            335544395
-        """
-        act.stdout = capsys.readouterr().out
-        assert act.clean_stdout == act.clean_expected_stdout
-        act.reset()
+    expected_stdout_5x = """
+        table is not defined
+        335544395
+    """
+
+    expected_stdout_6x = """
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
