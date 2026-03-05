@@ -24,6 +24,7 @@ db = db_factory(page_size=4096, init=init_script)
 act = python_act('db')
 
 @pytest.mark.version('>=2.5')
+@pytest.mark.slow
 def test_1(act: Action):
     with act.db.connect() as con:
         c = con.cursor()

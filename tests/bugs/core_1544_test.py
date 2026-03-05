@@ -38,6 +38,7 @@ expected_stdout = """
 """
 
 @pytest.mark.version('>=3')
+@pytest.mark.slow
 def test_1(act: Action):
 
     TOTAL_PROCEDURES_COUNT = 32800
