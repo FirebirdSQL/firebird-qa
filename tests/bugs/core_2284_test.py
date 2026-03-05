@@ -2,11 +2,15 @@
 
 """
 ID:          issue-2710-5943
-ISSUE:       2710, 5943
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/2710
 TITLE:       Records left in RDB$PAGES after rollback of CREATE TABLE statement
 DESCRIPTION:
 JIRA:        CORE-2284
-FBTEST:      bugs.core_2284
+NOTES:
+    [05.03.2026] pzotov
+    See also: https://github.com/FirebirdSQL/firebird/issues/5943 (CORE-5677)
+    Adjusted expected output which has changed since #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026 17:31:04 +0000).
+    Checked on 6.0.0.1807-46797ab.
 """
 
 import pytest
@@ -39,23 +43,26 @@ test_script = """
     rollback;
 """
 
-act = isql_act('db', test_script)
-
-expected_stdout = """
-    COUNT                           0
-"""
-
-expected_stderr = """
-    Statement failed, SQLSTATE = 42000
-    unsuccessful metadata update
-    -partner index segment no 1 has incompatible data type
-"""
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 @pytest.mark.version('>=3.0.3')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    act.execute()
-    assert (act.clean_stderr == act.clean_expected_stderr and
-            act.clean_stdout == act.clean_expected_stdout)
 
+    expected_stdout_5x = """
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -partner index segment no 1 has incompatible data type
+        COUNT 0
+    """
+
+    expected_stdout_6x = """
+        Statement failed, SQLSTATE = 42000
+        unsuccessful metadata update
+        -RECREATE TABLE "PUBLIC"."TEST_CS__DETAIL" failed
+        -partner index segment no 1 has incompatible data type
+        COUNT 0
+    """
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.execute(combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
