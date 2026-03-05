@@ -11,8 +11,11 @@ NOTES:
     [26.06.2025] pzotov
     Separated expected output for FB major versions prior/since 6.x.
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [05.03.2026] pzotov
+    See also: https://github.com/FirebirdSQL/firebird/issues/5943 (CORE-5677)
+    Adjusted expected output which has changed since #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026 17:31:04 +0000).
+    Checked on 6.0.0.1807-46797ab.
 """
 
 import pytest
@@ -47,7 +50,9 @@ expected_stdout_5x = """
 
 expected_stdout_6x = """
     Statement failed, SQLSTATE = 23000
-    violation of FOREIGN KEY constraint "PACKET_DETAIL_FK" on table "PUBLIC"."PACKET_DETAIL"
+    unsuccessful metadata update
+    -ALTER TABLE "PUBLIC"."PACKET_DETAIL" failed
+    -violation of FOREIGN KEY constraint "PACKET_DETAIL_FK" on table "PUBLIC"."PACKET_DETAIL"
     -Foreign key reference target does not exist
     -Problematic key value is ("PACKET_ID" = 753)
 """
