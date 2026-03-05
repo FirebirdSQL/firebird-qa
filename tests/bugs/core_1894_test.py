@@ -11,8 +11,10 @@ NOTES:
     [26.06.2025] pzotov
     Separated expected output for FB major versions prior/since 6.x.
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [05.03.2026] pzotov
+    Adjusted expected output which has changed since #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026 17:31:04 +0000).
+    Checked on 6.0.0.1807-46797ab.
 """
 
 import pytest
@@ -72,15 +74,23 @@ expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -Cannot have circular dependencies with computed fields
-
+    
+    Statement failed, SQLSTATE = 42S22
+    unsuccessful metadata update
+    -ALTER TABLE "PUBLIC"."T2" failed
+    -invalid request BLR at offset 5
+    -column "C1" is not defined in table "PUBLIC"."T2"
+    
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
     -COLUMN "PUBLIC"."T2"."C1"
     -there are 1 dependencies
-
-    Statement failed, SQLSTATE = 42000
-    Cannot have circular dependencies with computed fields
+    
+    Statement failed, SQLSTATE = 42S22
+    invalid request BLR at offset 5
+    -column "C1" is not defined in table "PUBLIC"."T2"
+    
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
