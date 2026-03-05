@@ -5,46 +5,47 @@ ID:          issue-4498
 ISSUE:       4498
 TITLE:       Creating external function (udf) to not existing dll - and then procedure with it - crash server
 DESCRIPTION:
-  *** FOR FB 4.X AND ABOVE  ***
-  Added separate code for running on FB 4.0.x: we use create UDR function statement and specify
-  non-existent library 'unknown_udf!UC_div'. The statement per se will pass and rdb$functions
-  *will* contain record for just created function. But following COMMT will raise exception:
-    Statement failed, SQLSTATE = HY000
-    UDR module not loaded
-    <localized message here>
-  Then we rollback and query rdb$functions again. No record about this function must be there.
+    *** FOR FB 4.X AND ABOVE  ***
+    Added separate code for running on FB 4.0.x: we use create UDR function statement and specify
+    non-existent library 'unknown_udf!UC_div'. The statement per se will pass and rdb$functions
+    *will* contain record for just created function. But following COMMT will raise exception:
+      Statement failed, SQLSTATE = HY000
+      UDR module not loaded
+      <localized message here>
+    Then we rollback and query rdb$functions again. No record about this function must be there.
 
-  STDERR is ignored in this test because of localized message about missed library.
-NOTES:
-[08.02.2022] pcisar
-  Fails on Windows 3.0.8 with unexpected additional output line:
-    + Rolling back work.
-      Rolling back work.
-      Statement failed, SQLSTATE = 39000
-      .* at offset
-      -function DUMMY_EXT is not defined
-      -module name or entrypoint could not be found)
-
-[04.03.2022] pzotov: RESOLVED.
-  Problem on Windows 3.0.8 caused by excessive query:
-      "select current_user, current_role from rdb$database"
-  -- which is done by ISQL 3.x when it gets commands from STDIN via PIPE mechanism.
-  Discussed with Alex et al, since 28-feb-2022 18:05 +0300.
-  Alex explanation: 28-feb-2022 19:52 +0300
-  subj: "Firebird new-QA: weird result for trivial test (outcome depends on presence of... running trace session!)"
-
-  NOTE-1: according to source issue from ticket, creation of temporary database not required here.
-  In old .fbt test this auto-created DB is immediately closed and script further makes two temp DBs.
-  In contrary to .fbt, here connection to auto-created temporary database ('C:/TEMP/PYTEST.../TEST_.../TEST.FDB')
-  is opened up to creation of first DB from SQL script  (create database '{str(temp_db_1_b)}';).
-  We can suppress 'Rolling back' message by trivial action: add COMMIT or ROLLBACK before this 'create database ...'
-
-  NOTE-2: I could not reproduce bugcheck on 32-bit snapshot WI-T3.0.0.30566 Alpha 1 (timestamp: 31-JUL-2013).
-  Tried both SS and CS, used forlder with space characters in name (as it was in the source example) - no matter.
-
-
+    STDERR is ignored in this test because of localized message about missed library.
 JIRA:        CORE-4172
-FBTEST:      bugs.core_4172
+NOTES:
+    [08.02.2022] pcisar
+      Fails on Windows 3.0.8 with unexpected additional output line:
+        + Rolling back work.
+          Rolling back work.
+          Statement failed, SQLSTATE = 39000
+          .* at offset
+          -function DUMMY_EXT is not defined
+          -module name or entrypoint could not be found)
+
+    [04.03.2022] pzotov: RESOLVED.
+      Problem on Windows 3.0.8 caused by excessive query:
+          "select current_user, current_role from rdb$database"
+      -- which is done by ISQL 3.x when it gets commands from STDIN via PIPE mechanism.
+      Discussed with Alex et al, since 28-feb-2022 18:05 +0300.
+      Alex explanation: 28-feb-2022 19:52 +0300
+      subj: "Firebird new-QA: weird result for trivial test (outcome depends on presence of... running trace session!)"
+
+      NOTE-1: according to source issue from ticket, creation of temporary database not required here.
+      In old .fbt test this auto-created DB is immediately closed and script further makes two temp DBs.
+      In contrary to .fbt, here connection to auto-created temporary database ('C:/TEMP/PYTEST.../TEST_.../TEST.FDB')
+      is opened up to creation of first DB from SQL script  (create database '{str(temp_db_1_b)}';).
+      We can suppress 'Rolling back' message by trivial action: add COMMIT or ROLLBACK before this 'create database ...'
+
+      NOTE-2: I could not reproduce bugcheck on 32-bit snapshot WI-T3.0.0.30566 Alpha 1 (timestamp: 31-JUL-2013).
+      Tried both SS and CS, used forlder with space characters in name (as it was in the source example) - no matter.
+    [05.03.2026] pzotov
+      Added substitutions for 5.x: we have to exclude any localized message.
+      Adjusted expected output which has changed since #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026 17:31:04 +0000).
+      Checked on 6.0.0.1807-46797ab; 5.0.4.1780-2040071.
 """
 
 import pytest
@@ -119,7 +120,8 @@ def test_1(act_1: Action, temp_db_1_a: Path, temp_db_1_b: Path):
 
 # version: 4.0
 
-act_2 = python_act('db')
+substitutions = [ ('^((?!(O_GDSCODE|SQLSTATE|UDR|RDB\\$|Records)).)*$', ''), ('[ \t]+', ' ') ]
+act_2 = python_act('db', substitutions = substitutions)
 
 test_script_2 = """
     recreate view v_check as
@@ -167,21 +169,25 @@ test_script_2 = """
     rollback;
 """
 
-expected_stdout_2 = """
-O_GDSCODE                       <null>
-RDB$FUNCTION_NAME               THE_DIV
-RDB$ENTRYPOINT                  unknown_udf!UC_div
-RDB$ENGINE_NAME                 UDR
-RDB$LEGACY_FLAG                 0
-Records affected: 1
-Records affected: 0
-
-"""
-
 @pytest.mark.version('>=4.0')
 def test_2(act_2: Action):
-    act_2.expected_stderr = 'We expect error, but ignore it'
-    act_2.expected_stdout = expected_stdout_2
-    act_2.isql(switches=[], input=test_script_2, io_enc=locale.getpreferredencoding())
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
+    expected_stdout_5x = """
+        O_GDSCODE                       <null>
+        Statement failed, SQLSTATE = HY000
+        UDR module not loaded
+        RDB$FUNCTION_NAME               THE_DIV
+        RDB$ENTRYPOINT                  unknown_udf!UC_div
+        RDB$ENGINE_NAME                 UDR
+        RDB$LEGACY_FLAG                 0
+        Records affected: 1
+        Records affected: 0
+    """
+    expected_stdout_6x = """
+        O_GDSCODE                       335544351
+        Records affected: 0
+        Records affected: 0
+    """
 
+    act_2.expected_stdout = expected_stdout_5x if act_2.is_version('<6') else expected_stdout_6x
+    act_2.isql(switches = ['-q'], input = test_script_2, combine_output = True, io_enc=locale.getpreferredencoding())
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
