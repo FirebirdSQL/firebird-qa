@@ -12,8 +12,11 @@ NOTES:
     ::: NB :::
     SQL schema name (introduced since 6.0.0.834), single and double quotes are suppressed in the output.
     See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
-
     Checked on 6.0.0.853; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
+    [05.03.2026] pzotov
+    Adjusted expected output which has changed since #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026 17:31:04 +0000).
+    Checked on 6.0.0.1807-46797ab.
 """
 
 import pytest
@@ -60,7 +63,7 @@ expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
-    -COLUMN TEST.F01
+    -TABLE TEST
     -there are 1 dependencies
     Table: TEST2
     F01 (DM_INT) INTEGER Nullable
