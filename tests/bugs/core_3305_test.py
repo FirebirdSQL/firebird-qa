@@ -11,8 +11,10 @@ NOTES:
     [27.06.2025] pzotov
     Reimplemented: make single test function for the whole code, use different variables to store output on 3.x / 4.x+5.x / 6.x
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [05.03.2026] pzotov
+    Adjusted expected output which has changed since #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026 17:31:04 +0000).
+    Checked on 6.0.0.1807-46797ab.
 """
 
 import pytest
@@ -50,8 +52,6 @@ expected_out_5x = """
 """
 
 expected_out_6x = """
-    Statement failed, SQLSTATE = 42000
-    attempted update of read-only column "PUBLIC"."TEST"."V"
     Statement failed, SQLSTATE = 42000
     attempted update of read-only column "PUBLIC"."TEST"."V"
 """
