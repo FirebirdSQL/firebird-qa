@@ -5,6 +5,10 @@ ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8881
 TITLE:       Large amount of unnecessary privileges in RDB$USER_PRIVILEGES for SYSDBA
 DESCRIPTION:
+    Test creates a table with N columns. This causes N implicit domains to be created with names like RDB$nnnn.
+    Then this table is altered so that number of columns is reduced to 1 (i.e. almost all of them are droppped).
+    After such action query to RDB$USER_PRIVILEGES with selecting rows where rdb$privilege = 'G' for this table
+    musrt return 0 rows (before fix this was not so and lot of rows remained as orphan).
 NOTES:
     [18.03.2026] pzotov
     Thanks to dimitr for suggestion related to test implementation details.
@@ -57,9 +61,9 @@ test_script = """
     select p.*
     from rdb$user_privileges p
     where
-    rdb$privilege = 'G'
-    and p.rdb$relation_name like 'RDB$%'
-    and trim(substring(p.rdb$relation_name from 5)) similar to '[[:DIGIT:]]+'
+        rdb$privilege = 'G'
+        and p.rdb$relation_name like 'RDB$%'
+        and trim(substring(p.rdb$relation_name from 5)) similar to '[[:DIGIT:]]+'
     ;
 """
 
