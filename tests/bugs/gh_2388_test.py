@@ -5,15 +5,20 @@ ID:          issue-2388
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/2388
 TITLE:       Implement SQL standard FORMAT clause for CAST between string types and datetime types [CORE6507]
 DESCRIPTION:
-NOTES:
-    [05.04.2024] pzotov
     Test generates SQL expressions to be used as execute statement argument.
     Main idea: choose some random timestamp, then convert it to string using some FORMAT and then convert back to timestamp.
     Origin and resulting values must be equal.
     More detailed description will be made later.
-
-    Checked on 6.0.0.305 #73551f3
-    ::: NB ::: execution time about 5-6 minutes!
+    Useful URL to get info about timeszones:
+    https://www.zeitverschiebung.net/en/timezone/europe--madrid (change there from "europe--madrid" to another or use 'Search').
+NOTES:
+    [22.03.2026] pzotov
+    Added apostrophe to the set of delimiters ( https://github.com/FirebirdSQL/firebird/commit/be9b171c2846366011424ffdd6729a554cd0b65c ).
+    Added check that for randomly selected date does not equal to either start_date or end_date of Daylight Saving Time clock transitions
+    interval for any timezone where DST offset is not zero. Otherwise cast from textual to time[stamp] with timezone and back to textual
+    causes mismatch equal to DST offset (mostly 60 minutes).
+    Checked on 6.0.0.1847
+    ::: NB ::: execution time takes about 15 minutes!
 """
 
 import pytest
@@ -24,23 +29,38 @@ db = db_factory()
 test_script = """
     set bail on;
     set list on;
-    recreate global temporary table tmp(tm_tz_txt varchar(100)) on commit preserve rows;
+    recreate global temporary table tmp_cache_ts_tz_txt(tm_tz_txt varchar(100)) on commit preserve rows;
 
     recreate table fmt_delimiter(
-        d char(1) primary key
+        d varchar(2) primary key
     );
-    insert into fmt_delimiter(d)
-    select '.' from rdb$database union all
-    select '/' from rdb$database union all
-    select ',' from rdb$database union all
-    select ';' from rdb$database union all
-    select ':' from rdb$database union all
-    select '-' from rdb$database union all
-    select ' ' from rdb$database
-    ;
+
+    -- <datetime template delimiter> ::=
+    --   <minus sign>                  1
+    -- | <period>                      2
+    -- | <solidus> // forward slash    3
+    -- | <comma>                       4
+    -- | <apostrophe>                  5
+    -- | <semicolon>                   6
+    -- | <colon>                       7
+    -- | <space>                       8
+
+    insert into fmt_delimiter(d) values('-');
+    insert into fmt_delimiter(d) values('.');
+    insert into fmt_delimiter(d) values('/');
+    insert into fmt_delimiter(d) values(',');
+    insert into fmt_delimiter(d) values( ascii_char(39) || ascii_char(39) );
+    insert into fmt_delimiter(d) values(';');
+    insert into fmt_delimiter(d) values(':');
+    insert into fmt_delimiter(d) values(' ');
     commit;
 
-    recreate table tz_list (tz_name varchar(50));
+    --############################################################
+
+    recreate table tz_list (
+        id smallint,
+        tz_name varchar(50)
+    );
     insert into tz_list (tz_name) values ('Africa/Abidjan');
     insert into tz_list (tz_name) values ('Africa/Accra');
     insert into tz_list (tz_name) values ('Africa/Addis_Ababa');
@@ -638,6 +658,20 @@ test_script = """
     insert into tz_list (tz_name) values ('WET');
     insert into tz_list (tz_name) values ('Zulu');
     commit;
+    create unique index tz_list_name_unq on tz_list(tz_name);
+    commit;
+
+    -- fill ID with random order. This column will be used to produce dates to be checked:
+    merge into tz_list t
+    using (
+        select z.tz_name, row_number()over(order by rand()) as rn
+        from tz_list z
+    ) s on t.tz_name = s.tz_name
+    when matched then update set t.id = s.rn
+    ;
+    commit;
+    
+    --############################################################
 
     recreate table str2dts(
         dtp varchar(10), -- timing part: year/month/daynum/hour/minute/second/fract_seconds/timezone
@@ -726,7 +760,6 @@ test_script = """
     -- Generate stetements to convert from timestamp to varchar with time '00:00:00',
     -- then convert from this text to DATE and finally - from date back to varchar.
     -- Final text representation of date must be equal to starting one.
-    -- exec time: ~140 seconds.
     execute block returns( 
          dtx timestamp with time zone
         ,fmt varchar(15)
@@ -738,14 +771,43 @@ test_script = """
         declare n_err int = 0;
     begin
         rdb$set_context('USER_SESSION','CHECK_1','FAILED');
-        delete from tmp;
-        insert into tmp(tm_tz_txt)
+        delete from tmp_cache_ts_tz_txt;
+
+        insert into tmp_cache_ts_tz_txt(tm_tz_txt)
             with
             i as (
-                select cast( dateadd( rand()*86399*1000*365 millisecond to timestamp '01.01.2023 00:00:00') as varchar(24) ) time_txt from rdb$database
+                select
+                    z.id
+                    ,z.tz_name
+                    ,dateadd( z.id-1 day to current_date) rnd_dt
+                    ,rand()*86399*1000 rnd_ms
+                from tz_list z
             )
             ,z as (
-                select i.time_txt || ' ' || z.tz_name as tm_tz_txt from i cross join tz_list z
+                select rnd_dt || ' ' ||  dateadd( i.rnd_ms millisecond to time '00:00:00.000') || ' ' || i.tz_name as tm_tz_txt
+                from i
+                where
+                    -- ###  A C H T U N G  ### 22.03.2026 ###
+                    -- We have to SKIP timezone if any of {i.rnd_dt, current_date} equals to 
+                    -- either start or end date of DST transitions interval of this TZ and
+                    -- value of DST_OFFSET not equals to zero for such interval.
+                    -- Otherwise cast from textual to timezone and reverse to text leads to
+                    -- mismatches that equal to DST offset (mostly 60 minutes).
+                    not exists (
+                        select 1
+                          from rdb$time_zone_util.transitions(
+                            i.tz_name,
+                            timestamp '1900-01-01',
+                            timestamp '9999-12-30') p
+                        where
+                            p.rdb$dst_offset <> 0
+                            and
+                            (
+                                i.rnd_dt in ( cast(p.rdb$start_timestamp as date), cast(p.rdb$end_timestamp as date) ) -- for check #1 (full timestamp: date+time)
+                                or
+                                current_date in ( cast(p.rdb$start_timestamp as date), cast(p.rdb$end_timestamp as date) ) -- for checks #2 and #3 (time w/o date part)
+                            )
+                    )
             )
             select * from z
         ;
@@ -753,7 +815,7 @@ test_script = """
         for
             with
             i as (
-                select t.tm_tz_txt from tmp t -- rows 1
+                select t.tm_tz_txt as timestamp_with_tz_rnd_txt from tmp_cache_ts_tz_txt t -- rows 1
             )
             ,s as (
                 select a.dtp, a.fmt
@@ -773,20 +835,22 @@ test_script = """
                     and b.dtp in ('dd','mm','yy')
                     and c.dtp in ('dd','mm','yy')
             )
-            select i.tm_tz_txt, y.*, d.d as token_delimiter
-            from ymd y cross join i cross join (select d.d from fmt_delimiter d rows 5) d
+            select i.timestamp_with_tz_rnd_txt, y.*, d.d as token_delimiter
+            from ymd y cross join i cross join (select d.d from fmt_delimiter d) d
         as cursor c
         do begin
-            dtx = c.tm_tz_txt;
+            dtx = c.timestamp_with_tz_rnd_txt;
             fmt = trim(c.fmt_a) || c.token_delimiter || trim(c.fmt_b) || c.token_delimiter || trim(c.fmt_c);
-            execute statement ( 'select cast(timestamp ''' || dtx || ''' as varchar(50) format '''|| fmt || ''') from rdb$database' )    -- timestamp ==> date_as_txt
+            execute statement ( 'select /* chk-1.1 */ cast(timestamp ''' || dtx || ''' as varchar(50) format '''|| fmt || ''') from rdb$database' )    -- timestamp ==> date_as_txt
             into ts_as_text;
+            ts_as_text = replace(ts_as_text, '''', ''''''); -- 22.03.2026
 
-            execute statement ( 'select cast(''' || ts_as_text || ''' as date format '''|| fmt || ''') from rdb$database' )              -- date_as_txt ==> date
+            execute statement ( 'select /* chk-1.2 */ cast(''' || ts_as_text || ''' as date format '''|| fmt || ''') from rdb$database' )              -- date_as_txt ==> date
             into txt_as_dt;
 
-            execute statement ( 'select cast(date ''' || txt_as_dt || ''' as varchar(50) format '''|| fmt || ''') from rdb$database' )   -- date ==> date_as_txt2
+            execute statement ( 'select /* chk-1.3 */ cast(date ''' || txt_as_dt || ''' as varchar(50) format '''|| fmt || ''') from rdb$database' )   -- date ==> date_as_txt2
             into dt_as_text;
+            dt_as_text = replace(dt_as_text, '''', ''''''); -- 22.03.2026
 
             equals = ts_as_text is not distinct from dt_as_text;
 
@@ -811,9 +875,9 @@ test_script = """
     --/*********************
     -- CHECK-2.
     -- Generate stetements to convert from timestamp to varchar with date cut-off,
-    -- then convert from this text to time and finally - from time back to varchar.
+    -- e.g. '2012-12-09 15:27:25.1640 Africa/Casablanca' ==> '15:27:25.1640 Africa/Casablanca'.
+    -- Then convert from this text to time with time zone and finally - from time back to varchar.
     -- Final text representation of date must be equal to starting one.
-    -- NOTE: exec time is ~130 s.
     execute block returns(
          dtx time with time zone
         ,fmt varchar(50)
@@ -828,22 +892,11 @@ test_script = """
 
         rdb$set_context('USER_SESSION','CHECK_2','FAILED');
 
-        delete from tmp;
-        insert into tmp(tm_tz_txt)
-            with
-            i as (
-                select cast( dateadd( rand()*86399*1000 millisecond to time '00:00:00') as varchar(13) ) time_txt from rdb$database
-            )
-            ,z as (
-                select i.time_txt || ' ' || z.tz_name as tm_tz_txt from i cross join tz_list z
-            )
-            select * from z
-        ;
-        ---------------------------
         for
             with
             i as (
-                select t.tm_tz_txt from tmp t -- rows 10
+                -- '2012-12-09 15:27:25.1640 Africa/Casablanca' ==> '15:27:25.1640 Africa/Casablanca'
+                select substring( t.tm_tz_txt from 12) timeonly_with_tz_rnd_txt from tmp_cache_ts_tz_txt t
             )
             ,s as (
                 select a.dtp, trim(a.fmt || coalesce(t.mer, '')) as fmt
@@ -869,23 +922,19 @@ test_script = """
                     and d.dtp in ('hh','mi','ss', 'ff')
 
             )
-            select i.tm_tz_txt, h.* from hms h cross join i
+            select i.timeonly_with_tz_rnd_txt, h.* from hms h cross join i
             -- where hms.fmt_a = 'HH24' ROWS 1
         as cursor c
         do begin
-            dtx = c.tm_tz_txt;
+            dtx = c.timeonly_with_tz_rnd_txt;
             fmt = trim(c.fmt_a) || ':' || trim(c.fmt_b) || ':' || trim(c.fmt_c) || ':' || trim(c.fmt_d);
-            execute statement ( 'select cast(time ''' || dtx || ''' as varchar(50) format '''|| fmt || ''') from rdb$database -- 1' )
+            execute statement ( 'select /* chk-2.1 */ cast(time ''' || dtx || ''' as varchar(50) format '''|| fmt || ''') from rdb$database -- 1' )
             into tm_as_text;
 
-            execute statement ( 'select cast(''' || tm_as_text || ''' as time format '''|| fmt || ''') from rdb$database -- 2' )
-            --execute statement ( 'select cast(time ''' || tm_as_text || ''' as varchar(50) format '''|| fmt || ''') from rdb$database' )
-            --execute statement ( 'select cast(''' || tm_as_text || ''' as time format '''|| fmt_wo_tz || ''') from rdb$database' )
+            execute statement ( 'select /* chk-2.2 */ cast(''' || tm_as_text || ''' as time format '''|| fmt || ''') from rdb$database -- 2' )
             into txt_as_time;
             
-            --execute statement ( 'select cast( cast(''' || txt_as_time || ''' as time with time zone) as varchar(50) format '''|| fmt || ''') from rdb$database' )
-            --execute statement ( 'select cast(''' || txt_as_time || ''' as time) from rdb$database' )
-            execute statement ( 'select cast(time ''' || txt_as_time || ''' as varchar(50) format ''' || fmt || ''') from rdb$database -- 3' )
+            execute statement ( 'select /* chk-2.3 */ cast(time ''' || txt_as_time || ''' as varchar(50) format ''' || fmt || ''') from rdb$database -- 3' )
             into tm_back_to_text;
 
             equals = tm_as_text is not distinct from tm_back_to_text;
@@ -920,7 +969,11 @@ test_script = """
 
         for
             with
-            s as (
+            i as (
+                -- '2012-12-09 15:27:25.1640 Africa/Casablanca' ==> '15:27:25.1640 Africa/Casablanca'
+                select substring(t.tm_tz_txt from 12) as timeonly_with_tz_rnd_txt from tmp_cache_ts_tz_txt t -- rows 1
+            )
+            ,s as (
                 select a.dtp, a.fmt
                 from dts2str a
                 where a.dtp > ''
@@ -949,10 +1002,10 @@ test_script = """
                         )
                     and f.dtp = 'ff'
             )
-            select h.fmt_a, h.fmt_b, h.fmt_c, h.fmt_d, h.fmt_e, z.tz_name, d.d as token_delimiter
+            select h.fmt_a, h.fmt_b, h.fmt_c, h.fmt_d, h.fmt_e, i.timeonly_with_tz_rnd_txt, d.d as token_delimiter
             from hms h
-            cross join tz_list z
-            cross join (select d.d from fmt_delimiter d rows 5) d
+            cross join i
+            cross join (select d.d from fmt_delimiter d) d
             --where h.fmt_d = 'TZR'
             -- where h.fmt_d = 'TZH' and h.fmt_e = 'TZM' rows 1
             -- h.fmt_a = 'HH24' 
@@ -960,7 +1013,7 @@ test_script = """
         as cursor c
         do begin
             
-            tmtz_random_as_txt = cast( dateadd(rand()*86399*1000 millisecond to time '00:00:00') as varchar(13)) || ' ' || c.tz_name;
+            -- timeonly_with_tz_rnd_txt = cast( dateadd(rand()*86399*1000 millisecond to time '00:00:00') as varchar(13)) || ' ' || c.tz_name;
 
             fmt = trim(c.fmt_a) || c.token_delimiter || trim(c.fmt_b) || c.token_delimiter || trim(c.fmt_c) || ' ';
             if (c.fmt_d = 'TZH') then
@@ -968,18 +1021,19 @@ test_script = """
             else
                 fmt = fmt || c.fmt_d;
 
-            v_cast_to_tmtz_as_txt = 'select cast( cast(''' || tmtz_random_as_txt || ''' as time with time zone) as varchar(100) format '''|| fmt || ''') from rdb$database';
+            v_cast_to_tmtz_as_txt = 'select /* chk-3.1 */ cast( cast(''' || c.timeonly_with_tz_rnd_txt || ''' as time with time zone) as varchar(100) format '''|| fmt || ''') from rdb$database';
             execute statement ( v_cast_to_tmtz_as_txt )
             into tmtz_as_txt;
+            tmtz_as_txt = replace(tmtz_as_txt, '''', ''''''); -- 22.03.2026
 
-            v_cast_to_txt_as_tmtz = 'select cast(''' || tmtz_as_txt || ''' as time with time zone format '''|| fmt || ''') from rdb$database';
+            v_cast_to_txt_as_tmtz = 'select /* chk-3.2 */ cast(''' || tmtz_as_txt || ''' as time with time zone format '''|| fmt || ''') from rdb$database';
             execute statement ( v_cast_to_txt_as_tmtz )
             into txt_as_tmtz;
 
-            v_tmtz_back_to_txt = 'select cast( cast(''' || txt_as_tmtz || ''' as time with time zone) as varchar(100) format ''' || fmt || ''') from rdb$database';
+            v_tmtz_back_to_txt = 'select /* chk-3.2 */ cast( cast(''' || txt_as_tmtz || ''' as time with time zone) as varchar(100) format ''' || fmt || ''') from rdb$database';
             execute statement ( v_tmtz_back_to_txt )
             into tmtz_back_to_txt;
-
+            tmtz_back_to_txt = replace(tmtz_back_to_txt, '''', ''''''); -- 22.03.2026
             
             equals = tmtz_as_txt is not distinct from tmtz_back_to_txt;
 
