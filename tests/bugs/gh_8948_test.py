@@ -7,7 +7,7 @@ TITLE:       Natural scan may occur for a query that has EXISTS and several join
 DESCRIPTION:
 NOTES:
     Original title: "Firebird 5.0.4 snapshot (build 1784) performance issue".
-    Explained plan before fix did not use index on t_outer as 'o2' (inside subquery):
+    Explained plan before fix did not use index on t_outer as 'o2' (inside subquery).
     Thanks to dimitr for suggestions about test implementation details.
 
     Confirmeg bug on 6.0.0.1835-048e7c1; 5.0.4.1783-efed600.
