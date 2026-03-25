@@ -10,7 +10,7 @@ NOTES:
     ::: NOTE :::
     Problem detected when make restore using FBSVCMGR: lost part of message that was in STDOUT before this fix.
     (see https://github.com/FirebirdSQL/firebird/pull/8793#issuecomment-4129482729).
-    Waiting for fix. Currently test verifies only GBAK.
+    Currently test verifies only GBAK. Additional check (FBSVCMGR) will be added after fix.
 
     Confirmed problem on 6.0.0.1835.
     Checked on 6.0.0.1843.
