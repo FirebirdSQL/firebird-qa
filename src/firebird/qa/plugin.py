@@ -95,6 +95,14 @@ SKIP_VERSION = 'version'
 SKIP_PLATFORM = 'platform'
 SKIP_ANY = 'any'
 
+
+# Error tracker to stop suite after X consecutive ERRORs
+class ErrorTracker:
+    consecutive_errors = 0
+    threshold_reached = False
+
+tracker = ErrorTracker()
+
 @pytest.fixture(scope='session', autouse=True)
 def log_session_context(record_testsuite_property):
     """Autoused session fixture that records `version`,`architecture` and `mode`
@@ -172,6 +180,19 @@ def pytest_addoption(parser, pluginmanager):
     grp.addoption('--extend-xml', action='store_true', default=False, help="Extend XML JUnit report with additional information")
     grp.addoption('--install-terminal', action='store_true', default=False, help="Use our own terminal reporter")
     grp.addoption('--start-time', action='store_true', dest="start_time_info", default=False, help="Show tests start time info")
+    parser.addoption("--max-errors", action="store", default=5, type=int,
+                     help="Number of consecutive errors before skipping. Set to 0 to disable.")
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_call(item):
+    """
+    This wraps the actual test execution. If the threshold was hit by a
+    previous test, we skip this one immediately.
+    """
+    threshold = item.config.getoption("--max-errors")
+    if threshold > 0 and tracker.threshold_reached:
+        pytest.skip(f"Skipping: {threshold} consecutive failures reached.")
+    yield  # Run the actual test if threshold not reached
 
 def pytest_report_header(config):
     """Returns plugin-specific test session header.
@@ -332,6 +353,18 @@ def pytest_runtest_makereport(item, call):
 
     .. seealso:: `pytest documentation <_pytest.hookspec.pytest_runtest_makereport>` for details.
     """
+    threshold = item.config.getoption("--max-errors")
+    if threshold > 0:
+        if call.excinfo is not None:
+            # Check if the test resulted in an 'ERROR' (setup/teardown) or 'FAIL'
+            # In pytest, a DB connection crash often happens in a fixture (ERROR)
+            tracker.consecutive_errors += 1
+            tracker.threshold_reached = tracker.consecutive_errors >= threshold
+        # We only care about the actual execution (call), not setup/teardown
+        elif call.when == "call":
+            # If a test passes, reset the streak
+            tracker.consecutive_errors = 0
+    #
     result = pytest.TestReport.from_item_and_call(item, call)
     for attr in dir(item):
         if attr.startswith('_qa_'):

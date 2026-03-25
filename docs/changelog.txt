@@ -4,6 +4,11 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
+Version 0.22.0
+==============
+
+* Added `--max-errors` option to stop running the suite after specified number of subsequent errors.
+
 Version 0.21.0
 ==============
 
