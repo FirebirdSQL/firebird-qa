@@ -8,7 +8,7 @@ DESCRIPTION:
 NOTES:
     [26.03.2026] pzotov
     Confirmed problem on 6.0.0.1850-b8c5981
-    Checked on 6.0.0.1858-c0190d0
+    Checked on 6.0.0.1858-c0190d0.
 """
 import pytest
 from firebird.qa import *
