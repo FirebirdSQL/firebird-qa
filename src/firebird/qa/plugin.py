@@ -184,7 +184,7 @@ def pytest_addoption(parser, pluginmanager):
                      help="Number of consecutive errors before skipping. Set to 0 to disable.")
 
 @pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_call(item):
+def pytest_runtest_setup(item):
     """
     This wraps the actual test execution. If the threshold was hit by a
     previous test, we skip this one immediately.
