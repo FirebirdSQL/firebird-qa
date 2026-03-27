@@ -7,13 +7,13 @@ TITLE:       Fix gbak output some errors and warnings to stderr instead of stdou
 DESCRIPTION:
 NOTES:
     [26.03.2026] pzotov
-    ::: NOTE :::
-    Problem detected when make restore using FBSVCMGR: lost part of message that was in STDOUT before this fix.
-    (see https://github.com/FirebirdSQL/firebird/pull/8793#issuecomment-4129482729).
-    Currently test verifies only GBAK. Additional check (FBSVCMGR) will be added after fix.
+        Problem detected when make restore using FBSVCMGR: lost part of message that was in STDOUT before this fix.
+        (see https://github.com/FirebirdSQL/firebird/pull/8793#issuecomment-4129482729).
+    [27.03.2026] pzotov
+        Added check for FBSVCMGR.
 
     Confirmed problem on 6.0.0.1835
-    Checked on 6.0.0.1843.
+    Checked on 6.0.0.1843, 6.0.0.1858.
 """
 import locale
 import re
@@ -52,16 +52,22 @@ def test_1(act: Action, tmp_fbk: Path, tmp_res: Path, tmp_log: Path, tmp_err: Pa
     act.gbak(switches=['-b', act.db.dsn, str(tmp_fbk)])
     act.reset()
 
-    act.expected_stderr = 'MUST BE SOME NON-EMPTY TEXT! SEE QA-PLUGIN SOURCE!'
-    act.gbak(switches=['-rep', str(tmp_fbk), 'localhost:' + str(tmp_res)])
+    
+    for util_name in ('gbak','fbsvcmgr'):
+        act.expected_stderr = 'MUST BE SOME NON-EMPTY TEXT! SEE QA-PLUGIN SOURCE!'
+        if util_name == 'gbak':
+            act.gbak(switches=['-rep', str(tmp_fbk), 'localhost:' + str(tmp_res)])
+        else:
+            act.svcmgr(switches=['action_restore', 'bkp_file', tmp_fbk, 'dbname', tmp_res, 'res_replace' ])
 
-    for line in act.clean_stdout.splitlines():
-        if (s := line.strip()):
-            print('gbak STDOUT:' + s)
+        for line in act.clean_stdout.splitlines():
+            if (s := line.strip()):
+                print(f'{util_name} STDOUT:' + s)
 
-    for line in act.clean_stderr.splitlines():
-        if (s := line.strip()):
-            print('gbak STDERR:' + s)
+        for line in act.clean_stderr.splitlines():
+            if (s := line.strip()):
+                print(f'{util_name} STDERR:' + s)
+        act.reset()
 
     expected_out = """
         gbak STDERR:gbak:cannot commit index "PUBLIC"."TEST_X_UNQ"
@@ -69,6 +75,12 @@ def test_1(act: Action, tmp_fbk: Path, tmp_res: Path, tmp_log: Path, tmp_err: Pa
         gbak STDERR:gbak: ERROR:    Problematic key value is (<expression> = 0)
         gbak STDERR:gbak: ERROR:Database is not online due to failure to activate one or more indices.
         gbak STDERR:gbak: ERROR:    Run gfix -online to bring database online without active indices.
+
+        fbsvcmgr STDOUT:gbak:cannot commit index "PUBLIC"."TEST_X_UNQ"
+        fbsvcmgr STDOUT:gbak: ERROR:attempt to store duplicate value (visible to active transactions) in unique index "PUBLIC"."TEST_X_UNQ"
+        fbsvcmgr STDOUT:gbak: ERROR:    Problematic key value is (<expression> = 0)
+        fbsvcmgr STDERR:Database is not online due to failure to activate one or more indices.
+        fbsvcmgr STDERR:-Run gfix -online to bring database online without active indices.
     """
     
     assert strip_white(expected_out) == strip_white(capsys.readouterr().out)
