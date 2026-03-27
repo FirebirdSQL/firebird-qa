@@ -191,7 +191,7 @@ def pytest_runtest_setup(item):
     """
     threshold = item.config.getoption("--max-errors")
     if threshold > 0 and tracker.threshold_reached:
-        pytest.skip(f"Skipping: {threshold} consecutive failures reached.")
+        pytest.skip(f"Skipping: {threshold} consecutive errors reached.")
     yield  # Run the actual test if threshold not reached
 
 def pytest_report_header(config):
@@ -355,7 +355,9 @@ def pytest_runtest_makereport(item, call):
     """
     threshold = item.config.getoption("--max-errors")
     if threshold > 0:
-        if call.excinfo is not None:
+        if (call.excinfo is not None
+            and call.excinfo.typename != 'Skipped'
+            and call.when != "call"):
             # Check if the test resulted in an 'ERROR' (setup/teardown) or 'FAIL'
             # In pytest, a DB connection crash often happens in a fixture (ERROR)
             tracker.consecutive_errors += 1

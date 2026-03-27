@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.22.0] - 2026-03-26
+## [0.22.2] - 2026-03-27
+
+### Fixed
+
+- Problems caused by Skip marks and fails in `--max-errors`.
+
+## [0.22.1] - 2026-03-26
 
 ### Fixed
 
