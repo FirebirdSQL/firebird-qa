@@ -4,7 +4,12 @@ Changelog
 
 .. currentmodule:: firebird.qa.plugin
 
-Version 0.22.0
+Version 0.22.2
+==============
+
+* Fixed problems caused by Skip marks and fails in `--max-errors`.
+
+Version 0.22.1
 ==============
 
 * Fix error in `--max-errors` implementation: Skip is applied on `call` instead `setup`.
