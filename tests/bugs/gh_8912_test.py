@@ -3,7 +3,7 @@
 """
 ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8912
-TITLE:       Context variables clear/re-initialization support
+TITLE:       Context variables clear/re-initialization support.
 DESCRIPTION:
 NOTES:
     [29.03.2026] pzotov
