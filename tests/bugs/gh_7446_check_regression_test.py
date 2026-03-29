@@ -3,6 +3,7 @@
 """
 ID:          issue-7446
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7446
+TITLE:       Attempt to use data in destroyed transaction pool
 DESCRIPTION:
     Problem was reported privately by firebird user. As a visible result there were core dump and an error in firebird.log:
         Operating system call pthread_mutex_lock failed. Error code 22
