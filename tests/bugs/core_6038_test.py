@@ -3,7 +3,6 @@
 """
 ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6288
-TITLE:       Incorrect handling of non-ASCII object names in CREATE MAPPING statement
 TITLE:       Srp user manager sporadically creates users which can not attach
 DESCRIPTION:
     Explanation of bug nature was provided by Alex, see letter 05-jun-19 13:51.
