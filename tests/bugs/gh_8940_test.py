@@ -32,7 +32,7 @@ DESCRIPTION:
     'INSERT INTO TEST(...) VALUES(...)' - to make investigation easy.
 NOTES:
     [31.03.2026] pzotov
-    Thanks to dimitr for suggestions and explanations.
+    Thanks to dimitr for suggestions and explanations related to this test.
     Confirmed problem (poor cardinality estimation) on 6.0.0.1816.
     Checked on 6.0.0.1858.
 """
