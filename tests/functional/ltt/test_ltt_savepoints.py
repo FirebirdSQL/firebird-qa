@@ -7,7 +7,7 @@ TITLE:       Check support of SAVEPOINTS in local temporary tables.
 DESCRIPTION:
     This test uses ideas from several other tests related to savepoints.
 NOTES:
-    [08.02.2025] pzotov
+    [08.02.2026] pzotov
     Checked on 6.0.0.1405
 """
 
