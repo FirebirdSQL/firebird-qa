@@ -8,6 +8,10 @@ NOTES:
     [10.02.2024] pzotov
     Confirmed bug on 6.0.0.250
     Checked on 6.0.0.257 -- all fine.
+
+    [11.04.2026] pzotov
+    Reduced min_version to 5.0.4 after backport #979c0d7e
+    Checked on 5.0.4.1799.
 """
 
 import pytest
@@ -47,7 +51,7 @@ expected_stdout = """
     STAFFID 1
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.4')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
