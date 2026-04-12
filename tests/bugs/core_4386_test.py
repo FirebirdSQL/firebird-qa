@@ -34,9 +34,11 @@ NOTES:
       * Excluded check of FB 3.x (this version no more changed).
       Checked on 6.0.0.442, 5.0.2.1479, 4.0.6.3142
 
-    [29.06.2025] pzotov
-      Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
-      Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [12.04.2026] pzotov
+        Disabled run on 6.x+ because of shared metadata cache introduction since 6.0.0.1771-f73321c (25.02.2026).
+        Outcome of actions described in this ticket will be opposite to expected in 6.x.
+        Re-implemented version of this test will appear in $QA_ROOT/tests/functional/metacache/ folder.
+        Checked on 5.0.4.1808; 4.0.7.3269.
 """
 
 import pytest
@@ -105,8 +107,8 @@ ddl_script = """
     commit;
 """
 
-@pytest.mark.version('>=4.0')
-@pytest.mark.perf_measure               # To be reworked for new meta cache - all objects are deleteable
+@pytest.mark.version('>=4.0,<6') # To be reworked for new meta cache - all objects are deleteable
+@pytest.mark.perf_measure
 def test_1(act: Action, capsys):
 
     act.isql(switches = ['-q'], input = ddl_script, combine_output = True)
@@ -163,224 +165,219 @@ def test_1(act: Action, capsys):
                         print(e.__str__())
                         print(e.gds_codes)
 
-    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
-
     expected_stdout_5x = f"""
         READ_COMMITTED_NO_RECORD_VERSION drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
+        -object PROCEDURE "SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
+        -object PROCEDURE "SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
+        -object FUNCTION "FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
+        -object VIEW "V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
+        -object TABLE "TEST2" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
+        -object INDEX "TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_NO_RECORD_VERSION drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
+        -object INDEX "TEST2_X" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
+        -object PROCEDURE "SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
+        -object PROCEDURE "SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
+        -object FUNCTION "FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
+        -object VIEW "V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
+        -object TABLE "TEST2" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
+        -object INDEX "TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_RECORD_VERSION drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
+        -object INDEX "TEST2_X" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
+        -object PROCEDURE "SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
+        -object PROCEDURE "SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
+        -object FUNCTION "FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
+        -object VIEW "V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
+        -object TABLE "TEST2" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
+        -object INDEX "TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         SNAPSHOT drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
+        -object INDEX "TEST2_X" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
+        -object PROCEDURE "SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
+        -object PROCEDURE "SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
+        -object FUNCTION "FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
+        -object VIEW "V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
+        -object TABLE "TEST2" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
+        -object INDEX "TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         SERIALIZABLE drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
+        -object INDEX "TEST2_X" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop procedure sp_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_TEST" is in use
+        -object PROCEDURE "SP_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop procedure sp_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object PROCEDURE {SQL_SCHEMA_PREFIX}"SP_WORKER" is in use
+        -object PROCEDURE "SP_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop function fn_worker
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object FUNCTION {SQL_SCHEMA_PREFIX}"FN_WORKER" is in use
+        -object FUNCTION "FN_WORKER" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop view v_test
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object VIEW {SQL_SCHEMA_PREFIX}"V_TEST" is in use
+        -object VIEW "V_TEST" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop table test2
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object TABLE {SQL_SCHEMA_PREFIX}"TEST2" is in use
+        -object TABLE "TEST2" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop index test1_id
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST1_ID" is in use
+        -object INDEX "TEST1_ID" is in use
         (335544345, 335544351, 335544453)
 
         READ_COMMITTED_READ_CONSISTENCY drop index test2_x
         lock conflict on no wait transaction
         -unsuccessful metadata update
-        -object INDEX {SQL_SCHEMA_PREFIX}"TEST2_X" is in use
+        -object INDEX "TEST2_X" is in use
         (335544345, 335544351, 335544453)
     """
 
-    expected_stdout_6x = f"""
-    """
-    
-    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x                
+    act.expected_stdout = expected_stdout_5x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
