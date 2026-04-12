@@ -2,15 +2,15 @@
 
 """
 ID:          issue-4039
-ISSUE:       4039
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4039
 TITLE:       Missing constraint name in foreign key error message in FB 2.1.4
 DESCRIPTION:
 JIRA:        CORE-3691
 FBTEST:      bugs.core_3691
 NOTES:
-    [27.06.2025] pzotov
-    Added 'SCHEMA_PREFIX' to be substituted in expected_out on FB 6.x
-    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [12.04.2026] pzotov
+    Adjusted output in 6.x (changes caused by shared metadata cache intro, 25.02.2026).
+    Checked on: 6.0.0.1891; 5.0.4.1808; 4.0.7.3269; 3.0.14.33855.
 """
 
 import pytest
@@ -36,16 +36,23 @@ act = isql_act('db', test_script)
 @pytest.mark.version('>=3')
 def test_1(act: Action):
 
-    SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
-    
-    expected_stdout = f"""
+    expected_stdout_5x = f"""
         Statement failed, SQLSTATE = 23000
-        violation of FOREIGN KEY constraint "TDETL_FK" on table {SCHEMA_PREFIX}"TDETL"
+        violation of FOREIGN KEY constraint "TDETL_FK" on table "TDETL"
         -Foreign key reference target does not exist
         -Problematic key value is ("PID" = 2)
     """
 
-    act.expected_stdout = expected_stdout
+    expected_stdout_6x = f"""
+        Statement failed, SQLSTATE = 23000
+        unsuccessful metadata update
+        -ALTER TABLE "PUBLIC"."TDETL" failed
+        -violation of FOREIGN KEY constraint "TDETL_FK" on table "PUBLIC"."TDETL"
+        -Foreign key reference target does not exist
+        -Problematic key value is ("PID" = 2)
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
