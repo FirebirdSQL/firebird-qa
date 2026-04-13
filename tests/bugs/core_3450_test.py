@@ -1,4 +1,4 @@
-z`#coding:utf-8
+#coding:utf-8
 
 """
 ID:          issue-3811
