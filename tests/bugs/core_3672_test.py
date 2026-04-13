@@ -21,7 +21,7 @@ NOTES:
 
     Checked on 6.0.0.1891; 5.0.4.1808; 4.0.7.3269; 3.0.14.33855.
 """
-
+import os
 import random
 from pathlib import Path
 from sortedcontainers import SortedList
@@ -185,7 +185,7 @@ def test_1(act: Action, tmp_fdb: Path, capsys):
         PAGE_SIZE_SET.append(32768,)
 
     for pg_checked in PAGE_SIZE_SET:
-        db_cfg_name = f'tmp_{pg_checked}'
+        db_cfg_name = f'tmp_core_3672_page_{pg_checked}'
         db_cfg_object = driver_config.register_database(name = db_cfg_name)
         db_cfg_object.database.value = str(tmp_fdb)
         db_cfg_object.page_size.value = pg_checked
