@@ -31,7 +31,7 @@ def test_1(act: Action, tmp_fdb: Path, capsys):
     PAGE_SIZE_SET = [1024*i for i in (0,1,2,4,8,16,32,64,128,256)]
 
     for pg_val in PAGE_SIZE_SET:
-        db_cfg_name = f'tmp_{pg_val}'
+        db_cfg_name = f'tmp_functional_db_create_page_{pg_val}'
         db_cfg_object = driver_config.register_database(name = db_cfg_name)
         db_cfg_object.database.value = str(tmp_fdb)
         db_cfg_object.page_size.value = pg_val
