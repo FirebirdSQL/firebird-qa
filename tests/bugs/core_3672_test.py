@@ -8,7 +8,7 @@ DESCRIPTION:
 JIRA:        CORE-3672
 NOTES:
     [12.04.2026] pzotov
-    Totally re-implemented. Use all avaliable (currently) value of page_size: 86; 16k and 32k (for 4.x+).
+    Totally re-implemented. Use all avaliable (currently) value of page_size: 8k; 16k and 32k (for 4.x+).
     For every tested page size a table is created with text column of size = 8190 characters (using charset = 'utf8').
     Maximal length of index key for uniode characters that require (commonly) up to 6 bytes per character is:
         max_idx_key = int( (page_size / 4 - 9) / UTF_BYTES_PER_CHAR )
@@ -16,15 +16,15 @@ NOTES:
     with expression that is defined by: substring(<col> from 1 for {max_idx_key}).
     After this we run query 'select min(<col>) from ...' which must involve in use just created index.
     Query statistics must show that number of natural reads are zero and indexed reads only did occur.
-    Also, obtained value of <col> must be equal to minimal value of array that stored added values (SortedList).
-    If all checks passed then NO output must be as reault of this test.
+    Also, obtained value ('min_fetched') must be equal to minimal value among generated unicode values ('min_gen_val').
+    If all checks passed then NO output must be as result of this test.
 
     Checked on 6.0.0.1891; 5.0.4.1808; 4.0.7.3269; 3.0.14.33855.
 """
 import os
 import random
 from pathlib import Path
-from sortedcontainers import SortedList
+# not needed for this test: from sortedcontainers import SortedList
 from firebird.driver import DatabaseError, driver_config, create_database
 
 import pytest
@@ -210,11 +210,12 @@ def test_1(act: Action, tmp_fdb: Path, capsys):
                 ps, rs = None, None
                 try:
                     ps = cur.prepare('insert into test(col1) values(?)')
-                    ss = SortedList()
+                    min_gen_val = ''
                     for i in range(ROWS_TO_CHECK):
                         long_utf8_data = ''.join(set(get_random_unicode( max_idx_key + 1 )))
                         cur.execute(ps, (long_utf8_data,))
-                        ss.add(long_utf8_data)
+                        if long_utf8_data < min_gen_val or min_gen_val == '':
+                            min_gen_val = long_utf8_data[:max_idx_key]
                     con.commit()
 
                     con.execute_immediate(f'create index test_col1_expr on test computed by ( substring(col1 from 1 for {max_idx_key}) )')
@@ -232,12 +233,14 @@ def test_1(act: Action, tmp_fdb: Path, capsys):
                     nat_reads = (tabstat2[0].sequential if tabstat2[0].sequential else 0) - (tabstat1[0].sequential if tabstat1[0].sequential else 0)
                     idx_reads = (tabstat2[0].indexed if tabstat2[0].indexed else 0) - (tabstat1[0].indexed if tabstat1[0].indexed else 0)
                     
-                    if nat_reads == 0 and idx_reads > 0 and (min_fetched == ss[0][:max_idx_key]):
+                    if nat_reads == 0 and idx_reads > 0 and (min_fetched == min_gen_val[:]):
                         # MIN() value has been obtained using INDEX and matches to checked one.
                         # EXPECTED. NOTHING TO PRINT.
                         pass
                     else:
-                        print(f'UNEXPECTED STATISTICS AND/OR QUERY RESULT: {pg_actual=}: {nat_reads=}, {idx_reads=}; min_fetched == 1st of SortedList() ? => ', min_fetched == ss[0][:max_idx_key])
+                        print(f'UNEXPECTED STATISTICS AND/OR QUERY RESULT: {pg_actual=}: {nat_reads=}, {idx_reads=}; {min_fetched == min_gen_val = } ')
+                        print(f'{min_fetched=}')
+                        print(f'{min_gen_val=}')
 
                 except DatabaseError as e:
                     print( e.__str__() )
