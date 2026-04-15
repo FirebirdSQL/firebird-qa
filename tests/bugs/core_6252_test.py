@@ -3,16 +3,16 @@
 """
 ID:          issue-6495
 ISSUE:       6495
-TITLE:       UNIQUE / PRIMARY KEY constraint can be violated when AUTODDL = OFF and
-  mixing commands for DDL and DML
+TITLE:       UNIQUE / PRIMARY KEY constraint can be violated when AUTODDL = OFF and mixing commands for DDL and DML
 DESCRIPTION:
 JIRA:        CORE-6252
 FBTEST:      bugs.core_6252
 NOTES:
-    [03.07.2025] pzotov
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [169.04.2026] pzotov
+    Refactored (simplified code).
+    Discussed with Alex and Vlad, adjusted output to the current one in FB 6.x
+    (changed since shared metacache was introduced, 6.0.0.1771-f73321c 25.02.2026).
+    Checked on 6.0.0.1891; 5.0.4.1808; 4.0.7.3269; 3.0.14.33855
 """
 
 import pytest
@@ -28,39 +28,26 @@ test_script = """
         a int not null,
         b int not null
     );
-
-    recreate table test2(
-        u int not null,
-        v int not null
-    );
-
     commit;
 
     insert into test1(a, b) values (1,1);
     insert into test1(a, b) values (1,2);
-
-    insert into test2(u, v) values (1,1);
-    insert into test2(u, v) values (1,2);
     commit;
 
+    -----------------------
+    update test1 set b = 3;
+    -----------------------
 
-    -------------------------------------------------------
-    update test1 set b = 1;
+    set bail OFF;
     alter table test1 add constraint test1_unq unique (a);
     commit;
 
-    -------------------------------------------------------
-    rollback; -- otherwise exception about PK violation will be supressed by 1st one (about test1_UNQ)
-    -------------------------------------------------------
-
-    update test2 set v = 1;
-    alter table test2 add constraint test2_pk primary key (u);
-    commit;
-
-    set list on;
-    select * from test1;
-    select * from test2;
     rollback;
+
+    set heading off;
+    set count on;
+    select * from test1;
+    commit;
 
     -- We have to ensure that there are no indices that were created (before this bug fixed)
     -- for maintainace of PK/UNQ constraints:
@@ -77,47 +64,37 @@ test_script = """
 substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout_5x = """
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST1_UNQ" on table "TEST1"
-    -Problematic key value is ("A" = 1)
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST2_PK" on table "TEST2"
-    -Problematic key value is ("U" = 1)
-    A 1
-    B 1
-    A 1
-    B 2
-    U 1
-    V 1
-    U 1
-    V 1
-    IDX_NAME <null>
-    IDX_UNIQ <null>
-"""
-
-expected_stdout_6x = """
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST1_UNQ" on table "PUBLIC"."TEST1"
-    -Problematic key value is ("A" = 1)
-    Statement failed, SQLSTATE = 23000
-    violation of PRIMARY or UNIQUE KEY constraint "TEST2_PK" on table "PUBLIC"."TEST2"
-    -Problematic key value is ("U" = 1)
-    A 1
-    B 1
-    A 1
-    B 2
-    U 1
-    V 1
-    U 1
-    V 1
-    IDX_NAME <null>
-    IDX_UNIQ <null>
-"""
 
 @pytest.mark.version('>=3.0.6')
 def test_1(act: Action):
 
+    expected_stdout_5x = """
+        Statement failed, SQLSTATE = 23000
+        violation of PRIMARY or UNIQUE KEY constraint "TEST1_UNQ" on table "TEST1"
+        -Problematic key value is ("A" = 1)
+
+        1 1
+        1 2
+        Records affected: 2
+
+        <null> <null>
+        Records affected: 1
+    """
+
+    expected_stdout_6x = """
+        Statement failed, SQLSTATE = 23000
+        unsuccessful metadata update
+        -ALTER TABLE "PUBLIC"."TEST1" failed
+        -violation of PRIMARY or UNIQUE KEY constraint "TEST1_UNQ" on table "PUBLIC"."TEST1"
+        -Problematic key value is ("A" = 1)
+
+        1 3
+        1 3
+        Records affected: 2
+
+        <null> <null>
+        Records affected: 1
+    """
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
