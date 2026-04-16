@@ -13,6 +13,7 @@ NOTES:
     Adjusted output in 6.x to current (letter from dimitr, 13.04.2026 0855).
     Checked on 6.0.0.1891; 5.0.4.1808; 4.0.7.3269; 3.0.14.33855.
 """
+from firebird.driver import DatabaseError
 
 import pytest
 from firebird.qa import *
