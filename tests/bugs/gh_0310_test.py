@@ -2169,6 +2169,10 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                PASSWORD
     RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                PERCENTILE_CONT
+    RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                PERCENTILE_DISC
+    RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                PERCENT_RANK
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                PI
@@ -2228,6 +2232,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                RDB$GET_TRANSACTION_CN
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                RDB$RECORD_VERSION
+    RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                RDB$RESET_CONTEXT
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                RDB$ROLE_IN_USE
     RDB$KEYWORD_RESERVED            <true>
@@ -2563,7 +2569,7 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
-    Records affected: 519
+    Records affected: 522
 """
 
 @pytest.mark.disabled_in_forks
