@@ -22,17 +22,24 @@ from firebird.qa import *
 from firebird.driver import DatabaseError
 
 db = db_factory()
+act = python_act('db')
 
-substitutions = [('table (")?id \\d+(")? is not defined', 'table is not defined')]
-act = python_act('db', substitutions = substitutions)
+VAL1 = 123456
+VAL2 = 654321
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, capsys):
+    test_rel_id = -1
     with act.db.connect() as con:
         cur1 = con.cursor()
         cur1.execute("recreate table test(x int)")
         con.commit()
-        cur1.execute("insert into test values(1)")
+        cur1.execute("select rdb$relation_id from rdb$relations where rdb$relation_name = upper('test')")
+        for r in cur1:
+            test_rel_id = r[0]
+        assert test_rel_id > 0, 'Wrong name of table was used in the query.'
+
+        cur1.execute(f"insert into test values({VAL1})")
         con.commit()
         ps = None
         try:
@@ -40,7 +47,10 @@ def test_1(act: Action, capsys):
                 cur2 = con2.cursor()
                 cur2.execute("select 1 from rdb$database")
                 cur1.execute("drop table test")
-                ps = cur2.prepare("update test set x=-x")
+                ps = cur2.prepare(f"update test set x = x + {VAL2} returning x")
+                cur2.execute(ps)
+                for r in cur2:
+                    print(r[0])
                 con2.commit()
         except DatabaseError as e:
             print(e.__str__())
@@ -50,12 +60,13 @@ def test_1(act: Action, capsys):
             if ps:
                 ps.free()
 
-    expected_stdout_5x = """
-        table is not defined
+    expected_stdout_5x = f"""
+        table id {test_rel_id} is not defined
         335544395
     """
 
-    expected_stdout_6x = """
+    expected_stdout_6x = f"""
+        {VAL1 + VAL2}
     """
 
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
