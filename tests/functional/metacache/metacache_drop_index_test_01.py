@@ -13,7 +13,7 @@ DESCRIPTION:
         * att-2: runs the same query; explained plan must show NATURAL access (i.e. table full scan);
         * att-1: rollbacks statement 'DROP INDEX ...' and runs query to T.X; plan must show again ("reverted") INDEXED scan.
     These checks are performed for three kinds of index: refular; computed-by; conditional.
-    All kinds of TIL are checked (read committed; read consistency; snapshot; serialize) -- this is organized as outer loop.
+    All suitable TILs are checked (read committed record_version; read consistency; snapshot) -- this is organized as outer loop.
 NOTES:
     [23.04.2026] pzotov
     Checked on 6.0.0.1914-67e1176.
