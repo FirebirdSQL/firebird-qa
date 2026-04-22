@@ -16,8 +16,6 @@ DESCRIPTION:
     All kinds of TIL are checked (read committed; read consistency; snapshot; serialize) -- this is organized as outer loop.
 NOTES:
     [23.04.2026] pzotov
-    ::: NB :::
-    Currently test fails on TIL = READ_COMMITTED_NO_RECORD_VERSION and SERIALIZABLE. Sent report to FB-team.
     Checked on 6.0.0.1914-67e1176.
 """
 
@@ -52,15 +50,22 @@ def test_1(act: Action, capsys):
        ,'text_x_cond'    : 'create index text_x_cond on test(x) where x is not null'
     }
 
+    # NB. We must NOT use following TILs:
+    # 1) Isolation.READ_COMMITTED_NO_RECORD_VERSION. Otherwise attempt to query rdb$indices raises:
+    # deadlock
+    # read conflicts with concurrent update
+    # concurrent transaction number is 31
+    # (335544336, 335545096, 335544878)
+    #
+    # 2) Isolation.SERIALIZABLE. Otherwise attempt to DROP index (even w/o commit) raises:
+    # lock conflict on no wait transaction
+    # Acquire lock for relation ("SYSTEM"."RDB$INDICES") failed
+    # (335544345, 335544382)
+    
     tx_isol_lst = [ 
                     Isolation.READ_COMMITTED_RECORD_VERSION,
                     Isolation.READ_COMMITTED_READ_CONSISTENCY,
                     Isolation.SNAPSHOT,
-                    # ................................................
-                    # DOES NOT WORK CURRENTLY (23.04.2026, 6.0.0.1914):
-                    # Isolation.READ_COMMITTED_NO_RECORD_VERSION,
-                    # Isolation.SERIALIZABLE,
-                    # ................................................
                   ]
 
     # temp 4debug:
