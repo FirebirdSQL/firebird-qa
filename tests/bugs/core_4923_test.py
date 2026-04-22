@@ -1,24 +1,26 @@
 #coding:utf-8
 
 """
-ID:          issue-5214
-ISSUE:       5214
+ID:          n/a
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5214
 TITLE:       Add ability to track domains rename in DDL triggers
 DESCRIPTION:
 JIRA:        CORE-4923
 FBTEST:      bugs.core_4923
 NOTES:
     [01.12.2023] pzotov
-    New behaviour of ISQL was introduced after implementation of PR #7868: SET AUTOTERM.
-    Since that was implemented, ISQL handles comments (single- and multi-lined) as PART of statement that follows these comments.
-    In other words, ISQL in 6.x does not 'swallow' comments and sends them to engine together with statement that follows.
-    This means that such 'pair' (comment PLUS statement) can be 'unexpectedly' seen using monitor/logging features, including
-    rdb$get_context('DDL_TRIGGER', 'SQL_TEXT').
-    Currently this is not considered as a bug, see note by Adriano: https://groups.google.com/g/firebird-devel/c/AM8vlA3YJws
-    Because of this, we have (in this test) to either not use comments at all or filter them out by applying substitution which
-    will 'know' about some special text ('comment_tag') that must be suppressed.
-
-    Checked on 6.0.0.163
+        New behaviour of ISQL was introduced after implementation of PR #7868: SET AUTOTERM.
+        Since that was implemented, ISQL handles comments (single- and multi-lined) as PART of statement that follows these comments.
+        In other words, ISQL in 6.x does not 'swallow' comments and sends them to engine together with statement that follows.
+        This means that such 'pair' (comment PLUS statement) can be 'unexpectedly' seen using monitor/logging features, including
+        rdb$get_context('DDL_TRIGGER', 'SQL_TEXT').
+        Currently this is not considered as a bug, see note by Adriano: https://groups.google.com/g/firebird-devel/c/AM8vlA3YJws
+        Because of this, we have (in this test) to either not use comments at all or filter them out by applying substitution which
+        will 'know' about some special text ('comment_tag') that must be suppressed.
+        Checked on 6.0.0.163
+    [22.04.2026] pzotov
+        Removed ID from output because values in this column changed in 6.x since shared metacache has been introduced.
+        Checked on 6.0.0.1914; 5.0.4.1813; 4.0.7.3271; 3.0.14.33855.
 """
 
 import pytest
@@ -118,8 +120,7 @@ test_script = f"""
     set list on;
     set count on;
     select
-         id
-        ,who_logs
+         who_logs
         ,evn_type
         ,obj_type
         ,obj_name
@@ -134,7 +135,6 @@ test_script = f"""
 act = isql_act('db', test_script, substitutions=[ ('SQL_TEXT.*', ''), (f'-- {COMMENT_TAG}.*', '') ])
 
 expected_stdout = """
-    ID                              2
     WHO_LOGS                        DDL trigger BEFORE ddl statement
     EVN_TYPE                        CREATE
     OBJ_TYPE                        DOMAIN
@@ -144,7 +144,6 @@ expected_stdout = """
     SQL_TEXT                        80:1
     create domain dm_foo smallint not null
 
-    ID                              3
     WHO_LOGS                        DDL trigger AFTER ddl statement
     EVN_TYPE                        CREATE
     OBJ_TYPE                        DOMAIN
@@ -154,7 +153,6 @@ expected_stdout = """
     SQL_TEXT                        80:2
     create domain dm_foo smallint not null
 
-    ID                              4
     WHO_LOGS                        DDL trigger BEFORE ddl statement
     EVN_TYPE                        ALTER
     OBJ_TYPE                        DOMAIN
@@ -164,7 +162,6 @@ expected_stdout = """
     SQL_TEXT                        80:3
     alter domain dm_foo type int
 
-    ID                              5
     WHO_LOGS                        DDL trigger AFTER ddl statement
     EVN_TYPE                        ALTER
     OBJ_TYPE                        DOMAIN
@@ -174,7 +171,6 @@ expected_stdout = """
     SQL_TEXT                        80:4
     alter domain dm_foo type int
 
-    ID                              6
     WHO_LOGS                        DDL trigger BEFORE ddl statement
     EVN_TYPE                        ALTER
     OBJ_TYPE                        DOMAIN
@@ -184,7 +180,6 @@ expected_stdout = """
     SQL_TEXT                        80:5
     alter domain dm_foo to dm_bar
 
-    ID                              7
     WHO_LOGS                        DDL trigger AFTER ddl statement
     EVN_TYPE                        ALTER
     OBJ_TYPE                        DOMAIN
@@ -194,7 +189,6 @@ expected_stdout = """
     SQL_TEXT                        80:6
     alter domain dm_foo to dm_bar
 
-    ID                              8
     WHO_LOGS                        DDL trigger BEFORE ddl statement
     EVN_TYPE                        ALTER
     OBJ_TYPE                        DOMAIN
@@ -204,7 +198,6 @@ expected_stdout = """
     SQL_TEXT                        80:7
     alter domain dm_bar type bigint
 
-    ID                              9
     WHO_LOGS                        DDL trigger AFTER ddl statement
     EVN_TYPE                        ALTER
     OBJ_TYPE                        DOMAIN
@@ -214,7 +207,6 @@ expected_stdout = """
     SQL_TEXT                        80:8
     alter domain dm_bar type bigint
 
-    ID                              10
     WHO_LOGS                        DDL trigger BEFORE ddl statement
     EVN_TYPE                        ALTER
     OBJ_TYPE                        DOMAIN
@@ -224,7 +216,6 @@ expected_stdout = """
     SQL_TEXT                        80:9
     alter domain dm_bar drop not null
 
-    ID                              11
     WHO_LOGS                        DDL trigger AFTER ddl statement
     EVN_TYPE                        ALTER
     OBJ_TYPE                        DOMAIN
@@ -234,7 +225,6 @@ expected_stdout = """
     SQL_TEXT                        80:a
     alter domain dm_bar drop not null
 
-    ID                              12
     WHO_LOGS                        DDL trigger BEFORE ddl statement
     EVN_TYPE                        DROP
     OBJ_TYPE                        DOMAIN
@@ -244,7 +234,6 @@ expected_stdout = """
     SQL_TEXT                        80:b
     drop domain dm_bar
 
-    ID                              13
     WHO_LOGS                        DDL trigger AFTER ddl statement
     EVN_TYPE                        DROP
     OBJ_TYPE                        DOMAIN
@@ -261,6 +250,6 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
