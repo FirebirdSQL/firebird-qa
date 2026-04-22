@@ -14,8 +14,9 @@ NOTES:
         2) in contrary, attempt to open blob WITHOUT rights to do that completed OK:
             "Blob opened OK, hex(blob_id.low)='0x...'; hex(blob_id.high)='0x...', blob_length=N, segment_size=M"
             (while error 'no permission for ,,,' expected; this occurred both on Super and Classic)
-    Fixed in #7b617a95 ("Fixed assertion reported privately...")
-    Checked on 6.0.0.1891-f2367d8.
+    Fixed in #7b617a95 ("Fixed assertion reported privately..."; 6.0.0.1891)
+
+    Checked on 6.0.0.1914-67e1176 SS/CS; 5.0.4.1813-d5e3647 SS/CS; 4.0.7.3271-26f6881 SS/CS.
 """
 import os
 import pytest
@@ -34,6 +35,7 @@ act = python_act('db', substitutions =substitutions)
 
 tmp_user = user_factory('db', name='tmp_blob_reader', password='123')
 
+TEST_TABLE = 'BLOB_STORAGE'
 BLOB_DATA = """— Eh bien, mon prince. Gênes et Lucques ne sont plus que des apanages, des поместья, de la famille Buonaparte.
 Non, je vous préviens, que si vous ne me dites pas, que nous avons la guerre, si vous vous permettez encore de pallier toutes
 les infamies, toutes les atrocités de cet Antichrist (ma parole, j’y crois) — je ne vous connais plus, vous n’êtes plus mon ami,
@@ -44,7 +46,7 @@ vous n’êtes plus мой верный раб, comme vous dites.
 (грипп был тогда новое слово, употреблявшееся только редкими).
 """
 
-@pytest.mark.version('>=5.0')
+@pytest.mark.version('>=4.0.7')
 def test_1(act: Action, tmp_user: User, capsys):
 
     bpb_stream = bytes([1, BPBItem.TYPE, 1, BlobType.STREAM])
@@ -69,14 +71,14 @@ def test_1(act: Action, tmp_user: User, capsys):
     with act.db.connect() as con_dba, act.db.connect(user=tmp_user.name, password=tmp_user.password) as con_usr:
         with con_dba.cursor() as cur_dba, con_usr.cursor() as cur_usr:
             id = None
-            cur_dba.execute("create table blob_storage (b_field blob sub_type 1 segment size 4096)")
+            cur_dba.execute(f"create table {TEST_TABLE} (b_field blob sub_type 1 segment size 4096)")
             con_dba.commit()
-            cur_dba.execute(f"insert into blob_storage(b_field) values(?)", (BLOB_DATA,))
+            cur_dba.execute(f"insert into {TEST_TABLE}(b_field) values(?)", (BLOB_DATA,))
             con_dba.commit()
-            cur_dba.execute(f"grant select on blob_storage to {tmp_user.name}")
+            cur_dba.execute(f"grant select on {TEST_TABLE} to {tmp_user.name}")
             con_dba.commit()
             cur_dba.stream_blobs.append('b_field'.upper())
-            cur_dba.execute("select b_field from blob_storage")
+            cur_dba.execute(f"select b_field from {TEST_TABLE}")
 
             v_blob_data_id = cur_dba.fetchone()[0].blob_id
             assert v_blob_data_id
@@ -85,7 +87,7 @@ def test_1(act: Action, tmp_user: User, capsys):
 
             open_blob(cur_usr, v_blob_data_id, 'Check #1.')
 
-            cur_dba.execute(f"revoke select on blob_storage from {tmp_user.name}")
+            cur_dba.execute(f"revoke select on {TEST_TABLE} from {tmp_user.name}")
             con_dba.commit()
 
     assert v_blob_data_id
@@ -96,12 +98,15 @@ def test_1(act: Action, tmp_user: User, capsys):
             cur_usr._transaction.begin()
             open_blob(cur_usr, v_blob_data_id, 'Check #2.')
 
+    SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else'"PUBLIC".'
+    TEST_TABLE_NAME = TEST_TABLE if act.is_version('<6') else f'{SQL_SCHEMA_PREFIX}"{TEST_TABLE}"'
+
     expected_stdout = f"""
         Check #1.
         Blob opened OK, hex(blob_id.low)='0x...'; hex(blob_id.high)='0x...', blob_length=N, segment_size=M
 
         Check #2.
-        no permission for SELECT access to TABLE "PUBLIC"."BLOB_STORAGE"
+        no permission for SELECT access to TABLE {TEST_TABLE_NAME}
         -Effective user is TMP_BLOB_READER
         (335544352, 335545254)
     """
