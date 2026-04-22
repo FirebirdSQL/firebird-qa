@@ -64,7 +64,7 @@ def test_1(act: Action, capsys):
                   ]
 
     # temp 4debug:
-    tx_isol_lst= [ Isolation.SNAPSHOT, ]
+    #tx_isol_lst= [ Isolation.SNAPSHOT, ]
 
     # for any isolation mode attempt to run DDL for table that is in use by another Tx must fail
     # with the same error message. We check all possible Tx isolation modes for that:
