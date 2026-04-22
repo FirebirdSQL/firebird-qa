@@ -50,31 +50,33 @@ test_script = """
     select id, x from t where id = 1;
 """
 
-substitutions = [('[ \t]+', ' ')]
+substitutions = [('[ \t]+', ' '), ('^(-)?', '')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout_5x = """
-    CNT_NON_ZERO                    1
+    CNT_NON_ZERO 1
     Statement failed, SQLSTATE = 23000
     attempt to store duplicate value (visible to active transactions) in unique index "T_ID_UNIQUE"
-    -Problematic key value is ("ID" = 1)
+    Problematic key value is ("ID" = 1)
     PLAN (T NATURAL)
-    ID                              1
-    X                               -888888888
-    ID                              1
-    X                               -999999999
+    ID 1
+    X -888888888
+    ID 1
+    X -999999999
 """
 
 expected_stdout_6x = """
-    CNT_NON_ZERO                    1
+    CNT_NON_ZERO 1
     Statement failed, SQLSTATE = 23000
+    unsuccessful metadata update
+    CREATE INDEX "PUBLIC"."T_ID_UNIQUE" failed
     attempt to store duplicate value (visible to active transactions) in unique index "PUBLIC"."T_ID_UNIQUE"
-    -Problematic key value is ("ID" = 1)
+    Problematic key value is ("ID" = 1)
     PLAN ("PUBLIC"."T" NATURAL)
-    ID                              1
-    X                               -888888888
-    ID                              1
-    X                               -999999999
+    ID 1
+    X -888888888
+    ID 1
+    X -999999999
 """
 
 @pytest.mark.version('>=2.5.6')
