@@ -10,11 +10,15 @@ DESCRIPTION:
 FBTEST:      functional.arno.optimizer.opt_aggregate_distribution_03
 NOTES:
     [07.07.2025] pzotov
-    Refactored: explained plan is used to be checked in expected_out.
-    Added ability to use several queries and their datasets for check - see 'qry_list' and 'qry_data' tuples.
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-    Checked on 6.0.0.914; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
+        Refactored: explained plan is used to be checked in expected_out.
+        Added ability to use several queries and their datasets for check - see 'qry_list' and 'qry_data' tuples.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.914; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813
+    [23.04.2026] pzotov
+        Adjusted expected output (changed since #8995).
+        Excessive 'Filter' must not appear after 'Sort record length: ..., key length: ...' in explained plan.
+        Checked on 6.0.0.1914-67e1176.
 """
 
 import pytest
@@ -92,7 +96,7 @@ data_list = (
     """,
 )
 
-substitutions = [ ( r'\(record length: \d+, key length: \d+\)', 'record length: N, key length: M' ) ]
+substitutions = [ ( r'\(record length: \d+, key length: \d+\)', 'record length: N, key length: M' ), ('.*#QA_COMMENT#.*', '') ]
 act = python_act('db', substitutions = substitutions)
 
 #-----------------------------------------------------------
@@ -180,16 +184,16 @@ def test_1(act: Action, capsys):
         ....-> Filter
         ........-> Aggregate
         ............-> Sort record length: N, key length: M
-        ................-> Filter
-        ....................-> Nested Loop Join (outer)
-        ........................-> Filter
-        ............................-> Table "PUBLIC"."FLOWERS" as "F" Access By ID
-        ................................-> Bitmap
-        ....................................-> Index "PUBLIC"."FK_FLOWERS_COLORS" Range Scan (full match)
-        ........................-> Filter
-        ............................-> Table "PUBLIC"."COLORS" as "C" Access By ID
-        ................................-> Bitmap
-        ....................................-> Index "PUBLIC"."PK_COLORS" Unique Scan
+        #QA_COMMENT# this has been removed since #8995 fixed: ............-> Filter
+        ................-> Nested Loop Join (outer)
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."FLOWERS" as "F" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."FK_FLOWERS_COLORS" Range Scan (full match)
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."COLORS" as "C" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."PK_COLORS" Unique Scan
         {data_list[0]}
     """
 
