@@ -93,7 +93,7 @@ ddl_script = """
     commit;
 """
 
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=6.0')
 @pytest.mark.perf_measure               # To be reworked for new meta cache - all objects are deleteable
 def test_1(act: Action, capsys):
 
