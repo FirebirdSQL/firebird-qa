@@ -7,20 +7,26 @@ TITLE:       MIN/MAX aggregates may badly affect the join order in queries with 
 DESCRIPTION:
 NOTES:
     [31.01.2026] pzotov
-    No demo database has been provided in the ticket so i've tried to reproduce problem based on my guesses.
-    Commits that did fix:
-        5.x: afab69577209a82acf63e48779370caf806e9202 -- 31.03.25 17:02 UTC;
-        6.x: 45f87c2025cfb86fd217a6902ef34f2f57b26262 -- 01.04.25 09:37 UTC.
+        No demo database has been provided in the ticket so i've tried to reproduce problem based on my guesses.
+        Commits that did fix:
+            5.x: afab69577209a82acf63e48779370caf806e9202 -- 31.03.25 17:02 UTC;
+            6.x: 45f87c2025cfb86fd217a6902ef34f2f57b26262 -- 01.04.25 09:37 UTC.
 
-    This fix caused to changing of execution plan if we use aggregate function MIN() but not if COUNT().
-    Also, number of fetches significantly reduced on snapshots since fix (at least on example provided here).
+        This fix caused to changing of execution plan if we use aggregate function MIN() but not if COUNT().
+        Also, number of fetches significantly reduced on snapshots since fix (at least on example provided here).
 
-    Improvement can be seen in comparison of snapshots:
-        5.0.3.1638-6579c7d: 2061416 fetches // last snapshot before fix (28-03-25 20:18 UTC)
-        5.0.3.1639-67152c7: 1172507 fetches // first snapshot after fix (31-03-25 20:18 UTC)
-    Sent report to dimitr, 30.01.2026 21:19.
-
-    Checked on 6.0.0.1400; 5.0.4.1748.
+        Improvement can be seen in comparison of snapshots:
+            5.0.3.1638-6579c7d: 2061416 fetches // last snapshot before fix (28-03-25 20:18 UTC)
+            5.0.3.1639-67152c7: 1172507 fetches // first snapshot after fix (31-03-25 20:18 UTC)
+        Sent report to dimitr, 30.01.2026 21:19.
+        Checked on 6.0.0.1400; 5.0.4.1748.
+    [23.04.2026] pzotov
+        Adjusted expected output:
+            * changed on 6.x since 6.0.0.1819 12-mar-2026 (commit #ab9cd282, 10-mar-2026).
+            * changed on 5.x since backported fix for #8995 (commit #2f91fa00, 22-apr-2026);
+            * for 4.x expected output was originally wrong, fixed now.
+        Prohibit execution for 3.x.
+        Checked on 6.0.0.1914-67e1176, 5.0.5.1817-d2d8d89, 4.0.7.3271-26f6881.
 """
 
 from firebird.driver import DatabaseError
@@ -28,7 +34,8 @@ import pytest
 from firebird.qa import *
 
 db = db_factory()
-act = isql_act('db')
+substitutions = [ ('.*#QA_COMMENT#.*', '') ]
+act = isql_act('db', substitutions = substitutions)
 
 #-----------------------------------------------------------
 def replace_leading(source, char="."):
@@ -36,7 +43,7 @@ def replace_leading(source, char="."):
     return char * (len(source) - len(stripped)) + stripped
 #-----------------------------------------------------------
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
 
     init_script = """
@@ -152,53 +159,77 @@ def test_1(act: Action, capsys):
         
 
 
-    expected_stdout_5x = f"""
+    expected_stdout_4x = f"""
         {qry_map[1000]}
         Select Expression
         ....-> Aggregate
         ........-> Filter
         ............-> Nested Loop Join (outer)
-        ................-> Filter
-        ....................-> Hash Join (inner)
-        ........................-> Nested Loop Join (inner)
-        ............................-> Filter
-        ................................-> Table "INV_CARD" as "C" Full Scan
-        ............................-> Filter
-        ................................-> Table "BALANCE" as "M" Access By ID
-        ....................................-> Bitmap
-        ........................................-> Index "BAL_FK_INV" Range Scan (full match)
-        ........................-> Record Buffer (record length: 33)
-        ............................-> Table "GOODS_LST" as "G" Full Scan
+        ................-> Nested Loop Join (inner)
+        ....................-> Nested Loop Join (outer)
+        ........................-> Filter
+        ............................-> Table "INV_CARD" as "C" Full Scan
+        ........................-> Filter
+        ............................-> Table "BALANCE" as "M" Access By ID
+        ................................-> Bitmap
+        ....................................-> Index "BAL_FK_INV" Range Scan (full match)
+        ....................-> Filter
+        ........................-> Table "GOODS_LST" as "G" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "G_LST_PK" Unique Scan
         ................-> Filter
         ....................-> Table "GOODS_REF" as "GR" Access By ID
         ........................-> Bitmap
         ............................-> Index "G_REF_PK" Unique Scan
     """
 
+    expected_stdout_5x = f"""
+        {qry_map[1000]}
+        Select Expression
+        ....-> Aggregate
+        #QA_COMMENT# this has been removed since #8995 fixed: ........-> Filter
+        ........-> Nested Loop Join (outer)
+        ............-> Filter
+        ................-> Hash Join (inner)
+        ....................-> Nested Loop Join (inner)
+        ........................-> Filter
+        ............................-> Table "INV_CARD" as "C" Full Scan
+        ........................-> Filter
+        ............................-> Table "BALANCE" as "M" Access By ID
+        ................................-> Bitmap
+        ....................................-> Index "BAL_FK_INV" Range Scan (full match)
+        ....................-> Record Buffer (record length: 33)
+        ........................-> Table "GOODS_LST" as "G" Full Scan
+        ............-> Filter
+        ................-> Table "GOODS_REF" as "GR" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "G_REF_PK" Unique Scan
+    """
+
     expected_stdout_6x = f"""
         {qry_map[1000]}
         Select Expression
         ....-> Aggregate
-        ........-> Filter
-        ............-> Nested Loop Join (outer)
-        ................-> Filter
+        ........-> Nested Loop Join (outer)
+        ............-> Filter
+        ................-> Nested Loop Join (inner)
         ....................-> Hash Join (inner) (keys: 1, total key length: 4)
-        ........................-> Nested Loop Join (inner)
+        ........................-> Filter
+        ............................-> Table "PUBLIC"."BALANCE" as "M" Full Scan
+        ........................-> Record Buffer (record length: 33)
         ............................-> Filter
         ................................-> Table "PUBLIC"."INV_CARD" as "C" Full Scan
-        ............................-> Filter
-        ................................-> Table "PUBLIC"."BALANCE" as "M" Access By ID
-        ....................................-> Bitmap
-        ........................................-> Index "PUBLIC"."BAL_FK_INV" Range Scan (full match)
-        ........................-> Record Buffer (record length: 33)
-        ............................-> Table "PUBLIC"."GOODS_LST" as "G" Full Scan
-        ................-> Filter
-        ....................-> Table "PUBLIC"."GOODS_REF" as "GR" Access By ID
-        ........................-> Bitmap
-        ............................-> Index "PUBLIC"."G_REF_PK" Unique Scan
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."GOODS_LST" as "G" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."G_LST_PK" Unique Scan
+        ............-> Filter
+        ................-> Table "PUBLIC"."GOODS_REF" as "GR" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."G_REF_PK" Unique Scan
     """
 
-    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
+    act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
 
