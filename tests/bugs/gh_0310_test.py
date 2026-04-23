@@ -1523,8 +1523,7 @@ expected_stdout_5 = """
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
 
-
-    Records affected: 498
+    Records affected: 499
 """
 
 expected_stdout_6 = """
