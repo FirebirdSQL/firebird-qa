@@ -4,11 +4,11 @@
 ID:          optimizer.full-join-04
 TITLE:       FULL OUTER JOIN,  list all values, but filtered in WHERE clause
 DESCRIPTION:
-  TableX FULL OUTER JOIN TableY with relation in the ON clause.
-  Three tables are used, where 1 table (RC) holds references to the two other tables (R and C).
-  The two tables R and C contain both 1 value that isn't inside RC.
-  =====
-  NB: 'UNION ALL' is used here, so PLAN for 2.5 will be of TWO separate rows.
+    TableX FULL OUTER JOIN TableY with relation in the ON clause.
+    Three tables are used, where 1 table (RC) holds references to the two other tables (R and C).
+    The two tables R and C contain both 1 value that isn't inside RC.
+    =====
+    NB: 'UNION ALL' is used here, so PLAN for 2.5 will be of TWO separate rows.
 NOTES:
     [01.08.2023] pzotov
         Adjusted plan to actual for FB 5.x after letter from dimitr.
@@ -22,6 +22,9 @@ NOTES:
         Adjusted expected output to actual: FULL JOIN execution plan has changed since 19.02.2026 6.0.0.1458,
         commit: "6a76c1da Better index usage in full outer joins...". Discussed with dimitr, 20.02.2026 1723.
         Checked on 6.0.0.1461-5e98812.
+    [23.04.2026] pzotov
+        Adjusted expected output (changed since #8995).
+        Checked on 6.0.0.1914-67e1176.
 """
 
 import pytest
@@ -120,7 +123,7 @@ data_list = (
     """,
 )
 
-substitutions = [ ( r'\(record length: \d+, key length: \d+\)', 'record length: N, key length: M' ) ]
+substitutions = [ ( r'\(record length: \d+, key length: \d+\)', 'record length: N, key length: M' ), ('.*#QA_COMMENT#.*', '')  ]
 act = python_act('db', substitutions = substitutions)
 
 #-----------------------------------------------------------
@@ -325,22 +328,22 @@ def test_1(act: Action, capsys):
         ................................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
         ....................................-> Bitmap
         ........................................-> Index "PUBLIC"."PK_RELATIONS" Unique Scan
-        ........-> Filter
-        ............-> Nested Loop Join (outer)
-        ................-> Filter
-        ....................-> Nested Loop Join (outer)
-        ........................-> Filter
-        ............................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
-        ................................-> Bitmap
-        ....................................-> Index "PUBLIC"."PK_RELATIONS" Range Scan (lower bound: 1/1)
-        ........................-> Filter
-        ............................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
-        ................................-> Bitmap
-        ....................................-> Index "PUBLIC"."FK_RC_RELATIONS" Range Scan (full match)
-        ................-> Filter
-        ....................-> Table "PUBLIC"."CATEGORIES" as "C" Access By ID
-        ........................-> Bitmap
-        ............................-> Index "PUBLIC"."PK_CATEGORIES" Unique Scan
+        #QA_COMMENT# this has been removed since #8995 fixed: ........-> Filter
+        ........-> Nested Loop Join (outer)
+        ............-> Filter
+        ................-> Nested Loop Join (outer)
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."RELATIONS" as "R" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."PK_RELATIONS" Range Scan (lower bound: 1/1)
+        ....................-> Filter
+        ........................-> Table "PUBLIC"."RELATIONCATEGORIES" as "RC" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PUBLIC"."FK_RC_RELATIONS" Range Scan (full match)
+        ............-> Filter
+        ................-> Table "PUBLIC"."CATEGORIES" as "C" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PUBLIC"."PK_CATEGORIES" Unique Scan
         {data_list[0]}
     """
 
