@@ -6,13 +6,13 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4314
 TITLE:       Sub-optimal predicate checking while selecting from a view [CORE3981]
 DESCRIPTION:
 NOTES:
-    [20.08.2024] pzotov
-        Checked on 6.0.0.438, 5.0.2.1479, 4.0.6.3142, 3.0.12.33784.
     [26.06.2025] pzotov
         Separated expected output for FB major versions prior/since 6.x.
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
-
+    [23.04.2026] pzotov
+        Adjusted expected output (changed since #8995).
+        Checked on 6.0.0.1914-67e1176.
 """
 from firebird.driver import DatabaseError
 
@@ -135,16 +135,15 @@ def test_1(act: Action, capsys):
 
     expected_stdout_6x = """
         Select Expression
-        ....-> Filter
-        ........-> Nested Loop Join (outer)
-        ............-> Filter
-        ................-> Table "PUBLIC"."RR" as "PUBLIC"."V" "R" Access By ID
-        ....................-> Bitmap
-        ........................-> Index "PUBLIC"."RR_ID" Range Scan (upper bound: 1/1)
-        ............-> Filter
-        ................-> Table "PUBLIC"."RF" as "PUBLIC"."V" "PUBLIC"."RF" Access By ID
-        ....................-> Bitmap
-        ........................-> Index "PUBLIC"."RF_REL_NAME" Range Scan (full match)
+        ....-> Nested Loop Join (outer)
+        ........-> Filter
+        ............-> Table "PUBLIC"."RR" as "PUBLIC"."V" "R" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."RR_ID" Range Scan (upper bound: 1/1)
+        ........-> Filter
+        ............-> Table "PUBLIC"."RF" as "PUBLIC"."V" "PUBLIC"."RF" Access By ID
+        ................-> Bitmap
+        ....................-> Index "PUBLIC"."RF_REL_NAME" Range Scan (full match)
         Select Expression
         ....-> Filter
         ........-> Nested Loop Join (outer)
