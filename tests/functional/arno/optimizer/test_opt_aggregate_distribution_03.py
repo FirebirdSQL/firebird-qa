@@ -18,7 +18,7 @@ NOTES:
     [23.04.2026] pzotov
         Adjusted expected output (changed since #8995).
         Excessive 'Filter' must not appear after 'Sort record length: ..., key length: ...' in explained plan.
-        Checked on 6.0.0.1914-67e1176.
+        Checked on 6.0.0.1914-67e1176, 5.0.5.1817-d2d8d89.
 """
 
 import pytest
@@ -165,16 +165,15 @@ def test_1(act: Action, capsys):
         ....-> Filter
         ........-> Aggregate
         ............-> Sort record length: N, key length: M
-        ................-> Filter
-        ....................-> Nested Loop Join (outer)
-        ........................-> Filter
-        ............................-> Table "FLOWERS" as "F" Access By ID
-        ................................-> Bitmap
-        ....................................-> Index "FK_FLOWERS_COLORS" Range Scan (full match)
-        ........................-> Filter
-        ............................-> Table "COLORS" as "C" Access By ID
-        ................................-> Bitmap
-        ....................................-> Index "PK_COLORS" Unique Scan
+        ................-> Nested Loop Join (outer)
+        ....................-> Filter
+        ........................-> Table "FLOWERS" as "F" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "FK_FLOWERS_COLORS" Range Scan (full match)
+        ....................-> Filter
+        ........................-> Table "COLORS" as "C" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PK_COLORS" Unique Scan
         {data_list[0]}
     """
 

@@ -24,7 +24,7 @@ NOTES:
         Checked on 6.0.0.1461-5e98812.
     [23.04.2026] pzotov
         Adjusted expected output (changed since #8995).
-        Checked on 6.0.0.1914-67e1176.
+        Checked on 6.0.0.1914-67e1176, 5.0.5.1817-d2d8d89.
 """
 
 import pytest
@@ -282,22 +282,21 @@ def test_1(act: Action, capsys):
         ................................-> Table "RELATIONCATEGORIES" as "RC" Access By ID
         ....................................-> Bitmap
         ........................................-> Index "PK_RELATIONCATEGORIES" Unique Scan
-        ........-> Filter
-        ............-> Nested Loop Join (outer)
-        ................-> Filter
-        ....................-> Nested Loop Join (outer)
-        ........................-> Filter
-        ............................-> Table "RELATIONS" as "R" Access By ID
-        ................................-> Bitmap
-        ....................................-> Index "PK_RELATIONS" Range Scan (lower bound: 1/1)
-        ........................-> Filter
-        ............................-> Table "RELATIONCATEGORIES" as "RC" Access By ID
-        ................................-> Bitmap
-        ....................................-> Index "FK_RC_RELATIONS" Range Scan (full match)
-        ................-> Filter
-        ....................-> Table "CATEGORIES" as "C" Access By ID
-        ........................-> Bitmap
-        ............................-> Index "PK_CATEGORIES" Unique Scan
+        ........-> Nested Loop Join (outer)
+        ............-> Filter
+        ................-> Nested Loop Join (outer)
+        ....................-> Filter
+        ........................-> Table "RELATIONS" as "R" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "PK_RELATIONS" Range Scan (lower bound: 1/1)
+        ....................-> Filter
+        ........................-> Table "RELATIONCATEGORIES" as "RC" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "FK_RC_RELATIONS" Range Scan (full match)
+        ............-> Filter
+        ................-> Table "CATEGORIES" as "C" Access By ID
+        ....................-> Bitmap
+        ........................-> Index "PK_CATEGORIES" Unique Scan
         {data_list[0]}
     """
 
