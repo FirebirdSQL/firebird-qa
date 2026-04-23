@@ -5,12 +5,16 @@ ID:          issue-6166
 ISSUE:       6166
 TITLE:       Enhance dynamic libraries loading related error messages
 DESCRIPTION:
-  We intentionally try to load unit from non-existent UDR module with name "udrcpp_foo".
-  Message 'module not found' issued BEFORE fix - without any detailization.
-  Current output should contain phrase: 'UDR module not loaded'.
-  Filtering is used for prevent output of localized message about missed UDR library.
+    We intentionally try to load unit from non-existent UDR module with name "udrcpp_foo".
+    Message 'module not found' issued BEFORE fix - without any detailization.
+    Current output should contain phrase: 'UDR module not loaded'.
+    Filtering is used for prevent output of localized message about missed UDR library.
 JIRA:        CORE-5908
 FBTEST:      bugs.core_5908
+NOTES:
+    [23.04.2026] pzotov
+    Added substitutions to ignore presense or absense of leading dash ('-') at line with error message.
+    Checked on 6.0.0.1914; 5.0.5.1817; 4.0.7.3271; 3.0.14.33855.
 """
 
 import pytest
@@ -20,7 +24,7 @@ from firebird.driver import DatabaseError
 
 db = db_factory()
 
-act = python_act('db')
+act = python_act('db', substitutions = [('^(-)?', '')])
 
 expected_stdout = """
     UDR module not loaded
