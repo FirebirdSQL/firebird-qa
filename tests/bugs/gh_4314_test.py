@@ -12,7 +12,7 @@ NOTES:
         Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
     [23.04.2026] pzotov
         Adjusted expected output (changed since #8995).
-        Checked on 6.0.0.1914-67e1176.
+        Checked on 6.0.0.1914-67e1176, 5.0.5.1817-d2d8d89.
 """
 from firebird.driver import DatabaseError
 
@@ -109,17 +109,15 @@ def test_1(act: Action, capsys):
 
     expected_stdout_5x = """
         Select Expression
-        ....-> Filter
-        ........-> Nested Loop Join (outer)
-        ............-> Filter
-        ................-> Table "RR" as "V R" Access By ID
-        ....................-> Bitmap
-        ........................-> Index "RR_ID" Range Scan (upper bound: 1/1)
-        ............-> Filter
-        ................-> Table "RF" as "V RF" Access By ID
-        ....................-> Bitmap
-        ........................-> Index "RF_REL_NAME" Range Scan (full match)
-
+        ....-> Nested Loop Join (outer)
+        ........-> Filter
+        ............-> Table "RR" as "V R" Access By ID
+        ................-> Bitmap
+        ....................-> Index "RR_ID" Range Scan (upper bound: 1/1)
+        ........-> Filter
+        ............-> Table "RF" as "V RF" Access By ID
+        ................-> Bitmap
+        ....................-> Index "RF_REL_NAME" Range Scan (full match)
         Select Expression
         ....-> Filter
         ........-> Nested Loop Join (outer)
