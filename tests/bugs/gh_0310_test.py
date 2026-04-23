@@ -1034,6 +1034,9 @@ expected_stdout_5 = """
     RDB$KEYWORD_NAME                RDB$RECORD_VERSION
     RDB$KEYWORD_RESERVED            <true>
 
+    RDB$KEYWORD_NAME                RDB$RESET_CONTEXT
+    RDB$KEYWORD_RESERVED            <true>
+
     RDB$KEYWORD_NAME                RDB$ROLE_IN_USE
     RDB$KEYWORD_RESERVED            <true>
 
