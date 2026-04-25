@@ -44,11 +44,6 @@ NOTES:
         Script 'sample-DB_-_firebird.sql' in filed/standard_sample_databases.zip has been adjusted
         for applying in FB 6.x: 'ALTER CHARACTER SET ... SET DEFAULT COLLATION <CUSTOM_COLLATION>'
         requires explicitly specified `PUBLIC.` prefix. Execute block with if/else is used now there.
-
-        Separated expected output for FB major versions prior/since 6.x.
-        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-        Checked on 6.0.0.914; 5.0.3.1668.
-
     [16.01.2026] pzotov
         Script 'sample-DB_-_firebird.sql' in filed/standard_sample_databases.zip has been supplemented with
         index statistics re-calculation, including PK/FK indices. This is needed to get correct execution plan
@@ -57,6 +52,10 @@ NOTES:
         Otherwise Nested Loops are in use.
         Execution plan for this query has changed in 6.0.0.1394-c8d9d10d (2026.01.14) after
         commit #893488b "(Simplified but still) cost-based choice between LOOP and HASH semi-joins".
+    [25.04.2026] pzotov
+        Adjusted output on 5.x for query marked as 3000 ('Check unnesting of two nested EXISTS'):
+        nested loops must be in use instead of hash join. Confirmed by dimitr, letter 25.04.26 1153.
+        Checked on 5.0.5.1817-d2d8d89.
 """
 
 import pytest
@@ -217,15 +216,15 @@ def test_1(act: Action, tmp_sql: Path, capsys):
         {query_map[3000][1]}
         Select Expression
         ....-> Filter
-        ........-> Hash Join (semi) (keys: 1, total key length: 4)
+        ........-> Hash Join (semi)
         ............-> Table "CUSTOMER" as "C3" Full Scan
-        ............-> Record Buffer (record length: 58)
-        ................-> Filter
-        ....................-> Hash Join (semi) (keys: 1, total key length: 2)
-        ........................-> Table "SALES" as "S3" Full Scan
-        ........................-> Record Buffer (record length: 41)
-        ............................-> Filter
-        ................................-> Table "EMPLOYEE" as "X" Full Scan
+        ............-> Record Buffer (record length: NN)
+        ................-> Nested Loop Join (semi)
+        ....................-> Table "SALES" as "S3" Full Scan
+        ....................-> Filter
+        ........................-> Table "EMPLOYEE" as "X" Access By ID
+        ............................-> Bitmap
+        ................................-> Index "EMPLOYEE_PK" Unique Scan
 
         4000
         {query_map[4000][0]}
