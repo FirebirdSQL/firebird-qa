@@ -9,10 +9,12 @@ JIRA:        CORE-5074
 FBTEST:      bugs.core_5074
 NOTES:
     [01.07.2025] pzotov
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-    
-    Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [27.04.2026] pzotov
+        ::: 6x: WAITING FOR FIX :::
+        Test fails since 01-mar-2026. Sent report to Alex, 22.04.2026 17:16. Waiting for fix.
 """
 
 import pytest
