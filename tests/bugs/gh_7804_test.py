@@ -17,6 +17,11 @@ NOTES:
         Separated expected output for FB major versions prior/since 6.x.
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.909; 5.0.3.1668.
+
+    [27.04.2026] pzotov
+    ::: 6x: WAITING FOR RESOLUTION :::
+    Test fails since 12.03.2026. Sent report to dimitr, letter: 28.04.2026 00:26. Waiting for resolution.
+
 """
 
 import pytest
