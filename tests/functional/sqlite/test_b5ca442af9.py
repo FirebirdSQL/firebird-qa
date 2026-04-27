@@ -7,10 +7,12 @@ TITLE:       "Malformed database schema" when creating a failing index within a 
 DESCRIPTION:
 NOTES:
     [18.08.2025] pzotov
-    On FB 3.x error message does not contain line "Expression evaluation error for index ***unknown*** on table TEST"
-    Test does not checks this version.
-
-    Checked on 6.0.0.1204, 5.0.4.1701, 4.0.7.3231.
+        On FB 3.x error message does not contain line "Expression evaluation error for index ***unknown*** on table TEST"
+        Test does not checks this version.
+        Checked on 6.0.0.1204, 5.0.4.1701, 4.0.7.3231.
+    [28.04.2026] pzotov
+        Separated output for version prior and since 6.x (they become differ since shared metadata cache introduced in 6.x).
+        Checked on 6.0.0.1921.
 """
 
 import pytest
@@ -44,7 +46,7 @@ for p in addi_subst_tokens.split(' '):
 
 act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
     Statement failed, SQLSTATE = 40001
     lock conflict on no wait transaction
     -unsuccessful metadata update
@@ -62,8 +64,30 @@ expected_stdout = """
     Records affected: 0
 """
 
+expected_stdout_6x = """
+    Statement failed, SQLSTATE = 40001
+    unsuccessful metadata update
+    -CREATE INDEX TEST_IDX failed
+    -lock conflict on no wait transaction
+    -unsuccessful metadata update
+    -object TABLE TEST is in use
+    
+    Statement failed, SQLSTATE = 42000
+    unsuccessful metadata update
+    -DROP INDEX TEST_IDX failed
+    -Index not found
+    
+    Statement failed, SQLSTATE = 22003
+    unsuccessful metadata update
+    -CREATE INDEX TEST_IDX failed
+    -Expression evaluation error for index ***unknown*** on table TEST
+    -Integer overflow. The result of an integer operation caused the most significant bit of the result to carry.
+
+    Records affected: 0
+"""
+
 @pytest.mark.version('>=4')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
