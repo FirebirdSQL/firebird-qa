@@ -19,6 +19,9 @@ NOTES:
         Separated expected output for FB major versions prior/since 6.x.
         No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
         Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [27.04.2026] pzotov
+    ::: 6x: FAILS. WAITING FOR FIX :::
+    Sent report to FB-team, letter: 28.04.2026 00:13. Waiting for fix.
 """
 
 import pytest
