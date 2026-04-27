@@ -27,6 +27,9 @@ NOTES:
         NOTE. Firebird 6.x often tries to SORT(INDEX) instead of ORDER...INDEX if cost looks cheaper.
         See letter from dimitr, 14.01.2026 13:05.
         Checked on 6.0.0.1393-f7068cd.
+    [27.04.2026] pzotov
+    ::: 6x: WAITING FOR FIX/RESOLUTION :::
+    Sent report to dimitr, letter: 14.04.2026 00:57. Waiting for fix/resolution.
 """
 
 import pytest
