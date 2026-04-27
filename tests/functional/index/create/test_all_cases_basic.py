@@ -15,7 +15,7 @@ NOTES:
     Checked on Checked on 6.0.0.909; 5.0.3.1668; 4.0.6.3214.
 
     [26.08.2025] pzotov
-    Re-implemented after note by Antovn Zuev, Redbase.
+    Re-implemented after note by Anton Zuev, Redbase.
     Changed names of indices (removed duplicates that were result of copy-paste).
     An ability to create index and make it INACTIVE (within one 'CREATE INDEX' statement) currently presents only 
     in FB 6.x (i.e. it was not backported), see :
@@ -2007,7 +2007,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_F02_UNQ
         RI_REL_NAME TEST
@@ -2026,7 +2025,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_F03_ASC
         RI_REL_NAME TEST
@@ -2045,7 +2043,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_F04_ASCENDING
         RI_REL_NAME TEST
@@ -2064,7 +2061,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_F05_DESC
         RI_REL_NAME TEST
@@ -2083,7 +2079,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_F06_DESCENDING
         RI_REL_NAME TEST
@@ -2102,7 +2097,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_07_COMPOUND_ASC
         RI_REL_NAME TEST
@@ -2376,8 +2370,7 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 16
-        
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2394,7 +2387,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 0
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2411,7 +2404,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 1
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2428,7 +2421,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 2
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2445,7 +2438,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 3
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2462,7 +2455,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 4
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2479,7 +2472,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 5
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2496,7 +2489,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 6
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2513,7 +2506,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 7
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2530,7 +2523,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 8
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2547,7 +2540,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 9
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2564,7 +2557,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 10
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2581,7 +2574,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 11
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2598,7 +2591,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 12
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2615,7 +2608,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 13
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2632,7 +2625,7 @@ def test_1(act: Action, tmp_user: User):
         RS_FLD_POS 14
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
-        RI_IDX_ID 1
+        RI_IDX_ID 2
         RI_IDX_NAME TEST_08_COMPOUND_DEC
         RI_REL_NAME TEST
         RI_IDX_UNIQ 0
@@ -2650,7 +2643,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 16
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_F09_COMPUTED
         RI_REL_NAME TEST
@@ -2670,7 +2662,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_F10_COMPUTED
         RI_REL_NAME TEST
@@ -2690,7 +2681,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 2
         RI_IDX_NAME TEST_FK_11
         RI_REL_NAME TEST
@@ -2726,7 +2716,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME INTEG_2
         RC_CONSTRAINT_TYPE PRIMARY KEY
         Records affected: 2
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_K01_PARTIAL
         RI_REL_NAME TEST
@@ -2746,7 +2735,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_K02_PARTIAL_UNQ_DESC
         RI_REL_NAME TEST
@@ -2766,7 +2754,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_K04_PARTIAL_COMPUTED
         RI_REL_NAME TEST
@@ -2787,7 +2774,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_K05_PARTIAL_COMPUTED
         RI_REL_NAME TEST
@@ -2808,7 +2794,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID 1
         RI_IDX_NAME TEST_K06_PARTIAL_COMPUTED
         RI_REL_NAME TEST
@@ -2829,7 +2814,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID <null>
         RI_IDX_NAME TEST_I01_INACTIVE
         RI_REL_NAME TEST
@@ -2848,7 +2832,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID <null>
         RI_IDX_NAME TEST_I02_INACTIVE
         RI_REL_NAME TEST
@@ -2868,7 +2851,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID <null>
         RI_IDX_NAME TEST_I03_PARTIAL_INACTIVE
         RI_REL_NAME TEST
@@ -2888,7 +2870,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         RI_IDX_ID <null>
         RI_IDX_NAME TEST_I04_PARTIAL_COMPUTED_INACTIVE
         RI_REL_NAME TEST
@@ -2909,38 +2890,34 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME <null>
         RC_CONSTRAINT_TYPE <null>
         Records affected: 1
-        
         Statement failed, SQLSTATE = 54011
         unsuccessful metadata update
+        -CREATE INDEX "PUBLIC"."TEST_NOT_ALLOWED_01" failed
         -too many keys defined for index "PUBLIC"."TEST_NOT_ALLOWED_01"
         Records affected: 0
-        
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
         -CREATE INDEX "PUBLIC"."TEST_NOT_ALLOWED_02" failed
         -attempt to index COMPUTED BY column in INDEX "PUBLIC"."TEST_NOT_ALLOWED_02"
         Records affected: 0
-        
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
         -CREATE INDEX "PUBLIC"."TEST_NOT_ALLOWED_03" failed
         - attempt to index BLOB column in INDEX "PUBLIC"."TEST_NOT_ALLOWED_03"
         Records affected: 0
-        
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
         -CREATE INDEX "PUBLIC"."TEST_NOT_ALLOWED_04" failed
         - attempt to index array column in index "PUBLIC"."TEST_NOT_ALLOWED_04"
         Records affected: 0
-        
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
         -CREATE INDEX "PUBLIC"."TEST_NOT_ALLOWED_05" failed
         -Field ID cannot be used twice in index TEST_NOT_ALLOWED_05
         Records affected: 0
-        
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
+        -ALTER TABLE "PUBLIC"."TEST" failed
         -partner index segment no 1 has incompatible data type
         RI_IDX_ID 1
         RI_IDX_NAME TEST_PK
@@ -2960,7 +2937,6 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME INTEG_5
         RC_CONSTRAINT_TYPE PRIMARY KEY
         Records affected: 1
-        
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
         -ALTER TABLE "PUBLIC"."TEST" failed
@@ -3017,17 +2993,17 @@ def test_1(act: Action, tmp_user: User):
         RC_CONSTRAINT_NAME TEST_X_Y_Z
         RC_CONSTRAINT_TYPE PRIMARY KEY
         Records affected: 3
-        
         Statement failed, SQLSTATE = 42000
-        Expression evaluation error for index "***unknown***" on table "PUBLIC"."TEST"
+        unsuccessful metadata update
+        -CREATE INDEX "PUBLIC"."TEST_NOT_ALLOWED_08" failed
+        -Expression evaluation error for index "***unknown***" on table "PUBLIC"."TEST"
         -expression evaluation not supported
         -Argument for SQRT must be zero or positive
-        
         Records affected: 0
         Statement failed, SQLSTATE = 54000
         unsuccessful metadata update
+        -CREATE INDEX "PUBLIC"."TEST_256" failed
         -cannot add index, index root page is full.
-
         MAX_NUMBER_OF_CREATED_INDICES 255
         Records affected: 1
     """
