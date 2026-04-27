@@ -9,6 +9,9 @@ NOTES:
     [14.01.2026] pzotov
     Confirmed bug on 6.0.0.1389-f784b93; 5.0.4.1730-a42ec44; 4.0.7.3243-85d7ab6.
     Checked on 6.0.0.1389-7f71e94; 5.0.4.1746-a42ec44;
+    [28.04.2026] pzotov
+    ::: 6x: WAITING FOR RESOLUTION :::
+    Test fails since 01.03.2026. Sent report to Alex, letter: 28.04.2026 00:40. Waiting for resolution.
 """
 
 import pytest
