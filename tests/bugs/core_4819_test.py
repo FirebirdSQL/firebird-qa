@@ -9,10 +9,15 @@ JIRA:        CORE-4819
 FBTEST:      bugs.core_4819
 NOTES:
     [30.06.2025] pzotov
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-
-    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [27.04.2026] pzotov
+        :::: WAITING FOR FIX :::
+        Test fails on 6.x since shared metadata cache was introduced.
+        Discussed with Alex et al, letters since 20.04.2026 17:51.
+        See also https://github.com/FirebirdSQL/firebird/issues/8997
+        This test probably will be re-implemented after fix.
 """
 
 import pytest
