@@ -79,19 +79,28 @@ execute block as
       (select '"' || trim(rr.rdb$relation_name) || '"' as rdb$relation_name
          from rdb$relations rr
         where
-            -- XXX DO NOT XXX -- rr.rdb$relation_type=1 -- WRONG!! Views can simetime have rel_type = 0!
-            rr.RDB$VIEW_BLR is not null
+            -- XXX DO NOT XXX -- rr.rdb$relation_type=1 -- WRONG!! Views can sometime have rel_type = 0!
+            rr.rdb$view_blr is not null
             and coalesce(rr.rdb$system_flag,0)=0
       );
-    declare c_func cursor for                            -- FUNCTIONS
+    declare c_func cursor for                            -- *STANDALONE* FUNCTIONS
       (select '"' || trim(rf.rdb$function_name) || '"' rdb$function_name
          from rdb$functions rf
-        where coalesce(rf.rdb$system_flag,0)=0
+        where 
+            coalesce(rf.rdb$system_flag,0)=0
+            -- added 29.04.2026: mandatory! On 6.x absense of this caused fail of 
+            -- functional/replication/test_ddl_triggers_must_not_fire_on_replica.py
+            -- with "function NN not found"
+            -- Although this was definitely a bug but anywhere no error should appear.
+            and rf.rdb$package_name is null
       );
-    declare c_proc cursor for                            -- PROCEDURES
+    declare c_proc cursor for                            -- *STANDALONE* PROCEDURES
       (select '"' || trim(rp.rdb$procedure_name) || '"' as rdb$procedure_name
          from rdb$procedures rp
-         where coalesce(rp.rdb$system_flag,0)=0
+         where 
+             coalesce(rp.rdb$system_flag,0)=0
+             -- added 29.04.2026:
+             and rp.rdb$package_name is null
       );
 
     declare c_pkg cursor for                             -- PACKAGES
@@ -125,7 +134,7 @@ execute block as
              rr.rdb$relation_type in(0,2,4,5)
              and coalesce(rr.rdb$system_flag,0)=0
              -- MANDATORY! Views can simetime have rel_type = 0!
-             and rr.RDB$VIEW_BLR is null
+             and rr.rdb$view_blr is null
       );
 
     declare c_doms cursor for                            -- DOMAINS
@@ -224,7 +233,7 @@ begin
     end
     close c_proc;
 
-    open c_pkg; ---------------------  d r o p   p a c k a g e   b o d i e s ----
+    open c_pkg; ---------------------  d r o p   p k g   b o d i e s --------------
     while (1=1) do
     begin
         fetch c_pkg into stt;
