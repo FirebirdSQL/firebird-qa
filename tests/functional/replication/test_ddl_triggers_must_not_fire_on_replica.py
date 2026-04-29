@@ -25,8 +25,6 @@ DESCRIPTION:
     Finally, we extract metadata for master and replica and make comparison.
     The only difference in metadata must be 'CREATE DATABASE' statement with different DB names - we suppress it,
     thus metadata difference must not be issued.
-
-FBTEST:      tests.functional.replication.ddl_triggers_must_not_fire_on_replica
 NOTES:
     [25.08.2022] pzotov
     Warning raises on Windows and Linux:
@@ -37,9 +35,6 @@ NOTES:
        The reason currently is unknown.
 
     [15.04.2023] pzotov
-    Test was fully re-implemented. We have to query replica DATABASE for presense of data that we know there must appear.
-    We have to avoid query of replication log - not only verbose can be disabled, but also because code is too complex.
-
     We use 'assert' only at the final point of test, with printing detalization about encountered problem(s).
     During all previous steps, we only store unexpected output to variables, e.g.: out_main = capsys.readouterr().out etc.
 
@@ -58,8 +53,12 @@ NOTES:
 
     [23.11.2023] pzotov
     Make final SWEEP optional, depending on setting RUN_SWEEP_AT_END - see $QA_ROOT/files/test_config.ini.
-
     Checked on Windows, 6.0.0.193, 5.0.0.1304, 4.0.5.3042 (SS/CS for all).
+
+    [29.04.2026] pzotov
+    Refactored functions reset_replication, watch_replica and drop_db_objects: removed any usage of capsys there.
+    We can assume that no errors occurred only when empty data or zero return_code is returned from them.
+    Checked on 6.0.0.1923; 5.0.5.1819; 4.0.8.3277 (SS/CS for all).
 """
 
 import os
@@ -194,7 +193,7 @@ def reset_replication(act_db_main, act_db_repl, db_main_file, db_repl_file):
 
 def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', isql_check_script = '', replica_expected_out = ''):
 
-    retcode = 1;
+    err_msg_lst = []
     ready_to_check = False
     if ddl_ready_query:
         with a.db.connect(no_db_triggers = True) as con:
@@ -203,6 +202,7 @@ def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', i
                     cur.execute(ddl_ready_query)
                     count_actual = cur.fetchone()
                     if count_actual:
+                        # Expected DB object (specified in DDL) *appeared* in replica. We can go ahead.
                         ready_to_check = True
                         break
                     else:
@@ -212,60 +212,65 @@ def watch_replica( a: Action, max_allowed_time_for_wait, ddl_ready_query = '', i
         ready_to_check = True
 
     if not ready_to_check:
-        print( f'UNEXPECTED. Initial check query did not return any rows for {max_allowed_time_for_wait} seconds.' )
-        print('Initial check query:')
-        print(ddl_ready_query)
-        return
-    
-    final_check_pass = False
-    if isql_check_script:
-        for i in range(max_allowed_time_for_wait):
-            a.reset()
-            a.expected_stdout = replica_expected_out
-            a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = False)
-            if a.clean_stdout == a.clean_expected_stdout:
-                final_check_pass = True
-                break
-            if i < max_allowed_time_for_wait-1:
-                time.sleep(1)
-
-        if not final_check_pass:
-            print(f'UNEXPECTED. Final check query did not return expected dataset for {max_allowed_time_for_wait} seconds.')
-            print('Final check query:')
-            print(isql_check_script)
-            print('Expected output:')
-            print(a.clean_expected_stdout)
-            print('Actual output:')
-            print(a.clean_stdout)
-            print(f'Waited for {i} seconds')
+        err_msg_lst = [
+            f'UNEXPECTED. Initial check query did not return any rows for {max_allowed_time_for_wait} seconds.'
+            ,'Initial check query:'
+            ,ddl_ready_query
+        ]
     else:
-        final_check_pass = True
+        final_check_pass = False
+        if isql_check_script:
+            for iter in range(max_allowed_time_for_wait):
+                a.reset()
+                a.expected_stdout = replica_expected_out
+                a.isql(switches=['-q', '-nod'], input = isql_check_script, combine_output = False)
+                if a.clean_stdout == a.clean_expected_stdout:
+                    final_check_pass = True
+                    break
+                if iter < max_allowed_time_for_wait-1:
+                    time.sleep(1)
 
-    return
+            if 1: # temp 4debug!!!
+                # or not final_check_pass:
+                err_msg_lst = [
+                     f'UNEXPECTED. Final check query did not return expected dataset for {max_allowed_time_for_wait} seconds.'
+                    ,'Final check query:'
+                    ,isql_check_script
+                    ,'Expected output:'
+                    ,a.clean_expected_stdout
+                    ,'Actual output:'
+                    ,a.clean_stdout
+                    ,f'Waited for {iter} seconds'
+                ]
+        else:
+            final_check_pass = True
+
+    return '\n'.join(err_msg_lst)
+
+# < watch_replica
 
 #--------------------------------------------
 
-def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
+def drop_db_objects(act_db_main: Action,  act_db_repl: Action):
 
     # return initial state of master DB:
     # remove all DB objects (tables, views, ...):
     #
+    retdata = ''
     db_main_meta, db_repl_meta = '', ''
     for a in (act_db_main,act_db_repl):
         if a == act_db_main:
             sql_clean = (a.files_dir / 'drop-all-db-objects.sql').read_text()
-            a.expected_stdout = """
-                Start removing objects
-                Finish. Total objects removed
-            """
             a.isql(switches=['-q', '-nod'], input = sql_clean, combine_output = True)
-
-            if a.clean_stdout == a.clean_expected_stdout:
+            if a.return_code or 'SQLSTATE' in a.clean_stdout:
+                #a.clean_stderr:
+                retdata = a.clean_stdout
                 a.reset()
-            else:
-                print(a.clean_expected_stdout)
-                a.reset()
+                #####
                 break
+                #####
+            else:
+                a.reset()
 
             # NB: one need to remember that rdb$system_flag can be NOT ONLY 1 for system used objects!
             # For example, it has value =3 for triggers that are created to provide CHECK-constraints,
@@ -309,11 +314,14 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
             ##############################################################################
             ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
             ##############################################################################
-            watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
+            retdata = watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query)
 
             # Must be EMPTY:
-            print(capsys.readouterr().out)
-
+            if retdata:
+                #####
+                break
+                #####
+                
             db_main_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
         else:
             db_repl_meta = a.extract_meta(charset = 'utf8', io_enc = 'utf8')
@@ -327,15 +335,26 @@ def drop_db_objects(act_db_main: Action,  act_db_repl: Action, capsys):
             # 'ERROR: Record format with length NN is not found for table TEST'
             #
             a.gfix(switches=['-sweep', a.db.dsn])
+    # < for a in (act_db_main,act_db_repl)
 
-    # Final point: metadata must become equal:
-    #
-    diff_meta = ''.join(unified_diff( \
-                         [x for x in db_main_meta.splitlines() if 'CREATE DATABASE' not in x],
-                         [x for x in db_repl_meta.splitlines() if 'CREATE DATABASE' not in x])
-                       )
-    # Must be EMPTY:
-    print(diff_meta)
+    if not retdata:
+        # Final point: metadata must become equal:
+        #
+        if ( meta_diff := \
+             list(unified_diff(
+                             [x for x in db_main_meta.splitlines() if 'CREATE DATABASE' not in x],
+                             [x for x in db_repl_meta.splitlines() if 'CREATE DATABASE' not in x],
+                             fromfile = act_db_main.db.db_path,
+                             tofile = act_db_repl.db.db_path,
+                         ))
+           ):
+            retdata = '\n'.join( ('Master and replica DB have unexpected metadata difference:', '\n'.join( [ x.rstrip() for x in meta_diff if x[1:].strip() ])) )
+
+    # Must remain EMPTY:
+    ####################
+    return retdata
+
+# < drop_db_objects
 
 #--------------------------------------------
 
@@ -620,12 +639,11 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
         ##############################################################################
         ###  W A I T   U N T I L    R E P L I C A    B E C O M E S   A C T U A L   ###
         ##############################################################################
-        watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query, isql_check_script, isql_expected_out)
         # Must be EMPTY:
-        out_main = capsys.readouterr().out
+        out_main = watch_replica( act_db_repl, MAX_TIME_FOR_WAIT_DATA_IN_REPLICA, ddl_ready_query, isql_check_script, isql_expected_out)
 
-    
-    drop_db_objects(act_db_main, act_db_repl, capsys)
+    # Must be EMPTY:
+    out_drop = drop_db_objects(act_db_main, act_db_repl)
 
     # Return FW to initial values (if needed):
     if db_main_fw == DbWriteMode.SYNC:
@@ -633,8 +651,6 @@ def test_1(act_db_main: Action,  act_db_repl: Action, capsys):
     if db_repl_fw == DbWriteMode.SYNC:
         act_db_repl.db.set_sync_write()
 
-    # Must be EMPTY:
-    out_drop = capsys.readouterr().out
 
     if [ x for x in (out_prep, out_main, out_drop) if x.strip() ]:
         # We have a problem either with DDL/DML or with dropping DB objects.
