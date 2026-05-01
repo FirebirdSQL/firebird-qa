@@ -61,6 +61,14 @@ NOTES:
     Confirmed bug on 4.0.0.2372 (21-feb-2021): client hangs, server loads CPU for ~100%.
     Checked on 4.0.0.2377 (27-feb-2021).
     Checked on 6.0.0.1456-0-789d467; 5.0.4.1765-2c1e56d; 4.0.7.3243-ea1c15c5.
+
+
+    [30.04.2026] pzotov
+    Client library file may have form without path, e.g. 'libfbclient2.so' etc (reported by Alex, 
+    Temporary .py script must have ability to find appropriare file among folders which
+    are specified in OS envirionment 'PATH' variable, see there:
+        next(filter(lambda x: (Path(x) / fb_clnt_name).is_file(), os_path_lst), None)
+
 """
 import sys
 import time
@@ -214,6 +222,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_py: Path, tmp_log: Pat
         tmp_check_py = f"""
             #coding:utf-8
 
+            import os
             import argparse as ap
             from pathlib import Path
             from firebird.driver import *
@@ -226,13 +235,47 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_py: Path, tmp_log: Pat
             parser.add_argument("dba_pswd", nargs='?', default='{act_db_main.db.password}', help="Password to connect")
             args = parser.parse_args()
 
-            assert Path(args.fb_clnt).is_file(), f"FB client library not found: {{args.fb_clnt}}"
+            '''
+            used_fb_client = Path(args.fb_clnt)
+            if used_fb_client.is_file():
+                if str(Path(args.fb_clnt).parent) == '.':
+                    # Client library *does* exist in current dir and was specified w/o path prefix,
+                    # e.g. 'libfbclient2.so', 'fbclient.dll' etc:
+                    used_fb_client = Path(os.getcwd()) / args.fb_clnt
+                else:
+                    # Client library has non-empty path prefix (i.e. it *does* exist in some non-current dir):
+                    pass
+            else:
+                # Client library file does not exist in the current dir, nor it was specified with path prefix
+                # We have to search every folder from PATH list (use it as path prefix for full name to be verified).
+                # First directory which contains this file will be used as path prefix for client library:
+                fb_clnt_name = used_fb_client.name
+                os_path_lst = os.getenv('PATH').split(';' if os.name == 'nt' else ':')
+                first_dir_with_clnt_lib = next(filter(lambda x: (Path(x) / fb_clnt_name).is_file(), os_path_lst), None)
+                if first_dir_with_clnt_lib:
+                    used_fb_client = Path(first_dir_with_clnt_lib) / fb_clnt_name
+                else:
+                    assert False, f"File '{{str(used_fb_client)}}' not found neither in current dir nor in directories from PATH-list."
+            #assert Path(args.fb_clnt).is_file(), f"FB client library not found: {{args.fb_clnt}}"
+            # driver_config.fb_client_library.value = str(used_fb_client) # args.fb_clnt
+            '''
+
+            # Suggested by Alex, 01.05.2026 1654.
+            # The client library may be not in testing server nor in PATH list.
+            # Rather it can be found in ELF-defined directories (like /lib or /usr/lib) or in auxiliary folders which are specified
+            # in /etc/ld.so.conf. Also, this library can be among folders that are specified in LD_LIBRARY_PATH environment variable.
+            # Command [/usr/]/sbin/ldconfig -p | grep -w libfbclient.so may help in search of actual path to this library, e.g.:
+            #     libfbclient.so.2 (libc6,x86-64) => /usr/lib64/libfbclient.so.2
+            # ##################################
+            # *** DEFERRED / TO BE DISCUSSED ***
+            # ##################################
+            if Path(args.fb_clnt).is_file():
+                driver_config.fb_client_library.value = args.fb_clnt
+            else:
+                pass
 
             dsn_main ='inet://' + args.db_main_alias
             dsn_repl ='inet://' + args.db_repl_alias
-
-            #driver_config.fb_client_library.value = r"{act_db_main.vars['fbclient']}"
-            driver_config.fb_client_library.value = args.fb_clnt
 
             con_repl = connect(dsn_repl, user = args.dba_user, password = args.dba_pswd)
             con_main = connect(dsn_main, user = args.dba_user, password = args.dba_pswd)
@@ -244,6 +287,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_py: Path, tmp_log: Pat
             con_main.close() # <<< at this point client could not return control to OS, server hanged with loading 100% CPU.
 
             with connect(dsn_repl, user = args.dba_user, password = args.dba_pswd) as con:
+                # 4debug: print(f'{{used_fb_client=}}, {{con.info.name=}}')
                 cur = con.cursor()
                 try:
                     cur.execute('select d.mon$replica_mode, t.* from mon$database d left join test t on 1=1')
@@ -261,13 +305,29 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_py: Path, tmp_log: Pat
         """
 
         tmp_py.write_text(remove_excessive_leading_spaces(tmp_check_py))
-
         with open(tmp_log, 'w') as f:
             try:
                 ######################################################################
                 ###   c a l l    c h i l d    .p y     w i t h     t i m e o u t   ###
                 ######################################################################
-                py_aux_pid =  subprocess.run( [ sys.executable, '-u', tmp_py, act_db_main.vars['fbclient'] ], stdout = f, stderr = subprocess.STDOUT, timeout = MAX_WAIT_FOR_FINISH )
+                py_aux_pid =  subprocess.run( [
+                                                 sys.executable
+                                                 ,'-u', tmp_py
+                                                  # -----------------------------------------------------------------------------
+                                                  # ACHTUNG: client library file may have form without path, e.g. 'libfbclient2.so' etc.
+                                                  # Temporary .py script must have ability to find appropriare file among folders which
+                                                  # are specified in OS envirionment 'PATH' variable, see there:
+                                                  # next(filter(lambda x: (Path(x) / fb_clnt_name).is_file(), os_path_lst), None)
+                                                  # -----------------------------------------------------------------------------
+                                                 ,act_db_main.vars['fbclient']
+                                                 # use this to check work if client library was specified WITHOUT path prefix,
+                                                 # e.g. 'libfbclient.so.2' etc:
+                                                 #,act_db_main.vars['fbclient'].name
+                                              ]
+                                              ,stdout = f
+                                              ,stderr = subprocess.STDOUT
+                                              ,timeout = MAX_WAIT_FOR_FINISH
+                                            )
                 if py_aux_pid.returncode != 0:
                     run_errors_map['ret_code'] = f'Script FAILED: retcode={py_aux_pid.returncode}.'
             except subprocess.TimeoutExpired as e:
@@ -279,6 +339,7 @@ def test_1(act_db_main: Action,  act_db_repl: Action, tmp_py: Path, tmp_log: Pat
 
         with open(tmp_log, 'r') as f:
             print(f.read())
+
 
     # len(run_errors_map) == 0
 
