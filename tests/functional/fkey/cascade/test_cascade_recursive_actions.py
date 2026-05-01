@@ -36,17 +36,13 @@ DESCRIPTION:
     Only single segmented UK/FK are checked.
     Work within a single transaction.
 NOTES:
-    [21.06.2025] pzotov
-        ::: NB ::: SQL schema name (6.x+), single and double quotes are suppressed in the output.
-        See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
-        Discussed with Vlad, letters 16.06.2025 13:54 (subj: "#8598: ...")
-        Checked on 6.0.0.838; 3.0.13.33813.
     [06.03.2026] pzotov
-        This test causes FB hang since shared metacache was introduced in #b38046e1 ('Encapsulation of metadata cache'; 24-feb-2026).
-        Sent reports to FB team (dumps, stack traces): 26.02.2026 1304; 04.03.2026 1158; 04.03.2026 2327
-        WAITING FOR FIX.
+        This test causes FB hang since #b38046e1. Sent reports: 26.02.2026 1304; 04.03.2026 1158; 04.03.2026 2327
+    [01.05.2026] pzotov
+        Checked on Linux 6.0.0.1929 (SS and CS) after message from Alex -- all fine now.
+        But on Windows (same snashot: 6.0.0.1929 SS/CS) this test still hangs. Sent report to Alex.
 """
-
+import os
 import pytest
 from firebird.qa import *
 
@@ -97,11 +93,10 @@ expected_stdout = """
 
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
-    if act.is_version('<6'):
-        pass
-    else:
-        pytest.skip("CAUSES FB HANG, NEEDS TO BE FIXED. SEE NOTES.")
-   
+
+    if os.name == 'nt':
+        pytest.skip("Hangs on Windows. Wait for fix.")
+
     test_sql = f"""
         -- #################
         -- ON DELETE CASCADE
