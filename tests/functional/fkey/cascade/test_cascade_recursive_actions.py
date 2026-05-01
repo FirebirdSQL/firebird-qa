@@ -94,8 +94,10 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 def test_1(act: Action):
 
-    if os.name == 'nt':
-        pytest.skip("Hangs on Windows. Wait for fix.")
+    if act.is_version('<6') or os.name != 'nt':
+        pass
+    else:
+        pytest.skip("Hangs on WI-6.x. Wait for fix.")
 
     test_sql = f"""
         -- #################
