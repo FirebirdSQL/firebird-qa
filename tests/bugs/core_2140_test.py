@@ -11,8 +11,12 @@ NOTES:
     [26.06.2025] pzotov
     Separated expected output for FB major versions prior/since 6.x.
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-
     Checked on 6.0.0.876; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
+    [06.05.2026] pzotov
+    Shared metacache. This test failed on snapshots since 6.0.0.1806-72cd2509 to 6.0.0.1910-20260421_125230-9eb1417:
+    output remained empty. Fixed in 6.0.0.1910-20260421_155625-1fbfbf4 (21.04.2026 15:56:25 UTC).
+    Letters to Alex 12.04.2026 1322, 06.05.2026 1843.
 """
 
 import pytest
