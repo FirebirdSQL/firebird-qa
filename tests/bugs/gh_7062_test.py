@@ -10,6 +10,9 @@ NOTES:
     [04.07.2025] pzotov
     Added 'SQL_SCHEMA_PREFIX' to be substituted in expected_* on FB 6.x
     Checked on 6.0.0.894; 5.0.3.1668; 4.0.6.3214.
+    [11.05.2026] pzotov
+    Separated output for 6.x vs prior versions: output in 6.x contains more details
+    since shared metacache was introduced (6.0.0.1771-f73321c, 25-feb-2026).
 """
 
 import pytest
@@ -44,13 +47,22 @@ act = isql_act('db', test_script)
 def test_1(act: Action):
 
     SQL_SCHEMA_PREFIX = '' if act.is_version('<6') else '"PUBLIC".'
-    expected_stdout = f"""
+    expected_stdout_5x = f"""
         Statement failed, SQLSTATE = 22012
-        Expression evaluation error for index "***unknown***" on table {SQL_SCHEMA_PREFIX}"TEST_A"
+        Expression evaluation error for index "***unknown***" on table "TEST_A"
         -arithmetic exception, numeric overflow, or string truncation
         -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
     """
     
-    act.expected_stdout = expected_stdout
+    expected_stdout_6x = f"""
+        Statement failed, SQLSTATE = 22012
+        unsuccessful metadata update
+        -CREATE INDEX {SQL_SCHEMA_PREFIX}"TEST_A_EXPR" failed
+        -Expression evaluation error for index "***unknown***" on table {SQL_SCHEMA_PREFIX}"TEST_A"
+        -arithmetic exception, numeric overflow, or string truncation
+        -Integer divide by zero.  The code attempted to divide an integer value by an integer divisor of zero.
+    """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
