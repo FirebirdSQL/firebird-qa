@@ -8,11 +8,13 @@ DESCRIPTION:
     Currently test contains only two examples from the ticket. More checks will be added later.
 NOTES:
     [29.03.2026] pzotov
-    Test uses DDL and data from employee DB but they have been extracted to .sql and stored in 
-    files/standard_sample_databases.zip (file: "sample-DB_-_firebird.sql").
-    Default names of all constraints were replaced in order to easy find appropriate table.
-
-    Checked on 6.0.0.1858-c0190d0.
+        Test uses DDL and data from employee DB but they have been extracted to .sql and stored in 
+        files/standard_sample_databases.zip (file: "sample-DB_-_firebird.sql").
+        Default names of all constraints were replaced in order to easy find appropriate table.
+        Checked on 6.0.0.1858-c0190d0.
+    [11.05.2026] pzotov
+        Adjusted output after #b5b5b0e (Fixed PERCENT_RANK computation (#8970)).
+        Checked on 6.0.0.1910.
 """
 
 import pytest
@@ -224,7 +226,7 @@ def test_1(act: Action, tmp_sql: Path, capsys):
         MEDIAN_CONT : 33620.63
         DEPT_NO : 120
         SALARY : 39224.06
-        PRC_RANK : 0.25
+        PRC_RANK : 1.0
         MEDIAN_CONT : 33620.63
         DEPT_NO : 121
         SALARY : 110000
@@ -258,6 +260,7 @@ def test_1(act: Action, tmp_sql: Path, capsys):
         SALARY : 64635
         PRC_RANK : 1.0
         MEDIAN_CONT : 53688.75
+
     """
 
     act.expected_stdout = expected_stdout_6x
