@@ -18,8 +18,8 @@ NOTES:
     [22.04.2026] pzotov
         Adjusted expected_output on 6.x+ because of shared metadata cache (introduced 6.0.0.1771-f73321c, 25.02.2026).
         Error 'object in use' still MAY occur in 6.x when index is created but concurrent transaction with DML exists.
-        Explained by Alex, letter 24.04.2026 1753.
-        Additional version of this test that exploits shared metacache features see in functional/metacache/ folder.
+        This outcome became similar to prior versions since #85caf1b ("Fixed relation lock when creating expression index")
+        Explained by Alex, letters 24.04.2026 1753; 11.05.2026 1932.
         Checked on 6.0.0.1914; 5.0.4.1813; 4.0.7.3271; 3.0.14.33855
 """
 
