@@ -45,9 +45,6 @@ def test_1(act: Action, capsys):
     if act.is_version('>=4'):
        tx_isol_lst.append(Isolation.READ_COMMITTED_READ_CONSISTENCY)
 
-    # tmp
-    tx_isol_lst = [ Isolation.SNAPSHOT, ]
-
     # for any isolation mode attempt to run DDL for table that is in use by another Tx must fail
     # with the same error message. We check all possible Tx isolation modes for that:
     for x_isol in tx_isol_lst:
