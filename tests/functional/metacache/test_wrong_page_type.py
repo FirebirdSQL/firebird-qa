@@ -8,10 +8,10 @@ DESCRIPTION:
     Problem was encountered during re-implementing test for CORE-3188, 6.x CLASSIC.
     Initial report to to FB-team: 20.04.2026 1516.
 NOTES:
-    [15.05.2026] pzotov
-    Reproduced on CS at leat up to 6.0.0.1947.
-    On Super this problem did not exist (checked on 6.0.0.1771 - first snapshot with shared metacache).
-    Waiting for fix for CLASSIC.
+    [29.05.2026] pzotov
+    Bug did exists only on Classic.
+    Fixed in 6.0.0.1971-79b12a6.
+    Checked on 6.0.0.1976-eead264.
 """
 import time
 from firebird.driver import tpb, Isolation, TraAccessMode, DatabaseError
