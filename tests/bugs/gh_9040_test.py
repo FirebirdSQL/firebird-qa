@@ -8,7 +8,7 @@ DESCRIPTION:
 NOTES:
     [29.05.2026]
     Confirmed bug on 6.0.0.1971-79b12a6.
-    Checked on 6.0.0.1975-bfb596a.
+    Checked on 6.0.0.1975-bfb596a; 5.0.5.1826-d65849c.
 """
 
 import pytest
@@ -67,7 +67,7 @@ expected_stdout = """
     Records affected: 2
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.5')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
