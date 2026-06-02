@@ -11,6 +11,13 @@ NOTES:
     https://groups.google.com/g/firebird-devel/c/IGAsQtQ5cFM/m/vEeqrVspAwAJ
     Confirmed bug on 6.0.0.1971-79b12a6.
     Checked on 6.0.0.1976-33384b2
+
+    [02.06.2026] pzotov
+    Before 01.06.2026 regression did exist: private packaged routine could be invoked from outer code,
+    see: https://groups.google.com/g/firebird-devel/c/8Cu7J8pD_M4
+    It has been fixed in 12b2158d (access restrictions to private routines in packages): procedure 'sp_run_dml'
+    now must be specified both in head and body of package if we want to invoke it.
+    Checked on 6.0.0.1978-12b2158.
 """
 
 import pytest
@@ -22,6 +29,8 @@ test_sql = f"""
     create or alter package pg_test as
     begin
         temporary table pkt_open(id int) on commit preserve rows index pkt_open_id(id);
+        procedure sp_modify_data;
+        procedure sp_show_data returns(src varchar(10), id int);
     end
     ;
 
