@@ -13,6 +13,13 @@ NOTES:
     Currently only INSERTs seems to be avaliable for DML in the unit which tries to run DML in the packages temp tables,
     see: https://groups.google.com/g/firebird-devel/c/IGAsQtQ5cFM/m/vEeqrVspAwAJ
     Checked on 6.0.0.1976.
+
+    [02.06.2026] pzotov
+    Before 01.06.2026 regression did exist: private packaged routine could be invoked from outer code,
+    see: https://groups.google.com/g/firebird-devel/c/8Cu7J8pD_M4
+    It has been fixed in 12b2158d (access restrictions to private routines in packages): procedure 'sp_run_dml'
+    now must be specified both in head and body of package if we want to invoke it.
+    Checked on 6.0.0.1978-12b2158.
 """
 from firebird.driver import DatabaseError
 
@@ -61,6 +68,8 @@ def test_1(act: Action, capsys):
         create or alter package pg_test as
         begin
             temporary table {PKG_PUBL_TABLE}(id int, f01 int) on commit preserve rows unique index {PKG_PUBL_TABLE}_unq(id);
+            -- fixed in 12b2158d (access restrictions to private routines in packages):
+            procedure sp_run_dml;
         end
         ;
         recreate package body pg_test as
