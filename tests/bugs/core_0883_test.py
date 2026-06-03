@@ -2,7 +2,7 @@
 
 """
 ID:          issue-1276
-ISSUE:       1276
+ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1276
 TITLE:       The built-in BLR printer doesn't support all FB2 features
 DESCRIPTION:
 JIRA:        CORE-883
@@ -20,6 +20,11 @@ NOTES:
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
 
     Checked on 6.0.0.863; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
+    [03.06.2026] pzotov
+    Reduced scope of avaliable versions: prohibit execution on 6.0. Test likely will be removed in the future.
+    Current implementation looks extremely 'fragile' and, moreover, does not contain lot of BLR verbs that did appear since FB 2.0.x.
+    Have no idea how to make such test mor robust to changes in FB version that is under intensive development.
 """
 
 import pytest
@@ -257,7 +262,7 @@ expected_stdout_6x = """
        blr_end,
     blr_eoc
 """
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=3.0,<6.0')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output = True)
