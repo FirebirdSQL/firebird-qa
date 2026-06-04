@@ -13,6 +13,12 @@ NOTES:
     Separated expected output for FB major versions prior/since 6.x.
     No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
     Checked on 6.0.0.949; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+
+    [04.06.2026] pzotov
+    Since #9247c82b ("Feature #8974 - Temporary Tables in Packages", 12.05.2026)
+    RDB$RELATION_FIELDS unique key in 6.x contains four columns:
+    (RDB$FIELD_NAME, RDB$SCHEMA_NAME, RDB$PACKAGE_NAME, RDB$RELATION_NAME)
+    Expected output was adjusted.
 """
 
 import pytest
@@ -71,7 +77,7 @@ def test_1(act: Action):
         unsuccessful metadata update
         -CREATE TABLE "PUBLIC"."TEST" failed
         -violation of PRIMARY or UNIQUE KEY constraint "RDB$INDEX_15" on table "SYSTEM"."RDB$RELATION_FIELDS"
-        -Problematic key value is ("RDB$FIELD_NAME" = 'C1', "RDB$SCHEMA_NAME" = 'PUBLIC', "RDB$RELATION_NAME" = 'TEST')
+        -Problematic key value is ("RDB$FIELD_NAME" = 'C1', "RDB$SCHEMA_NAME" = 'PUBLIC', "RDB$PACKAGE_NAME" = NULL, "RDB$RELATION_NAME" = 'TEST')
         col1 1
         Col1 2
         ÇÒL1 3
