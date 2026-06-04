@@ -16,9 +16,11 @@ JIRA:        CORE-6166
 FBTEST:      bugs.core_6166
 NOTES:
     [03.07.2025] pzotov
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-    Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.889; 5.0.3.1668; 4.0.6.3214.
+    [04.06.2026] pzotov
+        FB 6.x: added  schema name ('PUBLIC.' prefix) to the index that is displayed ion SHOW INDEX command.
 """
 
 import pytest
@@ -87,7 +89,7 @@ def test_1(act: Action):
 
     expected_stdout_6x = """
         PUBLIC."ПакетДляРешенияЛинейныхГиперболическихИТрансцендентныхУравнений"
-        PUBLIC."КоэффициентыЛинейныхГиперболическихИТрансцендентныхУравненийЦЫЧ" UNIQUE INDEX ON "КоэффициентыДляЛинейныхГиперболическихИТрансцендентныхУравнений"("КоэффициентЦДляЛинейныхГиперболическихИТрансцендентныхУравнений", "КоэффициентЫДляЛинейныхГиперболическихИТрансцендентныхУравнений", "КоэффициентЧДляЛинейныхГиперболическихИТрансцендентныхУравнений")
+        PUBLIC."КоэффициентыЛинейныхГиперболическихИТрансцендентныхУравненийЦЫЧ" UNIQUE INDEX ON PUBLIC."КоэффициентыДляЛинейныхГиперболическихИТрансцендентныхУравнений"("КоэффициентЦДляЛинейныхГиперболическихИТрансцендентныхУравнений", "КоэффициентЫДляЛинейныхГиперболическихИТрансцендентныхУравнений", "КоэффициентЧДляЛинейныхГиперболическихИТрансцендентныхУравнений")
         МетодЗейделяДляЛинейныхГиперболическихИТрансцендентныхУравнений 123
         МетодНьютонаДляЛинейныхГиперболическихИТрансцендентныхУравнений 456
     """
