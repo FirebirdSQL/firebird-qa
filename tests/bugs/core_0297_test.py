@@ -14,6 +14,9 @@ DESCRIPTION:
   Fixed in 1.5.0
 JIRA:        CORE-297
 FBTEST:      bugs.core_0297
+NOTES:
+    [04.06.2026] pzotov
+    Renamed 'groups' to 't_groups': first word became reserved since 6.0.0.1986.
 """
 
 import pytest
@@ -23,7 +26,7 @@ db = db_factory(charset='ISO8859_1')
 
 test_script = """
     set term ^;
-    create procedure group_copy (
+    create procedure sp_make_groups_copy (
         source integer,
         destination integer)
     as
@@ -31,7 +34,7 @@ test_script = """
         exit;
     end^
 
-    create procedure insert_values (
+    create procedure sp_insert_values (
         cont integer,
         d_group integer)
     as
@@ -40,7 +43,7 @@ test_script = """
     end^
     set term ;^
 
-    create table groups (
+    create table t_groups (
         gr_id integer not null,
         gr_name varchar(40) character set iso8859_1 not null
         collate de_de
@@ -51,12 +54,12 @@ test_script = """
         t_group integer not null
     );
 
-    alter table groups add constraint pk_groups primary key (gr_id);
+    alter table t_groups add constraint pk_groups primary key (gr_id);
     alter table test add constraint pk_test primary key (id, t_group);
-    alter table test add constraint fk_test foreign key (t_group) references groups (gr_id);
+    alter table test add constraint fk_test foreign key (t_group) references t_groups (gr_id);
 
     set term ^;
-    alter procedure group_copy (
+    alter procedure sp_make_groups_copy (
         source integer,
         destination integer)
     as
@@ -73,7 +76,7 @@ test_script = """
     end
     ^
 
-    alter procedure insert_values (
+    alter procedure sp_insert_values (
         cont integer,
         d_group integer)
     as
@@ -99,19 +102,19 @@ test_script = """
     commit;
 
 
-    insert into groups values ( 1 , 'Group1' );
-    insert into groups values ( 2 , 'Group2' );
+    insert into t_groups values ( 1 , 'Group1' );
+    insert into t_groups values ( 2 , 'Group2' );
     commit;
-    execute procedure insert_values( 3000 , 1);
+    execute procedure sp_insert_values( 3000 , 1);
     commit;
 
     delete from test where t_group = 2;
-    execute procedure group_copy( 1 , 2 );
+    execute procedure sp_make_groups_copy( 1 , 2 );
     commit;
 
     set list on;
     select count(*) from test;
-    select * from groups;
+    select * from t_groups;
 
 """
 
