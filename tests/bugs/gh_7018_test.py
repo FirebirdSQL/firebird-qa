@@ -6,6 +6,9 @@ ISSUE:       7018
 TITLE:       Problems with windows frames
 DESCRIPTION:
 FBTEST:      bugs.gh_7018
+NOTES:
+    [04.06.2026] pzotov
+    Added item to the substitutions list: suppress tail of message after 'by ROWS' (it contains 'by ROWS/GROUPS' since 6.0.0.1986).
 """
 
 import pytest
@@ -35,7 +38,11 @@ test_script = """
     select 'sttm-9' as msg, count(distinct f01) over (rows between unbounded preceding and unbounded following) id from entries where id <= 2 order by id;
 """
 
-act = isql_act('db', test_script, substitutions=[('LIST\\s+\\d+:\\d+', '')])
+substitutions = [
+        ('LIST\\s+\\d+:\\d+', ''),
+        ('DISTINCT is not supported in windows with ORDER BY or frame by ROWS.*', 'DISTINCT is not supported')
+    ]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
     MSG                             sttm-1
