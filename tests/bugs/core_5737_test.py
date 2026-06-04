@@ -19,9 +19,11 @@ JIRA:        CORE-5737
 FBTEST:      bugs.core_5737
 NOTES:
     [02.07.2025] pzotov
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [04.06.2026] pzotov
+        FB 6.x: added  schema name ('PUBLIC.' prefix) to the index that is displayed ion SHOW INDEX command.
 """
 
 import pytest
@@ -31,7 +33,6 @@ from pathlib import Path
 from firebird.qa import *
 
 db = db_factory()
-
 act = python_act('db')
 
 show_script = temp_file('show_script.sql')
@@ -64,7 +65,7 @@ def test_1(act: Action, show_script: Path, show_output: Path):
 
     expected_stdout_6x = """
         PUBLIC.TEST1
-        PUBLIC.TEST1_ID_PK_DESC UNIQUE DESCENDING INDEX ON TEST1(ID)
+        PUBLIC.TEST1_ID_PK_DESC UNIQUE DESCENDING INDEX ON PUBLIC.TEST1(ID)
     """
 
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
