@@ -7,12 +7,21 @@ TITLE:       View cannot be created if its WHERE clause contains IN <subquery> w
 DESCRIPTION:
 JIRA:        CORE-1183
 FBTEST:      bugs.core_1183
+NOTES:
+    [05.06.2026] PZOTOV
+        Replaced check query to the view with 'SELECT COUNT(*)' from it because test failed on FB 6.x since
+        commit bb280120 (6.0.0.1959; 2026.05.21 05:41:14) when rbdb$relation_id ceased to be used as storage
+        for last created relation ID.
+        Checked on 6.0.0.1992; 5.0.5.1826; 4.0.0.2109; 3.0.14.33855.
 """
 
 import pytest
 from firebird.qa import *
 
-init_script = """
+db = db_factory()
+
+test_script = """
+    set list on;
     set term ^;
     create or alter procedure p
       returns (col int)
@@ -24,7 +33,7 @@ init_script = """
     set term ;^
     commit;
 
-    create or alter view v
+    create or alter view v_test
     as
       select
           rdb$description v_descr,
@@ -33,27 +42,18 @@ init_script = """
       from rdb$database
       where 1 in ( select col from p );
     commit;
+    select count(*) as v_count from v_test;
 """
-
-db = db_factory(init=init_script)
-
-test_script = """
-    set list on;
-    select v_descr, sign(v_rel_id) as v_rel_id, v_cset_name
-    from v;
-"""
-
-act = isql_act('db', test_script)
+substitutions = [('[ \t]+', ' ')]
+act = isql_act('db', test_script, substitutions = substitutions)
 
 expected_stdout = """
-    V_DESCR                         <null>
-    V_REL_ID                        1
-    V_CSET_NAME                     NONE
+    V_COUNT 1
 """
 
 @pytest.mark.version('>=3')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
-    act.execute()
+    act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
