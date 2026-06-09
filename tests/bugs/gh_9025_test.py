@@ -7,8 +7,8 @@ TITLE:       UDF compact div overflow
 DESCRIPTION:
 NOTES:
     [09.06.2026] pzotov
-    Confirmed crash on 6.0.0.1963-f41a8da.
-    Checked on 6.0.0.1965-f9a8d1a.
+    Confirmed crash on 6.0.0.1963-f41a8da; 5.0.5.1826-d65849c.
+    Checked on 6.0.0.1965-f9a8d1a; 5.0.5.1826-25836c9.
 """
 from firebird.driver import DatabaseError
 
@@ -29,7 +29,7 @@ init_script = """
 db = db_factory(init = init_script)
 act = python_act('db')
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.5')
 def test(act: Action, capsys):
     with  act.db.connect() as con:
         cur = con.cursor()
