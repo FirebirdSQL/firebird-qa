@@ -1533,6 +1533,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                ACCENT
     RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                ACCUMULATE
+    RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                ACOS
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                ACOSH
@@ -1546,6 +1548,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                ADMIN
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                AFTER
+    RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                AGGREGATE
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                ALL
     RDB$KEYWORD_RESERVED            <true>
@@ -1702,6 +1706,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                CONNECTIONS
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                CONSISTENCY
+    RDB$KEYWORD_RESERVED            <false>
+    RDB$KEYWORD_NAME                CONSTANT
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                CONSTRAINT
     RDB$KEYWORD_RESERVED            <true>
@@ -1869,6 +1875,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                FILTER
     RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                FINISH
+    RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                FIRST
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                FIRSTNAME
@@ -1918,6 +1926,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_NAME                GREATEST
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                GROUP
+    RDB$KEYWORD_RESERVED            <true>
+    RDB$KEYWORD_NAME                GROUPS
     RDB$KEYWORD_RESERVED            <true>
     RDB$KEYWORD_NAME                HASH
     RDB$KEYWORD_RESERVED            <false>
@@ -2571,7 +2581,8 @@ expected_stdout_6 = """
     RDB$KEYWORD_RESERVED            <false>
     RDB$KEYWORD_NAME                ZONE
     RDB$KEYWORD_RESERVED            <false>
-    Records affected: 522
+
+    Records affected: 527
 """
 
 @pytest.mark.disabled_in_forks
