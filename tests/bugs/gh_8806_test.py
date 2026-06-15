@@ -6,8 +6,11 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8806
 TITLE:       Missing privilege checks for the COMMENT ON PARAMETER command on functions in packages
 NOTES:
    [05.01.2026] pzotov
-   Confirmed bug on 6.0.0.1377
-   Checked on 6.0.0.1387.
+       Confirmed bug on 6.0.0.1377
+       Checked on 6.0.0.1387.
+   [15.06.2026] pzotov
+       Reduced min_version to 4.0.8 after backport to 4.x and 5.x.
+       Checked on 5.0.5.1833; 4.0.8.3285
 """
 
 import pytest
@@ -18,7 +21,7 @@ tmp_user = user_factory('db', name='tmp$8806_junior', password='456')
 
 act = isql_act('db')
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=4.0.8')
 def test_1(act: Action, tmp_user: User):
 
     PACKAGE_NAME = 'pg_test'
@@ -57,7 +60,21 @@ def test_1(act: Action, tmp_user: User):
         comment on parameter {PACKAGE_NAME}.{PG_PROC_NAME}.arg1 is 'unauthorized comment for packaged procedure';
     """
 
-    expected_stdout = f"""
+    expected_stdout_5x = f"""
+        Statement failed, SQLSTATE = 28000
+        unsuccessful metadata update
+        -COMMENT ON {PACKAGE_NAME.upper()}.{PG_FUNC_NAME.upper()}.ARG1 failed
+        -no permission for ALTER access to PACKAGE {PACKAGE_NAME.upper()}
+        -Effective user is {tmp_user.name.upper()}
+
+        Statement failed, SQLSTATE = 28000
+        unsuccessful metadata update
+        -COMMENT ON {PACKAGE_NAME.upper()}.{PG_PROC_NAME.upper()}.ARG1 failed
+        -no permission for ALTER access to PACKAGE {PACKAGE_NAME.upper()}
+        -Effective user is {tmp_user.name.upper()}
+    """
+
+    expected_stdout_6x = f"""
         Statement failed, SQLSTATE = 28000
         unsuccessful metadata update
         -COMMENT ON "PUBLIC"."{PACKAGE_NAME.upper()}"."{PG_FUNC_NAME.upper()}".ARG1 failed
@@ -71,6 +88,6 @@ def test_1(act: Action, tmp_user: User):
         -Effective user is {tmp_user.name.upper()}
     """
 
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.isql(switches=['-q'], input = test_script, credentials = True, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
