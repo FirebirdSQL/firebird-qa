@@ -8,6 +8,10 @@ DESCRIPTION:
 NOTES:
     [29.03.2026] pzotov
     Checked on 6.0.0.1858; 5.0.4.1791.
+
+    [15.06.2026] pzotov
+    Added example from #9057 ("Executing RDB$RESET_CONTEXT() without parameters kills the connection").
+    Checked on 6.0.0.2002; 5.0.5.1833.
 """
 import pytest
 from firebird.qa import *
@@ -45,6 +49,9 @@ test_script = f"""
     select rdb$reset_context(null) as drop_null_cnt from rdb$database;
     select rdb$reset_context('') as drop_empty_cnt from rdb$database;
     select rdb$reset_context('UNKNOWN_NAMESPACE') as drop_unkn_cnt from rdb$database;
+    -- added 15.06.2026, see:
+    -- https://github.com/FirebirdSQL/firebird/issues/9057
+    select rdb$reset_context() from rdb$database;
 """
 
 substitutions = [('[ \t]+', ' ')]
@@ -74,6 +81,9 @@ expected_stdout = f"""
     
     Statement failed, SQLSTATE = HY000
     Invalid namespace name 'UNKNOWN_NAMESPACE' passed to RDB$RESET_CONTEXT
+
+    Statement failed, SQLSTATE = 39000
+    function RDB$RESET_CONTEXT could not be matched
 """
 
 @pytest.mark.version('>=5.0.4')
