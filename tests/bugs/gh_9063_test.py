@@ -10,7 +10,7 @@ NOTES:
     Custom driver config objects are created here for 5.x (because SubQueryConversion = true must be used).
     Test verifies that there is no difference in results returning by queries that uses DISTINCT vs GROUP BY.
     Confirmed bug on 6.0.0.2009; 5.0.5.1833.
-    Checked on 6.0.0.2012; 5.0.0.1837.
+    Checked on 6.0.0.2012; 5.0.5.1837.
 """
 from firebird.driver import DatabaseError, driver_config, connect
 
