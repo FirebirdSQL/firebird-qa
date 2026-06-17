@@ -6,12 +6,16 @@ ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8948
 TITLE:       Natural scan may occur for a query that has EXISTS and several joins in the inner subquery.
 DESCRIPTION:
 NOTES:
-    Original title: 'Firebird 5.0.4 snapshot (build 1784) performance issue'.
-    Explained plan before fix did not use index on t_outer as 'o2' (inside subquery).
-    Thanks to dimitr for suggestions about test implementation details.
+    [23.03.2026] pzotov
+        Original title: 'Firebird 5.0.4 snapshot (build 1784) performance issue'.
+        Explained plan before fix did not use index on t_outer as 'o2' (inside subquery).
+        Thanks to dimitr for suggestions about test implementation details.
 
-    Confirmeg bug on 6.0.0.1835-048e7c1; 5.0.4.1783-efed600.
-    Checked on 6.0.0.1835-28db67e; 5.0.4.1785-8157ec5.
+        Confirmeg bug on 6.0.0.1835-048e7c1; 5.0.4.1783-efed600.
+        Checked on 6.0.0.1835-28db67e; 5.0.4.1785-8157ec5.
+    [17.06.2026] pzotov
+        Adjusted explained plan for 6.x (caused by #9063, see appropriate test; discussed with dimitr).
+        Checked on 6.0.0.2016-c35f429.
 """
 
 from firebird.driver import DatabaseError
@@ -121,22 +125,22 @@ def test_1(act: Action, capsys):
     expected_stdout_6x = f"""
         {qry_map[1000]}
         Select Expression
-        ....-> Nested Loop Join (semi)
-        ........-> Unique Sort (record length: 36, key length: 8)
+        ....-> Unique Sort (record length: 108, key length: 8)
+        ........-> Nested Loop Join (semi)
         ............-> Table "PUBLIC"."T_OUTER" as "O" Full Scan
-        ........-> Nested Loop Join (inner)
-        ............-> Filter
-        ................-> Table "PUBLIC"."T_INNER" as "IA" Access By ID
-        ....................-> Bitmap
-        ........................-> Index "PUBLIC"."T_INN_FK" Range Scan (full match)
-        ............-> Filter
-        ................-> Table "PUBLIC"."T_INNER" as "IB" Access By ID
-        ....................-> Bitmap
-        ........................-> Index "PUBLIC"."T_INN_PK" Unique Scan
-        ............-> Filter
-        ................-> Table "PUBLIC"."T_OUTER" as "O2" Access By ID
-        ....................-> Bitmap
-        ........................-> Index "PUBLIC"."T_OUT_PK" Unique Scan
+        ............-> Nested Loop Join (inner)
+        ................-> Filter
+        ....................-> Table "PUBLIC"."T_INNER" as "IA" Access By ID
+        ........................-> Bitmap
+        ............................-> Index "PUBLIC"."T_INN_FK" Range Scan (full match)
+        ................-> Filter
+        ....................-> Table "PUBLIC"."T_INNER" as "IB" Access By ID
+        ........................-> Bitmap
+        ............................-> Index "PUBLIC"."T_INN_PK" Unique Scan
+        ................-> Filter
+        ....................-> Table "PUBLIC"."T_OUTER" as "O2" Access By ID
+        ........................-> Bitmap
+        ............................-> Index "PUBLIC"."T_OUT_PK" Unique Scan
     """
 
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
