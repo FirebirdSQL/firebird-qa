@@ -21,13 +21,21 @@ DESCRIPTION:
             for <relation_type> in ('PERMANENT', 'GTT_PRESERVE_ROWS', 'GTT_DELETE_ROWS'):
                 <test scenario>
     =================
-    NB. Only three TIL can be checked: read committed record_version; read consistency; snapshot.
 NOTES:
     [26.04.2026] pzotov
-    Currently test FAILS on check of GTT which is created with 'ON COMMIT DELETE ROWS': no new indices will be used.
-    Sent report to FB-team, 26.04.2026 15:37.
+        Currently test FAILS on check of GTT which is created with 'ON COMMIT DELETE ROWS': no new indices will be used.
+        Sent report to FB-team, 26.04.2026 15:37.
+        Checked on 6.0.0.1914-67e1176.
 
-    Checked on 6.0.0.1914-67e1176.
+    [21.06.2026] pzotov
+        We must NOT use TIL = Isolation.SERIALIZABLE.
+        Otherwise attempt to DROP index (even w/o commit) raises:
+            lock conflict on no wait transaction
+            Acquire lock for relation ("SYSTEM"."RDB$INDICES") failed (335544345, 335544382)
+        Problems have been fixed in #fa5ffeba ("Fix for crash when table with index is recreated N times"), 15.06.2026 13:57.
+        NOTE: commit #9c7090dd ("Fixed control on index dependencies when index to be deleted") was done in the same push as
+        #fa5ffeba but it appears insufficient and bug still existed (test raised "cannot delete/TABLE .../there are 2 dependencies")
+        Checked on 6.0.0.2009-fa5ffeb; 6.0.0.2022-3bca222.
 """
 import time
 import pytest
@@ -36,6 +44,8 @@ from firebird.driver import tpb, Isolation, DatabaseError, FirebirdWarning
 
 db = db_factory()
 act = python_act('db')
+
+RECORDS_COUNT = 1000
 
 #-----------------------------------------------------------
 def replace_leading(source, char="."):
@@ -46,14 +56,8 @@ def replace_leading(source, char="."):
 @pytest.mark.version('>=6')
 def test_1(act: Action, capsys):
 
-    # NB. We must NOT use following TILs:
-    # 1) Isolation.READ_COMMITTED_NO_RECORD_VERSION. Otherwise attempt to query rdb$indices raises:
-    # deadlock
-    # read conflicts with concurrent update
-    # concurrent transaction number is 31
-    # (335544336, 335545096, 335544878)
-    #
-    # 2) Isolation.SERIALIZABLE. Otherwise attempt to DROP index (even w/o commit) raises:
+    # NB. We must NOT use TIL = Isolation.SERIALIZABLE.
+    # Otherwise attempt to DROP index (even w/o commit) raises:
     # lock conflict on no wait transaction
     # Acquire lock for relation ("SYSTEM"."RDB$INDICES") failed
     # (335544345, 335544382)
@@ -62,6 +66,7 @@ def test_1(act: Action, capsys):
                     Isolation.READ_COMMITTED_RECORD_VERSION,
                     Isolation.READ_COMMITTED_READ_CONSISTENCY,
                     Isolation.SNAPSHOT,
+                    Isolation.READ_COMMITTED_NO_RECORD_VERSION,
                   ]
 
     # temp 4debug:
@@ -71,7 +76,7 @@ def test_1(act: Action, capsys):
     tab_ddl_map = {
        'permanent' : (0, '',                 'test_permanent'.upper(), ''),
        'gtt_sessn' : (4, 'global temporary', 'gtt_ssn'.upper(), 'on commit preserve rows'),
-       #'gtt_trans' : (5, 'global temporary', 'gtt_tra'.upper(), 'on commit delete rows'),
+       'gtt_trans' : (5, 'global temporary', 'gtt_tra'.upper(), 'on commit delete rows'),
     }
 
    
@@ -124,14 +129,14 @@ def test_1(act: Action, capsys):
                     try:
                         # DML 'insert into ... select from ...'. Index must be involved:
                         msg = 'att-1, point-1'
-                        cur1.execute(f'insert into {tt_name}(f01, f02, f03, f04, f05, f06, f07) select i, i, i, i, i, i, null from generate_series(1, 1000) as s(i)')
+                        cur1.execute(f'insert into {tt_name}(f01, f02, f03, f04, f05, f06, f07) select i, i, i, i, i, i, null from generate_series(1, {RECORDS_COUNT}) as s(i)')
                         cur1.execute(f"select count(*) from {tt_name} where f01 between ? and ?", (1, 11))
 
                         # Print explained plan with padding each line by dots in order to see indentations:
                         print(msg)
                         print( '\n'.join([replace_leading(s) for s in cur1.statement.detailed_plan.split('\n')]) )
                         
-                        cur2.execute(f'insert into {tt_name}(f01, f02, f03, f04, f05, f06, f07) select -i, -i, -i, -i, -i, -i, -i from generate_series(1001, 2000) as s(i)')
+                        cur2.execute(f'insert into {tt_name}(f01, f02, f03, f04, f05, f06, f07) select -i, -i, -i, -i, -i, -i, -i from generate_series({RECORDS_COUNT}+1, 2 * {RECORDS_COUNT}) as s(i)')
                         
                         cur2.execute(f'create descending index {tt_name}_f01_regular_desc on {tt_name}(f01)')
                         cur2.execute(f'create unique index {tt_name}_f02_regular on {tt_name}(f02)')
