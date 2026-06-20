@@ -10,15 +10,10 @@ NOTES:
     Bug has been found occasinally during investigating consequences of #3fadfabe ("#9001: Restart value of Identity field failed").
     Discussed with Alex, letters since 15.06.2026 0223 (FB hanged after issuing 'Finish' message).
     This test verifies THREE types of tables: permanent and both GTTs.
-    Currently there is problem with GTT ON COMMIT DELETE rows: attempt to insert final record in it causes:
-        SQLSTATE = 22018 / Expression evaluation error for index
-        "PUBLIC"."RDB$TEMP_DEPEND_130_2" on table "PUBLIC"."T_GTT_DEL_ROWS"
-        -conversion error from string "1970 Paranoid"
-    Sent report to Alex, 19.06.2026 0308.
-    #######################
-    ### WAITING FOR FIX ###
-    #######################
-    Checked on 6.0.0.2018-fdd011c
+    ::: NB :::
+    For 'GTT on commit DELETE rows' problem has been fixed in 6.0.0.2022-3bca222.
+    (see report to Alex, 19.06.2026 0308).
+    Checked on 6.0.0.2018-fdd011c; 6.0.0.2022-3bca222.
 """
 
 import time
