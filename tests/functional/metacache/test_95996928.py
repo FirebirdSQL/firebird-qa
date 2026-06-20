@@ -9,7 +9,7 @@ DESCRIPTION:
     CORE-4386 after shared metadata cache intro. Initial letter to FB-team: 12.04.2026 2243 (used snapshot: 6.0.0.1891-f2367d8).
     ISQL-connection that was established by ISQL and used default TIL = READ_COMMITTED_NO_RECORD_VERSION and lock_resolution = WAIT
     could not perform 'ALTER TABLE <T>' statement. ISQL hanged infinitely and should be interrupted in that case.
-    This DDL not be done even if the table <T> was for sure used only by this ISQL (see DDL actions with 'TABLE_B').
+    This DDL could not complete even if the table <T> was for sure used only by this ISQL (see DDL actions with 'TABLE_B').
 
     Test can be considered as 'passed' if ISQL not hangs. Otherwise ISQL will be terminated after MAX_TIMEOUT seconds and its log
     will contain:
@@ -20,13 +20,13 @@ NOTES:
     [15.05.2026] pzotov
     1. Original scenario that illustrated this bug (i.e. which was sent to FB-team) did use standard EMPLOYEE database.
        During attempts to reproduce the same on EMPTY database it was encountered weird thing: one need to create any *VIEW* in order
-       such effect (hanging ISQL) could be observed. This view can have arbitrary DDL, even triivial query to rdb$database, see 'v_dummy'.
+       such effect (hanging ISQL) could be observed. This view may have arbitrary DDL, even trivial query to rdb$database, see 'v_dummy'.
        Without such view, scenario will *not* reproduce bug, ISQL does not hang (and EMPLOYEE *does* has at least one view).
     2. ::: NB ::: 
        ReadConsistency = 0 must be set in databases.conf in order to reproduce bug (hanging ISQL).
        It seems that the current fix does NOT solve problem: if ReadConsistency = 0 then ISQL still hangs.
     3. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
-    4. Test uses pre-created databases.conf which has alias defvined by variable REQUIRED_ALIAS.
+    4. Test uses pre-created databases.conf which has alias defined by variable REQUIRED_ALIAS.
        Database file for that alias must NOT exist in the QA_root/files/qa/ subdirectory: it will be created here.
        Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace
        it before every test session).
