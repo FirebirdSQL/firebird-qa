@@ -17,11 +17,14 @@ DESCRIPTION:
     NB. Only three TIL can be checked: read committed record_version; read consistency; snapshot.
 NOTES:
     [18.06.2026] pzotov
-    Test initially was made for check commit #c62f0609 ("Fixed DROP INDEX on temporary per-transaction table")
-    but it appeared to be insufficient for problem fix.
-    Discussion: https://groups.google.com/g/firebird-devel/c/avJi2t-0Av4/m/c47RE7KxAQAJ
-    Bug fixed on #fa5ffeba ("Fix for crash when table with index is recreated N times"), 15.06.2026 13:57.
-    Checked on 6.0.0.2009-fa5ffeba.
+        Test initially was made for check commit #c62f0609 ("Fixed DROP INDEX on temporary per-transaction table")
+        but it appeared to be insufficient for problem fix.
+        Discussion: https://groups.google.com/g/firebird-devel/c/avJi2t-0Av4/m/c47RE7KxAQAJ
+        Bug fixed on #fa5ffeba ("Fix for crash when table with index is recreated N times"), 15.06.2026 13:57.
+        Checked on 6.0.0.2009-fa5ffeba.
+    [23.06.2026] pzotov
+        All kinds of TIL must pass (originally READ_COMMITTED_NO_RECORD_VERSION and SERIALIZABLE were skipped).
+        Checked on 6.0.0.2023-8e2b38a.
 """
 
 import pytest
@@ -43,22 +46,12 @@ def replace_leading(source, char="."):
 @pytest.mark.version('>=6')
 def test_1(act: Action, capsys):
 
-    # NB. We must NOT use following TILs:
-    # 1) Isolation.READ_COMMITTED_NO_RECORD_VERSION. Otherwise attempt to query rdb$indices raises:
-    # deadlock
-    # read conflicts with concurrent update
-    # concurrent transaction number is 31
-    # (335544336, 335545096, 335544878)
-    #
-    # 2) Isolation.SERIALIZABLE. Otherwise attempt to DROP index (even w/o commit) raises:
-    # lock conflict on no wait transaction
-    # Acquire lock for relation ("SYSTEM"."RDB$INDICES") failed
-    # (335544345, 335544382)
-    
     tx_isol_lst = [ 
                     Isolation.READ_COMMITTED_RECORD_VERSION,
                     Isolation.READ_COMMITTED_READ_CONSISTENCY,
                     Isolation.SNAPSHOT,
+                    Isolation.SERIALIZABLE,
+                    Isolation.READ_COMMITTED_NO_RECORD_VERSION,
                   ]
 
     # K = relation type; V = (rel_type, rel_name, optional_ddl_suffix):
