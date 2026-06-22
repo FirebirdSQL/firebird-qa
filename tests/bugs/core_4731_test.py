@@ -53,18 +53,9 @@ DESCRIPTION:
   @@@ TODO @@@ 18.10.2025 ADD/ADJUST DESCRIPTION HERE @@@
 
 NOTES:
-    [18.02.2020] pzotov
-        REFACTORED: most of initial code was moved into $files_location/core_4731.sql; changed test_type to 'Python'.
     [18.10.2025] pzotov
         Test has been totally re-implemented. Some minor changes may occur soon.
-        ::: ACHTUNG :::
-        Currently test *FAILS* on all major versions because of detected vulnerabilities related to:
-            * RDB$FIELDS, RDB$TRIGGERS (letter to FB team 18.10.2025 01:22);
-            * RDB$GENERATORS (letter to FB team 18.10.2025 12:44, 12:59);
-            * RDB$TYPES (letter to FB team 18.10.2025 20:50, created ticket #8779);
         Further description and notes will be later.
-        Checked on 6.0.0.1312-efa86f3; 5.0.4.1725-85ed111; 4.0.7.3237-c6d4331; 3.0.14.33827-93a8023.
-
     [31.10.2025] pzotov
         Adjusted expected data in etalone_gds_map{}: 
         * table RDB$TYPES can be modified by limited set of statements:
@@ -82,6 +73,9 @@ NOTES:
     [02.02.2026] pzotov
         Added expected data for MON$LOCAL_TEMPORARY_TABLES and MON$LOCAL_TEMPORARY_TABLE_COLUMNS (6.x only)
         Checked on 6.0.0.1403
+    [22.06.2026] pzotov
+        Added expected data for RDB$CONSTANTS (6.x only)
+        Checked on 6.0.0.2023
 """
 import shutil
 import re
@@ -3185,6 +3179,7 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$backup_history', 'SET_NUL') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$backup_history', 'SQL_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$backup_history', 'SQL_INV') ] =  ((336397287, 336068927),)
+
         etalone_gds_map[ ('rdb$character_sets', 'ADD_CTR') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$character_sets', 'ADD_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$character_sets', 'ADD_FKY') ] =  ((335544351, 336397289, 335544352),)
@@ -3205,6 +3200,7 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$character_sets', 'SET_NUL') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$character_sets', 'SQL_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$character_sets', 'SQL_INV') ] =  ((336397287, 336068927),)
+
         etalone_gds_map[ ('rdb$check_constraints', 'ADD_CTR') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$check_constraints', 'ADD_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$check_constraints', 'ADROPIC') ] =  ((335544351, 336397305, 335544352), (335544351, 336397312, 335544352))
@@ -3224,6 +3220,7 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$check_constraints', 'SET_NUL') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$check_constraints', 'SQL_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$check_constraints', 'SQL_INV') ] =  ((336397287, 336068927),)
+
         etalone_gds_map[ ('rdb$collations', 'ADD_CTR') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$collations', 'ADD_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$collations', 'ADD_FKY') ] =  ((335544351, 336397289, 335544352),)
@@ -3244,6 +3241,7 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$collations', 'SET_NUL') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$collations', 'SQL_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$collations', 'SQL_INV') ] =  ((336397287, 336068927),)
+
         etalone_gds_map[ ('rdb$config', 'ADD_CTR') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$config', 'ADD_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$config', 'ALT_ADC') ] =  ((336397287, 336068927),)
@@ -3262,6 +3260,48 @@ def test_1(act: Action, tmp_nbk: Path, dba_privileged_user: User, non_privileged
         etalone_gds_map[ ('rdb$config', 'SET_NUL') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$config', 'SQL_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$config', 'SQL_INV') ] =  ((336397287, 336068927),)
+
+        # ------------------------------------------------------------------------------
+        # Added 22.06.2026 
+        # 335544351 : unsuccessful metadata update
+        # 336397289 : RECREATE TABLE ... failed
+        # 335544352 : no permission for REFERENCES access to TABLE ...
+        etalone_gds_map[ ('rdb$constants', 'ADD_FKY') ] =  ((335544351, 336397289, 335544352),)
+
+        # 335545030 : INSERT operation is not allowed for system table ...
+        etalone_gds_map[ ('rdb$constants', 'DML_INS') ] =  ((335545030,),)
+
+        # 335545074 : Cannot select system table "SYSTEM"."RDB$CONSTANTS" for update WITH LOCK
+        etalone_gds_map[ ('rdb$constants', 'DML_LOK') ] =  ((335545074,),)
+
+        # 335545030 : DELETE operation is not allowed for system table ...
+        etalone_gds_map[ ('rdb$constants', 'DML_DEL') ] =  ((335545030,),)
+
+        # 336397287 : ALTER TABLE ... failed
+        # 336068927 : Cannot CREATE/ALTER/DROP TABLE in SYSTEM schema
+        etalone_gds_map[ ('rdb$constants', 'ALT_ADC') ] =  ((336397287, 336068927),)
+
+        # 335545030 : UPDATE operation is not allowed for system table ...
+        etalone_gds_map[ ('rdb$constants', 'DML_UPD') ] =  ((335545030,),)
+
+        # 336397287 : ALTER TABLE ... failed
+        # 336068927 : Cannot CREATE/ALTER/DROP TABLE in SYSTEM schema
+        etalone_gds_map[ ('rdb$constants', 'ADD_CTR') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'ADD_DEF') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'ALT_NAM') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'ALT_POS') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'ALT_TYP') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'KIL_DEF') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'KIL_FLD') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'KIL_TAB') ] =  ((336397288, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'PUB_DIS') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'PUB_ENA') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'SET_NUL') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'SQL_DEF') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'SQL_INV') ] =  ((336397287, 336068927),)
+        etalone_gds_map[ ('rdb$constants', 'ADROPIC') ] =  ((336397287, 336068927),)
+        # ------------------------------------------------------------------------------
+
         etalone_gds_map[ ('rdb$database', 'ADD_CTR') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$database', 'ADD_DEF') ] =  ((336397287, 336068927),)
         etalone_gds_map[ ('rdb$database', 'ALT_ADC') ] =  ((336397287, 336068927),)
