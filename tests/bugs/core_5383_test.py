@@ -9,9 +9,14 @@ JIRA:        CORE-5383
 FBTEST:      bugs.core_5383
 NOTES:
     [01.07.2025] pzotov
-    Separated expected output for FB major versions prior/since 6.x.
-    No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-    Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+        Separated expected output for FB major versions prior/since 6.x.
+        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
+        Checked on 6.0.0.881; 5.0.3.1668; 4.0.6.3214; 3.0.13.33813.
+    [22.06.2026] pzotov
+        Adjusted output in 6.x to the actual one.
+        Since #9247c82b ("Feature #8974 - Temporary Tables in Packages (#8983)") attempt to drop a TABLE
+        that has dependent object(s) fails with text 'cannot delete _TABLE_ ...' (rather than 'COLUMN ...').
+        Checked on 6.0.0.1942-9247c82; 6.0.0.2023-8e2b38a.
 """
 
 import pytest
@@ -155,13 +160,13 @@ expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
-    -COLUMN "PUBLIC"."TEST01"."ID1"
+    -TABLE "PUBLIC"."TEST01"
     -there are 1 dependencies
 
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
-    -COLUMN "PUBLIC"."TEST02"."ID2"
+    -TABLE "PUBLIC"."TEST02"
     -there are 1 dependencies
 
     RDB$DEPENDENT_NAME              PG_03
