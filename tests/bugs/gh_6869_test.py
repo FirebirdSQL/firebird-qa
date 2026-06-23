@@ -8,10 +8,13 @@ NOTES:
     [25.02.2023] pzotov
         Confirmed bug on 5.0.0.520.
         Checked on 5.0.0.959 - all OK.
-    [04.07.2025] pzotov
-        Separated expected output for FB major versions prior/since 6.x.
-        No substitutions are used to suppress schema and quotes. Discussed with dimitr, 24.06.2025 12:39.
-        Checked on 6.0.0.876; 5.0.3.1668.
+    [23.06.2026] pzotov
+        Adjusted output in 6.x to the actual one.
+        Since #9247c82b ("Feature #8974 - Temporary Tables in Packages (#8983)") attempt to drop a TABLE
+        that has dependent object(s) fails with text 'cannot delete _TABLE_ ...' rather than 'COLUMN ...'.
+        (weird 'detalization' about dependency on table *COLUMN* exists in 3.x ... 5.x).
+        Currently 6.x raise message with CORRECT text which does not mention any columns.
+        Checked on 6.0.0.2023-8e2b38a.
 """
 
 import pytest
@@ -38,6 +41,10 @@ test_script = """
     execute block as
     begin
         execute statement 'drop table test'; -- PASSED, despite having two dependent objects (function and domain expr.)
+    end
+    ^
+    execute block as
+    begin
         execute statement 'drop function fn_test'; -- PASSED, despite having dependent object (domain expr.)
     end
     ^
@@ -65,12 +72,13 @@ expected_stdout_6x = """
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
-    -COLUMN "PUBLIC"."TEST"."I"
+    -TABLE "PUBLIC"."TEST"
     -there are 1 dependencies
+    
     Statement failed, SQLSTATE = 42000
     unsuccessful metadata update
     -cannot delete
-    -COLUMN "PUBLIC"."TEST"."I"
+    -TABLE "PUBLIC"."TEST"
     -there are 1 dependencies
 """
 
