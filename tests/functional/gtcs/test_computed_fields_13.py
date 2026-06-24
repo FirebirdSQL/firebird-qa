@@ -62,26 +62,31 @@ def test_1(act: Action):
         -cannot delete
         -COLUMN T0.A
         -there are 1 dependencies
+        
         point-1 10 30
+        
         Statement failed, SQLSTATE 42000
         unsuccessful metadata update
         -cannot delete
         -COLUMN T1.AF
         -there are 1 dependencies
+        
         point-2 11 44 220
     """
     expected_stdout_6x = """
         Statement failed, SQLSTATE 42000
         unsuccessful metadata update
-        -cannot delete
-        -COLUMN "PUBLIC"."T0"."A"
-        -there are 1 dependencies
+        -TABLE "PUBLIC"."T0"
+        -Can't have relation with only computed fields or constraints
+        
         point-1 10 30
+        
         Statement failed, SQLSTATE 42000
         unsuccessful metadata update
         -cannot delete
         -COLUMN "PUBLIC"."T1"."AF"
         -there are 1 dependencies
+        
         point-2 11 44 220
     """
     act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
