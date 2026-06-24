@@ -18,24 +18,26 @@ DESCRIPTION:
 
 NOTES:
     [15.05.2026] pzotov
-    1. Original scenario that illustrated this bug (i.e. which was sent to FB-team) did use standard EMPLOYEE database.
-       During attempts to reproduce the same on EMPTY database it was encountered weird thing: one need to create any *VIEW* in order
-       such effect (hanging ISQL) could be observed. This view may have arbitrary DDL, even trivial query to rdb$database, see 'v_dummy'.
-       Without such view, scenario will *not* reproduce bug, ISQL does not hang (and EMPLOYEE *does* has at least one view).
-    2. ::: NB ::: 
-       ReadConsistency = 0 must be set in databases.conf in order to reproduce bug (hanging ISQL).
-       It seems that the current fix does NOT solve problem: if ReadConsistency = 0 then ISQL still hangs.
-    3. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
-    4. Test uses pre-created databases.conf which has alias defined by variable REQUIRED_ALIAS.
-       Database file for that alias must NOT exist in the QA_root/files/qa/ subdirectory: it will be created here.
-       Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace
-       it before every test session).
-       Discussed with pcisar, letters since 30-may-2022 13:48, subject:
-       "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
-    5. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
-       (for LINUX this equality is case-sensitive, even when aliases are compared!)
-
-    Confirmed problem (ISQL hangs) on 6.0.0.1947-bbf461b
+        1. Original scenario that illustrated this bug (i.e. which was sent to FB-team) did use standard EMPLOYEE database.
+           During attempts to reproduce the same on EMPTY database it was encountered weird thing: one need to create any *VIEW* in order
+           such effect (hanging ISQL) could be observed. This view may have arbitrary DDL, even trivial query to rdb$database, see 'v_dummy'.
+           Without such view, scenario will *not* reproduce bug, ISQL does not hang (and EMPLOYEE *does* has at least one view).
+        2. ::: NB ::: 
+           ReadConsistency = 0 must be set in databases.conf in order to reproduce bug (hanging ISQL).
+           It seems that the current fix does NOT solve problem: if ReadConsistency = 0 then ISQL still hangs.
+        3. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
+        4. Test uses pre-created databases.conf which has alias defined by variable REQUIRED_ALIAS.
+           Database file for that alias must NOT exist in the QA_root/files/qa/ subdirectory: it will be created here.
+           Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace
+           it before every test session).
+           Discussed with pcisar, letters since 30-may-2022 13:48, subject:
+           "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
+        5. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
+           (for LINUX this equality is case-sensitive, even when aliases are compared!)
+        Confirmed problem (ISQL hangs) on 6.0.0.1947-bbf461b
+    [24.06.2026] pzotov
+        Problem has been fixed in #4876bc63 ("Fixed hang when executing ALTER TABLE tableName DROP FIELD fieldName").
+        Checked on 6.0.0.2028-348f7aa.
 """
 import subprocess
 from pathlib import Path
@@ -75,10 +77,10 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
     tpb_snap_wait = tpb(isolation=Isolation.SNAPSHOT, access_mode=TraAccessMode.WRITE, lock_timeout = -1)
 
     # READ_COMMITTED | NO_REC_VERSION | WAIT | READ_WRITE // isql
-    tpb_rc_norv_wait = tpb(isolation=Isolation.READ_COMMITTED_NO_RECORD_VERSION, access_mode=TraAccessMode.WRITE, lock_timeout = -1)
+    #tpb_rc_norv_wait = tpb(isolation=Isolation.READ_COMMITTED_NO_RECORD_VERSION, access_mode=TraAccessMode.WRITE, lock_timeout = -1)
 
     # READ_COMMITTED | NO_REC_VERSION | NOWAIT | READ_WRITE
-    tpb_rc_norv_nowait = tpb(isolation=Isolation.READ_COMMITTED_NO_RECORD_VERSION, access_mode=TraAccessMode.WRITE, lock_timeout = 0)
+    #tpb_rc_norv_nowait = tpb(isolation=Isolation.READ_COMMITTED_NO_RECORD_VERSION, access_mode=TraAccessMode.WRITE, lock_timeout = 0)
 
     with act.db.connect() as cn0:
 
