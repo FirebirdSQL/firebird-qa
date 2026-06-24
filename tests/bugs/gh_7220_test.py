@@ -93,12 +93,14 @@ def test_1(act: Action):
         RDB$DEPENDENT_NAME              WAIT_EVENT
         RDB$DEPENDED_ON_NAME            TABLE1
         Records affected: 3
+
         drop table table1;
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
         -cannot delete
-        -COLUMN "PUBLIC"."TABLE1"."N"
-        -there are 1 dependencies
+        -TABLE "PUBLIC"."TABLE1"
+        -there are 2 dependencies
+
         drop domain domain1;
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
