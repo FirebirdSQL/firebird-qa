@@ -8,9 +8,9 @@ DESCRIPTION:
     Bug was found during attempts to re-implement test for CORE-6336: 'ALTER DATABASE <some_sttm>' prevented
     further execution of CREATE TABLE with issuing SQLSTATE = 40001 / ... -update conflicts ... / -concurrent ...
     (see letter to FB team 11.05.2026 0309).
-    Test use pre-defined alias in databases.conf for which set set small value of DeadLockTimeot (much less than default 10).
-    An attempt to create table after 'alter databse' must be complted instantly without any error.
-    We check this for each isolation level (but with lock_timeout = 0).
+    Test use pre-defined alias in databases.conf for which set small value of DeadLockTimeot (much less than default 10).
+    An attempt to create table after 'alter database' must be completed instantly without any error.
+    We check this for each isolation level and with lock_timeout = 0.
 NOTES:
     Bug appeared when shared metacache was introduced and did exist up to 6.0.0.1959-a5ec02b.
     Checked on 6.0.0.1959-bb28012 (SS/CS) - all OK.
