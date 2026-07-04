@@ -8,6 +8,8 @@ DESCRIPTION:
     Source description:
     https://groups.google.com/g/firebird-devel/c/xIxhL_QAjEg/m/yMjlPxnuAQAJ
     ("Package constants. Weird message "HY000 / Statement format outdated" can raise")
+    See also:
+    https://github.com/FirebirdSQL/firebird/pull/9022
 NOTES:
     Fixed by commit: e588f9ea47b36d88c3020cde0e31b9b129c394ac
     Confirmed problem on 6.0.0.1992-00d5916
@@ -70,3 +72,44 @@ def test_1(act: Action):
     """
     act.isql(switches = ['-q'], input = test_sql, combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
+
+    ##########################################################################
+
+    # from https://github.com/FirebirdSQL/firebird/pull/9022
+    test_sql = f"""
+        set bail on;
+        set list on;
+        set autoterm on;
+        create package pg_9022
+        as
+        begin
+            procedure sp_test(i int) returns (o int); -- public procedure
+            constant header_const integer = 10;
+        end
+        ;
+        create package body pg_9022 as
+        begin
+            constant cp2 integer = 15;
+            constant cp3 integer = 30;
+            procedure sp_test(i int) returns (o int) as
+            begin
+                o = pg_9022.header_const + pg_9022.cp2;
+                suspend;
+            end
+        end
+        ;
+        commit;
+
+        select pg_9022.header_const as pg_9022_hdr_const from rdb$database;
+        select p.o as pg_9022_sp_out from pg_9022.sp_test(0) p;
+        commit;
+    """
+
+    act.expected_stdout = f"""
+        PG_9022_HDR_CONST 10
+        PG_9022_SP_OUT 25
+    """
+    act.isql(switches = ['-q'], input = test_sql, combine_output = True)
+    assert act.clean_stdout == act.clean_expected_stdout
+    act.reset()
