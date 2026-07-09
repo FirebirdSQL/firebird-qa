@@ -36,6 +36,7 @@ dependencies = [
     "firebird-driver~=2.0",
     "pytest>=7.4",
     "psutil~=5.9",
+    "sortedcontainers>=2.4.0"
     ]
 
 [project.urls]
