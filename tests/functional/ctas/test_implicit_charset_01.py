@@ -13,6 +13,8 @@ NOTES:
     appropriate record in the RDB$FIELDS table will contain:
         RDB$FIELD_TYPE = 14
         RDB$FIELD_SUB_TYPE = 4
+    Fixed by:
+        https://github.com/FirebirdSQL/firebird/commit/4bf5030b255ef12090a15b85e97f78ea4b129d9b
     Checked on 6.0.0.2072-42c8a5d
 """
 
