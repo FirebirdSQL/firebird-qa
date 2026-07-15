@@ -7,11 +7,21 @@ TITLE:       CTAS. Check content of RDB$ tables for a CTAS-table when field type
 DESCRIPTION:
 NOTES:
     [11.07.2026] pzotov
-    Array datatypes are not checked.
-    Difference existed in the SCALE for decimal/numeric columns between original and target tables.
-    Fixed in #6c797c76f (06-JUL-2026 11:22+0000).
-    See: https://groups.google.com/g/firebird-devel/c/tp2UhWmljHU/m/tf-v5EHBAAAJ
-    Checked on 6.0.0.2072-42c8a5d
+        Array datatypes are not checked.
+        Difference existed in the SCALE for decimal/numeric columns between original and target tables.
+        Fixed in #6c797c76f (06-JUL-2026 11:22+0000).
+        See: https://groups.google.com/g/firebird-devel/c/tp2UhWmljHU/m/tf-v5EHBAAAJ
+        Checked on 6.0.0.2072-42c8a5d
+    [15.07.2026] pzotov
+        Adjusted expected output to actual one that become since #7df850dd ("Fix some field precision of CTAS").
+        Problem was for COMPUTED-BY columns defined in the source table on basis of INTEGER fields (id016, id032, id064 and id128).
+        For these columns table RDB$FIELDS contained incorrect non-zero values in the RDB$FIELD_PRECICION (all must be zero).
+        NOTE. To make comparison between 'old' and 'new' outputs easier, one may to change following in the script:
+            * comment out 'set list on;'
+            * temporary set substitutions = []
+            * temporary set act.expected_stdout = ''.
+        Confirmed wrong values of RDB$FIELDS.RDB$FIELD_PRECICION for integer-based columns on 6.0.0.2073-3518df8.
+        Checked on 6.0.0.2074-7df850d.
 """
 import os
 import pytest
@@ -93,24 +103,51 @@ def test_1(act: Action):
         order by rf.rdb$field_position
         ;
 
+        /*
+        https://www.firebirdsql.org/file/documentation/html/en/refdocs/fblangref50/firebird-50-language-reference.html#fblangref50-datatypes
+        Precision   Data type            Dialect 3
+         1 ...  4   NUMERIC              SMALLINT
+         1 ...  4   DECIMAL              INTEGER
+         5 ...  9   NUMERIC or DECIMAL   INTEGER
+        10 ... 18   NUMERIC or DECIMAL   BIGINT
+        19 ... 38   NUMERIC or DECIMAL   INT128
+        */
+
         create domain id016 smallint;
         create domain id032 int;
         create domain id064 bigint;
         create domain id128 int128;
         create domain flt float;
         create domain dbl double precision;
-        create domain dec_02_2 decimal(2,2);
-        create domain dec_04_0 decimal(4);   -- int (exact);
-        create domain dec_04_2 decimal(4,2); -- int (data * 1e2);
-        create domain num_02_2 numeric(2,2); -- smallint;
-        create domain num_04_0 numeric(4);   -- smallint (exact);
-        create domain num_04_2 numeric(4,2); -- smallint (data * 1e2);
-        create domain num_09_0 numeric(9);
-        create domain num_09_9 numeric(9,9);
-        create domain num_10_0 numeric(10);     -- bigint (data * 1e4);
-        create domain num_10_10 numeric(10,10);
-        create domain num_38_0 numeric(38);
-        create domain num_38_38 numeric(38,38); -- int128 (data * 1e6);
+
+        create domain dec_01_0  decimal(1);    -- int
+        create domain dec_04_0  decimal(4);    -- int
+        create domain dec_05_0  decimal(5);    -- int
+        create domain dec_09_0  decimal(9);    -- int
+        create domain dec_18_0  decimal(18);   -- bigint
+        create domain dec_38_0  decimal(38);   -- int128
+
+        create domain dec_01_1  decimal(1, 1);  -- int
+        create domain dec_04_4  decimal(4, 4);  -- int
+        create domain dec_05_5  decimal(5, 5);  -- int
+        create domain dec_09_9  decimal(9, 9);  -- int
+        create domain dec_18_18 decimal(18,18); -- bigint
+        create domain dec_38_38 decimal(38,38); -- int128
+
+        create domain num_01_0 numeric(1);    -- smallint
+        create domain num_04_0 numeric(4);    -- smallint
+        create domain num_05_0 numeric(5);    -- int
+        create domain num_09_0 numeric(9);    -- int
+        create domain num_18_0 numeric(18);   -- bigint
+        create domain num_38_0 numeric(38);   -- int128
+
+        create domain num_01_1  numeric(1, 1);  -- smallint
+        create domain num_04_4  numeric(4, 4);  -- smallint
+        create domain num_05_5  numeric(5, 5);  -- int
+        create domain num_09_9  numeric(9, 9);  -- int
+        create domain num_18_18 numeric(18,18); -- bigint
+        create domain num_38_38 numeric(38,38); -- int128
+
         create domain df_16 decfloat(16);
         create domain df_34 decfloat(34);
         create domain dt date;
@@ -130,51 +167,57 @@ def test_1(act: Action):
         commit;
 
         recreate table tbase(
-            id016 id016
-           ,id032 id032
-           ,id064 id064
-           ,id128 id128
-           ,flt flt
-           ,dbl dbl
-           ,dec_02_2 dec_02_2
-           ,dec_04_0 dec_04_0
-           ,dec_04_2 dec_04_2
-           ,num_02_2 num_02_2
-           ,num_04_0 num_04_0
-           ,num_04_2 num_04_2
-           ,num_09_0 num_09_0
-           ,num_09_9 num_09_9
-           ,num_10_0 num_10_0
-           ,num_10_10 num_10_10
-           ,num_38_0 num_38_0
-           ,num_38_38 num_38_38
-           ,df_16 df_16
-           ,df_34 df_34
-           ,dt dt
-           ,tm tm
-           ,ts ts
-           ,tmtz tmtz
-           ,tstz tstz
-           ,tbin tbin
-           ,tchr tchr
-           ,vbin vbin
-           ,vchr_utf8 vchr_utf8
-           ,vchr_iso1 vchr_iso1
-           ,vchr_1250 vchr_1250
-           ,boo boo
-           ,bbin bbin
-           ,btxt btxt
-           ----------------------
-           ,comp_01 computed by ( id016 - 1 )
-           ,comp_02 computed by ( id032 - 1 )
-           ,comp_03 computed by ( dt + 1 )
-           ,comp_04 computed by ( dateadd(1 second to tm) )
-           ,comp_05 computed by ( ts - 1 )
-           ,comp_06 computed by ( reverse(vchr_utf8) )
-           ,comp_07 computed by ( lower(vchr_1250) )
-           ,comp_10 computed by ( not boo )
-           ,comp_11 computed by ( bbin )
-           ,comp_12 computed by ( reverse(btxt) )
+            id016       id016
+           ,id032       id032
+           ,id064       id064
+           ,id128       id128
+           ,flt         flt
+           ,dbl         dbl
+
+           ,dec_01_0    dec_01_0
+           ,dec_04_0    dec_04_0
+           ,dec_05_0    dec_05_0
+           ,dec_09_0    dec_09_0
+           ,dec_18_0    dec_18_0
+           ,dec_38_0    dec_38_0
+                       
+           ,dec_01_1    dec_01_1
+           ,dec_04_4    dec_04_4
+           ,dec_05_5    dec_05_5
+           ,dec_09_9    dec_09_9
+           ,dec_18_18   dec_18_18
+           ,dec_38_38   dec_38_38
+                       
+           ,num_01_0    num_01_0
+           ,num_04_0    num_04_0
+           ,num_05_0    num_05_0
+           ,num_09_0    num_09_0
+           ,num_18_0    num_18_0
+           ,num_38_0    num_38_0
+                       
+           ,num_01_1    num_01_1
+           ,num_04_4    num_04_4
+           ,num_05_5    num_05_5
+           ,num_09_9    num_09_9
+           ,num_18_18   num_18_18
+           ,num_38_38   num_38_38
+
+           ,df_16       df_16
+           ,df_34       df_34
+           ,dt          dt
+           ,tm          tm
+           ,ts          ts
+           ,tmtz        tmtz
+           ,tstz        tstz
+           ,tbin        tbin
+           ,tchr        tchr
+           ,vbin        vbin
+           ,vchr_utf8   vchr_utf8
+           ,vchr_iso1   vchr_iso1
+           ,vchr_1250   vchr_1250
+           ,boo         boo
+           ,bbin        bbin
+           ,btxt        btxt
         );
         recreate table ctas_permanent as (select * from tbase);
         execute block as begin rdb$set_context('USER_SESSION','SHOW_FOR_TABLE', 'CTAS_PERMANENT'); end;
@@ -274,14 +317,14 @@ def test_1(act: Action):
         COLL_ATTR <null>
         RF_IS_EXPR 0
         F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME DEC_02_2
-        RF_FLD_SOURCE DEC_02_2
+        RF_FLD_NAME DEC_01_0
+        RF_FLD_SOURCE DEC_01_0
         RF_NOT_NULL <null>
         RF_DEFAULT <null>
         RF_IDENT_TYPE <null>
         F_FLD_TYPE decimal
-        F_FLD_PREC 2
-        F_FLD_SCALE -2
+        F_FLD_PREC 1
+        F_FLD_SCALE 0
         F_CHR_LEN <null>
         CSET_NAME <null>
         BYTES_PER_C <null>
@@ -304,14 +347,14 @@ def test_1(act: Action):
         COLL_ATTR <null>
         RF_IS_EXPR 0
         F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME DEC_04_2
-        RF_FLD_SOURCE DEC_04_2
+        RF_FLD_NAME DEC_05_0
+        RF_FLD_SOURCE DEC_05_0
         RF_NOT_NULL <null>
         RF_DEFAULT <null>
         RF_IDENT_TYPE <null>
         F_FLD_TYPE decimal
-        F_FLD_PREC 4
-        F_FLD_SCALE -2
+        F_FLD_PREC 5
+        F_FLD_SCALE 0
         F_CHR_LEN <null>
         CSET_NAME <null>
         BYTES_PER_C <null>
@@ -319,14 +362,149 @@ def test_1(act: Action):
         COLL_ATTR <null>
         RF_IS_EXPR 0
         F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME NUM_02_2
-        RF_FLD_SOURCE NUM_02_2
+        RF_FLD_NAME DEC_09_0
+        RF_FLD_SOURCE DEC_09_0
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE decimal
+        F_FLD_PREC 9
+        F_FLD_SCALE 0
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME DEC_18_0
+        RF_FLD_SOURCE DEC_18_0
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE decimal
+        F_FLD_PREC 18
+        F_FLD_SCALE 0
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME DEC_38_0
+        RF_FLD_SOURCE DEC_38_0
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE decimal
+        F_FLD_PREC 38
+        F_FLD_SCALE 0
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME DEC_01_1
+        RF_FLD_SOURCE DEC_01_1
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE decimal
+        F_FLD_PREC 1
+        F_FLD_SCALE -1
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME DEC_04_4
+        RF_FLD_SOURCE DEC_04_4
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE decimal
+        F_FLD_PREC 4
+        F_FLD_SCALE -4
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME DEC_05_5
+        RF_FLD_SOURCE DEC_05_5
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE decimal
+        F_FLD_PREC 5
+        F_FLD_SCALE -5
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME DEC_09_9
+        RF_FLD_SOURCE DEC_09_9
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE decimal
+        F_FLD_PREC 9
+        F_FLD_SCALE -9
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME DEC_18_18
+        RF_FLD_SOURCE DEC_18_18
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE decimal
+        F_FLD_PREC 18
+        F_FLD_SCALE -18
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME DEC_38_38
+        RF_FLD_SOURCE DEC_38_38
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE decimal
+        F_FLD_PREC 38
+        F_FLD_SCALE -38
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME NUM_01_0
+        RF_FLD_SOURCE NUM_01_0
         RF_NOT_NULL <null>
         RF_DEFAULT <null>
         RF_IDENT_TYPE <null>
         F_FLD_TYPE numeric
-        F_FLD_PREC 2
-        F_FLD_SCALE -2
+        F_FLD_PREC 1
+        F_FLD_SCALE 0
         F_CHR_LEN <null>
         CSET_NAME <null>
         BYTES_PER_C <null>
@@ -349,14 +527,14 @@ def test_1(act: Action):
         COLL_ATTR <null>
         RF_IS_EXPR 0
         F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME NUM_04_2
-        RF_FLD_SOURCE NUM_04_2
+        RF_FLD_NAME NUM_05_0
+        RF_FLD_SOURCE NUM_05_0
         RF_NOT_NULL <null>
         RF_DEFAULT <null>
         RF_IDENT_TYPE <null>
         F_FLD_TYPE numeric
-        F_FLD_PREC 4
-        F_FLD_SCALE -2
+        F_FLD_PREC 5
+        F_FLD_SCALE 0
         F_CHR_LEN <null>
         CSET_NAME <null>
         BYTES_PER_C <null>
@@ -379,44 +557,14 @@ def test_1(act: Action):
         COLL_ATTR <null>
         RF_IS_EXPR 0
         F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME NUM_09_9
-        RF_FLD_SOURCE NUM_09_9
+        RF_FLD_NAME NUM_18_0
+        RF_FLD_SOURCE NUM_18_0
         RF_NOT_NULL <null>
         RF_DEFAULT <null>
         RF_IDENT_TYPE <null>
         F_FLD_TYPE numeric
-        F_FLD_PREC 9
-        F_FLD_SCALE -9
-        F_CHR_LEN <null>
-        CSET_NAME <null>
-        BYTES_PER_C <null>
-        FLD_COLL <null>
-        COLL_ATTR <null>
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME NUM_10_0
-        RF_FLD_SOURCE NUM_10_0
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE numeric
-        F_FLD_PREC 10
+        F_FLD_PREC 18
         F_FLD_SCALE 0
-        F_CHR_LEN <null>
-        CSET_NAME <null>
-        BYTES_PER_C <null>
-        FLD_COLL <null>
-        COLL_ATTR <null>
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME NUM_10_10
-        RF_FLD_SOURCE NUM_10_10
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE numeric
-        F_FLD_PREC 10
-        F_FLD_SCALE -10
         F_CHR_LEN <null>
         CSET_NAME <null>
         BYTES_PER_C <null>
@@ -432,6 +580,81 @@ def test_1(act: Action):
         F_FLD_TYPE numeric
         F_FLD_PREC 38
         F_FLD_SCALE 0
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME NUM_01_1
+        RF_FLD_SOURCE NUM_01_1
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE numeric
+        F_FLD_PREC 1
+        F_FLD_SCALE -1
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME NUM_04_4
+        RF_FLD_SOURCE NUM_04_4
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE numeric
+        F_FLD_PREC 4
+        F_FLD_SCALE -4
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME NUM_05_5
+        RF_FLD_SOURCE NUM_05_5
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE numeric
+        F_FLD_PREC 5
+        F_FLD_SCALE -5
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME NUM_09_9
+        RF_FLD_SOURCE NUM_09_9
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE numeric
+        F_FLD_PREC 9
+        F_FLD_SCALE -9
+        F_CHR_LEN <null>
+        CSET_NAME <null>
+        BYTES_PER_C <null>
+        FLD_COLL <null>
+        COLL_ATTR <null>
+        RF_IS_EXPR 0
+        F_FLD_EXPR_BLOB_ID <null>
+        RF_FLD_NAME NUM_18_18
+        RF_FLD_SOURCE NUM_18_18
+        RF_NOT_NULL <null>
+        RF_DEFAULT <null>
+        RF_IDENT_TYPE <null>
+        F_FLD_TYPE numeric
+        F_FLD_PREC 18
+        F_FLD_SCALE -18
         F_CHR_LEN <null>
         CSET_NAME <null>
         BYTES_PER_C <null>
@@ -694,157 +917,7 @@ def test_1(act: Action):
         COLL_ATTR 3
         RF_IS_EXPR 0
         F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_01
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE bigint
-        F_FLD_PREC 18
-        F_FLD_SCALE 0
-        F_CHR_LEN <null>
-        CSET_NAME <null>
-        BYTES_PER_C <null>
-        FLD_COLL <null>
-        COLL_ATTR <null>
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_02
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE bigint
-        F_FLD_PREC 18
-        F_FLD_SCALE 0
-        F_CHR_LEN <null>
-        CSET_NAME <null>
-        BYTES_PER_C <null>
-        FLD_COLL <null>
-        COLL_ATTR <null>
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_03
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE date
-        F_FLD_PREC <null>
-        F_FLD_SCALE 0
-        F_CHR_LEN <null>
-        CSET_NAME <null>
-        BYTES_PER_C <null>
-        FLD_COLL <null>
-        COLL_ATTR <null>
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_04
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE time without time zone
-        F_FLD_PREC <null>
-        F_FLD_SCALE 0
-        F_CHR_LEN <null>
-        CSET_NAME <null>
-        BYTES_PER_C <null>
-        FLD_COLL <null>
-        COLL_ATTR <null>
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_05
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE timestamp without time zone
-        F_FLD_PREC <null>
-        F_FLD_SCALE 0
-        F_CHR_LEN <null>
-        CSET_NAME <null>
-        BYTES_PER_C <null>
-        FLD_COLL <null>
-        COLL_ATTR <null>
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_06
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE varchar
-        F_FLD_PREC <null>
-        F_FLD_SCALE 0
-        F_CHR_LEN 10
-        CSET_NAME UTF8
-        BYTES_PER_C 4
-        FLD_COLL UNICODE_CI_AI
-        COLL_ATTR 7
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_07
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE varchar
-        F_FLD_PREC <null>
-        F_FLD_SCALE 0
-        F_CHR_LEN 10
-        CSET_NAME WIN1250
-        BYTES_PER_C 1
-        FLD_COLL WIN_CZ_CI_AI
-        COLL_ATTR 7
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_10
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE boolean
-        F_FLD_PREC <null>
-        F_FLD_SCALE 0
-        F_CHR_LEN <null>
-        CSET_NAME <null>
-        BYTES_PER_C <null>
-        FLD_COLL <null>
-        COLL_ATTR <null>
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_11
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE blob sub_type binary segment size 80
-        F_FLD_PREC <null>
-        F_FLD_SCALE 0
-        F_CHR_LEN <null>
-        CSET_NAME <null>
-        BYTES_PER_C <null>
-        FLD_COLL <null>
-        COLL_ATTR <null>
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        RF_FLD_NAME COMP_12
-        RF_FLD_SOURCE RDB_NNNN
-        RF_NOT_NULL <null>
-        RF_DEFAULT <null>
-        RF_IDENT_TYPE <null>
-        F_FLD_TYPE blob sub_type text segment size 80
-        F_FLD_PREC <null>
-        F_FLD_SCALE 0
-        F_CHR_LEN <null>
-        CSET_NAME WIN1250
-        BYTES_PER_C 1
-        FLD_COLL WIN_CZ
-        COLL_ATTR 3
-        RF_IS_EXPR 0
-        F_FLD_EXPR_BLOB_ID <null>
-        Records affected: 44
+        Records affected: 46
     """
     act.isql(switches = ['-q'], input = test_script, combine_output = True, charset = 'utf8')
     assert act.clean_stdout == act.clean_expected_stdout
