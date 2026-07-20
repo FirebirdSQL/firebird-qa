@@ -7,8 +7,8 @@ TITLE:       Problem when restoring the database on FB 4.0 RC1 (gbak regression)
 DESCRIPTION:
     Test used database backup that was provided in the ticket.
 
-    Maximal allowed time is set here for restoring process and gbak will be
-    forcedly killed if it can not complete during this time.
+    Process of restore is limited to some reasonable number of seconds and must be
+    terminated it shi time expire.
     Currently this time is 300 seconds (see 'MAX_THRESHOLD' variable).
 
     Database is validated (using 'gfix -v -full') after successful restore finish.
@@ -28,22 +28,28 @@ DESCRIPTION:
 FBTEST:      bugs.gh_6785
 NOTES:
     [30.06.2022] pzotov
-    Checked again on 4.0.1.2692, 5.0.0.509. Confirmed reproducing of problem on 4.0.0.2452.
-
+        Checked again on 4.0.1.2692, 5.0.0.509. Confirmed reproducing of problem on 4.0.0.2452.
     [20.07.2022] pzotov
-    firebird.log may contain messages encoded in different code pages (say, in cp1251 and in utf8).
-    Because of this, one need to IGNORE any decoding errors when obtain content of log.
-    In this case call of act.get_firebird_log() will raise:
-        UnicodeDecodeError: 'ascii' codec can't decode byte 0x** ... ordinal not in range(128)
-
-    We have either to specify this using somewhat like "act.connect_server(encoding_errors = 'ignore')",
-    or to change firebid-driver.conf - and this will be more proper way.
-    This file (firebid-driver.conf) must have section with name [DEFAULT] with encoding_errors = ignore.
-    Test assumes exactly THIS, i.e. we do NOT specify "encoding_errors = 'ignore'" in acty.connect_server()
-
+        firebird.log may contain messages encoded in different code pages (say, in cp1251 and in utf8).
+        Because of this, one need to IGNORE any decoding errors when obtain content of log.
+        In this case call of act.get_firebird_log() will raise:
+            UnicodeDecodeError: 'ascii' codec can't decode byte 0x** ... ordinal not in range(128)
+        We have either to specify this using somewhat like "act.connect_server(encoding_errors = 'ignore')",
+        or to change firebid-driver.conf - and this will be more proper way.
+        This file (firebid-driver.conf) must have section with name [DEFAULT] with encoding_errors = ignore.
+        Test assumes exactly THIS, i.e. we do NOT specify "encoding_errors = 'ignore'" in acty.connect_server()
     [30.09.2025] pzotov
-    Separated MAX_THRESHOLD assignment depending on OS (on Linux currently it must be greater than on Windows).
-    Added diagnostics when restore command failed (usually because of timeout).
+        Separated MAX_THRESHOLD assignment depending on OS (on Linux currently it must be greater than on Windows).
+        Added diagnostics when restore command failed (usually because of timeout).
+    [20.07.2026] pzotov
+        Restore command was supplemented with switches '-v -st tdrw' (30-jun-2022) and this causes producing of
+        HUGE log because test DB has lot of objects.
+        If restore is terminated with TimeoutExpired then we have to *** LIMIT *** size of data from this log
+        that is shown in annotation. Otherwise annotation in HTML format (that is further created by QA script)
+        will have size about 150 Mb for each failed run of this test. As result, it will be unable to complete
+        QA-report because such huge HTML pages will be compressed for extremely long time
+        (example for Linux: source size = 155632295, compressed = 2657937, time = 221 s).
+        See setting 'MAX_LOG_LENGTH' for showing head and tail of log.
 """
 import os
 import locale
@@ -51,7 +57,6 @@ import zipfile
 import subprocess
 import re
 from difflib import unified_diff
-from textwrap import wrap
 from firebird.driver import SrvRepairFlag
 from pathlib import Path
 import time
@@ -68,6 +73,8 @@ tmp_fdb = temp_file('gh_6785.tmp.fdb')
 
 ###############################################
 MAX_THRESHOLD = 300 if os.name == 'nt' else 400
+MAX_LOG_LENGTH = 10*1024 # added 20.07.2026:
+SKIP_MSG = f'... skipped: output is limited to { 2 * MAX_LOG_LENGTH / 1024} K ...'
 ###############################################
 
 expected_stdout = """
@@ -92,7 +99,8 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
                             '-user', act.db.user, '-password', act.db.password,
                             '-rep', tmp_fbk, tmp_fdb,
                             '-st', 'tdrw', 
-                            '-v', '-y', str(tmp_log)
+                            '-v',
+                            '-y', str(tmp_log)
                           ]
                           ,stderr = subprocess.STDOUT
                           ,timeout = MAX_THRESHOLD
@@ -114,9 +122,15 @@ def test_1(act: Action, tmp_fbk: Path, tmp_fdb: Path, tmp_log: Path, capsys):
         tmp_fdb.unlink(missing_ok = True)
 
         if tmp_log.is_file():
-            print('Check restore log:')
+            print(f'Check restore log (size: {tmp_log.stat().st_size} bytes):')
             with open(tmp_log, 'r') as f:
-                print(f.read())
+                s = f.read()
+                if len(s) > MAX_LOG_LENGTH+2 + len(SKIP_MSG)+2  + MAX_LOG_LENGTH+2:
+                    print(s[:MAX_LOG_LENGTH])
+                    print(SKIP_MSG)
+                    print(s[-MAX_LOG_LENGTH:])
+                else:
+                    print(s)
         else:
             print('Restore log does not exist!')
 
