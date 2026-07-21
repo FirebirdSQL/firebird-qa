@@ -186,13 +186,19 @@ def test_1(act: Action, capsys):
         act.isql(switches = ['-q'], input = test_script, combine_output = True, io_enc = locale.getpreferredencoding())
 
     # Parse trace log:
-    start_show = 0
+    start_show = print_flag = 0
     for line in act.trace_log:
         if line.startswith("^^^"):
             start_show = 1
             continue
         if start_show and line.rstrip():
             print( replace_leading(line,'.') )
+            print_flag = 1
+
+    if not print_flag:
+        print('ERROR: NO LINES HAVE BEEN PRINTED, CHECK TRACE LOG:')
+        print(act.trace_log)
+
 
     expected_stdout_5x = """
         Sub-query (invariant)
