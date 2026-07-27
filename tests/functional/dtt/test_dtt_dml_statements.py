@@ -10,7 +10,7 @@ NOTES:
     [27.07.2026] pzotov
     Checked 6.0.0.2092-3fa7269.
 """
-import shutil
+
 import locale
 from pathlib import Path
 import pytest
@@ -278,7 +278,6 @@ def test_1(act: Action, tmp_sql: Path, capsys):
     """
     
     tmp_sql.write_text(ddl_full, encoding = 'utf8')
-    shutil.copy2(tmp_sql, r'C:\FBTESTING\qa\misc\tmp.sql')
 
     COMMON_OUTCOME = '50986F1B51E97BEF394071812759DD597C92633C07A22997A8FFA0A7BB890B2A6FB3901407BF02CA7A11B19480400BFC40E102A6253BC14B2226035C0D0DDCF4'
     expected_stdout = f"""
