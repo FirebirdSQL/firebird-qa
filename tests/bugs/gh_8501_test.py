@@ -13,18 +13,25 @@ DESCRIPTION:
         https://github.com/FirebirdSQL/firebird/issues/8475#issuecomment-2772324636
 NOTES:
     [11.04.2025] pzotov
-
-    Following queries display THE SAME error messages before and after fix:
-        * select cast('00:60' as time with time zone format 'TZR') from rdb$database
-        * select cast('15:00' as time format 'TZH:TZM') from rdb$database
-        * select cast('15:00' as time format 'TZR') from rdb$database
-        * select cast('-15:00' as time format 'TZH:TZM') from rdb$database
-        * select cast('-15:00' as time format 'TZR') from rdb$database
-    It is unclear for what reason they were added into src/common/tests/CvtTest.cpp
-    
-    Confirmed wrong output (w/o errors or with different messages) on 6.0.0.722.
-    Checked on 6.0.0.725
+        Following queries display THE SAME error messages before and after fix:
+            * select cast('00:60' as time with time zone format 'TZR') from rdb$database
+            * select cast('15:00' as time format 'TZH:TZM') from rdb$database
+            * select cast('15:00' as time format 'TZR') from rdb$database
+            * select cast('-15:00' as time format 'TZH:TZM') from rdb$database
+            * select cast('-15:00' as time format 'TZR') from rdb$database
+        It is unclear for what reason they were added into src/common/tests/CvtTest.cpp
+        
+        Confirmed wrong output (w/o errors or with different messages) on 6.0.0.722.
+        Checked on 6.0.0.725
+    [28.07.2026] pzotov
+        Adjusted expected error text for cast('Apr' as date format 'YEAR  MON'), see:
+            https://github.com/FirebirdSQL/firebird/pull/9052
+            https://github.com/FirebirdSQL/firebird/pull/9093
+            https://groups.google.com/g/firebird-devel/c/aNkUxNtur88/m/CNwUUNk8AQAJ
+            https://github.com/FirebirdSQL/firebird/commit/0592438608e695a22e520776fa149f49def86bc4
+        Checked on 6.0.0.2097-0592438
 """
+
 from firebird.driver import DatabaseError
 import pytest
 from firebird.qa import *
@@ -120,8 +127,8 @@ def test_1(act: Action, capsys):
         
         1040
         {query_map[1040]}
-        Cannot find value in input string for "YEAR" pattern
-        335545315
+        Cannot recognize "EAR" part of date format
+        335545293
         
         1050
         {query_map[1050]}
