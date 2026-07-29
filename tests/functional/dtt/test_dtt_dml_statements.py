@@ -8,6 +8,8 @@ DESCRIPTION:
     against declared temporary tables in standalone/packaged units, triggers and execute blocks.
 NOTES:
     [27.07.2026] pzotov
+    Confirmed bug on 6.0.0.2090-eecfe01: FB crashes.
+    See also: https://groups.google.com/g/firebird-devel/c/M6_BAoBNRpM/m/IVCL2oEcAwAJ
     Checked 6.0.0.2092-3fa7269.
 """
 
