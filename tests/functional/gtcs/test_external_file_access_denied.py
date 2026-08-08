@@ -5,58 +5,67 @@ ID:          gtcs.external-file-access-denied
 FBTEST:      functional.gtcs.external_file_access_denied
 TITLE:       External file path outside configured directories is rejected at DDL time
 DESCRIPTION:
-  When ExternalFileAccess is set to a restricted directory list, creating an
-  external table whose file path escapes the allowed directories must be
-  rejected during CREATE TABLE, not silently stored in metadata and only
-  failing later on access.
+  When ExternalFileAccess is restricted, creating an external table whose
+  file path is outside the allowed directory must be rejected during
+  CREATE TABLE.
 
-  Without the fix, the CREATE TABLE succeeded and the malicious path was
-  stored in RDB$EXTERNAL_FILE; the access check happened only when the
-  table was actually opened.  With the fix, the path is validated at
-  metadata load time via checkExternalFileAccess().
+  Without the fix, CREATE TABLE succeeds and the invalid path is stored
+  in RDB$EXTERNAL_FILE. The access check is performed only when the
+  external file is opened.
+
+  With the fix, the path is validated while relation metadata is loaded,
+  so CREATE TABLE fails immediately.
 
 NOTES:
   [08.08.2026] sunliqiang
-  Test requires ExternalFileAccess set to a restricted list (e.g.
-  'Restrict <dir>').  If external file access is configured as 'None',
-  the test is skipped.
+  The test database uses a dedicated databases.conf alias with
+  ExternalFileAccess restricted to its database directory.
 """
+
+from pathlib import Path
 
 import pytest
 from firebird.qa import *
 
-db = db_factory(user='SYSDBA', password='masterkey')
+
+REQUIRED_ALIAS = 'tmp_external_file_access_denied_alias'
+
+db = db_factory(filename='#' + REQUIRED_ALIAS, user='SYSDBA', password='masterkey', async_write=False, do_not_drop=True)
 
 act = isql_act('db')
-
-expected_stderr = """
-Statement failed, SQLSTATE = 28000
-Use of external file at location /etc/passwd is not allowed by server configuration
-"""
 
 
 @pytest.mark.version('>=4.0')
 def test_1(act: Action):
-    # Create a table pointing outside the allowed directory list.
-    # With the fix this must fail at DDL time.
-    sql = '''
-        create table ext_escape external file '/etc/passwd' (line varchar(200));
-        exit;
-    '''
 
-    act.expected_stderr = expected_stderr
+    # Obtain the physical database location. The database is created inside
+    # the directory allowed by ExternalFileAccess.
+    with act.db.connect() as con:
+        cur = con.cursor()
+        cur.execute('select mon$database_name from mon$database')
+        db_path = Path(cur.fetchone()[0])
+
+    allowed_dir = db_path.parent
+
+    # Use a file in the parent directory, which is deliberately outside
+    # ExternalFileAccess = Restrict <allowed_dir>.
+    denied_file = allowed_dir.parent / 'ext_access_denied_test.dat'
+
+    external_file = str(denied_file).replace("'", "''")
+
+    sql = f"""
+        create table ext_escape external file '{external_file}'
+        (
+            line varchar(200)
+        );
+        exit;
+    """
+
+    act.expected_stderr = f"""
+Statement failed, SQLSTATE = 28000
+Use of external file at location {denied_file} is not allowed by server configuration
+"""
 
     act.isql(switches=['-q'], input=sql)
 
-    if 'SQLSTATE = 28000' not in act.clean_stderr:
-        # ExternalFileAccess may be 'None' in the test environment, which
-        # rejects the path with a different message, or 'Full' which allows
-        # everything.  Distinguish: None rejects at open time (not DDL),
-        # Full allows.  Only skip when the configuration is not a
-        # restricted list at all.
-        if 'not allowed by server configuration' not in act.clean_stderr:
-            pytest.skip('ExternalFileAccess is not set to a restricted list')
-
-    assert 'SQLSTATE = 28000' in act.clean_stderr
-    assert 'not allowed by server configuration' in act.clean_stderr
     assert act.clean_stderr == act.clean_expected_stderr
