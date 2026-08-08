@@ -30,7 +30,7 @@ from firebird.qa import *
 
 REQUIRED_ALIAS = 'tmp_external_file_access_denied_alias'
 
-db = db_factory(filename='#' + REQUIRED_ALIAS, user='SYSDBA', password='masterkey', async_write=False, do_not_drop=True)
+db = db_factory(filename='#' + REQUIRED_ALIAS)
 
 act = isql_act('db')
 
