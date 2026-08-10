@@ -10,8 +10,8 @@ DESCRIPTION:
     The name of profiling session ('manual nested loop') is stored in context variable in order to avoid duplicates.
 NOTES:
     [02.07.2026] pzotov
-    Confirmed bug on 6.0.0.2050-09246e5.
-    Checked on 6.0.0.2050-a4fa0b9 -- all fine.
+    Confirmed bug on 6.0.0.2050-09246e5, 5.0.5.1859.
+    Checked on 6.0.0.2050-a4fa0b9, 5.0.5.1860-1ba6474.
 """
 import os
 import pytest
@@ -22,7 +22,7 @@ db = db_factory()
 substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', substitutions = substitutions)
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.5')
 def test_1(act: Action):
 
     SCHEMA_SEARCH_STTM = '' if act.is_version('<6') else 'set search_path to PLG$PROFILER, PUBLIC;'
