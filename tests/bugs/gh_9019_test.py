@@ -34,7 +34,7 @@ DESCRIPTION:
 NOTES:
     [02.09.2026] pzotov
     Confirmed issue on 6.0.0.2140-1b42306 (10.08.2026 20:39); 5.0.5.1868; 4.0.8.3314.
-    Checked on 6.0.0.2147.
+    Checked on 6.0.0.2147, 5.0.5.1879-d995e8d.
 """
 
 import pytest
@@ -159,7 +159,7 @@ expected_stdout = """
     Records affected: 0
 """
 
-@pytest.mark.version('>=6.0')
+@pytest.mark.version('>=5.0.5')
 def test_1(act: Action):
     act.expected_stdout = expected_stdout
     act.execute(combine_output = True)
