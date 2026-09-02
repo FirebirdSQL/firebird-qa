@@ -24,7 +24,9 @@ DESCRIPTION:
         -nan < -snan < -inf < -0.1 < -0.10 < -0 < 0 < 0.10 < 0.1 < inf < snan < nan
 
     Checked on 4.0.0.1714.
-FBTEST:      functional.datatypes.decfloat_ordering_rules
+NOTES:
+    [02.09.2026] pzotov
+    See also $QA_HOME/tests/bugs/gh_9019_test.py for TOTALORDER additional check.
 """
 
 import pytest
