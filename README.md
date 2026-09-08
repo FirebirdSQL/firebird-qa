@@ -7,15 +7,17 @@ This repository contains:
 - tests for Firebird engine (directory `tests`)
 - files needed by tests (directories `databases`, `files`, `backups` and `configs`)
 
-**Requirements:** Python 3.8+, Firebird 3+
+**Requirements:** Python 3.11+, Firebird 3.0.2+
 
 You should definitelly read the [QA suite documentation](https://firebird-qa.readthedocs.io)!
+Home page for Python `firebird-driver`: https://pypi.org/project/firebird-driver/
+Home page for pytest plugin `firebird-Qa`: https://pypi.org/project/firebird-qa/
 
 ## Quickstart
 
-1. Clone the git repository
+* Clone this git repository
 
-2. If you don't have `pipx` tool installed, install it using::
+* If you don't have `pipx` tool installed, install it using::
 
    ```
    python -m pip install pipx
@@ -30,13 +32,17 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
    > once after installation to ensure that tools installed via `pipx` will be available on
    > search path.
 
-3. Install the plugin and required dependencies by running next command:
+* Install the plugin and required dependencies by running next command:
 
    ```
    pipx install --include-deps firebird-qa
    ```
 
-3. Adjust Firebird server configuration.
+* Install Python packages that are needed for some tests. Currently they are:
+    * for Windows: psutil, sortedcontainers, win32gui, win32con
+	* for Linux: psutil, sortedcontainers
+
+* Adjust Firebird server configuration.
 
    **ONLY FOR MANUAL runs:**
 
@@ -54,10 +60,11 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
    ```
 
    This must be done only if you want to run some tests manually.
-   Automated scenario for running tests will overwrite this file
-   and put there all needed data before every pytest session (using
-   `$QA_ROOT/files/qa-databases.conf` as prototype for that purpose).
-
+   Automated scenario for running tests will replace file `$FB_HOME/databases.conf`
+   with `$QA_HOME/files/qa-databases.conf` and append aliases `security.db` and `employee`
+   at the end of `$FB_HOME/databases.conf`.
+   
+   
     1. `$FB_HOME/firebird.conf`:
 
         **Firebird 3:**
@@ -252,7 +259,7 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
            Add following parameters in the 'firebird.exe' key:
            ```
            DumpCount, type = DWORD, value: not less than 5;
-           DumpFoler, type = REG_EXPAND_SZ, value = directory where you want dumps to be created;
+           DumpFolder, type = REG_EXPAND_SZ, value = <some_dir> // directory where you want dumps to be created;
            DumpType, type = DWORD, value = 2
            ```
         3. Following setting must present in the registry to disable any pop-up window when program crashes:
@@ -271,12 +278,16 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
         ```
 
 5. Cautions.
-    1. Problems can occur on Windows if we launch two FB instances which uses the same major version ODS.
-       Currently this relates to FB-4.x and FB-5.x: each of them tries to create file 'fb13_user_mapping'
-       in `%programdata%\firebird`. This leads to conflict and attempt to connect to any DB using latter FB instance
-       issues "Error occurred during login, please check server firebird.log for details" and firebird.log will have:
+    1. Problem can occur on Windows if we launch FB-3.x and one more FB-3.x instances is running concurrently.
+       Each of these instances try to create file 'fb13_user_mapping' in `%programdata%\firebird`.
+	   This leads to conflict for some tests (at least for those which are in functional/replication folder).
+	   Details can be found here: https://github.com/FirebirdSQL/firebird/issues/7896
+       An attempt to connect to any DB using latter FB instance will fail with:
+	   "Error occurred during login, please check server firebird.log for details"
+       The firebird.log will have:
        "Database is probably already opened by another engine instance in another Windows session".
-       BE SURE THAT YOU DID NOT LAUNCH ANOTHER FIREBIRD INSTANCE THAT USES SAME ODS AS CURRENTLY TESTING.
+       BE SURE THAT YOU DID NOT LAUNCH ANOTHER FIREBIRD 3.X INSTANCE TOGEHTHER CURRENTLY TESTING.
+	   This problem has been fixed in FB 4.x and later.
     2. Be sure that directory specified by FIREBIRD_TMP variable actually exists and is accessible for 'firebird' account.
     3. Ensure that your `firebird-driver.conf` contains 'DEFAULT' section with `encoding_errors = ignore`.
        Otherwise outcome of some tests can be unpredictable if your OS has non-ascii system console
@@ -285,17 +296,19 @@ You should definitelly read the [QA suite documentation](https://firebird-qa.rea
 
    The plugin adds next options to pytest:
    ```
-        Firebird server:
-            --server=SERVER       Server configuration name
-            --bin-dir=PATH        Path to directory with Firebird utilities
-            --protocol={xnet,inet,inet4,wnet}
-                                  Network protocol used for database attachments
-            --runslow             Run slow tests
-            --save-output         Save test std[out|err] output to files
-            --skip-deselected={platform,version,any}
-                                  SKIP tests instead deselection
-            --extend-xml          Extend XML JUnit report with additional information
-            --install-terminal    Use our own terminal reporter
+		--bin-dir            Path to directory with Firebird utilities
+		--disable-db-cache   Disable cache for empty databases ; default=False
+		--driver-config      Firebird driver configuration filename; default: firebird-driver.conf
+		--extend-xml         Extend XML JUnit report with additional information; default=False
+		--install-terminal   Use our own terminal reporter; default=False
+		--max-errors         Number of consecutive errors before skipping; default=0
+		--protocol           Network protocol used for database attachments ( inet, inet4, xnet,wnet )
+		--runslow            Run slow tests; default=False
+		--save-output        Save test std[out|err] output to files; default=False
+		--server             Server configuration name
+		--skip-deselected    SKIP tests instead deselection ( SKIP_PLATFORM, SKIP_VERSION, SKIP_ANY )
+		--start-time         Show tests start time info; default=False
+
    ```
    To run all tests (except slow ones) against local server use next command::
    ```
