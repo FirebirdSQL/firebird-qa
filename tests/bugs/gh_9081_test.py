@@ -5,6 +5,10 @@ ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9081
 TITLE:       Error creating unique expression index
 DESCRIPTION:
+    Bug was encountered because `CREATE INDEX` implicitly uses ParallelWorkers > 1 and launches several connects ("workers")
+    in case when table has Pointer Pages > 1. If EXPRESSION-based or CONTITIONAL index is created then presense of duplicated
+    keys in one of PP that is handled by *worker* (NOT main connect) caused bugcheck. Explained by Vlad, 03-sep-2026 13:26.
+
     Test creates a table with three columns: (id int, f1 varchar, f2 varchar).
     Values in f1 and f2 are defined by id and must have lot of duplicates.
     It is crucial for this test:
@@ -15,7 +19,7 @@ DESCRIPTION:
 NOTES:
     [07.09.2026] pzotov
     1. Table must occupy more that one Pointer Page.
-    2. Server config must have 'ParallelWorkers' with value more than 1.
+    2. ParallelWorkers must be greater than 1 (duplicated key must be found by some WORKER rather then in main connect).
     3. Suppose that this counter is changed in ASCENDING order, from 0 to <INIT_ROWS_COUNT> (say, 1000000).
        Then FIRST duplicate of expression `f1 || f2` will be found for id pair = {1010, 11000}.
        The 'distance' between problematic Id values: 11000 - 1010 = 9990; 
