@@ -10,25 +10,15 @@ DESCRIPTION:
     When ExternalFileAccess is restricted to the directory containing the test database, an external table whose file is located inside that
     directory must still work normally.
 NOTES:
-    [08.08.2026] sunliqiang
-    The test database uses a dedicated databases.conf alias with
-    ExternalFileAccess restricted to its database directory.
+    [10.09.2026] pzotov
+    1. Re-implemented: avoid usage of $QA_ROOT/files/qa-databases.conf (suggested by Anton Zuev, RedBase).
+       Test uses ConfigManager class from QA-plugin in order to preserve original content of databases.conf and restore it at the teardown stage.
+       Copy of $FB_HOME/databases.conf will be stored in the folder where test database lives.
+       New content of this file will define alias that points to test DB file (see 'CONNECT_TO_ALIAS') and parameter for enabling creation of
+       external table which storage is in the same folder as test DB uses:
+           ExternalFileAccess = Restrict {test_db_path}
 
-    [04.09.2026] pzotov
-    1. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
-    2. Test uses pre-created databases.conf which has alias defined by variable REQUIRED_ALIAS.
-       Database file for that alias must NOT exist in the QA_root/files/qa/ subdirectory: it will be created here.
-       Content of databases.conf must be taken from $QA_ROOT/files/qa-databases.conf (one need to replace
-       it before every test session).
-       Discussed with pcisar, letters since 30-may-2022 13:48, subject:
-       "new qa, core_4964_test.py: strange outcome when use... shutil.copy() // comparing to shutil.copy2()"
-    3. Value of REQUIRED_ALIAS must be EXACTLY the same as alias specified in the pre-created databases.conf
-       (for LINUX this equality is case-sensitive, even when aliases are compared):
-       tmp_external_file_allowed_alias = $(dir_sampleDb)/qa/tmp_external_file_allowed.fdb
-       {
-           ExternalFileAccess = Restrict $(dir_sampleDb)/qa
-       }
-    4. The firebird.conf must contain 'ExternalFileAccess = None'. Some old tests have to be re-implemented because of this change.
+    2. The firebird.conf must contain 'ExternalFileAccess = None'. Some old tests have to be re-implemented because of this change.
 
     ###############
     ### ACHTUNG ###
@@ -40,41 +30,45 @@ NOTES:
 """
 
 from pathlib import Path
-
+import time
 import pytest
 from firebird.qa import *
 
+# Name of alias that will be written into temporary replacement of databases.conf:
+CONNECT_TO_ALIAS = 'tmp_external_file_allowed_alias'
+
+# name of external table that will be used in SQL statements:
 EXT_TABLE_NAME = 'ext_allowed'
 
-# Pre-defined alias from QA_root/files/qa-databases.conf.
-# This file must be copied manually to each testing FB home folder
-# with replacing databases.conf there.
-# Alias must contain 'ExternalFileAccess' parameter (per-database)
-# which is specified to some directory that for sure does exist
-# when this test is running. Currently it is $(dir_sampleDb)/qa,
-# thus parameter looks like:
-# ExternalFileAccess = Restrict $(dir_sampleDb)/qa
-#
-REQUIRED_ALIAS = 'tmp_external_file_allowed_alias'
-
-db = db_factory(filename='#' + REQUIRED_ALIAS)
+db = db_factory()
 substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', substitutions = substitutions)
 
-@pytest.mark.skip("Need fix #9121. Some tests must be re-implemented.")
-@pytest.mark.version('>=3.0')
-def test_1(act: Action):
+tmp_file = temp_file('func-extfile-access-allowed.copy')
 
-    # The database itself is located in the directory configured in
-    # ExternalFileAccess, so a sibling external file is guaranteed to
-    # be inside the allowed directory.
-    # Obtain the physical database location. The database is created inside the directory allowed by ExternalFileAccess.
+####@pytest.mark.skip("Need fix #9121. Some tests must be re-implemented.")
+@pytest.mark.version('>=3.0')
+def test_1(act: Action, tmp_file: Path, store_config: ConfigManager, capsys):
+
+    # Obtain the physical database location.
     # NOTE: we must NOT use 'act.db.db_path' for ALIASED databases! It will return '.' rather than full path+filename.
     # Use only con.info.name for that:
+    TEMP_DB_CONF_CONTENT = ''
     with act.db.connect() as con:
-        allowed_dir = Path(con.info.name).parent
-        
-    allowed_file = allowed_dir / 'ext_access_allowed_test.dat'
+        test_db_file = con.info.name
+        test_db_path = Path(test_db_file).parent
+        TEMP_DB_CONF_CONTENT = f"""
+            {CONNECT_TO_ALIAS} = {test_db_file}
+            {{
+                ExternalFileAccess = Restrict {test_db_path}
+            }}
+        """
+    assert CONNECT_TO_ALIAS in TEMP_DB_CONF_CONTENT and 'ExternalFileAccess' in TEMP_DB_CONF_CONTENT
+
+    # REPLACE databases.conf:
+    store_config.replace('databases.conf', TEMP_DB_CONF_CONTENT)
+
+    allowed_file = test_db_path / 'ext_access_allowed_test.dat'
 
     # Remove leftovers from an interrupted/failed previous test run.
     allowed_file.unlink(missing_ok=True)
@@ -84,6 +78,7 @@ def test_1(act: Action):
     test_sql = f"""
         set bail on;
         set list on;
+        connect 'localhost:{CONNECT_TO_ALIAS}' user {act.db.user} password '{act.db.password}';
         create table {EXT_TABLE_NAME} external file '{external_file}'(letter char(1), lf char(1));
         commit;
         set count on;
@@ -111,7 +106,7 @@ def test_1(act: Action):
         Records affected: 5
     """
 
-    act.isql(switches=['-q'], input = test_sql, combine_output = True)
+    act.isql(switches=['-q'], connect_db = False, credentials = False, input = test_sql, combine_output = True)
     allowed_file.unlink(missing_ok = True)
 
     assert act.clean_stdout == act.clean_expected_stdout
