@@ -24,7 +24,7 @@ NOTES:
     ### ACHTUNG ###
     ###############
     CURRENTLY TEST PASSES BUT ALL MAJOR VERSIONS BEHAVE NOT LIKE IT IS DESIRED BY THIS PULL REQUEST #39:
-    ACCESS CHECK IS PERFORMED ONLY DURING DML RATHER THAN DDL. WAITING FOR FIX.
+    ACCESS CHECK IS PERFORMED ONLY DURING DML RATHER THAN DDL. WAITING FOR FIX #9121.
 
     Checked on 6.0.0.2169; 5.0.5.1879; 4.0.8.3314; 3.0.15.33884  
 """
@@ -46,7 +46,6 @@ act = isql_act('db', substitutions = substitutions)
 
 tmp_file = temp_file('func-extfile-access-allowed.copy')
 
-####@pytest.mark.skip("Need fix #9121. Some tests must be re-implemented.")
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_file: Path, store_config: ConfigManager, capsys):
 
