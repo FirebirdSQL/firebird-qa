@@ -8,8 +8,8 @@ DESCRIPTION:
     There is no similar test in GTCS, but for INTEGER datatype see:
     https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/EXT_REL_0_4_D.script
 NOTES:
-    [11.09.2026] pzotov
-    Test has been replaced with functional/table/external/test_external_file_all_datatypes.py
+    [12.09.2026] pzotov
+    Test has been replaced with functional/table/external/external_file_all_datatypes_test.py
     Execution DISABLED.
 """
 from pathlib import Path

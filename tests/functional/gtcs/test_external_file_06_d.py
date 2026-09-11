@@ -11,8 +11,8 @@ NOTES:
     [03.03.2021] pzotov
     Added substitution for zero value ('F02') as result of evaluating exp(-745.1332192):
     on Windows number of digits in decimal representation more than on Linux for 1.
-    [11.09.2026] pzotov
-    Test has been replaced with functional/table/external/test_external_file_all_datatypes.py
+    [12.09.2026] pzotov
+    Test has been replaced with functional/table/external/external_file_all_datatypes_test.py
     Execution DISABLED.
 """
 

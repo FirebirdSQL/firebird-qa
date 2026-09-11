@@ -23,8 +23,8 @@ NOTES:
     2. One need to be sure that firebird.conf does NOT contain DatabaseAccess = None.
     3. The firebird.conf must contain 'ExternalFileAccess = None'.
 
-    [11.09.2026] pzotov
-    Test has been replaced with functional/table/external/test_external_file_all_datatypes.py
+    [12.09.2026] pzotov
+    Test has been replaced with functional/table/external/external_file_all_datatypes_test.py
     Execution DISABLED.
 """
 
