@@ -26,7 +26,7 @@ NOTES:
     CURRENTLY TEST PASSES BUT ALL MAJOR VERSIONS BEHAVE NOT LIKE IT IS DESIRED BY THIS PULL REQUEST #39:
     ACCESS CHECK IS PERFORMED ONLY DURING DML RATHER THAN DDL. WAITING FOR FIX #9121.
 
-    Checked on 6.0.0.2169; 5.0.5.1879; 4.0.8.3314; 3.0.15.33884  
+    Checked on 6.0.0.2176; 5.0.5.1862; 4.0.8.3314; 3.0.15.33884
 """
 
 from pathlib import Path
@@ -44,10 +44,8 @@ db = db_factory()
 substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', substitutions = substitutions)
 
-tmp_file = temp_file('func-extfile-access-allowed.copy')
-
 @pytest.mark.version('>=3.0')
-def test_1(act: Action, tmp_file: Path, store_config: ConfigManager, capsys):
+def test_1(act: Action, store_config: ConfigManager, capsys):
 
     # Obtain the physical database location.
     # NOTE: we must NOT use 'act.db.db_path' for ALIASED databases! It will return '.' rather than full path+filename.
