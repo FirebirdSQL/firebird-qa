@@ -5,13 +5,12 @@ ID:          gtcs.external-file-04-A
 FBTEST:      functional.gtcs.external_file_04_d
 TITLE:       est for external table with field of INTEGER datatype
 DESCRIPTION:
-  Original test see in:
-  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/EXT_REL_0_4_D.script
+    Original test see in:
+    https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/EXT_REL_0_4_D.script
 NOTES:
-  [31.07.2022] pzotov
-  FB config must allow creation of external tables, check parameter 'ExternalFileAccess'.
-  Otherwise: SQLSTATE = 28000 / Use of external file at location ... is not allowed ...
-  Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.591
+    [11.09.2026] pzotov
+    Test has been replaced with functional/table/external/test_external_file_all_datatypes.py
+    Execution DISABLED.
 """
 
 from pathlib import Path
@@ -44,6 +43,7 @@ expected_stdout = """
     Records affected: 5
 """
 
+@pytest.mark.skip('Not needed anymore. See functional/table/external/test_external_file_all_datatypes.py')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_ext_file: Path):
     
