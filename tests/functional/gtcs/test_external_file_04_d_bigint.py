@@ -5,17 +5,13 @@ ID:          gtcs.external-file-04-B
 FBTEST:      functional.gtcs.external_file_04_d_bigint
 TITLE:       Test for external table with field of BIGINT datatype
 DESCRIPTION:
-  There is no similar test in GTCS, but for INTEGER datatype see:
-  https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/EXT_REL_0_4_D.script
+    There is no similar test in GTCS, but for INTEGER datatype see:
+    https://github.com/FirebirdSQL/fbtcs/blob/master/GTCS/tests/EXT_REL_0_4_D.script
 NOTES:
-  [31.07.2022] pzotov
-  FB config must allow creation of external tables, check parameter 'ExternalFileAccess'.
-  Otherwise: SQLSTATE = 28000 / Use of external file at location ... is not allowed ...
-  Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.591
+    [11.09.2026] pzotov
+    Test has been replaced with functional/table/external/test_external_file_all_datatypes.py
+    Execution DISABLED.
 """
-
-
-
 from pathlib import Path
 import pytest
 from firebird.qa import *
@@ -39,6 +35,7 @@ expected_stdout = """
     Records affected: 5
 """
 
+@pytest.mark.skip('Not needed anymore. See functional/table/external/test_external_file_all_datatypes.py')
 @pytest.mark.version('>=3.0')
 def test_1(act: Action, tmp_ext_file: Path):
     
