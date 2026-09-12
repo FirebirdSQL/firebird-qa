@@ -424,7 +424,8 @@ create domain dm_ip varchar(255);
 
 -------------------------------------------------------------------------------
 ---- aux table for auto stop running attaches:
---recreate table ext_stoptest external 'stoptest.txt' (
+-- DISABLED FOR THIS TEST BECAUSE NOT NEEDED HERE:
+--recreate table ext_stoptest ex`ternal 'stoptest.txt' (
 --  s char(2)
 --);
 
@@ -1860,7 +1861,7 @@ begin
         v_curr_trn = coalesce(a_trn_id, current_transaction);
 
         -- "-1" ==> decision to premature stop all ISQL sessions by issuing EXTERNAl command
-        -- (either running $tmpdir/1stoptest.tmp.sh or adding line into external file 'stoptest.txt')
+        -- (either running $tmpdir/1stoptest.tmp.sh or adding line into ext`ernal file 'stoptest.txt')
         v_need_to_stop = coalesce( :a_need_to_stop, (select p.need_to_stop from sp_stoptest p rows 1) );
 
         v_dummy = gen_id( g_stop_test, 2147483647);
