@@ -43,6 +43,7 @@ DATE_BIN_LEN = 4
 # Name of alias that will be written into temporary replacement of databases.conf:
 CONNECT_TO_ALIAS = 'tmp_gh_8890_alias'
 
+@pytest.mark.ai
 @pytest.mark.version('>=6.0')
 def test_1(act: Action, store_config: ConfigManager, capsys):
 
