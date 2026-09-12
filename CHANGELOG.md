@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Helper function `replace_leading` for use in tests. It replaces leading whitespace
+  in a string with a same-length sequence of the specified character (default '.'),
+  so indentation depth remains visible in output comparisons. Test files must use
+  this function instead of defining their own local copies.
+
 ## [0.22.2] - 2026-03-27
 
 ### Fixed

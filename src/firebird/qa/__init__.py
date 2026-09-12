@@ -40,4 +40,5 @@
 
 from .plugin import db_factory, Database, user_factory, User, isql_act, python_act, Action, \
      temp_file, temp_files, role_factory, Role, envar_factory, Envar, Mapping, mapping_factory, \
-     ServerKeeper, ExecutionError, QA_GLOBALS, existing_db_factory, ConfigManager
+     ServerKeeper, ExecutionError, QA_GLOBALS, existing_db_factory, ConfigManager, \
+     replace_leading

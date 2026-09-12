@@ -55,6 +55,10 @@ python_act
 ----------
 .. autofunction:: python_act
 
+replace_leading
+---------------
+.. autofunction:: replace_leading
+
 Database
 --------
 .. autoclass:: Database

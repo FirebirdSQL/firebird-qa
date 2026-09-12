@@ -658,6 +658,28 @@ def substitute_macros(text: str, macros: Dict[str, str]):
         f_text = f_text.replace(f'$({pattern.upper()})', replacement)
     return f_text
 
+def replace_leading(source: str, char: str = '.') -> str:
+    """Helper function that replaces leading whitespace in `source` with `char`.
+
+    All leading whitespace (everything removed by `str.lstrip()`) is replaced by
+    the sequence of `char` of the same length, so the indentation depth of the
+    line remains visible after output cleaning/substitutions that collapse runs
+    of spaces. Typically used to prepare plan (and similar) output lines for
+    comparison with expected output.
+
+    Arguments:
+        source: String to process.
+        char: Character used to replace the leading whitespace.
+
+    .. note::
+
+       Common helper extracted from test files, where it was previously
+       duplicated in dozens of local copies. Test files must NOT define their
+       own local copies of this function.
+    """
+    stripped = source.lstrip()
+    return char * (len(source) - len(stripped)) + stripped
+
 class Database:
     """Object to access and manage single test database.
 
