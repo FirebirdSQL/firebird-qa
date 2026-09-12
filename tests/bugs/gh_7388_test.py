@@ -46,12 +46,6 @@ SUCCESS_MSG = "Expected: table statistics are identical."
 
 #----------------------------------------------------------
 
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-
-#----------------------------------------------------------
-
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
     t_map = { 'rdb$relation_fields' : -1, 'rdb$relations' : -1, 'rdb$security_classes' : -1 }

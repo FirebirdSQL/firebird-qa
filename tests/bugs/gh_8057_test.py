@@ -390,12 +390,6 @@ def parse_index_root_page(db_file, pg_size, rel_name, irt_page_number, rel_sel_m
             # Input, byRef:
             rel_sel_map[rel_name.strip()] = min_irtd_selec
 
-#-----------------------------------------------------------------------------
-
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-
 #-----------------------------------------------------------------------
 
 @pytest.mark.version('>=6.0')

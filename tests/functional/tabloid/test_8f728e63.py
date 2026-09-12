@@ -104,12 +104,6 @@ act = python_act('db', substitutions = substitutions)
 
 #---------------------------------------------------------
 
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-
-#---------------------------------------------------------
-
 query_map = {
     1000 : (
               """

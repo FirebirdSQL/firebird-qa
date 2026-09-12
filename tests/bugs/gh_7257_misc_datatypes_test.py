@@ -30,12 +30,6 @@ act = python_act('db', substitutions = [('[ \t]+', ' '), ])
 
 #-----------------------------------------------------------
 
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-
-#-----------------------------------------------------------
-
 def run_ddl_dml(act, capsys, dtype, v_chk, v_max, use_rand = True):
 
     with act.db.connect() as con:

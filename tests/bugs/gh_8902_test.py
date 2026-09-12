@@ -41,12 +41,6 @@ query_map = {
 
 #-----------------------------------------------------------
 
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-
-#-----------------------------------------------------------
-
 @pytest.mark.version('>=6.0')
 def test_1(act: Action, tmp_init_sql: Path, capsys):
     employee_data_sql = zipfile.Path(act.files_dir / 'standard_sample_databases.zip', at='sample-DB_-_firebird.sql')

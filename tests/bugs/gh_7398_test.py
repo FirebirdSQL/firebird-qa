@@ -67,12 +67,6 @@ fbk_file = temp_file('gh_7398.tmp.fbk')
 
 #-----------------------------------------------------------
 
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-
-#-----------------------------------------------------------
-
 expected_out_4x = """
     Select Expression
     ....-> Aggregate

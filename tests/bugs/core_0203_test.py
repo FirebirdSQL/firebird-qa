@@ -64,12 +64,6 @@ act = isql_act('db', substitutions = substitutions)
 
 #-----------------------------------------------------------
 
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-
-#-----------------------------------------------------------
-
 @pytest.mark.version('>=3')
 def test_1(act: Action, capsys):
 

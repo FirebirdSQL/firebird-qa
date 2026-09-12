@@ -51,12 +51,6 @@ tmp_fbk = temp_file('gh_8161.tmp.fbk')
 
 #-----------------------------------------------------------
 
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-
-#-----------------------------------------------------------
-
 @pytest.mark.version('>=3.0.12')
 def test_1(act: Action, tmp_fbk: Path, capsys):
     zipped_fbk_file = zipfile.Path(act.files_dir / 'gh_8161.zip', at = 'gh_8161.fbk')

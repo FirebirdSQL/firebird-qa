@@ -63,10 +63,6 @@ query_lst = (
 act = python_act('db')
 
 #---------------------------------------------------------
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-#---------------------------------------------------------
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
     with act.db.connect() as con:

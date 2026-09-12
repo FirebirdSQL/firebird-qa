@@ -57,12 +57,6 @@ act = python_act('db')
 
 #-----------------------------------------------------------
 
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-
-#-----------------------------------------------------------
-
 def check_indices_inactive(act, qry_map, nr_block, capsys):
     with act.db.connect() as con:
         cur = con.cursor()

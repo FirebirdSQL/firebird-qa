@@ -47,10 +47,6 @@ act = python_act('db')
 RECORDS_COUNT = 1000
 
 #-----------------------------------------------------------
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-#-----------------------------------------------------------
 
 @pytest.mark.version('>=6')
 def test_1(act: Action, capsys):

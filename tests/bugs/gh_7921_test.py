@@ -195,10 +195,6 @@ db = db_factory(init = init_sql)
 act = python_act('db')
 
 #---------------------------------------------------------
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-#---------------------------------------------------------
 
 @pytest.mark.version('>=5.0.1')
 def test_1(act: Action, capsys):

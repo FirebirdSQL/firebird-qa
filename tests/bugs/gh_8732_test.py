@@ -41,10 +41,6 @@ db = db_factory(init=init_script)
 act = python_act('db', substitutions=[('record length.*', ''), ('key length.*', '')])
 
 #-----------------------------------------------------------
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-#-----------------------------------------------------------
 
 @pytest.mark.version('>=5.0.4')
 def test_1(act: Action, capsys):

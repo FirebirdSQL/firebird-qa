@@ -38,10 +38,6 @@ substitutions = [ ('[ \t]+', ' '), (r'RDB\$TEMP_DEPEND_\d+.*', 'RDB_TEMP_DEPEND'
 act = python_act('db', substitutions = substitutions)
 
 #-----------------------------------------------------------
-def replace_leading(source, char="."):
-    stripped = source.lstrip()
-    return char * (len(source) - len(stripped)) + stripped
-#-----------------------------------------------------------
 
 @pytest.mark.version('>=6')
 def test_1(act: Action, capsys):
