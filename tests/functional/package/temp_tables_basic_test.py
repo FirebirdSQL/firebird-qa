@@ -16,9 +16,10 @@ NOTES:
     Problem was encountered (FB crash) if we do commit after every checked datatype (see below: 'xxx con.commit() xxx').
     If we skip commit then all fine.
     See also: https://groups.google.com/g/firebird-devel/c/azqX6VgM59k/m/oOkRbGaLAQAJ
-    WAITING FOR FIX!
 
-    Checked on 6.0.0.2060-637102f.
+    [15.09.2026]
+    Uncommented `commit()`, noted by dimitr.
+    Checked on 6.0.0.2176-0-8a5a043
 """
 
 import pytest
@@ -120,19 +121,18 @@ def test_1(act: Action, capsys):
             con.execute_immediate(ddl_pkg_body)
 
             cur.callproc(f'pg_temp_tab.sp_{k}_fill')
-            #cur.execute(f'select pg_temp_tab.fn_{k}_count() as "fn_{k}_count" from rdb$database')
             cur.execute(f'select * from pg_temp_tab.sp_{k}_show')
             ccol=cur.description
             for r in cur:
                 for i in range(0,len(ccol)):
                     print( ccol[i][0],':', r[i])
 
-            # 05.07.2026. ::: ACHTUNG :::
-            # FOLLOWING COMMIT MUST BE COMMENTED OUT!
-            # OTHERWISE FB CRASHES, SEE
-            # https://groups.google.com/g/firebird-devel/c/azqX6VgM59k/m/oOkRbGaLAQAJ
-            # WAITING FOR FIX!
-            # xxx con.commit() xxx
+            # following `commit()` has been commented out since 05.07.2026 because it caused FB crash,
+            # see https://groups.google.com/g/firebird-devel/c/azqX6VgM59k/m/oOkRbGaLAQAJ
+            # UNcommented 15.09.2026 because problem has been fixed in 22260a0b
+            # (see also note by dimitr, 15.09.2026 09:20).
+            after dimitr's note, lkett
+            con.commit()
 
         # < for k, v in types_map.items()
 
