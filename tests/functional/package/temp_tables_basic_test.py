@@ -131,7 +131,6 @@ def test_1(act: Action, capsys):
             # see https://groups.google.com/g/firebird-devel/c/azqX6VgM59k/m/oOkRbGaLAQAJ
             # UNcommented 15.09.2026 because problem has been fixed in 22260a0b
             # (see also note by dimitr, 15.09.2026 09:20).
-            after dimitr's note, lkett
             con.commit()
 
         # < for k, v in types_map.items()
