@@ -59,6 +59,10 @@ replace_leading
 ---------------
 .. autofunction:: replace_leading
 
+terminate_sync
+--------------
+.. autofunction:: terminate_sync
+
 Database
 --------
 .. autoclass:: Database

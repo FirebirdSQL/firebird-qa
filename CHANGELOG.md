@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   in a string with a same-length sequence of the specified character (default '.'),
   so indentation depth remains visible in output comparisons. Test files must use
   this function instead of defining their own local copies.
+- Helper function `terminate_sync` for use in tests. It terminates external process
+  (`subprocess.Popen`) and synchronously waits for its completion, with forced kill
+  escalation after `max_wait_seconds` (default: 10). Returns process exit code, or
+  `None` if no process was passed.
 
 ## [0.22.2] - 2026-03-27
 

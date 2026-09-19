@@ -54,7 +54,7 @@ from collections import deque
 from _pytest.config import Config
 from _pytest.terminal import TerminalReporter, _get_raw_skip_reason, _format_trimmed
 from _pytest.pathlib import bestrelpath
-from subprocess import run, CompletedProcess, PIPE, STDOUT
+from subprocess import run, CompletedProcess, PIPE, STDOUT, Popen, TimeoutExpired
 from pathlib import Path
 from configparser import ConfigParser, ExtendedInterpolation
 from packaging.specifiers import SpecifierSet
@@ -679,6 +679,41 @@ def replace_leading(source: str, char: str = '.') -> str:
     """
     stripped = source.lstrip()
     return char * (len(source) - len(stripped)) + stripped
+
+def terminate_sync(running_process: Popen, max_wait_seconds: int = 10) -> Optional[int]:
+    """Helper function that synchronously terminates external process.
+
+    The process is asked to terminate, then the function waits for its completion
+    no longer than `max_wait_seconds`. If the process does not terminate in time,
+    it is forcibly killed, and the function waits for its completion again.
+
+    .. note::
+
+       On Windows `terminate()` and `kill()` are both `TerminateProcess` (i.e.
+       immediate), so the escalation path is a safety net there. On POSIX
+       `terminate()` sends SIGTERM and `kill()` sends SIGKILL.
+
+    .. note::
+
+       If `running_process` is `None`, the call does nothing and returns `None`.
+       This makes the function convenient to use in cleanup blocks where the
+       process might not have been started.
+
+    Arguments:
+        running_process: Process to terminate, or `None`.
+        max_wait_seconds: Timeout (seconds) for each of the two waits.
+
+    Returns:
+        Process exit code, or `None` when `running_process` was `None`.
+    """
+    if running_process is None:
+        return None
+    running_process.terminate()
+    try:
+        return running_process.wait(timeout=max_wait_seconds)
+    except TimeoutExpired:
+        running_process.kill()
+        return running_process.wait(timeout=max_wait_seconds)
 
 class Database:
     """Object to access and manage single test database.
