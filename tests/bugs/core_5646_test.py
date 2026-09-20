@@ -97,12 +97,6 @@ import pytest
 from firebird.qa import *
 from firebird.driver import DatabaseError
 
-#--------------------------------------------------------------------
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#--------------------------------------------------------------------
 
 ###########################
 ###   S E T T I N G S   ###

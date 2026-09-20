@@ -68,12 +68,6 @@ import pytest
 from firebird.qa import *
 from firebird.driver import TPB, Isolation
 
-#--------------------------------------------------------------------
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#--------------------------------------------------------------------
 
 REQUIRED_ALIAS = 'tmp_gh_6932_alias'
 

@@ -83,12 +83,6 @@ import psutil
 import pytest
 from firebird.qa import *
 
-#--------------------------------------------------------------------
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#--------------------------------------------------------------------
 
 # Pre-defined alias for test DB in the QA_root/files/qa-databases.conf.
 # This file (qa-databases.conf) must be copied manually to each testing

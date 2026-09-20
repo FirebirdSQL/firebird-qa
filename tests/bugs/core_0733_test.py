@@ -65,12 +65,6 @@ from collections import defaultdict
 import pytest
 from firebird.qa import *
 from firebird.driver import driver_config, connect, NetProtocol
-#--------------------------------------------------------------------
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#--------------------------------------------------------------------
 
 N_MEASURES = 9
 DATA_WIDTH = 10000 # 1500 # 8200 #1600

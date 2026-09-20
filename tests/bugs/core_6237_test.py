@@ -59,12 +59,6 @@ MIN_RATIO_THRESHOLD = 1.50
 # ratio between them can be ignored because of proximity to zero:
 MAX_MEDIAN_TO_IGNORE = 50
 
-#------------------
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#------------------
 
 @pytest.mark.version('>=3.0.5')
 def test_1(act: Action, leg_user: User, srp_user: User, capsys):

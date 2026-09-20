@@ -55,12 +55,7 @@ NOTES:
     Checked on 5.0.0.501, 4.0.1.2692, 3.0.8.33535
 
     [14.09.2022] pzotov
-    1. It is better to made func 'median()' separate rather than inner.
-       See letter from pcisar, 31-may-2022 11:25:
-         "In Python, inner function is created anew whenever you call the function,
-         just for the time of function invocation. It has it's uses and advantages,
-         but it's not generally recommended (it's not like in other languages!)"
-    2. Additional testing after get fail with weird message:
+    1. Additional testing after get fail with weird message:
        "psutil.NoSuchProcess: process PID not found (pid=16652)" for 3.0.8 Classic,
        captured for: fb_info_b = psutil.Process(fb_pid).cpu_times().
        This could be caused by FB crash. TO BE INVESTIGATED FURTHER.
@@ -89,13 +84,6 @@ if os.name == 'nt':
 else:
     MAX_TIME_RATIOS_COMMIT_TO_COMPILE = {'packaged' : 0.55, 'standalone' : 0.50}
 
-
-#--------------------------------------------------------------------
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#--------------------------------------------------------------------
 
 @pytest.mark.perf_measure
 @pytest.mark.version('>=3.0')

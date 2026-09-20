@@ -55,12 +55,6 @@ tmp_fbk = temp_file('tmp_8663.fbk')
 tmp_fdb = temp_file('tmp_8663.fdb')
 tmp_log = temp_file('tmp_8663.log')
 
-#--------------------------------------------------------------------
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#--------------------------------------------------------------------
 
 @pytest.mark.perf_measure
 @pytest.mark.version('>=4.0')

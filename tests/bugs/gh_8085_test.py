@@ -41,12 +41,6 @@ MAX_WAIT_FOR_ISQL_BEGIN_WORK=3
 MAX_WAIT_FOR_ISQL_TERMINATE=11
 MAX_RSS_DIFFERENCE_MEDIAN = 0
 
-#--------------------------------------------------------------------
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#--------------------------------------------------------------------
 
 @pytest.mark.perf_measure
 @pytest.mark.version('>=4.0.5')

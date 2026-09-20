@@ -76,13 +76,6 @@ from firebird.qa import *
 from firebird.driver import driver_config, connect, NetProtocol
 
 
-#--------------------------------------------------------------------
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-#--------------------------------------------------------------------
-
 db = db_factory(init = 'recreate global temporary table gtt_test(b blob, compression_suitability varchar(10), wire_compression varchar(10)) on commit delete rows;')
 
 act = python_act('db')

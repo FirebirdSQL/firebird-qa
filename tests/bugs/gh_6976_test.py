@@ -107,15 +107,6 @@ tmp_fdb = db_factory(filename = 'tmp_gh_6976.cuted_off.fdb', async_write = True)
 act_source = python_act('db')
 act_broken = python_act('tmp_fdb')
 
-#--------------------------------------------
-
-def median(lst):
-    n = len(lst)
-    s = sorted(lst)
-    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
-
-#--------------------------------------------
-
 def try_cuted_off_db(act_source, act_broken, db_page_size, db_pages_cnt, cut_off_pages_cnt):
 
     dbsrc = act_source.db.db_path
