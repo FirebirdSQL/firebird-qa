@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   (`subprocess.Popen`) and synchronously waits for its completion, with forced kill
   escalation after `max_wait_seconds` (default: 10). Returns process exit code, or
   `None` if no process was passed.
+- Helper function `median` for use in tests. It returns the median of a sequence
+  of numbers: middle value for odd length, average of two middle values for even
+  length, `None` for an empty sequence. The sequence is not modified. Test files
+  must use this function instead of defining their own local copies.
 
 ## [0.22.2] - 2026-03-27
 

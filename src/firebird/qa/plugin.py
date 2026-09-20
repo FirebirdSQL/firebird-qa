@@ -715,6 +715,27 @@ def terminate_sync(running_process: Popen, max_wait_seconds: int = 10) -> Option
         running_process.kill()
         return running_process.wait(timeout=max_wait_seconds)
 
+def median(lst: Sequence) -> Optional[Union[int, float]]:
+    """Helper function that returns the median of the passed sequence of numbers.
+
+    For a sequence with an odd number of elements returns the middle element of
+    the sorted sequence. For a sequence with an even number of elements returns
+    the average (arithmetic mean) of the two middle elements. Returns `None` if
+    the sequence is empty. The passed sequence is not modified.
+
+    Arguments:
+        lst: Sequence of numbers to process.
+
+    .. note::
+
+       Common helper extracted from test files, where it was previously
+       duplicated in dozens of local copies. Test files must NOT define their
+       own local copies of this function.
+    """
+    n = len(lst)
+    s = sorted(lst)
+    return (sum(s[n//2-1:n//2+1])/2.0, s[n//2])[n % 2] if n else None
+
 class Database:
     """Object to access and manage single test database.
 
