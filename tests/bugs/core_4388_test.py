@@ -37,12 +37,10 @@ NOTES:
     This was explained by zcode.ai (together with suggested fix - see call of `terminate_sync()` function from QA-plugin).
 
     ### CRITICAL ISSUE-2 ###
-    We have to be sure that while async ISQL stands in long-term waiting, its connection will not be cancelled because of
-    too small value of per-database `StatementTimeout` parameter which may present in the firebird.conf (though there is
-    completely no sense to set this limit to such small values like 1..2 seconds). It order to prevent it, this parameter
-    is CHANGED by replacing existing databases.conf with temporary content, see ConfigManager usage.
-    This can be done since 4.0.0, see: 2c49e6fc / hvlad / 22.02.2017 14:30:57 +0200
-    ("New feature CORE-5488 : Timeouts for running SQL statements and idle connections")
+    We have to issue 'SET STATEMENT TIMEOUT 0' in order to be sure that async ISQL stands in long-term waiting and its hanging 
+    statement will not be cancelled because of relatively small value of `StatementTimeout` parameter from firebird.conf.
+    Statement and connection timeouts were introduced in
+    4.0.0-2c49e6fc / 22.02.2017 12:30:57 ("New feature CORE-5488 : Timeouts for running SQL statements and idle connections")
 
     Checked on 6.0.0.2176; 5.0.5.1886; 4.0.8.3320; 3.0.15.33885.
 """
@@ -62,15 +60,6 @@ init_script = """
     commit;
 """
 
-hanged_script = """
-    --set echo on;
-    set list on;
-    select gen_id(g,1) from rdb$database;
-    commit;
-    set transaction lock timeout 20;
-    select /* trace_me */ x from test where id = 1 with lock;
-"""
-
 # Name of alias that will be written into temporary replacement of databases.conf:
 CONNECT_TO_ALIAS = 'tmp_core_4388_alias'
 
@@ -88,32 +77,23 @@ tmp_hang_sql = temp_file('tmp_4388.sql')
 tmp_hang_log = temp_file('tmp_4388.log')
 
 @pytest.mark.version('>=3.0')
-def test_1(act: Action, tmp_hang_sql: Path, tmp_hang_log: Path, store_config: ConfigManager, capsys):
+def test_1(act: Action, tmp_hang_sql: Path, tmp_hang_log: Path, capsys):
+
+    set_sttm_timeout = "set statement timeout 0"
+    if act.is_version('<4'):
+        set_sttm_timeout = ''
+
+    hanged_script = f"""
+        --set echo on;
+        set list on;
+        select gen_id(g,1) from rdb$database;
+        {set_sttm_timeout};
+        commit;
+        set transaction lock timeout 20;
+        select /* trace_me */ x from test where id = 1 with lock;
+    """
 
     tmp_hang_sql.write_text(hanged_script)
-
-    if act.is_version('<4'):
-        # There was no parameter 'StatementTimeout' in FB 3.x. SKIP replacing of database.conf.
-        pass
-    else:
-        # Obtain the physical database location.
-        # NOTE: we must NOT use 'act.db.db_path' for ALIASED databases! It will return '.' rather than full path+filename.
-        # Use only con.info.name for that:
-        TEMP_DB_CONF_CONTENT = ''
-        with act.db.connect() as con:
-            test_db_file = con.info.name
-            test_db_path = Path(test_db_file).parent
-            TEMP_DB_CONF_CONTENT = f"""
-                {CONNECT_TO_ALIAS} = {test_db_file}
-                {{
-                    StatementTimeout = 0
-                }}
-            """
-        assert CONNECT_TO_ALIAS in TEMP_DB_CONF_CONTENT and 'StatementTimeout' in TEMP_DB_CONF_CONTENT
-
-        # REPLACE databases.conf: put there `StatementTimeout = 0` in order to prevent cancellation
-        # of endless waiting in async ISQL:
-        store_config.replace('databases.conf', TEMP_DB_CONF_CONTENT)
 
     hanged_attach_id = 0
     in_locked_state = False
