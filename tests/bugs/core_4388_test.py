@@ -174,7 +174,6 @@ def test_1(act: Action, tmp_hang_sql: Path, tmp_hang_log: Path, store_config: Co
                             break
 
                         if hanged_attach_id and in_locked_state:
-                            cur_monitoring.execute('select /* trace_me*/ 12345 from rdb$database')
                             break
 
                         t2 = py_dt.datetime.now()
