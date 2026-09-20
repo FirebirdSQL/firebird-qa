@@ -37,10 +37,10 @@ NOTES:
     This was explained by zcode.ai (together with suggested fix - see call of `terminate_sync()` function from QA-plugin).
 
     ### CRITICAL ISSUE-2 ###
-    We have to issue SET STATEMENT TIMEOUT 0' in order to be sure that async ISQL stands in endless waiting and its connection
-    will not be cancelled because of some relatively small value of per-database `StatementTimeout` parameter which may present
-    in the firebird.conf. Statement and connection timeouts were introduced in 4.0.0-2c49e6fc / hvlad / 22.02.2017 12:30:57
-    ("New feature CORE-5488 : Timeouts for running SQL statements and idle connections")
+    We have to issue 'SET STATEMENT TIMEOUT 0' in order to be sure that async ISQL stands in long-term waiting and its hanging 
+    statement will not be cancelled because of relatively small value of `StatementTimeout` parameter from firebird.conf.
+    Statement and connection timeouts were introduced in
+    4.0.0-2c49e6fc / 22.02.2017 12:30:57 ("New feature CORE-5488 : Timeouts for running SQL statements and idle connections")
 
     Checked on 6.0.0.2176; 5.0.5.1886; 4.0.8.3320; 3.0.15.33885.
 """
