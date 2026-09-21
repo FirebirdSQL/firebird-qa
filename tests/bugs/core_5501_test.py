@@ -160,9 +160,7 @@ PAGE_TYPES = {0				: "undef/free",
 
 def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
     if mode == 'encrypt':
-        # alter_db_sttm = f'alter database encrypt with "{ENCRYPTION_PLUGIN}"' # <<< ::: NB ::: DO NOT add '... key "{ENCRYPTION_KEY}"' here!
         alter_db_sttm = f'alter database encrypt with "{ENCRYPTION_PLUGIN}" key "{ENCRYPTION_KEY}"'
-         
         wait_for_state = 'Database encrypted'
     elif mode == 'decrypt':
         alter_db_sttm = 'alter database decrypt'
@@ -197,10 +195,10 @@ def run_encr_decr(act: Action, mode, max_wait_encr_thread_finish, capsys):
                 d1=t2-t1
                 if d1.seconds*1000 + d1.microseconds//1000 > max_wait_encr_thread_finish:
                     break
-    
-                ######################################################
-                ###   C H E C K    M O N $ C R Y P T _ S T A T E   ###
-                ######################################################
+
+                #########################################################
+                ###   C H E C K    E N C R Y P T I O N    S T A T E   ###
+                #########################################################
                 # Invoke 'gstat -h' and read its ouput.
                 # Encryption can be considered as COMPLETED when we will found:
                 # "Attributes              encrypted, plugin fbSampleDbCrypt"
