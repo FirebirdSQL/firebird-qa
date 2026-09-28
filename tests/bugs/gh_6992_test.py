@@ -59,46 +59,6 @@ init_script = """
 """
 db = db_factory(init = init_script)
 
-test_script = """
-    set planonly;
-    set explain on;
-
-    -- This must NOT be transformed because we make here ANTI-JOIN.
-    -- Outer join is the only way to get proper result here:
-    select *
-    from tmain m1
-    left join tdetl_a d1 on m1.id = d1.pid
-    where d1.pid is null
-    ;
-
-    -- This MUST be transformed to INNER join because WHERE expression effectively will skip nulls.
-    -- See also issue in the ticket:
-    -- "regular comparisons that ignore NULLs by their nature, will cause the LEFT->INNER transformation"
-    select *
-    from tmain m2
-    left join tdetl_a d2 on m2.id = d2.pid
-    where d2.pid  = 0
-    ;
-
-    -- This must NOT be transformed, see ticket:
-    -- "checks for NULL, e.g. WHERE T2.ID IS NOT NULL ..., would not transform LEFT into INNER"
-    select *
-    from tmain m3
-    left join tdetl_a d3 on m3.id = d3.pid
-    where d3.pid is not null
-    ;
-
-    -- This must NOT be transformed, reason is the same:
-    -- "checks for NULL, e.g. WHERE T2.ID IS NOT NULL ..., would not transform LEFT into INNER"
-    -- NB: the fact that column tdetl_b.pid is declared as NOT NULL is ignored here.
-    -- This limitation seems redunant here.
-    select *
-    from tmain m4
-    left join tdetl_b d4 on m4.id = d4.pid
-    where d4.pid is not null
-    ;
-"""
-
 qry_map = {
     1000 :
     (
