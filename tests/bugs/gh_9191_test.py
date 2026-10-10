@@ -27,6 +27,7 @@ NOTES:
     Confirmed problem on 6.0.0.2199-bf94598.
     Checked on 6.0.0.2204-2d20c77.
 """
+from statistics import median
 import psutil
 import pytest
 from firebird.qa import *
