@@ -59,6 +59,7 @@ NOTES:
     Checked on 4.0.1.2692, 3.0.8.33535 -- both Windows and Linux.
 """
 
+from statistics import median
 import os
 import psutil
 import time
