@@ -60,6 +60,7 @@ NOTES:
 
     Checked on WINDOWS builds: 3.0.8.33535, 4.0.1.2692, 5.0.0.730 (SS/CS)
 """
+from statistics import median
 import time
 import os
 import sys
