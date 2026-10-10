@@ -59,6 +59,7 @@ FBTEST:      bugs.core_5393
   Checked on 3.0.8.33535, 4.0.1.2692, 5.0.0.591
 """
 
+from statistics import median
 import psutil
 import pytest
 from firebird.qa import *
