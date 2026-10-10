@@ -41,6 +41,7 @@ NOTES:
 
 """
 
+from statistics import median
 import psutil
 import pytest
 from firebird.qa import *
