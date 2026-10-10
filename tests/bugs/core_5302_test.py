@@ -79,6 +79,7 @@ FBTEST:      bugs.core_5302
 
 """
 
+from statistics import median
 import psutil
 import pytest
 from firebird.qa import *
