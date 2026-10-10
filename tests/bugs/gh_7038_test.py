@@ -34,6 +34,7 @@ NOTES:
     [21.07.2022] pzotov
     Checked on 5.0.0.591
 """
+from statistics import median
 import os
 import psutil
 import pytest
