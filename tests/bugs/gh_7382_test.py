@@ -77,6 +77,7 @@ NOTES:
         Ratio median:     1.153846
 """
 
+from statistics import median
 import os
 import time
 import psutil
