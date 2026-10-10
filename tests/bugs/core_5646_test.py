@@ -93,6 +93,7 @@ NOTES:
         The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
 
+from statistics import median
 import pytest
 from firebird.qa import *
 from firebird.driver import DatabaseError
