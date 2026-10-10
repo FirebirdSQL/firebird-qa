@@ -58,6 +58,7 @@ NOTES:
 JIRA:        CORE-733
 FBTEST:      bugs.core_0733
 """
+from statistics import median
 import psutil
 import platform
 from collections import defaultdict
