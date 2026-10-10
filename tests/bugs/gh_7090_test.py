@@ -24,6 +24,7 @@ NOTES:
     Scope of median ratio values: 1.65 ... 1.77
 """
 
+from statistics import median
 import psutil
 import pytest
 from firebird.qa import *
