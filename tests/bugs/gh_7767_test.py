@@ -33,6 +33,7 @@ NOTES:
     Test duration time: about 50s.
     Checked on 6.0.0.436, 5.0.2.1478, 4.0.6.3142 (all SS/CS; both Windows and Linux).
 """
+from statistics import median
 import shutil
 from pathlib import Path
 import psutil
