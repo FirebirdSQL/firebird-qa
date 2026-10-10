@@ -39,6 +39,7 @@ NOTES:
 
     Checked on 6.0.0.269; 6.0.0.273; 6.0.0.783.
 """
+from statistics import median
 import os
 import psutil
 import pytest
