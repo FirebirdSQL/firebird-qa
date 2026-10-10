@@ -34,6 +34,7 @@ NOTES:
     2DO: WireCrypt must be disabled for this test. Custom driver-config object must be used for DPB.
 """
 
+from statistics import median
 import pytest
 import datetime
 import platform
