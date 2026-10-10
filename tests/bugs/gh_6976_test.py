@@ -78,6 +78,7 @@ NOTES:
     second and third attempts to make connection.
 """
 
+from statistics import median
 import os
 import subprocess
 import codecs
