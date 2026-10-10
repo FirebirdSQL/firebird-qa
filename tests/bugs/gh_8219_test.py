@@ -37,6 +37,7 @@ NOTES:
     3. Test can be used only for ServerMode = Super or SuperClassic
        (because in CS a new process is made and we have no value of cpu_times() *before* DB creation).
 """
+from statistics import median
 import os
 import psutil
 import pytest
