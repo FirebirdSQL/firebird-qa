@@ -67,6 +67,7 @@ NOTES:
         Checked on Windows: 5.0.0.967 SS/CS, 4.0.3.2904 SS/CS, 3.0.11.33665 SS/CS
 """
 
+from statistics import median
 import os
 from pathlib import Path
 import psutil
