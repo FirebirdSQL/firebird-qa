@@ -54,6 +54,7 @@ NOTES:
     Checked on SS/CS, 6.0.0.2176; 5.0.5.1886; 4.0.8.3320
 """
 
+from statistics import median
 import psutil
 import pytest
 import subprocess
