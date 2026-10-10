@@ -37,6 +37,7 @@ NOTES:
     Adapted for firebird-qa plugin. Checked on 4.0.1.2692, 5.0.0.509 - both Windows and Linux
 """
 
+from statistics import median
 import pytest
 from firebird.qa import *
 import psutil
