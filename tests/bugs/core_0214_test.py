@@ -44,6 +44,7 @@ NOTES:
     This occurs at least for: Python 3.11.2 / pytest: 7.4.4 / firebird.driver: 1.10.6 / Firebird.Qa: 0.19.3
     The reason of that was explained by Vlad, 26.10.24 17:42 ("oddities when use instances of selective statements").
 """
+from statistics import median
 import os
 import psutil
 import time
