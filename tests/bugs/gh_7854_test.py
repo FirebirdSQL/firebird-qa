@@ -19,6 +19,7 @@ NOTES:
     Checked on 6.0.0.139, 5.0.0.1277, 4.0.5.3031
 """
 
+from statistics import median
 import psutil
 import pytest
 from firebird.qa import *
