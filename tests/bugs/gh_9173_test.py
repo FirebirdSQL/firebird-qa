@@ -7,8 +7,12 @@ TITLE:       Wrong result: partial index WHERE col IS NOT NULL is applied when a
 DESCRIPTION:
 NOTES:
     [05.10.2026] pzotov
-    Confirmed bug on 5.0.5.1895-9586fe7.
-    Checked on 6.0.0.2197-1e316df; 5.0.5.1897-8e16604.
+        Confirmed bug on 5.0.5.1895-9586fe7.
+        Checked on 6.0.0.2197-1e316df; 5.0.5.1897-8e16604.
+    [10.10.2026] pzotov
+        Added example from https://github.com/FirebirdSQL/firebird/issues/9173#issuecomment-5927083279
+        Confirmed problem (natural reads instead of indexed) on 6.0.0.2204-2d20c77; 5.0.5.1903-14bfcdf.
+        Checked on 6.0.0.2208-6515630; 5.0.5.1906-db21868.
 """
 
 import pytest
@@ -73,20 +77,69 @@ test_script = """
     -- 4. join, T3.T1_ID has a different field id
     select count(*) from T1 join T3 on T3.T1_ID = T1.ID where T1.GRP = 0;
 
+    -- #############################################################################
+    -- Additional example:
+    -- https://github.com/FirebirdSQL/firebird/issues/9173#issuecomment-5927083279
+    -- Fixed 10.10.2026 as postfix:
+    -- 5x: https://github.com/FirebirdSQL/firebird/commit/db21868081c07f8805758186428d342c07ddd167
+    -- 6x: https://github.com/FirebirdSQL/firebird/commit/6515630a732072a38c8053cda84d4def6e158b41
+    recreate table t4 (
+        id integer not null primary key
+        ,flag char(1)
+        ,c integer
+    );
+    -- 1000 rows, 20 of them with flag = 'y' and c not null
+    set term ^;
+    execute block as
+      declare i int = 1;
+      declare n int = 1000;
+    begin
+        while (i <= n) do
+        begin
+            if ( i <= 50 ) then
+                insert into t4 (id, flag, c) values (:i, 'y', :i);
+            else
+                insert into t4 (id, flag, c) values (:i, 'n', null);
+            i = i + 1;
+        end
+    end^
+    set term ;^
+    commit;
+
+    create index t4_flag_y on t4 (flag) where flag = 'y';
+    create index t4_c on t4 (c) where c is not null;
+
+    set planonly;
+    select count(*) from t4 where flag = 'y';
+    select count(*) from t4 where c is not null;
+    select count(*) from rdb$database cross join t4 where t4.c = 50;
 """
 substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', test_script, substitutions = substitutions)
 
-expected_stdout = """
-    COUNT 100
-    COUNT 100
-    COUNT 100
-    COUNT 100
-"""
-
 @pytest.mark.version('>=4')
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+
+    expected_out = """
+        COUNT 100
+        COUNT 100
+        COUNT 100
+        COUNT 100
+    """
+
+    expected_out_5x = """
+        PLAN (T4 INDEX (T4_FLAG_Y))
+        PLAN (T4 INDEX (T4_C))
+        PLAN JOIN (RDB$DATABASE NATURAL, T4 INDEX (T4_C))
+    """
+    
+    expected_out_6x = """
+        PLAN ("PUBLIC"."T4" INDEX ("PUBLIC"."T4_FLAG_Y"))
+        PLAN ("PUBLIC"."T4" INDEX ("PUBLIC"."T4_C"))
+        PLAN JOIN ("SYSTEM"."RDB$DATABASE" NATURAL, "PUBLIC"."T4" INDEX ("PUBLIC"."T4_C"))
+    """
+
+    act.expected_stdout = expected_out + '\n' + (expected_out_5x if act.is_version('<6') else expected_out_6x)
     act.execute(combine_output = True)
     assert act.clean_stdout == act.clean_expected_stdout
 
