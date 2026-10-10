@@ -39,6 +39,7 @@ NOTES:
     Increased threshold from 1.3 to 1.8
     NB. Confirmed poor ratio between sysdba/non_dba time on 3.0.4.33054 (03-oct-2018): ratio was about 3.5 ... 4.0.
 """
+from statistics import median
 import psutil
 import pytest
 from firebird.qa import *
