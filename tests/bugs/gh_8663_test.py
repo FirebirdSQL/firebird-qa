@@ -24,6 +24,7 @@ NOTES:
     Test duration: 15...20s.
     Checked on 6.0.0.1052; 5.0.3.1684; 4.0.6.3222.
 """
+from statistics import median
 import os
 import psutil
 import zipfile
