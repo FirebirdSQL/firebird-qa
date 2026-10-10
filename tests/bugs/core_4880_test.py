@@ -61,6 +61,7 @@ NOTES:
        This could be caused by FB crash. TO BE INVESTIGATED FURTHER.
 """
 
+from statistics import median
 import os
 import psutil
 import pytest
