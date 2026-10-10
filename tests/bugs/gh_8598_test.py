@@ -44,6 +44,7 @@ NOTES:
     Test duration: ~35s.
     Checked on 6.0.0.1077
 """
+from statistics import median
 import os
 import pytest
 import psutil
