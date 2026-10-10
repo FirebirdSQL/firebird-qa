@@ -20,6 +20,7 @@ NOTES:
 
     Checked on 3.0.11.33665, 4.0.3.2904, 5.0.0.970
 """
+from statistics import median
 import os
 import psutil
 import pytest
