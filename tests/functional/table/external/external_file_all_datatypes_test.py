@@ -81,10 +81,16 @@ NOTES:
            test_external_file_06_d.py
            test_external_file_09_d.py 
        All of them can be SKIPPED from execution.
-
     Checked on 6.0.0.2176; 5.0.5.1862; 4.0.8.3314.
-"""
 
+    [14.10.2026] pzotov
+    Adjusted code according to issues in #9210:
+        1) attemot to convert 0x8000000000000000 to integer must raise `integer overflow'
+           rather than 'numeric value is out of range' (currently this relates to 6x only!)
+        2) time with time zone: '23:59:59 UTC' is shown differently on Windows vs Linux.
+    Checked on 6.0.0.2210-a3f935f; 5.0.5.1906.
+"""
+import os
 import re
 from pathlib import Path
 import pytest
@@ -101,7 +107,7 @@ db = db_factory()
 act = python_act('db')
 
 @pytest.mark.ai
-@pytest.mark.version('>=4.0')
+@pytest.mark.version('>=5.0.5')
 def test_1(act: Action, store_config: ConfigManager):
 
     TYPES_DATA = [
@@ -215,15 +221,32 @@ def test_1(act: Action, store_config: ConfigManager):
             2147483647
             """
 
-    EXPECTED_STDERR['int'] = """
+    # 14.10.2026: since #9210 literal 0x8000000000000000 is interpreted as positive INT128 (+9223372036854775808)
+    # rather than previous BIGINT -9223372036854775808). Because of that, an attempt to convert it to INTEGER
+    # raises 'Integer overflow.  ... caused the most significant bit of the result to carry.'
+    # (instead of 'numeric value is out of range')
+    # See: https://github.com/FirebirdSQL/firebird/pull/9210#issue-5827669901
+    # ::: NOTE :::
+    # Currently this ticket relates only to 6.x, i.e. was not back-ported.
+    # Because of that, error message for this literal differs depending on major version of checked FB:
+    if act.is_version('<6'):
+        error_msg_0x8000000000000000 ='-numeric value is out of range'
+    else:
+        error_msg_0x8000000000000000 ='-Integer overflow.  The result of an integer operation caused the most significant bit of the result to carry.'
+    
+    EXPECTED_STDERR['int'] = f"""
             arithmetic exception, numeric overflow, or string truncation
             -numeric value is out of range
+
             arithmetic exception, numeric overflow, or string truncation
             -numeric value is out of range
+
             arithmetic exception, numeric overflow, or string truncation
             -numeric value is out of range
+
             arithmetic exception, numeric overflow, or string truncation
-            -numeric value is out of range
+            {error_msg_0x8000000000000000}
+
             conversion error from string "v#xc3#xa9rit#xc3#xa9"
             """
 
@@ -471,11 +494,15 @@ def test_1(act: Action, store_config: ConfigManager):
             conversion error from string "v#xc3#xa9rit#xc3#xa9"
             """
 
-    EXPECTED_STDOUT['time with time zone'] = """
+    # 14.10.2026 time with time zone: 23:59:59 UTC is printed as 23:59:59+00:00 or 23:59:59 depending
+    # on the platform of the Python client (dateutil uses tzwin('UTC') on Windows and tzfile on Linux).
+    tmtz_suffix = '+00:00' if os.name == 'nt' else ''
+
+    EXPECTED_STDOUT['time with time zone'] = f"""
             07:08:00
             04:05:06
             01:02:03
-            23:59:59+00:00
+            23:59:59{tmtz_suffix}
             """
 
     EXPECTED_STDERR['time with time zone'] = """
