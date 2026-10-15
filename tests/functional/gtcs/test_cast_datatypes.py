@@ -25,7 +25,14 @@ DESCRIPTION:
             suspend;
         end
 NOTES:
+    [19.03.2025] pzotov
     Checked on 4.0.1.2692.
+
+    [15.10.2026] pzotov
+    Temporary(?) disabled execution on 6.x because of changed interpretation rules for hex numbers
+    since #afba279 ("New feature non-decimal integer literals (SQL:2023 T661)...").
+    Script that defines DDL and data to bechecked (act.files_dir / 'gtcs-cast-gen-ddl.sql') must be
+    totally changed for 6.x in order to pass this test again.
 """
 
 import pytest
@@ -298,7 +305,7 @@ expected_stdout = """
     varchar(30)_time                01:02:03.4560 
 """
 
-@pytest.mark.version('>=3.0')
+@pytest.mark.version('>=3.0,<6')
 def test_1(act: Action, capsys):
     
     act.isql(switches=['-q'], input_file = act.files_dir / 'gtcs-cast-gen-ddl.sql')
