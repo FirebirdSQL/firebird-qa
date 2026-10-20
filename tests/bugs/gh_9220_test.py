@@ -15,7 +15,6 @@ import pytest
 from firebird.qa import *
 
 db = db_factory()
-
 test_script = """
     set bail on;
     set list on;
