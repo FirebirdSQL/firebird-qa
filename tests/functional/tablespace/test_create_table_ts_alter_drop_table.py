@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.create_table_ts_alter_drop_table
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.create_table_ts_alter_drop_table
 DESCRIPTION:
-FBTEST:      functional.tablespace.create_table_ts_alter_drop_table
 """
 
 import pytest
