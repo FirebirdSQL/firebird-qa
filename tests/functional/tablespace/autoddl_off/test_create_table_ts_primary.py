@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.autoddl_off.create_table_ts_primary
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.autoddl_off.create_table_ts_primary
 DESCRIPTION:
-FBTEST:      functional.tablespace.autoddl_off.create_table_ts_primary
 """
 
 import pytest
