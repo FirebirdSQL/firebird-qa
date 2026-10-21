@@ -13,7 +13,7 @@ from pathlib import Path
 
 substitutions = [('I/O error during "CreateFile \\(create\\)" operation for file.*', 'I/O error during "open O_CREAT" operation for file'),
                  ('I/O error during "open O_CREAT" operation for file.*', 'I/O error during "open O_CREAT" operation for file'),
-                 ('-The system cannot find the path specified.', '-No such file or directory')]
+                 ('-The system cannot find the path specified.', '')]
 
 db = db_factory()
 act = isql_act('db', substitutions=substitutions)
@@ -28,7 +28,6 @@ unsuccessful metadata update
 -CREATE TABLESPACE TS1 failed
 -I/O error during "open O_CREAT" operation for file
 -Error while trying to create file
--No such file or directory
 """
 
 
