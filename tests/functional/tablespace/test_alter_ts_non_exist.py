@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.alter_ts_non_exist
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.alter_ts_non_exist
 DESCRIPTION:
-FBTEST:      functional.tablespace.alter_ts_non_exist
 """
 
 import pytest
