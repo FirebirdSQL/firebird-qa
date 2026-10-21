@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.drop_ts
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.drop_ts
 DESCRIPTION:
-FBTEST:      functional.tablespace.drop_ts
 """
 
 import pytest
