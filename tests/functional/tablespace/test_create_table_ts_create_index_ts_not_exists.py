@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.create_table_ts_create_index_ts_not_exists
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.create_table_ts_create_index_ts_not_exists
 DESCRIPTION:
-FBTEST:      functional.tablespace.create_table_ts_create_index_ts_not_exists
 """
 
 import pytest
