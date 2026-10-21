@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.autoddl_off.create_table_create_index_ts_alter_drop_index
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.autoddl_off.create_table_create_index_ts_alter_drop_index
 DESCRIPTION:
-FBTEST:      functional.tablespace.autoddl_off.create_table_create_index_ts_alter_drop_index
 """
 
 import pytest
