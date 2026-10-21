@@ -1,12 +1,16 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.autoddl_off.create_table_ts
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.autoddl_off.create_table_ts
 DESCRIPTION:
-FBTEST:      functional.tablespace.autoddl_off.create_table_ts
+NOTES:
+    [21.10.2026] pzotov
+    Adjusted 'substitutions' list to be independent on OS localization.
+    Checked on 6.0.0.2405-6b29da9
 """
 
+import locale
 import os
 import pytest
 from pathlib import Path
@@ -14,8 +18,12 @@ from firebird.qa import *
 
 
 db = db_factory()
-substitutions = [('I/O error during .*', 'I/O error during "CreateFile (open)" operation for file'),
-                 ('The system cannot find the file specified.', 'No such file or directory')]
+substitutions = [
+    ('I/O error during .*', 'I/O error during "CreateFile (open)" operation for file'),
+    ('The system cannot find the file specified.', ''),
+    ('[^\x00-\x7F]+', ''), # find every non-ascii character and suppress its output
+    (r'^-\s+.*', ''), # supress output of lines that look like this: "-  ." (they may remain after removing non ascii characters from localized messages)
+]
 act = isql_act('db', substitutions=substitutions)
 
 
@@ -34,7 +42,6 @@ expected_stderr = """
 Statement failed, SQLSTATE = 08001
 I/O error during "CreateFile (open)" operation for file 
 -Error while trying to open file
--No such file or directory
 """
 
 
@@ -50,14 +57,14 @@ def test_1(act: Action, tmpdir: Path):
     insert into test_table values (123, 345, 34.23, 56.45, 87.56, '01.02.1983', 'summer');
     commit;
     """
-    act.isql(switches=['-q', '-n'], input=script)
+    act.isql(switches=['-q', '-n'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
 
     script = """
     set list on;
     select * from test_table;
     select RDB$TABLESPACE_NAME from RDB$RELATIONS where RDB$RELATION_NAME='TEST_TABLE';
     """
-    act.isql(switches=['-q', '-n'], input=script)
+    act.isql(switches=['-q', '-n'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
     stdout = act.clean_stdout
     act.reset()
 
@@ -69,7 +76,7 @@ def test_1(act: Action, tmpdir: Path):
     select * from test_table;
     """
     act.expected_stderr = expected_stderr
-    act.isql(switches=['-q', '-n'], input=script)
+    act.isql(switches=['-q', '-n'], input=script, io_enc=locale.getpreferredencoding())
     stderr = act.clean_stderr
 
     act.expected_stdout = expected_stdout
