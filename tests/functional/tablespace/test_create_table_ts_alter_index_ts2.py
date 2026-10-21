@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.create_table_ts_alter_index_ts2
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.create_table_ts_alter_index_ts2
 DESCRIPTION:
-FBTEST:      functional.tablespace.create_table_ts_alter_index_ts2
 """
 
 import os
