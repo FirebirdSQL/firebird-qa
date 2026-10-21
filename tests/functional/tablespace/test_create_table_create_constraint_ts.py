@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.create_table_create_constraint_ts
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.create_table_create_constraint_ts
 DESCRIPTION:
-FBTEST:      functional.tablespace.create_table_create_constraint_ts
 """
 
 import pytest
