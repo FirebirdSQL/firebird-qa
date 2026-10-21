@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.create_table_ts_alter_table_two_connections
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.create_table_ts_alter_table_two_connections
 DESCRIPTION:
-FBTEST:      functional.tablespace.create_table_ts_alter_table_two_connections
 """
 
 import pytest
