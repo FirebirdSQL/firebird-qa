@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.create_ts_over_max_count
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.create_ts_over_max_count
 DESCRIPTION:
-FBTEST:      functional.tablespace.create_ts_over_max_count
 """
 
 from re import sub
