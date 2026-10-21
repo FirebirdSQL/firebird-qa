@@ -1,12 +1,16 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.autoddl_off.create_table_ts_create_index
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.autoddl_off.create_table_ts_create_index
 DESCRIPTION:
-FBTEST:      functional.tablespace.autoddl_off.create_table_ts_create_index
+NOTES:
+    [21.10.2026] pzotov
+    Adjusted 'substitutions' list to be independent on OS localization.
+    Checked on 6.0.0.2405-6b29da9
 """
 
+import locale
 import os
 import pytest
 from pathlib import Path
@@ -14,8 +18,12 @@ from firebird.qa import *
 
 
 db = db_factory()
-substitutions = [('I/O error during .*', 'I/O error during "CreateFile (open)" operation for file'),
-                 ('The system cannot find the file specified.', 'No such file or directory')]
+substitutions = [
+    ('I/O error during .*', 'I/O error during "CreateFile (open)" operation for file'),
+    ('The system cannot find the file specified.', ''),
+    ('[^\x00-\x7F]+', ''), # find every non-ascii character and suppress its output
+    (r'^-\s+.*', ''), # supress output of lines that look like this: "-  ." (they may remain after removing non ascii characters from localized messages)
+]
 act = isql_act('db', substitutions=substitutions)
 
 
@@ -23,7 +31,6 @@ expected_stderr = """
 Statement failed, SQLSTATE = 08001
 I/O error during "CreateFile (open)" operation for file "D:\\TESTING\\fbt-repository\\tmp\\tablespace.dat"
 -Error while trying to open file
--No such file or directory
 """
 
 
@@ -45,7 +52,7 @@ def test_1(act: Action, tmpdir: Path):
     SET STATISTICS INDEX IDX_TEST;
     commit;
     """
-    act.isql(switches=['-q', '-n'], input=init_script)
+    act.isql(switches=['-q', '-n'], input=init_script, combine_output=True, io_enc=locale.getpreferredencoding())
 
     ts_renamefile = tmpdir / 'tablespace_rename.dat'
     os.rename(ts_file, ts_renamefile)
@@ -54,6 +61,6 @@ def test_1(act: Action, tmpdir: Path):
     SET STATISTICS INDEX IDX_TEST;
     """
     act.expected_stderr = expected_stderr
-    act.isql(switches=['-q', '-n'], input=script)
+    act.isql(switches=['-q', '-n'], input=script, io_enc=locale.getpreferredencoding())
 
     assert act.clean_stderr == act.clean_expected_stderr
