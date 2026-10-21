@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.drop_ts_failed_index_dependency
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.drop_ts_failed_index_dependency
 DESCRIPTION:
-FBTEST:      functional.tablespace.drop_ts_failed_index_dependency
 """
 
 import pytest
