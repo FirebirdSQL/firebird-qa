@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.autoddl_off.create_table_ts_not_exists
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.autoddl_off.create_table_ts_not_exists
 DESCRIPTION:
-FBTEST:      functional.tablespace.autoddl_off.create_table_ts_not_exists
 """
 
 import pytest
