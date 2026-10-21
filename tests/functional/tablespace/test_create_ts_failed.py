@@ -11,7 +11,6 @@ import pytest
 from pathlib import Path
 from firebird.qa import *
 
-server = server_factory()
 db = db_factory()
 substitutions = [('file.*exists', 'file exists')]
 act = isql_act('db', substitutions=substitutions)
