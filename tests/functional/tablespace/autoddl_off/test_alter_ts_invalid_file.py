@@ -1,22 +1,28 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.autoddl_off.alter_ts_invalid_file
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.autoddl_off.alter_ts_invalid_file
 DESCRIPTION:
-FBTEST:      functional.tablespace.autoddl_off.alter_ts_invalid_file
+NOTES:
+    [21.10.2026] pzotov
+    Adjusted 'substitutions' list to be independent on OS localization.
+    Checked on 6.0.0.2405-6b29da9
 """
-
+import locale
 import pytest
 from pathlib import Path
 from firebird.qa import *
 
 db = db_factory()
 substitutions = [
-    ('/.*tablespace', 'tablespace'),
-    ('.:.*tablespace', 'tablespace'),
-    ('-Error while trying to read from file', '-File size is less than expected'),
-    ('-Reached the end of the file.', '')
+        ('/.*tablespace', 'tablespace'),
+        ('.:.*tablespace', 'tablespace'),
+        ('-Error while trying to read from file', '-File size is less than expected'),
+        ('-Reached the end of the file.', ''),
+        ('[^\x00-\x7F]+', ''), # find every non-ascii character and suppress its output
+        (r'^-\s+.*', ''), # supress output of lines that look like this: "-  ." (they may remain after removing non ascii characters from localized messages)
+
     ]
 act = isql_act('db', substitutions=substitutions)
 
@@ -62,7 +68,7 @@ def test_1(act: Action, tmpdir: Path):
     select * from test_table;
     commit;
     """
-    act.isql(switches=['-q', '-n'], input=init_script)
+    act.isql(switches=['-q', '-n'], input=init_script, combine_output=True, io_enc=locale.getpreferredencoding())
     stdout = act.clean_stdout + '\n'
     act.reset()
 
@@ -73,7 +79,7 @@ def test_1(act: Action, tmpdir: Path):
     select * from test_table;
     commit;
     """
-    act.isql(switches=['-q', '-n'], input=script, combine_output=True)
+    act.isql(switches=['-q', '-n'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
     stdout += act.clean_stdout + '\n'
     act.reset()
 
@@ -82,7 +88,7 @@ def test_1(act: Action, tmpdir: Path):
     select RDB$FILE_NAME from RDB$RELATIONS as rl left join RDB$TABLESPACES as ts ON rl.RDB$TABLESPACE_NAME=ts.RDB$TABLESPACE_NAME where RDB$RELATION_NAME='TEST_TABLE';
     select * from test_table;
     """
-    act.isql(switches=['-q', '-n'], input=script, combine_output=True)
+    act.isql(switches=['-q', '-n'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
     stdout += act.clean_stdout
     act.reset()
 
@@ -90,7 +96,7 @@ def test_1(act: Action, tmpdir: Path):
     ALTER TABLESPACE TS1 SET FILE TO '{ts1_file}';
     commit;
     """
-    act.isql(switches=['-q', '-n'], input=script, combine_output=True)
+    act.isql(switches=['-q', '-n'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
     stdout += act.clean_stdout
 
     act.expected_stdout = expected_stdout
