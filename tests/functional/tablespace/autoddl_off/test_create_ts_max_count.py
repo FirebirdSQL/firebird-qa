@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.autoddl_off.create_ts_max_count
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.autoddl_off.create_ts_max_count
 DESCRIPTION:
-FBTEST:      functional.tablespace.autoddl_off.create_ts_max_count
 """
 
 import pytest
