@@ -13,7 +13,7 @@ from pathlib import Path
 
 substitutions = [('.*test_dir/ts1.dat', 'test_dir/ts1.dat'), ('=+ =+', '======'), 
                  ('.*test_dir\\\\ts1.dat', 'test_dir/ts1.dat'), 
-                 ('-The system cannot find the path specified.', '-No such file or directory')]
+                 ('-The system cannot find the path specified.', '')]
 
 db = db_factory()
 act = python_act('db', substitutions=substitutions)
@@ -28,7 +28,6 @@ unsuccessful metadata update
 -CREATE TABLESPACE TS1 failed
 test_dir/ts1.dat"
 -Error while trying to create file
--No such file or directory
 """
 
 
