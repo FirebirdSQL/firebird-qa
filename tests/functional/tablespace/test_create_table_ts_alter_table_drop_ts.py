@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.create_table_ts_alter_table_drop_ts
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.create_table_ts_alter_table_drop_ts
 DESCRIPTION:
-FBTEST:      functional.tablespace.create_table_ts_alter_table_drop_ts
 NOTES:
     [2025.03.03] Zuev
     Don't delete or replace a file of the test tablespace.
