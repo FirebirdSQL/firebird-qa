@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.autoddl_off.create_table_ts_alter_index_ts_drop_ts
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.autoddl_off.create_table_ts_alter_index_ts_drop_ts
 DESCRIPTION:
-FBTEST:      functional.tablespace.autoddl_off.create_table_ts_alter_index_ts_drop_ts
 NOTES:       Test is currently being skipped because the DROP WITH INCLUDING CONTENTS functionality is not supported.
 """
 
