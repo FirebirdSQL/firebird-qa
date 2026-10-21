@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.alter_ts
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.alter_ts
 DESCRIPTION:
-FBTEST:      functional.tablespace.alter_ts
 """
 
 import os
