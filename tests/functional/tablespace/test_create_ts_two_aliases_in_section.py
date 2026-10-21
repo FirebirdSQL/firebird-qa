@@ -19,6 +19,7 @@ expected_stdout = """
 new_config = temp_file('new_directories.conf')
 
 
+@pytest.mark.skip("directories.conf is not supported in FB")
 @pytest.mark.version('>=6.0')
 def test_1(act: Action, tmpdir: Path, store_config: ConfigManager, new_config: Path):
 
