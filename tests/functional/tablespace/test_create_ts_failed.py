@@ -1,10 +1,9 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.create_ts_failed
-TITLE:       
+ID:          n/a
+TITLE:       functional.tablespace.create_ts_failed
 DESCRIPTION:
-FBTEST:      functional.tablespace.create_ts_failed
 """
 
 import pytest
