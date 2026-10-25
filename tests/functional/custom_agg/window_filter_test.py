@@ -233,10 +233,6 @@ expected_stdout = """
     U_RUN 420
 """
 
-expected_stderr = """
-
-"""
-
 @pytest.mark.version('>=6.0')
 @pytest.mark.ai
 def test_1(act: Action):
