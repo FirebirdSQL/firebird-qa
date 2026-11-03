@@ -12,7 +12,6 @@ NOTES:
     [11.07.2025] pzotov
     This test replaces previously created ones with names: test_01.py ... test_10.py
     All these tests has been marked to be SKIPPED from execution.
-    Checked on Checked on 6.0.0.909; 5.0.3.1668; 4.0.6.3214.
 
     [26.08.2025] pzotov
     Re-implemented after note by Anton Zuev, Redbase.
@@ -22,7 +21,11 @@ NOTES:
         https://github.com/FirebirdSQL/firebird/issues/6233
         https://github.com/FirebirdSQL/firebird/pull/8091
     Added statements that must fail on every checked FB version.
-    Checked on 6.0.0.1244; 5.0.4.1701; 4.0.7.3231.
+
+    [03.11.2026] pzotov
+    Removed code that attempted to create number of indices more than can be fit in Index Root page.
+    See this check in $QA_ROOT/tests/functional/index/create/test_max_indices_in_index_root_page.py
+    Checked on 6.0.0.2444; 5.0.5.1906; 4.0.8.3328.
 """
 
 import pytest
@@ -377,47 +380,6 @@ def test_1(act: Action, tmp_user: User):
         create index test_NOT_ALLOWED_08 on test computed by( sqrt(id) );
         commit;
         select * from v_index_info;
-        drop table test;
-        -----------------------------------
-        -- check that we can not create too large number of indices for some table.
-        -- NB: limit depends on page_size: 8K = 255; 16K = 511; 32K = 1023; formula: power(2, ( 8 + log(2, pg_size/8) ) - 1)
-        -- ("cannot add index, index root page is full"):
-        create table test(id int, h06 int);
-        commit;
-        --- set autoddl off;
-        set transaction read committed;
-        set term ^;
-        execute block as
-            declare i int;
-            declare n int;
-            declare pg_size int;
-        begin
-            i = 1;
-            
-            -- select mon$page_size from mon$database into pg_size;
-            -- if ( rdb$get_context('SYSTEM', 'ENGINE_VERSION') >= '5.' ) then
-            --     n = 1 + power( 2, ( 8 + log(2, pg_size/8192) ) ); -- 256; 512; 1024; ...
-            -- else
-            --     n = 1 + decode(pg_size,  8192, 408,   16384, 818,   32768, 1637,   9999);
-
-            -- COULD NOT get proper formula too define max allowed indices per a table.
-            -- Hope that this is greater than actual limit for currently used page sizes:
-            n = 9999;
-            while (i <= n) do
-            begin
-                execute statement 'create index test_' || i || ' on test(h06)'
-                with autonomous transaction
-                ;
-                i = i + 1;
-            end
-        end
-        ^
-        set term ;^
-        --- set autoddl on;
-        commit;
-        --set plan on;
-        select count(*) as max_number_of_created_indices from v_index_info;
-        rollback; -- !! see https://github.com/FirebirdSQL/firebird/issues/8714#issuecomment-3224128813
         drop table test;
     """
 
@@ -1119,12 +1081,6 @@ def test_1(act: Action, tmp_user: User):
         -expression evaluation not supported
         -Argument for SQRT must be zero or positive
         Records affected: 0
-
-        Statement failed, SQLSTATE = 54000
-        unsuccessful metadata update
-        -cannot add index, index root page is full.
-        MAX_NUMBER_OF_CREATED_INDICES 408
-        Records affected: 1
     """
     
     expected_stdout_5x = """
@@ -1980,12 +1936,6 @@ def test_1(act: Action, tmp_user: User):
         -expression evaluation not supported
         -Argument for SQRT must be zero or positive
         Records affected: 0
-
-        Statement failed, SQLSTATE = 54000
-        unsuccessful metadata update
-        -cannot add index, index root page is full.        
-        MAX_NUMBER_OF_CREATED_INDICES 408
-        Records affected: 1
     """
 
     expected_stdout_6x = """
@@ -3000,12 +2950,6 @@ def test_1(act: Action, tmp_user: User):
         -expression evaluation not supported
         -Argument for SQRT must be zero or positive
         Records affected: 0
-        Statement failed, SQLSTATE = 54000
-        unsuccessful metadata update
-        -CREATE INDEX "PUBLIC"."TEST_256" failed
-        -cannot add index, index root page is full.
-        MAX_NUMBER_OF_CREATED_INDICES 255
-        Records affected: 1
     """
 
     act.expected_stdout = expected_stdout_4x if act.is_version('<5') else expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
