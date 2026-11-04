@@ -1,5 +1,4 @@
 # coding:utf-8
-
 """
 ID:          n/a
 TITLE:       CREATE OR ALTER TABLESPACE: create branch and alter branch
@@ -53,7 +52,7 @@ def test_1(act: Action, tmp_path: Path):
 
     ts_name = 'TS1' # name of tablespace in DB.
 
-    # Name of files:
+    # Random names of files that will be used for storage TS data:
     rnd_name_1 = 'ts_1_' + generate_random_string(20)
     rnd_name_2 = 'ts_2_' + generate_random_string(20)
     rnd_name_3 = 'ts_missed_' + generate_random_string(20)
@@ -130,17 +129,18 @@ def test_1(act: Action, tmp_path: Path):
     act.reset()
 
     # +++++++++++++++++++++++++++++++++ check #2b +++++++++++++++++++++++++++++++++
-    # Old file - ts_file_1 - is no longer associated with DB: drop it.
+    # Old file (ts_file_1) is no longer associated with DB: drop it.
     # Data must remain accessible from the new file.
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     ts_file_1.unlink()
 
     test_sql = """
         set list on;
+        insert into test_table(id) select -id from test_table;
         select count(*) as cnt from test_table;
     """
     expected_stdout = """
-        CNT     2
+        CNT     4
     """
 
     act.expected_stdout = expected_stdout
