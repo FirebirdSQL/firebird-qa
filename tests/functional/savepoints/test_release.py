@@ -66,7 +66,22 @@ substitutions = [('[ \t]+', ' ')]
 
 act = isql_act('db', test_script, substitutions=substitutions)
 
-expected_stdout = """
+expected_stdout_5x = """
+    Statement failed, SQLSTATE = 3B000
+    Unable to find savepoint with name B in transaction context
+    Statement failed, SQLSTATE = 3B000
+    Unable to find savepoint with name C in transaction context
+    Statement failed, SQLSTATE = 3B000
+    Unable to find savepoint with name A in transaction context
+    C1 4
+    C2 1
+    C3 2
+    Statement failed, SQLSTATE = 3B000
+    Unable to find savepoint with name P in transaction context
+    C4 1
+"""
+
+expected_stdout_6x = """
     Statement failed, SQLSTATE = 3B000
     Unable to find savepoint with name "B" in transaction context
     Statement failed, SQLSTATE = 3B000
@@ -84,6 +99,6 @@ expected_stdout = """
 @pytest.mark.version('>=3.0')
 @pytest.mark.ai
 def test_1(act: Action):
-    act.expected_stdout = expected_stdout
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.execute(combine_output=True)
     assert act.clean_stdout == act.clean_expected_stdout
