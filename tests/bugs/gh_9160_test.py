@@ -3,12 +3,18 @@
 """
 ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9160
-TITLE:       Failed COMMIT of a DDL transaction leaves orphan RDB$FORMATS records causing subsequent "bugcheck 179 Record N is wrong length" for new tables
+TITLE:       Failed COMMIT of Tx with 'CREATE TABLE' leaves orphan RDB$FORMATS records causing subsequent "bugcheck 179 Record N is wrong length" for new tables
 DESCRIPTION:
     Test uses simplified scenario from ticket and checks output of ISQL, then running `gfix -v -full` and compare firebird.log with its initial state.
 NOTES:
+    [11.10.2026] pzotov
     Confirmed bug on 5.0.5.1888-9b169bc; 4.0.8.3322-a2c43e7; 3.0.15.33886-71590ee.
     Checked on 6.0.0.2208-6515630; 5.0.5.1891-22e4dec; 4.0.8.3322-0c6f6b0; 3.0.15.33886-8a45b62
+
+    [04.11.2026] pzotov
+    Added check for non-zero act.return_code after gfix validation.
+    Since 6.0.0.2211-b3eb0c9 gfix issues 'warnings: N' in its output (caused by orphan pages).
+    Discussed with FB-team, 04.11.2026 17:40.
 """
 import re
 import locale
@@ -139,8 +145,8 @@ def test_1(act: Action, capsys):
 
     #---------------------------------------
     act.gfix(switches=['-v', '-full', act.db.db_path], combine_output = True, io_enc = locale.getpreferredencoding())
-    if act.clean_stdout:
-        actual_out += '\n' + 'Unexpected output in gfix:\n' + act.clean_stdout
+    if act.clean_stdout and act.return_code:
+        actual_out += '\n' + 'Unexpected output in gfix:\n' + act.clean_stdout + f', retcode={act.return_code}'
     act.reset()
     #---------------------------------------
 
@@ -148,6 +154,7 @@ def test_1(act: Action, capsys):
 
     allowed_patterns = [ r'consistency\s+check', 'Error:', r'wrong\s+length' ]
     allowed_patterns = [ re.compile(x, re.IGNORECASE) for x in allowed_patterns ]
+
     print_title_msg = 1
     for line in unified_diff(log_before, log_after):
         if (msg := line.strip()):
