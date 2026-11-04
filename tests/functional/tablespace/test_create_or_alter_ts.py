@@ -57,12 +57,10 @@ def test_1(act: Action, tmp_path: Path):
     rnd_name_1 = 'ts_1_' + generate_random_string(20)
     rnd_name_2 = 'ts_2_' + generate_random_string(20)
     rnd_name_3 = 'ts_missed_' + generate_random_string(20)
-    rnd_name_4 = 'ts_tmpren_' + generate_random_string(20)
 
     ts_file_1 = tmp_path / rnd_name_1
     ts_file_2 = tmp_path / rnd_name_2
     ts_file_missing = tmp_path / rnd_name_3
-    ts_file_renamed = tmp_path / rnd_name_4
 
     # +++++++++++++++++++++++++++++++++ check #1 +++++++++++++++++++++++++++++++++
     # create branch: tablespace does not exist yet
@@ -132,10 +130,10 @@ def test_1(act: Action, tmp_path: Path):
     act.reset()
 
     # +++++++++++++++++++++++++++++++++ check #2b +++++++++++++++++++++++++++++++++
-    # Old file is no longer associated with the database: rename it away.
+    # Old file - ts_file_1 - is no longer associated with DB: drop it.
     # Data must remain accessible from the new file.
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    os.rename(ts_file_1, ts_file_renamed)
+    ts_file_1.unlink()
 
     test_sql = """
         set list on;
