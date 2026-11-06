@@ -1,0 +1,289 @@
+#coding:utf-8
+
+"""
+ID:          n/a
+ISSUE:       https://github.com/FirebirdSQL/firebird/commit/871e33ce4e15a85d031be2399037a2046440c8c7
+TITLE:       Fix PERCENTILE_CONT and PERCENTILE_DISC with a sub-select in WITHIN GROUP
+DESCRIPTION:
+    Scenario for commit 871e33ce4e15a85d031be2399037a2046440c8c7
+    "Fix PERCENTILE_CONT and PERCENTILE_DISC with a sub-select in WITHIN GROUP"
+NOTES:
+    [07.11.2026] pzotov
+    The scenario has been found by AI.
+    Confirmed problems (misc BLR errors) with 6.0.0.2447-77d8185.
+    Checked on 6.0.0.2452-871e33c.
+"""
+
+import pytest
+from firebird.qa import *
+from firebird.driver import DatabaseError
+
+init_script = """
+    set bail off;
+    recreate table test(id int primary key, grp int, val int);
+    commit;
+    insert into test(id, grp, val) values( 1, 1, 10);
+    insert into test(id, grp, val) values( 2, 1, 20);
+    insert into test(id, grp, val) values( 3, 1, 30);
+    insert into test(id, grp, val) values( 4, 1, 40);
+    insert into test(id, grp, val) values( 5, 2, 100);
+    insert into test(id, grp, val) values( 6, 2, 200);
+    insert into test(id, grp, val) values( 7, 2, 300);
+    commit;
+"""
+
+db = db_factory(init = init_script)
+
+substitutions = [('[ \t]+', ' ')]
+act = python_act('db', substitutions = substitutions)
+
+@pytest.mark.ai
+@pytest.mark.version('>=6.0')
+def test_1(act: Action, capsys):
+
+    qry_map = {
+        1000 :
+        (
+            """
+                select
+                    grp
+                   ,percentile_cont(0.5) within group (order by val) as pc_cont
+                   ,percentile_disc(0.5) within group (order by val) as pc_disc
+                from test
+                group by grp
+            """
+            ,
+            """
+                CASE 1 (control). Plain column in WITHIN GROUP: works on both builds. A column reference emitted twice into BLR is harmless (no context is allocated).
+            """
+        )
+        ,
+        2000 :
+        (
+            """
+                select
+                    grp
+                   ,percentile_cont( (select 0.5 from rdb$database) ) within group (order by val) as pc_cont
+                from test
+                group by grp
+            """
+            ,
+            """
+                CASE 2 (control). Sub-select as the PERCENT argument: 'arg' was always dsqlPass-ed separately, so this is NOT affected by the bug.
+            """
+        )
+        ,
+        3100 :
+        (
+            """
+                select
+                    grp
+                   ,percentile_cont(0.5) within group (order by (select t2.val from test t2 where t2.id = t.id)) as pc_cont
+                from test t
+                group by grp
+            """
+            ,
+            """
+                CASE 3 (BUG). Correlated sub-select in WITHIN GROUP (ORDER BY ...), aggregate form.
+                BEFORE fix: "context already in use (BLR error)" / isc_ctxinuse.
+                AFTER  fix: works, same result as CASE 1.
+            """
+        )
+        ,
+        3200 :
+        (
+            """
+                select
+                    grp
+                   ,percentile_cont(0.5) within group (order by (select t2.val from test t2 where t2.id = t.id)) as pc_cont
+                   ,percentile_disc(0.5) within group (order by (select t2.val from test t2 where t2.id = t.id)) as pc_disc
+                from test t
+                group by grp
+            """
+            ,
+            """
+                CASE 3 (BUG). Correlated sub-select in WITHIN GROUP (ORDER BY ...), aggregate form.
+                BEFORE fix: "context already in use (BLR error)" / isc_ctxinuse.
+                AFTER  fix: works, same result as CASE 1.
+            """
+        )
+        ,
+        4000 :
+        (
+            """
+                select
+                    percentile_cont(0.5) within group (order by (select count(*) from rdb$database)) as pc_cont
+                from rdb$database
+            """
+            ,
+            """
+                CASE 4 (BUG). Uncorrelated scalar sub-select: also allocates a context -> same failure.
+            """
+        )
+        ,
+        5000 :
+        (
+            """
+                select
+                    id
+                   ,grp
+                   ,val
+                   ,percentile_disc(0.5) within group (order by (select t2.val from test t2 where t2.id = t.id))
+                        over (partition by grp) as median_disc
+                from test t
+                order by id
+            """
+            ,
+            """
+                CASE 5 (BUG). Window-function form: same dsqlCopy() path, same failure.
+            """
+        )
+        ,
+        6000 :
+        (
+            """
+                select * from v_pct;
+
+            """
+            ,
+            """
+                CASE 6 (BUG). Even through a VIEW / stored in metadata the BLR is generated by DSQL the same way, so creating the view fails before the fix.
+            """
+            ,
+            """
+                create view v_pct as
+                select
+                    grp
+                   ,percentile_cont(0.5) within group (order by (select t2.val from test t2 where t2.id = t.id)) as pc_cont
+                from test t
+                group by grp;
+            """
+        )
+        ,
+    }
+    
+    with act.db.connect() as con:
+        cur = con.cursor()
+        for k, v in qry_map.items():
+            chk_sql, qry_comment = v[:2]
+
+            ps, rs = None, None
+            print(qry_comment)
+            print(chk_sql)
+
+            if len(v) >= 3:
+                ddl_addi = v[2] # 'create view' for 6000
+                try:
+                    con.execute_immediate(ddl_addi)
+                    con.commit()
+                except DatabaseError as e:
+                    print(f'Key: {k}. Problem with\n{ddl_addi=}:')
+                    print(e.__str__())
+                    print(e.gds_codes)
+
+            try:
+                ps = cur.prepare(chk_sql)
+
+                # Print explained plan with padding eash line by dots in order to see indentations:
+                #print( '\n'.join([replace_leading(s) for s in ps.detailed_plan.split('\n')]) )
+                #print('')
+
+                # ::: NB ::: 'ps' returns data, i.e. this is SELECTABLE expression.
+                # We have to store result of cur.execute(<psInstance>) in order to
+                # close it explicitly.
+                # Otherwise AV can occur during Python garbage collection and this
+                # causes pytest to hang on its final point.
+                # Explained by hvlad, email 26.10.24 17:42
+                rs = cur.execute(ps)
+                cur_cols = cur.description
+                for r in cur:
+                    for i in range(0,len(cur_cols)):
+                        print( cur_cols[i][0], ':', r[i] )
+            except DatabaseError as e:
+                print(e.__str__())
+                print(e.gds_codes)
+            finally:
+                if rs:
+                    rs.close() # <<< EXPLICITLY CLOSING CURSOR RESULTS
+                if ps:
+                    ps.free()
+
+
+    act.expected_stdout = f"""
+        {qry_map[1000][1]}
+        {qry_map[1000][0]}
+        GRP : 1
+        PC_CONT : 25.0
+        PC_DISC : 20
+        GRP : 2
+        PC_CONT : 200.0
+        PC_DISC : 200
+
+        {qry_map[2000][1]}
+        {qry_map[2000][0]}
+        GRP : 1
+        PC_CONT : 25.0
+        GRP : 2
+        PC_CONT : 200.0
+
+        {qry_map[3100][1]}
+        {qry_map[3100][0]}
+        GRP : 1
+        PC_CONT : 25.0
+        GRP : 2
+        PC_CONT : 200.0
+
+        {qry_map[3200][1]}
+        {qry_map[3200][0]}
+        GRP : 1
+        PC_CONT : 25.0
+        PC_DISC : 20
+        GRP : 2
+        PC_CONT : 200.0
+        PC_DISC : 200
+
+        {qry_map[4000][1]}
+        {qry_map[4000][0]}
+        PC_CONT : 1.0
+
+        {qry_map[5000][1]}
+        {qry_map[5000][0]}
+        ID : 1
+        GRP : 1
+        VAL : 10
+        MEDIAN_DISC : 20
+        ID : 2
+        GRP : 1
+        VAL : 20
+        MEDIAN_DISC : 20
+        ID : 3
+        GRP : 1
+        VAL : 30
+        MEDIAN_DISC : 20
+        ID : 4
+        GRP : 1
+        VAL : 40
+        MEDIAN_DISC : 20
+        ID : 5
+        GRP : 2
+        VAL : 100
+        MEDIAN_DISC : 200
+        ID : 6
+        GRP : 2
+        VAL : 200
+        MEDIAN_DISC : 200
+        ID : 7
+        GRP : 2
+        VAL : 300
+        MEDIAN_DISC : 200
+
+        {qry_map[6000][1]}
+        {qry_map[6000][0]}
+        GRP : 1
+        PC_CONT : 25.0
+        GRP : 2
+        PC_CONT : 200.0
+    """
+    act.stdout = capsys.readouterr().out
+    assert act.clean_stdout == act.clean_expected_stdout
+
