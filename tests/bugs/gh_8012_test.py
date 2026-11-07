@@ -10,17 +10,7 @@ DESCRIPTION:
     "aggregate must not appear in the GROUP BY / WHERE clause" and to be passed further with
     no sort block being allocated for it. AggNode::execute() then dereferenced the NULL
     pointer (asb), which crashed the server ('Access violation' in firebird.log).
-    Both defects have the same nature: FieldFinder, when it scans the arguments of an
-    aggregate, enters sub-selects although fields over there tell nothing about the scope
-    level which the aggregate itself belongs to:
-      1) commit 61cce64: AggNode::dsqlAggregate2Finder() did not set fieldFinder.ignoreSubSelects,
-         so fields inside a SCALAR sub-select of an aggregate argument were counted. For an
-         aggregate whose only fields live inside such a sub-select, e.g. LIST(DISTINCT (SELECT ...)),
-         the finder reported "no aggregate here" and PASS1_rse() did not reject it (cases A1-A8);
-      2) commit 77d8185 ("Postfix for #8012"): node RseBoolNode (predicates which contain
-         a sub-select: EXISTS, IN, SINGULAR, ALL, ANY and their negations) had no dsqlFieldFinder()
-         override at all, so the finder entered such sub-selects even when ignoreSubSelects was
-         already set (cases B1-B6).
+
     Beside crashes, both defects also allowed INVALID queries to be silently accepted
     (cases A6, B7, C1: non-DISTINCT aggregate in the GROUP BY list / undetected nested aggregate),
     and made the intermediate build with 61cce64 only to lose the proper rejection for
