@@ -1,12 +1,13 @@
 #coding:utf-8
 
 """
-ID:          issue-8946
+ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8946
-TITLE:       PERCENTILE_CONT and PERCENTILE_DISC functions #2
+TITLE:       PERCENTILE_CONT and PERCENTILE_DISC functions
 DESCRIPTION:
-    test_1 contains two examples from the ticket.
-    test_2 is a regression check for a scalar sub-select in the WITHIN GROUP (ORDER BY ...)
+    The single test_1 contains two parts.
+    Part 1 has two examples from the ticket.
+    Part 2 is a regression check for a scalar sub-select in the WITHIN GROUP (ORDER BY ...)
     clause of PERCENTILE_CONT()/PERCENTILE_DISC(): such a statement in an ad-hoc query, in a
     windowed form and in a view used to fail with "context already in use (BLR error)" (or,
     for the view DDL, with "invalid request BLR at offset ...").
@@ -20,13 +21,16 @@ NOTES:
         Adjusted output after #b5b5b0e (Fixed PERCENT_RANK computation (#8970)).
         Checked on 6.0.0.1910.
     [06.11.2026] AI assistant
-        Added test_2. The value argument of a percentile aggregate is aliased from the first
+        Added second part of the test. The value argument of a percentile aggregate is aliased from the first
         item of the WITHIN GROUP (ORDER BY ...) clause, and PercentileAggNode::dsqlCopy() passed
         only the order clause: the very same sub-select node was left in the copy, and genBlr()
         wrote its context twice into the BLR. Ad-hoc statements and views with such a statement
         used to fail at run time with "context already in use (BLR error)", and the view DDL was
         rejected at creation with "invalid request BLR at offset ...".
         Checked on 6.0.0.2447-a75c543.
+    [07.11.2026] pzotov
+        Refactored so that all queries are performed within single test function (see 'qry_map' items).
+        Checked on 6.0.0.2454-28bc822.
 """
 
 import pytest
@@ -34,6 +38,7 @@ import zipfile
 from pathlib import Path
 from firebird.qa import *
 from firebird.driver import DatabaseError
+import time
 
 db = db_factory()
 substitutions = []
@@ -41,67 +46,56 @@ substitutions = []
 act = python_act('db', substitutions = substitutions)
 tmp_sql = temp_file('gh_8061.tmp.sql')
 
-# Schema and data of test_2.
-init_isql = """
-    recreate table pct_t1 (id integer, val numeric(15,4));
-    recreate table pct_t2 (id integer, t1id integer, val integer);
-    insert into pct_t1 values (1, 1.5);
-    insert into pct_t1 values (2, 2.5);
-    insert into pct_t1 values (3, 3.5);
-    insert into pct_t2 values (1, 1, 10);
-    insert into pct_t2 values (2, 2, 20);
-    insert into pct_t2 values (3, 3, 30);
-    commit;
-    set list on;
-    set count off;
-"""
-
-test_script_2 = init_isql + """
-    -- correlated scalar sub-select in the WITHIN GROUP (ORDER BY ...):
-    select percentile_cont(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) as c1 from pct_t1 t1;
-    select percentile_disc(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) as c2 from pct_t1 t1;
-    -- uncorrelated sub-select:
-    select percentile_cont(0.5) within group (order by (select avg(t2.val) from pct_t2 t2)) as c3 from pct_t1 t1;
-    -- sub-select with DESC:
-    select percentile_cont(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id) desc) as c4 from pct_t1 t1;
-    -- controls, no sub-select:
-    select percentile_cont(0.5) within group (order by t1.val) as c5 from pct_t1 t1;
-    select percentile_disc(0.5) within group (order by t1.val) as c6 from pct_t1 t1;
-    -- windowed form:
-    select t1.id as w1, percentile_cont(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) over (partition by t1.id) as w2 from pct_t1 t1 order by 1;
-    -- the same statements in views:
-    create view pct_v_cont (r) as
-        select percentile_cont(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) from pct_t1 t1;
-    create view pct_v_disc (r) as
-        select percentile_disc(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) from pct_t1 t1;
-    select * from pct_v_cont;
-    select * from pct_v_disc;
-"""
-
-expected_stdout_2 = """
-    C1 20.00000000000000
-    C2 20
-    C3 20.00000000000000
-    C4 20.00000000000000
-    C5 2.500000000000000
-    C6 2.5000
-    W1 1
-    W2 10.00000000000000
-    W1 2
-    W2 20.00000000000000
-    W1 3
-    W2 30.00000000000000
-    R 20.00000000000000
-    R 20
-"""
-
-act_2 = isql_act('db', test_script_2, substitutions=[('[ \t]+', ' ')])
-
-
+@pytest.mark.ai
 @pytest.mark.version('>=6.0')
 def test_1(act: Action, tmp_sql: Path, capsys):
+    #------------------------------------------------------------------
+    # PART 1: two examples of PERCENTILE_DISC()/PERCENTILE_CONT() usage
+    # from the ticket.
+    #------------------------------------------------------------------
     employee_data_sql = zipfile.Path(act.files_dir / 'standard_sample_databases.zip', at='sample-DB_-_firebird.sql')
-    tmp_sql.write_bytes(employee_data_sql.read_bytes())
+
+    test_script = employee_data_sql.read_text(encoding = 'utf8')
+
+    # added 07.11.2026:
+    ###################
+    test_script += """
+        recreate table pct_t1 (id int, val numeric(15,4));
+        recreate table pct_t2 (id int, t1id int, val int);
+        create view v_pct_test as
+        select
+            percentile_cont(0.5)
+            within group (
+                             order by (
+                                          select max(t2.val)
+                                          from pct_t2 t2
+                                          where t2.t1id = t1.id
+                                      )
+                         )
+            as p_cont
+            ,
+            percentile_disc(0.5)
+            within group (
+                             order by (
+                                          select max(t2.val)
+                                          from pct_t2 t2
+                                          where t2.t1id = t1.id
+                                      )
+                         )
+            as p_disc
+        from pct_t1 t1
+        ;
+
+        insert into pct_t1 values (1, 1.5);
+        insert into pct_t1 values (2, 2.5);
+        insert into pct_t1 values (3, 3.5);
+        insert into pct_t2 values (1, 1, 10);
+        insert into pct_t2 values (2, 2, 20);
+        insert into pct_t2 values (3, 3, 30);
+        commit;
+    """
+
+    tmp_sql.write_text(test_script, encoding = 'utf8')
 
     act.isql(switches = ['-q'], charset='utf8', input_file = tmp_sql, combine_output = True)
     if act.return_code == 0:
@@ -113,41 +107,145 @@ def test_1(act: Action, tmp_sql: Path, capsys):
             print(line)
     act.reset()
     #----------------------------------------------------------------------
-    query_map = {
-        1000 : (
-                  f"""
-                    select 
-                        dept_no 
-                        ,salary
-                        ,cume_dist() over(partition by dept_no order by salary) as c_dist
-                        ,percentile_disc(0.5) within group(order by salary) over(partition by dept_no) as median_disc
-                    from employee
-                    where dept_no < 600
-                    order by 1, 2
-                  """
-                 ,'Example of PERCENTILE_DISC() usage'
-               )
+    qry_map = {
+        1000 :
+        (
+            f"""
+                select
+                    dept_no
+                    ,salary
+                    ,cume_dist() over(partition by dept_no order by salary) as c_dist
+                    ,percentile_disc(0.5) within group(order by salary) over(partition by dept_no) as median_disc
+                from employee
+                where dept_no < 600
+                order by 1, 2
+            """
+            ,'Example of PERCENTILE_DISC() usage'
+        )
         ,
-        2000 : (
-                  f"""
-                    select 
-                        dept_no
-                        ,salary
-                        ,percent_rank() over(partition by dept_no order by salary) as prc_rank
-                        ,percentile_cont(0.5) within group(order by salary) over(partition by dept_no) as median_cont
-                    from employee
-                    where dept_no < 600
-                    order by 1, 2
-                  """
-                 ,'Example of PERCENTILE_CONT() usage'
-               )
+        2000 :
+        (
+            f"""
+                select
+                    dept_no
+                    ,salary
+                    ,percent_rank() over(partition by dept_no order by salary) as prc_rank
+                    ,percentile_cont(0.5) within group(order by salary) over(partition by dept_no) as median_cont
+                from employee
+                where dept_no < 600
+                order by 1, 2
+            """
+            ,'Example of PERCENTILE_CONT() usage'
+        )
+        ,
+        3100 :
+        (
+            f"""
+                select
+                    percentile_cont(0.5)
+                    within group (
+                                     order by (
+                                                  select max(t2.val)
+                                                  from pct_t2 t2
+                                                  where t2.t1id = t1.id
+                                              )
+                                 ) as p_cont_correlated
+                    ,
+                    percentile_disc(0.5)
+                    within group (
+                                     order by (
+                                                  select max(t2.val)
+                                                  from pct_t2 t2
+                                                  where t2.t1id = t1.id
+                                              )
+                                 ) as p_disc_correlated
+
+                from pct_t1 t1
+            """
+            ,'correlated scalar sub-select in the WITHIN GROUP (ORDER BY ...) - query to the TABLE' 
+        )
+        ,
+        3200 :
+        (
+            f"""
+                select
+                    percentile_cont(0.5)
+                    within group (
+                                     order by (
+                                                  select avg(t2.val)
+                                                  from pct_t2 t2
+                                              )
+                                 ) as p_cont_uncorrelated
+                from pct_t1 t1
+            """
+            ,'uncorrelated sub-select' 
+        )
+        ,
+        3300 :
+        (
+            f"""
+                select
+                    percentile_cont(0.5)
+                    within group (
+                                     order by (
+                                                  select max(t2.val)
+                                                  from pct_t2 t2
+                                                  where t2.t1id = t1.id
+                                              )
+                                              DESC -- <<< NB <<<
+                                 ) as p_cont_corr_desc_ord
+                from pct_t1 t1
+            """
+            ,'percentile_cont: correlated scalar sub-select in the WITHIN GROUP (ORDER BY ...) DESCEND' 
+        )
+        ,
+        3400 :
+        (
+            f"""
+                select
+                    percentile_cont(0.5) within group (order by t1.val) as p_cont_no_subquery
+                    ,
+                    percentile_disc(0.5) within group (order by t1.val) as p_disc_no_subquery
+                from pct_t1 t1
+            """
+            ,'controls, no sub-select' 
+        )
+        ,
+        3500 :
+        (
+            f"""
+                select
+                    t1.id as w1
+                    ,
+                    percentile_cont(0.5)
+                    within group (
+                                     order by (
+                                                  select max(t2.val)
+                                                  from pct_t2 t2
+                                                  where t2.t1id = t1.id
+                                              )
+                                 ) over (partition by t1.id)
+                    as p_cont_windowed
+                from pct_t1 t1
+                order by 1
+            """
+            ,'windowed form of WITHING GROUP(...)'
+        )
+        ,
+        3600 :
+        (
+            f"""
+                select v.*
+                from v_pct_test v;
+            """
+            ,'correlated scalar sub-select in the WITHIN GROUP (ORDER BY ...) - query to the VIEW' 
+        )
         ,
     }
 
-
     with act.db.connect() as con:
         cur = con.cursor()
-        for q_idx, q_tuple in query_map.items():
+        for q_idx, q_tuple in qry_map.items():
             test_sql, qry_comment = q_tuple[:2]
             ps, rs = None, None
             try:
@@ -169,10 +267,11 @@ def test_1(act: Action, tmp_sql: Path, capsys):
                     rs.close()
                 if ps:
                     ps.free()
-    expected_stdout_6x = f"""
+
+    act.expected_stdout = f"""
         1000
-        {query_map[1000][0]}
-        {query_map[1000][1]}
+        {qry_map[1000][0]}
+        {qry_map[1000][1]}
         DEPT_NO : 000
         SALARY : 53793
         C_DIST : 0.5
@@ -251,8 +350,8 @@ def test_1(act: Action, tmp_sql: Path, capsys):
         MEDIAN_DISC : 42742.5
 
         2000
-        {query_map[2000][0]}
-        {query_map[2000][1]}
+        {qry_map[2000][0]}
+        {qry_map[2000][1]}
         DEPT_NO : 000
         SALARY : 53793
         PRC_RANK : 0.0
@@ -330,17 +429,44 @@ def test_1(act: Action, tmp_sql: Path, capsys):
         PRC_RANK : 1.0
         MEDIAN_CONT : 53688.75
 
+        3100
+        {qry_map[3100][0]}
+        {qry_map[3100][1]}
+        P_CONT_CORRELATED : 20.0
+        P_DISC_CORRELATED : 20
+
+        3200
+        {qry_map[3200][0]}
+        {qry_map[3200][1]}
+        P_CONT_UNCORRELATED : 20.0
+
+        3300
+        {qry_map[3300][0]}
+        {qry_map[3300][1]}
+        P_CONT_CORR_DESC_ORD : 20.0
+
+        3400
+        {qry_map[3400][0]}
+        {qry_map[3400][1]}
+        P_CONT_NO_SUBQUERY : 2.5
+        P_DISC_NO_SUBQUERY : 2.5
+
+        3500
+        {qry_map[3500][0]}
+        {qry_map[3500][1]}
+        W1 : 1
+        P_CONT_WINDOWED : 10.0
+        W1 : 2
+        P_CONT_WINDOWED : 20.0
+        W1 : 3
+        P_CONT_WINDOWED : 30.0
+
+        3600
+        {qry_map[3600][0]}
+        {qry_map[3600][1]}
+        P_CONT : 20.0
+        P_DISC : 20
     """
 
-    act.expected_stdout = expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
-
-
-@pytest.mark.ai
-@pytest.mark.version('>=6.0')
-def test_2(act_2: Action):
-    act_2.expected_stdout = expected_stdout_2
-    act_2.execute()
-    assert act_2.clean_stdout == act_2.clean_expected_stdout
-    assert act_2.clean_stderr == ''
