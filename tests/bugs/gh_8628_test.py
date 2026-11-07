@@ -3,7 +3,7 @@
 """
 ID:          n/a
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8628
-TITLE:       Incorrect join order for JOIN LATERAL with UNION referencing the outer stream(s) via its select list
+TITLE:       Incorrect join order for JOIN LATERAL with UNION, aggregate or window function referencing the outer stream(s) via its select list
 DESCRIPTION:
 NOTES:
     [17.07.2025] pzotov
@@ -11,6 +11,11 @@ NOTES:
     See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
     Confirmed problem on 6.0.0.877, 5.0.3.1622
     Checked on 6.0.0.1020, 5.0.3.1683
+    [07.11.2026] AI assistant
+    Added queries 2 and 3: the same problem when the select list of the LATERAL derived
+    table contains an aggregate or a window function instead of a union clause.
+    Confirmed on a 6.0 development build: before the fix both queries produced an inverted
+    join order and failed at run time with "no current record for fetch operation".
 """
 
 import pytest
@@ -19,7 +24,7 @@ from firebird.driver import DatabaseError
 
 db = db_factory()
 
-substitutions = []
+substitutions = [(r'record length: \d+', 'record length: NN')]
 # QA_GLOBALS -- dict, is defined in qa/plugin.py, obtain settings
 # from act.files_dir/'test_config.ini':
 #
@@ -44,6 +49,20 @@ def test_1(act: Action, capsys):
                 select r.rdb$relation_name as name from rdb$database
                 union all
                 select r.rdb$owner_name as name from rdb$database
+            ) t
+        """,
+        """
+            select t.cnt
+            from rdb$relations r
+            cross join lateral (
+                select count(d.rdb$relation_id + r.rdb$relation_id) as cnt from rdb$database d
+            ) t
+        """,
+        """
+            select t.cnt
+            from rdb$relations r
+            cross join lateral (
+                select count(d.rdb$relation_id + r.rdb$relation_id) over () as cnt from rdb$database d
             ) t
         """,
     )
@@ -86,6 +105,23 @@ def test_1(act: Action, capsys):
         ........-> Union
         ............-> Table RDB$DATABASE as T RDB$DATABASE Full Scan
         ............-> Table RDB$DATABASE as T RDB$DATABASE Full Scan
+        Fetching completed.
+        {qry_list[1]}
+        Select Expression
+        ....-> Nested Loop Join (inner)
+        ........-> Table RDB$RELATIONS as R Full Scan
+        ........-> Aggregate
+        ............-> Table RDB$DATABASE as T D Full Scan
+        Fetching completed.
+        {qry_list[2]}
+        Select Expression
+        ....-> Nested Loop Join (inner)
+        ........-> Table RDB$RELATIONS as R Full Scan
+        ........-> Window
+        ............-> Window Partition
+        ................-> Window Buffer
+        ....................-> Record Buffer (record length: NN)
+        ........................-> Table RDB$DATABASE as T D Full Scan
         Fetching completed.
     """
 
