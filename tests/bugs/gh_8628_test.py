@@ -11,11 +11,16 @@ NOTES:
     See $QA_HOME/README.substitutions.md or https://github.com/FirebirdSQL/firebird-qa/blob/master/README.substitutions.md
     Confirmed problem on 6.0.0.877, 5.0.3.1622
     Checked on 6.0.0.1020, 5.0.3.1683
-    [07.11.2026] AI assistant
+   
+    [07.11.2026] AI assistant / pzotov
     Added queries 2 and 3: the same problem when the select list of the LATERAL derived
     table contains an aggregate or a window function instead of a union clause.
     Confirmed on a 6.0 development build: before the fix both queries produced an inverted
     join order and failed at run time with "no current record for fetch operation".
+
+    Commit: https://github.com/FirebirdSQL/firebird/commit/28bc822df9373a9f7247fad903e7ae75596a4a57
+    ::: NOTE ::: Currently this addition can be used only in FB-6x. Backport to 5x not yet exist.
+    Checked on 6.0.0.2454-28bc822.
 """
 
 import pytest
@@ -41,7 +46,7 @@ act = python_act('db', substitutions = substitutions)
 @pytest.mark.version('>=5.0.3')
 def test_1(act: Action, capsys):
 
-    qry_list = (
+    qry_list = [
         """
             select t.name
             from rdb$relations r
@@ -51,21 +56,31 @@ def test_1(act: Action, capsys):
                 select r.rdb$owner_name as name from rdb$database
             ) t
         """,
-        """
-            select t.cnt
-            from rdb$relations r
-            cross join lateral (
-                select count(d.rdb$relation_id + r.rdb$relation_id) as cnt from rdb$database d
-            ) t
-        """,
-        """
-            select t.cnt
-            from rdb$relations r
-            cross join lateral (
-                select count(d.rdb$relation_id + r.rdb$relation_id) over () as cnt from rdb$database d
-            ) t
-        """,
-    )
+    ]
+
+    if act.is_version('<6'):
+        # Waiting for backport.
+        pass
+    else:
+        qry_list.extend (
+            (
+                """
+                    select t.cnt
+                    from rdb$relations r
+                    cross join lateral (
+                        select count(d.rdb$relation_id + r.rdb$relation_id) as cnt from rdb$database d
+                    ) t
+                """,
+                """
+                    select t.cnt
+                    from rdb$relations r
+                    cross join lateral (
+                        select count(d.rdb$relation_id + r.rdb$relation_id) over () as cnt from rdb$database d
+                    ) t
+                """,
+            )
+        )
+
 
     with act.db.connect() as con:
         cur = con.cursor()
@@ -97,7 +112,7 @@ def test_1(act: Action, capsys):
                 if ps:
                     ps.free()
 
-    act.expected_stdout = f"""
+    expected_stdout = f"""
         {qry_list[0]}
         Select Expression
         ....-> Nested Loop Join (inner)
@@ -106,24 +121,33 @@ def test_1(act: Action, capsys):
         ............-> Table RDB$DATABASE as T RDB$DATABASE Full Scan
         ............-> Table RDB$DATABASE as T RDB$DATABASE Full Scan
         Fetching completed.
-        {qry_list[1]}
-        Select Expression
-        ....-> Nested Loop Join (inner)
-        ........-> Table RDB$RELATIONS as R Full Scan
-        ........-> Aggregate
-        ............-> Table RDB$DATABASE as T D Full Scan
-        Fetching completed.
-        {qry_list[2]}
-        Select Expression
-        ....-> Nested Loop Join (inner)
-        ........-> Table RDB$RELATIONS as R Full Scan
-        ........-> Window
-        ............-> Window Partition
-        ................-> Window Buffer
-        ....................-> Record Buffer (record length: NN)
-        ........................-> Table RDB$DATABASE as T D Full Scan
-        Fetching completed.
     """
 
+    expected_stdout_5x = expected_stdout
+
+    if act.is_version('<6'):
+        pass
+    else:
+        expected_stdout_6x = expected_stdout + f"""
+            {qry_list[1]}
+            Select Expression
+            ....-> Nested Loop Join (inner)
+            ........-> Table RDB$RELATIONS as R Full Scan
+            ........-> Aggregate
+            ............-> Table RDB$DATABASE as T D Full Scan
+            Fetching completed.
+            {qry_list[2]}
+            Select Expression
+            ....-> Nested Loop Join (inner)
+            ........-> Table RDB$RELATIONS as R Full Scan
+            ........-> Window
+            ............-> Window Partition
+            ................-> Window Buffer
+            ....................-> Record Buffer (record length: NN)
+            ........................-> Table RDB$DATABASE as T D Full Scan
+            Fetching completed.
+        """
+
+    act.expected_stdout = expected_stdout_5x if act.is_version('<6') else expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
