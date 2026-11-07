@@ -5,16 +5,28 @@ ID:          issue-8946
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8946
 TITLE:       PERCENTILE_CONT and PERCENTILE_DISC functions #2
 DESCRIPTION:
-    Currently test contains only two examples from the ticket. More checks will be added later.
+    test_1 contains two examples from the ticket.
+    test_2 is a regression check for a scalar sub-select in the WITHIN GROUP (ORDER BY ...)
+    clause of PERCENTILE_CONT()/PERCENTILE_DISC(): such a statement in an ad-hoc query, in a
+    windowed form and in a view used to fail with "context already in use (BLR error)" (or,
+    for the view DDL, with "invalid request BLR at offset ...").
 NOTES:
     [29.03.2026] pzotov
-        Test uses DDL and data from employee DB but they have been extracted to .sql and stored in 
+        Test uses DDL and data from employee DB but they have been extracted to .sql and stored in
         files/standard_sample_databases.zip (file: "sample-DB_-_firebird.sql").
         Default names of all constraints were replaced in order to easy find appropriate table.
         Checked on 6.0.0.1858-c0190d0.
     [11.05.2026] pzotov
         Adjusted output after #b5b5b0e (Fixed PERCENT_RANK computation (#8970)).
         Checked on 6.0.0.1910.
+    [06.11.2026] AI assistant
+        Added test_2. The value argument of a percentile aggregate is aliased from the first
+        item of the WITHIN GROUP (ORDER BY ...) clause, and PercentileAggNode::dsqlCopy() passed
+        only the order clause: the very same sub-select node was left in the copy, and genBlr()
+        wrote its context twice into the BLR. Ad-hoc statements and views with such a statement
+        used to fail at run time with "context already in use (BLR error)", and the view DDL was
+        rejected at creation with "invalid request BLR at offset ...".
+        Checked on 6.0.0.2447-a75c543.
 """
 
 import pytest
@@ -28,6 +40,63 @@ substitutions = []
 
 act = python_act('db', substitutions = substitutions)
 tmp_sql = temp_file('gh_8061.tmp.sql')
+
+# Schema and data of test_2.
+init_isql = """
+    recreate table pct_t1 (id integer, val numeric(15,4));
+    recreate table pct_t2 (id integer, t1id integer, val integer);
+    insert into pct_t1 values (1, 1.5);
+    insert into pct_t1 values (2, 2.5);
+    insert into pct_t1 values (3, 3.5);
+    insert into pct_t2 values (1, 1, 10);
+    insert into pct_t2 values (2, 2, 20);
+    insert into pct_t2 values (3, 3, 30);
+    commit;
+    set list on;
+    set count off;
+"""
+
+test_script_2 = init_isql + """
+    -- correlated scalar sub-select in the WITHIN GROUP (ORDER BY ...):
+    select percentile_cont(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) as c1 from pct_t1 t1;
+    select percentile_disc(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) as c2 from pct_t1 t1;
+    -- uncorrelated sub-select:
+    select percentile_cont(0.5) within group (order by (select avg(t2.val) from pct_t2 t2)) as c3 from pct_t1 t1;
+    -- sub-select with DESC:
+    select percentile_cont(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id) desc) as c4 from pct_t1 t1;
+    -- controls, no sub-select:
+    select percentile_cont(0.5) within group (order by t1.val) as c5 from pct_t1 t1;
+    select percentile_disc(0.5) within group (order by t1.val) as c6 from pct_t1 t1;
+    -- windowed form:
+    select t1.id as w1, percentile_cont(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) over (partition by t1.id) as w2 from pct_t1 t1 order by 1;
+    -- the same statements in views:
+    create view pct_v_cont (r) as
+        select percentile_cont(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) from pct_t1 t1;
+    create view pct_v_disc (r) as
+        select percentile_disc(0.5) within group (order by (select max(t2.val) from pct_t2 t2 where t2.t1id = t1.id)) from pct_t1 t1;
+    select * from pct_v_cont;
+    select * from pct_v_disc;
+"""
+
+expected_stdout_2 = """
+    C1 20.00000000000000
+    C2 20
+    C3 20.00000000000000
+    C4 20.00000000000000
+    C5 2.500000000000000
+    C6 2.5000
+    W1 1
+    W2 10.00000000000000
+    W1 2
+    W2 20.00000000000000
+    W1 3
+    W2 30.00000000000000
+    R 20.00000000000000
+    R 20
+"""
+
+act_2 = isql_act('db', test_script_2, substitutions=[('[ \t]+', ' ')])
+
 
 @pytest.mark.version('>=6.0')
 def test_1(act: Action, tmp_sql: Path, capsys):
@@ -266,3 +335,12 @@ def test_1(act: Action, tmp_sql: Path, capsys):
     act.expected_stdout = expected_stdout_6x
     act.stdout = capsys.readouterr().out
     assert act.clean_stdout == act.clean_expected_stdout
+
+
+@pytest.mark.ai
+@pytest.mark.version('>=6.0')
+def test_2(act_2: Action):
+    act_2.expected_stdout = expected_stdout_2
+    act_2.execute()
+    assert act_2.clean_stdout == act_2.clean_expected_stdout
+    assert act_2.clean_stderr == ''
