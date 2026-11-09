@@ -37,12 +37,13 @@ DESCRIPTION:
     in any order - see MIN_* and MAX_* thresholds.
 NOTES:
     [20.05.2024] pzotov
-    Improvement URL (27-sep-2022 15:16):
-    https://github.com/FirebirdSQL/firebird/commit/54f1990b98d3e510a10d06fe9ceb76456804da52
-    Improved record compression (denser encoding of repeating bytes and less blocks) (#7302)
-
-    Charset must be specified in db_factory, otherwise 'malformed string' will raise.
-    Checked on 5.0.1.1399, 6.0.0.351 for DB with page_size = 8192.
+        Improvement URL (27-sep-2022 15:16):
+        https://github.com/FirebirdSQL/firebird/commit/54f1990b98d3e510a10d06fe9ceb76456804da52
+        Improved record compression (denser encoding of repeating bytes and less blocks) (#7302)
+        Charset must be specified in db_factory, otherwise 'malformed string' will raise.
+        Checked on 5.0.1.1399, 6.0.0.351 for DB with page_size = 8192.
+    [09.11.2026] pzotov
+        DISABLED because test 'gh_9245_test.py' (AI-generated) does the same but with more careful checks.
 """
 import re
 
@@ -80,6 +81,7 @@ init_ddl = f"""
 db = db_factory(page_size = 8192, init = init_ddl, charset = 'win1251')
 act = python_act('db')
 
+@pytest.mark.skip("DISABLED: see gh_9245_test.py")
 @pytest.mark.version('>=5.0')
 def test_1(act: Action, capsys):
 
