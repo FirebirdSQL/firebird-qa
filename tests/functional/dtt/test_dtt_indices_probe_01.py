@@ -52,8 +52,7 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
            ,'t_tms' : ('timestamp'                , ( "'29.02.2004 01:02:03.456'", ) )
            ,'t_tmz' : ('time with time zone'      , ( "'01:02:03.456 Indian/Cocos'", ) )
            ,'t_tsz' : ('timestamp with time zone' , ( "'29.02.2004 01:02:03.456 Indian/Cocos'", ) )
-           ,'t_utf8_regular'    : ('varchar(255) character set utf8',  ("'შობას გილოცავთ'",) )         # georgian // UnicodeDecodeError: 'charmap' codec can't decode byte 0x98 in position 24606: character maps to <undefined>
-           #,'t_utf8_regular'    : ('varchar(255) character set utf8',  ("'მადლობა'",) )
+           ,'t_utf8_regular'    : ('varchar(255) character set utf8',  ("'მადლობა'",) ) # georgian
            ,'t_utf8_ci_ai'      : ('varchar(255) character set utf8 collate unicode_ci_ai',  ("'Շնորհավոր Սուրբ Ծնունդ'",) ) # armenian
            ,'t_iso8859_1_da_da' : ('varchar(255) character set iso8859_1 collate da_da',  ("q'#Børn får søde gærøl#'",)  )
            ,'t_iso8859_1_de_de' : ('varchar(255) character set iso8859_1 collate de_de',  ("q'#Müßiggänger müssen süße Äpfel grüßen#'",)  )
