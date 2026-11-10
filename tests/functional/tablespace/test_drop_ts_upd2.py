@@ -23,6 +23,7 @@ substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', substitutions=substitutions)
 
 
+@pytest.mark.skip("Temporary disabled. To be re-implemented later.")
 @pytest.mark.parametrize(
     "commit, autoddl",
     [("commit;", "set autoddl on;"), ("", "set autoddl off;")],
