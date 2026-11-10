@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.lpad
+ID:          functional.intfunc.string.test_lpad_01
 TITLE:       LPAD function, including non-ascii characters
 DESCRIPTION:
 FBTEST:      functional.intfunc.string.lpad_01

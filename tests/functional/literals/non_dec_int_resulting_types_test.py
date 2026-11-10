@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.literals.non_dec_int_resulting_types_test
 ISSUE:        https://github.com/FirebirdSQL/firebird/pull/8564
 TITLE:        Non-decimal integer literals and underscores: data types of literals
 DESCRIPTION:

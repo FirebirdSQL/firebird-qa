@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.drop-03
+ID:          functional.domain.drop.test_03
 FBTEST:      functional.domain.drop.03
 TITLE:       DROP DOMAIN - that doesn't exists
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_returning_01
 TITLE:       Test of RETURNING clause: INSERT, UPDATE, MERGE.
 DESCRIPTION:
     Original test see in:

@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.hypoth_agg.test_vs_window_equivalence
 ISSUE:        https://github.com/FirebirdSQL/firebird/issues/9035
 TITLE:        Hypothetical-set aggregates: result equals the window function value for the hypothetical row
 DESCRIPTION:

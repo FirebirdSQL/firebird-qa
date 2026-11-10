@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8926
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8926
 TITLE:       Indexes may not be used for multiple ORed conditions containing both field and non-field references
 DESCRIPTION:

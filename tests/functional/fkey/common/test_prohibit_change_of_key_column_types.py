@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.fkey.common.test_prohibit_change_of_key_column_types
 TITLE:       Attempt to change type of any column involved in PK/FK constraints must fail.
 DESCRIPTION:
     Single- and multi-segmented PK/UK are checked.

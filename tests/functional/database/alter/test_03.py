@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          alter-database-03
+ID:          functional.database.alter.test_03
 TITLE:       Alter database: add file with name of this database or previously added files must fail
 DESCRIPTION: Add same file twice must fail
 NOTES:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.eqc-136030
+ID:          functional.tabloid.test_eqc_136030
 TITLE:       Check ability for preparing and then run query with parameters. Query should use ORDER-BY clause.
 DESCRIPTION:
 NOTES:

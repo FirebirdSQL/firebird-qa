@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_3123a5a0
 ISSUE:       None
 TITLE:       Check ability to reuse internal connection by EXECUTE STATEMENT.
 DESCRIPTION: 

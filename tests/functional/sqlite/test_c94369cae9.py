@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          c94369cae9
+ID:          functional.sqlite.test_c94369cae9
 ISSUE:       https://www.sqlite.org/src/tktview/c94369cae9
 TITLE:       Wrong answer when use no-case collation due to the LIKE optimization
 DESCRIPTION:

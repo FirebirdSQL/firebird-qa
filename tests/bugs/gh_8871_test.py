@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8871
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8871
 TITLE:       Fix locking error if IN/EXISTS is converted into a semi-join
 DESCRIPTION:

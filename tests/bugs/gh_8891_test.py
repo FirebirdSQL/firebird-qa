@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8891
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8891
 TITLE:       Regression. Result of cross join of two procedures + unioned with common datasource (e.g. rdb$database) is wrong
 DESCRIPTION:

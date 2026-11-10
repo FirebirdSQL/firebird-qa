@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          int128.math-functions
+ID:          functional.datatypes.test_int128_math_functions
 ISSUE:       6585
 JIRA:        CORE-6344
 TITLE:       Basic test for math functions against INT128 datatype

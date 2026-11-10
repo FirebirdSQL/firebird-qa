@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_field_not_null_left_joins_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/e26e3e582663f91bfb37f0ce28dd9063ef50e3d3
 TITLE:       CTAS. Nullability in case when column content is gathered from right part of OUTER join (which always may return null)
 DESCRIPTION:

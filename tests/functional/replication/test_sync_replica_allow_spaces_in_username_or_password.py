@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_sync_replica_allow_spaces_in_username_or_password
+ID:          functional.replication.test_sync_replica_allow_spaces_in_username_or_password
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/979f46b71e519d48e24bfe204bad063c39596518
 TITLE:       Leading, trailing or inner space character specified in 'sync_replica' must not cause error
 DESCRIPTION:

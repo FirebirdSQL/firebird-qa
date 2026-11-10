@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-7001
+ID:          functional.basic.isql.test_08
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7001
 TITLE:       ISQL showing publication status
 DESCRIPTION:

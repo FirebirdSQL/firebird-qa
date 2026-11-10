@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          7fde638e94
+ID:          functional.sqlite.test_7fde638e94
 ISSUE:       https://www.sqlite.org/src/tktview/7fde638e94
 TITLE:       Assertion fault on a LEFT JOIN
 DESCRIPTION:

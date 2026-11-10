@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.connect-02
+ID:          functional.trigger.database.test_connect_04
 TITLE:       Error handling when multiple triggers on database connect exist
 DESCRIPTION:
   Test behavoiur when MULTIPLE db-level triggers on CONNECT exist:

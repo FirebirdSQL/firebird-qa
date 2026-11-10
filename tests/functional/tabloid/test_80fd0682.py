@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          None
+ID:          functional.tabloid.test_80fd0682
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/80fd06828e72f9e8335150c923350730013b3b28
 TITLE:       Fixed bug with index names patterns in online validation service
 DESCRIPTION:

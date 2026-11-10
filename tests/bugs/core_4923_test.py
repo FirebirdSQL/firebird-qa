@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-5214
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5214
 TITLE:       Add ability to track domains rename in DDL triggers
 DESCRIPTION:

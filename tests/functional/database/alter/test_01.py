@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          alter-database-01
+ID:          functional.database.alter.test_01
 TITLE:       Alter database: adding a secondary file
 DESCRIPTION: Adding a secondary file to the database
 NOTES:

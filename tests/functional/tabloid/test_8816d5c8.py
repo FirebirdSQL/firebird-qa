@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-8816d5c8
+ID:          functional.tabloid.test_8816d5c8
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/adbbcc064f7c18e49ebb5ce3ff91308e8816d5c8
 TITLE:       Fixed crash when IN predicate is delivered into aggregates/unions 
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_datatypes_usage_04
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9053
 TITLE:       CTAS. NUMERICAL TYPES. Check content of RDB$ tables for a CTAS-table when fields are expressions, literals or aggregates.
 DESCRIPTION:

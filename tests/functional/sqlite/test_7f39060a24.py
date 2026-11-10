@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          7f39060a24
+ID:          functional.sqlite.test_7f39060a24
 ISSUE:       https://www.sqlite.org/src/tktview/7f39060a24
 TITLE:       LEFT JOIN malfunctions with partial index (unexpected fetch 1 row).
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.sql-join-03
+ID:          functional.gtcs.test_sql_join_03
 TITLE:       Ability to run query: ( A LEFT JOIN B ) INER JOIN C, plus ORDER BY with fields not from SELECT list
 DESCRIPTION:
   Original test see in:

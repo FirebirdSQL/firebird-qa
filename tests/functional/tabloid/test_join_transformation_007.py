@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.join-transformation-07
+ID:          functional.tabloid.test_join_transformation_007
 TITLE:       Check ability of outer join simplification.
 DESCRIPTION:
   For two datasources (S1, S2) and some complex query Q which has inside itself: "... left join S2 [...]"

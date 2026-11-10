@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-22
+ID:          functional.arno.derived_tables.test_22
 TITLE:       Derived table outer reference (triggers)
 DESCRIPTION: NEW/OLD context variables should be available inside the derived table.
 FBTEST:      functional.arno.derived_tables.22

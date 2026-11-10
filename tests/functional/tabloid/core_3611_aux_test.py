@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.core-3611-aux
+ID:          functional.tabloid.core_3611_aux_test
 TITLE:       Wrong data while retrieving from CTEs (or derived tables) with same column names
 DESCRIPTION: 
   See another sample in this ticket (by dimitr, 30/Oct/12 07:13 PM)

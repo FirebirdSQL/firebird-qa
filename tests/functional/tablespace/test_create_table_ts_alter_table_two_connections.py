@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_create_table_ts_alter_table_two_connections
 TITLE:       functional.tablespace.create_table_ts_alter_table_two_connections
 DESCRIPTION:
 """

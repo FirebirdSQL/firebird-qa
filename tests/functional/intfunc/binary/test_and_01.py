@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.binary.and
+ID:          functional.intfunc.binary.test_and_01
 TITLE:       New Built-in Functions, Firebird 2.1 : BIN_AND( <number> [, <number> ...] )
 DESCRIPTION: Returns the result of a binary AND operation performed on all arguments.
 FBTEST:      functional.intfunc.binary.and_01

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-8418
+ID:          functional.intfunc.unlist.unlist_separators_ascii_literals_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8418
 TITLE:       UNLIST function. Check work with separator that is specified as one ASCII literal.
 DESCRIPTION:

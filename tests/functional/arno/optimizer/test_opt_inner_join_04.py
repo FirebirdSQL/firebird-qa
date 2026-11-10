@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.inner-join-04
+ID:          functional.arno.optimizer.test_opt_inner_join_04
 TITLE:       INNER JOIN join order LIKE and IS NULL
 DESCRIPTION: IS NULL should also be used for determing join order.
 FBTEST:      functional.arno.optimizer.opt_inner_join_04

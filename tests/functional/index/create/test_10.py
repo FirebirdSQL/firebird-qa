@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.create-10
+ID:          functional.index.create.test_10
 TITLE:       CREATE INDEX - try create index with same name
 DESCRIPTION:
 FBTEST:      functional.index.create.10

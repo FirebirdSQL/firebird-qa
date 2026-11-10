@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.agg_resulting_datatype.blob_merging_test
 ISSUE:        doc/sql.extensions/README.data_type_results_of_aggregations.txt (FB source tree)
 TITLE:        Resulting datatype of aggregations: BLOB types (README rule 3e + charsets)
 DESCRIPTION:

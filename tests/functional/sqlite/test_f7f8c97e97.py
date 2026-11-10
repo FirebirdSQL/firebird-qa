@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          f7f8c97e97
+ID:          functional.sqlite.test_f7f8c97e97
 ISSUE:       https://www.sqlite.org/src/tktview/f7f8c97e97
 TITLE:       Valid query fails to compile due to WHERE clause optimization
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8821
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8821
 TITLE:       REGRESSION: natural plan instead of primary/unique index
 DESCRIPTION:

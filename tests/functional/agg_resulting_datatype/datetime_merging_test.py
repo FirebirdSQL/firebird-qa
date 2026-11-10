@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.agg_resulting_datatype.datetime_merging_test
 ISSUE:        doc/sql.extensions/README.data_type_results_of_aggregations.txt (FB source tree)
 TITLE:        Resulting datatype of aggregations: datetime types (README rule 3d + WITH TIME ZONE)
 DESCRIPTION:

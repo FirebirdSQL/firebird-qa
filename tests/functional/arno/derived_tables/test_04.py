@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-04
+ID:          functional.arno.derived_tables.test_04
 TITLE:       Derived table column names must be unique
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.04

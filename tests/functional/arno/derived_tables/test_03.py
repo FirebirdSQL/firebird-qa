@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-03
+ID:          functional.arno.derived_tables.test_03
 TITLE:       Explicit column names for derived table
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.03

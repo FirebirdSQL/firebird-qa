@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-1670
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1670
 TITLE:       Incorrect column values with outer joins and derived tables
 DESCRIPTION:

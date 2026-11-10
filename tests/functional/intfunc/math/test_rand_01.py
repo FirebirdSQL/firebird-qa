@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.rand
+ID:          functional.intfunc.math.test_rand_01
 TITLE:       Result of cast(RAND() as <textual_type>) must not loss fractional part
 DESCRIPTION: Returns a random number between 0 and 1.
 FBTEST:      functional.intfunc.math.rand_01

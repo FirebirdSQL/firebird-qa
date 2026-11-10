@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.blob.test_open_blob_without_select
 TITLE:       Open BLOB without selection
 DESCRIPTION: 
 NOTES:

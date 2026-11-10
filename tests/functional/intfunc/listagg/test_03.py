@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.listagg.03
+ID:          functional.intfunc.listagg.test_03
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8689
 TITLE:       LISTAGG(DISTINCT <char>): must remove duplicated characters if they are not distinguish in CI/AI comparison.
 DESCRIPTION:

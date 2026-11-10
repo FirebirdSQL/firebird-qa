@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          34cd55d68e
+ID:          functional.sqlite.test_34cd55d68e
 ISSUE:       https://www.sqlite.org/src/tktview/34cd55d68e
 TITLE:       Database corruption following INSERT with a TRIGGER that does an affinity change
 DESCRIPTION:

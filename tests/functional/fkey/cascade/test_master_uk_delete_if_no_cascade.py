@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.fkey.cascade.test_master_uk_delete_if_no_cascade
 TITLE:       Attempt to delete record in master with UK must fail if there is FK record in detail and FK was declared without CASCADE option
 DESCRIPTION:
     Test verifies RI mechanism when CASCADE option missed: record in master with UNIQUE constraint may be deleted 

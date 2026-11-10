@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.create-07
+ID:          functional.index.create.test_07
 TITLE:       CREATE INDEX - Multi column
 DESCRIPTION:
 FBTEST:      functional.index.create.07

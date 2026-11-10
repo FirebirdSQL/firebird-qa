@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_drop_ts_after_drop_all_dependent_objects
 TITLE:       Drop tablespace must be allowed if there is an active Tx which removed all objects dependent on <TS>
 DESCRIPTION:
     Test creates TS and a table within it, with adding one record in this table.

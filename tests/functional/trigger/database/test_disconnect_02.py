@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.trigger_on_disconnect_02
+ID:          functional.trigger.database.test_disconnect_02
 TITLE:       ON DISCONNECT trigger must fire during database shutdown (gfix -shut full -force 0).
 DESCRIPTION: 
     Improvement was introduced 06-apr-2023, commit:

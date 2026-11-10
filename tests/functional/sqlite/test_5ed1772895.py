@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          5ed1772895
+ID:          functional.sqlite.test_5ed1772895
 ISSUE:       https://www.sqlite.org/src/tktview/5ed1772895
 TITLE:       Incorrect ORDER BY on an indexed JOIN
 DESCRIPTION:

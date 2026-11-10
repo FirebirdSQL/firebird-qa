@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.minvalue
+ID:          functional.intfunc.math.test_minvalue_01
 TITLE:       MINVALUE( <value> [, <value> ... )
 DESCRIPTION: Returns the minimun value of a list of values.
 FBTEST:      functional.intfunc.math.minvalue_01

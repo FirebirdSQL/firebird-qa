@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.literals.underscores_in_decimal_test
 ISSUE:        https://github.com/FirebirdSQL/firebird/pull/8564
 TITLE:        Underscores in numeric literals (SQL:2023 T662), part 2: decimal literals
 DESCRIPTION:

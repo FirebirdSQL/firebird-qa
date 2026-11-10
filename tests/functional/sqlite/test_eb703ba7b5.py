@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          eb703ba7b5
+ID:          functional.sqlite.test_eb703ba7b5
 ISSUE:       https://www.sqlite.org/src/tktview/eb703ba7b5
 TITLE:       Incorrect result using index on expression with collating function
 DESCRIPTION:

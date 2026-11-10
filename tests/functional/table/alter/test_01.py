@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-01
+ID:          functional.table.alter.test_01
 TITLE:       ALTER TABLE - ADD column
 DESCRIPTION:
 FBTEST:      functional.table.alter.01

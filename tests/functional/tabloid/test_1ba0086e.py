@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          1ba0086e
+ID:          functional.tabloid.test_1ba0086e
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/1ba0086e136279d2ed6ddb043e67c709cf10d490
 TITLE:       Add optional COLUMN to ALTER TABLE ... ADD and DROP
 DESCRIPTION:

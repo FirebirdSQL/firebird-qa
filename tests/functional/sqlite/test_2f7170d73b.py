@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          2f7170d73b
+ID:          functional.sqlite.test_2f7170d73b
 ISSUE:       https://www.sqlite.org/src/tktview/2f7170d73b
 TITLE:       Error "misuse of aggregate" raising if aggregate column in FROM subquery presents in the correlated subquery
 DESCRIPTION:

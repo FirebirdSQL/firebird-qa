@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-11
+ID:          functional.table.alter.test_11
 TITLE:       ALTER TABLE - DROP CONSTRAINT - UNIQUE
 DESCRIPTION:
 FBTEST:      functional.table.alter.11

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          computed-fields-11
+ID:          functional.gtcs.test_computed_fields_11
 FBTEST:      functional.gtcs.computed_fields_11
 TITLE:       Computed fields
 DESCRIPTION:

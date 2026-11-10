@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-30
+ID:          functional.domain.create.test_30
 FBTEST:      functional.domain.create.30
 TITLE:       CREATE DOMAIN - BLOB SUB_TYPE CHARACTER SET
 DESCRIPTION: Domain creation based on BLOB datatype with SUBTYPE TEXT and CHARACTER SET specification

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_dtt_datatypes
 TITLE:       DECLARED TEMPORARY TABLE - basic test for datatypes.
 DESCRIPTION:
     Test verifies ability to use DTT in standalone/packaged units and in triggers.

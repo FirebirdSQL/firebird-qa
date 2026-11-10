@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          monitoring-tables-02
+ID:          functional.monitoring.test_02
 TITLE:       Get data about active statements from current attachment (WHERE-filter: mon$statements.mon$state=1).
 DESCRIPTION:
 FBTEST:      functional.monitoring.02

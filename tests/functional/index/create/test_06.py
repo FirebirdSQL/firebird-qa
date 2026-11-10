@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.create-06
+ID:          functional.index.create.test_06
 TITLE:       CREATE DESCENDING INDEX
 DESCRIPTION:
 FBTEST:      functional.index.create.06

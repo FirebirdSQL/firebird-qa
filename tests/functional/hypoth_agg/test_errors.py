@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.hypoth_agg.test_errors
 ISSUE:        https://github.com/FirebirdSQL/firebird/issues/9035
 TITLE:        Hypothetical-set aggregates: syntax and semantic errors
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.crash-of-group-by-varchar-4000
+ID:          functional.gtcs.test_crash_of_group_by_varchar_4000
 FBTEST:      functional.gtcs.crash_of_group_by_varchar_4000
 TITLE:       Crash on attempt to GROUP BY on table with varchar(4000) field
 DESCRIPTION:

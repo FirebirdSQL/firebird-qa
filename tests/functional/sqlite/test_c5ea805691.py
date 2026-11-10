@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          c5ea805691
+ID:          functional.sqlite.test_c5ea805691
 ISSUE:       https://www.sqlite.org/src/tktview/c5ea805691
 TITLE:       Inverted sort order when using DISTINCT and a descending index
 DESCRIPTION:

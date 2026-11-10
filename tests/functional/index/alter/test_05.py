@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.alter-05
+ID:          functional.index.alter.test_05
 TITLE:       ALTER INDEX - INACTIVE FOREIGN KEY
 DESCRIPTION: An index participating in FOREIGN KEY constraint cannot be deactivated
 FBTEST:      functional.index.alter.05

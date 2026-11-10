@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          generator.alter-01
+ID:          functional.generator.alter.test_01
 FBTEST:      functional.generator.alter.01
 TITLE:       ALTER SEQUENCE
 DESCRIPTION:

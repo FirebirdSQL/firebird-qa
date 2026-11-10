@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          services.role-in-service-attachment
+ID:          functional.services.test_role_in_service_attachment
 TITLE:       Check that trace plugin shows ROLE used in service attachment. Format: USER[:ROLE]
 DESCRIPTION:
   See: https://github.com/FirebirdSQL/firebird/commit/dd241208f203e54a9c5e9b8b24c0ef24a4298713

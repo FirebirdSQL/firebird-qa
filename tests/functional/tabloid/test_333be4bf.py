@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-333be4bf
+ID:          functional.tabloid.test_333be4bf
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/333be4bfd48d8b2f84852073436a20698dbc8c54
 TITLE:       Change error by warning in the case when isc_dpb_parallel_workers value is not at valid range
 DESCRIPTION:

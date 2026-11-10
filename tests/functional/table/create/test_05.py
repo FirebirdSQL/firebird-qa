@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.create-05
+ID:          functional.table.create.test_05
 TITLE:       CREATE TABLE - create table with same name
 DESCRIPTION:
 FBTEST:      functional.table.create.05

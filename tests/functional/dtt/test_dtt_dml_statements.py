@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_dtt_dml_statements
 TITLE:       DECLARED TEMPORARY TABLE - basic check of allowed DML statements.
 DESCRIPTION:
     Test verifies ability to use DML (insert / update or insert / update / merge and delete / explicit and implicit cursors)

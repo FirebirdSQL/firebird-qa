@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.table.alter-07
+ID:          functional.trigger.table.test_alter_07
 TITLE:       ALTER TRIGGER: attempt to use "new" in AFTER INSERT
 DESCRIPTION: an attempt to change the trigger event to 'AFTER' should be rejected if trigger uses 'new' context variable.
 FBTEST:      functional.trigger.table.alter_07

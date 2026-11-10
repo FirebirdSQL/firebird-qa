@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          create-database-01
+ID:          functional.database.create.test_01
 TITLE:       Create database: set names and default character set
 DESCRIPTION: Check ability to specify SET NAMES and DEFAULT CHARACTER SET within one statement.
 NOTES:

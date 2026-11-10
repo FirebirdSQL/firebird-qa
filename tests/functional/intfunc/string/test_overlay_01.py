@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.overlay
+ID:          functional.intfunc.string.test_overlay_01
 TITLE:       OVERLAY function
 DESCRIPTION:
   Returns string1 replacing the substring FROM start FOR length by string2.

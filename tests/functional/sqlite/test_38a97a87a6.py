@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          38a97a87a6
+ID:          functional.sqlite.test_38a97a87a6
 ISSUE:       https://www.sqlite.org/src/tktview/38a97a87a6
 TITLE:       Inaccurate int/float comparison results in corrupt index
 DESCRIPTION:

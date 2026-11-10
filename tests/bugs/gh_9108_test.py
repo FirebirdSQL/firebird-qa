@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9108
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/9108
 TITLE:       Convert string literals to the operand type at prepare time in comparisons
 DESCRIPTION:

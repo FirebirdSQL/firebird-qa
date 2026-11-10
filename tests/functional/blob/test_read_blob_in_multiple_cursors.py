@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          functional.blob.test_access_to_blob_in_multiple_cursors.py
+ID:          functional.blob.test_read_blob_in_multiple_cursors
 TITLE:       Ability to read same blob_id using multiple cursors
 DESCRIPTION: 
     Source ticket:

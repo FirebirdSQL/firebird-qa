@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.ln
+ID:          functional.intfunc.math.test_ln_01
 TITLE:       LN( <number> )
 DESCRIPTION: Returns the natural logarithm of a number.
 FBTEST:      functional.intfunc.math.ln_01

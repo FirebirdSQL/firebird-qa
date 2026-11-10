@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.table.external.external_file_all_datatypes_test
 ISSUE:       n/a
 TITLE:       External tables must accept values of all existing FB datatypes if they belong to allowed range (or set), and must reject out-of-range values
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.avg-04
+ID:          functional.intfunc.avg.test_04
 TITLE:       AVG - Test for INTEGER
 DESCRIPTION:
   Round up (17/3 = 5,66666666666667)

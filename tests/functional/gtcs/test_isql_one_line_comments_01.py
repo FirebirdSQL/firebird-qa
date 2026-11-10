@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          isql_one_line_comments_01
+ID:          functional.gtcs.test_isql_one_line_comments_01
 TITLE:       bug #781610 problems with one line comments (--)
 DESCRIPTION:
     Original test see in:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          6c1d3febc0
+ID:          functional.sqlite.test_6c1d3febc0
 ISSUE:       https://www.sqlite.org/src/tktview/6c1d3febc0
 TITLE:       PRIMARY KEY for REAL column datatype leads to a missing entry in the index.
 DESCRIPTION:

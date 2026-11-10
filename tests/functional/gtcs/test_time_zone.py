@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.time-zone
+ID:          functional.gtcs.test_time_zone
 TITLE:       Miscelaneous time zone tests
 DESCRIPTION:
     Original test see in:

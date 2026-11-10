@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-8418
+ID:          functional.intfunc.unlist.unlist_returning_types_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8418
 TITLE:       UNLIST function. Check output for different returning types
 DESCRIPTION: Initial version of test was provided by red-soft (file: "unlist.test_returning_types.py").

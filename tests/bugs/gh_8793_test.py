@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8793
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8793
 TITLE:       Fix gbak output some errors and warnings to stderr instead of stdout
 DESCRIPTION:

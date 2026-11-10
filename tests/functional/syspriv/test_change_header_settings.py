@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.change-header-settings
+ID:          functional.syspriv.test_change_header_settings
 TITLE:       Check ability to change some database header attributes by non-sysdba user who is granted with necessary system privileges
 DESCRIPTION:
   NB: attributes should be changed one at a time, i.e. one Services API call should change only ONE atribute.

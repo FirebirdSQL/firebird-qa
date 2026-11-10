@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.misc.gen_uuid
+ID:          functional.intfunc.misc.test_gen_uuid_01
 TITLE:       GEN_UUID()
 DESCRIPTION: Returns a universal unique number.
 FBTEST:      functional.intfunc.misc.gen_uuid_01

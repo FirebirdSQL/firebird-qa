@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          bc1aea7b72
+ID:          functional.sqlite.test_bc1aea7b72
 ISSUE:       https://www.sqlite.org/src/tktview/bc1aea7b72
 TITLE:       Incorrect result on LEFT JOIN with OR constraints and an ORDER BY clause
 DESCRIPTION:

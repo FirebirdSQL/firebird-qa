@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.metacache.test_addi_index_metacache_02
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7954
 TITLE:       Shared metacache. Check ability to ADD indices/constraints, run DML and DROP indices/constraints.
 DESCRIPTION:

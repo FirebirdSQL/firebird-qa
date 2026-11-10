@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          1dcb4d4496
+ID:          functional.sqlite.test_1dcb4d4496
 ISSUE:       https://www.sqlite.org/src/tktview/
 TITLE:       Incorrect query result when redundant terms appears in WHERE clause
 DESCRIPTION:

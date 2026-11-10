@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-3186
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/3186
 TITLE:       DB_KEY is always zero for external tables
 DESCRIPTION:

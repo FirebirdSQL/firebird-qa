@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.cast-06
+ID:          functional.intfunc.cast.test_06
 TITLE:       CAST CHAR -> INTEGER (Round down)
 DESCRIPTION:
 FBTEST:      functional.intfunc.cast.06

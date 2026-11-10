@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.dbp-5125-windowed-funcs
+ID:          functional.tabloid.test_dbp_5125_windowed_funcs
 TITLE:       Common SQL. Check correctness of the results
 DESCRIPTION: 
 FBTEST:      functional.tabloid.dbp_5125_windowed_funcs

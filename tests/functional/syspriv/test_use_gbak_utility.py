@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.use-gbak-utility
+ID:          functional.syspriv.test_use_gbak_utility
 TITLE:       Check ability to to make database backup
 DESCRIPTION:
 FBTEST:      functional.syspriv.use_gbak_utility

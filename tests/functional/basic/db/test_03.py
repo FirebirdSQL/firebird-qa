@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-03
+ID:          functional.basic.db.test_03
 TITLE:       New DB - RDB$COLLATIONS
 DESCRIPTION: Check the correct content of RDB$COLLATIONS on new DB.
 FBTEST:      functional.basic.db.03

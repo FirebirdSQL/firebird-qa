@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.list-03
+ID:          functional.intfunc.list.test_03
 ISSUE:       1367
 TITLE:       List function with distinct option
 DESCRIPTION:

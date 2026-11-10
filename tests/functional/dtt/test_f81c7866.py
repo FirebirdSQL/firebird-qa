@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_f81c7866
 ISSUE:       https://groups.google.com/g/firebird-devel/c/Deaz3vZerhI/m/ldmo2lCGAQAJ
 TITLE:       DECLARED TEMP TABLE. Error "SQLSTATE = 22000 / no current record for fetch" may unexpectedly raise
 DESCRIPTION:

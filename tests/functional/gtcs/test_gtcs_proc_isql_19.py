@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.proc-isql-19
+ID:          functional.gtcs.test_gtcs_proc_isql_19
 TITLE:       gtcs-proc-isql-19
 DESCRIPTION:
   Original test see in:

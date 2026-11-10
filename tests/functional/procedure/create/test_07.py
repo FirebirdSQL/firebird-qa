@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.create-07
+ID:          functional.procedure.create.test_07
 TITLE:       CREATE PROCEDURE - try create SP with same name
 DESCRIPTION:
 FBTEST:      functional.procedure.create.07

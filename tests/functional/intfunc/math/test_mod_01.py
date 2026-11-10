@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.mod
+ID:          functional.intfunc.math.test_mod_01
 TITLE:       MOD( <number>, <number> )
 DESCRIPTION: Modulo: MOD(X, Y) returns the remainder part of the division of X by Y.
 FBTEST:      functional.intfunc.math.mod_01

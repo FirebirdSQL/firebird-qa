@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          view.create-01
+ID:          functional.view.create.test_01
 TITLE:       CREATE VIEW
 DESCRIPTION:
 FBTEST:      functional.view.create.01

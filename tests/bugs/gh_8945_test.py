@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8945
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8945
 TITLE:       ALTER COLUMN <BOOL_COL> TYPE [VAR]CHAR must be allowed
 DESCRIPTION:

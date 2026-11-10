@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.left-join-05
+ID:          functional.arno.optimizer.test_opt_left_join_05
 TITLE:       LEFT OUTER JOIN with full match, but limited in ON clause
 DESCRIPTION:
   TableX LEFT OUTER JOIN TableY with full match, but TableY results limited in ON clause.

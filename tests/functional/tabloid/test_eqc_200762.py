@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.eqc-200762
+ID:          functional.tabloid.test_eqc_200762
 TITLE:       Check results of CONTAINING when search pattern can span on one or several blob segments
 DESCRIPTION: 
 FBTEST:      functional.tabloid.eqc_200762

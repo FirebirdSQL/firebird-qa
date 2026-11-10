@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset-clear-timeouts
+ID:          functional.session.test_alter_session_reset_clear_timeouts
 ISSUE:       6093
 TITLE:       ALTER SESSION RESET: reset session and statement timeouts to zero
 DESCRIPTION:

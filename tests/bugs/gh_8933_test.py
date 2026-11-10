@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8933
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8933
 TITLE:       Isql SHOW PROCEDURE/FUNCTION doesn't show NOT NULL status for parameters
 DESCRIPTION:

@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.hypoth_agg.test_nulls_order
 ISSUE:        https://github.com/FirebirdSQL/firebird/issues/9035
 TITLE:        Hypothetical-set aggregates: NULL handling and NULLS FIRST / NULLS LAST
 DESCRIPTION:

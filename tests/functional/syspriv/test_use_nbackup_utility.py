@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.use-nbackup-utility
+ID:          functional.syspriv.test_use_nbackup_utility
 TITLE:       Check ability to use nbackup
 DESCRIPTION:
   Verify ability to issue ALTER DATABASE BEGIN/END BACKUP command by non-sysdba user.

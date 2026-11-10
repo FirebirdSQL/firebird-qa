@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.replication.test_allow_ltt_commands_in_read_only_replica
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8934
 TITLE:       Local temporary tables can not be created on REPLICA database (but should).
 DESCRIPTION:

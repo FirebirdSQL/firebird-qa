@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-28
+ID:          functional.basic.db.test_28
 TITLE:       New DB - RDB$TRIGGER_MESSAGES content
 DESCRIPTION: Check the correct content of RDB$TRIGGER_MESSAGES in new database.
 FBTEST:      functional.basic.db.28

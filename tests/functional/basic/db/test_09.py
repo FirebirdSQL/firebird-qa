@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-09
+ID:          functional.basic.db.test_09
 TITLE:       New DB - RDB$FILTERS
 DESCRIPTION: Check for correct content of RDB$FILTERS in new database.
 FBTEST:      functional.basic.db.09

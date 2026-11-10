@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.sqlancer.osdi20_rigger_example_01_test
 ISSUE:       https://www.usenix.org/system/files/osdi20-rigger.pdf
 TITLE:       Partial index must not use incorrect assumption that 'c0 IS NOT 1' implied 'c0 NOT NULL'
 DESCRIPTION:

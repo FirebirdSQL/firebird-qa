@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.bus-3103-windowed-funcs
+ID:          functional.tabloid.test_bus_3103_windowed_funcs
 TITLE:       Query for test MAX()OVER().
 DESCRIPTION: 
 FBTEST:      functional.tabloid.bus_3103_windowed_funcs

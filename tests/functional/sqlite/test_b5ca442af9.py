@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          b5ca442af9
+ID:          functional.sqlite.test_b5ca442af9
 ISSUE:       https://www.sqlite.org/src/tktview/b5ca442af9
 TITLE:       "Malformed database schema" when creating a failing index within a transaction
 DESCRIPTION:

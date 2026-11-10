@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:           n/a
+ID:           functional.ctas.test_with_data_bulk_insert_01
 ISSUE:        https://github.com/FirebirdSQL/firebird/pull/9193
 TITLE:        CTAS. 'WITH DATA': data completeness for regular, global temporary and local temporary tables
 DESCRIPTION:

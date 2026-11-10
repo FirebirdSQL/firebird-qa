@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.ref-integ-drop-fk-index
+ID:          functional.gtcs.test_ref_integ_drop_fk_index
 TITLE:       Index that is used for FK should not be avail for DROP
 DESCRIPTION:
     Original test see in:

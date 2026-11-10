@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.generator_could_not_be_transferred_to_replica
+ID:          functional.replication.test_generator_could_not_be_transferred_to_replica
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6848
 TITLE:       Generator values may not replicate after commit
 DESCRIPTION:

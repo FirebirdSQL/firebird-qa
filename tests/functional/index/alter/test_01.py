@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.alter-01
+ID:          functional.index.alter.test_01
 TITLE:       ALTER INDEX - INACTIVE
 DESCRIPTION:
 FBTEST:      functional.index.alter.01

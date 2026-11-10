@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.trigger-variable-assignment
+ID:          functional.gtcs.test_trigger_variable_assignment
 TITLE:       Variable in the AFTER-trigger must be allowed for assignment OLD value in it
 DESCRIPTION:
   ::: NB :::

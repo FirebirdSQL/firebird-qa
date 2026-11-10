@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_06
 TITLE:       Support to multiple SINGULAR subqueries
 DESCRIPTION:
     Original test see in:

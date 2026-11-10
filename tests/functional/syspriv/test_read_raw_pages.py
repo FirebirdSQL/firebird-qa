@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.read-raw-pages
+ID:          functional.syspriv.test_read_raw_pages
 TITLE:       Check ability to get binary content of DB page by non-sysdba user who is
   granted with necessary system privilege
 DESCRIPTION:

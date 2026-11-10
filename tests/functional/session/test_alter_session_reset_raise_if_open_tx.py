@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset-raise-if-open-tx
+ID:          functional.session.test_alter_session_reset_raise_if_open_tx
 ISSUE:       6093
 TITLE:       ALTER SESSION RESET: throw error (isc_ses_reset_err) if any open transaction exist in current connection
 DESCRIPTION:

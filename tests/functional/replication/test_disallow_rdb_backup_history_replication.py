@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.disallow_rdb$backup_history_replication
+ID:          functional.replication.test_disallow_rdb_backup_history_replication
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7605
 TITLE:       Disallow replication of RDB$BACKUP_HISTORY
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          exception.drop-03
+ID:          functional.exception.drop.test_03
 FBTEST:      functional.exception.drop.03
 TITLE:       DROP EXCEPTION - that doesn't exists
 DESCRIPTION:

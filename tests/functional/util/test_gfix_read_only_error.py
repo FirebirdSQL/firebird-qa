@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.util.test_gfix_read_only_error
 TITLE:       gbak utility: changing write mode to sync/async must be prohibited when access mode is read-only
 DESCRIPTION:
     Along with check what TOTLE says, this test also verifies that runtime error now is supplied with detailed message,

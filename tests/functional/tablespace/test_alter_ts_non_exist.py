@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_alter_ts_non_exist
 TITLE:       functional.tablespace.alter_ts_non_exist
 DESCRIPTION:
 """

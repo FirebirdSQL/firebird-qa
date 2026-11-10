@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.access-any-object
+ID:          functional.syspriv.test_access_any_object
 TITLE:       Check ability to query, modify and deleting data plus add/drop constraints on any table
 DESCRIPTION:
   We create two master-detail tables (under SYSDBA) and add some data to them.

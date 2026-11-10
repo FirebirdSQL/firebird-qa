@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.table.alter-06
+ID:          functional.trigger.table.test_alter_06
 TITLE:       ALTER TRIGGER - AFTER DELETE
 DESCRIPTION:
 FBTEST:      functional.trigger.table.alter_06

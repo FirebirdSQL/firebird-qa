@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.inner-join-merge-01
+ID:          functional.arno.optimizer.test_opt_inner_join_merge_01
 TITLE:       INNER JOIN join merge
 DESCRIPTION:
   X JOIN Y ON (X.Field = Y.Field)

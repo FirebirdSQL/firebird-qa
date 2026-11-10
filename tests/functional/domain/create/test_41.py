@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-41
+ID:          functional.domain.create.test_41
 FBTEST:      functional.domain.create.41
 TITLE:       CREATE DOMAIN - create two domain with same name
 DESCRIPTION: The creation of already existing domain must fail (SQLCODE -607)

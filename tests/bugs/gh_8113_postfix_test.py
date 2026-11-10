@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          commit-d7ba33db
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/d7ba33db3298902a31aecba0caef96819d3b0ec9
 TITLE:       Postfix for #8113: UNION ALL optimization with constant false condition.
 DESCRIPTION:

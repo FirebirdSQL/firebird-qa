@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          fkey.primary.insert-07
+ID:          functional.fkey.primary.test_insert_pk_07
 FBTEST:      functional.fkey.primary.insert_pk_07
 ISSUE:       2027
 JIRA:        CORE-1606

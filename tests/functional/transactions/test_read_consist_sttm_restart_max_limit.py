@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          transactions.read-consist-sttm-restart-max-limit
+ID:          functional.transactions.test_read_consist_sttm_restart_max_limit
 TITLE:       READ CONSISTENCY. Maximal number of statement-level restarts must be 10.
 DESCRIPTION:
   Initial article for reading:

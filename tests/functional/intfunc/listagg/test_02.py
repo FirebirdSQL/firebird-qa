@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.listagg.02
+ID:          functional.intfunc.listagg.test_02
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8689
 TITLE:       LISTAGG function: DISTINCT does not remove duplicates for BLOB datatype
 DESCRIPTION:

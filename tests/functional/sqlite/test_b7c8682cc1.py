@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          b7c8682cc1
+ID:          functional.sqlite.test_b7c8682cc1
 ISSUE:       https://www.sqlite.org/src/tktview/b7c8682cc1
 TITLE:       Incorrect result from LEFT JOIN with OR in the WHERE clause
 DESCRIPTION:

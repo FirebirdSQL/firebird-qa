@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ltt.test_ltt_08aa7603
 ISSUE:       https://groups.google.com/g/firebird-devel/c/8vlKSNckyuw/m/BTSkzb6wAQAJ
 TITLE:       LTT with index. Crash when DDL + DML are in the same Tx and 'COMMIT' presents between 'DROP INDEX' and 'DROP TABLE'.
 DESCRIPTION:

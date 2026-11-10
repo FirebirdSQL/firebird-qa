@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.cast-23
+ID:          functional.intfunc.cast.test_23
 TITLE:       CAST TIMESTAMP -> TIME
 DESCRIPTION:
   Be careful about date/time format on FB server !

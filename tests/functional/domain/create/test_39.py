@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-39
+ID:          functional.domain.create.test_39
 FBTEST:      functional.domain.create.39
 TITLE:       CREATE DOMAIN - COLLATE
 DESCRIPTION: Domain creation based on VARCHAR datatype with COLLATE specification

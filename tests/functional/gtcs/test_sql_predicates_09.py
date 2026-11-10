@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_09
 TITLE:       Applying SINGULAR to result of query with aggregate function
 DESCRIPTION:
     Original test see in:

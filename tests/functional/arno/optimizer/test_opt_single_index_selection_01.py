@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.single-index-selection-01
+ID:          functional.arno.optimizer.test_opt_single_index_selection_01
 TITLE:       Unique index selection (single segment)
 DESCRIPTION:
   Check if it will select only the index with the unique index when equal operator is

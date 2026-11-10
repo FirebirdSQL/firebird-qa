@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.external-file-04-A
+ID:          functional.gtcs.test_external_file_04_d
 FBTEST:      functional.gtcs.external_file_04_d
 TITLE:       est for external table with field of INTEGER datatype
 DESCRIPTION:

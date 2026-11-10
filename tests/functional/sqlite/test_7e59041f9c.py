@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          7e59041f9c
+ID:          functional.sqlite.test_7e59041f9c
 ISSUE:       https://www.sqlite.org/src/tktview/7e59041f9c
 TITLE:       DISTINCT malfunctions for a VIEW
 DESCRIPTION:

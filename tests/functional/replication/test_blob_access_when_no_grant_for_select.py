@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_blob_access_when_no_grant_for_select
+ID:          functional.replication.test_blob_access_when_no_grant_for_select
 ISSUE:       None.
 TITLE:       Replicator must have access to the table with blob regardless SELECT grant on this table to the user who created blob.
 DESCRIPTION:

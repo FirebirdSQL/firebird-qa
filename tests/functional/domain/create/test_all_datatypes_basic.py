@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.domain.create.test_all_datatypes_basic
 TITLE:       CREATE DOMAIN - basic checks 
 DESCRIPTION:
     Verify work for all avaliable data types, with adding [not] null, default, check clauses and collations (if applicable).

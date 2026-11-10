@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.delete-03
+ID:          functional.dml.delete.test_03
 FBTEST:      functional.dml.delete.03
 TITLE:       DELETE from VIEW
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          47b2581aa9
+ID:          functional.sqlite.test_47b2581aa9
 ISSUE:       https://www.sqlite.org/src/tktview/47b2581aa9
 TITLE:       Infinite loop on UPDATE
 DESCRIPTION:

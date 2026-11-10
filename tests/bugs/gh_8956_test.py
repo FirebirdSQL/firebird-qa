@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8956
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8956
 TITLE:       DECLARE VARIABLE does not accept arbitrary expressions within declared routines
 DESCRIPTION:

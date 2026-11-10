@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.cte-01
+ID:          functional.dml.cte.test_01
 TITLE:       Non-Recursive CTEs
 FBTEST:      functional.dml.cte.01
 DESCRIPTION:

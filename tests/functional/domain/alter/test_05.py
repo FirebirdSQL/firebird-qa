@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.alter-05
+ID:          functional.domain.alter.test_05
 FBTEST:      functional.domain.alter.05
 TITLE:       ALTER DOMAIN - Alter domain that doesn't exists
 DESCRIPTION:

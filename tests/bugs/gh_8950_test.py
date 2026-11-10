@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8950
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8950
 TITLE:       ALTER TABLE <T> ALTER <INDEXED_NON_TEXTUAL_COL> TYPE VARCHAR(nnnn) causes column to be non-updatable state
 DESCRIPTION:

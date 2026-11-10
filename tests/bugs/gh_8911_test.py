@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8911
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8911
 TITLE:       Wrong result in case of SubQueryConversion = true
 DESCRIPTION:

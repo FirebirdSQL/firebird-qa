@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.atan
+ID:          functional.intfunc.math.test_atan_01
 TITLE:       ATAN( <number> )
 DESCRIPTION:
   Returns the arc tangent of a number. Returns a value in the range -PI/2 to PI/2.

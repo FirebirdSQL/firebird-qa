@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.sqlancer.tidb_challenge_48_test
 ISSUE:       https://github.com/tidb-challenge-program/bug-hunting-issue/issues/19
 TITLE:       UNIQUE constraint on DECIMAL/floating-point columns causes incorrect result for NULL in AND
 DESCRIPTION:

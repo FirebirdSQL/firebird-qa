@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.ext-conn-pool-01
+ID:          functional.session.test_ext_conn_pool_01
 TITLE:       External Connections Pool, functionality test 01
 DESCRIPTION:
     Basic check of External Connections Pool. We verify here following:

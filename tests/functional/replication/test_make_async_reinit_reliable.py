@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_make_async_reinit_reliable
+ID:          functional.replication.test_make_async_reinit_reliable
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8324
 TITLE:       Make asynchronous replica re-initialization reliable #8324
 DESCRIPTION:

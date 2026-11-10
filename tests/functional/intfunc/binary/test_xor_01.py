@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.binary.xor
+ID:          functional.intfunc.binary.test_xor_01
 TITLE:       New Built-in Functions, Firebird 2.1 : BIN_XOR( <number> [, <number> ...] )
 DESCRIPTION: Returns the result of a binary XOR operation performed on all arguments.
 FBTEST:      functional.intfunc.binary.xor_01

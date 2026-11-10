@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.alter-02
+ID:          functional.domain.alter.test_02
 FBTEST:      functional.domain.alter.02
 TITLE:       ALTER DOMAIN - DROP DEFAULT
 DESCRIPTION:

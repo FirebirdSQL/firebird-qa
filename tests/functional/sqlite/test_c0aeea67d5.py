@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          c0aeea67d5
+ID:          functional.sqlite.test_c0aeea67d5
 ISSUE:       https://www.sqlite.org/src/tktview/c0aeea67d5
 TITLE:       Incorrect LIKE result
 DESCRIPTION:

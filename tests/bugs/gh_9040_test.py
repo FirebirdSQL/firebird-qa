@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9040
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9040
 TITLE:       SIMILAR TO does not work with wildcard combined with OR operator
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.trace-any-attachment
+ID:          functional.syspriv.test_trace_any_attachment
 TITLE:       Check ability to trace any attachment by non-sysdba user who is granted with necessary system privileges
 DESCRIPTION:
 FBTEST:      functional.syspriv.trace_any_attachment

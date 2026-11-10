@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-8418
+ID:          functional.intfunc.unlist.unlist_simplified_form_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8878
 TITLE:       Short syntax for UNLIST with IN operator
 DESCRIPTION:

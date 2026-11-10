@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.package.test_22260a0b
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/22260a0bc6c6313d8aaba5b1cafa934d059d6592
 TITLE:       Fixed drop of attachment-level GTT reported in devel
 DESCRIPTION:

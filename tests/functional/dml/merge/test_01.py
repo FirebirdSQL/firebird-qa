@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.merge-01
+ID:          functional.dml.merge.test_01
 FBTEST:      functional.dml.merge.01
 ISSUE:       1201
 JIRA:        CORE-815

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.create-11
+ID:          functional.index.create.test_11
 TITLE:       CREATE UNIQUE INDEX - Non unique data in table
 DESCRIPTION:
 FBTEST:      functional.index.create.11

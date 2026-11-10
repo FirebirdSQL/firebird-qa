@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.create-12
+ID:          functional.index.create.test_12
 TITLE:       CREATE UNIQUE INDEX - Null value in table
 DESCRIPTION:
 FBTEST:      functional.index.create.12

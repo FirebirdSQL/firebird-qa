@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.sql-join-04
+ID:          functional.gtcs.test_sql_join_04
 TITLE:       Ability to run query: ( A LEFT JOIN B ) , C. Then add  ORDER BY with fields not from SELECT list
 DESCRIPTION:
   Original test see in:

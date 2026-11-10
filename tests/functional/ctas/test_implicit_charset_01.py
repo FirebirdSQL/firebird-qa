@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_implicit_charset_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9053
 TITLE:       CTAS. Check content of RDB$ tables when record source contains literal string (extracted metadata must contain CHARACTER SET for appropriate column).
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.cot
+ID:          functional.intfunc.math.test_cot_01
 TITLE:       COT( <number> )
 DESCRIPTION: returns 1 / tan(argument)
 FBTEST:      functional.intfunc.math.cot_01

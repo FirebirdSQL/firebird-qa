@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_35f56933
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/35f56933306d9d486a5c66da8f85b4be214860d9
 TITLE:       Fixed cardinality mistake for invariant booleans
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.eqc-160757
+ID:          functional.tabloid.test_eqc_160757
 TITLE:       Check correctness of LEFT JOIN result when left source is table with several
   -vs- single rows and right source is SP.
 DESCRIPTION:

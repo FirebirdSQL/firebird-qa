@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-40
+ID:          functional.domain.create.test_40
 FBTEST:      functional.domain.create.40
 TITLE:       CREATE DOMAIN - all options
 DESCRIPTION: Domain creation based on VARCHAR datatype with all possible options

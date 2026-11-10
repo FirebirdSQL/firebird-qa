@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.fkey.common.test_restrictions_for_default_fk_fields
 TITLE:       FK definition: SET DEFAULT clause should not lead FK-columns to have their default values if parent record not yet exists or was removed
 DESCRIPTION:
     Parent table has UNIQUE constraint declared for NULLABLE column(s).

@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.agg_resulting_datatype.approximate_decfloat_merging_test
 ISSUE:        doc/sql.extensions/README.data_type_results_of_aggregations.txt (FB source tree)
 TITLE:        Resulting datatype of aggregations: FLOAT/DOUBLE/DECFLOAT (README rule 3c + DECFLOAT)
 DESCRIPTION:

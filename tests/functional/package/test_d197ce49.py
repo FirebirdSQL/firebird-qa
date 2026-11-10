@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.package.test_d197ce49
 ISSUE:       https://groups.google.com/g/firebird-devel/c/uPpRhaAKT0M/m/uczwM_cVAwAJ
 TITLE:       Package constants. FB crashes if package body constant is queried
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-22
+ID:          functional.domain.create.test_22
 FBTEST:      functional.domain.create.22
 TITLE:       CREATE DOMAIN - NATIONAL CHARACTER
 DESCRIPTION: Simple domain creation based NATIONAL CHARACTER datatype

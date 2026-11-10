@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_10
 TITLE:       Check result of DISTINCT when applying SINGULAR to result of query with aggregate function
 DESCRIPTION:
     Original test see in:

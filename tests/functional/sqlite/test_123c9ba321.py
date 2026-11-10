@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          123c9ba321
+ID:          functional.sqlite.test_123c9ba321
 ISSUE:       https://www.sqlite.org/src/tktview/123c9ba321
 TITLE:       Incorrect result when an index is used for an ordered join
 DESCRIPTION:

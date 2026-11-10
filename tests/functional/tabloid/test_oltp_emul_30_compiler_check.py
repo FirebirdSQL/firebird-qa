@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.oltp-emul-30-compiler-check
+ID:          functional.tabloid.test_oltp_emul_30_compiler_check
 TITLE:       Compiler check. Test ability to compile source code of OLTP-EMUL test.
 DESCRIPTION: 
 FBTEST:      functional.tabloid.oltp_emul_30_compiler_check

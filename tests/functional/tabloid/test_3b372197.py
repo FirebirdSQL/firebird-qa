@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          None
+ID:          functional.tabloid.test_3b372197
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6798
 TITLE:       built-in functions UNICODE_CHAR and UNICODE_VAL
 DESCRIPTION:

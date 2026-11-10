@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.transactions-autocommit-03
+ID:          functional.gtcs.test_transactions_autocommit_3
 TITLE:       Changes within AUTO COMMIT must be cancelled when exception raises in some PROCEDURE
 DESCRIPTION:
   Test does the same actions as described in GTCS/tests/AUTO_COMMIT.3.ESQL.script, see:

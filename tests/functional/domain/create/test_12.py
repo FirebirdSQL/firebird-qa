@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-12
+ID:          functional.domain.create.test_12
 FBTEST:      functional.domain.create.12
 TITLE:       CREATE DOMAIN - DECIMAL ARRAY
 DESCRIPTION: Array domain creation based DECIMAL datatype

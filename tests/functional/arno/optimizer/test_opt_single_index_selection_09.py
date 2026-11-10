@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.single-index-selection-08
+ID:          functional.arno.optimizer.test_opt_single_index_selection_09
 TITLE:       Best match index selection (single segment) OR
 DESCRIPTION:
   Check if it will select the index with the best selectivity.

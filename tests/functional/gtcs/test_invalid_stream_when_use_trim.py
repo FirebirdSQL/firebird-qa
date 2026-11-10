@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.invalid-stream-when-use-trim
+ID:          functional.gtcs.test_invalid_stream_when_use_trim
 TITLE:       Statement with TRIM raises "bad BLR -- invalid stream"
 DESCRIPTION:
   ::: NB :::

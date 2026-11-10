@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.transaction-start-multiple-with-normal-finish
+ID:          functional.trigger.database.test_transaction_start_multiple_with_normal_finish
 TITLE:       Multiple triggers on start transaction
 DESCRIPTION:
   This tests normal operation of database TRANSACTION START trigger when:

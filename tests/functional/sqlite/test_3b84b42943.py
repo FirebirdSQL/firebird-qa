@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          3b84b42943
+ID:          functional.sqlite.test_3b84b42943
 ISSUE:       https://www.sqlite.org/src/tktview/3b84b42943
 TITLE:       LEFT JOIN malfunctions with generated column
 DESCRIPTION:

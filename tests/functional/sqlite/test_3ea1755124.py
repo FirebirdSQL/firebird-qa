@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          3ea1755124
+ID:          functional.sqlite.test_3ea1755124
 ISSUE:       https://www.sqlite.org/src/tktview/3ea1755124
 TITLE:       REINDEX causes "UNIQUE constraint failed" error for generated column
 DESCRIPTION:

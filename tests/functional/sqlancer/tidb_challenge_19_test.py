@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.sqlancer.tidb_challenge_19_test
 ISSUE:       https://github.com/tidb-challenge-program/bug-hunting-issue/issues/19
 TITLE:       Incorrect result for LEFT JOIN and CASE operator
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.alter-12
+ID:          functional.trigger.alter.test_12
 TITLE:       ALTER TRIGGER - AS
 DESCRIPTION: Try use new prefix in DELETE trigger
 FBTEST:      functional.trigger.alter.22

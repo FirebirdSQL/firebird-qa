@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ltt.test_ltt_index_usage
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8891
 TITLE:       Presense of DML between 'CREATE <LTT>' and 'CREATE INDEX' (for <LTT>) blocks usage of index
 DESCRIPTION:

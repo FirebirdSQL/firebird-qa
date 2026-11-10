@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-15
+ID:          functional.arno.derived_tables.test_15
 TITLE:       UNION inside derived table
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.15

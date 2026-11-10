@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          functional.blob.test_small_blob_caching.py
+ID:          functional.blob.test_small_blob_caching
 TITLE:       Operations with inline streamed blobs when boundary values are used for seek() and read() methods.
 DESCRIPTION: 
     Source ticket:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-14
+ID:          functional.domain.create.test_14
 FBTEST:      functional.domain.create.14
 TITLE:       CREATE DOMAIN - NUMERIC ARRAY
 DESCRIPTION: Array domain creation based on NUMERIC datatype

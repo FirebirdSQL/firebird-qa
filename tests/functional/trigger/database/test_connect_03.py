@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.connect-03
+ID:          functional.trigger.database.test_connect_03
 ISSUE:       1120
 TITLE:       Multiple triggers on database connect
 DESCRIPTION:

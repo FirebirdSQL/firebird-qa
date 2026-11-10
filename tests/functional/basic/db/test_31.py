@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-31
+ID:          functional.basic.db.test_31
 TITLE:       New DB - RDB$USER_PRIVILEGES content
 DESCRIPTION: Check the correct content of RDB$USER_PRIVILEGES in new database.
 NOTES:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.sin
+ID:          functional.intfunc.math.test_sin_01
 TITLE:       SIN( <number> )
 DESCRIPTION: Returns the sine of an input number that is expressed in radians.
 FBTEST:      functional.intfunc.math.sin_01

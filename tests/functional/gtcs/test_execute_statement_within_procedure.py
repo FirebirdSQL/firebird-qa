@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.execute-statement-within-procedure
+ID:          functional.gtcs.test_execute_statement_within_procedure
 FBTEST:      functional.gtcs.execute_statement_within_procedure
 TITLE:       EXECUTE STATEMENT within a stored procedure could lead to a problems
 DESCRIPTION:

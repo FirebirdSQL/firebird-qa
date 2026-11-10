@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_sync_replica_server_hangs_on_disconnect
+ID:          functional.replication.test_sync_replica_server_hangs_on_disconnect
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6727
 TITLE:       Synchronous replication hangs on disconnect [CORE6497]
 DESCRIPTION:

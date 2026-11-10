@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_71ebb207
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/71ebb207628cd4f2e33c7e43c5fc6e1d7b58a957
 TITLE:       Use simpler method to skip indices that should not receive updates from new records, remove unneded any more RDB$FORMAT from RDB$INDICES
 DESCRIPTION:

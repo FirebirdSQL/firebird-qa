@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          generator.drop-01
+ID:          functional.generator.drop.test_01
 FBTEST:      functional.generator.drop.01
 TITLE:       DROP GENERATOR
 DESCRIPTION:

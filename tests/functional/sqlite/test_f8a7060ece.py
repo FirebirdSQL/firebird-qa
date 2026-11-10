@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          f8a7060ece
+ID:          functional.sqlite.test_f8a7060ece
 ISSUE:       https://www.sqlite.org/src/tktview/f8a7060ece
 TITLE:       Incorrect result for query that uses MIN() and a CAST on rowid
 DESCRIPTION:

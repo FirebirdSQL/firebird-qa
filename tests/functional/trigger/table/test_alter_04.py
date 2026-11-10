@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.table.alter-04
+ID:          functional.trigger.table.test_alter_04
 TITLE:       ALTER TRIGGER - BEFORE INSERT
 DESCRIPTION:
 FBTEST:      functional.trigger.table.alter_04

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.literal-length
+ID:          functional.datatypes.test_decfloat_literal_length
 ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Literal length currently is limited with 1024 characters (including decimal separator and minus sign if any)

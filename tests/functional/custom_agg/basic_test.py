@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:         n/a
+ID:         functional.custom_agg.basic_test
 ISSUE:      https://github.com/FirebirdSQL/firebird/pull/9050
 TITLE:      Custom aggregate functions (PR #9050): basic usage
 DESCRIPTION:

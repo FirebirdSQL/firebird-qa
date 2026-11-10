@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          ca0d20b6cd
+ID:          functional.sqlite.test_ca0d20b6cd
 ISSUE:       https://www.sqlite.org/src/tktview/ca0d20b6cd
 TITLE:       COLLATE operator masked by function calls
 DESCRIPTION:

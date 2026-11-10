@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          7a31705a7e
+ID:          functional.sqlite.test_7a31705a7e
 ISSUE:       https://www.sqlite.org/src/tktview/7a31705a7e
 TITLE:       Name resolution fails when table name is a prefix of another table
 DESCRIPTION:

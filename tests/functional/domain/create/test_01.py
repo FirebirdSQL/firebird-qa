@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-01
+ID:          functional.domain.create.test_01
 FBTEST:      functional.domain.create.01
 TITLE:       CREATE DOMAIN - SMALLINT
 DESCRIPTION: Simple domain creation based SMALLINT datatype

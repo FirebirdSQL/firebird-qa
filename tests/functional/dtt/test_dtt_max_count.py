@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_dtt_max_count
 TITLE:       DECLARED TEMPORARY TABLE - check max limit for DTT that can be created within each kind of PSQL unit.
 DESCRIPTION:
     Test verifies ability to create up to 1024 DTT in PSQL utins (standalone/packaged proc and func; triggers).

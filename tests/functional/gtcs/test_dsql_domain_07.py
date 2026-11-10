@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.dsql-domain-07
+ID:          functional.gtcs.test_dsql_domain_07
 FBTEST:      functional.gtcs.dsql_domain_07
 TITLE:       Test CREATE / ALTER domain statement with ADD/DROP CONSTRAINT clauses, together and separately.
 DESCRIPTION:

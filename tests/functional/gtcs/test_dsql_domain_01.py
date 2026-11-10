@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.dsql-domain-01
+ID:          functional.gtcs.test_dsql_domain_01
 FBTEST:      functional.gtcs.dsql_domain_01
 TITLE:       Test the level 0 syntax for SQL create domain defining only the datatype
 DESCRIPTION:

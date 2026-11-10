@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.single-bit-in-representation
+ID:          functional.datatypes.test_decfloat_single_bit_in_representation
 TITLE:       Check result of EXP() which can be represented only by one ("last") significant bit
 DESCRIPTION:
   Get minimal distinguish from zero value for DEFCFLOAT datatype using EXP() function.

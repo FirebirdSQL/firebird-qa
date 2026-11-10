@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.delete-02
+ID:          functional.dml.delete.test_02
 FBTEST:      functional.dml.delete.02
 TITLE:       DELETE with WHERE
 DESCRIPTION:

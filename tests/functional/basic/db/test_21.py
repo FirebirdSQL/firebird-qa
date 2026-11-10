@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-21
+ID:          functional.basic.db.test_21
 TITLE:       New DB - RDB$REF_CONSTRAINTS content
 DESCRIPTION: Check the correct content of RDB$REF_CONSTRAINTS in new database.
 FBTEST:      functional.basic.db.21

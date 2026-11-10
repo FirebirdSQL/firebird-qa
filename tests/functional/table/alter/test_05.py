@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-05
+ID:          functional.table.alter.test_05
 TITLE:       ALTER TABLE - ALTER - TO
 DESCRIPTION:
 FBTEST:      functional.table.alter.05

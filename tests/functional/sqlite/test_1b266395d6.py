@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          1b266395d6
+ID:          functional.sqlite.test_1b266395d6
 ISSUE:       https://www.sqlite.org/src/tktview/1b266395d6
 TITLE:       INSERT OR REPLACE with a foreign key constraint leads to assertion fault
 DESCRIPTION:

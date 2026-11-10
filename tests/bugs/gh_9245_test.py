@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9245
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/9245
 TITLE:       fix(gstat): Use correct RHD, RHDE and RHDF based on header flags in gstat
 DESCRIPTION:

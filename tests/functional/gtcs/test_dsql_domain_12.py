@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.dsql-domain-12
+ID:          functional.gtcs.test_dsql_domain_12
 FBTEST:      functional.gtcs.dsql_domain_12
 TITLE:       Verify result of INSERT DEFAULT VALUES into a table with domain fields when domains are defined with DEFAULT value.
 DESCRIPTION:

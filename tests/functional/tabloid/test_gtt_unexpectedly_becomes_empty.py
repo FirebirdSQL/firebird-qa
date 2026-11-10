@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:       n/a
+ID:       functional.tabloid.test_gtt_unexpectedly_becomes_empty
 ISSUE:    https://groups.google.com/g/firebird-devel/c/DfxVxtU3Iuk
 TITLE:    GTT behavior changed in master (issue in fb-devel).
 DESCRIPTION: 

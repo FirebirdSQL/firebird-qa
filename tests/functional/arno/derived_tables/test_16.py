@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-16
+ID:          functional.arno.derived_tables.test_16
 TITLE:       Simple derived table with aggregate inside
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.16

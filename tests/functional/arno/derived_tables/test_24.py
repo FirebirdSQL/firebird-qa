@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-24
+ID:          functional.arno.derived_tables.test_24
 TITLE:       Derived table with outer reference from LEFT JOIN.
 DESCRIPTION: Outer reference inside derived table to other relations in from clause is not allowed.
 NOTES:

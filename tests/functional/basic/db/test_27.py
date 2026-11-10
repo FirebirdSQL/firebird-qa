@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-27
+ID:          functional.basic.db.test_27
 TITLE:       New DB - RDB$TRANSACTIONS content
 DESCRIPTION: Check the correct content of RDB$TRANSACTIONS in new database.
 FBTEST:      functional.basic.db.27

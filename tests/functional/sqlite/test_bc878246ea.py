@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          bc878246ea
+ID:          functional.sqlite.test_bc878246ea
 ISSUE:       https://www.sqlite.org/src/tktview/bc878246ea
 TITLE:       Incorrect result from LEFT JOIN query
 DESCRIPTION:

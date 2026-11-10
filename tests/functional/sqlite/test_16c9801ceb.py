@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          16c9801ceb
+ID:          functional.sqlite.test_16c9801ceb
 ISSUE:       https://www.sqlite.org/src/tktview/16c9801ceb
 TITLE:       Segfault on DELETE with WHERE containing OR and redundant index exists.
 DESCRIPTION:

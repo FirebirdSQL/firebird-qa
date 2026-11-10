@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.avg-06
+ID:          functional.intfunc.avg.test_06
 TITLE:       AVG - Integer OverFlow
 DESCRIPTION:
 FBTEST:      functional.intfunc.avg.06

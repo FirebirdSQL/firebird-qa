@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_19
 TITLE:       GROUP BY of result of SINGULAR which is applied to result of VIEWS JOIN
 DESCRIPTION:
     Original test see in:

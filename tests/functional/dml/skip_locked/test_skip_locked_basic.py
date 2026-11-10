@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.skip_locked
+ID:          functional.dml.skip_locked.test_skip_locked_basic
 TITLE:       Basic check of SKIP LOCKED
 DESCRIPTION:
     Trivial test to check SKIP LOCKED functionality on all kinds of transaction isolation level.

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.asin
+ID:          functional.intfunc.math.test_asin_01
 TITLE:       ASIN( <number> )
 DESCRIPTION:
   Returns the arc sine of a number. The argument to ASIN must be in the range -1 to 1.

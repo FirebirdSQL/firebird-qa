@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.permission_error_on_ddl_issued_by_non_sysdba
+ID:          functional.replication.test_permission_error_on_ddl_issued_by_non_sysdba
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6856
 TITLE:       Permission error with replication
 DESCRIPTION:

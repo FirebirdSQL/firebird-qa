@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_blob_characters_garbled_when_conn_charset_differs
+ID:          functional.replication.test_blob_characters_garbled_when_conn_charset_differs
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7969
 TITLE:       Characters are garbled when replicating fields with type BLOB SUB_TYPE TEXT if the character set of the connection and the field are different
 DESCRIPTION:

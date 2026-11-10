@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.external-file-04-B
+ID:          functional.gtcs.test_external_file_04_d_bigint
 FBTEST:      functional.gtcs.external_file_04_d_bigint
 TITLE:       Test for external table with field of BIGINT datatype
 DESCRIPTION:

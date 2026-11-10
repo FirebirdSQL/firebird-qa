@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          209d31e316
+ID:          functional.sqlite.test_209d31e316
 ISSUE:       https://www.sqlite.org/src/tktview/209d31e316
 TITLE:       Assertion fault when deleting a table out from under a SELECT
 DESCRIPTION:

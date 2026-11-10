@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.use-granted-by-clause
+ID:          functional.syspriv.test_use_granted_by_clause
 TITLE:       Check ability to query, modify and deleting data plus add/drop constraints on any table
 DESCRIPTION:
     Two users are created, U01 and U02.

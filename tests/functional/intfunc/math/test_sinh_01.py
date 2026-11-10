@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.sinh
+ID:          functional.intfunc.math.test_sinh_01
 TITLE:       SINH( <number> )
 DESCRIPTION: Returns the hyperbolic sine of a number.
 FBTEST:      functional.intfunc.math.sinh_01

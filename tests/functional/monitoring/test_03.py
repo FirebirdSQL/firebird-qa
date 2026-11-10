@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          monitoring-tables-03
+ID:          functional.monitoring.test_03
 TITLE:       table MON$COMPILED_STATEMENTS and columns MON$STATEMENTS.MON$COMPILED_STATEMENT_ID and MON$CALL_STACK.MON$COMPILED_STATEMENT_ID
 DESCRIPTION:
     See https://github.com/FirebirdSQL/firebird/commit/3a452630b67f26d100c60234941a40d4468c170e (11-aug-2022)

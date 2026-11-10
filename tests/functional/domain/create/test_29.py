@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-29
+ID:          functional.domain.create.test_29
 FBTEST:      functional.domain.create.29
 TITLE:       CREATE DOMAIN - BLOB SEGMENT SIZE
 DESCRIPTION: 

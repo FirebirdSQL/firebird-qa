@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-6413
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6413
 TITLE:       Data pages of newly gbak restored databases should be marked as "swept"
 DESCRIPTION:

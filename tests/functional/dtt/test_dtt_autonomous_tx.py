@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_dtt_autonomous_tx
 ISSUE:       n/a
 TITLE:       DECLARED TEMPORARY TABLE. An autonomous transaction must see the same rows.
 DESCRIPTION:

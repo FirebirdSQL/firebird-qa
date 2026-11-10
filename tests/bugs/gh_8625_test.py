@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8625
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8625
 TITLE:       Range based FOR is broken with a DO SUSPEND without BEGIN...END
 DESCRIPTION:

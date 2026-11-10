@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.no-dups-in-call-stack
+ID:          functional.tabloid.test_no_dups_in_call_stack
 TITLE:       Avoid info duplication when statements in call stack attached to different
   transactions (for example: monitoring snapshot is created in autonomous transaction)
 DESCRIPTION:

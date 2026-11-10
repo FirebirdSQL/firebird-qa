@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-31
+ID:          functional.domain.create.test_31
 FBTEST:      functional.domain.create.31
 TITLE:       CREATE DOMAIN. Check ability to declare using syntax BLOB(seglen, num_subtype)
 DESCRIPTION: Domain creation based on BLOB with "(segment_len, num_datatype)" specification.

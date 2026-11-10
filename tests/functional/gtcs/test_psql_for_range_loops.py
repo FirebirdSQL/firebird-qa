@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_psql_for_range_loops
 TITLE:       Check PSQL range-based loops.
 DESCRIPTION:
     Original test see in:

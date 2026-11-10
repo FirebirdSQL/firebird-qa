@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          4e8e4857d3
+ID:          functional.sqlite.test_4e8e4857d3
 ISSUE:       https://www.sqlite.org/src/tktview/4e8e4857d3
 TITLE:       Crash on query using an OR term in the WHERE clause
 DESCRIPTION:

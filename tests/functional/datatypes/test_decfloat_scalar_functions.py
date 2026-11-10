@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.scalar-functions
+ID:          functional.datatypes.test_decfloat_scalar_functions
 ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Test common math functions that should work with DECFLOAT datatype

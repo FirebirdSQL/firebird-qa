@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_create_table_alter_constraint_ts
 TITLE:       functional.tablespace.create_table_alter_constraint_ts
 DESCRIPTION:
 """

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.create-03
+ID:          functional.trigger.create.test_03
 TITLE:       CREATE TRIGGER BEFORE UPDATE
 DESCRIPTION:
 FBTEST:      functional.trigger.create.03

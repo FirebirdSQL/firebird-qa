@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8851
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8851
 TITLE:       'Internal error' when calling outer procedure after deleting unused result variable from inner procedure
 DESCRIPTION:

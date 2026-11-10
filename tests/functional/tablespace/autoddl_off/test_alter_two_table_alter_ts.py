@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.autoddl_off.test_alter_two_table_alter_ts
 TITLE:       functional.tablespace.autoddl_off.alter_two_table_alter_ts
 DESCRIPTION:
 """

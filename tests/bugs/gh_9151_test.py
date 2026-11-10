@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9151
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9151
 TITLE:       Regression in 5.0.4: "no current record for fetch operation" on a LEFT JOIN to an aggregated derived table
 DESCRIPTION:

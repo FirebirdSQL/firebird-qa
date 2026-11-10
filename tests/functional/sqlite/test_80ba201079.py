@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          80ba201079
+ID:          functional.sqlite.test_80ba201079
 ISSUE:       https://www.sqlite.org/src/tktview/80ba201079
 TITLE:       Bug involving subqueries and the OR optimization
 DESCRIPTION:

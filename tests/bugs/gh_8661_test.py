@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8661
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8661
 TITLE:       Strange output from SHOW DEPENDENCIES command on 6.0
 NOTES:

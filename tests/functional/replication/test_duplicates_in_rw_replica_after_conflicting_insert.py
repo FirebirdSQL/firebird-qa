@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.duplicates_in_rw_replica_after_conflicting_insert
+ID:          functional.replication.test_duplicates_in_rw_replica_after_conflicting_insert
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6849
 TITLE:       Conflicting INSERT propagated into a read-write replica may cause duplicate records to appear
 DESCRIPTION:

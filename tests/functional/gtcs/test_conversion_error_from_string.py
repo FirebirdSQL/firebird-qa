@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.conversion-error-from-string
+ID:          functional.gtcs.test_conversion_error_from_string
 FBTEST:      functional.gtcs.conversion_error_from_string
 TITLE:       Script issues conversion error from string
 DESCRIPTION:

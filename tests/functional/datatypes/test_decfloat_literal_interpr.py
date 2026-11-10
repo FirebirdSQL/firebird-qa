@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.literal-interpretation
+ID:          functional.datatypes.test_decfloat_literal_interpr
 ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Test interpretation of numeric literals

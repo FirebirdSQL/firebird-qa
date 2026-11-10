@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          generator.create-02
+ID:          functional.generator.create.test_02
 FBTEST:      functional.generator.create.02
 TITLE:       CREATE GENERATOR - try create gen with same name
 DESCRIPTION:

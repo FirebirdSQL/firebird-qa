@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.gtcs-proc-isql-14
+ID:          functional.tabloid.test_gtcs_proc_isql_14
 TITLE:       gtcs-proc-isql-14
 DESCRIPTION: 
   Original test see in:

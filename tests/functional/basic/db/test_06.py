@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-06
+ID:          functional.basic.db.test_06
 TITLE:       New DB - RDB$FIELD_DIMENSIONS
 DESCRIPTION: Check for correct content of RDB$FIELD_DIMENSIONS in new database.
 FBTEST:      functional.basic.db.06

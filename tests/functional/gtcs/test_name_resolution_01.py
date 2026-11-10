@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_name_resolution_01
 TITLE:       SQL schemas. Name resolution. Usage of scope specifier (`%`).
 DESCRIPTION:
     Original test see in:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.shutdown_during_applying_segments_leads_to_crash
+ID:          functional.replication.test_shutdown_during_applying_segments_leads_to_crash
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6975
 TITLE:       Crash or hang while shutting down the replica database if segments are being applied
 DESCRIPTION:

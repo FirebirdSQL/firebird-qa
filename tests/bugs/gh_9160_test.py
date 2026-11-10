@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9160
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9160
 TITLE:       Failed COMMIT of Tx with 'CREATE TABLE' leaves orphan RDB$FORMATS records causing subsequent "bugcheck 179 Record N is wrong length" for new tables
 DESCRIPTION:

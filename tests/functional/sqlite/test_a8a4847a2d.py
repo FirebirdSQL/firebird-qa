@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          a8a4847a2d
+ID:          functional.sqlite.test_a8a4847a2d
 ISSUE:       https://www.sqlite.org/src/tktview/a8a4847a2d
 TITLE:       Trigger inserts duplicate value in UNIQUE column
 DESCRIPTION:

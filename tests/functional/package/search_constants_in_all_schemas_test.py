@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.package.search_constants_in_all_schemas_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/812413420e110cb77cdd9688b888f5e1ff9e3d1e
 TITLE:       Search existing package constants in all SCHEMAs
 DESCRIPTION:

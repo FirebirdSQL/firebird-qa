@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.util.gbak_fast_path.test_fp06_perf_smoke
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9155
 TITLE:       gbak FAST_PATH: perf smoke on 300k rows with 2 parallel workers
 DESCRIPTION:

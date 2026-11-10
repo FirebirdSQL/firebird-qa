@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.tanh
+ID:          functional.intfunc.math.test_tanh_01
 TITLE:       TANH( <number> )
 DESCRIPTION:
   Returns the hyperbolic tangent of a number.

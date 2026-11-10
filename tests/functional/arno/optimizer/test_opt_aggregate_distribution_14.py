@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.aggregate-distribution-14
+ID:          functional.arno.optimizer.test_opt_aggregate_distribution_14
 ISSUE:       2835
 TITLE:       Try to deliver HAVING CLAUSE conjunctions to the WHERE clause
 DESCRIPTION:

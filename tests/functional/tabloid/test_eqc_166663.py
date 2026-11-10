@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.eqc-166663
+ID:          functional.tabloid.test_eqc_166663
 TITLE:       Index(es) should not become corrupted after two updates and raising exception in one Tx, doing inside SP
 DESCRIPTION: 
 FBTEST:      functional.tabloid.eqc_166663

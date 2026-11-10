@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.oltp_emul_ddl
+ID:          functional.replication.test_oltp_emul_ddl
 TITLE:       Applying full DDL from OLTP-EMUL test on master with further check replica
 DESCRIPTION:
     We create table and add data in it according to ticket info.

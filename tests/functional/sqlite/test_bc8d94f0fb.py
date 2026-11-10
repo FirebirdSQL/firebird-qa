@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          bc8d94f0fb
+ID:          functional.sqlite.test_bc8d94f0fb
 ISSUE:       https://www.sqlite.org/src/tktview/bc8d94f0fb
 TITLE:       RENAME COLUMN fails on tables with redundant UNIQUE constraints
 DESCRIPTION:

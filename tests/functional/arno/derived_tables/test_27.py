@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-27
+ID:          functional.arno.derived_tables.test_27
 TITLE:       Derived table with same alias for several columns
 DESCRIPTION: Expect an error if a derived table column aliases is not unique.
 NOTES:

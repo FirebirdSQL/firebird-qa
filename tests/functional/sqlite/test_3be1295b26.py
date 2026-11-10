@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          3be1295b26
+ID:          functional.sqlite.test_3be1295b26
 ISSUE:       https://www.sqlite.org/src/tktview/3be1295b26
 TITLE:       Inconsistent behavior of a partial unique index on a boolean expression.
 DESCRIPTION:

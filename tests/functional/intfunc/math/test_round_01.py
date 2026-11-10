@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.round
+ID:          functional.intfunc.math.test_round_01
 TITLE:       ROUND( <number>, <number> )
 DESCRIPTION: Returns a number rounded to the specified scale.
 FBTEST:      functional.intfunc.math.round_01

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.metacache.test_drop_index_metacache_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7954
 TITLE:       Shared metacache. Check ability to DROP INDEX <X> while concurrent DML activity exists that involves index <X>
 DESCRIPTION:

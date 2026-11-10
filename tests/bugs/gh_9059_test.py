@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9059
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9059
 TITLE:       Weird violation of FOREIGN KEY for [var]binary datatype when PK and FK indices have opposite direction
 DESCRIPTION:

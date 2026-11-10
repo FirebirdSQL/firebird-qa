@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ltt.test_ltt_datatypes
 TITLE:       LOCAL TEMPORARY TABLE - basic test for datatypes.
 DESCRIPTION:
     Test create LTT with all currently existing datatypes, including boundary sizes for some columns.

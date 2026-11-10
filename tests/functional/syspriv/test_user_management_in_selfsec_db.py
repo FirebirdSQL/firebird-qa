@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          user-management-in-selfsec-db
+ID:          functional.syspriv.test_user_management_in_selfsec_db
 ISSUE:
 TITLE:       Self-secutity DB: system privilege USER_MANAGEMENT must allow only to add/alter/drop user. No access to any user tables must be granted.
 DESCRIPTION:

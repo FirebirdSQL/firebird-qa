@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.create-10
+ID:          functional.procedure.create.test_16
 ISSUE:       1161
 TITLE:       Type Flag for Stored Procedures
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.join-01
+ID:          functional.dml.join.test_01
 FBTEST:      functional.dml.join.01
 TITLE:       NAMED COLUMNS join
 DESCRIPTION:

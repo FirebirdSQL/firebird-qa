@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          c997b11c4d
+ID:          functional.sqlite.test_c997b11c4d
 ISSUE:       https://www.sqlite.org/src/tktview/c997b11c4d
 TITLE:       ORDER BY clause ignored in 3-way join query
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8940
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8940
 TITLE:       Better cardinality estimation for queries with many predicates (especially those not matched to any indices)
 DESCRIPTION:

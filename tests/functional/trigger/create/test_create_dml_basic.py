@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.trigger.create.test_create_dml_basic
 TITLE:       CREATE TRIGGER - basic checks for DML triggers
 DESCRIPTION:
     Test checks several scnarios with 'CREATE TRIGGER' statement, they are titled in 'msg_map' dict.

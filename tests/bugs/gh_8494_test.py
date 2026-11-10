@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8494
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8494
 TITLE:       Fix issues with longish concatenated context aliases
 DESCRIPTION:

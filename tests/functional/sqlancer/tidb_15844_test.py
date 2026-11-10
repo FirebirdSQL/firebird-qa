@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          15844
+ID:          functional.sqlancer.tidb_15844_test
 ISSUE:       https://github.com/pingcap/tidb/issues/15844
 TITLE:       NATURAL RIGHT JOIN results in an unexpected "Unknown column" error
 DESCRIPTION:

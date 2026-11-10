@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-09
+ID:          functional.domain.create.test_09
 FBTEST:      functional.domain.create.09
 TITLE:       CREATE DOMAIN - TIMESTAMP
 DESCRIPTION: Simple domain creation based TIMESTAMP datatype

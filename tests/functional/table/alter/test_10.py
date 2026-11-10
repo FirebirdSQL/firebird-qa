@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-10
+ID:          functional.table.alter.test_10
 TITLE:       ALTER TABLE - DROP CONSTRAINT - PRIMARY KEY
 DESCRIPTION:
 FBTEST:      functional.table.alter.10

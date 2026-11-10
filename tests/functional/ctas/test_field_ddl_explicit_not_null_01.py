@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_field_ddl_explicit_not_null_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9053
 TITLE:       CTAS. Nullability in case when column is declared via nullable domain but has explicit 'own' NOT-null flag in the declaration.
 DESCRIPTION:

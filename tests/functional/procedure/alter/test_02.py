@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.alter-02
+ID:          functional.procedure.alter.test_02
 TITLE:       ALTER PROCEDURE - Alter non exists procedure
 DESCRIPTION:
 FBTEST:      functional.procedure.alter.02

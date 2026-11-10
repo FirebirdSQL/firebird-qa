@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.literals.non_dec_int_mantissa_test
 ISSUE:        https://github.com/FirebirdSQL/firebird/pull/8564
 TITLE:        Non-decimal integer literals: no non-decimal literals in mantissa of approximate literals
 DESCRIPTION:

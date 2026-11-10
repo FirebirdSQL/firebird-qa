@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.request-of-expr-index
+ID:          functional.tabloid.test_request_of_expr_index
 TITLE:       request of expression index could run outside of main request's snapshot.
 DESCRIPTION: 
   Test verifies fix that is described here:

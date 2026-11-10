@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.left-join-13
+ID:          functional.arno.optimizer.test_opt_left_join_13
 TITLE:       LEFT OUTER JOIN VIEW with full match
 DESCRIPTION:
   TableX LEFT OUTER JOIN ViewY with full match. Every reference from ViewY should have a value.

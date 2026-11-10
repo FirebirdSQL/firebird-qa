@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          functional.blob.test_blob_over_4gb.py
+ID:          functional.blob.test_blob_over_4gb
 TITLE:       Check ability to operate with blob with size greater than 4Gb
 DESCRIPTION: 
     Test generated binary file with random data and size = 4Gb + 1 bytes (see 'BLOB_DATA_LEN').

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.failed_DDL_commands_can_be_replicated
+ID:          functional.replication.test_failed_DDL_commands_can_be_replicated
 ISSUE:       6907
 TITLE:       Failed DDL commands can be replicated
 DESCRIPTION:

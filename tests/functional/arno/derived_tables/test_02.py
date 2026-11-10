@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-02
+ID:          functional.arno.derived_tables.test_02
 TITLE:       Unnamed (no relation alias) derived table
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.02

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          af4556bb5c
+ID:          functional.sqlite.test_af4556bb5c
 ISSUE:       https://www.sqlite.org/src/tktview/af4556bb5c
 TITLE:       Segfault while trying to prepare a malformed window-function query
 DESCRIPTION:

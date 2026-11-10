@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-13
+ID:          functional.domain.create.test_13
 FBTEST:      functional.domain.create.13
 TITLE:       CREATE DOMAIN - NUMERIC
 DESCRIPTION: Simple domain creation based NUMERIC datatype

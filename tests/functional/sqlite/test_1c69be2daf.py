@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          1c69be2daf
+ID:          functional.sqlite.test_1c69be2daf
 ISSUE:       https://www.sqlite.org/src/tktview/1c69be2daf
 TITLE:       Incorrect GROUP BY when input and output columns have the same name
 DESCRIPTION:

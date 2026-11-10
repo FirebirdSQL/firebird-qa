@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.agg_resulting_datatype.mixing_numeric_types_test
 ISSUE:        doc/sql.extensions/README.data_type_results_of_aggregations.txt (FB source tree)
 TITLE:        UNION ALL / UNION DISTINCT of 3 numeric records: full matrix of mixed types
 DESCRIPTION:

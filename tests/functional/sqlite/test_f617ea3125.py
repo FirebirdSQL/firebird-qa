@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          f617ea3125
+ID:          functional.sqlite.test_f617ea3125
 ISSUE:       https://www.sqlite.org/src/tktview/f617ea3125
 TITLE:       Incorrect ORDER BY with colliding input and output column names
 DESCRIPTION:

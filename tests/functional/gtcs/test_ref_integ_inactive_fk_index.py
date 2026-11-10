@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.ref_integ_inactive_fk_index
+ID:          functional.gtcs.test_ref_integ_inactive_fk_index
 TITLE:       Index that is used for FK should not be avail for INACTIVE
 DESCRIPTION:
     Original test see in:

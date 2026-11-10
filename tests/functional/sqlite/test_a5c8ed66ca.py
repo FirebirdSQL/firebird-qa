@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          a5c8ed66ca
+ID:          functional.sqlite.test_a5c8ed66ca
 ISSUE:       https://www.sqlite.org/src/tktview/a5c8ed66ca
 TITLE:       Incorrect count(*) when partial indices exist
 DESCRIPTION:

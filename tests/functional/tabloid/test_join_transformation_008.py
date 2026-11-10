@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.join-transformation-08
+ID:          functional.tabloid.test_join_transformation_008
 TITLE:       Check ability of outer join simplification.
 DESCRIPTION:
   From join-transformation-008.fbt:

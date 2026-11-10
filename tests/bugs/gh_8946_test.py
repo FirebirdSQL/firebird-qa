@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8946
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8946
 TITLE:       PERCENTILE_CONT and PERCENTILE_DISC functions
 DESCRIPTION:

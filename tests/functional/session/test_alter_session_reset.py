@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset
+ID:          functional.session.test_alter_session_reset
 TITLE:       Test results of ALTER SESSION RESET
 DESCRIPTION:
 NOTES:

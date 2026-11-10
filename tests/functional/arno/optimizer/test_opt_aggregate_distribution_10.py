@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.aggregate-distribution-10
+ID:          functional.arno.optimizer.test_opt_aggregate_distribution_10
 TITLE:       Try to deliver HAVING CLAUSE conjunctions to the WHERE clause
 DESCRIPTION:
   Comparisons which doesn't contain (anywhere hiding in the expression) aggregate-functions

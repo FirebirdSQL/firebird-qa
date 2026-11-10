@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          util.gbak-zip
+ID:          functional.util.test_gbak_zip
 TITLE:       gbak utility: check ability to use -ZIP command switch when create backup
 DESCRIPTION:
     We create some DB objects, encrypt it and extract metadata into .SQL script.

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.remote-access-to-security-db
+ID:          functional.tabloid.test_remote_access_to_security_db
 TITLE:       Verify ability to make REMOTE connect to security.db
 DESCRIPTION:
      This test verifies only ability to make REMOTE connect to security.db

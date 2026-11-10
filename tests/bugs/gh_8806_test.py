@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8806
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8806
 TITLE:       Missing privilege checks for the COMMENT ON PARAMETER command on functions in packages
 NOTES:

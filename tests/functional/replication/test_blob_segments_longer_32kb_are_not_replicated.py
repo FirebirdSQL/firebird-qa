@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.blob_segments_longer_32kb_are_not_replicated
+ID:          functional.replication.test_blob_segments_longer_32kb_are_not_replicated
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6893
 TITLE:       Problem with replication of BLOB segments longer than 32KB
 DESCRIPTION:

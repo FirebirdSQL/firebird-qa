@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          57c47526c3
+ID:          functional.sqlite.test_57c47526c3
 ISSUE:       https://www.sqlite.org/src/tktview/57c47526c3
 TITLE:       Incorrect answer when flattening a UNION ALL compound
 DESCRIPTION:

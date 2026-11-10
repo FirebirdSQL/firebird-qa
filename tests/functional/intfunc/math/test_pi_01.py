@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.pi
+ID:          functional.intfunc.math.test_pi_01
 TITLE:       PI()
 DESCRIPTION: Returns the PI constant (3.1459...).
 FBTEST:      functional.intfunc.math.pi_01

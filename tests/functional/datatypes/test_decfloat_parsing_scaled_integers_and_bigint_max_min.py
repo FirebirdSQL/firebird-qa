@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.parsing-scaled-integers-and-bigint-max-min
+ID:          functional.datatypes.test_decfloat_parsing_scaled_integers_and_bigint_max_min
 TITLE:       Interpretation of DECFLOAT values as BIGINT
 DESCRIPTION:
     Check commit: "Fixed parsing of scaled integers and MAX/MIN INT64", 2017-05-28

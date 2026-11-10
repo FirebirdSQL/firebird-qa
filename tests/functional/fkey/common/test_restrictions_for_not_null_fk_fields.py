@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.fkey.common.test_restrictions_for_not_null_fk_fields
 TITLE:       FK definition: SET NULL clause should not lead FK-columns to have NULLs.
 DESCRIPTION:
     Parent table has UNIQUE constraint declared for NULLABLE column(s).

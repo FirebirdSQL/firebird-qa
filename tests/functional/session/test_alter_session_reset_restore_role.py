@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset-restore-role
+ID:          functional.session.test_alter_session_reset_restore_role
 ISSUE:       6093
 TITLE:       ALTER SESSION RESET: restore ROLE which was passed with DPB and clear all cached security classes (if role was changed)
 DESCRIPTION:

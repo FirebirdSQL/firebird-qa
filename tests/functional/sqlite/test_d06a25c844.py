@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          d06a25c844
+ID:          functional.sqlite.test_d06a25c844
 ISSUE:       https://www.sqlite.org/src/tktview/d06a25c844
 TITLE:       Incorrect result from a UNION with an ORDER BY
 DESCRIPTION:

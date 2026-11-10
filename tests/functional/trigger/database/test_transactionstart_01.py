@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.transaction-start
+ID:          functional.trigger.database.test_transactionstart_01
 TITLE:       Trigger on start tansaction
 DESCRIPTION:
   This tests normal operation of database TRANSACTION START trigger.

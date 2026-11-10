@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          f74beaabde
+ID:          functional.sqlite.test_f74beaabde
 ISSUE:       https://www.sqlite.org/src/tktview/f74beaabde
 TITLE:       Problem with 3-way joins and the USING clause
 DESCRIPTION:

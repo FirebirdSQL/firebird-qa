@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dc6ebeda93
+ID:          functional.sqlite.test_dc6ebeda93
 ISSUE:       https://www.sqlite.org/src/tktview/dc6ebeda93
 TITLE:       Incorrect DELETE due to the one-pass optimization
 DESCRIPTION:

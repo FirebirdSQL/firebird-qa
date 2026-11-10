@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_dtt_subroutines_access
 ISSUE:       
 TITLE:       DECLARED TEMPORARY TABLE. Check access from local subroitines
 DESCRIPTION:

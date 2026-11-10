@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          c2ad16f997
+ID:          functional.sqlite.test_c2ad16f997
 ISSUE:       https://www.sqlite.org/src/tktview/c2ad16f997
 TITLE:       Segfault on query involving deeply nested aggregate views
 DESCRIPTION:

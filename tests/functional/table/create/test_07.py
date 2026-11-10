@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.create-07
+ID:          functional.table.create.test_07
 TITLE:       CREATE TABLE - unknown datatype (domain)
 DESCRIPTION:
 FBTEST:      functional.table.create.07

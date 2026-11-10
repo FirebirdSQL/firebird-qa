@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          787fa716be
+ID:          functional.sqlite.test_787fa716be
 ISSUE:       https://www.sqlite.org/src/tktview/787fa716be
 TITLE:       Assertion fault when multi-use subquery implemented by co-routine
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.dbp-4391-combo-full-join-and-windowed-funcs
+ID:          functional.tabloid.test_dbp_4391_combo_full_join_and_windowed_funcs
 TITLE:       Common SQL. Check correctness of the results
 DESCRIPTION: 
 FBTEST:      functional.tabloid.dbp_4391_combo_full_join_and_windowed_funcs

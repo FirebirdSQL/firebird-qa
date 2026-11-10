@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.optimizer-index-navigation
+ID:          functional.tabloid.test_optimizer_index_navigation
 TITLE:       Check that optimizer takes in account presense of index and does navigation instead of external sort.
 DESCRIPTION: 
   Verified commit: https://github.com/FirebirdSQL/firebird/actions/runs/176006556

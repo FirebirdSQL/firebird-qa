@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-18
+ID:          functional.domain.create.test_18
 FBTEST:      functional.domain.create.18
 TITLE:       CREATE DOMAIN using 'VARCHAR' keyword
 DESCRIPTION: Simple domain creation based on VARCHAR datatype.

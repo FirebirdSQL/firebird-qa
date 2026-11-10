@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_00
 TITLE:       Support for SINGULAR <subquery>
 DESCRIPTION:
   Original test see in:

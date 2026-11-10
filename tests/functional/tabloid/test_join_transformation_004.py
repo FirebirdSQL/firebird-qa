@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.join-transformation-04
+ID:          functional.tabloid.test_join_transformation_004
 TITLE:       Check ability of outer join simplification.
 DESCRIPTION:
   Two datasources are involved in the null-rejecting predicate in the WHERE-filtering.

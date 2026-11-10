@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9079
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9079
 TITLE:       Wrong cursor ID for the second query in the procedure during profiling
 DESCRIPTION:

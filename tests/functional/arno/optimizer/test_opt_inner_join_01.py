@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.inner-join-01
+ID:          functional.arno.optimizer.test_opt_inner_join_01
 TITLE:       INNER JOIN join order
 DESCRIPTION:
   With a INNER JOIN the table with the smallest expected result should be the first one in

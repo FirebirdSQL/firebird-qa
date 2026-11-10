@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-7425
+ID:          functional.basic.isql.test_07
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7425
 TITLE:       Add REPLICA MODE to the output of the isql SHOW DATABASE command
 DESCRIPTION:

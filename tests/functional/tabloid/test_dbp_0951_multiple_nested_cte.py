@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.dbp-0951-multiple-nested-cte
+ID:          functional.tabloid.test_dbp_0951_multiple_nested_cte
 TITLE:       Query for test multiple CTEs
 DESCRIPTION: 
 FBTEST:      functional.tabloid.dbp_0951_multiple_nested_cte

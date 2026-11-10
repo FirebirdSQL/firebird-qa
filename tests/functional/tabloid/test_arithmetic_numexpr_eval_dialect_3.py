@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.arithmetic-numexpr-eval-dialect-3
+ID:          functional.tabloid.test_arithmetic_numexpr_eval_dialect_3
 TITLE:       Check result of integer division on dialect 3.
 DESCRIPTION: 
   Was fixed in 2.1, see: sql.ru/forum/actualutils.aspx?action=gotomsg&tid=708324&msg=7865013

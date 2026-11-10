@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.connect-02
+ID:          functional.trigger.database.test_connect_02
 TITLE:       Error handling in trigger on database connect
 DESCRIPTION:
   This test verifies the proper error handling: uncaught exceptions

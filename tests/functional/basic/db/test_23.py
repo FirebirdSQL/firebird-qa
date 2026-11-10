@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-23
+ID:          functional.basic.db.test_23
 TITLE:       New DB - RDB$RELATIONS content
 DESCRIPTION: Check the correct content of RDB$RELATIONS in new database.
 NOTES:

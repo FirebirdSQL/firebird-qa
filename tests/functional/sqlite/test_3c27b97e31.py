@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          3c27b97e31
+ID:          functional.sqlite.test_3c27b97e31
 ISSUE:       https://www.sqlite.org/src/tktview/3c27b97e31
 TITLE:       REAL rounding seems to depend on index presence
 DESCRIPTION:

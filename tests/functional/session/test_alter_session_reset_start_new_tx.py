@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset-start-new-tx
+ID:          functional.session.test_alter_session_reset_start_new_tx
 ISSUE:       6093
 TITLE:       ALTER SESSION RESET: START new transaction with the same properties as transaction
   that was rolled back (if transaction was present before reset)

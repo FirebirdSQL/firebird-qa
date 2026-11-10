@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.cos
+ID:          functional.intfunc.math.test_cos_01
 TITLE:       COS( <number>)
 DESCRIPTION:
   Returns the cosine of a number. The angle is specified in radians and returns a value in the range -1 to 1.

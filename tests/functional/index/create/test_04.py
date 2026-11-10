@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.create-04
+ID:          functional.index.create.test_04
 TITLE:       CREATE ASCENDING INDEX
 DESCRIPTION:
 FBTEST:      functional.index.create.04

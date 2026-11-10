@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          cad1ab4cb7
+ID:          functional.sqlite.test_cad1ab4cb7
 ISSUE:       https://www.sqlite.org/src/tktview/cad1ab4cb7
 TITLE:       Segfault due to LEFT JOIN flattening optimization
 DESCRIPTION:

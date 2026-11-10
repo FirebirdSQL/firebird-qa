@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-05
+ID:          functional.basic.db.test_05
 TITLE:       New DB - RDB$DEPENDENCIES
 DESCRIPTION: Check for correct content of RDB$DEPENDENCIES in new database.
 FBTEST:      functional.basic.db.05

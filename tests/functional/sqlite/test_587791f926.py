@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          587791f926
+ID:          functional.sqlite.test_587791f926
 ISSUE:       https://www.sqlite.org/src/tktview/587791f926
 TITLE:       Wrong result of COUNT when using WHERE clause with POSITION()
 DESCRIPTION:

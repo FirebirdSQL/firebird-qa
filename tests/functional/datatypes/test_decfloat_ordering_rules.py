@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.ordering-rules
+ID:          functional.datatypes.test_decfloat_ordering_rules
 TITLE:       Test ordering of decfloat values
 DESCRIPTION:
     Test verifies work of:

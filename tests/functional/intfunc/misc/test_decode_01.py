@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.misc.decode
+ID:          functional.intfunc.misc.test_decode_01
 TITLE:       DECODE()
 DESCRIPTION: DECODE is a shortcut for a case when else expreession.
 FBTEST:      functional.intfunc.misc.decode_01

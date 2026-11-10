@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.avg-01
+ID:          functional.intfunc.avg.test_01
 TITLE:       AVG from single integer row
 DESCRIPTION:
 FBTEST:      functional.intfunc.avg.01

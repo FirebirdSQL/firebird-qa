@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.eqc-344124
+ID:          functional.tabloid.test_eqc_344124
 TITLE:       Check ability to run selectable SP with input parameter which inserts into GTT
   (on commit DELETE rows) and then does suspend
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.sort-by-index-09
+ID:          functional.arno.optimizer.test_opt_sort_by_index_09
 TITLE:       ORDER BY ASC using index (non-unique)
 DESCRIPTION:
   ORDER BY X

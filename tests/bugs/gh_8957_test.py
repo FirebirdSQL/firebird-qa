@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          issue-8957
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8957
 TITLE:       AllowUpdateOverwrite config setting: how UPDATE should handle the case when a record was updated by trigger
 DESCRIPTION:

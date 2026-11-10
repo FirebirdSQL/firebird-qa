@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-42
+ID:          functional.domain.create.test_42
 FBTEST:      functional.domain.create.42
 TITLE:       CREATE DOMAIN - domain name equal to existing datatype
 DESCRIPTION: Domain creation must fail (SQLCODE -104) if domain name is equal to datatype name

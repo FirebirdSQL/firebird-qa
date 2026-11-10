@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-37
+ID:          functional.domain.create.test_37
 FBTEST:      functional.domain.create.37
 TITLE:       CREATE DOMAIN - NOT NULL
 DESCRIPTION: Domain creation based on VARCHAR datatype with NOT NULL specification

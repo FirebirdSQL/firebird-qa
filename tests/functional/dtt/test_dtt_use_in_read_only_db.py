@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_dtt_use_in_read_only_db
 TITLE:       DECLARED TEMPORARY TABLE must be updatable in read-only database
 DESCRIPTION:
     Test changes DB access mode to READ ONLY and verifies that execute block:

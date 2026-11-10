@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          41866dc373
+ID:          functional.sqlite.test_41866dc373
 ISSUE:       https://www.sqlite.org/src/tktview/41866dc373
 TITLE:       MIN() malfunctions for UNIQUE column
 DESCRIPTION:

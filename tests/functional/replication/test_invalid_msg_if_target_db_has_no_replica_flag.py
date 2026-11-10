@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.invalid_msg_if_target_db_has_no_replica_flag
+ID:          functional.replication.test_invalid_msg_if_target_db_has_no_replica_flag
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6989
 TITLE:       Invalid message in replication.log (and possibly crash in the case of synchronous replication) when the target DB has no its "replica" flag set
 DESCRIPTION:

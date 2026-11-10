@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          91e8695101
+ID:          functional.sqlite.test_91e8695101
 ISSUE:       https://www.sqlite.org/src/tktview/91e8695101
 TITLE:       Segfault in a table with generated columns
 DESCRIPTION:

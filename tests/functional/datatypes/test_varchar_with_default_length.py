@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.datatypes.test_varchar_with_default_length
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/d32276b82b694dcc84a7103fa91fd57afbe88372
 TITLE:       Check ability to specify 'varchar' data type WITHOUT length and create DB objects with referencing to such types.
 DESCRIPTION:

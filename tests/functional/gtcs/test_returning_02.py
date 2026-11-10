@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_returning_02
 TITLE:       Test of RETURNING clause: UPDATE; UPDATE OR INSERT; DELETE.
 DESCRIPTION:
     Original test see in:

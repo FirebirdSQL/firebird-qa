@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          002caede89
+ID:          functional.sqlite.test_002caede89
 ISSUE:       https://www.sqlite.org/src/tktview/002caede89
 TITLE:       LEFT JOIN with OR terms in WHERE clause causes assertion fault
 DESCRIPTION:

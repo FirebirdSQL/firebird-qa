@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.hypoth_agg.test_group_by
 ISSUE:        https://github.com/FirebirdSQL/firebird/issues/9035
 TITLE:        Hypothetical-set aggregates with GROUP BY: per-group values and window equivalence per group
 DESCRIPTION:

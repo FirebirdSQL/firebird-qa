@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          1b8d726456
+ID:          functional.sqlite.test_1b8d726456
 ISSUE:       https://www.sqlite.org/src/tktview/1b8d726456
 TITLE:       MAX yields unexpected result for UTF-16
 DESCRIPTION:

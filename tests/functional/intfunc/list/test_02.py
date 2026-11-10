@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.list-02
+ID:          functional.intfunc.list.test_02
 ISSUE:       1367
 TITLE:       List function with delimiter specified
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.create-05
+ID:          functional.procedure.create.test_05
 TITLE:       CREATE PROCEDURE - PSQL Stataments
 DESCRIPTION:
 FBTEST:      functional.procedure.create.05

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.reverse
+ID:          functional.intfunc.string.test_reverse_01
 TITLE:       REVERSE( <value> )
 DESCRIPTION:
   Returns a string in reverse order. Useful function for creating an expression index that

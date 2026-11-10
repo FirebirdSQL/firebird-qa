@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.cast-04
+ID:          functional.intfunc.cast.test_04
 TITLE:       CAST Numeric -> Numeric (Round down)
 DESCRIPTION:
 FBTEST:      functional.intfunc.cast.04

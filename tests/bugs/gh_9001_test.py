@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9001
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9001
 TITLE:       Restart value of Identity field failed on Firebird 6.0, no problem on previous version
 DESCRIPTION:

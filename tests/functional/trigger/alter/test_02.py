@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.alter-02
+ID:          functional.trigger.alter.test_02
 TITLE:       ALTER TRIGGER - INACTIVE
 DESCRIPTION:
 FBTEST:      functional.trigger.alter.02

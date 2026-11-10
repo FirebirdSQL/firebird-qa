@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          view.create-09
+ID:          functional.view.create.test_10
 TITLE:       CREATE VIEW as SELECT ....
 DESCRIPTION:
   Create view without field list

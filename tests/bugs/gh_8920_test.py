@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8920
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8920
 TITLE:       Can not ALTER VIEW if it was created using function in its query and name of column changed
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_default_values_derivation_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9053
 TITLE:       CTAS. DEFAULT value for a column must be derived only from DOMAIN. Dedicated default from FIELD definition must not present in the target table.
 DESCRIPTION:

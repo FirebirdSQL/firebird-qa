@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-e260ced8
+ID:          functional.tabloid.test_e260ced8
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/5df6668c7bf5a4b27e15f687f8c6cc40e260ced8
 TITLE:       Allow computable but non-invariant lists to be used for index lookup
 DESCRIPTION:

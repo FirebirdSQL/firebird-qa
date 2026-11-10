@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8912
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8912
 TITLE:       Context variables clear/re-initialization support
 DESCRIPTION:

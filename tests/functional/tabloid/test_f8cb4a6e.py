@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_f8cb4a6e
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/f8cb4a6ec0a315ade057bbbdd819ea924cce93cc
 TITLE:       Correct error message on non-positioned cursor
 DESCRIPTION:

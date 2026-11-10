@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.regexp-similar-to
+ID:          functional.gtcs.test_regexp_similar_to
 TITLE:       Statements with SIMILAR TO - miscelaneous tests.
 DESCRIPTION:
   Test creates table and fills it with unicode data to be checked (field 'str'),

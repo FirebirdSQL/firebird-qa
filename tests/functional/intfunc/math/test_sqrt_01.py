@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.sqrt
+ID:          functional.intfunc.math.test_sqrt_01
 TITLE:       SQRT( <number> )
 DESCRIPTION: Returns the square root of a number.
 FBTEST:      functional.intfunc.math.sqrt_01

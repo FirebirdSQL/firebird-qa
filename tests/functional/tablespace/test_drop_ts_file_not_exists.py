@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:             functional.tablespace.drop_ts_file_not_exists
+ID:             functional.tablespace.test_drop_ts_file_not_exists
 TITLE:          Test DROP TABLESPACE if a tablespace file not exists.
 DESCRIPTION:    
     Rename TS file and try to drop TS.

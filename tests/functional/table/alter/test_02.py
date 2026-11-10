@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-02
+ID:          functional.table.alter.test_02
 TITLE:       ALTER TABLE. Add column with DEFAULT expression, NOT NULL requirement and UNIQUE constraint that must be applied to its values.
 DESCRIPTION:
 FBTEST:      functional.table.alter.02

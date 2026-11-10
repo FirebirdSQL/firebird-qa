@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          38cb5df375
+ID:          functional.sqlite.test_38cb5df375
 ISSUE:       https://www.sqlite.org/src/tktview/38cb5df375
 TITLE:       LIMIT ignored on compound query with subqueries
 DESCRIPTION:

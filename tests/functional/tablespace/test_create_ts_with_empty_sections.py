@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          test_create_ts_with_empty_section
+ID:          functional.tablespace.test_create_ts_with_empty_sections
 FBTEST:      
 TITLE:       Test for separating directories.conf with empty section.
 DESCRIPTION: Creates a file with alias, which doesn't exist.

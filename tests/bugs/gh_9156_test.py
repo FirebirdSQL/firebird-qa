@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9156
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9156
 TITLE:       Explicit PLAN rejected with "index ... cannot be used in the specified plan" when the query contains a LEFT OUTER JOIN (regression from 3.0)
 DESCRIPTION:

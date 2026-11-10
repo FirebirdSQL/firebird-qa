@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          shadow.create-02
+ID:          functional.shadow.test_create_02
 TITLE:       CREATE SHADOW: check usage with presense of 'FILE <...>' clause.
 DESCRIPTION:
 NOTES:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-28
+ID:          functional.domain.create.test_28
 FBTEST:      functional.domain.create.28
 TITLE:       CREATE DOMAIN. Specifying BLOB SUB_TYPE <A>, where A = 'binary' or 'text'.
 DESCRIPTION: Domain creation based on BLOB datatype with SUBTYPE <subtype_alias> specification

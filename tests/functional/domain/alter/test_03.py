@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.alter-03
+ID:          functional.domain.alter.test_03
 FBTEST:      functional.domain.alter.03
 TITLE:       ALTER DOMAIN - ADD CONSTRAINT
 DESCRIPTION:

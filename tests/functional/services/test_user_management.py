@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          services.user-management
+ID:          functional.services.test_user_management
 TITLE:       Check ability to make connect to FB services and add/drop user
 DESCRIPTION:
   We check here:

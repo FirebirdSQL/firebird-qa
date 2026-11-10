@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.power
+ID:          functional.intfunc.math.test_power_01
 TITLE:       POWER( <number>, <number> )
 DESCRIPTION: POWER(X, Y) returns X to the power of Y.
 FBTEST:      functional.intfunc.math.power_01

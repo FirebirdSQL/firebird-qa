@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.modify-ext-conn-pool
+ID:          functional.syspriv.test_modify_ext_conn_pool
 TITLE:       Check ability to manage external connections pool
 DESCRIPTION:
   Verify ability to issue ALTER EXTERNAL CONNECTIONS POOL <...> by non-sysdba user.

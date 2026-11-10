@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.change-mapping-rules
+ID:          functional.syspriv.test_change_mapping_rules
 TITLE:       Check ability to manage auth mappings
 DESCRIPTION: Verify ability to issue CREATE / ALTER / DROP MAPPING by non-sysdba user.
 FBTEST:      functional.syspriv.change_mapping_rules

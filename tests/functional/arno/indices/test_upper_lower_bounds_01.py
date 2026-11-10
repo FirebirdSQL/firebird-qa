@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.upper-lower-bounds-01
+ID:          functional.arno.indices.test_upper_lower_bounds_01
 TITLE:       Upper and lower bounds
 DESCRIPTION: Equal comparison should be prefered.
   Lower and Upper bounds are bound by the same value.

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.metacache.test_90a1086d
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/90a1086d4803797c6135bc72eb4f9d129b054a2e
 TITLE:       Fixed illegal error and assert raised when routine removed in same transaction where it was created
 DESCRIPTION:

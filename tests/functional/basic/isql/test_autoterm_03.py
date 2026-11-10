@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-7868
+ID:          functional.basic.isql.test_autoterm_03
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/7868
 TITLE:       SET AUTOTERM ON/OFF. Additional tests.
 DESCRIPTION:

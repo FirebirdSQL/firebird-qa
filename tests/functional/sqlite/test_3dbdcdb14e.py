@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          3dbdcdb14e
+ID:          functional.sqlite.test_3dbdcdb14e
 ISSUE:       https://www.sqlite.org/src/tktview/3dbdcdb14e
 TITLE:       Assertion fault using indices with redundant columns
 DESCRIPTION:

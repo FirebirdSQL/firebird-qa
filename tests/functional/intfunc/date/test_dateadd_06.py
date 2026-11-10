@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.date.dateadd-06
+ID:          functional.intfunc.date.test_dateadd_06
 TITLE:       DATEADD
 DESCRIPTION:
   Returns a date/time/timestamp value increased (or decreased, when negative) by the specified amount of time.

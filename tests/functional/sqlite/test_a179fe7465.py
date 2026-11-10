@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          a179fe7465
+ID:          functional.sqlite.test_a179fe7465
 ISSUE:       https://www.sqlite.org/src/tktview/a179fe7465
 TITLE:       Incorrect output order on a join with an ORDER BY
 DESCRIPTION:

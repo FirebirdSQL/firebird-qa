@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          8454a207b9
+ID:          functional.sqlite.test_8454a207b9
 ISSUE:       https://www.sqlite.org/src/tktview/8454a207b9
 TITLE:       ALTER TABLE ADD COLUMN with negative DEFAULT value
 DESCRIPTION:

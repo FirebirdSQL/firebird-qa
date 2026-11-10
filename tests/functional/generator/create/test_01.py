@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          generator.create-01
+ID:          functional.generator.create.test_01
 FBTEST:      functional.generator.create.01
 TITLE:       CREATE GENERATOR and query related data from RDB$GENERATORS
 DESCRIPTION:

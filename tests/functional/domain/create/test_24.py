@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-24
+ID:          functional.domain.create.test_24
 FBTEST:      functional.domain.create.24
 TITLE:       CREATE DOMAIN - NATIONAL CHAR VARYING
 DESCRIPTION: Simple domain creation based NATIONAL CHAR VARYING datatype

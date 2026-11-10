@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.sqlancer.osdi20_rigger_example_04_test
 ISSUE:       https://www.usenix.org/system/files/osdi20-rigger.pdf
 TITLE:       Incorrect result for DISTINCT.
 DESCRIPTION:

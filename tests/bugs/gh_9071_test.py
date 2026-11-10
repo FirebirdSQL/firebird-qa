@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9071
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9071
 TITLE:       Support for DROP SCHEMA CASCADE
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.eqc-306263
+ID:          functional.tabloid.test_eqc_306263
 TITLE:       Check ability to run complex query
 DESCRIPTION: 
 FBTEST:      functional.tabloid.eqc_306263

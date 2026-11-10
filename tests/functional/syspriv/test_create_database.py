@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.create-database
+ID:          functional.syspriv.test_create_database
 TITLE:       Check ability to CREATE database by non-sysdba user who is granted with necessary system privilege
 DESCRIPTION:
 FBTEST:      functional.syspriv.create_database

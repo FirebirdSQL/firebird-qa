@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_16
 TITLE:       Check of applying SINGULAR to result produced by a VIEW
 DESCRIPTION:
     Original test see in:

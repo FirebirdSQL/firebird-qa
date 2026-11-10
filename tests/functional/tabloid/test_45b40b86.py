@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_45b40b86
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/45b40b86b94bec9deadcab5d376e079700cd68aa
 TITLE:       Fix old problem triggered by schemas changes (related to tests/bugs/gh_8057_test.py)
 DESCRIPTION:

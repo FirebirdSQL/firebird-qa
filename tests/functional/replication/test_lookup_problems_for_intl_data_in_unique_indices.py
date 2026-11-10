@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_lookup_problems_for_intl_data_in_unique_indices
+ID:          functional.replication.test_lookup_problems_for_intl_data_in_unique_indices
 ISSUE:       No ticket exist for this test.
 TITLE:       Lookup problems for INTL strings in unique indices
 DESCRIPTION:

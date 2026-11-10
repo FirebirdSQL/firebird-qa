@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.external-file-04-C
+ID:          functional.gtcs.test_external_file_04_d_int128
 FBTEST:      functional.gtcs.external_file_04_d_int128
 TITLE:       Test for external table with field of INT128 datatype
 DESCRIPTION:

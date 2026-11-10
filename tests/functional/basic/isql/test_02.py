@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          isql-02
+ID:          functional.basic.isql.test_02
 TITLE:       ISQL - SHOW SYSTEM TABLES
 DESCRIPTION: Check for correct output of "SHOW SYSTEM;" command on empty database.
 NOTES:

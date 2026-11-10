@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_dtt_indices_04
 ISSUE:       n/a
 TITLE:       DECLARED TEMPORARY TABLE. Index usage when textual data belongs to Unicode ranges
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-5655
+ID:          functional.basic.isql.test_05
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/5655
 TITLE:       ISQL should be able to process single statement with length up to 10*1024*1024 chars
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.update-or-insert-02
+ID:          functional.dml.update_or_insert.test_02
 FBTEST:      functional.dml.update_or_insert.02
 TITLE:       UPDATE OR INSERT
 DESCRIPTION: With RETURNING clause

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.selectivity-02
+ID:          functional.arno.optimizer.test_opt_selectivity_02
 TITLE:       SELECTIVITY - CREATE INDEX
 DESCRIPTION:
   Check if selectivity is calculated correctly.

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.monitor-any-attachment
+ID:          functional.syspriv.test_monitor_any_attachment
 TITLE:       Check ability to monitor any attachment
 DESCRIPTION:
 FBTEST:      functional.syspriv.monitor_any_attachment

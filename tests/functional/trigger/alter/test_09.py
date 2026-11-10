@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.alter-09
+ID:          functional.trigger.alter.test_09
 TITLE:       ALTER TRIGGER - POSITION
 DESCRIPTION:
   Test by checking trigger seqeunce

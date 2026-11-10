@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_datatypes_usage_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9053
 TITLE:       CTAS. Basic test: check ability to use all data types.
 DESCRIPTION:

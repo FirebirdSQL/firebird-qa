@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8794
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8794
 TITLE:       Called procedure parameter changes during execution without assignment when deleting from updatable view
 DESCRIPTION:

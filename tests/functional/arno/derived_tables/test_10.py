@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-10
+ID:          functional.arno.derived_tables.test_10
 TITLE:       Outer reference to upper scope-level is allowed
 DESCRIPTION: Such as fields inside derived table part of sub-query.
 FBTEST:      functional.arno.derived_tables.10

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.dsql-domain-22
+ID:          functional.gtcs.test_dsql_domain_22
 FBTEST:      functional.gtcs.dsql_domain_22
 TITLE:       Verify result of ALTER DOMAIN with changing NOT NULL flag and CHECK constraints
   when a table exists with field based on this domain

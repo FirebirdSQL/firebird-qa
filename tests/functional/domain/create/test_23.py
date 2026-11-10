@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-23
+ID:          functional.domain.create.test_23
 FBTEST:      functional.domain.create.23
 TITLE:       CREATE DOMAIN - NATIONAL CHAR
 DESCRIPTION: Simple domain creation based NATIONAL CHAR datatype

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.parser-comments-in-sql
+ID:          functional.gtcs.test_parser_comments_in_sql
 TITLE:       Check for problems with comments (single-line and multi-line)
 DESCRIPTION:
   ::: NB :::

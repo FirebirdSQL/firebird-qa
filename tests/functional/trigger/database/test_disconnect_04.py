@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.trigger_on_disconnect_04
+ID:          functional.trigger.database.test_disconnect_04
 TITLE:       ON DISCONNECT trigger must fire if attachment is closed by IDLE timeout.
 DESCRIPTION: 
     Improvement was introduced 06-apr-2023, commit:

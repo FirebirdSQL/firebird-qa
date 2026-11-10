@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-06
+ID:          functional.table.alter.test_06
 TITLE:       ALTER TABLE. Alter type of some column.
 DESCRIPTION:
 FBTEST:      functional.table.alter.06

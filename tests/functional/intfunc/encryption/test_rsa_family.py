@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.encryption.rsa-family
+ID:          functional.intfunc.encryption.test_rsa_family
 TITLE:       Basic test for RSA-family: rsa_private(), rsa_public(), rsa_encrypt(),
   rsa_decrypt(), rsa_sign_hash() and rsa_verify_hash()
 DESCRIPTION:

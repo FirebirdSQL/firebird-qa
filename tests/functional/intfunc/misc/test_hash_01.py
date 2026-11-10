@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.misc.hash
+ID:          functional.intfunc.misc.test_hash_01
 TITLE:       HASH( <value> )
 DESCRIPTION: Returns a HASH of a value.
 FBTEST:      functional.intfunc.misc.hash_01

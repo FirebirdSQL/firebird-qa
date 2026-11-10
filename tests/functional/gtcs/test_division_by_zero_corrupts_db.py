@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.division-by-zero-corrupts-db
+ID:          functional.gtcs.test_division_by_zero_corrupts_db
 FBTEST:      functional.gtcs.division_by_zero_corrupts_db
 TITLE:       Zero divide in SP can crash database when call this SP several times
 DESCRIPTION:

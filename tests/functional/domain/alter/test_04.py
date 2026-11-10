@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.alter-04
+ID:          functional.domain.alter.test_04
 FBTEST:      functional.domain.alter.04
 TITLE:       ALTER DOMAIN - DROP CONSTRAINT
 DESCRIPTION:

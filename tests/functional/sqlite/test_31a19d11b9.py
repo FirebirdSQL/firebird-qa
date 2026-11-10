@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          31a19d11b9
+ID:          functional.sqlite.test_31a19d11b9
 ISSUE:       https://www.sqlite.org/src/tktview/31a19d11b9
 TITLE:       Name resolution issue with compound SELECTs and Common Table Expressions
 DESCRIPTION:

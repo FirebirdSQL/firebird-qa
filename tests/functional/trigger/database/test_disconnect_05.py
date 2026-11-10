@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.trigger_on_disconnect_05
+ID:          functional.trigger.database.test_disconnect_05
 TITLE:       ON DISCONNECT trigger and OnDisconnectTriggerTimeout expiration
 DESCRIPTION: 
     Improvement was introduced 06-apr-2023, commits:

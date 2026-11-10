@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.access-shutdown-database
+ID:          functional.syspriv.test_access_shutdown_database
 TITLE:       Check ability to access to database in shutdown single mode as non-sysdba
 DESCRIPTION:
   We create role with granting system privilege ACCESS_SHUTDOWN_DATABASE to it.

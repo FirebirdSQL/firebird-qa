@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.metacache.test_bb28012
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/bb280120e9a181bafa900dba3f331324167a6167
 TITLE:       Use generator instead field in rdb$database to generate relation ID
 DESCRIPTION:

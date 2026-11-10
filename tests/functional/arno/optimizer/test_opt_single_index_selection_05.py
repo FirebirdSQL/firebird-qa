@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.single-index-selection-04
+ID:          functional.arno.optimizer.test_opt_single_index_selection_05
 TITLE:       Best match index selection (single segment) ASC and DESC
 DESCRIPTION:
   Check if it will select the indexes which can be used. Also prefer ASC index above DESC

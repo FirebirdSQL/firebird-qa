@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_create_ts_failed
 TITLE:       functional.tablespace.create_ts_failed
 DESCRIPTION:
 """

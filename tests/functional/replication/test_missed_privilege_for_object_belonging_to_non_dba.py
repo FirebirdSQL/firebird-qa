@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_missed_privilege_for_object_belonging_to_non_dba
+ID:          functional.replication.test_missed_privilege_for_object_belonging_to_non_dba
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8857
 TITLE:       Replication stops if GRANT issued by NON-DBA user who has RDB$ADMIN role and appropriate object (table, etc) belongs to another user
 DESCRIPTION:

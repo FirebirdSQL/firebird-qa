@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.create-06
+ID:          functional.table.create.test_06
 TITLE:       CREATE TABLE - two column with same name
 DESCRIPTION:
 FBTEST:      functional.table.create.06

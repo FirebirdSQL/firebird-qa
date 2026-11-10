@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.test_fb_sql_for_range
+ID:          functional.gtcs.test_fb_sql_for_range
 TITLE:       Range-based FOR statement.
 DESCRIPTION:
     Functionality descriprion: https://github.com/FirebirdSQL/firebird/issues/8498

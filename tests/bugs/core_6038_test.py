@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-6288
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6288
 TITLE:       Srp user manager sporadically creates users which can not attach
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.blob_not_found_in_rw_replica_if_target_row_exists
+ID:          functional.replication.test_blob_not_found_in_rw_replica_if_target_row_exists
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7070
 TITLE:       Error "BLOB is not found" while replication converts INSERT into UPDATE for a conflicting record
 DESCRIPTION:

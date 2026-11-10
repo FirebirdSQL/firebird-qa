@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          525e5665
+ID:          functional.tabloid.test_525e5665
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/525e5665556f0670483ea032d78b8069347a6490
 TITLE:       Corrections after LTT changes
 DESCRIPTION:

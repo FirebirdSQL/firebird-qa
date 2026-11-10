@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-12
+ID:          functional.basic.db.test_12
 TITLE:       New DB - RDB$FUNCTIONS content
 DESCRIPTION: Check for correct content of RDB$FUNCTIONS in a new database.
 FBTEST:      functional.basic.db.12

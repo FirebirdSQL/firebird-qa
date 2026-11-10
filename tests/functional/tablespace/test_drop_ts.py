@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_drop_ts
 TITLE:       functional.tablespace.drop_ts
 DESCRIPTION:
 """

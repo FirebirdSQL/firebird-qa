@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          c2a19d8165
+ID:          functional.sqlite.test_c2a19d8165
 ISSUE:       https://www.sqlite.org/src/tktview/c2a19d8165
 TITLE:       Incorrect LEFT JOIN when FROM clause contains nested subqueries
 DESCRIPTION:

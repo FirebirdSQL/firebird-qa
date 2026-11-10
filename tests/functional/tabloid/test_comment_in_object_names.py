@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.comment-in-object-names
+ID:          functional.tabloid.test_comment_in_object_names
 TITLE:       All DB objects types must allow name COMMENT. Also, COMMENT ON ... must allow occurence of "comment" in it.
 DESCRIPTION: 
   Original issue: https://granicus.if.org/pgbugs/15555

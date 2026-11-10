@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          e20dd54ab0
+ID:          functional.sqlite.test_e20dd54ab0
 ISSUE:       https://www.sqlite.org/src/tktview/e20dd54ab0
 TITLE:       COLLATE sequence for ORDER/GROUP BY ignored when using an index-on-expression
 DESCRIPTION:

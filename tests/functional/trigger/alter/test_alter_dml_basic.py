@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.trigger.alter.test_alter_dml_basic
 TITLE:       ALTER TRIGGER - basic checks for DML triggers
 DESCRIPTION:
     Test checks several scnarios with 'ALTER TRIGGER' statement, they are titled in 'msg_map' dict.

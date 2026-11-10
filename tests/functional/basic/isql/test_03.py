@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-1383
+ID:          functional.basic.isql.test_03
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1383
 TITLE:       ISQL - SHOW SYSTEM parameters
 DESCRIPTION: Extend ISQL SHOW SYSTEM command to accept parameters TABLES, COLLATIONS and FUNCTIONS

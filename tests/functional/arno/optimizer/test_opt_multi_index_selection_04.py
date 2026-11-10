@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.multi-index-selection-04
+ID:          functional.arno.optimizer.test_opt_multi_index_selection_04
 TITLE:       Best match index selection (multi segment)
 DESCRIPTION:
   Check if it will select the index with the best selectivity and with the biggest segment

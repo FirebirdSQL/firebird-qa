@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.table.alter-08
+ID:          functional.trigger.table.test_alter_08
 TITLE:       ALTER TRIGGER - POSITION
 DESCRIPTION:
 FBTEST:      functional.trigger.table.alter_08

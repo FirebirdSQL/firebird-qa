@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-13
+ID:          functional.basic.db.test_13
 TITLE:       New DB - RDB$GENERATORS
 DESCRIPTION: Check for correct content of RDB$GENERATORS in empty database.
 NOTES:

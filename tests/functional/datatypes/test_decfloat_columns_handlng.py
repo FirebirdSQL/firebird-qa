@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.columns-handling
+ID:          functional.datatypes.test_decfloat_columns_handlng
 ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Check ability of misc. actions against table column for DECFLOAT datatype

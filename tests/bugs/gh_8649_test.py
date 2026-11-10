@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8649
 ISSUE:       8649
 TITLE:       AV when ON CONNECT triggers uses EXECUTE STATEMENT ON EXTERNAL
 DESCRIPTION:

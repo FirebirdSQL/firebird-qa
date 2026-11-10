@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-26
+ID:          functional.basic.db.test_26
 TITLE:       New DB - RDB$SECURITY_CLASSES content
 DESCRIPTION: Check the correct content of RDB$SECURITY_CLASSES in new database.
 NOTES:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8805
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8805
 TITLE:       Regression in 6.x: query with "... where <field> in ( <scalar_value> | <scalar_func>, null )" returns empty rowset instead of existing record.
 DESCRIPTION:

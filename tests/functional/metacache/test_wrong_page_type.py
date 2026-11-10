@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.metacache.test_wrong_page_type
 ISSUE:       Shared metacache. Mailbox p519446@yandex.com, letter to FB-team 20.04.2026 1516
 TITLE:       DROP TABLE caused "page 0 is of wrong type (expected index root, found database header)"
 DESCRIPTION:

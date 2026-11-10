@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.trunc
+ID:          functional.intfunc.math.test_trunc_01
 TITLE:       TRUNC( <number> [, <number> ] )
 DESCRIPTION: Returns the integral part (up to the specified scale) of a number.
 FBTEST:      functional.intfunc.math.trunc_01

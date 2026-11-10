@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.external_tables
+ID:          functional.tablespace.test_external_tables
 TITLE:       External tables cannot be assigned to tablespaces
 DESCRIPTION:
   Verifies that external tables cannot be associated with tablespaces.

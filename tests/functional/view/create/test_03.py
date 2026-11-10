@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          view.create-03
+ID:          functional.view.create.test_03
 TITLE:       CREATE VIEW - bad number of columns
 DESCRIPTION:
 FBTEST:      functional.view.create.03

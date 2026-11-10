@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.drop-02
+ID:          functional.domain.drop.test_02
 FBTEST:      functional.domain.drop.02
 TITLE:       DROP DOMAIN - in use
 DESCRIPTION:

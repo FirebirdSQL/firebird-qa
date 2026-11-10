@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8890
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8890
 TITLE:       WITH TIME ZONE types store non-zero garbage for padding instead of 0x00.
 DESCRIPTION:

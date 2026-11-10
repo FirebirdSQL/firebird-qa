@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decimal-declared-scale
+ID:          functional.datatypes.test_decimal_declared_scale
 TITLE:       Dummy test
 DESCRIPTION: Samples are from #3912 and  #5989.
 FBTEST:      functional.datatypes.decimal_declared_scale

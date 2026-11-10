@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.blob.test_insert_update_streamed_blob
 TITLE:       INSERT or UPDATE of streamed blob must take in account appropriate user grants or such operations.
 DESCRIPTION: 
     Test creates a table with blob field, temporary file with some data and non-privileged user ('tmp_user').

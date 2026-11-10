@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.sort-by-index-05
+ID:          functional.arno.optimizer.test_opt_sort_by_index_05
 TITLE:       MAX() and DESC index (non-unique)
 DESCRIPTION:
  SELECT MAX(FieldX) FROM X

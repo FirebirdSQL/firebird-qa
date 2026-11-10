@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.fkey.common.test_non_priv_user_access_to_child_for_cascade
 TITLE:       Child table must be updated even if current user has no privileges on it but 'CASCADE' present in FK declaration.
 DESCRIPTION:
     Child table has column(s) on which FK is declared, with options: ON UPDATE CASCADE and ON DELETE CASCADE.

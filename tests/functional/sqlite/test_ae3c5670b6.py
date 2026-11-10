@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          ae3c5670b6
+ID:          functional.sqlite.test_ae3c5670b6
 ISSUE:       https://www.sqlite.org/src/tktview/ae3c5670b6
 TITLE:       Bug caused by factoring of constants in trigger programs
 DESCRIPTION:

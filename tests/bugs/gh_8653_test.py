@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8653
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8653
 TITLE:       TRANSACTION_ROLLBACK missing in the trace log when appropriate DB-level trigger fires
 DESCRIPTION:

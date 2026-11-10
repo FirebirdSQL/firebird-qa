@@ -1,5 +1,5 @@
 """
-ID:          functional.tablespace.drop_if_exists_2
+ID:          functional.tablespace.test_drop_if_exists_2
 TITLE:       DROP TABLESPACE IF EXISTS
 DESCRIPTION:
 """

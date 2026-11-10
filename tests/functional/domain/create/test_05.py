@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-05
+ID:          functional.domain.create.test_05
 FBTEST:      functional.domain.create.05
 TITLE:       CREATE DOMAIN - DOUBLE PRECISION
 DESCRIPTION: Simple domain creation based DOUBLE PRECISION datatype

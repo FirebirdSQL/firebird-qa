@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8628
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8628
 TITLE:       Incorrect join order for JOIN LATERAL with UNION, aggregate or window function referencing the outer stream(s) via its select list
 DESCRIPTION:

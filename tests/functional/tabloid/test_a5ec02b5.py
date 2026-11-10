@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_a5ec02b5
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/a5ec02b568902e284f1305fe8aaf8f607bed9c25
 TITLE:       Fixed NOT NULL fields in virtual tables
 DESCRIPTION:

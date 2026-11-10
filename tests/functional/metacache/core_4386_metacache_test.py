@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.metacache.core_4386_metacache_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4708
 TITLE:       Error 'object in use' must NOT raise in 6.x with shared metacache (opposite outcome to prior versions).
 DESCRIPTION:

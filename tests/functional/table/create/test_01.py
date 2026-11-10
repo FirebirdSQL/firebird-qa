@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.create-01
+ID:          functional.table.create.test_01
 TITLE:       CREATE TABLE - types
 DESCRIPTION:
 FBTEST:      functional.table.create.01

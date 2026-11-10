@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          monitoring-tables-04
+ID:          functional.monitoring.test_04
 TITLE:       SYSDBA must see all attachments and their transactions, non-privileged user - only those which was of his login.
 DESCRIPTION:
 FBTEST:      functional.monitoring.04

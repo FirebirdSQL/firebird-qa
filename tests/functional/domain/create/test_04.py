@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-04
+ID:          functional.domain.create.test_04
 FBTEST:      functional.domain.create.04
 TITLE:       CREATE DOMAIN - FLOAT
 DESCRIPTION: Simple domain creation based FLOAT datatype

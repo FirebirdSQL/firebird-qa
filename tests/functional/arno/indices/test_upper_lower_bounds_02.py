@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.upper-lower-bounds-02
+ID:          functional.arno.indices.test_upper_lower_bounds_02
 TITLE:       Upper and lower bounds
 DESCRIPTION:
   "Less or equal than" should be prefered above "less than" and "greater or equal than"

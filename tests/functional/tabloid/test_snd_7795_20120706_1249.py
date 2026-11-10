@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.snd-7795-20120706-1249
+ID:          functional.tabloid.test_snd_7795_20120706_1249
 TITLE:       Common SQL. Check correctness of the results
 DESCRIPTION: 
   NB: new datatype in FB 4.0 was introduces: numeric(38,0).

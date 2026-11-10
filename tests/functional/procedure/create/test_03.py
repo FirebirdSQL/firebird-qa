@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.create-03
+ID:          functional.procedure.create.test_03
 TITLE:       CREATE PROCEDURE - Output paramaters
 DESCRIPTION:
 FBTEST:      functional.procedure.create.03

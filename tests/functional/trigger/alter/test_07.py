@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.alter-07
+ID:          functional.trigger.alter.test_07
 TITLE:       ALTER TRIGGER - AFTER INSERT
 DESCRIPTION:
   NB: phrase 'attempted update of read-only column' contains name of table and column ('TEST.ID') on 4.0.x

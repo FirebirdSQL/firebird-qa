@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8663
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8663
 TITLE:       Problem with restore time when DB has many indices (possible regression in 6.x)
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.create-06
+ID:          functional.procedure.create.test_06
 TITLE:       CREATE PROCEDURE - PSQL Stataments - SUSPEND
 DESCRIPTION:
 FBTEST:      functional.procedure.create.06

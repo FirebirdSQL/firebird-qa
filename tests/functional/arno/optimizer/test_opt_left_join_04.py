@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.left-join-04
+ID:          functional.arno.optimizer.test_opt_left_join_04
 TITLE:       LEFT OUTER JOIN with full match
 DESCRIPTION:
   TableX LEFT OUTER JOIN TableY with full match. Every reference from TableY should have a value.

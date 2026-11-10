@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          c620261b5b
+ID:          functional.sqlite.test_c620261b5b
 ISSUE:       https://www.sqlite.org/src/tktview/c620261b5b
 TITLE:       Incorrect result on query involving LEFT JOIN and transitive constraints
 DESCRIPTION:

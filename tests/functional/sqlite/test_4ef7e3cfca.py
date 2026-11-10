@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          4ef7e3cfca
+ID:          functional.sqlite.test_4ef7e3cfca
 ISSUE:       https://www.sqlite.org/src/tktview/4ef7e3cfca
 TITLE:       Name resolution problem in sub-selects within triggers
 DESCRIPTION:

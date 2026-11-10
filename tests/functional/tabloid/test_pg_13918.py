@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.pg-13918
+ID:          functional.tabloid.test_pg_13918
 TITLE:       Some _TRIVIAL_ queries allow to specify HAVING without group by, and for such
   case one may to get record from EMPTY source rowset(!)
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.grant-revoke-any-object
+ID:          functional.syspriv.test_grant_revoke_any_object
 TITLE:       Check ability to query, modify and deleting data plus add/drop constraints on any table
 DESCRIPTION:
   Two users are created, U01 and U02.

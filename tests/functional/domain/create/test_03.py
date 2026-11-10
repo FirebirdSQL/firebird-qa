@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-03
+ID:          functional.domain.create.test_03
 FBTEST:      functional.domain.create.03
 TITLE:       CREATE DOMAIN - INT
 DESCRIPTION: Simple domain creation based INT datatype

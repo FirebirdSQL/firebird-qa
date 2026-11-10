@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.ignore-db-triggers
+ID:          functional.syspriv.test_ignore_db_triggers
 TITLE:       Check ability of non-sysdba and non-owner to ignore DB triggers
 DESCRIPTION:
     Test creates two users (tmp_senior, tmp_junior) and role with IGNORE_DB_TRIGGERS system privilege.

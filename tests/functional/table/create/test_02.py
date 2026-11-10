@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.create-02
+ID:          functional.table.create.test_02
 TITLE:       CREATE TABLE - column properties
 DESCRIPTION:
 FBTEST:      functional.table.create.02

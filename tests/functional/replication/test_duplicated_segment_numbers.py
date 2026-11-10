@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_duplicated_segment_numbers.py
+ID:          functional.replication.test_duplicated_segment_numbers
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8755
 TITLE:       Replicator could produce log segments with duplicated segment numbers
 DESCRIPTION:

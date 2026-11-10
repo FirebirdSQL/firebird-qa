@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.atan2
+ID:          functional.intfunc.math.test_atan2_01
 TITLE:       ATAN2( <number>, <number> )
 DESCRIPTION:
   Returns the arc tangent of the first number / the second number.

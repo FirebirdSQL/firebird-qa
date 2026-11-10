@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.list-01
+ID:          functional.intfunc.list.test_01
 ISSUE:       1367
 TITLE:       List with default options
 DESCRIPTION:

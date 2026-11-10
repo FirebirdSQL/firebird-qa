@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8836
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8836
 TITLE:       Regression: Aggregate function ANY_VALUE always returns NULL
 DESCRIPTION:

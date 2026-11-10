@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-13
+ID:          functional.arno.derived_tables.test_13
 TITLE:       DISTINCT inside derived table
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.13

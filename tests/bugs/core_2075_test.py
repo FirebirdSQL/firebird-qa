@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-2510
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/2510
 TITLE:       Parts of RDB$DB_KEY of views may be inverted when using FULL JOINs.
 DESCRIPTION:

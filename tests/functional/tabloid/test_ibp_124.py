@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_ibp_124
 TITLE:       WHERE CURRENT OF <C> within block that has savepoint: statement #2 must see changes produced by statement #1
 DESCRIPTION:
     Original issue:

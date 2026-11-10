@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          ec32177c99
+ID:          functional.sqlite.test_ec32177c99
 ISSUE:       https://www.sqlite.org/src/tktview/ec32177c99
 TITLE:       Incorrect result with complex OR-connected WHERE
 DESCRIPTION:

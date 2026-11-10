@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.arithmetic-cast-float-to-int-as-round
+ID:          functional.tabloid.test_arithmetic_cast_float_to_int_as_round
 TITLE:       Result of CAST for numbers is implementation defined
 DESCRIPTION: 
   See also: sql.ru/forum/actualutils.aspx?action=gotomsg&tid=1062610&msg=15214333

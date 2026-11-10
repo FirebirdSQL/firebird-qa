@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8842
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8842
 TITLE:       GTT accept weird syntax and has unnecessary syntax conflicts.
 DESCRIPTION:

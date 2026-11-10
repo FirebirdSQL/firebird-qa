@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.sort-by-index-18
+ID:          functional.arno.optimizer.test_opt_sort_by_index_18
 TITLE:       ORDER BY ASC using index (single) and WHERE clause
 DESCRIPTION:
     WHERE X = 1 ORDER BY Y

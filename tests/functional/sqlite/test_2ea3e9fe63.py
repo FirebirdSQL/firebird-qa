@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          2ea3e9fe63
+ID:          functional.sqlite.test_2ea3e9fe63
 ISSUE:       https://www.sqlite.org/src/tktview/2ea3e9fe63
 TITLE:       Partial index causes assertion fault on UPDATE OR REPLACE
 DESCRIPTION:

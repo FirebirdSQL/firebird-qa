@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.sort-by-index-07
+ID:          functional.arno.optimizer.test_opt_sort_by_index_07
 TITLE:       MIN() and ASC index (non-unique)
 DESCRIPTION:
   SELECT MIN(FieldX) FROM X

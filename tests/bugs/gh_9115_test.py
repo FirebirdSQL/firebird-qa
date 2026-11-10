@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9115
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9115
 TITLE:       A trailing garbage character is accepted after a special date/time expression
 DESCRIPTION:

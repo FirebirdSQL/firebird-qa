@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          isql-01
+ID:          functional.basic.isql.test_01
 TITLE:       ISQL: check output of 'SHOW DATABASE' and 'SHOW DB'
 DESCRIPTION: Check for correct output of SHOW DATABASE on empty database.
 FBTEST:      functional.basic.isql.01

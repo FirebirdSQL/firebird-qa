@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9186
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9186
 TITLE:       LIKE, CONTAINING, STARTING WITH and SIMILAR TO fail on DATE/TIME/TIMESTAMP and approximate numeric operands since gh_9108
 DESCRIPTION:

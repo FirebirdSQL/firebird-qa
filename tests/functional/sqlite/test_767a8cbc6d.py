@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          767a8cbc6d
+ID:          functional.sqlite.test_767a8cbc6d
 ISSUE:       https://www.sqlite.org/src/tktview/767a8cbc6d
 TITLE:       COLLATE NOCASE string comparison yields incorrect result when partial index presents
 DESCRIPTION:

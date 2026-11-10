@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-01
+ID:          functional.arno.derived_tables.test_01
 TITLE:       Simple derived table
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.01

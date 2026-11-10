@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_import_from_table_vs_view_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9053
 TITLE:       CTAS. Check equality of outcomes for import data from joined TABLES vs from VIEW (that has appropriate query to same tables).
 DESCRIPTION:

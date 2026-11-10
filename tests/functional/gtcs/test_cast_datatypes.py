@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.cast-datatypes
+ID:          functional.gtcs.test_cast_datatypes
 TITLE:       Check result or CAST() for misc agruments // from GTCS.
 DESCRIPTION: 
     Original tests see in:

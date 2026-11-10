@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.grant-revoke-any-ddl-right
+ID:          functional.syspriv.test_grant_revoke_any_ddl_right
 TITLE:       Check ability to grant right for issuing CREATE/ALTER/DROP statements
 DESCRIPTION:
     Test creates user <tmp_user_grantor> and grants to him system privilege

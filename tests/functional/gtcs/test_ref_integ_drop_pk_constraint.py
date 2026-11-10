@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.ref_integ_drop_pk_constraint
+ID:          functional.gtcs.test_ref_integ_drop_pk_constraint
 TITLE:       Constraint of PRIMARY KEY should not be avail for DROP if there is FK that depends on it
 DESCRIPTION:
     Original test see in:

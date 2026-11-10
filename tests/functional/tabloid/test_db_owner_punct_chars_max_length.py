@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_db_owner_punct_chars_max_length
 ISSUE:       n/a
 TITLE:       Allow to create DB with owner containing a character from string.punctuation set, with duplicating it up to max allowed length
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.inner-join-merge-03
+ID:          functional.arno.optimizer.test_opt_inner_join_merge_03
 TITLE:       INNER JOIN join merge
 DESCRIPTION:
   X JOIN Y ON (X.Field + (10 * 2) = Y.Field + 20)

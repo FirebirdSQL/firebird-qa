@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.alter-02
+ID:          functional.index.alter.test_02
 TITLE:       ALTER INDEX
 DESCRIPTION:
 FBTEST:      functional.index.alter.02

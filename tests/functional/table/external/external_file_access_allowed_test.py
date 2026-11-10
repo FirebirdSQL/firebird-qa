@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          https://github.com/FirebirdSQL/firebird/pull/9121
+ID:          functional.table.external.external_file_access_allowed_test
 TITLE:       External table must be allowed in in the directory belonging to the list specified in the 'ExternalFileAccess' config parameter
 DESCRIPTION:
     https://github.com/FirebirdSQL/firebird-qa/pull/39

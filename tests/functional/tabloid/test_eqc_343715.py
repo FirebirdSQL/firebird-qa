@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.eqc-343715
+ID:          functional.tabloid.test_eqc_343715
 TITLE:       Checking PK index is used when table is joined as driven (right) source in LEFT OUTER join from VIEW
 DESCRIPTION: 
   Number of index reads per TABLE can be watched only in 3.0 by using mon$table_stats. 

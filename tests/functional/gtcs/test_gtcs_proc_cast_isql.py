@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.proc_cast_isql
+ID:          functional.gtcs.test_gtcs_proc_cast_isql
 FBTEST:      functional.gtcs.cast-datatypes // old: functional.gtcs.gtcs_proc_cast_isql
 TITLE:       PROC_CAST1_ISQL.script ... PROC_CAST10_ISQL.script
 DESCRIPTION:

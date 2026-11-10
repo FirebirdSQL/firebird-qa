@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-6681
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6681
 TITLE:       Support for WHEN NOT MATCHED BY SOURCE for MERGE statement
 DESCRIPTION:

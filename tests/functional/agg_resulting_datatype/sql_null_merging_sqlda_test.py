@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.agg_resulting_datatype.sql_null_merging_sqlda_test
 ISSUE:        doc/sql.extensions/README.data_type_results_of_aggregations.txt (FB source tree)
 TITLE:        Resulting datatype of aggregations: NULL literal and SQL_NULL type (isql / sqlda_display)
 DESCRIPTION:

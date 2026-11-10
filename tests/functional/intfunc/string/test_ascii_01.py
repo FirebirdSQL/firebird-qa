@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.ascii
+ID:          functional.intfunc.string.test_ascii_01
 TITLE:       ASCII_CHAR( <number> )
 DESCRIPTION:
   Returns the ASCII character with the specified code. The argument to ASCII_CHAR must be

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.ref-integ-drop-fk-then-pk
+ID:          functional.gtcs.test_ref_integ_drop_fk_then_pk
 TITLE:       Outcome must be SUCCESS if first we drop FK and after this PK constraint
 DESCRIPTION:
   Original test see in:

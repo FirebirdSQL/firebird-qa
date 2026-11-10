@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.util.gbak_fast_path.test_fp05_scope_and_api
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9155
 TITLE:       gbak FAST_PATH: eligibility scope, metadata-only mode and fbsvcmgr Services API
 DESCRIPTION:

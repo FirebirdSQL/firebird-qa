@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          https://github.com/FirebirdSQL/firebird/commit/2e16c7c6e79cba8492b3fe06093f1f228ffbf0e5
+ID:          functional.dtt.test_2e16c7c6
 TITLE:       DECLARED TEMPORARY TABLE - fix problem with outer DLTT access in subroutine
 DESCRIPTION:
 NOTES:

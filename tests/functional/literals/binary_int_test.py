@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.literals.binary_int_test
 ISSUE:        https://github.com/FirebirdSQL/firebird/pull/8564
 TITLE:        Non-decimal integer literals (SQL:2023 T661), part 3: binary
 DESCRIPTION:

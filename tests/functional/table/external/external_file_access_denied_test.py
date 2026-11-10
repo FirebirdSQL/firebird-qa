@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.table.external.external_file_access_denied_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/9121
 TITLE:       External file path outside configured directories is rejected at DDL time
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.fkey.cascade.test_master_pk_on_update_cascade
 TITLE:       Updating PK column(s) in master must cause changes in appropriate detail column(s) if FK references to PK and 'ON UPDATE CASCADE' option is used
 DESCRIPTION:
     Test verifies RI mechanism when ON UPDATE CASCADE option is used: updating record in master should cause appropriate updates in detail.

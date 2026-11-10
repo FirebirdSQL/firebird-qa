@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-6019
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6019
 TITLE:       Regression: FB crashes when trying to recreate table that is in use by DML (3.0.3; 3.0.4; 4.0.0)
 DESCRIPTION:

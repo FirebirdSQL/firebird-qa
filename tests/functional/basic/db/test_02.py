@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-02
+ID:          functional.basic.db.test_02
 TITLE:       New DB - RDB$CHARACTER_SETS
 DESCRIPTION: Check the correct content of RDB$CHARACTER_SETS for new database
 FBTEST:      functional.basic.db.02

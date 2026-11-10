@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.dsql-domain-20
+ID:          functional.gtcs.test_dsql_domain_20
 FBTEST:      functional.gtcs.dsql_domain_20
 TITLE:       Verify result of ALTER DOMAIN SET/DROP DEFAULT when a table exists with field based on this domain
 DESCRIPTION:

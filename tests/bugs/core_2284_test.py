@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-2710
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/2710
 TITLE:       Records left in RDB$PAGES after rollback of CREATE TABLE statement
 DESCRIPTION:

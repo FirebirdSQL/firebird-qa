@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.binary.or
+ID:          functional.intfunc.binary.test_or_01
 TITLE:       New Built-in Functions, Firebird 2.1 : BIN_OR( <number> [, <number> ...] )
 DESCRIPTION: Returns the result of a binary OR operation performed on all arguments.
 FBTEST:      functional.intfunc.binary.or_01

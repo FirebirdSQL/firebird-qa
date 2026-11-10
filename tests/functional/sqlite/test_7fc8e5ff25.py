@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          7fc8e5ff25
+ID:          functional.sqlite.test_7fc8e5ff25
 ISSUE:       https://www.sqlite.org/src/tktview/7fc8e5ff25
 TITLE:       INSERT into table with two triggers does not terminate
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-19
+ID:          functional.domain.create.test_19
 FBTEST:      functional.domain.create.19
 TITLE:       CREATE DOMAIN - VARCHAR ARRAY
 DESCRIPTION: Array domain creation based on VARCHAR datatype

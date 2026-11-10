@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          exception.alter
+ID:          functional.exception.alter.test_01
 FBTEST:      functional.exception.alter.01
 TITLE:       ALTER EXCEPTION
 DESCRIPTION:

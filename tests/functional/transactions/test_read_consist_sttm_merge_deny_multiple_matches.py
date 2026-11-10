@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          transactions.read-consist-sttm-merge-deny-multiple-matches
+ID:          functional.transactions.test_read_consist_sttm_merge_deny_multiple_matches
 TITLE:       READ CONSISTENCY. MERGE must reject multiple matches, regardless on statement-level restart.
 DESCRIPTION:
   Initial article for reading:

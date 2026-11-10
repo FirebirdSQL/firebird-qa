@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.fkey.cascade.test_master_pk_on_delete_cascade
 TITLE:       Deleting record in master must cause deletions in appropriate detail if FK references to PK and 'ON DELETE CASCADE' option is used.
 DESCRIPTION:
     Test verifies RI mechanism when ON DELETE CASCADE option is used.

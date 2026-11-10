@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-20
+ID:          functional.domain.create.test_20
 FBTEST:      functional.domain.create.20
 TITLE:       CREATE DOMAIN - VARCHAR CHARACTER SET
 DESCRIPTION: Domain creation based on VARCHAR datatype with CHARACTER SET specification

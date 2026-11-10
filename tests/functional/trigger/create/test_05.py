@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.create-05
+ID:          functional.trigger.create.test_05
 TITLE:       CREATE TRIGGER BEFORE DELETE
 DESCRIPTION:
 FBTEST:      functional.trigger.create.05

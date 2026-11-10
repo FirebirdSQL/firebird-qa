@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-4491
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4491
 TITLE:       Owner name is missing for generators/exceptions restored from a backup
 DESCRIPTION:

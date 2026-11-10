@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-04
+ID:          functional.table.alter.test_04
 TITLE:       ALTER TABLE - ADD CONSTRAINT - UNIQUE
 DESCRIPTION:
 FBTEST:      functional.table.alter.04

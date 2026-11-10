@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          exception.drop-01
+ID:          functional.exception.drop.test_01
 FBTEST:      functional.exception.drop.01
 TITLE:       DROP EXCEPTION
 DESCRIPTION:

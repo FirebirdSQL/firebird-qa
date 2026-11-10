@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_02
 TITLE:       Support for SINGULAR when subquery refers to another table
 DESCRIPTION:
   Original test see in:

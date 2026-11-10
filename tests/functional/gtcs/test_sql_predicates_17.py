@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_17
 TITLE:       Check of applying SINGULAR to result produced by a JOIN of two views
 DESCRIPTION:
     Original test see in:

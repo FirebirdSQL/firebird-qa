@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8948
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8948
 TITLE:       Natural scan may occur for a query that has EXISTS and several joins in the inner subquery.
 DESCRIPTION:

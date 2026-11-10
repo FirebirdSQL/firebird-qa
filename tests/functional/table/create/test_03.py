@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.create-03
+ID:          functional.table.create.test_03
 TITLE:       CREATE TABLE - charset + colations + domain
 DESCRIPTION:
 FBTEST:      functional.table.create.03

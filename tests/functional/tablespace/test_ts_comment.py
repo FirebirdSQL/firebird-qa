@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.ts_comment
+ID:          functional.tablespace.test_ts_comment
 TITLE:       Test the ability to comment on tablespaces
 DESCRIPTION:
 """

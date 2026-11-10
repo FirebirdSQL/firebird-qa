@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.agg_resulting_datatype.sql_null_merging_driver_test
 ISSUE:        doc/sql.extensions/README.data_type_results_of_aggregations.txt (FB source tree)
 TITLE:        SQL_NULL input parameters via python driver: nullness only, and DTS merging of bare '?'
 DESCRIPTION:

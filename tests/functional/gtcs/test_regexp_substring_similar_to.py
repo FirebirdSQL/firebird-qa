@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.regexp-substring-similar-to
+ID:          functional.gtcs.test_regexp_substring_similar_to
 TITLE:       SUBSTRING - miscelaneous tests of <str> SIMILAR TO <pattern>
 DESCRIPTION:
   Test creates table and fills it with unicode data to be checked (field 'str'), pattern and

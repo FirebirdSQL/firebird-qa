@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-8252
+ID:          functional.tabloid.test_aae2ae32
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/aae2ae3291855f51ff587d0da055aed270137e8f
 TITLE:       Better fix for #8252: incorrect subquery unnesting with complex dependencies, it re-allows converting nested IN/EXISTS into multiple semi-join
 DESCRIPTION:

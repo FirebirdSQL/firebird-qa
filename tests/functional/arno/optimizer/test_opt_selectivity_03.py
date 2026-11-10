@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.selectivity-03
+ID:          functional.arno.optimizer.test_opt_selectivity_03
 TITLE:       SELECTIVITY - INDEX INACTIVE / ACTIVE
 DESCRIPTION:
   Check if selectivity is calculated correctly.

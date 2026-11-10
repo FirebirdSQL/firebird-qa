@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          3998683a16
+ID:          functional.sqlite.test_3998683a16
 ISSUE:       https://www.sqlite.org/src/tktview/3998683a16
 TITLE:       Some valid floating-point literals are not recognized.
 DESCRIPTION:

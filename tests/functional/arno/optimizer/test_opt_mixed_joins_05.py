@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.mixed-joins-05
+ID:          functional.arno.optimizer.test_opt_mixed_joins_05
 TITLE:       Mixed JOINS
 DESCRIPTION:
   Tables without indexes should be merged (when inner join) and those who can use a index, should use it.

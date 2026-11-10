@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_hq_153b7f6e
 TITLE:       Don't set rdb$relation_fields.rdb$collation_id if field uses explicit domain with the same charset and collation id
 DESCRIPTION: 
     [17.02.2026] pzotov

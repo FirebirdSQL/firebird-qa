@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.encryption.block-cipher-basic
+ID:          functional.intfunc.encryption.test_block_cipher_basic
 TITLE:       ENCRYPT/DECRYPT built-in functions
 DESCRIPTION:
   Verify block crypto algorithms that are implemented in ENCRYPT/DECRYPT built-in functions.

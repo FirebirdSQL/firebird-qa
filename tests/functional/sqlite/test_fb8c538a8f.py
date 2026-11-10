@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          fb8c538a8f
+ID:          functional.sqlite.test_fb8c538a8f
 ISSUE:       https://www.sqlite.org/src/tktview/fb8c538a8f
 TITLE:       Incorrect sorting when a column uses BINARY collation in the ORDER BY, but is compared with a different collation in the WHERE clause
 DESCRIPTION:

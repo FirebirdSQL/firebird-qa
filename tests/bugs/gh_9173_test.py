@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9173
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9173
 TITLE:       Wrong result: partial index WHERE col IS NOT NULL is applied when a comparison references a field with the same field id from another table
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_22
 TITLE:       SINGULAR - subquery uses CONTAINING
 DESCRIPTION:
     Original test see in:

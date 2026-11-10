@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.log
+ID:          functional.intfunc.math.test_log_01
 TITLE:       LOG( <number>, <number> )
 DESCRIPTION: Returns the logarithm base x of y.
 FBTEST:      functional.intfunc.math.log_01

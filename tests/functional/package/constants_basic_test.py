@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.package.constants_basic_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8916
 TITLE:       Package constants (#8916) - basic test.
 DESCRIPTION:

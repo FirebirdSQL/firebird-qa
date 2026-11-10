@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          d666d600a6
+ID:          functional.sqlite.test_d666d600a6
 ISSUE:       https://www.sqlite.org/src/tktview/d666d600a6
 TITLE:       COLLATE operator on lhs of BETWEEN expression is ignored.
 DESCRIPTION:

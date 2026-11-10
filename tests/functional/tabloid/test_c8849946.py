@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-c8849946
+ID:          functional.tabloid.test_c8849946
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/c884994653523d7d6d614075af45c7ecf338008e
 TITLE:       Scrollable cursors. Inconsistent cursor repositioning
 DESCRIPTION:

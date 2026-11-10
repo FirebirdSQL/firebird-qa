@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.preserve-accuracy
+ID:          functional.datatypes.test_decfloat_loose_accuracy
 TITLE:       Test for preseving accuracy when evaluate sum of values with huge difference in magnitude
 DESCRIPTION:
     Wide range of terms can lead to wrong result of sum.

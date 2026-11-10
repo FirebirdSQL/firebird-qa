@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.cast-16
+ID:          functional.intfunc.cast.test_16
 TITLE:       CAST DATE -> VARCHAR
 DESCRIPTION:
   Be careful about date format on FB server !

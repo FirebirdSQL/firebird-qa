@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.listagg.01
+ID:          functional.intfunc.listagg.test_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8689
 TITLE:       LISTAGG function - basic test
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.alter-01
+ID:          functional.procedure.alter.test_01
 TITLE:       ALTER PROCEDURE - Simple ALTER
 DESCRIPTION:
 FBTEST:      functional.procedure.alter.01

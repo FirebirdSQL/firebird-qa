@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.updating_blob_with_empty_string_stops_replication
+ID:          functional.replication.test_updating_blob_with_empty_string_stops_replication
 ISSUE:       6795
 TITLE:       Replication gets stuck due to "Blob xxx.xx is not found for table xxx" error
 DESCRIPTION:

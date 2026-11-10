@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-38
+ID:          functional.domain.create.test_38
 FBTEST:      functional.domain.create.38
 TITLE:       CREATE DOMAIN - CHECK
 DESCRIPTION: Domain creation based on VARCHAR datatype with CHECK specification

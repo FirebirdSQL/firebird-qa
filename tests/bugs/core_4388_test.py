@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-4710
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/4710
 TITLE:       SELECT WITH LOCK may enter an infinite loop for a single record
 DESCRIPTION:

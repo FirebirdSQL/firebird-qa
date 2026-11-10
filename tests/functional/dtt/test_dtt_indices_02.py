@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_dtt_indices_02
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/9130
 TITLE:       Index support for Declared LTT - max count of indices per table
 DESCRIPTION:

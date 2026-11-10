@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.fkey.cascade.test_cascade_recursive_actions
 TITLE:       Cyclic references between PK and FK (declared with 'ON ... CASCADE') must not cause infinite loop when records are deleted or updated in any of involved tables.
 DESCRIPTION:
     Test verifies RI mechanism when ON DELETE/UPDATE CASCADE option is used.

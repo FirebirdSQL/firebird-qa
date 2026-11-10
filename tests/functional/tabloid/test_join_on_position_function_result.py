@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.join-on-position-function-result
+ID:          functional.tabloid.test_join_on_position_function_result
 TITLE:       Records with NULLs could be lost from resultset.
 DESCRIPTION: 
   http://www.sql.ru/forum/actualutils.aspx?action=gotomsg&tid=1009792&msg=14032086

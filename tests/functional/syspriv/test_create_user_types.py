@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.create-user-types
+ID:          functional.syspriv.test_create_user_types
 TITLE:       Check ability to update content of RDB$TYPES
 DESCRIPTION:
 FBTEST:      functional.syspriv.create_user_types

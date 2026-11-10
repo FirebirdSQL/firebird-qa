@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.sqlancer.doi_10_1145_3428279_example_17_test
 ISSUE:       https://dl.acm.org/doi/pdf/10.1145/3428279
 TITLE:       Conversion of character string to boolean value
 DESCRIPTION:

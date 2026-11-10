@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          b2d4edaffd
+ID:          functional.sqlite.test_b2d4edaffd
 ISSUE:       https://www.sqlite.org/src/tktview/b2d4edaffd
 TITLE:       Comparison on view malfunctions
 DESCRIPTION:

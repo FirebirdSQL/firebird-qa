@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-07
+ID:          functional.domain.create.test_07
 FBTEST:      functional.domain.create.07
 TITLE:       CREATE DOMAIN - DATE
 DESCRIPTION: Simple domain creation based DATE datatype

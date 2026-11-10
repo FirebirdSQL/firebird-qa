@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.create-04
+ID:          functional.table.create.test_04
 TITLE:       CREATE TABLE - constraints
 DESCRIPTION:
 FBTEST:      functional.table.create.04

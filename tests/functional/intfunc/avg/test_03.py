@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.avg-03
+ID:          functional.intfunc.avg.test_03
 TITLE:       AVG - Test for INTEGER
 DESCRIPTION: Round down (16/3 = 5.3)
 FBTEST:      functional.intfunc.avg.03

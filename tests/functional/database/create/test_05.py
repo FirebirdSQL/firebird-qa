@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          create-database-05
+ID:          functional.database.create.test_05
 TITLE:       Create database: with PAGE_SIZE=4096: check actual size of page in the created database.
 DESCRIPTION:
 FBTEST:      functional.database.create.05

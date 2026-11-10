@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          e1e07ef202
+ID:          functional.sqlite.test_e1e07ef202
 ISSUE:       https://www.sqlite.org/src/tktview/e1e07ef202
 TITLE:       COLLATE in BETWEEN expression is ignored
 DESCRIPTION:

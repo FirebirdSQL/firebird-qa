@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          be31cf009c
+ID:          functional.sqlite.test_be31cf009c
 ISSUE:       https://www.sqlite.org/src/tktview/be31cf009c
 TITLE:       Unexpected result for % and '1E1'
 DESCRIPTION:

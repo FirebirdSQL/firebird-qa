@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.encryption.rsa-family-pkcs15
+ID:          functional.intfunc.encryption.test_rsa_family_pkcs_1_5
 ISSUE:       6929
 TITLE:       RSA-family function, attitional test: verify ability to use PKCS_1_5 keyword
 DESCRIPTION:

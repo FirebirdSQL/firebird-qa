@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.left
+ID:          functional.intfunc.string.test_left_01
 TITLE:       LEFT function
 DESCRIPTION:
   Returns the substring of a specified length that appears at the start of a left-to-right string.

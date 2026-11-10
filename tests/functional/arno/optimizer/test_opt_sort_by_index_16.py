@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.sort-by-index-16
+ID:          functional.arno.optimizer.test_opt_sort_by_index_16
 TITLE:       ORDER BY DESC NULLS FIRST using index
 DESCRIPTION:
   ORDER BY X DESC NULLS FIRST

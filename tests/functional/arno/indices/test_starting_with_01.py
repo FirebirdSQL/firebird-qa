@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.starting-with-01
+ID:          functional.arno.indices.test_starting_with_01
 TITLE:       STARTING WITH charset NONE
 DESCRIPTION: STARTING WITH - Select from table with 2 entries
 FBTEST:      functional.arno.indices.starting_with_01

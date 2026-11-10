@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.ceil
+ID:          functional.intfunc.math.test_ceil_01
 TITLE:       CEIL( <number>)
 DESCRIPTION:
   Returns a value representing the smallest integer that is greater than or equal to the input argument.

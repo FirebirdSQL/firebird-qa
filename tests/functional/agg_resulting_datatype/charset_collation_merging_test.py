@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.agg_resulting_datatype.charset_collation_merging_test
 ISSUE:        doc/sql.extensions/README.data_type_results_of_aggregations.txt (FB source tree)
 TITLE:        Aggregation result: persisted charset, collation and numeric precision in RDB$FIELDS
 DESCRIPTION:

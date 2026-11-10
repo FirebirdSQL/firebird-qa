@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.eqc-141347
+ID:          functional.tabloid.test_eqc_141347
 TITLE:       Check correctness of LEFT JOIN result when right source has two FK and one of
   fields from FK present both in ON and WHERE clauses.
 DESCRIPTION:

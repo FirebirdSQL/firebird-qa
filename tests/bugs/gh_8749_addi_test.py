@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8749
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8749
 TITLE:       RDB$RECORD_VERSION has wrong value when is used in BEFORRE trigger and RETURNING INTO.
 DESCRIPTION:

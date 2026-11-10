@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          360c6073e1
+ID:          functional.sqlite.test_360c6073e1
 ISSUE:       https://www.sqlite.org/src/tktview/360c6073e1
 TITLE:       Aggregate MAX() function with COLLATE clause
 DESCRIPTION:

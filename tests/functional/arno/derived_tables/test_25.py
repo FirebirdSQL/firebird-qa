@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-25
+ID:          functional.arno.derived_tables.test_25
 TITLE:       Derived table with outer reference from FULL JOIN.
 DESCRIPTION: Outer reference inside derived table to other relations in from clause is not allowed.
 NOTES:

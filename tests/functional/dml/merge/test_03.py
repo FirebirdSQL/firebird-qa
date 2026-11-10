@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.merge-03
+ID:          functional.dml.merge.test_03
 FBTEST:      functional.dml.merge.03
 TITLE:       MERGE ... RETURNING must refer either ALIAS of the table (if it is defined) or context variables OLD and NEW
 DESCRIPTION:

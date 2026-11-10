@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.avoid-index-usage
+ID:          functional.arno.optimizer.test_opt_avoid_index_usage
 ISSUE:       3431
 TITLE:       AVOID index usage in WHERE <indexed_varchar_field> = <integer_value>
 DESCRIPTION:

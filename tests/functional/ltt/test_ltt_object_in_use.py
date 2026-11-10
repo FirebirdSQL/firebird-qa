@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ltt.test_ltt_object_in_use
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/06d18794f7c219aa9dca05b48dabab7732c7ba37
 TITLE:       Checks for 'object in use' when doing DDL changes in LTTs.
 DESCRIPTION:

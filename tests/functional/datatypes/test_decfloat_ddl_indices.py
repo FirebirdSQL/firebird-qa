@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.ddl-indices
+ID:          functional.datatypes.test_decfloat_ddl_indices
 TITLE:       Check ability to create table with 16 fields of type decfloat(34), plus create indices and add data
 ISSUE:       5803
 JIRA:        CORE-5535

@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.literals.transparent_smallint_assign_test
 ISSUE:        https://github.com/FirebirdSQL/firebird/pull/8564
 TITLE:        Non-decimal integer literals: transparent conversion to SMALLINT on assignment
 DESCRIPTION:

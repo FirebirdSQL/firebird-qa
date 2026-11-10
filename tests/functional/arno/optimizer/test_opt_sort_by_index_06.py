@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.sort-by-index-06
+ID:          functional.arno.optimizer.test_opt_sort_by_index_06
 TITLE:       MAX() and ASC index (non-unique)
 DESCRIPTION:
   SELECT MAX(FieldX) FROM X

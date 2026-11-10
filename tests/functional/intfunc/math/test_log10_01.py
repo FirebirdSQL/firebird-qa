@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.log10
+ID:          functional.intfunc.math.test_log10_01
 TITLE:       LOG10( <number> )
 DESCRIPTION: Returns the logarithm base ten of a number.
 FBTEST:      functional.intfunc.math.log10_01

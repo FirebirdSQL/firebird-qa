@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.pg-14421
+ID:          functional.tabloid.test_pg_14421
 TITLE:       UPDATE/DETERE RETURNING should issue only one row when applying to table with self-referencing FK
 DESCRIPTION: 
   Original issue:

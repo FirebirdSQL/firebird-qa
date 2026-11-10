@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          exception.create-01
+ID:          functional.exception.create.test_01
 FBTEST:      functional.exception.create.01
 TITLE:       CREATE EXCEPTION
 DESCRIPTION:

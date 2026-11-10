@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-26
+ID:          functional.domain.create.test_26
 FBTEST:      functional.domain.create.26
 TITLE:       CREATE DOMAIN - BLOB
 DESCRIPTION: Simple domain creation based on BLOB datatype.

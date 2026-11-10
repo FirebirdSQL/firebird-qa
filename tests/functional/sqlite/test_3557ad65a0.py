@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          3557ad65a0
+ID:          functional.sqlite.test_3557ad65a0
 ISSUE:       https://www.sqlite.org/src/tktview/3557ad65a0
 TITLE:       Incorrect DISTINCT on an indexed query with IN
 DESCRIPTION:

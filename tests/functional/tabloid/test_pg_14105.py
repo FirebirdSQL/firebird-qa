@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.pg-14105
+ID:          functional.tabloid.test_pg_14105
 TITLE:       Check ability to compile query with combination of full and right join. Taken from PG bug library.
 DESCRIPTION: 
   Original issue ( http://www.postgresql.org/message-id/20160420194758.22924.80319@wrigleys.postgresql.org ):

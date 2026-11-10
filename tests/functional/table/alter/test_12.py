@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-12
+ID:          functional.table.alter.test_12
 TITLE:       Verify ability to create exactly 254 changes of format (increasing it by 1) after initial creating table
 DESCRIPTION: 
 FBTEST:      functional.table.alter.12

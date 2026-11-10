@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.date.dateadd-02
+ID:          functional.intfunc.date.test_dateadd_02
 TITLE:       DATEADD function for MONTH
 DESCRIPTION:
   Returns a date/time/timestamp value increased (or decreased, when negative) by the specified amount of time.

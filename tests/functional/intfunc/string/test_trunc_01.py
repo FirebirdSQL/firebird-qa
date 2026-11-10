@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.trunc
+ID:          functional.intfunc.string.test_trunc_01
 TITLE:       Test for TRUNC function
 DESCRIPTION:
     TRUNC( <number> [, <number> ] )

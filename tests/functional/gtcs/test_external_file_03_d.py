@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_external_file_03_d
 FBTEST:      functional.gtcs.external_file_03_d
 TITLE:       Ability to use external table with field of SMALLINT datatype
 DESCRIPTION:

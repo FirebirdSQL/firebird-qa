@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.window-func-01
+ID:          functional.gtcs.test_window_func_01
 TITLE:       Set of miscelaneous tests for verification of windowed functions
 DESCRIPTION:
   Statements from this test are added to initial SQL which is stored in: /files/gtcs-window-func.sql

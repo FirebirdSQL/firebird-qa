@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.minimum-grant
+ID:          functional.gtcs.test_minimum_grant_test
 TITLE:       Minimum grant test
 DESCRIPTION:
   ::: NB :::

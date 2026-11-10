@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          transactions.read-consist-sttm-restart-on-update-01
+ID:          functional.transactions.test_read_consist_sttm_restart_on_update_01
 TITLE:       READ CONSISTENCY. Check creation of new statement-level snapshot and restarting changed caused by UPDATE. Test-01.
 DESCRIPTION:
   Initial article for reading:

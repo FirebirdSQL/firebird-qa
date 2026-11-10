@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8598
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8598
 TITLE:       Don't fire referential integrity triggers if primary or unique keys haven't changed
 DESCRIPTION:

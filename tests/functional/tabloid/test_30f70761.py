@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_30f70761
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/30f707611aeed904c081c442192f0b6a5850501d
 TITLE:       Check every foreign key referencing a primary/unique key on parent delete or key update
 DESCRIPTION:

@@ -1,6 +1,6 @@
 # coding:utf-8
 """
-ID:          n/a
+ID:          functional.tablespace.test_gbak_ts_messages
 TITLE:       GBAK messages about tablespaces must use own message numbers, not numbers of schema messages
 DESCRIPTION:
     See https://github.com/FirebirdSQL/firebird/commit/af766d69a2ccc786ef8720167beb5973aa0c7847

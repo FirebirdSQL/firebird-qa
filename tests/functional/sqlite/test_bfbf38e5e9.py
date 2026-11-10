@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          bfbf38e5e9
+ID:          functional.sqlite.test_bfbf38e5e9
 ISSUE:       https://www.sqlite.org/src/tktview/bfbf38e5e9
 TITLE:       Segfault on a nested join
 DESCRIPTION:

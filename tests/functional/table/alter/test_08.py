@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-08
+ID:          functional.table.alter.test_08
 TITLE:       ALTER TABLE - DROP column
 DESCRIPTION:
 FBTEST:      functional.table.alter.08

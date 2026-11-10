@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.dbp-1697-windowed-funcs
+ID:          functional.tabloid.test_dbp_1697_windowed_funcs
 TITLE:       Query for test SUM()OVER() and COUNT()OVER().
 DESCRIPTION: 
 FBTEST:      functional.tabloid.dbp_1697_windowed_funcs

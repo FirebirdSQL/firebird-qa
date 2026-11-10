@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          c88f3036a2
+ID:          functional.sqlite.test_c88f3036a2
 ISSUE:       https://www.sqlite.org/src/tktview/c88f3036a2
 TITLE:       ALTER TABLE DROP <column> may corrupt data
 DESCRIPTION:

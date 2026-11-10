@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.util.gbak_fast_path.test_fp04_structural_checks
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9155
 TITLE:       gbak FAST_PATH: structural checks are NOT skipped and the mode stays fail-fast
 DESCRIPTION:

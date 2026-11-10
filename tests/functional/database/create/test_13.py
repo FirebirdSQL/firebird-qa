@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          create-database-13
+ID:          functional.database.create.test_13
 TITLE:       Create database: check that actual FW setting is ON for just created database.
 DESCRIPTION:
     Test was requested by dimitr, letter: 15.04.2024 20:32.

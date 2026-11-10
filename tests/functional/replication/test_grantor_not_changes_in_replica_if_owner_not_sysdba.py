@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_grantor_not_changes_in_replica_if_owner_not_sysdba
+ID:          functional.replication.test_grantor_not_changes_in_replica_if_owner_not_sysdba
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8058
 TITLE:       DDL-Changes in replication does not set the correct grantor
 DESCRIPTION:

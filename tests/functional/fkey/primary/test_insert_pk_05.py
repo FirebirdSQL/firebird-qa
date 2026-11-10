@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          fkey.primary.insert-05
+ID:          functional.fkey.primary.test_insert_pk_05
 FBTEST:      functional.fkey.primary.insert_pk_05
 TITLE:       Detail Tx should be able to insert data that matches to newly added PK if master Tx has committed.
 DESCRIPTION:

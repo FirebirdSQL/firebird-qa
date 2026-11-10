@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          65eb38f6e4
+ID:          functional.sqlite.test_65eb38f6e4
 ISSUE:       https://www.sqlite.org/src/tktview/65eb38f6e4
 TITLE:       Incorrect answer on LEFT JOIN when STAT4 is enabled
 DESCRIPTION:

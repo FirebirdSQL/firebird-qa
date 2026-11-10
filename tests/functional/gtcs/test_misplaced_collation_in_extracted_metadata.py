@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.test_misplaced_collation_in_extracted_metadata
+ID:          functional.gtcs.test_misplaced_collation_in_extracted_metadata
 TITLE:       Misplaced collation when extracting metadata with isql
 DESCRIPTION:
   bug #223126 Misplaced collation when extracting metadata with isql

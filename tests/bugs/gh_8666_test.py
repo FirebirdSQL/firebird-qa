@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8666
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8666
 TITLE:       Crash after calling incorrectly parametrized request
 NOTES:

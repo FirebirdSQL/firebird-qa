@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.trigger_on_disconnect_06
+ID:          functional.trigger.database.test_disconnect_06
 TITLE:       ON DISCONNECT trigger: print exceptions (including cancelling) to trace if log_errors = true
 DESCRIPTION: 
     Improvement was introduced 06-apr-2023, commit:

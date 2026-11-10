@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_uk_violation_in_rw_repl_if_constraint_name_is_used
+ID:          functional.replication.test_uk_violation_in_rw_repl_if_constraint_name_is_used
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8139
 TITLE:       PK/UK violation error raises in RW replica if constraint name is used to check uniqueness instead of index name
 DESCRIPTION:

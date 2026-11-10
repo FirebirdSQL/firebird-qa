@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ltt.test_ltt_savepoints
 ISSUE:       None
 TITLE:       Check support of SAVEPOINTS in local temporary tables.
 DESCRIPTION:

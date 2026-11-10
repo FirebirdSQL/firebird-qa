@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.literals.glued_tokens_test
 ISSUE:        https://github.com/FirebirdSQL/firebird/pull/8564
 TITLE:        Non-decimal literals and underscores: numeric literal glued to identifier now raises error
 DESCRIPTION:

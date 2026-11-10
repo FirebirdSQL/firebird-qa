@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-03
+ID:          functional.table.alter.test_03
 TITLE:       ALTER TABLE - ADD CONSTRAINT - PRIMARY KEY
 DESCRIPTION:
 FBTEST:      functional.table.alter.03

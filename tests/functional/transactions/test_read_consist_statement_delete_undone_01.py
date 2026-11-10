@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          transactions.read-consist-statement-delete-undone-01
+ID:          functional.transactions.test_read_consist_statement_delete_undone_01
 TITLE:       READ CONSISTENCY. Changes produced by DELETE statement must be UNDONE when cursor resultset becomes empty after this statement start. Test-01
 DESCRIPTION:
   Initial article for reading:

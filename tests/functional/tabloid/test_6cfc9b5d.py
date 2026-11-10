@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          issue-6cfc9b5d
+ID:          functional.tabloid.test_6cfc9b5d
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/6cfc9b5d7dc343295968cc4545c6fa184966cfc9
 TITLE:       Scrollable cursors. Automated test with randomly generated mission for positioning.
 DESCRIPTION:

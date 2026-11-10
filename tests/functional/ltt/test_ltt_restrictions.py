@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ltt.test_ltt_restrictions
 TITLE:       LOCAL TEMPORARY TABLE - verify restrictions.
 DESCRIPTION:
     Test verifies restrictions defined for LTT in doc/sql.extensions/README.local_temporary_tables.md

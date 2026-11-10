@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_alter_ts_invalid_file
 TITLE:       functional.tablespace.alter_ts_invalid_file
 DESCRIPTION:
 NOTES:

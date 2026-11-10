@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.proc-isql-15
+ID:          functional.gtcs.test_gtcs_proc_isql_15
 TITLE:       gtcs-proc-isql-15
 DESCRIPTION:
   Original test see in:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.dbp-2146-distinct-not-in
+ID:          functional.tabloid.test_dbp_2146_distinct_not_in
 TITLE:       Common SQL. Check correctness of the results
 DESCRIPTION: 
 FBTEST:      functional.tabloid.dbp_2146_distinct_not_in

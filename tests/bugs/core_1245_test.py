@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-1669
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/1669
 TITLE:       Incorrect column values with outer joins and views
 DESCRIPTION:

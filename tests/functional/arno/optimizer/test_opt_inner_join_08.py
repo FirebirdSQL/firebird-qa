@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.inner-join-08
+ID:          functional.arno.optimizer.test_opt_inner_join_08
 TITLE:       INNER JOIN join order and VIEW
 DESCRIPTION: Try to merge the top INNER JOINs of VIEWS/TABLES together to 1 inner join.
 FBTEST:      functional.arno.optimizer.opt_inner_join_08

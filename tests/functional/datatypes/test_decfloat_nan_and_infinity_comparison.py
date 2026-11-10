@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.nan-and-infinity-comparison
+ID:          functional.datatypes.test_decfloat_nan_and_infinity_comparison
 TITLE:       DECFLOAT should not throw exceptions when +/-NaN, +/-sNaN and +/-Infinity is used in comparisons
 DESCRIPTION:
 FBTEST:      functional.datatypes.decfloat_nan_and_infinity_comparison

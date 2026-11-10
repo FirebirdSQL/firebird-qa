@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-32
+ID:          functional.basic.db.test_32
 TITLE:       New DB - RDB$VIEW_RELATIONS content
 DESCRIPTION: Check the correct content of RDB$VIEW_RELATIONS in new database.
 FBTEST:      functional.basic.db.32

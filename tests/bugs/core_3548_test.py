@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-3904
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/3904
 TITLE:       GFIX returns an error after correctly shutting down a database
 DESCRIPTION: Affects only local connections

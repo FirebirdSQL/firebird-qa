@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          31338dca7e
+ID:          functional.sqlite.test_31338dca7e
 ISSUE:       https://www.sqlite.org/src/tktview/31338dca7e
 TITLE:       OR operator in WHERE clause gives wrong answer when indexed
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          34a579141b
+ID:          functional.sqlite.test_34a579141b
 ISSUE:       https://www.sqlite.org/src/tktview/34a579141b
 TITLE:       Incorrect results with OR terms in the ON clause of a LEFT JOIN
 DESCRIPTION:

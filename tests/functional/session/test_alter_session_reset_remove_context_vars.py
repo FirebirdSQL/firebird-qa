@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset-remove-context-vars
+ID:          functional.session.test_alter_session_reset_remove_context_vars
 ISSUE:       6093
 TITLE:       ALTER SESSION RESET: remove all context variables in 'USER_SESSION' namespace
 DESCRIPTION:

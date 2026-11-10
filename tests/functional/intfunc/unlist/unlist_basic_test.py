@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-8418
+ID:          functional.intfunc.unlist.unlist_basic_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8418
 TITLE:       UNLIST function. Basic examples.
 DESCRIPTION: Provided by red-soft. Original file name: "unlist.test_eamples.py"

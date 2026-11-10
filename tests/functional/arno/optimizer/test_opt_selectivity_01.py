@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.selectivity-01
+ID:          functional.arno.optimizer.test_opt_selectivity_01
 TITLE:       SELECTIVITY - SET STATISTICS
 DESCRIPTION:
   Check if selectivity is calculated correctly.

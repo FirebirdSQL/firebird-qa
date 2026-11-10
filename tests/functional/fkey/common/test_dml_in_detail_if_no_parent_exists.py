@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:    n/a
+ID:    functional.fkey.common.test_dml_in_detail_if_no_parent_exists
 TITLE: FK-columns columns in the child table must either all be equal to appropriate columns in the parent or some/all of them must be null
 DESCRIPTION:
     Single- and multi-segmented FK are checked.

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.avg-05
+ID:          functional.intfunc.avg.test_05
 TITLE:       AVG - DISTINCT
 DESCRIPTION:
 FBTEST:      functional.intfunc.avg.05

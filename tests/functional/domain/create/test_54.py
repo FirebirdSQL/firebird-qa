@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-43
+ID:          functional.domain.create.test_54
 FBTEST:      functional.domain.create.54
 ISSUE:       1026
 JIRA:        CORE-660

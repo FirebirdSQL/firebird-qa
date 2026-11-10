@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          7fa8049685
+ID:          functional.sqlite.test_7fa8049685
 ISSUE:       https://www.sqlite.org/src/tktview/7fa8049685
 TITLE:       Incorrect result on a LEFT JOIN when using an index
 DESCRIPTION:

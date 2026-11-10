@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.metacache.test_weird_error_when_use_es
 ISSUE:       n/a
 TITLE:       Weird message (with irrelevant text) raises when AUTODDL = OFF and attempt to call procedure which was created using ES and uses ES for some DML.
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.abs
+ID:          functional.intfunc.math.test_abs_01
 TITLE:       ABS( <number> )
 DESCRIPTION: Test of ABS( <number> ) function returns the absolute value of a number.
 FBTEST:      functional.intfunc.math.abs_01

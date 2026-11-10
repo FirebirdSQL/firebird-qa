@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.exceptions-trapping
+ID:          functional.datatypes.test_decfloat_exceptions_trapping
 ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Test exception trapping for result of DECFLOAT operations

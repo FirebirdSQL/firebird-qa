@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.special-functions
+ID:          functional.datatypes.test_decfloat_special_functions
 ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Test functions that are designed specially for DECFLOAT handling

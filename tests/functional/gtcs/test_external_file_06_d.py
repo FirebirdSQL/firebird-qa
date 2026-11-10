@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.external-file-06
+ID:          functional.gtcs.test_external_file_06_d
 FBTEST:      functional.gtcs.external_file_06_d
 TITLE:       Test for external table with field of DOUBLE PRECISION datatype
 DESCRIPTION:

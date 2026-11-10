@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8881
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8881
 TITLE:       Large amount of unnecessary privileges in RDB$USER_PRIVILEGES for SYSDBA
 DESCRIPTION:

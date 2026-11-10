@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          create-database-10
+ID:          functional.database.create.test_10
 TITLE:       Create database: Multi file DB - starting
 DESCRIPTION: Database with four files. Additional files specified by STARTING AT.
 NOTES:

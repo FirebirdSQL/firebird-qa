@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          9ece23d2ca
+ID:          functional.sqlite.test_9ece23d2ca
 ISSUE:       https://www.sqlite.org/src/tktview/9ece23d2ca
 TITLE:       Default collation sequences lost when window function added to query
 DESCRIPTION:

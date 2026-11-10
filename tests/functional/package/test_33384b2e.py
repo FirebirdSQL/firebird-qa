@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.package.test_33384b2e
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/33384b2ee2d36fcab3aa34245a328b0401eb687b
 TITLE:       Packaged temporary tables. Only `INSERT` is allowed for them in the package body units
 DESCRIPTION:

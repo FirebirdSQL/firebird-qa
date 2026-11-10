@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.date.extract-01
+ID:          functional.intfunc.date.test_extract_01
 ISSUE:       1029
 TITLE:       EXTRACT(WEEK FROM DATE)
 DESCRIPTION: Test the extract week function

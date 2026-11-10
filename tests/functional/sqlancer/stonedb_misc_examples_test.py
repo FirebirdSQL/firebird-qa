@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.sqlancer.stonedb_misc_examples_test
 ISSUE:       https://docs.google.com/document/d/1N-oUGVATV0l6tG87uOtPNmfLS7g_fuo7HIckFobD-Yo/edit?tab=t.0
 TITLE:       Bugs Found in StoneDB by SQLancer
 DESCRIPTION:

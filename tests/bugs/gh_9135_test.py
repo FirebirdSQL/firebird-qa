@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9135
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/9135
 TITLE:       Remove limit for usage of blob subtypes in user objects
 DESCRIPTION:

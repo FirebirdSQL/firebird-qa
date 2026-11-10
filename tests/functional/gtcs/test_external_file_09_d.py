@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.external-file-09
+ID:          functional.gtcs.test_external_file_09_d
 FBTEST:      functional.gtcs.external_file_09_d
 TITLE:       Test for external table with field of DATE datatype
 DESCRIPTION:

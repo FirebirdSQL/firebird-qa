@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.join-transformation-02
+ID:          functional.tabloid.test_join_transformation_002
 TITLE:       Check ability of outer join simplification.
 DESCRIPTION:
   Use null-rejected predicate in WHERE filtering leads to replacement of TWO outer joins.

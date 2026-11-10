@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.timestamps
+ID:          functional.arno.indices.test_timestamps_01
 TITLE:       TIMESTAMP in index with values below julian date
 DESCRIPTION:
   Datetime values below the julian date (firebird base date '1858-11-17') should be stored

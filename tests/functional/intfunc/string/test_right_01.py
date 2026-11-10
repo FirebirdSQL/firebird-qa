@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.right
+ID:          functional.intfunc.string.test_right_01
 TITLE:       RIGHT( <string>, <number> )
 DESCRIPTION:
   Returns the substring, of the specified length, from the right-hand end of a string.

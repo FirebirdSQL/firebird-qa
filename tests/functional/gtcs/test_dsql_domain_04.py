@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.dsql-domain-04
+ID:          functional.gtcs.test_dsql_domain_04
 FBTEST:      functional.gtcs.dsql_domain_04
 TITLE:       Test the level 0 syntax for SQL "CREATE DOMAIN" statement using datatype and CHECK constraint clause
 DESCRIPTION:

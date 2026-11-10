@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.alter-04
+ID:          functional.index.alter.test_04
 TITLE:       ALTER INDEX - INACTIVE PRIMARY KEY
 DESCRIPTION: An index participating in PK-constraint cannot be deactivated
 FBTEST:      functional.index.alter.04

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-95442bdf
+ID:          functional.tabloid.test_95442bdf
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/95442bdfff76d22aafb57b58894047be2a89c6ea
 TITLE:       Attempt to avoid hash joining for possible cardinality under-estimations
 DESCRIPTION:

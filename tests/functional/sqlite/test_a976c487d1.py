@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          a976c487d1
+ID:          functional.sqlite.test_a976c487d1
 ISSUE:       https://www.sqlite.org/src/tktview/a976c487d1
 TITLE:       LEFT JOIN in view malfunctions
 DESCRIPTION:

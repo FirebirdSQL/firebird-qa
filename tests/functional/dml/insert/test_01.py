@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.insert-01
+ID:          functional.dml.insert.test_01
 FBTEST:      functional.dml.insert.01
 TITLE:       INSERT with Defaults
 DESCRIPTION:

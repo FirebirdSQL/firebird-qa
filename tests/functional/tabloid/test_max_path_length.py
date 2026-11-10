@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.max-path-length
+ID:          functional.tabloid.test_max_path_length
 TITLE:       Check ability to create database with total length of path and file name about maximal allowed limit in Windows
 DESCRIPTION:
   Maximal TOTAL length of <drive>:/<path>/<DB_filename> on Windows is about 260 characters.

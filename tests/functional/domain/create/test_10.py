@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-10
+ID:          functional.domain.create.test_10
 FBTEST:      functional.domain.create.10
 TITLE:       CREATE DOMAIN - TIMESTAMP ARRAY
 DESCRIPTION: Array domain creation based TIMESTAMP datatype

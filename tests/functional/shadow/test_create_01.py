@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          shadow.create-01
+ID:          functional.shadow.test_create_01
 TITLE:       CREATE SHADOW: check basic usage
 DESCRIPTION:
 NOTES:

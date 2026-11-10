@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          ce8717f088
+ID:          functional.sqlite.test_ce8717f088
 ISSUE:       https://www.sqlite.org/src/tktview/ce8717f088
 TITLE:       LIKE malfunctions for UNIQUE COLLATE NOCASE column
 DESCRIPTION:

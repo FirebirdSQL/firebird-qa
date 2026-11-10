@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          80369eddd5
+ID:          functional.sqlite.test_80369eddd5
 ISSUE:       https://www.sqlite.org/src/tktview/80369eddd5
 TITLE:       Incorrect case in the LIKE operator when comparing unicode characters belonging to "Other Letter" category
 DESCRIPTION:

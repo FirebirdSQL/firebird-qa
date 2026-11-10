@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.inner-join-09
+ID:          functional.arno.optimizer.test_opt_inner_join_09
 TITLE:       INNER JOIN join order and distribution
 DESCRIPTION:
   With a INNER JOIN the relation with the smallest expected result should be the first one

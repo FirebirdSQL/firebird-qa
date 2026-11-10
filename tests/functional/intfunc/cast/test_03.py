@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.cast-03
+ID:          functional.intfunc.cast.test_03
 TITLE:       CAST Numeric -> DATE
 DESCRIPTION: Convert from number to date is not (yet) supported
 FBTEST:      functional.intfunc.cast.03

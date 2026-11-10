@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.encryption.sha3
+ID:          functional.intfunc.encryption.test_sha3
 TITLE:       SHA3 support for the built-in function CRYPT_HASH()
 DESCRIPTION:
     Idea of test see in test_rsa_family.py

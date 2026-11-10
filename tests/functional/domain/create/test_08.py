@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-08
+ID:          functional.domain.create.test_08
 FBTEST:      functional.domain.create.08
 TITLE:       CREATE DOMAIN - TIME
 DESCRIPTION: Simple domain creation based TIME datatype

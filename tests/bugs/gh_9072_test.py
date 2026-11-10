@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9072
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9072
 TITLE:       gbak restore fails with "Implementation of text subtype 52 not located" after restoring a WIN1251 user collation
 DESCRIPTION:

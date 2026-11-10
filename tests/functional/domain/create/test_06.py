@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-06
+ID:          functional.domain.create.test_06
 FBTEST:      functional.domain.create.06
 TITLE:       CREATE DOMAIN - DOUBLE PRECISION - ARRAY
 DESCRIPTION: Array domain creation based DOUBLE PRECISION datatype

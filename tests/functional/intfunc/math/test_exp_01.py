@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.exp
+ID:          functional.intfunc.math.test_exp_01
 TITLE:       EXP( <number> )
 DESCRIPTION: Returns the exponential e to the argument.
 FBTEST:      functional.intfunc.math.exp_01

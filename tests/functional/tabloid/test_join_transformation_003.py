@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.join-transformation-03
+ID:          functional.tabloid.test_join_transformation_003
 TITLE:       Check ability of outer join simplification.
 DESCRIPTION:
   Null-rejected expr in WHERE clause refers to most right datasource, and this leads to replacement of TWO outer joins.

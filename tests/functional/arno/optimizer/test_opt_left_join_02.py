@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.left-join-02
+ID:          functional.arno.optimizer.test_opt_left_join_02
 TITLE:       LEFT OUTER JOIN with no match and IS NULL in WHERE clause
 DESCRIPTION:
     TableX LEFT OUTER JOIN TableY with no match, thus result should contain all NULLs for TableY

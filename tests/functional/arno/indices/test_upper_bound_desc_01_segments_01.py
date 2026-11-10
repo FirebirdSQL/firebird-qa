@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.upper-bound-desc-1-segment-01
+ID:          functional.arno.indices.test_upper_bound_desc_01_segments_01
 TITLE:       DESC single segment index upper bound
 DESCRIPTION: Check if all 15 values are fetched with "greater than or equal" operator.
 FBTEST:      functional.arno.indices.upper_bound_desc_01_segments_01

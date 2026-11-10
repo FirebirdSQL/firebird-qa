@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.binding-to-legacy
+ID:          functional.datatypes.test_decfloat_binding_to_legacy
 TITLE:       Test ability for DECFLOAT values to be represented as other data types using LEGACY keyword.
 DESCRIPTION:
   We check here that values from DECFLOAT will be actually converted to legacy datatypes

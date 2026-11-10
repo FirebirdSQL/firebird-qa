@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8036
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8036
 TITLE:       "no current record for fetch operation" error with select stored procedures
 DESCRIPTION:

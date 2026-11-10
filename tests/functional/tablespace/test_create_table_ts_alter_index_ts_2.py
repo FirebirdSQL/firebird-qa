@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_create_table_ts_alter_index_ts_2
 TITLE:       functional.tablespace.create_table_ts_alter_index_ts_2
 DESCRIPTION:
 """

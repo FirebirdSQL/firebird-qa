@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ltt.test_ltt_get_table_stat
 TITLE:       LOCAL TEMPORARY TABLE - get table access statistics using API
 DESCRIPTION:
     Test creates LTT with all known datatypes (except blobs), create indices for every column and adds {ROWS_TO_ADD}

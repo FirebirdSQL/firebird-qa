@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_create_using_es_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9053
 TITLE:       CTAS. Check ability to use ES mechanism. Non-recursive UNIONed query is built in the loop.
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.floor
+ID:          functional.intfunc.math.test_floor_01
 TITLE:       FLOOR( <number> )
 DESCRIPTION:
   Returns a value representing the largest integer that is less than or equal to the input argument

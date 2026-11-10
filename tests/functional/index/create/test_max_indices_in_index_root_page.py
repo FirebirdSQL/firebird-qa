@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          max-indices-in-index-root-page
+ID:          functional.index.create.test_max_indices_in_index_root_page
 ISSUE:       n/a
 TITLE:       Max number of indices that fit on the index root page (one-segment and 16-segment indices)
 DESCRIPTION:

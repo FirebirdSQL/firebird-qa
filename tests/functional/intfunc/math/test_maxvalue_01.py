@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.maxvalue
+ID:          functional.intfunc.math.test_maxvalue_01
 TITLE:       MAXVALUE( <value> [, <value> ...] )
 DESCRIPTION: Returns the maximum value of a list of values.
 FBTEST:      functional.intfunc.math.maxvalue_01

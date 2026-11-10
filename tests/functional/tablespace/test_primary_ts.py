@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.primary_ts
+ID:          functional.tablespace.test_primary_ts
 TITLE:       Test PRIMARY TS.
 DESCRIPTION: 
 """

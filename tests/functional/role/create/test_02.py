@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          role.create-02
+ID:          functional.role.create.test_02
 TITLE:       CREATE ROLE - try create role with same name
 DESCRIPTION:
 FBTEST:      functional.role.create.02

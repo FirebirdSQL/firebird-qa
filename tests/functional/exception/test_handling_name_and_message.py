@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          exception.handling-name-and-message
+ID:          functional.exception.test_handling_name_and_message
 FBTEST:      functional.exception.handling_name_and_message
 TITLE:       Context variables EXCEPTION and ERROR_MESSAGE for ability to log exception info (including call stack!) on server side
 DESCRIPTION:

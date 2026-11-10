@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-19
+ID:          functional.arno.derived_tables.test_19
 TITLE:       Sub-select inside derived table
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.19

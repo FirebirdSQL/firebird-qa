@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.test_journal_file_truncated_on_concurrent_cs_load.py
+ID:          functional.replication.test_journal_file_truncated_on_concurrent_cs_load
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8766
 TITLE:       File truncation errors may happen during replication in Windows CS
 DESCRIPTION:

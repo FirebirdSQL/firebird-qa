@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.transaction-rollback
+ID:          functional.trigger.database.test_transactionrollback_01
 TITLE:       Trigger on rollback transaction
 DESCRIPTION:
   Test trigger on rollback transaction

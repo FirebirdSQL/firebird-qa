@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.loose-record-when-relief-where-expr
+ID:          functional.tabloid.test_loose_record_when_relief_where_expr
 TITLE:       Uncomment of one part of OR'ed expression led to loose of record from resultset.
 DESCRIPTION: 
   "OR" could __reduce__ number of rows in resultset.

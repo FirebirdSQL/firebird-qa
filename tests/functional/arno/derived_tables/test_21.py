@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-21
+ID:          functional.arno.derived_tables.test_21
 TITLE:       Implicit derived table by IN predicate
 DESCRIPTION:
   IN predicate uses derived table internally and should ignore column-name checks

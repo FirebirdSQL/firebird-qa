@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ltt.test_ltt_263e09d6
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/263e09d6c0ab49d0f7dde7b2e1fe7486843e055e
 TITLE:       Allow to mix DDL and DML in Created LLT in the same transaction
 DESCRIPTION:

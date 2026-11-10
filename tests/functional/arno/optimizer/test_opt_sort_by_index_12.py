@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.sort-by-index-12
+ID:          functional.arno.optimizer.test_opt_sort_by_index_12
 TITLE:       ORDER BY ASC, DESC using index (multi)
 DESCRIPTION:
   ORDER BY X ASC, Y DESC

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.alter-13
+ID:          functional.trigger.alter.test_13
 TITLE:       ALTER TRIGGER - AS
 DESCRIPTION: Try use old prefix in INSERT trigger
 FBTEST:      functional.trigger.alter.23

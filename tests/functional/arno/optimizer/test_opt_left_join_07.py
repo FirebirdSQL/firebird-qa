@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.left-join-07
+ID:          functional.arno.optimizer.test_opt_left_join_07
 TITLE:       4 JOINed tables with 1 LEFT OUTER JOIN
 DESCRIPTION:
   A INNER JOINed TableD to a LEFT JOINed TableC should be able to access the outer TableB

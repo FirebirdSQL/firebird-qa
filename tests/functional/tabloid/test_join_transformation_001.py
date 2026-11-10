@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.join-transformation-01
+ID:          functional.tabloid.test_join_transformation_001
 TITLE:       Check ability of outer join simplification.
 DESCRIPTION:
   Use null-rejected predicate, trivial case.

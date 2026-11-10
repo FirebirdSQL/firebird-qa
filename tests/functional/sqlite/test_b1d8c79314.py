@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          b1d8c79314
+ID:          functional.sqlite.test_b1d8c79314
 ISSUE:       https://www.sqlite.org/src/tktview/b1d8c79314
 TITLE:       LIKE malfunctions for INT PRIMARY KEY COLLATE NOCASE column
 DESCRIPTION:

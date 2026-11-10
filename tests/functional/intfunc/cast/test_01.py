@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.cast-01
+ID:          functional.intfunc.cast.test_01
 TITLE:       CAST Numeric -> CHAR
 DESCRIPTION:
 FBTEST:      functional.intfunc.cast.01

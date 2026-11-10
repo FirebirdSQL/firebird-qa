@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_datatypes_usage_02
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9053
 TITLE:       CTAS. Check content of RDB$ tables for a CTAS-table when field types are specified directly in the table DDL (i.e. not via domains).
 DESCRIPTION:

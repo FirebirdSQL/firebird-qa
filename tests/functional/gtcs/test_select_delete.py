@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_select_delete
 TITLE:       
 DESCRIPTION:
   Original test see in:

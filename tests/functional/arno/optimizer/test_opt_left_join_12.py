@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.left-join-12
+ID:          functional.arno.optimizer.test_opt_left_join_12
 TITLE:       LEFT OUTER JOIN with distribution CASE
 DESCRIPTION:
   TableX LEFT OUTER JOIN TableY with partial match. WHERE clause contains CASE expression

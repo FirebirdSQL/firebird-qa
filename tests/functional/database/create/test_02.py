@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          create-database-02
+ID:          functional.database.create.test_02
 TITLE:       Create database: non sysdba user
 DESCRIPTION:
 FBTEST:      functional.database.create.02

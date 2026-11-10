@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.round-modes
+ID:          functional.datatypes.test_decfloat_round_modes
 ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Check validity of different ROUNDING modes that are defined for DECFLOAT datatype

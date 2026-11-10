@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-07
+ID:          functional.table.alter.test_07
 TITLE:       ALTER TABLE. Alter position of columns.
 DESCRIPTION:
 FBTEST:      functional.table.alter.07

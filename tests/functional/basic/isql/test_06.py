@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-7218
+ID:          functional.basic.isql.test_06
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7218
 TITLE:       Let ISQL show per-table run-time statistics.
 NOTES:

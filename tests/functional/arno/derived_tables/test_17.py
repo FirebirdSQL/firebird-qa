@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-17
+ID:          functional.arno.derived_tables.test_17
 TITLE:       Aggregate inside derived table
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.17

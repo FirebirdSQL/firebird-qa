@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ctas.test_allow_parenthesis_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/bf10ae16d57aabdbb2145dd528d44f44144098e9
 TITLE:       CTAS. Allow the use of parenthesis in CREATE TABLE AS (...)
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.cosh
+ID:          functional.intfunc.math.test_cosh_01
 TITLE:       COSH( <number>)
 DESCRIPTION: Returns the hyperbolic cosine of a number.
 FBTEST:      functional.intfunc.math.cosh_01

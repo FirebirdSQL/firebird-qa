@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-8418
+ID:          functional.intfunc.unlist.unlist_for_db_objects_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8418
 TITLE:       UNLIST function. Check interacting with various DB objects.
 DESCRIPTION: Provided by red-soft. Original file name: "unlist.test_with_objs.py"

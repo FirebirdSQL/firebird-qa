@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.metacache.remove_old_db_versions_on_rollback_test
 ISSUE:       n/a
 TITLE:       ROLLBACK must clean metacache from previous version of DB objects: check result of change stored proc outcome arg to incompatible datatype.
 DESCRIPTION:

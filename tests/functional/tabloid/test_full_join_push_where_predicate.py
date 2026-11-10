@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue.full-join-push-where-predicate
+ID:          functional.tabloid.test_full_join_push_where_predicate
 TITLE:       WHERE-filter must be applied after FULL JOIN result
 DESCRIPTION:
   See (rus): https://www.sql.ru/forum/1326682/dva-cte-ih-full-join-i-uslovie-daut-nekorrektnyy-rezultat

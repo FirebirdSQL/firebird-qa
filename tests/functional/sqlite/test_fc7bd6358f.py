@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          fc7bd6358f
+ID:          functional.sqlite.test_fc7bd6358f
 ISSUE:       https://www.sqlite.org/src/tktview/fc7bd6358f
 TITLE:       Incorrect query result in a 3-way join due to affinity issues
 DESCRIPTION:

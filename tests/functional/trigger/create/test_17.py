@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.create-11
+ID:          functional.trigger.create.test_17
 TITLE:       CREATE TRIGGER SQL2003
 DESCRIPTION:
 FBTEST:      functional.trigger.create.17

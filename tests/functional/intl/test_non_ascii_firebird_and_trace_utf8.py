@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          functional.intl.test_non_ascii_firebird_and_trace_utf8.py
+ID:          functional.intl.test_non_ascii_firebird_and_trace_utf8
 TITLE:       Check ability to obtain non-ascii content from firebird.log and trace when use ON DISCONNECT trigger and exception with non-ascii names, charset = UTF8.
 DESCRIPTION: 
     We can make engine to put something in firebird.log by creating ON DISCONNECT trigger which raises exception.

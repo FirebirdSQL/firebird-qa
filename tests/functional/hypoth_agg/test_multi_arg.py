@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:           n/a
+ID:           functional.hypoth_agg.test_multi_arg
 ISSUE:        https://github.com/FirebirdSQL/firebird/issues/9035
 TITLE:        Hypothetical-set aggregates with several arguments (RANK('b', 2) ORDER BY s, x)
 DESCRIPTION:

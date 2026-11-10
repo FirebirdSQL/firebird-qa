@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          create-database-00
+ID:          functional.database.create.test_00
 TITLE:       Verify ability to create database with different values of PAGE_SIZE
 DESCRIPTION: Test creates database with specifying different values for page_size, each is degree of 2, from 0 to 256 Kb.
 NOTES:

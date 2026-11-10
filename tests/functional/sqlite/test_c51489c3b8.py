@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          c51489c3b8
+ID:          functional.sqlite.test_c51489c3b8
 ISSUE:       https://www.sqlite.org/src/tktview/c51489c3b8
 TITLE:       Incorrect result from WITH RECURSIVE using DISTINCT
 DESCRIPTION:

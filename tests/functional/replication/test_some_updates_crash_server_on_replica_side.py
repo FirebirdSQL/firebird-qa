@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.some_updates_crash_server_on_replica_side
+ID:          functional.replication.test_some_updates_crash_server_on_replica_side
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/6909
 TITLE:       Some updates can crash Firebird server on replica side
 DESCRIPTION:

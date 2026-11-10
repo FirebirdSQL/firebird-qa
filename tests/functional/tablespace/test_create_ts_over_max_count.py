@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_create_ts_over_max_count
 TITLE:       functional.tablespace.create_ts_over_max_count
 DESCRIPTION:
 """

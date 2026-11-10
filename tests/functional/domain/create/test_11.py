@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-11
+ID:          functional.domain.create.test_11
 FBTEST:      functional.domain.create.11
 TITLE:       CREATE DOMAIN - DECIMAL
 DESCRIPTION: Simple domain creation based DECIMAL datatype

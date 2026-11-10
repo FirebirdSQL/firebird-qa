@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          752e1646fc
+ID:          functional.sqlite.test_752e1646fc
 ISSUE:       https://www.sqlite.org/src/tktview/752e1646fc
 TITLE:       Wrong result if DISTINCT used on subquery which uses ORDER BY.
 DESCRIPTION:

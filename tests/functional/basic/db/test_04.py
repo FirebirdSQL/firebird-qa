@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-04
+ID:          functional.basic.db.test_04
 TITLE:       New DB - RDB$EXCEPTIONS
 DESCRIPTION: Check for correct content of RDB$EXCEPTIONS in new database.
 FBTEST:      functional.basic.db.04

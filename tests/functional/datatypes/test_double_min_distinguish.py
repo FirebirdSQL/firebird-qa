@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          double.min-distinguish
+ID:          functional.datatypes.test_double_min_distinguish
 TITLE:       List of all values starting from 1.0 divided by 2, until previous and current become equal
 DESCRIPTION:
 NOTES:

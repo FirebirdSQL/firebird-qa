@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-26
+ID:          functional.arno.derived_tables.test_26
 TITLE:       Derived table with column that is specified several times
 DESCRIPTION: Expect an error if a derived table column names is not unique.
 NOTES:

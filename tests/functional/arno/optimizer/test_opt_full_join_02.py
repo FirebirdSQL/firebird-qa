@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.full-join-02
+ID:          functional.arno.optimizer.test_opt_full_join_02
 TITLE:       FULL OUTER JOIN,  list all values, but filtered in WHERE clause
 DESCRIPTION:
   TableX FULL OUTER JOIN TableY with relation in the ON clause.

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset-clear-gtt
+ID:          functional.session.test_alter_session_reset_clear_gtt
 ISSUE:       6093
 TITLE:       ALTER SESSION RESET: clear contents of all used GTT ON COMMIT PRESERVE ROWS
 DESCRIPTION:

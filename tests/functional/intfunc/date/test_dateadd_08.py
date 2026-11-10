@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.date.dateadd-08
+ID:          functional.intfunc.date.test_dateadd_08
 ISSUE:       1805
 TITLE:       Dateadd milliseconds
 DESCRIPTION:

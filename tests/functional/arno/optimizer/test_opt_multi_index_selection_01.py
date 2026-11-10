@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.multi-index-selection-01
+ID:          functional.arno.optimizer.test_opt_multi_index_selection_01
 TITLE:       Unique index selection (multi segment)
 DESCRIPTION:
   Check if it will select only the index with the unique index when equal operator is

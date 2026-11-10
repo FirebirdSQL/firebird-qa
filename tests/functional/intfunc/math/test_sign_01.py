@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.sign
+ID:          functional.intfunc.math.test_sign_01
 TITLE:       SIGN( <number> )
 DESCRIPTION:
   Returns 1, 0, or -1 depending on whether the input value is positive, zero or negative, respectively.

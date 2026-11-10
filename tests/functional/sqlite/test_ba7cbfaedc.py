@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          ba7cbfaedc
+ID:          functional.sqlite.test_ba7cbfaedc
 ISSUE:       https://www.sqlite.org/src/tktview/ba7cbfaedc
 TITLE:       Wrong output order when a DESC index and GROUP BY and ORDER BY.
 DESCRIPTION:

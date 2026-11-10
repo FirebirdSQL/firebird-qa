@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.package.temp_tables_access_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8974
 TITLE:       Temporary tables in packages (#8974) - access rights
 DESCRIPTION:

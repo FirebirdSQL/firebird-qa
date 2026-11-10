@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          create-database-11
+ID:          functional.database.create.test_11
 TITLE:       Create database: Default char set NONE
 DESCRIPTION: This test should be implemented for all char sets.
 FBTEST:      functional.database.create.11

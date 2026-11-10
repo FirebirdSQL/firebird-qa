@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.create-09
+ID:          functional.procedure.create.test_15
 ISSUE:       1049
 TITLE:       COLLATE IN STORED PROCEDURE
 DESCRIPTION:

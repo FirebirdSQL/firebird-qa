@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.change-shutdown-mode
+ID:          functional.syspriv.test_change_shutdown_mode
 TITLE:       Check ability to change database shutdown mode by non-sysdba user who is
   granted with necessary system privileges
 DESCRIPTION:

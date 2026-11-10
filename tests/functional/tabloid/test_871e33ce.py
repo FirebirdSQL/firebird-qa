@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_871e33ce
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/871e33ce4e15a85d031be2399037a2046440c8c7
 TITLE:       Fix PERCENTILE_CONT and PERCENTILE_DISC with a sub-select in WITHIN GROUP
 DESCRIPTION:

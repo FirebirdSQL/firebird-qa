@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.merge-02
+ID:          functional.dml.merge.test_02
 FBTEST:      functional.dml.merge.02
 TITLE:       MERGE statement can have only one RETURNING which must be after all WHEN sub-statements
 DESCRIPTION:

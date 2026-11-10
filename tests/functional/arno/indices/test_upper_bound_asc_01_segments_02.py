@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.upper-bound-asc-1-segment-02
+ID:          functional.arno.indices.test_upper_bound_asc_01_segments_02
 TITLE:       ASC single segment index upper bound
 DESCRIPTION: Check if all 32 values are fetched with "lower than" operator.
 FBTEST:      functional.arno.indices.upper_bound_asc_01_segments_02

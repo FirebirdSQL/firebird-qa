@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.join-02
+ID:          functional.dml.join.test_02
 FBTEST:      functional.dml.join.02
 TITLE:       NATURAL join
 DESCRIPTION:

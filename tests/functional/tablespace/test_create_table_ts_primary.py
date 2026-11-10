@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.test_create_table_ts_primary
 TITLE:       functional.tablespace.create_table_ts_primary
 DESCRIPTION:
 """

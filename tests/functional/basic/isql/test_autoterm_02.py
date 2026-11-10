@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-7868
+ID:          functional.basic.isql.test_autoterm_02
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/7868
 TITLE:       SET AUTOTERM ON/OFF. Ability to handle long DDL in one line without 'set term'.
 DESCRIPTION: DDL was taken from test for core-4882 (DDL of OLTP-EMUL transformed to one-line).

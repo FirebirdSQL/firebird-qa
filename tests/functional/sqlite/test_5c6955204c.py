@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          5c6955204c
+ID:          functional.sqlite.test_5c6955204c
 ISSUE:       https://www.sqlite.org/src/tktview/5c6955204c
 TITLE:       Incorrect result on a table scan of a partial index
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.count-02
+ID:          functional.intfunc.count.test_02
 TITLE:       COUNT
 DESCRIPTION: Count of: 1) all rows; 2) not null values; 3) distinct values
 FBTEST:      functional.intfunc.count.02

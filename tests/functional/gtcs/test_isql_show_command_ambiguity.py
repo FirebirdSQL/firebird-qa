@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.isql-show-command-ambiguity
+ID:          functional.gtcs.test_isql_show_command_ambiguity
 TITLE:       SHOW TABLE / VIEW: ambiguity between tables and views
 DESCRIPTION:
   ::: NB :::

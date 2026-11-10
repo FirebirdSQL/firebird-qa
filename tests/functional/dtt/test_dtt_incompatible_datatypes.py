@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.dtt.test_dtt_incompatible_datatypes
 ISSUE:       https://groups.google.com/g/firebird-devel/c/TfMzdpsTHpg/m/OmDoMyXFAQAJ
 TITLE:       DECLARED TEMPORARY TABLE. Bugcheck when running core with incomatible data types
 DESCRIPTION:

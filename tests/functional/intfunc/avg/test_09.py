@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.avg-09
+ID:          functional.intfunc.avg.test_09
 TITLE:       AVG - DOUBLE PRECISION
 DESCRIPTION: AVG from single DOUBLE PRECISION row
 FBTEST:      functional.intfunc.avg.09

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.transactions-autocommit-02
+ID:          functional.gtcs.test_transactions_autocommit_2
 TITLE:       Changes within AUTO COMMIT must be cancelled when exception raises in some TRIGGER
 DESCRIPTION:
   Original test see in:

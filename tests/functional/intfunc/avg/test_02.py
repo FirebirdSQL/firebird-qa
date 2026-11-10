@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.avg-02
+ID:          functional.intfunc.avg.test_02
 TITLE:       AVG - Test for INTEGER
 DESCRIPTION: If X is exactly halfway between two whole numbers, the result is always the even number.
 FBTEST:      functional.intfunc.avg.02

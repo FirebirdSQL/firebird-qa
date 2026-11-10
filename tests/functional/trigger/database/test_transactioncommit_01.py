@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.transaction-commit
+ID:          functional.trigger.database.test_transactioncommit_01
 TITLE:       Trigger on commit transaction. See also CORE-645
 DESCRIPTION:
   Test trigger on commit transaction

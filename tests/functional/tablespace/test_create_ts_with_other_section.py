@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          test_read_ts_with_other_section
+ID:          functional.tablespace.test_create_ts_with_other_section
 FBTEST:      
 TITLE:       Test for separating directories.conf with false section.
 DESCRIPTION: Creates a file with alias, which doesn`t defined in true section.

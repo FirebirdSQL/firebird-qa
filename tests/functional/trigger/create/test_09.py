@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.create-09
+ID:          functional.trigger.create.test_09
 TITLE:       CREATE TRIGGER BEFORE INSERT DECLARE VARIABLE
 DESCRIPTION:
 FBTEST:      functional.trigger.create.09

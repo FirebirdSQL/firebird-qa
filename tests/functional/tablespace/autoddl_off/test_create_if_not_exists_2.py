@@ -2,7 +2,7 @@
 # coding:utf-8
 
 """
-ID:          functional.tablespace.autoddl_off.create_ts_if_not_exists_2
+ID:          functional.tablespace.autoddl_off.test_create_if_not_exists_2
 TITLE:
 DESCRIPTION:
 """

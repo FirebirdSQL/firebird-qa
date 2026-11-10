@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.disconnect
+ID:          functional.trigger.database.test_disconnect_01
 TITLE:       Trigger on database disconnect: check that exception that raised when trigger fires is written to firebird.log
 DESCRIPTION:
     Test covers https://github.com/FirebirdSQL/firebird/issues/4282

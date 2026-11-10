@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          exception.create-03
+ID:          functional.exception.create.test_03
 FBTEST:      functional.exception.create.03
 TITLE:       CREATE EXCEPTION - too long message
 DESCRIPTION:

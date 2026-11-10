@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8965
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8965
 TITLE:       Wrong PERCENT_RANK computation
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          build.snapshot-files-checklist
+ID:          functional.basic.test_snapshot_files_check_list
 TITLE:       Check list of files in the current Firebird snapshot
 DESCRIPTION:
   Get list of all files from FB_HOME and compare it with expected for each major FB version.

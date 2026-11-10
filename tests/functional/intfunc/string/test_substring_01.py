@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.left
+ID:          functional.intfunc.string.test_substring_01
 TITLE:       Positional SUBSTRING function
 DESCRIPTION: https://www.firebirdsql.org/file/documentation/html/en/refdocs/fblangref50/firebird-50-language-reference.html#fblangref50-scalarfuncs-substring-pos
 NOTES:

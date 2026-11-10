@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-21
+ID:          functional.domain.create.test_21
 FBTEST:      functional.domain.create.21
 TITLE:       CREATE DOMAIN - NCHAR
 DESCRIPTION: Simple domain creation based NCHAR datatype

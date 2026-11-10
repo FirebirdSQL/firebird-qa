@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          miscelan.binding
+ID:          functional.datatypes.test_miscelan_binding
 TITLE:       Test ability for DECFLOAT values to be represented as other data types using LEGACY keyword.
 DESCRIPTION:
     We check here that values from DECFLOAT will be actually converted to legacy datatypes 

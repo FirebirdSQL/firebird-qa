@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.avg-08
+ID:          functional.intfunc.avg.test_08
 TITLE:       AVG - NULL test
 DESCRIPTION:
 FBTEST:      functional.intfunc.avg.08

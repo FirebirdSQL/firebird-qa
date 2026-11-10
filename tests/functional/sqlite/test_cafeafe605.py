@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          cafeafe605
+ID:          functional.sqlite.test_cafeafe605
 ISSUE:       https://www.sqlite.org/src/tktview/cafeafe605
 TITLE:       UPDATE with causes error when its WHERE expression involves ROW_NUMBER()OVER() call
 DESCRIPTION:

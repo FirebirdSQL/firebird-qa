@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-15
+ID:          functional.domain.create.test_15
 FBTEST:      functional.domain.create.15
 TITLE:       CREATE DOMAIN - CHAR
 DESCRIPTION: Simple domain creation based CHAR datatype

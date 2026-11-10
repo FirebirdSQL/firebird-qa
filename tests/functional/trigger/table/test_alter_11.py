@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.table.alter-11
+ID:          functional.trigger.table.test_alter_11
 TITLE:       ALTER TRIGGER - AS
 DESCRIPTION: Test by insert data
 FBTEST:      functional.trigger.table.alter_11

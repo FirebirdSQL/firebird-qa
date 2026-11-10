@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-17
+ID:          functional.domain.create.test_17
 FBTEST:      functional.domain.create.17
 TITLE:       CREATE DOMAIN using 'CHARACTER VARYING' keyword
 DESCRIPTION: Simple domain creation based on CHARACTER VARYING datatype.

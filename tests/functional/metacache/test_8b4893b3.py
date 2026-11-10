@@ -1,6 +1,6 @@
 #coding:utf-8
 """
-ID:          n/a
+ID:          functional.metacache.test_8b4893b3
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/8b4893b3bdd3bd5e8dcc6b9953d3379dd196d268
 TITLE:       Shared metacache. DROP <UNIQ_CONSTR> while concurrent Tx involving appropriate index; verify RDB$ content for such intermediate state.
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset-decfloat
+ID:          functional.session.test_alter_session_reset_decfloat
 ISSUE:       6093
 TITLE:       ALTER SESSION RESET: DECFLOAT parameters must be returned to default values
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.package.temp_tables_multiple_indices_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/89760a089690bca306c3c8b87d41f7269c8c4199
 TITLE:       Temporary tables in packages (#8974) - multiple indices
 DESCRIPTION:

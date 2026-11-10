@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          ce82323194
+ID:          functional.sqlite.test_ce82323194
 ISSUE:       https://www.sqlite.org/src/tktview/ce82323194
 TITLE:       Duplicate CTE name gives incorrect result
 DESCRIPTION:

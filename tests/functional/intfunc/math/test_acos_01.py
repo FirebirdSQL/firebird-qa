@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.math.acos
+ID:          functional.intfunc.math.test_acos_01
 TITLE:       ACOS( <number> )
 DESCRIPTION:
   Returns the arc cosine of a number. Argument to ACOS must be in the range -1 to 1.

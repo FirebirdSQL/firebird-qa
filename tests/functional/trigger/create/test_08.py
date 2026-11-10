@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.create-08
+ID:          functional.trigger.create.test_08
 TITLE:       CREATE TRIGGER AFTER DELETE POSITION 12
 DESCRIPTION:
 FBTEST:      functional.trigger.create.08

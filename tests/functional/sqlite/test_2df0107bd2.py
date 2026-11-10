@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          2df0107bd2
+ID:          functional.sqlite.test_2df0107bd2
 ISSUE:       https://www.sqlite.org/src/tktview/2df0107bd2
 TITLE:       Incorrect result from LEFT JOIN with a subquery on the LHS
 DESCRIPTION:

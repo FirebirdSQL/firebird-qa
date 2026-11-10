@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          ebdbadade5
+ID:          functional.sqlite.test_ebdbadade5
 ISSUE:       https://www.sqlite.org/src/tktview/ebdbadade5
 TITLE:       LEFT JOIN incorrect when ON clause does not reference right table.
 DESCRIPTION:

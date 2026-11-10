@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          2d5a316356
+ID:          functional.sqlite.test_2d5a316356
 ISSUE:       https://www.sqlite.org/src/tktview/2d5a316356
 TITLE:       Segmentation fault in CROSS JOIN
 DESCRIPTION:

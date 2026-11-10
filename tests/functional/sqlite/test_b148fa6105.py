@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          b148fa6105
+ID:          functional.sqlite.test_b148fa6105
 ISSUE:       https://www.sqlite.org/src/tktview/b148fa6105
 TITLE:       CAST takes implicit COLLATE of its operand
 DESCRIPTION:

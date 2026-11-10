@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.use-gstat-utility
+ID:          functional.syspriv.test_use_gstat_utility
 TITLE:       Check ability to obtain database statistics
 DESCRIPTION:
   We create user and grant system privileges USE_GSTAT_UTILITY and IGNORE_DB_TRIGGERS to him.

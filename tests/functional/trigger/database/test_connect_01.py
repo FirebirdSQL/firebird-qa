@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.connect-01
+ID:          functional.trigger.database.test_connect_01
 TITLE:       Trigger on database connect. See also CORE-745
 DESCRIPTION: 
   This tests normal operation of database CONNECT trigger.

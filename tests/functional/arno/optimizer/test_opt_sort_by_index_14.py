@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.sort-by-index-14
+ID:          functional.arno.optimizer.test_opt_sort_by_index_14
 TITLE:       ORDER BY ASC NULLS FIRST using index
 DESCRIPTION:
   ORDER BY X ASC NULLS FIRST

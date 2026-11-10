@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.binding-to-other-types
+ID:          functional.datatypes.test_decfloat_binding_to_other_types
 ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Test ability for DECFLOAT values to be represented as other data types (char, double, bigint).

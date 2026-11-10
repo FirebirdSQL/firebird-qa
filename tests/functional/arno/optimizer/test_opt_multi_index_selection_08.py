@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          optimizer.multi-index-selection-07
+ID:          functional.arno.optimizer.test_opt_multi_index_selection_08
 TITLE:       Best match index selection (multi segment)
 DESCRIPTION:
   STARTING WITH can also use a index and it should in fact be possible to use a compound

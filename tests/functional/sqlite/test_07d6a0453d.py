@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          07d6a0453d
+ID:          functional.sqlite.test_07d6a0453d
 ISSUE:       https://www.sqlite.org/src/tktview/07d6a0453d
 TITLE:       OFFSET ignored if there is no FROM clause
 DESCRIPTION:

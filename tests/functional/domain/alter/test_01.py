@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.alter-01
+ID:          functional.domain.alter.test_01
 FBTEST:      functional.domain.alter.01
 TITLE:       ALTER DOMAIN - SET DEFAULT
 DESCRIPTION:

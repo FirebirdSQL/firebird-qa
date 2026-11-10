@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-438
 ISSUE:        https://github.com/FirebirdSQL/firebird/issues/438
 TITLE:        BLOBs in external tables
 DESCRIPTION:

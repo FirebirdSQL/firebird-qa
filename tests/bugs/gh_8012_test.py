@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8012
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8012
 TITLE:       SELECT crashes the server when LIST(DISTINCT (SELECT ...)) is used as a GROUP BY item
 DESCRIPTION:

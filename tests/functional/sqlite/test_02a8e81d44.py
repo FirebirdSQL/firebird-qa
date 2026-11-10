@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          02a8e81d44
+ID:          functional.sqlite.test_02a8e81d44
 ISSUE:       https://www.sqlite.org/src/tktview/02a8e81d44
 TITLE:       LIMIT clause on sub-select in FROM clause of a SELECT in a UNION ALL interpreted incorrectly
 DESCRIPTION:

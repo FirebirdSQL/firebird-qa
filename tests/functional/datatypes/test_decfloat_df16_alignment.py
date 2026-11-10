@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          decfloat.df16-alignment
+ID:          functional.datatypes.test_decfloat_df16_alignment
 ISSUE:       5803
 JIRA:        CORE-5535
 TITLE:       Check proper alignment of decfloat(16) value if it is shown in ISQL when SET LIST ON

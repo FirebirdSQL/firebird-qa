@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.join-transformation-06
+ID:          functional.tabloid.test_join_transformation_006
 TITLE:       Check ability of outer join simplification.
 DESCRIPTION:
   We can replace 'A left join B' with 'A inner join B' if:

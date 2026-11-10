@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.dml-privileges-sufficiency
+ID:          functional.tabloid.test_dml_privileges_sufficiency
 TITLE:       Verify sufficiency of privileges for performing DML actions. Verify that
   RETURNING clause can not be used without SELECT privilege.
 DESCRIPTION:

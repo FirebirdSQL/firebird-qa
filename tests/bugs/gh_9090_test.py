@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9090
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9090
 TITLE:       Firebird 6.0.0 inconsistencies re rdb$object_type 38 (SCHEMA)
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          868145d012
+ID:          functional.sqlite.test_868145d012
 ISSUE:       https://www.sqlite.org/src/tktview/868145d012
 TITLE:       Assertion fault on double LEFT JOIN (after added support for transitive constraints)
 DESCRIPTION:

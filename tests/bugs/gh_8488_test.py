@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8488
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8488
 TITLE:       MIN/MAX aggregates may badly affect the join order in queries with mixed INNER/LEFT joins
 DESCRIPTION:

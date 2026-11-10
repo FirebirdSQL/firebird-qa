@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          dml.update-or-insert-03
+ID:          functional.dml.update_or_insert.test_03
 FBTEST:      functional.dml.update_or_insert.03
 TITLE:       UPDATE OR INSERT
 DESCRIPTION: MATCHING clause

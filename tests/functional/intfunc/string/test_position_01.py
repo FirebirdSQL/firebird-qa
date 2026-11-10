@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.position
+ID:          functional.intfunc.string.test_position_01
 ISSUE:       1926
 TITLE:       POSITION( <string> IN <string> )
 DESCRIPTION:

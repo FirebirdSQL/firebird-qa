@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.dbp-1940-20110725-1159
+ID:          functional.tabloid.test_dbp_1940_20110725_1159
 TITLE:       Common SQL. Check correctness of the results
 DESCRIPTION: 
 FBTEST:      functional.tabloid.dbp_1940_20110725_1159

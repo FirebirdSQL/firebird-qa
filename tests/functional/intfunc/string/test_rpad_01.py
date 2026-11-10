@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.rpad
+ID:          functional.intfunc.string.test_rpad_01
 TITLE:       RPAD function, including non-ascii characters
 DESCRIPTION:
 NOTES:

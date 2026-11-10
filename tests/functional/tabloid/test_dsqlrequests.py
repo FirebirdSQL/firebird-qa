@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          tabloid.test_dsqlrequests
+ID:          functional.tabloid.test_dsqlrequests
 TITLE:       DROP TABLE fails if executing in ES and DML at the same execute block is performed in autonomous transaction
 DESCRIPTION:
     Regression detected in 5.0.0.435, build 19.03.2022

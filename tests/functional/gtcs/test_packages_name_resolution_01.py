@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_packages_name_resolution_01
 TITLE:       Test of packages names resolution - usage of scope specifier '%package'
 DESCRIPTION:
     Original test see in:

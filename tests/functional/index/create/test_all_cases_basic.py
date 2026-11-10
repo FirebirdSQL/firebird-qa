@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.index.create.test_all_cases_basic
 TITLE:       CREATE INDEX: check all cases
 DESCRIPTION:
     Check ability to create indices for all permitted cases and inability to do that for computed/blob/array columns.

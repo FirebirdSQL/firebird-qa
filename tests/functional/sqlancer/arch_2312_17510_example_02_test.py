@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.sqlancer.arch_2312_17510_example_02_test
 ISSUE:       https://arxiv.org/pdf/2312.17510
 TITLE:       Bug in RIGHT JOIN
 DESCRIPTION:

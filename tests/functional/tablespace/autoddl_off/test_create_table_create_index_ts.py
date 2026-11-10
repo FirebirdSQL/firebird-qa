@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.autoddl_off.test_create_table_create_index_ts
 TITLE:       functional.tablespace.autoddl_off.create_table_create_index_ts
 DESCRIPTION:
 NOTES:

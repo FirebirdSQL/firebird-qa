@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          1e39b966ae
+ID:          functional.sqlite.test_1e39b966ae
 ISSUE:       https://www.sqlite.org/src/tktview/1e39b966ae
 TITLE:       LEFT JOIN strength reduction optimization causes an error.
 DESCRIPTION:

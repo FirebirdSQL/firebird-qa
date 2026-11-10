@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tabloid.test_893488bb
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/893488bb9d592b37b8c79e2197d1db9f831d15b5
 TITLE:       (Simplified but still) cost-based choice between LOOP and HASH semi-joins
 DESCRIPTION:

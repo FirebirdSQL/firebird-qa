@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          b50528af44
+ID:          functional.sqlite.test_b50528af44
 ISSUE:       https://www.sqlite.org/src/tktview/b50528af44
 TITLE:       "WHERE a=? AND b IN (?,?,...) AND c>?" query using the seekscan optimization sometimes returns extra rows.
 DESCRIPTION:

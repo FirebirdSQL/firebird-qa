@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          fkey.unique.insert-13
+ID:          functional.fkey.unique.test_insert_14
 FBTEST:      functional.fkey.unique.insert_14
 TITLE:       Check correct work fix with foreign key
 DESCRIPTION:

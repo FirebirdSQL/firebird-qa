@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.create-08
+ID:          functional.procedure.create.test_08
 TITLE:       CREATE PROCEDURE - COMMIT in SP is not alowed
 DESCRIPTION:
 FBTEST:      functional.procedure.create.08

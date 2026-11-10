@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          98d973b8f5
+ID:          functional.sqlite.test_98d973b8f5
 ISSUE:       https://www.sqlite.org/src/tktview/98d973b8f5
 TITLE:       Partial index gives incorrect query result
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          18458b1ad6
+ID:          functional.sqlite.test_18458b1ad6
 ISSUE:       https://www.sqlite.org/src/tktview/18458b1ad6
 TITLE:       COLLATE issue in a view
 DESCRIPTION:

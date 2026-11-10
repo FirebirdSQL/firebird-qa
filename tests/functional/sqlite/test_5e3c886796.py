@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          5e3c886796
+ID:          functional.sqlite.test_5e3c886796
 ISSUE:       https://www.sqlite.org/src/tktview/5e3c886796
 TITLE:       Correlated subquery on the RHS of an IN operator causes output of excessive rows
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.fkey.common.test_restrictions_for_diff_table_types
 TITLE:       Tables involved in referential integrity have to meet restrictions when their types differ (persistent vs GTT; connection-bound vs transaction-bound).
 DESCRIPTION:
     Test verifies that:

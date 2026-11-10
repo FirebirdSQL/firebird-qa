@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          derived-table-14
+ID:          functional.arno.derived_tables.test_14
 TITLE:       FIRST / SKIP inside derived table
 DESCRIPTION:
 FBTEST:      functional.arno.derived_tables.14

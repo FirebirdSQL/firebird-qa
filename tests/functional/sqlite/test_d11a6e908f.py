@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          d11a6e908f
+ID:          functional.sqlite.test_d11a6e908f
 ISSUE:       https://www.sqlite.org/src/tktview/d11a6e908f
 TITLE:       Query planner fault on three-way nested join with compound inner SELECT
 DESCRIPTION:

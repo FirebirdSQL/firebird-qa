@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_nested_func_01
 TITLE:       Test of NESTED FUNCTIONS functionality
 DESCRIPTION:
     Original test see in:

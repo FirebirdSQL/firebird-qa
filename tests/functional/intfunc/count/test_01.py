@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.count-01
+ID:          functional.intfunc.count.test_01
 TITLE:       COUNT - Select from empty table
 DESCRIPTION:
 FBTEST:      functional.intfunc.count.01

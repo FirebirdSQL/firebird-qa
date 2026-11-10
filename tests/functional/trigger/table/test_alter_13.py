@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.table.alter-13
+ID:          functional.trigger.table.test_alter_13
 TITLE:       ALTER TRIGGER - AS
 DESCRIPTION:
   Try use new prefix in DELETE trigger

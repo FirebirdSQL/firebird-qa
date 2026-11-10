@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          monitoring-tables-01
+ID:          functional.monitoring.test_01
 TITLE:       Get isolation level of the current transaction
 DESCRIPTION:
 FBTEST:      functional.monitoring.01

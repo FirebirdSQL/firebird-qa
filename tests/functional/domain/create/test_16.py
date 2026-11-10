@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-16
+ID:          functional.domain.create.test_16
 FBTEST:      functional.domain.create.16
 TITLE:       CREATE DOMAIN using 'CHARACTER' keyword
 DESCRIPTION: Simple domain creation based on CHARACTER datatype.

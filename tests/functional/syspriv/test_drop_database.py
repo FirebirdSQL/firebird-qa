@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.drop-database
+ID:          functional.syspriv.test_drop_database
 TITLE:       Check ability to DROP database by non-sysdba user who is granted with necessary system privileges
 DESCRIPTION:
   We make backup and restore of current DB to other name ('functional.syspriv.drop_database.tmp').

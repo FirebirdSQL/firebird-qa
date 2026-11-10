@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          05f43be8fd
+ID:          functional.sqlite.test_05f43be8fd
 ISSUE:       https://www.sqlite.org/src/tktview/05f43be8fd
 TITLE:       Incorrect use of index with LIKE operators when the LHS is a blob
 DESCRIPTION:

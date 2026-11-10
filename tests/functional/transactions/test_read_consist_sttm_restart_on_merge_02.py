@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          transactions.read-consist-sttm-restart-on-merge-02
+ID:          functional.transactions.test_read_consist_sttm_restart_on_merge_02
 TITLE:       READ CONSISTENCY. Check creation of new statement-level snapshot and restarting changed caused by MERGE. Test-02.
 DESCRIPTION:
   Initial article for reading:

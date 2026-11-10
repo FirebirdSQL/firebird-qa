@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.create-05
+ID:          functional.index.create.test_05
 TITLE:       CREATE DESC INDEX
 DESCRIPTION:
 FBTEST:      functional.index.create.05

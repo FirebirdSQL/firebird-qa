@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.binary.shl
+ID:          functional.intfunc.binary.test_shl_01
 TITLE:       New Built-in Functions, Firebird 2.1 : BIN_SHL( <number>, <number> )
 DESCRIPTION: Returns the result of a binary shift left operation performed on the arguments (first << second).
 FBTEST:      functional.intfunc.binary.shl_01

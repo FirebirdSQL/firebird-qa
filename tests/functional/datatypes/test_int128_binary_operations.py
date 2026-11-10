@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          int128.binary-operations
+ID:          functional.datatypes.test_int128_binary_operations
 ISSUE:       6583
 JIRA:        CORE-6342
 TITLE:       Basic test for binary functions against INT128 datatype

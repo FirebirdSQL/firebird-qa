@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.select-delete-isql
+ID:          functional.gtcs.test_gtcs_select_delete_isql
 TITLE:       Test for select from SP that deletes record after its output
 DESCRIPTION:
   Original test see in:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.date.datediff-06
+ID:          functional.intfunc.date.test_datediff_06
 TITLE:       DATEDIFF
 DESCRIPTION:
   Returns an exact numeric value representing the interval of time from the first date/time/timestamp value to the second one.

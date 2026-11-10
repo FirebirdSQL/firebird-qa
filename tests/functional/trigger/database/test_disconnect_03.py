@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          trigger.database.trigger_on_disconnect_03
+ID:          functional.trigger.database.test_disconnect_03
 TITLE:       ON DISCONNECT trigger must fire if attachment is deleted from MON$ATTACHMENTS by another attachment.
 DESCRIPTION: 
     Improvement was introduced 06-apr-2023, commit:

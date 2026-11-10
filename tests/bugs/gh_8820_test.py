@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8820
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8820
 TITLE:       Missing a column name for boolean expression
 DESCRIPTION:

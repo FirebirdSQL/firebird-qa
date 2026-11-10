@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          fd1bda016d
+ID:          functional.sqlite.test_fd1bda016d
 ISSUE:       https://www.sqlite.org/src/tktview/fd1bda016d
 TITLE:       Assertion in the query containing subquery in select section and exists()
 DESCRIPTION:

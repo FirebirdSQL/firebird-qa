@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9143
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9143
 TITLE:       Cannot insert data into package table with fully qualified name
 DESCRIPTION:

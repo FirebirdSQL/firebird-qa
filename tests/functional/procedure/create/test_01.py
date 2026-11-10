@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          procedure.create-01
+ID:          functional.procedure.create.test_01
 TITLE:       CREATE PROCEDURE
 DESCRIPTION: Create trivial SP and check SHOW PROCEDURE output for it.
 FBTEST:      functional.procedure.create.01

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          b75a9ca6b0
+ID:          functional.sqlite.test_b75a9ca6b0
 ISSUE:       https://www.sqlite.org/src/tktview/b75a9ca6b0
 TITLE:       ORDER BY ignored if query has identical GROUP BY
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset-allow-2pc-prepared
+ID:          functional.session.test_alter_session_reset_allow_2pc_prepared
 ISSUE:       6093
 TITLE:       ALTER SESSION RESET: do NOT raise error if prepared 2PC transactions present
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          syspriv.create-privileged-roles
+ID:          functional.syspriv.test_create_privileged_roles
 TITLE:       Check ability of non-sysdba user to CREATE privileged role (but NOT use it)
 DESCRIPTION:
 FBTEST:      functional.syspriv.create_privileged_roles

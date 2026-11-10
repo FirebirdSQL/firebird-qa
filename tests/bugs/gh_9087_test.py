@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9087
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9087
 TITLE:       Firebird 6.0.0 restore resets changed default database collation of FB5 database to system default
 DESCRIPTION:

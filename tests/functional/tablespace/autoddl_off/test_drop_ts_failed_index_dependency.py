@@ -1,7 +1,7 @@
 # coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.tablespace.autoddl_off.test_drop_ts_failed_index_dependency
 TITLE:       functional.tablespace.autoddl_off.drop_ts_failed_index_dependency
 DESCRIPTION:
 """

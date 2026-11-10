@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          gtcs.transactions-autocommit-01
+ID:          functional.gtcs.test_transactions_autocommit_1
 TITLE:       AUTO COMMIT must preserve changes that were made by all DML even if ROLLBACK is issued
 DESCRIPTION:
   Original test see in:

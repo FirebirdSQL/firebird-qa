@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          test_rdb_blob_util_basic
+ID:          functional.blob.test_rdb_blob_util_basic
 TITLE:       Basic test of RDB$BLOB_UTIL package functionality
 DESCRIPTION: Test uses only examples from doc/sql.extensions/README.blob_util.md; advanced checks will be stored in another tests.
 """

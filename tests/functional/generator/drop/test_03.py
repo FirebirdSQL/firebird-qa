@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          generator.drop-03
+ID:          functional.generator.drop.test_03
 FBTEST:      functional.generator.drop.03
 TITLE:       DROP GENERATOR - generator does not exists
 DESCRIPTION:

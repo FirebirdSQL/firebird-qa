@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          new-database-16
+ID:          functional.basic.db.test_16
 TITLE:       New DB - RDB$INDICES content
 DESCRIPTION: Check the correct content of RDB$INDICES in new database.
 FBTEST:      functional.basic.db.16

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.package.temp_tables_basic_test
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8974
 TITLE:       Temporary Tables in Packages (#8974) - basic test.
 DESCRIPTION:

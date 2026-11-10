@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_sql_predicates_21
 TITLE:       SINGULAR - Subquery returning exactly one row.
 DESCRIPTION:
     Original test see in:

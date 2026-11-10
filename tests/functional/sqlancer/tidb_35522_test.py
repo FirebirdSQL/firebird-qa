@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.sqlancer.tidb_35522_test
 ISSUE:       https://github.com/pingcap/tidb/issues/35522
 TITLE:       incorrect unresolved column when using natural join
 DESCRIPTION:

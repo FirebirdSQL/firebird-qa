@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          d02e1406a5
+ID:          functional.sqlite.test_d02e1406a5
 ISSUE:       https://www.sqlite.org/src/tktview/d02e1406a5
 TITLE:       LEFT JOIN with an OR in the ON clause causes segfault
 DESCRIPTION:

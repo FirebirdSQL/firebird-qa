@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          98825a79ce
+ID:          functional.sqlite.test_98825a79ce
 ISSUE:       https://www.sqlite.org/src/tktview/98825a79ce
 TITLE:       Incorrect result from a DISTINCT + GROUP BY + ORDER BY query
 DESCRIPTION:

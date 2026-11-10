@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          table.alter-09
+ID:          functional.table.alter.test_09
 TITLE:       ALTER TABLE - DROP (with data)
 DESCRIPTION:
 FBTEST:      functional.table.alter.09

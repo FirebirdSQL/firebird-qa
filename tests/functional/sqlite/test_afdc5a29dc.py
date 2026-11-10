@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          afdc5a29dc
+ID:          functional.sqlite.test_afdc5a29dc
 ISSUE:       https://www.sqlite.org/src/tktview/afdc5a29dc
 TITLE:       Lossless conversion when casting a large TEXT number to NUMERIC is not performed
 DESCRIPTION:

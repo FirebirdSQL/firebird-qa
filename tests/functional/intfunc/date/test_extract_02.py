@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.date.extract-02
+ID:          functional.intfunc.date.test_extract_02
 ISSUE:       1805
 TITLE:       EXTRACT - MILLISECONDS
 DESCRIPTION: Test the extract function with miliseconds

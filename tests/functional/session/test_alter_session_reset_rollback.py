@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          session.alter-session-reset-rollback
+ID:          functional.session.test_alter_session_reset_rollback
 ISSUE:       6093
 TITLE:       ALTER SESSION RESET: ROLLBACK current user transaction (if present) and issue
   warning if that transaction changes any table before reset

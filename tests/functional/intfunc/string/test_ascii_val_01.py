@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.ascii_val
+ID:          functional.intfunc.string.test_ascii_val_01
 TITLE:       ASCII_VAL( <string> )
 DESCRIPTION:
   Returns the ASCII code of the first character of the specified string.

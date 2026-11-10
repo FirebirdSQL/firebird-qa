@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.ltt.test_ltt_use_in_read_only_db
 TITLE:       LOCAL TEMPORARY TABLE - must be avaliable for usage in read-only database
 DESCRIPTION:
 NOTES:

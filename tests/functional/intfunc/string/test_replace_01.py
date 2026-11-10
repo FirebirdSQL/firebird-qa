@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          intfunc.string.replace
+ID:          functional.intfunc.string.test_replace_01
 TITLE:       REPLACE( <stringtosearch>, <findstring>, <replstring> )
 DESCRIPTION:
   Replaces all occurrences of <findstring> in <stringtosearch> with <replstring>.

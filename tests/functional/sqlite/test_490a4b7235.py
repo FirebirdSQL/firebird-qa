@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          490a4b7235
+ID:          functional.sqlite.test_490a4b7235
 ISSUE:       https://www.sqlite.org/src/tktview/490a4b7235
 TITLE:       Assertion when "WHERE 0" on the first element of a UNION present
 DESCRIPTION:

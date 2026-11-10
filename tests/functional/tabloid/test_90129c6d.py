@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          issue-90129c6d
+ID:          functional.tabloid.test_90129c6d
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/90129c6d3ebd5d1c9a7b44d287a4791dffcd031e
 TITLE:       Scrollable cursors. Fixed isBof/isEof when the prefetch is active
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          25e335f802
+ID:          functional.sqlite.test_25e335f802
 ISSUE:       https://www.sqlite.org/src/tktview/25e335f802
 TITLE:       Query "<A> left join <B> inner join <C> on <b_c_expr> on <a_b_expr>" caused left join behave like inner join.
 DESCRIPTION:

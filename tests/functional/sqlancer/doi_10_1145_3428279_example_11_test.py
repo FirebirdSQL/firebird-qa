@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.sqlancer.doi_10_1145_3428279_example_11_test
 ISSUE:       https://dl.acm.org/doi/pdf/10.1145/3428279
 TITLE:       Non-deterministic output when using MAX() function
 DESCRIPTION:

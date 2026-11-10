@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          None
+ID:          functional.tabloid.test_883200d1
 ISSUE:       https://github.com/FirebirdSQL/firebird/commit/883200d1927f74baadc7eb14293d1a9fb4e517ce
 TITLE:       Do not re-prepare statements when execute DDL in ISQL
 DESCRIPTION:

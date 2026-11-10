@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-8968
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8968
 TITLE:       Incorrect check of the limit on the number of local temporary tables
 DESCRIPTION:

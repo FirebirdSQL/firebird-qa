@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          replication.bugcheck_in_rw_replica_after_conflicting_insert
+ID:          functional.replication.test_bugcheck_in_rw_replica_after_conflicting_insert
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/8040
 TITLE:       Bugcheck 183 (wrong record length) could happen on replica database after UK violation on insert
 DESCRIPTION:

@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          domain.create-32
+ID:          functional.domain.create.test_32
 FBTEST:      functional.domain.create.32
 TITLE:       CREATE DOMAIN - DEFAULT literal
 DESCRIPTION: Domain creation based on VARCHAR datatype with literal DEFAULT specification

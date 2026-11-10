@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.intfunc.generate_series.test_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/pull/8795
 TITLE:       GENERATE_SERIES function - basic test
 DESCRIPTION:

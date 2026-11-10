@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          892fc34f17
+ID:          functional.sqlite.test_892fc34f17
 ISSUE:       https://www.sqlite.org/src/tktview/892fc34f17
 TITLE:       Incorrect query result when a LEFT JOIN subquery is flattened
 DESCRIPTION:

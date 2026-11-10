@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          6f2222d550
+ID:          functional.sqlite.test_6f2222d550
 ISSUE:       https://www.sqlite.org/src/tktview/6f2222d550
 TITLE:       Incorrect output on a LEFT JOIN
 DESCRIPTION:

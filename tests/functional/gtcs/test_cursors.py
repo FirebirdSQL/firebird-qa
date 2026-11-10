@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.gtcs.test_cursors
 TITLE:       Test of CURSOR functionality
 DESCRIPTION:
     Original test see in:

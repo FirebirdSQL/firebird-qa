@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          16028
+ID:          functional.sqlancer.tidb_16028_test
 ISSUE:       https://github.com/pingcap/tidb/issues/16028
 TITLE:       Incorrect result when comparing a FLOAT/DOUBLE UNSIGNED with a negative number
 DESCRIPTION:

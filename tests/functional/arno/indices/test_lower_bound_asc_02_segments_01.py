@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          index.lower-bound-asc-2-segments
+ID:          functional.arno.indices.test_lower_bound_asc_02_segments_01
 TITLE:       ASC 2-segment index lower bound
 DESCRIPTION:
   Check if all 5 values are fetched with "equals" operator over first segment and

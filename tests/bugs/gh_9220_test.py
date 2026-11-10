@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          issue-9220
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/9220
 TITLE:       Profiler reports wrong or missing PSQL line statistics
 DESCRIPTION:
