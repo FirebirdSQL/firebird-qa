@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          n/a
+ID:          functional.metacache.test_addi_index_metacache_01x
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7954
 TITLE:       Shared metacache. Check ability to ADD several indices while concurrent DML activity exists.
 DESCRIPTION:
@@ -9,7 +9,7 @@ DESCRIPTION:
     Attach #1 adds records to this table and further remains 'idle' (without commit).
     Attach #2 creates indices for columns f01 ... f07. Part of them are created explicitly (via 'CREATE INDEX' statement),
     others are created implicitly by engine for support of declarative constraints (UNIQUE / PRIMARY KEY / FOREIGN KEY).
-    NOTE-1: column 'f06' must be declared as NOT null because it will server as PRIMARY KEY in temporary created constraint.
+    NOTE-1: column 'f06' must be declared as NOT null because it will be PRIMARY KEY.
     NOTE-2: we do NOT complete these actions by commit in order to check proper work of shared metadata cache.
     Then we run queries which must show that all new (non-committed) indices are avaliable for attach #2 (see 'chk_sql_lst').
     All queries must contain 'Index Range Scan' or 'Index Full Scan' in appropriate explained plan.
@@ -126,11 +126,12 @@ def test_1(act: Action, capsys):
                         # DML 'insert into ... select from ...'. Index must be involved:
                         msg = 'att-1, point-1'
                         cur1.execute(f'insert into {tt_name}(f01, f02, f03, f04, f05, f06, f07) select i, i, i, i, i, i, null from generate_series(1, {RECORDS_COUNT}) as s(i)')
-                        cur1.execute(f"select count(*) from {tt_name} where f01 between ? and ?", (1, 11))
+                        cur1.execute(f"select count(*) from {tt_name} where f01 between ? and ?", (1, 11)).fetchall()
 
                         # Print explained plan with padding each line by dots in order to see indentations:
                         print(msg)
                         print( '\n'.join([replace_leading(s) for s in cur1.statement.detailed_plan.split('\n')]) )
+                        tx1.rollback()
                         
                         cur2.execute(f'insert into {tt_name}(f01, f02, f03, f04, f05, f06, f07) select -i, -i, -i, -i, -i, -i, -i from generate_series({RECORDS_COUNT}+1, 2 * {RECORDS_COUNT}) as s(i)')
                         
@@ -181,11 +182,11 @@ def test_1(act: Action, capsys):
                             for i in range(0,len(cur_cols)):
                                 print( cur_cols[i][0].ljust(32), ':', r[i] )
 
-                        tx1.rollback()
+                        #tx1.rollback()
 
                     except Exception as e:
                         print(e.__str__())
-                        print(e.gds_codes)
+                        #print(e.gds_codes)
                 # < with tx1.cursor() as cur1, tx2.cursor() as cur2
             # < with act.db.connect() as con1, act.db.connect() as con2
 
