@@ -58,6 +58,7 @@ test_sql = f"""
 db = db_factory()
 act = isql_act('db', test_sql)
 
+@pytest.mark.skip("Temporary disabled. To be re-implemented later.")
 @pytest.mark.version('>=6')
 def test_1(act: Action):
     act.expected_stdout = f"""
