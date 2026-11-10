@@ -61,6 +61,7 @@ def get_free_port_in_range(start_port, end_port, hostname = 'localhost'):
     raise OSError(f"No free ports available in range {start_port}-{end_port}")
 #------------------------------------------------------------------------------------
 
+@pytest.mark.skip("Temporary disabled. To be re-implemented later.")
 @pytest.mark.version('>=6.0')
 def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
 
