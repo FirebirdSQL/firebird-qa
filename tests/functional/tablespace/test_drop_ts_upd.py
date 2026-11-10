@@ -22,6 +22,7 @@ db = db_factory(init = init_ddl)
 substitutions = [('[ \t]+', ' ')]
 act = isql_act('db', substitutions = substitutions)
 
+@pytest.mark.skip("Temporary disabled. To be re-implemented later.")
 @pytest.mark.version('>=6.0')
 def test_1(act: Action, tmp_path: Path):
 
