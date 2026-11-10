@@ -9,7 +9,8 @@ NOTES:
     Original commit:
         https://github.com/FirebirdSQL/firebird/commit/f93b6ce7ba148e6185c40a3328ca56686626e2ae
 
-    [31.08.2026] pzotov
+    [10.11.2026] pzotov
+    Checked on 6.0.0.2452-93846a2.
 """
 import time
 from pathlib import Path
@@ -19,7 +20,10 @@ from firebird.qa import *
 from firebird.driver import tpb, Isolation, DatabaseError
 
 db = db_factory()
-act = python_act('db')
+
+substitutions = [('[ \t]+', ' '), ('-- line \\d.*', ''), ('(-)?At block line(:)? \\d.*', ''), ('RDB\\$PSQL_LTT_\\d+', 'RDB_PSQL_LTT')]
+act = python_act('db', substitutions = substitutions)
+
 tmp_sql = temp_file('tmp_dtt_indices.sql')
 tmp_log = temp_file('tmp_dtt_indices.log')
 
@@ -61,7 +65,7 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
             ,'set list on;'
             ,'set autoterm on;'
             ,"create exception exc_record_not_found 'Table @1 not found record with value [@2] of type `@3`';"
-            ,'set explain on;'
+            ,'set plan on;'
         ]
         for k, v in types_map.items():
             decl_type = v[0]
@@ -110,12 +114,241 @@ def test_1(act: Action, tmp_sql: Path, tmp_log: Path, capsys):
     tmp_sql.write_text('\n'.join(ddl_common), encoding = 'utf-8')
 
     act.expected_stdout = f"""
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_BOO_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_BOO_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_BOO_ASC"
+        Problematic key value is ("T_BOO" = TRUE)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_BOO_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_BOO_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_BOO_DES"
+        Problematic key value is ("T_BOO" = TRUE)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_SML_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_SML_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_SML_ASC"
+        Problematic key value is ("T_SML" = 32767)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_SML_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_SML_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_SML_DES"
+        Problematic key value is ("T_SML" = 32767)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_INT_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_INT_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_INT_ASC"
+        Problematic key value is ("T_INT" = 2147483647)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_INT_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_INT_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_INT_DES"
+        Problematic key value is ("T_INT" = 2147483647)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_BIG_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_BIG_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_BIG_ASC"
+        Problematic key value is ("T_BIG" = 9223372036854775807)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_BIG_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_BIG_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_BIG_DES"
+        Problematic key value is ("T_BIG" = 9223372036854775807)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_128_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_128_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_128_ASC"
+        Problematic key value is ("T_128" = 170141183460469231731687303715884105727)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_128_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_128_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_128_DES"
+        Problematic key value is ("T_128" = 170141183460469231731687303715884105727)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_FLT_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_FLT_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_FLT_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_FLT_ASC"
+        Problematic key value is ("T_FLT" = 1.1754944e-38)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_FLT_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_FLT_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_FLT_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_FLT_DES"
+        Problematic key value is ("T_FLT" = 1.1754944e-38)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_DBL_ASC"
+        Problematic key value is ("T_DBL" = 9007199254740992.)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DBL_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_DBL_DES"
+        Problematic key value is ("T_DBL" = 9007199254740992.)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_NUM_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_NUM_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_NUM_ASC"
+        Problematic key value is ("T_NUM" = 327.67)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_NUM_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_NUM_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_NUM_DES"
+        Problematic key value is ("T_NUM" = 327.67)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DEC_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DEC_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_DEC_ASC"
+        Problematic key value is ("T_DEC" = 327.67)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DEC_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DEC_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_DEC_DES"
+        Problematic key value is ("T_DEC" = 327.67)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_ASC"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_DFL_ASC"
+        Problematic key value is ("T_DFL" = 0E-6144)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_DES"))
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DFL_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_DFL_DES"
+        Problematic key value is ("T_DFL" = 0E-6144)
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DAT_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_DAT_ASC"
+        Problematic key value is ("T_DAT" = '2004-02-29')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_DAT_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_DAT_DES"
+        Problematic key value is ("T_DAT" = '2004-02-29')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_TIM_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_TIM_ASC"
+        Problematic key value is ("T_TIM" = '01:02:03.4560')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_TIM_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_TIM_DES"
+        Problematic key value is ("T_TIM" = '01:02:03.4560')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_TMS_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_TMS_ASC"
+        Problematic key value is ("T_TMS" = '2004-02-29 01:02:03.4560')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_TMS_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_TMS_DES"
+        Problematic key value is ("T_TMS" = '2004-02-29 01:02:03.4560')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_TMZ_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_TMZ_ASC"
+        Problematic key value is ("T_TMZ" = '01:02:03.4560 Indian/Cocos')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_TMZ_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_TMZ_DES"
+        Problematic key value is ("T_TMZ" = '01:02:03.4560 Indian/Cocos')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_TSZ_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_TSZ_ASC"
+        Problematic key value is ("T_TSZ" = '2004-02-29 01:02:03.4560 Indian/Cocos')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_TSZ_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_TSZ_DES"
+        Problematic key value is ("T_TSZ" = '2004-02-29 01:02:03.4560 Indian/Cocos')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_UTF8_REGULAR_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_UTF8_REGULAR_ASC"
+        Problematic key value is ("T_UTF8_REGULAR" = 'მადლობა')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_UTF8_REGULAR_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_UTF8_REGULAR_DES"
+        Problematic key value is ("T_UTF8_REGULAR" = 'მადლობა')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_UTF8_CI_AI_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_UTF8_CI_AI_ASC"
+        Problematic key value is ("T_UTF8_CI_AI" = 'Շնորհավոր Սուրբ Ծնունդ')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_UTF8_CI_AI_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_UTF8_CI_AI_DES"
+        Problematic key value is ("T_UTF8_CI_AI" = 'Շնորհավոր Սուրբ Ծնունդ')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_ISO8859_1_DA_DA_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_ISO8859_1_DA_DA_ASC"
+        Problematic key value is ("T_ISO8859_1_DA_DA" = 'Børn får søde gærøl')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_ISO8859_1_DA_DA_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_ISO8859_1_DA_DA_DES"
+        Problematic key value is ("T_ISO8859_1_DA_DA" = 'Børn får søde gærøl')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_ISO8859_1_DE_DE_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_ISO8859_1_DE_DE_ASC"
+        Problematic key value is ("T_ISO8859_1_DE_DE" = 'Müßiggänger müssen süße Äpfel grüßen')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_ISO8859_1_DE_DE_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_ISO8859_1_DE_DE_DES"
+        Problematic key value is ("T_ISO8859_1_DE_DE" = 'Müßiggänger müssen süße Äpfel grüßen')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_ISO8859_1_FR_FR_ASC"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_ISO8859_1_FR_FR_ASC"
+        Problematic key value is ("T_ISO8859_1_FR_FR" = 'L'été, là-bas, ç'a été délicieux')
+        PLAN ("RDB_PSQL_LTT" INDEX ("IDX_T_ISO8859_1_FR_FR_DES"))
+        EXC_GDSCODE 335544349
+        EXC_MESSAGE
+        attempt to store duplicate value (visible to active transactions) in unique index "IDX_T_ISO8859_1_FR_FR_DES"
+        Problematic key value is ("T_ISO8859_1_FR_FR" = 'L'été, là-bas, ç'a été délicieux')    
     """
-    act.isql(switches=['-q'], charset = 'utf8', combine_output = True, input_file = tmp_sql, io_enc = locale.getpreferredencoding())
+    act.isql(switches=['-q'], charset = 'utf8', combine_output = True, input_file = tmp_sql, io_enc = 'utf8')
     assert act.clean_stdout == act.clean_expected_stdout
     act.reset()
-
-
-    #act.stdout = capsys.readouterr().out
-    #assert act.clean_stdout == act.clean_expected_stdout
-    #act.reset()
