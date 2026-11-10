@@ -1,7 +1,7 @@
 #coding:utf-8
 
 """
-ID:          functional.metacache.test_addi_index_metacache_01x
+ID:          functional.metacache.test_addi_index_metacache_01
 ISSUE:       https://github.com/FirebirdSQL/firebird/issues/7954
 TITLE:       Shared metacache. Check ability to ADD several indices while concurrent DML activity exists.
 DESCRIPTION:
