@@ -18,7 +18,7 @@ DESCRIPTION:
 
     Four checks are performed by the single test function below:
         1. verbose backup of database which contains at least one user tablespace: two lines that
-           follow "gbak:writing packages" must be about tablespaces, not about schemas;
+           precede "gbak:writing tables" must be about tablespaces, not about schemas;
         2. `gbak -?`: help lines for -TS_MAPPING_FILE / -TS / -TS_ORIGINAL_PATHS options;
         3. missing parameter for -TS_MAP option (error raised during command line parsing);
         4. -TS_MAP points to non-existing file (error raised during command line parsing).
@@ -45,6 +45,13 @@ NOTES:
 
     Confirmed problem on 6.0.0.2446-0b6d977.
     Checked on 6.0.0.2447-77d8185.
+
+    [2026.11.13] pzotov
+    Adjusted check #1: https://github.com/FirebirdSQL/firebird/commit/14e1466a2ccaece9e12ac7100fbc8f3ab2a4ad55
+    ("Move write_tablespaces() before write_relations() in backup") changed the place where lines about
+    tablespaces appear in the 'gbak -b -v' output: now they are issued BEFORE 'gbak:writing tables'
+    rather than after 'gbak:writing packages'.
+    Checked on 6.0.0.2459-353c99c (includes 14e1466) and 6.0.0.2455 (does not include it).
 """
 
 import re
@@ -109,15 +116,17 @@ def test_1(act: Action, tmp_path: Path):
     act.gbak(switches = ['-b', '-v', act.db.dsn, str(fbk_file)], combine_output = True)
     assert act.return_code == 0
 
-    # Lines about tablespaces are issued right after the "writing packages" section.
+    # Lines about tablespaces are issued right before the "writing tables" section
+    # (since commit 14e1466a; before it they followed the "writing packages" section).
     # We can not simply filter lines by word "tablespace"/"schema" because lines like
     # 'gbak:writing schemas' or 'gbak:writing schema "PUBLIC"' exist on every build
     # (real schema section).
+    # NB: exact match is used for the anchor, so 'gbak:writing tablespaces' can not be taken for it.
     out_lines = collapsed_lines(act.stdout)
-    assert 'gbak:writing packages' in out_lines, \
+    assert 'gbak:writing tables' in out_lines, \
         f'Anchor line was not found. Full gbak output:\n{act.stdout}'
-    anchor = out_lines.index('gbak:writing packages')
-    ts_lines = out_lines[anchor + 1 : anchor + 3]
+    anchor = out_lines.index('gbak:writing tables')
+    ts_lines = out_lines[anchor - 2 : anchor]
 
     assert ts_lines == expected_backup_ts_lines
 
