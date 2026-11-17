@@ -20,7 +20,7 @@ from firebird.qa import *
 db = db_factory()
 substitutions = [
     ('I/O error during .*', 'I/O error during "CreateFile (open)" operation for file'),
-    ('The system cannot find the file specified.', ''),
+    ('The system cannot find the file specified.', 'No such file or directory'),
     ('[^\x00-\x7F]+', ''), # find every non-ascii character and suppress its output
     (r'^-\s+.*', ''), # supress output of lines that look like this: "-  ." (they may remain after removing non ascii characters from localized messages)
 ]
@@ -32,6 +32,7 @@ unsuccessful metadata update
 -ALTER INDEX "PUBLIC"."IDX_TEST" failed
 -I/O error during "CreateFile (open)" operation for file "D:\\TESTING\\fbt-repository\\tmp\\tablespace.dat"
 -Error while trying to open file
+-No such file or directory
 """
 
 
@@ -41,32 +42,36 @@ def test_1(act: Action, tmpdir: Path):
 
     init_script = f"""
     CREATE TABLESPACE TS1 FILE '{ts_file}';
+    commit;
 
     CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,INT_F INTEGER,FLOAT_F FLOAT,DP_F DOUBLE PRECISION,NUMERIC_F NUMERIC(10,6),TIMESTAMP_F TIMESTAMP,VARCHAR_F VARCHAR(100));
+    commit;
 
     CREATE INDEX IDX_TEST ON TEST_TABLE (ID);
+    commit;
 
     insert into test_table values (123, 345, 34.23, 56.45, 87.56, '01.02.1983', 'summer');
+    commit;
 
     ALTER INDEX IDX_TEST SET TABLESPACE TO TS1;
     commit;
+
+    ALTER INDEX IDX_TEST inactive;
     """
-    act.isql(switches=['-q', '-n'], input=init_script, combine_output=True, io_enc=locale.getpreferredencoding())
+    act.isql(switches=['-q'], input=init_script, combine_output=True, io_enc=locale.getpreferredencoding())
     act.reset()
 
     test_script = """
     ALTER INDEX IDX_TEST inactive;
-    commit;
     """
-    act.isql(switches=['-q', '-n'], input=test_script, combine_output=True, io_enc=locale.getpreferredencoding())
+    act.isql(switches=['-q'], input=test_script, combine_output=True, io_enc=locale.getpreferredencoding())
     ts_renamefile = tmpdir / 'tablespace_rename.dat'
     os.rename(ts_file, ts_renamefile)
 
     test_script = """
     ALTER INDEX IDX_TEST active;
-    commit;
     """
     act.expected_stderr = expected_stderr
-    act.isql(switches=['-q', '-n'], input=test_script, io_enc=locale.getpreferredencoding())
+    act.isql(switches=['-q'], input=test_script, io_enc=locale.getpreferredencoding())
 
     assert act.clean_stderr == act.clean_expected_stderr

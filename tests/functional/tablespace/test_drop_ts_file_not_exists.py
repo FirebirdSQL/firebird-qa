@@ -20,7 +20,7 @@ from firebird.qa import *
 substitutions = [
         ('file ".*tablespace.dat"', 'file "tablespace.dat"'),
         ('"CreateFile \\(open\\)"', '"open"'),
-        ('The system cannot find the file specified.', ''),
+        ('The system cannot find the file specified.', 'No such file or directory'),
         ('[^\x00-\x7F]+', ''), # find every non-ascii character and suppress its output
         (r'^-\s+.*', ''), # supress output of lines that look like this: "-  ." (they may remain after removing non ascii characters from localized messages)
 ]
@@ -34,6 +34,7 @@ unsuccessful metadata update
 -DROP TABLESPACE TS1 failed
 -I/O error during "open" operation for file "/tmp/pytest-of-root/pytest-129/test_10/tablespace.dat"
 -Error while trying to open file
+-No such file or directory
 """
 
 
