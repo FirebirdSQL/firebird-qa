@@ -21,15 +21,15 @@ new_config = temp_file('new_directories.conf')
 
 @pytest.mark.skip("directories.conf is not supported in FB")
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path, store_config: ConfigManager, new_config: Path):
+def test_1(act: Action, tmp_path: Path, store_config: ConfigManager, new_config: Path):
 
     alias = 'test_dir'
     alias_dir = "ts_test_dir"
-    alias_path = tmpdir / alias_dir
+    alias_path = tmp_path / alias_dir
     alias_path.mkdir()
 
     alias_dir2 = "ts_test_dir2"
-    alias_path2 = tmpdir / alias_dir2
+    alias_path2 = tmp_path / alias_dir2
     alias_path2.mkdir()
 
     directories_conf = f"""

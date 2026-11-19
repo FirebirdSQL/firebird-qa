@@ -27,19 +27,29 @@ RDB$TABLESPACE_NAME             PRIMARY
 
 @pytest.mark.version('>=6.0')
 def test_1(act: Action):
+    for autoddl in (True, False):
+        isql_switches = ['-q'] if autoddl else ['-q', '-n']
+    
+        script = f"""
+        CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,INT_F INTEGER,FLOAT_F FLOAT,DP_F DOUBLE PRECISION,NUMERIC_F NUMERIC(10,6),TIMESTAMP_F TIMESTAMP,VARCHAR_F VARCHAR(100)) TABLESPACE PRIMARY;
+        commit;
 
-    script = f"""
-    CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,INT_F INTEGER,FLOAT_F FLOAT,DP_F DOUBLE PRECISION,NUMERIC_F NUMERIC(10,6),TIMESTAMP_F TIMESTAMP,VARCHAR_F VARCHAR(100)) TABLESPACE PRIMARY;
-    commit;
+        insert into test_table values (123, 345, 34.23, 56.45, 87.56, '01.02.1983', 'summer');
+        commit;
 
-    insert into test_table values (123, 345, 34.23, 56.45, 87.56, '01.02.1983', 'summer');
-    commit;
+        set list on;
+        select * from test_table;
+        select RDB$TABLESPACE_NAME from RDB$RELATIONS where RDB$RELATION_NAME='TEST_TABLE';
+        """
+        act.reset()
+        act.isql(switches=isql_switches, input=script)
 
-    set list on;
-    select * from test_table;
-    select RDB$TABLESPACE_NAME from RDB$RELATIONS where RDB$RELATION_NAME='TEST_TABLE';
-    """
-    act.isql(switches=['-q'], input=script)
+        act.expected_stdout = expected_stdout
+        assert act.clean_stdout == act.clean_expected_stdout, f"AUTODDL: {autoddl}"
 
-    act.expected_stdout = expected_stdout
-    assert act.clean_stdout == act.clean_expected_stdout
+        cleanup_script = f"""
+        DROP TABLE TEST_TABLE;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=['-q'], input=cleanup_script)

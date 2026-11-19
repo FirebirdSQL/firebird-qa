@@ -13,8 +13,13 @@ from firebird.qa import *
 
 max_count = 257
 
+substitutions = [
+    ('RDB\\$INDEX_\\d+', 'RDB$INDEX_XX'),
+    ('"RDB\\$TABLESPACE_ID" = \\d+', '"RDB$TABLESPACE_ID" = X')
+]
+
 db = db_factory()
-act = isql_act('db', substitutions=[('RDB\\$INDEX_\\d+', 'RDB$INDEX_XX')])
+act = isql_act('db', substitutions=substitutions)
 
 expected_stderr = """
 Statement failed, SQLSTATE = 23000
@@ -44,13 +49,44 @@ unsuccessful metadata update
 
 
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path):
+def test_1(act: Action, tmp_path: Path):
+    for autoddl in (True, False):
+        if autoddl:
+            rollback = 'rollback;'
+            isql_switches = ['-q']
+        else:
+            rollback = ''
+            isql_switches = ['-q', '-n']
 
-    script = ""
-    for i in range(1, (max_count+1)):
-        ts_files = tmpdir / 'tablespace'+str(i)+'.dat'
-        script += f"CREATE TABLESPACE TS{i} FILE '{ts_files}';\n"
-    act.expected_stderr = expected_stderr
-    act.isql(switches=['-q'], input=script)
+        script = ""
+        for i in range(1, (max_count+1)):
+            ts_files = tmp_path / ('tablespace'+str(i)+'.dat')
+            ts_files.unlink(missing_ok=True)
+            script += f"CREATE TABLESPACE TS{i} FILE '{ts_files}';\n"
+        script += rollback
+        act.reset()
+        act.expected_stderr = expected_stderr
+        act.isql(switches=isql_switches, input=script)
 
-    assert act.clean_stderr == act.clean_expected_stderr
+        assert act.clean_stderr == act.clean_expected_stderr, f"AUTODDL: {autoddl}"
+
+        cleanup_script = f"""       
+        set term ^;
+        EXECUTE BLOCK
+        AS
+        DECLARE VARIABLE TS_NAME VARCHAR(63);
+        BEGIN
+        FOR SELECT RDB$TABLESPACE_NAME
+            FROM RDB$TABLESPACES
+            WHERE rdb$system_flag = 0
+            INTO :TS_NAME
+        DO
+            EXECUTE STATEMENT 'DROP TABLESPACE "' || TS_NAME || '"';
+        END^
+        set term ;^
+        commit;
+        """
+        act.reset()
+        act.isql(switches=['-q'], input=cleanup_script)
+
+

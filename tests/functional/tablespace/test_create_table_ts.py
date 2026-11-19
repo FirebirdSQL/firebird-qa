@@ -21,8 +21,8 @@ db = db_factory()
 substitutions = [
     ('I/O error during .*', 'I/O error during "CreateFile (open)" operation for file'),
     ('The system cannot find the file specified.', 'No such file or directory'),
-    ('[^\x00-\x7F]+', ''), # find every non-ascii character and suppress its output
-    (r'^-\s+.*', ''), # supress output of lines that look like this: "-  ." (they may remain after removing non ascii characters from localized messages)
+    ('[^\x00-\x7F]+', ''),  # find every non-ascii character and suppress its output
+    (r'^-\s+.*', ''),  # supress output of lines that look like this: "-  ." (they may remain after removing non ascii characters from localized messages)
 ]
 act = isql_act('db', substitutions=substitutions)
 
@@ -47,41 +47,65 @@ I/O error during "CreateFile (open)" operation for file
 
 
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path):
-    ts_file = tmpdir / 'tablespace.dat'
+def test_1(act: Action, tmp_path: Path):
+    for autoddl in (True, False):
+        if autoddl:
+            commit = 'commit;'
+            isql_switches = ['-q']
+        else:
+            commit = ''
+            isql_switches = ['-q', '-n']
 
-    script = f"""
-    CREATE TABLESPACE TS1 FILE '{ts_file}';
-    commit;
+        ts_file = tmp_path / 'tablespace1.dat'
+        ts_file.unlink(missing_ok=True)
 
-    CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,INT_F INTEGER,FLOAT_F FLOAT,DP_F DOUBLE PRECISION,NUMERIC_F NUMERIC(10,6),TIMESTAMP_F TIMESTAMP,VARCHAR_F VARCHAR(100)) TABLESPACE TS1;
-    commit;
+        script = f"""
+        CREATE TABLESPACE TS1 FILE '{ts_file}';
+        {commit}
 
-    insert into test_table values (123, 345, 34.23, 56.45, 87.56, '01.02.1983', 'summer');
-    commit;
-    """
-    act.isql(switches=['-q'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
+        CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,INT_F INTEGER,FLOAT_F FLOAT,DP_F DOUBLE PRECISION,NUMERIC_F NUMERIC(10,6),TIMESTAMP_F TIMESTAMP,VARCHAR_F VARCHAR(100)) TABLESPACE TS1;
+        {commit}
 
-    script = """
-    set list on;
-    select * from test_table;
-    select RDB$TABLESPACE_NAME from RDB$RELATIONS where RDB$RELATION_NAME='TEST_TABLE';
-    """
-    act.isql(switches=['-q'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
-    stdout = act.clean_stdout
-    act.reset()
+        insert into test_table values (123, 345, 34.23, 56.45, 87.56, '01.02.1983', 'summer');
+        commit;
+        """
+        act.reset()
+        act.isql(switches=isql_switches, input=script, io_enc=locale.getpreferredencoding())
 
-    ts_renamefile = tmpdir / 'tablespace_rename.dat'
-    os.rename(ts_file, ts_renamefile)
+        script = """
+        set list on;
+        select * from test_table;
+        select RDB$TABLESPACE_NAME from RDB$RELATIONS where RDB$RELATION_NAME='TEST_TABLE';
+        """
+        act.reset()
+        act.isql(switches=isql_switches, input=script, combine_output=True, io_enc=locale.getpreferredencoding())
+        stdout = act.clean_stdout
 
-    script = """
-    set list on;
-    select * from test_table;
-    """
-    act.expected_stderr = expected_stderr
-    act.isql(switches=['-q'], input=script, io_enc=locale.getpreferredencoding())
-    stderr = act.clean_stderr
+        ts_renamefile = tmp_path / 'tablespace_rename.dat'
+        ts_renamefile.unlink(missing_ok=True)
+        ts_file.rename(ts_renamefile)
 
-    act.expected_stdout = expected_stdout
-    act.expected_stderr = expected_stderr
-    assert stdout == act.clean_expected_stdout and stderr == act.clean_expected_stderr
+        script = """
+        set list on;
+        select * from test_table;
+        """
+        act.reset()
+        act.expected_stderr = expected_stderr
+        act.isql(switches=isql_switches, input=script, io_enc=locale.getpreferredencoding())
+        stderr = act.clean_stderr
+
+        act.expected_stdout = expected_stdout
+        act.expected_stderr = expected_stderr
+        assert stdout == act.clean_expected_stdout and stderr == act.clean_expected_stderr, f"AUTODDL: {autoddl}"
+
+        # Restore TS file before cleanup
+        ts_renamefile.rename(ts_file)
+
+        cleanup_script = f"""
+        DROP TABLE TEST_TABLE;
+        commit;
+        DROP TABLESPACE TS1;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=['-q'], input=cleanup_script)

@@ -23,9 +23,9 @@ unsuccessful metadata update
 
 
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path, tmp_path: Path):
+def test_1(act: Action, tmp_path: Path):
 
-    ts_file = tmpdir / 'tablespace.dat'
+    ts_file = tmp_path / 'tablespace.dat'
 
     open(ts_file, "w").close()
 
