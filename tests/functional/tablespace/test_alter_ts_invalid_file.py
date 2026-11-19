@@ -16,13 +16,13 @@ from firebird.qa import *
 
 db = db_factory()
 substitutions = [
-        ('/.*tablespace', 'tablespace'),
-        ('.:.*tablespace', 'tablespace'),
-        ('-Error while trying to read from file', '-File size is less than expected'),
-        ('-Reached the end of the file.', ''),
-        ('[^\x00-\x7F]+', ''), # find every non-ascii character and suppress its output
-        (r'^-\s+.*', ''), # supress output of lines that look like this: "-  ." (they may remain after removing non ascii characters from localized messages)
-    ]
+    ('/.*tablespace', 'tablespace'),
+    ('.:.*tablespace', 'tablespace'),
+    ('-Error while trying to read from file', '-File size is less than expected'),
+    ('-Reached the end of the file.', ''),
+    ('[^\x00-\x7F]+', ''),  # find every non-ascii character and suppress its output
+    (r'^-\s+.*', ''),  # supress output of lines that look like this: "-  ." (they may remain after removing non ascii characters from localized messages)
+]
 
 
 act = isql_act('db', substitutions=substitutions)
@@ -50,59 +50,80 @@ I/O error during "read" operation for file "tablespace2.dat"
 
 
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path):
-    ts1_file = tmpdir / 'tablespace1.dat'
-    ts2_file = tmpdir / 'tablespace2.dat'
+def test_1(act: Action, tmp_path: Path):
+    for autoddl in (True, False):
+        if autoddl:
+            commit = 'commit;'
+            isql_switches = ['-q']
+        else:
+            commit = ''
+            isql_switches = ['-q', '-n']
 
-    ts2_file.write_text('Text', encoding='utf-8')
+        ts1_file = tmp_path / 'tablespace1.dat'
+        ts1_file.unlink(missing_ok=True)
+        ts2_file = tmp_path / 'tablespace2.dat'
+        ts2_file.unlink(missing_ok=True)
 
-    init_script = f"""
-    CREATE TABLESPACE TS1 FILE '{ts1_file}';
-    commit;
+        ts2_file.write_text('Text', encoding='utf-8')
 
-    CREATE TABLE TEST_TABLE(ID INT, NAME VARCHAR(10)) TABLESPACE TS1;
-    commit;
+        init_script = f"""
+        CREATE TABLESPACE TS1 FILE '{ts1_file}';
+        {commit}
 
-    insert into test_table values (1, 'One');
-    insert into test_table values (2, 'Two');
-    commit;
+        CREATE TABLE TEST_TABLE(ID INT, NAME VARCHAR(10)) TABLESPACE TS1;
+        {commit}
 
-    set list on;
-    select RDB$FILE_NAME from RDB$RELATIONS as rl left join RDB$TABLESPACES as ts ON rl.RDB$TABLESPACE_NAME=ts.RDB$TABLESPACE_NAME where RDB$RELATION_NAME='TEST_TABLE';
-    select /* trace_me: 01 */ * from test_table;
-    commit;
-    """
-    act.isql(switches=['-q'], input=init_script, combine_output=True, io_enc=locale.getpreferredencoding())
-    stdout = act.clean_stdout + '\n'
-    act.reset()
+        insert into test_table values (1, 'One');
+        insert into test_table values (2, 'Two');
+        {commit}
 
-    script = f"""
-    ALTER TABLESPACE TS1 SET FILE TO '{ts2_file}';
-    commit;
-    set list on;
-    select RDB$FILE_NAME from RDB$RELATIONS as rl left join RDB$TABLESPACES as ts ON rl.RDB$TABLESPACE_NAME=ts.RDB$TABLESPACE_NAME where RDB$RELATION_NAME='TEST_TABLE';
-    select /* trace_me: 02 */ * from test_table;
-    """
-    act.isql(switches=['-q'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
-    stdout += act.clean_stdout + '\n'
-    act.reset()
+        set list on;
+        select RDB$FILE_NAME from RDB$RELATIONS as rl left join RDB$TABLESPACES as ts ON rl.RDB$TABLESPACE_NAME=ts.RDB$TABLESPACE_NAME where RDB$RELATION_NAME='TEST_TABLE';
+        select /* trace_me: 01 */ * from test_table;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=isql_switches, input=init_script, combine_output=True, io_enc=locale.getpreferredencoding())
+        stdout = act.clean_stdout + '\n'
 
-    script = """
-    set list on;
-    select RDB$FILE_NAME from RDB$RELATIONS as rl left join RDB$TABLESPACES as ts ON rl.RDB$TABLESPACE_NAME=ts.RDB$TABLESPACE_NAME where RDB$RELATION_NAME='TEST_TABLE';
-    select /* trace_me: 03 */ * from test_table;
-    commit;
-    """
-    act.isql(switches=['-q'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
-    stdout += act.clean_stdout
-    act.reset()
+        script = f"""
+        ALTER TABLESPACE TS1 SET FILE TO '{ts2_file}';
+        {commit}
+        set list on;
+        select RDB$FILE_NAME from RDB$RELATIONS as rl left join RDB$TABLESPACES as ts ON rl.RDB$TABLESPACE_NAME=ts.RDB$TABLESPACE_NAME where RDB$RELATION_NAME='TEST_TABLE';
+        select /* trace_me: 02 */ * from test_table;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=isql_switches, input=script, combine_output=True, io_enc=locale.getpreferredencoding())
+        stdout += act.clean_stdout + '\n'
 
-    script = f"""
-    ALTER TABLESPACE /* trace_me: 04 */ TS1 SET FILE TO '{ts1_file}';
-    commit;
-    """
-    act.isql(switches=['-q'], input=script, combine_output=True, io_enc=locale.getpreferredencoding())
-    stdout += act.clean_stdout
+        script = f"""
+        set list on;
+        select RDB$FILE_NAME from RDB$RELATIONS as rl left join RDB$TABLESPACES as ts ON rl.RDB$TABLESPACE_NAME=ts.RDB$TABLESPACE_NAME where RDB$RELATION_NAME='TEST_TABLE';
+        select /* trace_me: 03 */ * from test_table;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=isql_switches, input=script, combine_output=True, io_enc=locale.getpreferredencoding())
+        stdout += act.clean_stdout
 
-    act.expected_stdout = expected_stdout
-    assert stdout == act.clean_expected_stdout
+        script = f"""
+        ALTER TABLESPACE /* trace_me: 04 */ TS1 SET FILE TO '{ts1_file}';
+        commit;
+        """
+        act.reset()
+        act.isql(switches=isql_switches, input=script, combine_output=True, io_enc=locale.getpreferredencoding())
+        stdout += act.clean_stdout
+
+        act.expected_stdout = expected_stdout
+        assert stdout == act.clean_expected_stdout, f"AUTODDL: {autoddl}"
+
+        cleanup_script = f"""
+        DROP TABLE TEST_TABLE;
+        commit;
+        DROP TABLESPACE TS1;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=['-q'], input=cleanup_script)

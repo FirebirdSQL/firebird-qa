@@ -33,35 +33,58 @@ VARCHAR_F                       summer
 
 
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path):
+def test_1(act: Action, tmp_path: Path):
+    for autoddl in (True, False):
+        if autoddl:
+            on_commit = 'commit;'
+            off_commit = ''
+            isql_switches = ['-q']
+        else:
+            on_commit = ''
+            off_commit = 'commit;'
+            isql_switches = ['-q', '-n']
+        
+        ts_file = tmp_path / 'tablespace1.dat'
+        ts_file.unlink(missing_ok=True)
 
-    ts_file = tmpdir / 'tablespace.dat'
+        init_script = f"""
+        CREATE TABLESPACE TS1 FILE '{ts_file}';
+        {on_commit}
 
-    init_script = f"""
-    CREATE TABLESPACE TS1 FILE '{ts_file}';
-    commit;
+        CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,VARCHAR_F VARCHAR(100));
+        {on_commit}
 
-    CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,VARCHAR_F VARCHAR(100));
-    commit;
+        CREATE INDEX IDX_TEST ON TEST_TABLE (ID) TABLESPACE TS1;
+        {on_commit}
 
-    CREATE INDEX IDX_TEST ON TEST_TABLE (ID) TABLESPACE TS1;
-    commit;
+        insert into test_table values (123, 'summer');
+        {on_commit}
 
-    insert into test_table values (123, 'summer');
-    commit;
+        set list on;
+        select * from TEST_TABLE;
+        select RDB$INDEX_NAME from RDB$INDICES where RDB$RELATION_NAME='TEST_TABLE';
+        select RDB$TABLESPACE_NAME from RDB$INDICES where RDB$INDEX_NAME='IDX_TEST';
+        {off_commit}
+        
+        drop TABLESPACE TS1;
+        {off_commit}
+        drop index IDX_TEST;
+        {off_commit}
+        drop TABLESPACE TS1;
+        {off_commit}
 
-    set list on;
-    select * from TEST_TABLE;
-    select RDB$INDEX_NAME from RDB$INDICES where RDB$RELATION_NAME='TEST_TABLE';
-    select RDB$TABLESPACE_NAME from RDB$INDICES where RDB$INDEX_NAME='IDX_TEST';
+        select * from TEST_TABLE;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=isql_switches, input=init_script, combine_output=True)
 
-    drop TABLESPACE TS1;
-    drop index IDX_TEST;
-    drop TABLESPACE TS1;
+        act.expected_stdout = expected_stdout
+        assert act.clean_stdout == act.clean_expected_stdout, f"AUTODDL: {autoddl}"
 
-    select * from TEST_TABLE;
-    """
-    act.isql(switches=['-q'], input=init_script, combine_output=True)
-
-    act.expected_stdout = expected_stdout
-    assert act.clean_stdout == act.clean_expected_stdout
+        cleanup_script = f"""
+        DROP TABLE TEST_TABLE;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=['-q'], input=cleanup_script)

@@ -96,7 +96,7 @@ def test_1(act: Action, tmp_path: Path):
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
         -CREATE TABLESPACE {ts_name.upper()} failed
-        -The constant "{ts_name.upper()}" must be initialized by a constant expression
+        -Tablespace "{ts_name.upper()}" already exists
     """
     act.expected_stdout = expected_stdout
     act.isql(switches = ['-q'], input=test_sql, combine_output = True)
@@ -115,7 +115,7 @@ def test_1(act: Action, tmp_path: Path):
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
         -CREATE TABLESPACE {ts_name_prim} failed
-        -The constant "{ts_name_prim}" must be initialized by a constant expression
+        -Tablespace "{ts_name_prim}" already exists
     """
     act.expected_stdout = expected_stdout
     act.isql(switches = ['-q'], input=test_sql, combine_output = True)
@@ -133,7 +133,7 @@ def test_1(act: Action, tmp_path: Path):
         Statement failed, SQLSTATE = 42000
         unsuccessful metadata update
         -CREATE TABLESPACE {ts_name_prim} failed
-        -The constant "{ts_name_prim}" must be initialized by a constant expression
+        -Tablespace "{ts_name_prim}" already exists
     """
     act.expected_stdout = expected_stdout
     act.isql(switches = ['-q'], input=test_sql, combine_output = True)

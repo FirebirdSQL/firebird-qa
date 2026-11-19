@@ -18,9 +18,9 @@ expected_stdout = ""
 
 
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path):
+def test_1(act: Action, tmp_path: Path):
 
-    ts_file = tmpdir / 'ts_file.dat'
+    ts_file = tmp_path / 'ts_file.dat'
 
     init_script = f"""
     CREATE TABLESPACE TS1 FILE '{ts_file}';
