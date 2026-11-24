@@ -231,7 +231,7 @@ def fetch_as_str(cur, sql):
 
 @pytest.mark.ai
 @pytest.mark.version('>=6.0')
-def test_lateral_sources_views_and_procs(act: Action):
+def test_1(act: Action):
     # DDL contains set-term PSQL blocks, so it is executed via isql:
     act.isql(switches=['-q'], input=DDL, combine_output=True)
     assert act.return_code == 0, act.stdout
