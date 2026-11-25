@@ -209,6 +209,7 @@ def _run_phase(con, phase):
 
 # -------------------------------- test ------------------------------------
 
+@pytest.mark.ai
 @pytest.mark.version('>=4.0.8')
 def test_1(act: Action, capsys):
 
