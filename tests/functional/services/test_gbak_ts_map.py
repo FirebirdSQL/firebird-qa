@@ -16,10 +16,11 @@ from firebird.qa import *
 
 db = db_factory()
 substitutions = [
-    ('/.*tablespace1.dat', 'tablespace1.dat'),
-    ('.:.*tablespace1.dat', 'tablespace1.dat'),
-    ('/.*tablespace2.dat', 'tablespace2.dat'),
-    ('.:.*tablespace2.dat', 'tablespace2.dat')
+    ('original path: .*tablespace1.dat', 'original path: tablespace1.dat'),
+    ('/.*tablespace1_restore.dat', 'tablespace1_restore.dat'),
+    ('.:.*tablespace1_restore.dat', 'tablespace1_restore.dat'),
+    ('/.*tablespace2_restore.dat', 'tablespace2_restore.dat'),
+    ('.:.*tablespace2_restore.dat', 'tablespace2_restore.dat')
 ]
 act = python_act('db', substitutions=substitutions)
 
@@ -35,9 +36,9 @@ TIMESTAMP_F                     1983-02-01 00:00:00.0000
 VARCHAR_F                       summer
 
 RDB$TABLESPACE_NAME             TS1
-RDB$FILE_NAME                   tablespace1.dat
+RDB$FILE_NAME                   tablespace1_restore.dat
 RDB$TABLESPACE_NAME             TS2
-RDB$FILE_NAME                   tablespace2.dat
+RDB$FILE_NAME                   tablespace2_restore.dat
 """
 
 expected_stderr = """
@@ -80,17 +81,21 @@ def test_1(act: Action, restored_db: Database, tmp_path: Path):
     insert into test_table values (123, 345, 34.23, 56.45, 87.56, '01.02.1983', 'summer');
     commit;
     """
+    act.reset()
     act.isql(switches=['-q'], input=script)
 
+    act.reset()
     act.svcmgr(switches=['-action_backup', '-dbname', act.db.db_path, '-bkp_file', backup_dsn])
 
     # missing parameter
+    act.reset()
     act.expected_stderr = expected_stderr
     act.svcmgr(switches=['-action_restore', '-bkp_file', backup_dsn, '-dbname',
                restored_db.db_path, '-res_replace', '-res_ts_map'])
     error = act.stderr
 
     # File not exists
+    act.reset()
     act.expected_stderr = expected_stderr
     act.svcmgr(switches=['-action_restore', '-bkp_file', backup_dsn, '-dbname',
                restored_db.db_path, '-res_replace', '-res_ts_map', 'NOT_VALID_PATH'])
@@ -102,12 +107,11 @@ TS2 {ts2_restore}
 """
     map_ts.write_text(mapping_ts)
 
+    act.reset()
     act.expected_stderr = expected_stderr
     act.svcmgr(switches=['-action_restore', '-bkp_file', backup_dsn, '-dbname',
                restored_db.db_path, '-res_replace', '-res_ts_map', map_ts])
     error += act.stderr
-
-    act.reset()
 
     # Normal
     mapping_ts = f"""
@@ -115,14 +119,16 @@ TS1 {ts1_restore}
 TS2 {ts2_restore}
 """
     map_ts.write_text(mapping_ts)
+    act.reset()
     act.svcmgr(switches=['-action_restore', '-bkp_file', backup_dsn, '-dbname',
                restored_db.db_path, '-res_replace', '-res_ts_map', map_ts])
 
     test_script = """
     set list on; 
     SELECT * FROM TEST_TABLE;
-    select RDB$FILE_NAME from RDB$TABLESPACES where RDB$SYSTEM_FLAG = 0;
+    select RDB$TABLESPACE_NAME, RDB$FILE_NAME from RDB$TABLESPACES where RDB$SYSTEM_FLAG = 0;
     """
+    act.reset()
     act.isql(switches=['-q'], input=test_script, use_db=restored_db)
     act.expected_stdout = expected_stdout
     assert act.clean_stdout == act.clean_expected_stdout

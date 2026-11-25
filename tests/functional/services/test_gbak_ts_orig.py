@@ -15,8 +15,8 @@ from firebird.qa import *
 db = db_factory()
 substitutions = [
     ('/.*tablespace1.dat', 'tablespace1.dat'),
-    ('.:.*tablespace2.dat', 'tablespace2.dat'),
-    ('/.*tablespace1.dat', 'tablespace1.dat'),
+    ('.:.*tablespace1.dat', 'tablespace1.dat'),
+    ('/.*tablespace2.dat', 'tablespace2.dat'),
     ('.:.*tablespace2.dat', 'tablespace2.dat')
 ]
 
@@ -40,7 +40,7 @@ RDB$FILE_NAME                   tablespace2.dat
 """
 
 expected_stderr = """
-Tablespace "TS1" creation error. File "tablespace1.dat" exists.
+Tablespace file "tablespace1.dat" already exists
 -Exiting before completion due to errors
 """
 
@@ -96,7 +96,7 @@ def test_1(act: Action, restored_db: Database, tmp_path: Path):
     check_script = """
     set list on; 
     SELECT * FROM TEST_TABLE;
-    select RDB$FILE_NAME from RDB$TABLESPACES where RDB$SYSTEM_FLAG = 0;
+    select RDB$TABLESPACE_NAME, RDB$FILE_NAME from RDB$TABLESPACES where RDB$SYSTEM_FLAG = 0;
     """
     act.reset()
     act.isql(switches=['-q'], input=check_script, use_db=restored_db)

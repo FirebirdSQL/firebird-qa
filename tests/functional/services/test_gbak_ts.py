@@ -14,10 +14,11 @@ from firebird.qa import *
 
 db = db_factory()
 substitutions = [
-    ('/.*tablespace1.dat', 'tablespace1.dat'),
-    ('.:.*tablespace1.dat', 'tablespace1.dat'),
-    ('/.*tablespace2.dat', 'tablespace2.dat'),
-    ('.:.*tablespace2.dat', 'tablespace2.dat')
+    ('original path: .*tablespace1.dat', 'original path: tablespace1.dat'),
+    ('/.*tablespace1_restore.dat', 'tablespace1_restore.dat'),
+    ('.:.*tablespace1_restore.dat', 'tablespace1_restore.dat'),
+    ('/.*tablespace2_restore.dat', 'tablespace2_restore.dat'),
+    ('.:.*tablespace2_restore.dat', 'tablespace2_restore.dat')
 ]
 act = python_act('db', substitutions=substitutions)
 
@@ -33,9 +34,9 @@ TIMESTAMP_F                     1983-02-01 00:00:00.0000
 VARCHAR_F                       summer
 
 RDB$TABLESPACE_NAME             TS1
-RDB$FILE_NAME                   tablespace1.dat
+RDB$FILE_NAME                   tablespace1_restore.dat
 RDB$TABLESPACE_NAME             TS2
-RDB$FILE_NAME                   tablespace2.dat
+RDB$FILE_NAME                   tablespace2_restore.dat
 """
 
 expected_stderr = """
@@ -100,7 +101,7 @@ def test_1(act: Action, restored_db: Database, tmp_path: Path):
     check_script = """
     set list on; 
     SELECT * FROM TEST_TABLE;
-    select RDB$FILE_NAME from RDB$TABLESPACES where RDB$SYSTEM_FLAG = 0;
+    select RDB$TABLESPACE_NAME, RDB$FILE_NAME from RDB$TABLESPACES where RDB$SYSTEM_FLAG = 0;
     """
     act.isql(switches=['-q'], input=check_script, use_db=restored_db)
     act.expected_stdout = expected_stdout
