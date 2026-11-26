@@ -112,6 +112,7 @@ TS2 {ts2_restore}
     act.svcmgr(switches=['-action_restore', '-bkp_file', backup_dsn, '-dbname',
                restored_db.db_path, '-res_replace', '-res_ts_map', map_ts])
     error += act.stderr
+    ts2_restore.unlink(missing_ok=True)
 
     # Normal
     mapping_ts = f"""
