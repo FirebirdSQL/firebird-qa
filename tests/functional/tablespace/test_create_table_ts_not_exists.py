@@ -7,7 +7,6 @@ DESCRIPTION:
 """
 
 import pytest
-from pathlib import Path
 from firebird.qa import *
 
 
@@ -24,12 +23,15 @@ unsuccessful metadata update
 
 @pytest.mark.version('>=6.0')
 def test_1(act: Action):
+    for autoddl in (True, False):
+        isql_switches = ['-q'] if autoddl else ['-q', '-n']
+            
+        init_script = """
+        CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,INT_F INTEGER,FLOAT_F FLOAT,DP_F DOUBLE PRECISION,NUMERIC_F NUMERIC(10,6),TIMESTAMP_F TIMESTAMP,VARCHAR_F VARCHAR(100)) TABLESPACE TS1;
+        commit;
+        """
+        act.reset()
+        act.expected_stderr = expected_stderr
+        act.isql(switches=isql_switches, input=init_script)
 
-    init_script = """
-    CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,INT_F INTEGER,FLOAT_F FLOAT,DP_F DOUBLE PRECISION,NUMERIC_F NUMERIC(10,6),TIMESTAMP_F TIMESTAMP,VARCHAR_F VARCHAR(100)) TABLESPACE TS1;
-    commit;
-    """
-    act.expected_stderr = expected_stderr
-    act.isql(switches=['-q'], input=init_script)
-
-    assert act.clean_stderr == act.clean_expected_stderr
+        assert act.clean_stderr == act.clean_expected_stderr, f"AUTODDL: {autoddl}"

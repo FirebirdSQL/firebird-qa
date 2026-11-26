@@ -47,58 +47,82 @@ REFERENCES_TS                   TS1
 
 
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path):
-    ts1_file = tmpdir / 'tablespace1.dat'
-    ts2_file = tmpdir / 'tablespace2.dat'
+def test_1(act: Action, tmp_path: Path):
+    for autoddl in (True, False):
+        if autoddl:
+            commit = 'commit;'
+            isql_switches = ['-q']
+        else:
+            commit = ''
+            isql_switches = ['-q', '-n']
 
-    test_script = f"""
-    CREATE TABLESPACE TS1 FILE '{ts1_file}';
-    CREATE TABLESPACE TS2 FILE '{ts2_file}';
-    commit;
+        ts1_file = tmp_path / 'tablespace1.dat'
+        ts1_file.unlink(missing_ok=True)
+        ts2_file = tmp_path / 'tablespace2.dat'
+        ts2_file.unlink(missing_ok=True)
 
-    CREATE TABLE REF_TABLE(ID INT, VARCHAR_REF VARCHAR(100) UNIQUE);
-    INSERT INTO REF_TABLE VALUES (1, 'winter');
-    INSERT INTO REF_TABLE VALUES (2, 'spring');
-    INSERT INTO REF_TABLE VALUES (3, 'summer');
-    INSERT INTO REF_TABLE VALUES (4, 'autumn');
-    commit;
+        test_script = f"""
+        CREATE TABLESPACE TS1 FILE '{ts1_file}';
+        CREATE TABLESPACE TS2 FILE '{ts2_file}';
+        {commit}
 
-    CREATE TABLE TEST_TABLE(ID_PRIM     INT NOT NULL    CONSTRAINT          TS_PRIM     PRIMARY KEY                         IN TABLESPACE TS1,
-                            ID_UNIQ     INT             CONSTRAINT          TS_UNIQ     UNIQUE                              TABLESPACE TS2,
-                            VARCHAR_REF VARCHAR(100)    CONSTRAINT          TS_REF      REFERENCES   REF_TABLE(VARCHAR_REF) TABLESPACE PRIMARY);
-    commit;
+        CREATE TABLE REF_TABLE(ID INT, VARCHAR_REF VARCHAR(100) UNIQUE);
+        INSERT INTO REF_TABLE VALUES (1, 'winter');
+        INSERT INTO REF_TABLE VALUES (2, 'spring');
+        INSERT INTO REF_TABLE VALUES (3, 'summer');
+        INSERT INTO REF_TABLE VALUES (4, 'autumn');
+        {commit}
 
-    INSERT INTO TEST_TABLE VALUES (123, 777, 'summer');
-    INSERT INTO TEST_TABLE VALUES (35, 683, 'winter');
-    commit;
+        CREATE TABLE TEST_TABLE(ID_PRIM     INT NOT NULL    CONSTRAINT          TS_PRIM     PRIMARY KEY                         IN TABLESPACE TS1,
+                                ID_UNIQ     INT             CONSTRAINT          TS_UNIQ     UNIQUE                              TABLESPACE TS2,
+                                VARCHAR_REF VARCHAR(100)    CONSTRAINT          TS_REF      REFERENCES   REF_TABLE(VARCHAR_REF) TABLESPACE PRIMARY);
+        {commit}
 
-    set list on;
-    select * from TEST_TABLE;
+        INSERT INTO TEST_TABLE VALUES (123, 777, 'summer');
+        INSERT INTO TEST_TABLE VALUES (35, 683, 'winter');
+        {commit}
 
-    --CHECK CONSTRAINTS TABLESPACES--
-    select RDB$TABLESPACE_NAME as PRIMARY_TS from RDB$INDICES where RDB$INDEX_NAME='TS_PRIM';
-    select RDB$TABLESPACE_NAME as UNIQUE_TS from RDB$INDICES where RDB$INDEX_NAME='TS_UNIQ';
-    select RDB$TABLESPACE_NAME as REFERENCES_TS from RDB$INDICES where RDB$INDEX_NAME='TS_REF';
+        set list on;
+        select * from TEST_TABLE;
 
-    --CHANGE CONTRAINTS TABLESPACES--
-    ALTER INDEX TS_PRIM SET TABLESPACE TS2;
-    ALTER INDEX TS_UNIQ SET TABLESPACE PRIMARY;
-    ALTER INDEX TS_REF SET TABLESPACE TS1;
-    commit;
+        --CHECK CONSTRAINTS TABLESPACES--
+        select RDB$TABLESPACE_NAME as PRIMARY_TS from RDB$INDICES where RDB$INDEX_NAME='TS_PRIM';
+        select RDB$TABLESPACE_NAME as UNIQUE_TS from RDB$INDICES where RDB$INDEX_NAME='TS_UNIQ';
+        select RDB$TABLESPACE_NAME as REFERENCES_TS from RDB$INDICES where RDB$INDEX_NAME='TS_REF';
 
-    --CHECK PRIMARY CONSTRAINT--
-    INSERT INTO TEST_TABLE VALUES (123, 12365, 'autumn');
-    --CHECK UNIQUE CONSTRAINT--
-    INSERT INTO TEST_TABLE VALUES (555, 683, 'spring');
-    --CHECK FOREIGN CONSTRAINT--
-    INSERT INTO TEST_TABLE VALUES (654, 1212, 'season');
+        --CHANGE CONTRAINTS TABLESPACES--
+        ALTER INDEX TS_PRIM SET TABLESPACE TS2;
+        ALTER INDEX TS_UNIQ SET TABLESPACE PRIMARY;
+        ALTER INDEX TS_REF SET TABLESPACE TS1;
+        {commit}
 
-    --CHECK CONSTRAINTS TABLESPACES--
-    select RDB$TABLESPACE_NAME as PRIMARY_TS from RDB$INDICES where RDB$INDEX_NAME='TS_PRIM';
-    select RDB$TABLESPACE_NAME as UNIQUE_TS from RDB$INDICES where RDB$INDEX_NAME='TS_UNIQ';
-    select RDB$TABLESPACE_NAME as REFERENCES_TS from RDB$INDICES where RDB$INDEX_NAME='TS_REF';
-    """
-    act.expected_stdout = expected_stdout
-    act.isql(switches=['-q'], input=test_script, combine_output=True)
+        --CHECK PRIMARY CONSTRAINT--
+        INSERT INTO TEST_TABLE VALUES (123, 12365, 'autumn');
+        --CHECK UNIQUE CONSTRAINT--
+        INSERT INTO TEST_TABLE VALUES (555, 683, 'spring');
+        --CHECK FOREIGN CONSTRAINT--
+        INSERT INTO TEST_TABLE VALUES (654, 1212, 'season');
 
-    assert act.clean_stdout == act.clean_expected_stdout
+        --CHECK CONSTRAINTS TABLESPACES--
+        select RDB$TABLESPACE_NAME as PRIMARY_TS from RDB$INDICES where RDB$INDEX_NAME='TS_PRIM';
+        select RDB$TABLESPACE_NAME as UNIQUE_TS from RDB$INDICES where RDB$INDEX_NAME='TS_UNIQ';
+        select RDB$TABLESPACE_NAME as REFERENCES_TS from RDB$INDICES where RDB$INDEX_NAME='TS_REF';
+        commit;
+        """
+        act.reset()
+        act.expected_stdout = expected_stdout
+        act.isql(switches=isql_switches, input=test_script, combine_output=True)
+        assert act.clean_stdout == act.clean_expected_stdout, f"AUTODDL: {autoddl}"
+
+        cleanup_script = f"""
+        DROP TABLE TEST_TABLE;
+        commit;
+        DROP TABLE REF_TABLE;
+        commit;
+        DROP TABLESPACE TS1;
+        commit;
+        DROP TABLESPACE TS2;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=['-q'], input=cleanup_script)

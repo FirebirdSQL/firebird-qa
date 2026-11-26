@@ -33,11 +33,11 @@ unsuccessful metadata update
 
 @pytest.mark.skip("directories.conf is not supported in FB")
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path, store_config: ConfigManager, new_config: Path):
+def test_1(act: Action, tmp_path: Path, store_config: ConfigManager, new_config: Path):
 
     alias = 'test_dir'
     alias_dir = "ts_test_dir"
-    alias_path = tmpdir / alias_dir
+    alias_path = tmp_path / alias_dir
     alias_path.mkdir()
 
     directories_conf = f"""

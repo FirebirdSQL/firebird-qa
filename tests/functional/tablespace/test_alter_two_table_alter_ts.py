@@ -29,36 +29,56 @@ ID                              343
 
 
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path):
-    ts1_file = tmpdir / 'tablespace1.dat'
+def test_1(act: Action, tmp_path: Path):
+    for autoddl in (True, False):
+        if autoddl:
+            commit = 'commit;'
+            isql_switches = ['-q']
+        else:
+            commit = ''
+            isql_switches = ['-q', '-n']
+        
+        ts1_file = tmp_path / 'tablespace1.dat'
+        ts1_file.unlink(missing_ok=True)
 
-    test_script = f"""
-    CREATE TABLESPACE TS1 FILE '{ts1_file}';
-    commit;
+        test_script = f"""
+        CREATE TABLESPACE TS1 FILE '{ts1_file}';
+        {commit}
 
-    CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,INT_F INTEGER,FLOAT_F FLOAT,DP_F DOUBLE PRECISION,NUMERIC_F NUMERIC(10,6),TIMESTAMP_F TIMESTAMP,VARCHAR_F VARCHAR(100));
-    commit;
-    CREATE TABLE TEST_TABLE2(ID INTEGER);
-    commit;
+        CREATE TABLE TEST_TABLE(ID BIGINT NOT NULL,INT_F INTEGER,FLOAT_F FLOAT,DP_F DOUBLE PRECISION,NUMERIC_F NUMERIC(10,6),TIMESTAMP_F TIMESTAMP,VARCHAR_F VARCHAR(100));
+        {commit}
+        CREATE TABLE TEST_TABLE2(ID INTEGER);
+        {commit}
 
-    ALTER TABLE TEST_TABLE SET TABLESPACE TS1;
-    commit;
+        ALTER TABLE TEST_TABLE SET TABLESPACE TS1;
+        {commit}
 
-    insert into test_table values (123, 345, 34.23, 56.45, 87.56, '01.02.1983', 'summer');
-    commit;
+        insert into test_table values (123, 345, 34.23, 56.45, 87.56, '01.02.1983', 'summer');
+        {commit}
 
-    ALTER TABLE TEST_TABLE2 SET TABLESPACE TS1;
-    commit;
+        ALTER TABLE TEST_TABLE2 SET TABLESPACE TS1;
+        {commit}
+        insert into test_table2 values (343);
+        {commit}
 
-    insert into test_table2 values (343);
-    commit;
+        set list on;
+        select * from test_table;
+        select * from test_table2;
+        commit;
+        """
+        act.reset()
+        act.expected_stdout = expected_stdout
+        act.isql(switches=isql_switches, input=test_script)
 
+        assert act.clean_stdout == act.clean_expected_stdout, f"AUTODDL: {autoddl}"
 
-    set list on;
-    select * from test_table;
-    select * from test_table2;
-    """
-    act.expected_stdout = expected_stdout
-    act.isql(switches=['-q'], input=test_script)
-
-    assert act.clean_stdout == act.clean_expected_stdout
+        cleanup_script = f"""
+        DROP TABLE TEST_TABLE;
+        commit;
+        DROP TABLE TEST_TABLE2;
+        commit;
+        DROP TABLESPACE TS1;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=['-q'], input=cleanup_script)

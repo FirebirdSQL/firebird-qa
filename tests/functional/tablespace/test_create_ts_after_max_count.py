@@ -528,34 +528,70 @@ RDB$TABLESPACE_NAME             NEW_TS10
 
 
 @pytest.mark.version('>=6.0')
-def test_1(act: Action, tmpdir: Path):
+def test_1(act: Action, tmp_path: Path):
+    for autoddl in (True, False):
+        if autoddl:
+            commit = 'commit;'
+            isql_switches = ['-q']
+        else:
+            commit = ''
+            isql_switches = ['-q', '-n']
+        
+        ts_file = tmp_path / 'tablespace1.dat'
+        ts_file.unlink(missing_ok=True)
 
-    script = ""
-    for i in range(1, (max_count+1)):
-        ts_files = tmpdir / 'tablespace'+str(i)+'.dat'
-        script += f"CREATE TABLESPACE TS{i} FILE '{ts_files}';\n"
-    act.isql(switches=['-q'], input=script)
+        script = ""
+        for i in range(1, (max_count+1)):
+            ts_files = tmp_path / ('tablespace'+str(i)+'.dat')
+            ts_files.unlink(missing_ok=True)
+            script += f"CREATE TABLESPACE TS{i} FILE '{ts_files}';\n"
+        script += 'commit;'
+        act.reset()
+        act.isql(switches=isql_switches, input=script)
 
-    drop_TS = """
-    DROP TABLESPACE TS1;
-    DROP TABLESPACE TS2;
-    DROP TABLESPACE TS10;
-    DROP TABLESPACE TS50;
-    DROP TABLESPACE TS70;
-    DROP TABLESPACE TS100;
-    DROP TABLESPACE TS150;
-    DROP TABLESPACE TS170;
-    DROP TABLESPACE TS200;
-    DROP TABLESPACE TS253;
-    """
-    act.isql(switches=['-q'], input=drop_TS)
+        drop_TS = """
+        DROP TABLESPACE TS1;
+        DROP TABLESPACE TS2;
+        DROP TABLESPACE TS10;
+        DROP TABLESPACE TS50;
+        DROP TABLESPACE TS70;
+        DROP TABLESPACE TS100;
+        DROP TABLESPACE TS150;
+        DROP TABLESPACE TS170;
+        DROP TABLESPACE TS200;
+        DROP TABLESPACE TS253;
+        commit;
+        """
+        act.reset()
+        act.isql(switches=isql_switches, input=drop_TS)
 
-    script = ""
-    for i in range(1, 11):
-        ts_files = tmpdir / 'new_tablespace'+str(i)+'.dat'
-        script += f"CREATE TABLESPACE NEW_TS{i} FILE '{ts_files}';\n"
-    script += "commit; set list on; select RDB$TABLESPACE_ID, RDB$TABLESPACE_NAME from RDB$TABLESPACES ORDER BY RDB$TABLESPACE_ID;"
-    act.isql(switches=['-q'], input=script)
+        script = ""
+        for i in range(1, 11):
+            ts_files = tmp_path / ('new_tablespace'+str(i)+'.dat')
+            ts_files.unlink(missing_ok=True)
+            script += f"CREATE TABLESPACE NEW_TS{i} FILE '{ts_files}';\n"
+        script += f"{commit} set list on; select RDB$TABLESPACE_ID, RDB$TABLESPACE_NAME from RDB$TABLESPACES ORDER BY RDB$TABLESPACE_ID; commit;"
+        act.reset()
+        act.isql(switches=isql_switches, input=script)
 
-    act.expected_stdout = expected_stdout
-    assert act.clean_stdout == act.clean_expected_stdout
+        act.expected_stdout = expected_stdout
+        assert act.clean_stdout == act.clean_expected_stdout, f"AUTODDL: {autoddl}"
+
+        cleanup_script = f"""       
+        set term ^;
+        EXECUTE BLOCK
+        AS
+        DECLARE VARIABLE TS_NAME VARCHAR(63);
+        BEGIN
+        FOR SELECT RDB$TABLESPACE_NAME
+            FROM RDB$TABLESPACES
+            WHERE rdb$system_flag = 0
+            INTO :TS_NAME
+        DO
+            EXECUTE STATEMENT 'DROP TABLESPACE "' || TS_NAME || '"';
+        END^
+        set term ;^
+        commit;
+        """
+        act.reset()
+        act.isql(switches=['-q'], input=cleanup_script)
