@@ -6,7 +6,6 @@ TITLE:       functional.tablespace.alter_ts
 DESCRIPTION:
 """
 
-import os
 import pytest
 import shutil
 from pathlib import Path
@@ -75,7 +74,8 @@ def test_1(act: Action, tmp_path: Path):
         act.isql(switches=isql_switches, input=f"ALTER TABLESPACE TS1 SET FILE TO '{ts2_file}'; {commit}")
 
         ts_renamefile = tmp_path / 'tablespace_rename.dat'
-        os.rename(ts1_file, ts_renamefile)
+        ts_renamefile.unlink(missing_ok=True)
+        ts1_file.rename(ts_renamefile)
 
         after_rename_script = """
         set list on;

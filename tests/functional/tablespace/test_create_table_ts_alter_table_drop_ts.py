@@ -10,7 +10,6 @@ NOTES:
     Only check whether a tablespace can be deleted after objects have been moved from it to another tablespace.
 """
 
-import os
 import pytest
 from pathlib import Path
 from firebird.qa import *

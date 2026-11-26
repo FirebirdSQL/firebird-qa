@@ -6,7 +6,6 @@ TITLE:       functional.tablespace.create_table_ts_alter_index_ts2
 DESCRIPTION:
 """
 
-import os
 import pytest
 from pathlib import Path
 from firebird.qa import *

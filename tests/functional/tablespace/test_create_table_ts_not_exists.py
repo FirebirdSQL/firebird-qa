@@ -7,7 +7,6 @@ DESCRIPTION:
 """
 
 import pytest
-from pathlib import Path
 from firebird.qa import *
 
 
