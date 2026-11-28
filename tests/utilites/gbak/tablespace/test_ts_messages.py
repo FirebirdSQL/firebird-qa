@@ -1,6 +1,6 @@
 # coding:utf-8
 """
-ID:          functional.tablespace.test_gbak_ts_messages
+ID:          utilites.gbak.tablespace.test_ts_messages
 TITLE:       GBAK messages about tablespaces must use own message numbers, not numbers of schema messages
 DESCRIPTION:
     See https://github.com/FirebirdSQL/firebird/commit/af766d69a2ccc786ef8720167beb5973aa0c7847
@@ -52,6 +52,9 @@ NOTES:
     tablespaces appear in the 'gbak -b -v' output: now they are issued BEFORE 'gbak:writing tables'
     rather than after 'gbak:writing packages'.
     Checked on 6.0.0.2459-353c99c (includes 14e1466) and 6.0.0.2455 (does not include it).
+
+    [2026.11.19] Zuev
+    The test was replaced from tests/functional/tablespace/test_gbak_ts_messages.py
 """
 
 import re
