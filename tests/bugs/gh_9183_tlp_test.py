@@ -25,6 +25,8 @@ db = db_factory()
 act = python_act('db')
 
 EXPECTED_MSG = 'OK: no mismatches found.'
+
+@pytest.mark.ai
 @pytest.mark.version('>=4.0')
 def test_1(act: Action, capsys):
 
@@ -1582,8 +1584,8 @@ def test_1(act: Action, capsys):
     ]
     # end of QRY_LIST definition 
 
-    srv_cfg = driver_config.register_server(name = f'srv_cfg_9183', config = '')
-    db_cfg_name = f'db_cfg_9183'
+    srv_cfg = driver_config.register_server(name = 'srv_cfg_9183_tlp', config = '')
+    db_cfg_name = 'db_cfg_9183'
     db_cfg_object = driver_config.register_database(name = db_cfg_name)
     db_cfg_object.server.value = srv_cfg.name
     db_cfg_object.database.value = str(act.db.db_path)
